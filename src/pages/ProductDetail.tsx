@@ -392,6 +392,54 @@ const extractHepaticFeatures = (product: any) => {
   return { lowLoad, energyBar, omega3, digestiveSynergy, conditions, vetWarning, crossSellHints };
 };
 
+/** Check if product is cardiac/heart support */
+const isCardiacProduct = (product: any): boolean => {
+  const cat = (product.category || '').toLowerCase();
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''}`.toLowerCase();
+  return cat === 'cardiac' || cat === 'heart' ||
+    text.includes('cardiac') || text.includes('לב') || text.includes('heart') ||
+    text.includes('cardio');
+};
+
+/** Extract cardiac care features */
+const extractCardiacFeatures = (product: any) => {
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''}`.toLowerCase();
+  const allText = text + ' ' + JSON.stringify(product.product_attributes || {}).toLowerCase();
+
+  const heartPillars = [
+    { icon: '🧂', label: 'נתרן נמוך במיוחד', description: 'רמות נתרן מופחתות לניהול לחץ דם ומניעת אגירת נוזלים', color: 'hsl(200,55%,45%)' },
+    { icon: '🌿', label: 'ג\'ינסנג (Panax)', description: 'תמיכה בשריר הלב ושיפור החיוניות – רכיב פיטו-תרפי מוכח', color: 'hsl(140,50%,40%)' },
+    { icon: '🛡️', label: 'SOD – Superoxide Dismutase', description: 'תרכיז מיץ מלון – נטרול רדיקלים חופשיים להגנה על תאי הלב', color: 'hsl(280,45%,50%)' },
+  ];
+
+  const hasFitAroma = allText.includes('fit-aroma') || allText.includes('fit aroma') || allText.includes('ציפוי ארומטי') || allText.includes('aromatic');
+  const fitAroma = hasFitAroma ? {
+    title: 'Fit-aroma Technology',
+    description: 'טכנולוגיית ציפוי ארומטי – רכיבים פונקציונליים מצופים בחומצות שומן ארומטיות לשיפור הטעם וספיגה יעילה ומבוקרת',
+  } : null;
+
+  const hasXOS = allText.includes('xos') || allText.includes('xylo') || allText.includes('קסילו');
+  const gutHeart = hasXOS
+    ? 'XOS (Xylo-oligosaccharides) – הגנה על מיקרוביוטת המעי, קריטית לבריאות כוללת בחולים כרוניים'
+    : 'פרה-ביוטיקה – תמיכה בבריאות המעי לשיפור הספיגה וחיזוק המערכת בחולי לב';
+
+  const conditions = [
+    { icon: '❤️', label: 'אי ספיקת לב כרונית', description: 'Chronic Heart Insufficiency – תזונה מותאמת לתמיכה ארוכת טווח' },
+    { icon: '🩺', label: 'איזון לחץ דם', description: 'Hypertension Management – סיוע בשמירה על לחץ דם תקין' },
+    { icon: '🐕', label: 'חיוניות לכלבים מבוגרים', description: 'Senior Vitality – שיפור איכות חיים וחיוניות בגיל מתקדם' },
+  ];
+
+  const vetWarning = 'מזון רפואי ייעודי - מחייב מעקב וטרינרי צמוד. יש לשים לב לסימנים כמו קוצר נשימה או עייפות חריגה ולדווח לרופא.';
+  const feedingTip = 'לחולי לב: מומלץ לחלק את המנה למספר ארוחות קטנות כדי לא להעמיס על מערכת העיכול ועל הלב.';
+
+  const crossSellHints = [
+    'חטיפים דלי נתרן – בטוחים לכלבים עם בעיות לב',
+    '⚠️ יש להימנע מחטיפים מלוחים ומעור גולמי (Rawhide)',
+  ];
+
+  return { heartPillars, fitAroma, gutHeart, conditions, vetWarning, feedingTip, crossSellHints };
+};
+
 /** Check if product is joint/orthopedic mobility */
 const isJointProduct = (product: any): boolean => {
   const cat = (product.category || '').toLowerCase();
@@ -2324,6 +2372,8 @@ const ProductDetail = () => {
   const jointFoodFeatures = useMemo(() => product && isJointFood ? extractJointFeatures(product) : { cartilage: [], inflammation: { omega3: '', epa: '', dha: '', description: '' }, weightJoint: '', audiences: [], expertTip: '', analysis: [], caPhNote: '', vetWarning: '', crossSellHints: [] }, [product, isJointFood]);
   const isHepatic = useMemo(() => product ? isHepaticProduct(product) : false, [product]);
   const hepaticFeatures = useMemo(() => product && isHepatic ? extractHepaticFeatures(product) : { lowLoad: [], energyBar: { title: '', description: '' }, omega3: { value: '', description: '' }, digestiveSynergy: '', conditions: [], vetWarning: '', crossSellHints: [] }, [product, isHepatic]);
+  const isCardiac = useMemo(() => product ? isCardiacProduct(product) : false, [product]);
+  const cardiacFeatures = useMemo(() => product && isCardiac ? extractCardiacFeatures(product) : { heartPillars: [], fitAroma: null, gutHeart: '', conditions: [], vetWarning: '', feedingTip: '', crossSellHints: [] }, [product, isCardiac]);
   const analysisData = useMemo(() => product ? parseAnalysis(product) : [], [product]);
   const vitaminsData = useMemo(() => product ? parseVitamins(product) : [], [product]);
   const feedingResult = useMemo(() => {
@@ -5909,6 +5959,143 @@ const ProductDetail = () => {
               </h3>
               <div className="space-y-1.5">
                 {hepaticFeatures.crossSellHints.map((hint, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <span className="text-[10px] text-primary mt-0.5">●</span>
+                    <p className="text-[11px] text-muted-foreground">{hint}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Cardiac: Veterinary Warning ── */}
+        {isCardiac && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
+            <Card className="p-3 border-[hsl(0,60%,50%)]/30 bg-[hsl(0,50%,95%)]/50 dark:bg-[hsl(0,30%,12%)]/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(0,50%,85%)]/30 flex items-center justify-center flex-shrink-0">
+                  <ShieldAlert className="w-5 h-5 text-[hsl(0,60%,50%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-[hsl(0,60%,45%)]">🚨 מוצר רפואי ייעודי</p>
+                  <p className="text-[11px] text-foreground font-medium">{cardiacFeatures.vetWarning}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Cardiac: Heart Health Dashboard ── */}
+        {isCardiac && cardiacFeatures.heartPillars.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(350,30%,95%)] to-background border-[hsl(350,35%,60%)]/20 dark:from-[hsl(350,20%,14%)]">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <HeartPulse className="w-4 h-4 text-[hsl(350,55%,50%)]" />
+                ❤️ דשבורד בריאות הלב – Cardiac Support
+              </h3>
+              <div className="space-y-2">
+                {cardiacFeatures.heartPillars.map((item, i) => (
+                  <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 + i * 0.06 }}
+                    className="flex items-center gap-3 rounded-lg p-3" style={{ backgroundColor: `${item.color}10` }}>
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-lg" style={{ backgroundColor: `${item.color}20` }}>
+                      {item.icon}
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-bold text-foreground">{item.label}</p>
+                      <p className="text-[11px] text-muted-foreground">{item.description}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Cardiac: Fit-aroma Technology ── */}
+        {isCardiac && cardiacFeatures.fitAroma && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+            <Card className="p-3 bg-gradient-to-br from-[hsl(45,40%,92%)] to-background border-[hsl(45,35%,55%)]/20 dark:from-[hsl(45,20%,14%)]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(45,45%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-5 h-5 text-[hsl(45,60%,40%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-foreground">✨ {cardiacFeatures.fitAroma.title}</p>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">{cardiacFeatures.fitAroma.description}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Cardiac: Gut-Heart Axis ── */}
+        {isCardiac && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.36 }}>
+            <Card className="p-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-[hsl(140,40%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Salad className="w-5 h-5 text-[hsl(140,50%,40%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-foreground">🌿 ציר מעי-לב (Gut-Heart Axis)</p>
+                  <p className="text-[11px] text-muted-foreground">{cardiacFeatures.gutHeart}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Cardiac: Target Conditions ── */}
+        {isCardiac && cardiacFeatures.conditions.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+            <Card className="p-4">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-3">
+                <Target className="w-4 h-4 text-primary" />
+                🎯 מתאים למצבים:
+              </h3>
+              <div className="space-y-2">
+                {cardiacFeatures.conditions.map((c, i) => (
+                  <div key={i} className="flex items-center gap-3 rounded-lg p-2.5 bg-muted/30">
+                    <span className="text-lg flex-shrink-0">{c.icon}</span>
+                    <div>
+                      <p className="text-[12px] font-bold text-foreground">{c.label}</p>
+                      <p className="text-[10px] text-muted-foreground">{c.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Cardiac: Feeding Tip ── */}
+        {isCardiac && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.44 }}>
+            <Card className="p-3 bg-gradient-to-br from-[hsl(200,35%,93%)] to-background border-[hsl(200,30%,60%)]/20 dark:from-[hsl(200,20%,14%)]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(200,45%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Timer className="w-5 h-5 text-[hsl(200,55%,45%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-foreground">⏰ טיפ האכלה</p>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">{cardiacFeatures.feedingTip}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Cardiac: Cross-Sell ── */}
+        {isCardiac && cardiacFeatures.crossSellHints.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+            <Card className="p-3">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-2">
+                <Target className="w-4 h-4 text-primary" />
+                💡 משלימים מומלצים
+              </h3>
+              <div className="space-y-1.5">
+                {cardiacFeatures.crossSellHints.map((hint, i) => (
                   <div key={i} className="flex items-start gap-2">
                     <span className="text-[10px] text-primary mt-0.5">●</span>
                     <p className="text-[11px] text-muted-foreground">{hint}</p>
