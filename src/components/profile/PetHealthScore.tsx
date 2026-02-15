@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Activity, Syringe, Calendar, Shield, ChevronLeft, AlertTriangle } from "lucide-react";
+import { Activity, Syringe, Calendar, Shield, ChevronLeft, AlertTriangle, CreditCard } from "lucide-react";
+import { PetIdCard } from "./PetIdCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
@@ -56,6 +57,7 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
   const [inRecovery, setInRecovery] = useState(false);
   const [showVaccineBoost, setShowVaccineBoost] = useState(false);
   const [showInsurancePitch, setShowInsurancePitch] = useState(false);
+  const [showIdCard, setShowIdCard] = useState(false);
   const [hasRecentWeight, setHasRecentWeight] = useState(false);
   const [hasParasitePrevention, setHasParasitePrevention] = useState(false);
   const [hasRegisteredClinic, setHasRegisteredClinic] = useState(false);
@@ -396,8 +398,11 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
               )}
             </div>
 
-            {/* Arrow */}
+            {/* Actions */}
             <div className="flex flex-col items-center gap-1.5">
+              <button onClick={() => setShowIdCard(true)} className="p-1.5 hover:bg-muted/60 rounded-lg transition-colors" title="תעודת זיהוי">
+                <CreditCard className="w-4.5 h-4.5 text-primary/70" strokeWidth={1.5} />
+              </button>
               <button onClick={onViewDetails} className="p-1.5">
                 <ChevronLeft className="w-5 h-5 text-muted-foreground" />
               </button>
@@ -474,6 +479,17 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Pet ID Card */}
+      <PetIdCard
+        petId={pet.id}
+        petName={pet.name}
+        petType={pet.type}
+        breed={pet.breed}
+        avatarUrl={pet.avatar_url}
+        open={showIdCard}
+        onClose={() => setShowIdCard(false)}
+      />
     </>
   );
 };
