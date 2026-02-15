@@ -880,6 +880,98 @@ const extractDesheddingFeatures = (product: any): {
   return { efficiencyPct, techFeatures, sizeGuide: { weightRange, coatType }, proTip, homeHygiene };
 };
 
+/** Check if product is a medical-grade protection product (flea & tick collars, spot-on) */
+const isMedicalProtectionProduct = (product: any): boolean => {
+  const text = `${product.name || ''} ${product.description || ''} ${product.brand || ''} ${product.category || ''}`.toLowerCase();
+  return text.includes('seresto') || text.includes('סרסטו') ||
+    (text.includes('flea') && text.includes('tick')) || (text.includes('פרעושים') && text.includes('קרציות')) ||
+    text.includes('imidacloprid') || text.includes('flumethrin') || text.includes('אימידאקלופריד') ||
+    text.includes('flea & tick') || text.includes('flea and tick') ||
+    (product.category || '').toLowerCase() === 'flea-tick' || (product.category || '').toLowerCase() === 'medical-protection';
+};
+
+/** Extract medical-grade protection features */
+const extractMedicalProtectionFeatures = (product: any): {
+  protectionDuration: string | null;
+  safetyAlerts: { icon: React.ReactNode; label: string; description: string }[];
+  activeIngredients: { name: string; target: string }[];
+  featureIcons: { icon: React.ReactNode; label: string; labelHe: string }[];
+  applicationSteps: string[];
+  brandAuthority: string | null;
+} => {
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''} ${(product.special_diet || []).join(' ')}`.toLowerCase();
+  const attrs = product.product_attributes || {};
+  const benefits = Array.isArray(product.benefits) ? product.benefits : [];
+  const benefitsText = benefits.map((b: any) => `${b.title || ''} ${b.description || ''}`).join(' ').toLowerCase();
+  const allText = text + ' ' + benefitsText;
+
+  // Protection duration
+  let protectionDuration: string | null = null;
+  const durMatch = allText.match(/(\d+)\s*[-–]\s*(\d+)\s*(?:months?|חודשים|חוד)/i)
+    || allText.match(/(?:up to|עד)\s*(\d+)\s*(?:months?|חודשים)/i);
+  if (durMatch) {
+    protectionDuration = durMatch[2] ? `${durMatch[1]}-${durMatch[2]} חודשים` : `עד ${durMatch[1]} חודשים`;
+  }
+  if (!protectionDuration && (allText.includes('seresto') || allText.includes('סרסטו'))) protectionDuration = '7-8 חודשים';
+
+  // Safety alerts
+  const safetyAlerts: { icon: React.ReactNode; label: string; description: string }[] = [];
+  if (allText.includes('not for cats') || allText.includes('לא לחתולים') || allText.includes('לא מתאים לחתולים') || allText.includes('dogs only') || allText.includes('לכלבים בלבד'))
+    safetyAlerts.push({ icon: <AlertTriangle className="w-5 h-5" />, label: 'לא מתאים לחתולים', description: 'מוצר זה מיועד לכלבים בלבד – סכנת הרעלה לחתולים!' });
+  else
+    safetyAlerts.push({ icon: <AlertTriangle className="w-5 h-5" />, label: 'בדיקת מין', description: 'וודאו שהמוצר מתאים למין חיית המחמד שלכם' });
+
+  const ageMatch = allText.match(/(?:from|מגיל|מ[-–]?)\s*(\d+)\s*(?:weeks?|שבועות)/i);
+  const minAge = ageMatch ? `מגיל ${ageMatch[1]} שבועות ומעלה` : (allText.includes('seresto') ? 'מגיל 7 שבועות ומעלה' : null);
+  if (minAge)
+    safetyAlerts.push({ icon: <Baby className="w-5 h-5" />, label: minAge, description: 'אין להשתמש בגורים צעירים מדי' });
+
+  if (allText.includes('wash hands') || allText.includes('לשטוף ידיים') || allText.includes('שטיפת ידיים') || allText.includes('after handling') || allText.includes('לאחר המגע'))
+    safetyAlerts.push({ icon: <Hand className="w-5 h-5" />, label: 'לשטוף ידיים לאחר המגע', description: 'מוצר מכיל חומרים פעילים – שטפו ידיים אחרי הענקה' });
+  else
+    safetyAlerts.push({ icon: <Hand className="w-5 h-5" />, label: 'לשטוף ידיים לאחר המגע', description: 'מומלץ לשטוף ידיים לאחר מגע עם המוצר' });
+
+  // Active ingredients
+  const activeIngredients: { name: string; target: string }[] = [];
+  if (allText.includes('imidacloprid') || allText.includes('אימידאקלופריד'))
+    activeIngredients.push({ name: 'Imidacloprid (אימידאקלופריד)', target: 'נגד פרעושים (Fleas)' });
+  if (allText.includes('flumethrin') || allText.includes('פלומת׳רין') || allText.includes('flumethrin'))
+    activeIngredients.push({ name: 'Flumethrin (פלומת׳רין)', target: 'נגד קרציות (Ticks)' });
+  if (activeIngredients.length === 0 && (allText.includes('flea') || allText.includes('פרעוש')))
+    activeIngredients.push({ name: 'חומר פעיל נגד פרעושים', target: 'הגנה מפרעושים' });
+  if (activeIngredients.length <= 1 && (allText.includes('tick') || allText.includes('קרצי')))
+    activeIngredients.push({ name: 'חומר פעיל נגד קרציות', target: 'הגנה מקרציות' });
+
+  // Feature icons
+  const featureIcons: { icon: React.ReactNode; label: string; labelHe: string }[] = [];
+  if (allText.includes('water') || allText.includes('מים') || allText.includes('waterproof') || allText.includes('water resistant') || allText.includes('עמיד במים') || allText.includes('רחצה') || allText.includes('bath') || allText.includes('rain') || allText.includes('גשם'))
+    featureIcons.push({ icon: <Droplets className="w-5 h-5" />, label: 'Water Resistant', labelHe: 'עמיד במים – רחצה וגשם' });
+  if (allText.includes('odorless') || allText.includes('ללא ריח') || allText.includes('no odor') || allText.includes('ריח') || allText.includes('non-smell'))
+    featureIcons.push({ icon: <Wind className="w-5 h-5" />, label: 'Odorless', labelHe: 'ללא ריח' });
+  if (allText.includes('non-greasy') || allText.includes('אינו שומני') || allText.includes('לא שומני') || allText.includes('greasy') || allText.includes('שומני'))
+    featureIcons.push({ icon: <Droplet className="w-5 h-5" />, label: 'Non-Greasy', labelHe: 'אינו שומני' });
+  if (featureIcons.length === 0) {
+    featureIcons.push({ icon: <Droplets className="w-5 h-5" />, label: 'Water Resistant', labelHe: 'עמיד במים' });
+    featureIcons.push({ icon: <Wind className="w-5 h-5" />, label: 'Odorless', labelHe: 'ללא ריח' });
+    featureIcons.push({ icon: <Droplet className="w-5 h-5" />, label: 'Non-Greasy', labelHe: 'אינו שומני' });
+  }
+
+  // Application steps
+  const applicationSteps = [
+    'הוציאו את הקולר מהאריזה',
+    'התאימו לצוואר – כלל שתי אצבעות (Two-Finger Rule)',
+    'חתכו את העודף והשליכו בצורה בטוחה'
+  ];
+
+  // Brand authority
+  let brandAuthority: string | null = null;
+  if (allText.includes('bayer') || allText.includes('באייר')) brandAuthority = 'Bayer – מותג וטרינרי מוביל עולמי';
+  else if (allText.includes('elanco') || allText.includes('אלנקו')) brandAuthority = 'Elanco – מותג וטרינרי מוביל';
+  else if (product.brand) brandAuthority = product.brand;
+
+  return { protectionDuration, safetyAlerts, activeIngredients, featureIcons, applicationSteps, brandAuthority };
+};
+
 /** Extract technical specs from product_attributes for accessories */
 const extractTechSpecs = (product: any): { label: string; value: string }[] => {
   const specs: { label: string; value: string }[] = [];
@@ -1182,6 +1274,8 @@ const ProductDetail = () => {
   const crateFeatures = useMemo(() => product && isCrate ? extractCrateFeatures(product) : { safetyBadges: [], fitGuide: { maxWeight: null, crateSize: null, includesDivider: false }, lifestyleIcons: [], prosFromReviews: [], bedRecommendation: null }, [product, isCrate]);
   const isDeshedding = useMemo(() => product ? isDesheddingProduct(product) : false, [product]);
   const desheddingFeatures = useMemo(() => product && isDeshedding ? extractDesheddingFeatures(product) : { efficiencyPct: null, techFeatures: [], sizeGuide: { weightRange: null, coatType: null }, proTip: null, homeHygiene: false }, [product, isDeshedding]);
+  const isMedicalProtection = useMemo(() => product ? isMedicalProtectionProduct(product) : false, [product]);
+  const medicalFeatures = useMemo(() => product && isMedicalProtection ? extractMedicalProtectionFeatures(product) : { protectionDuration: null, safetyAlerts: [], activeIngredients: [], featureIcons: [], applicationSteps: [], brandAuthority: null }, [product, isMedicalProtection]);
   const isPuppy = useMemo(() => product ? isPuppyProduct(product) : false, [product]);
   const puppyFeatures = useMemo(() => product && isPuppy ? extractPuppyFeatures(product) : { hasDHA: false, hasAntioxidants: false, topIngredient: null, grainStatus: { hasBarleyOatmeal: false, noCornWheatSoy: false }, hasSatisfactionGuarantee: false, developmentBenefits: [], puppyFeedingMatrix: [] }, [product, isPuppy]);
   const isTreat = useMemo(() => product ? isTreatProduct(product) : false, [product]);
@@ -2655,6 +2749,130 @@ const ProductDetail = () => {
                       <Check className="w-3 h-3 text-[hsl(170,50%,40%)]" /> חיסכון בזמן ניקיון יומי
                     </p>
                   </div>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Medical Protection: Protection Duration Badge ── */}
+        {isMedicalProtection && medicalFeatures.protectionDuration && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(210,80%,93%)] to-background border-[hsl(210,60%,55%)]/30 dark:from-[hsl(210,40%,15%)] dark:border-[hsl(210,50%,40%)]/30">
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-full bg-[hsl(210,70%,50%)]/15 flex items-center justify-center flex-shrink-0">
+                  <Shield className="w-7 h-7 text-[hsl(210,70%,45%)]" />
+                </div>
+                <div>
+                  <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">משך הגנה</p>
+                  <p className="text-xl font-black text-foreground">{medicalFeatures.protectionDuration}</p>
+                  <p className="text-[11px] text-muted-foreground">הגנה רציפה מפרעושים וקרציות</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Medical Protection: Critical Safety Alerts ── */}
+        {isMedicalProtection && medicalFeatures.safetyAlerts.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}>
+            <Card className="p-4 border-destructive/40 bg-destructive/5 dark:bg-destructive/10">
+              <h3 className="text-sm font-bold text-destructive flex items-center gap-2 mb-3">
+                <AlertTriangle className="w-4 h-4" />
+                אזהרות בטיחות קריטיות
+              </h3>
+              <div className="space-y-2.5">
+                {medicalFeatures.safetyAlerts.map((alert, i) => (
+                  <div key={i} className="flex items-start gap-2.5 bg-destructive/5 dark:bg-destructive/10 rounded-lg p-2.5">
+                    <div className="w-8 h-8 rounded-full bg-destructive/15 flex items-center justify-center flex-shrink-0 text-destructive">
+                      {alert.icon}
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-bold text-destructive">{alert.label}</p>
+                      <p className="text-[11px] text-muted-foreground">{alert.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Medical Protection: Active Ingredients ── */}
+        {isMedicalProtection && medicalFeatures.activeIngredients.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <FlaskConical className="w-4 h-4 text-primary" />
+                חומרים פעילים
+              </h3>
+              <div className="space-y-2">
+                {medicalFeatures.activeIngredients.map((ing, i) => (
+                  <div key={i} className="flex items-center gap-3 bg-primary/5 dark:bg-primary/10 rounded-lg p-3">
+                    <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
+                      <Bug className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-semibold text-foreground">{ing.name}</p>
+                      <p className="text-[11px] text-muted-foreground">{ing.target}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Medical Protection: Feature Icons ── */}
+        {isMedicalProtection && medicalFeatures.featureIcons.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}>
+            <div className="grid grid-cols-3 gap-2">
+              {medicalFeatures.featureIcons.map((feat, i) => (
+                <Card key={i} className="p-3 flex flex-col items-center text-center gap-1.5">
+                  <div className="w-10 h-10 rounded-full bg-[hsl(210,50%,90%)]/50 dark:bg-[hsl(210,30%,20%)] flex items-center justify-center text-[hsl(210,60%,45%)]">
+                    {feat.icon}
+                  </div>
+                  <p className="text-[11px] font-bold text-foreground">{feat.label}</p>
+                  <p className="text-[10px] text-muted-foreground leading-tight">{feat.labelHe}</p>
+                </Card>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* ── Medical Protection: Application Guide ── */}
+        {isMedicalProtection && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.36 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Target className="w-4 h-4 text-primary" />
+                מדריך הענקה – 3 שלבים
+              </h3>
+              <div className="space-y-2">
+                {medicalFeatures.applicationSteps.map((step, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-bold text-primary">{i + 1}</span>
+                    </div>
+                    <p className="text-[13px] text-foreground">{step}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Medical Protection: Brand Authority ── */}
+        {isMedicalProtection && medicalFeatures.brandAuthority && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+            <Card className="p-3 bg-gradient-to-br from-[hsl(45,60%,93%)] to-background border-[hsl(45,50%,65%)]/20 dark:from-[hsl(45,30%,15%)] dark:border-[hsl(45,40%,40%)]/20">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-full bg-[hsl(45,60%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Stethoscope className="w-5 h-5 text-[hsl(45,60%,40%)]" />
+                </div>
+                <div>
+                  <p className="text-[13px] font-bold text-foreground">{medicalFeatures.brandAuthority}</p>
+                  <p className="text-[10px] text-muted-foreground">מומלץ ע"י וטרינרים מובילים</p>
                 </div>
               </div>
             </Card>
