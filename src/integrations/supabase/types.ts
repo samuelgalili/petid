@@ -5892,6 +5892,7 @@ export type Database = {
           created_at: string
           id: string
           pet_id: string
+          pet_type: string | null
           poll_key: string
           selected_option: number
           selected_text: string
@@ -5901,6 +5902,7 @@ export type Database = {
           created_at?: string
           id?: string
           pet_id: string
+          pet_type?: string | null
           poll_key: string
           selected_option: number
           selected_text: string
@@ -5910,9 +5912,46 @@ export type Database = {
           created_at?: string
           id?: string
           pet_id?: string
+          pet_type?: string | null
           poll_key?: string
           selected_option?: number
           selected_text?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pet_preference_tags: {
+        Row: {
+          category: string
+          confidence: number
+          created_at: string
+          id: string
+          pet_id: string
+          source_poll_key: string
+          tag: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          confidence?: number
+          created_at?: string
+          id?: string
+          pet_id: string
+          source_poll_key: string
+          tag: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          confidence?: number
+          created_at?: string
+          id?: string
+          pet_id?: string
+          source_poll_key?: string
+          tag?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
