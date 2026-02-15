@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Camera, FileUp, PenLine, X, Loader2,
   Syringe, Building2, Calendar, CheckCircle2, AlertTriangle,
-  CalendarPlus, Weight, Shield, Pill
+  CalendarPlus, Weight, Shield, Pill, User, MapPin, Phone, Hash
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,8 @@ interface MedicalDocumentFABProps {
 
 interface ScanResult {
   clinicName: string | null;
+  clinicPhone: string | null;
+  clinicAddress: string | null;
   visitDate: string | null;
   vaccines: string[];
   diagnoses: string[];
@@ -37,9 +39,14 @@ interface ScanResult {
   deworming: boolean;
   cost: number | null;
   nextDueDate?: string | null;
+  ownerName: string | null;
+  ownerAddress: string | null;
+  ownerCity: string | null;
+  ownerPhone: string | null;
+  ownerIdNumber: string | null;
 }
 
-type ModalStep = 'closed' | 'choose' | 'scanning' | 'review' | 'manual';
+type ModalStep = 'closed' | 'choose' | 'scanning' | 'review' | 'profileReview' | 'manual';
 
 // Shih Tzu weight standards by age (months → expected kg range)
 const SHIH_TZU_WEIGHT: Record<number, [number, number]> = {
@@ -156,13 +163,29 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
       if (!user) throw new Error("Not authenticated");
 
       if (lastBase64) {
-        // Re-call edge function with saveToDb: true
         await supabase.functions.invoke("scan-vet-document", {
           body: { petId, userId: user.id, imageBase64: lastBase64, fileName: lastFileName, saveToDb: true },
         });
       }
 
+      // Save clinic info to pet
+      if (scanResult.clinicName) {
+        const clinicUpdate: Record<string, unknown> = { vet_clinic_name: scanResult.clinicName };
+        if (scanResult.clinicPhone) clinicUpdate.vet_clinic_phone = scanResult.clinicPhone;
+        if (scanResult.clinicAddress) clinicUpdate.vet_clinic_address = scanResult.clinicAddress;
+        await supabase.from("pets").update(clinicUpdate).eq("id", petId);
+      }
+
       toast({ title: "הנתונים אושרו ✅", description: "ציון הבריאות ולוח החיסונים עודכנו" });
+
+      // Check if profile data was extracted — offer update
+      const hasProfileData = scanResult.ownerName || scanResult.ownerAddress || scanResult.ownerPhone || scanResult.ownerIdNumber;
+      if (hasProfileData) {
+        setStep('profileReview');
+        setConfirming(false);
+        return;
+      }
+
       onComplete?.();
       handleClose();
     } catch {
@@ -170,6 +193,44 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
     } finally {
       setConfirming(false);
     }
+  };
+
+  // Save profile data after user approves
+  const handleProfileConfirm = async () => {
+    if (!scanResult) return;
+    setConfirming(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const profileUpdate: Record<string, unknown> = {};
+      if (scanResult.ownerName) profileUpdate.full_name = scanResult.ownerName;
+      if (scanResult.ownerCity) profileUpdate.city = scanResult.ownerCity;
+      if (scanResult.ownerAddress) profileUpdate.street = scanResult.ownerAddress;
+      if (scanResult.ownerPhone) profileUpdate.phone = scanResult.ownerPhone;
+      if (scanResult.ownerIdNumber) {
+        // Store encrypted and last 4 digits masked
+        profileUpdate.id_number_encrypted = scanResult.ownerIdNumber;
+        profileUpdate.id_number_last4 = scanResult.ownerIdNumber.slice(-4);
+      }
+
+      if (Object.keys(profileUpdate).length > 0) {
+        await supabase.from("profiles").update(profileUpdate).eq("id", user.id);
+      }
+
+      toast({ title: "הפרופיל עודכן ✅", description: "הפרטים האישיים נשמרו בהצלחה" });
+      onComplete?.();
+      handleClose();
+    } catch {
+      toast({ title: "שגיאה בעדכון הפרופיל", variant: "destructive" });
+    } finally {
+      setConfirming(false);
+    }
+  };
+
+  const handleSkipProfile = () => {
+    onComplete?.();
+    handleClose();
   };
 
   const handleManualSubmit = async () => {
@@ -187,6 +248,8 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
       const extracted = data.extracted;
       setScanResult({
         clinicName: manualClinic || null,
+        clinicPhone: null,
+        clinicAddress: null,
         visitDate: manualDate,
         vaccines: extracted.vaccines || [],
         diagnoses: extracted.diagnoses || [],
@@ -195,6 +258,11 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
         deworming: false,
         cost: null,
         nextDueDate: extracted.nextVisitDate,
+        ownerName: null,
+        ownerAddress: null,
+        ownerCity: null,
+        ownerPhone: null,
+        ownerIdNumber: null,
       });
       setLastBase64(null); // Manual — already saved by extract-vet-summary
       setStep('review');
@@ -289,6 +357,7 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
                   <h3 className="text-lg font-bold text-foreground">
                     {step === 'choose' && 'הוסף ביקור / חיסון'}
                     {step === 'review' && 'אישור נתונים שזוהו'}
+                    {step === 'profileReview' && 'עדכון פרופיל אישי'}
                     {step === 'manual' && 'הזנה ידנית'}
                   </h3>
                   <button onClick={handleClose} className="p-2 rounded-full hover:bg-muted transition-colors">
@@ -509,6 +578,90 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
                       onClick={() => { setScanResult(null); setStep('choose'); }}
                     >
                       סרוק שוב
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Profile Review Step */}
+              {step === 'profileReview' && scanResult && (
+                <div className="space-y-4">
+                  <div className="p-4 bg-blue-500/5 rounded-2xl border border-blue-500/20">
+                    <div className="flex items-center gap-2 mb-3">
+                      <User className="w-4 h-4 text-blue-600" strokeWidth={1.5} />
+                      <p className="text-sm font-semibold text-blue-700">
+                        מצאנו את הפרטים שלך במסמך. האם לעדכן את הפרופיל האישי?
+                      </p>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {scanResult.ownerName && (
+                        <div className="flex items-center gap-3">
+                          <User className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.5} />
+                          <div>
+                            <p className="text-[10px] text-muted-foreground">שם הבעלים</p>
+                            <p className="text-sm text-foreground">{scanResult.ownerName}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {(scanResult.ownerAddress || scanResult.ownerCity) && (
+                        <div className="flex items-center gap-3">
+                          <MapPin className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.5} />
+                          <div>
+                            <p className="text-[10px] text-muted-foreground">כתובת מגורים</p>
+                            <p className="text-sm text-foreground">
+                              {[scanResult.ownerAddress, scanResult.ownerCity].filter(Boolean).join(', ')}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {scanResult.ownerPhone && (
+                        <div className="flex items-center gap-3">
+                          <Phone className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.5} />
+                          <div>
+                            <p className="text-[10px] text-muted-foreground">טלפון</p>
+                            <p className="text-sm text-foreground">{scanResult.ownerPhone}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {scanResult.ownerIdNumber && (
+                        <div className="flex items-center gap-3">
+                          <Hash className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.5} />
+                          <div>
+                            <p className="text-[10px] text-muted-foreground">ת"ז (מאובטח)</p>
+                            <p className="text-sm text-foreground font-mono">
+                              {'*'.repeat(Math.max(0, scanResult.ownerIdNumber.length - 4))}{scanResult.ownerIdNumber.slice(-4)}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Button
+                      className="flex-1 h-12 rounded-2xl font-semibold"
+                      onClick={handleProfileConfirm}
+                      disabled={confirming}
+                    >
+                      {confirming ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-4 h-4 ml-2" />
+                          עדכן פרופיל
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-12 rounded-2xl px-5"
+                      onClick={handleSkipProfile}
+                    >
+                      דלג
                     </Button>
                   </div>
                 </div>
