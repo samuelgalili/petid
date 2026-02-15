@@ -80,9 +80,11 @@ serve(async (req) => {
 Analyze the following scraped product page content and extract ALL data into the exact JSON structure below.
 
 CATEGORY DETECTION - CRITICAL:
+- If the page contains keywords like "מחסום", "muzzle", "זמם" → set category to "muzzles"
 - If the page contains keywords like "collar", "קולר", "צווארון", "רצועה", "leash", "harness", "הרנס", "מיטה", "bed", "toy", "צעצוע", "nylon", "ניילון", "D-ring", "buckle", "אבזם", "quick-release", "שחרור מהיר" → set category to "accessories"
 - If the page contains keywords like "מזון", "food", "kibble", "חטיף", "treat", "שימורים" → set appropriate food category
-- For accessories: populate product_attributes with technical specs (material, size, color, features, closure, dimensions, care_instructions)
+- For accessories/muzzles: populate product_attributes with technical specs (material, size, color, features, closure, dimensions, care_instructions)
+- For muzzles specifically: map "היקף" to "circumference", "אורך" to "length", extract size_number, and add breed_recommendations as an array of breed names
 - For food: populate product_attributes with nutritional values (protein_pct, fat_pct, fiber_pct, moisture_pct, ash_pct)
 
 RULES:
@@ -96,8 +98,9 @@ RULES:
   - Set feeding_guide to empty array []
   - Set ingredients to null
   - In product_attributes, include: material, size, color, features (as comma-separated text), closure type, dimensions, and care_instructions (e.g. "ניקוי במטלית לחה")
+  - For MUZZLE products specifically: in product_attributes also include circumference (map from "היקף"), length (map from "אורך"), size_number, and breed_recommendations as an array of Hebrew breed names the muzzle fits (e.g. ["ברניז", "באסט האונד", "רוטוויילר"])
   - benefits: Product features/advantages as [{ "title": "name", "description": "short description" }]
-- category: one of: dry-food, wet-food, treats, toys, grooming, health, food, accessories, collars, leashes, beds, clothing. Use null if unclear.
+- category: one of: dry-food, wet-food, treats, toys, grooming, health, food, accessories, collars, leashes, beds, clothing, muzzles. Use null if unclear.
 - pet_type: dog, cat, or all.
 - life_stage: puppy, kitten, adult, senior, all. Use null if unclear.
 - dog_size: small, medium, large, all. Use null if unclear.
