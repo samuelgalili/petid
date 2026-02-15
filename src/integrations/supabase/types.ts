@@ -1369,10 +1369,14 @@ export type Database = {
       business_products: {
         Row: {
           average_rating: number | null
+          benefits: Json | null
+          brand: string | null
           business_id: string
           category: string | null
           created_at: string
           description: string | null
+          dog_size: string | null
+          feeding_guide: Json | null
           flagged_at: string | null
           flagged_reason: string | null
           flavors: string[] | null
@@ -1380,8 +1384,10 @@ export type Database = {
           image_url: string
           images: string[] | null
           in_stock: boolean | null
+          ingredients: string | null
           is_featured: boolean | null
           is_flagged: boolean | null
+          life_stage: string | null
           name: string
           needs_image_review: boolean | null
           needs_price_review: boolean | null
@@ -1390,20 +1396,26 @@ export type Database = {
           price: number
           price_per_weight: number | null
           price_suggestion_reason: string | null
+          product_attributes: Json | null
           review_count: number | null
           sale_price: number | null
           sku: string | null
           source_url: string | null
+          special_diet: string[] | null
           suggested_price: number | null
           updated_at: string
           weight_unit: string | null
         }
         Insert: {
           average_rating?: number | null
+          benefits?: Json | null
+          brand?: string | null
           business_id: string
           category?: string | null
           created_at?: string
           description?: string | null
+          dog_size?: string | null
+          feeding_guide?: Json | null
           flagged_at?: string | null
           flagged_reason?: string | null
           flavors?: string[] | null
@@ -1411,8 +1423,10 @@ export type Database = {
           image_url: string
           images?: string[] | null
           in_stock?: boolean | null
+          ingredients?: string | null
           is_featured?: boolean | null
           is_flagged?: boolean | null
+          life_stage?: string | null
           name: string
           needs_image_review?: boolean | null
           needs_price_review?: boolean | null
@@ -1421,20 +1435,26 @@ export type Database = {
           price: number
           price_per_weight?: number | null
           price_suggestion_reason?: string | null
+          product_attributes?: Json | null
           review_count?: number | null
           sale_price?: number | null
           sku?: string | null
           source_url?: string | null
+          special_diet?: string[] | null
           suggested_price?: number | null
           updated_at?: string
           weight_unit?: string | null
         }
         Update: {
           average_rating?: number | null
+          benefits?: Json | null
+          brand?: string | null
           business_id?: string
           category?: string | null
           created_at?: string
           description?: string | null
+          dog_size?: string | null
+          feeding_guide?: Json | null
           flagged_at?: string | null
           flagged_reason?: string | null
           flavors?: string[] | null
@@ -1442,8 +1462,10 @@ export type Database = {
           image_url?: string
           images?: string[] | null
           in_stock?: boolean | null
+          ingredients?: string | null
           is_featured?: boolean | null
           is_flagged?: boolean | null
+          life_stage?: string | null
           name?: string
           needs_image_review?: boolean | null
           needs_price_review?: boolean | null
@@ -1452,10 +1474,12 @@ export type Database = {
           price?: number
           price_per_weight?: number | null
           price_suggestion_reason?: string | null
+          product_attributes?: Json | null
           review_count?: number | null
           sale_price?: number | null
           sku?: string | null
           source_url?: string | null
+          special_diet?: string[] | null
           suggested_price?: number | null
           updated_at?: string
           weight_unit?: string | null

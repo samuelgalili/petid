@@ -30,6 +30,12 @@ interface ScrapedProductResult {
     currency: string | null;
     basePrice: number | null;
     salePrice: number | null;
+    ingredients: string | null;
+    benefits: { title: string; description: string }[];
+    lifeStage: string | null;
+    dogSize: string | null;
+    specialDiet: string[];
+    productAttributes: Record<string, string>;
   };
   variants: ProductVariant[];
   feedingGuide: { range: string; amount: string }[];
@@ -85,6 +91,12 @@ function extractProductFromHtml(html: string, url: string): Omit<ScrapedProductR
       currency: "ILS",
       basePrice: null,
       salePrice: null,
+      ingredients: null,
+      benefits: [],
+      lifeStage: null,
+      dogSize: null,
+      specialDiet: [],
+      productAttributes: {},
     },
     variants: [],
     feedingGuide: [],
@@ -120,7 +132,10 @@ function extractProductFromHtml(html: string, url: string): Omit<ScrapedProductR
   result.product.brand =
     $(".brand-link img").attr("alt")?.trim() ||
     $(".brand-link").text().trim() ||
+    $('[class*="brand"] a').text().trim() ||
     $('[class*="brand"]').first().text().trim() ||
+    $('a[href*="/brand/"]').text().trim() ||
+    $('span.posted_in a[rel="tag"]').first().text().trim() ||
     null;
   
   // Try JSON-LD for brand
@@ -229,7 +244,71 @@ function extractProductFromHtml(html: string, url: string): Omit<ScrapedProductR
     }
   });
 
-  // ==================== VARIANTS ====================
+  // ==================== INGREDIENTS ====================
+  // Look for "רכיבים:" section in the description tab
+  const descriptionHtml = $("#tab-description").html() || $(".woocommerce-Tabs-panel--description").html() || "";
+  const ingredientsMatch = descriptionHtml.match(/רכיבים[:\s]*<\/[^>]*>\s*([\s\S]*?)(?:<h[2-6]|<hr|<\/div|$)/i);
+  if (ingredientsMatch) {
+    const ingredientsEl = cheerio.load(`<div>${ingredientsMatch[1]}</div>`);
+    result.product.ingredients = ingredientsEl("div").text().trim().replace(/\s+/g, " ");
+  }
+  // Fallback: search in full text
+  if (!result.product.ingredients) {
+    const fullText = $("#tab-description").text() || "";
+    const ingIdx = fullText.indexOf("רכיבים:");
+    if (ingIdx !== -1) {
+      const afterIng = fullText.substring(ingIdx + 7).trim();
+      // Take until next section header or 500 chars
+      const endIdx = afterIng.search(/\n\s*(המלצ|הנחי|מידע|תיאור|####)/);
+      result.product.ingredients = (endIdx > 0 ? afterIng.substring(0, endIdx) : afterIng.substring(0, 500)).trim();
+    }
+  }
+
+  // ==================== BENEFITS ====================
+  // Extract h4 sections with lists from description
+  $("#tab-description h4, #tab-description h3").each((_, el) => {
+    const heading = $(el).text().trim().replace(/^\d+\.\s*/, "").replace(/\*\*/g, "");
+    if (!heading || heading.includes("המלצת") || heading.includes("הנחיות") || heading.includes("רכיבים") || heading.includes("הכמות")) return;
+    
+    let desc = "";
+    let next = $(el).next();
+    while (next.length && !next.is("h3, h4, h2, hr, table")) {
+      const text = next.text().trim();
+      if (text) desc += (desc ? " " : "") + text;
+      next = next.next();
+    }
+    if (desc && heading.length > 3) {
+      result.product.benefits.push({ title: heading, description: desc });
+    }
+  });
+
+  // ==================== PRODUCT ATTRIBUTES (מידע נוסף) ====================
+  $("#tab-additional_information table tr, .woocommerce-product-attributes tr, .shop_attributes tr").each((_, el) => {
+    const label = $(el).find("th, td:first-child").first().text().trim();
+    const value = $(el).find("td:last-child, td").last().text().trim();
+    if (label && value && label !== value) {
+      result.product.productAttributes[label] = value;
+    }
+  });
+
+  // Also try WooCommerce additional info tab
+  if (Object.keys(result.product.productAttributes).length === 0) {
+    $(".woocommerce-Tabs-panel--additional_information table tr").each((_, el) => {
+      const label = $(el).find("th").text().trim();
+      const value = $(el).find("td").text().trim();
+      if (label && value) result.product.productAttributes[label] = value;
+    });
+  }
+
+  // ==================== LIFE STAGE & DOG SIZE & SPECIAL DIET ====================
+  const attrs = result.product.productAttributes;
+  if (attrs["שלב בחיים"]) result.product.lifeStage = attrs["שלב בחיים"];
+  if (attrs["גודל הכלב"]) result.product.dogSize = attrs["גודל הכלב"];
+  if (attrs["תזונה מיוחדת"]) {
+    result.product.specialDiet = attrs["תזונה מיוחדת"].split(",").map(s => s.trim()).filter(Boolean);
+  }
+
+
   // Method 1: WooCommerce data-product_variations
   const variationsAttr = $("[data-product_variations]").attr("data-product_variations");
   if (variationsAttr) {
@@ -321,7 +400,7 @@ function extractProductFromHtml(html: string, url: string): Omit<ScrapedProductR
     // pet type detected from URL
   }
 
-  console.log(`Extracted: "${result.product.title}", ${result.product.images.length} images, ${result.variants.length} variants, ${result.feedingGuide.length} feeding rows`);
+  console.log(`Extracted: "${result.product.title}", ${result.product.images.length} images, ${result.variants.length} variants, ${result.feedingGuide.length} feeding rows, ${result.product.benefits.length} benefits, ingredients: ${!!result.product.ingredients}, attrs: ${Object.keys(result.product.productAttributes).length}`);
   return result;
 }
 

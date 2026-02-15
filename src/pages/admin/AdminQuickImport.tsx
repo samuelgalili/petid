@@ -46,7 +46,7 @@ const AdminQuickImport = () => {
       const scraped = data.data.products[0];
 
       // Step 2: Save to business_products
-      const productData = {
+      const productData: any = {
         business_id: DEFAULT_BUSINESS_ID,
         name: scraped.title || "מוצר ללא שם",
         description: scraped.description || null,
@@ -61,6 +61,14 @@ const AdminQuickImport = () => {
         category: detectCategory(scraped),
         in_stock: true,
         pet_type: scraped.petType || "all",
+        brand: scraped.brand || null,
+        ingredients: scraped.ingredients || null,
+        benefits: scraped.benefits || [],
+        feeding_guide: scraped.feedingGuide || [],
+        product_attributes: scraped.productAttributes || {},
+        life_stage: scraped.lifeStage || null,
+        dog_size: scraped.dogSize || null,
+        special_diet: scraped.specialDiet || [],
       };
 
       if (!productData.name.trim()) {
