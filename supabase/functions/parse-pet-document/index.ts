@@ -33,7 +33,7 @@ async function extractDataFromDocument(
   content: string,
   documentName: string
 ): Promise<ExtractedData> {
-  const extractionPrompt = `אתה עוזר לניתוח מסמכים וטרינריים וביטוח לחיות מחמד. 
+  const extractionPrompt = `אתה עוזר לניתוח מסמכים וטרינריים וביטוח לחיות מחמד. מומחה במיוחד בנתונים רפואיים של חתולים.
   
 נתוני מסמך:
 שם: ${documentName}
@@ -42,15 +42,20 @@ async function extractDataFromDocument(
 חלץ את הנתונים הבאים בפורמט JSON (החזר רק את השדות שקיימים במסמך):
 {
   "chip_number": "מספר השבב אם קיים",
-  "vaccination_type": "סוג ההצפה",
-  "vaccination_date": "תאריך הצפה (YYYY-MM-DD)",
-  "vaccination_expiry": "תאריך תוקף הצפה (YYYY-MM-DD)",
+  "vaccination_type": "סוג החיסון — לחתולים: FVRCP/מרובעת, FeLV/לוקמיה, FIP, Chlamydia/כלמידיה, Rabies/כלבת. לכלבים: DHPP, Rabies, Bordetella וכו'",
+  "vaccination_date": "תאריך חיסון (YYYY-MM-DD)",
+  "vaccination_expiry": "תאריך תוקף חיסון (YYYY-MM-DD)",
   "vet_name": "שם הווטרינר",
   "vet_clinic": "שם הקליניקה",
+  "is_cat_friendly_clinic": "true/false — האם הקליניקה ידידותית לחתולים (Cat Friendly Clinic, ISFM, AAFP)",
   "treatment_type": "סוג הטיפול",
   "treatment_date": "תאריך הטיפול (YYYY-MM-DD)",
-  "diagnosis": "אבחנה",
+  "diagnosis": "אבחנה — לחתולים: שים לב במיוחד ל-FLUTD, Crystals/קריסטלים, Struvite/סטרוויט, CKD, Hyperthyroid, FORL, FIP",
   "medications": ["רשימה של תרופות"],
+  "is_sterilized": "true/false — האם מופיע Spayed/מעוקרת/Neutered/מסורס/Sterilized/מעוקר",
+  "sterilization_type": "spayed/neutered אם רלוונטי",
+  "urinary_symptoms": ["רשימת סימפטומים בדרכי שתן: crystals/קריסטלים, struvite/סטרוויט, inappropriate urination/השתנה מחוץ לארגז, hematuria/דם בשתן, blockage/חסימה"],
+  "weight_kg": "משקל בק\"ג אם מופיע (דיוק של 100 גרם לחתולים)",
   "total_cost": "עלות כוללת (מספר)",
   "currency": "מטבע",
   "payment_method": "דרך תשלום",
@@ -60,6 +65,13 @@ async function extractDataFromDocument(
   "provider_phone": "מספר טלפון",
   "provider_address": "כתובת"
 }
+
+הנחיות חשובות לחתולים:
+- חיסונים חתוליים: FVRCP (מרובעת — מגן מפני Rhinotracheitis, Calicivirus, Panleukopenia), FeLV (לוקמיה — קריטי לחתולים חיצוניים), FIP, Chlamydia
+- אם מופיעים: Crystals/קריסטלים, Struvite/סטרוויט, השתנה מחוץ לארגז — חלץ לשדה urinary_symptoms
+- חפש ספציפית: Spayed/מעוקרת או Neutered/מסורס לעדכון סטטוס עיקור
+- דיוק משקל: בחתולים כל 100 גרם חשובים — חלץ משקל מדויק
+- קליניקה ידידותית: חפש Cat Friendly, ISFM, AAFP
 
 החזר רק JSON תקני, ללא טקסט נוסף. השאר null את השדות שלא מופיעים.`;
 
