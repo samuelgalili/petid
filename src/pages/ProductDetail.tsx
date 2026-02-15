@@ -12,7 +12,8 @@ import {
   Car, Grip, Cog, Droplet, Sun, Wind, Pipette, Beaker, Flower2, Bug,
   Target, CircleDot, ArrowDownToLine, Armchair, Weight, Lock, DoorOpen,
   Maximize2, FoldVertical, Trash2, PawPrint, ThumbsUp, Box,
-  Volume2, Gift, Gamepad2, BedDouble, Music, Siren
+  Volume2, Gift, Gamepad2, BedDouble, Music, Siren,
+  Puzzle, Brain, Award, Cherry, Sandwich, CircleDashed
 } from "lucide-react";
 import { ProductReviews } from "@/components/shop/ProductReviews";
 import { PriceAlertButton } from "@/components/shop/PriceAlertButton";
@@ -973,6 +974,78 @@ const extractMedicalProtectionFeatures = (product: any): {
   return { protectionDuration, safetyAlerts, activeIngredients, featureIcons, applicationSteps, brandAuthority };
 };
 
+/** Check if product is a puzzle / enrichment stuffing toy (e.g. KONG) */
+const isPuzzleEnrichmentProduct = (product: any): boolean => {
+  const cat = (product.category || '').toLowerCase();
+  const text = `${product.name || ''} ${product.description || ''} ${product.brand || ''}`.toLowerCase();
+  return cat === 'enrichment' || cat === 'puzzle' ||
+    text.includes('kong') || text.includes('קונג') || text.includes('stuffing') || text.includes('מילוי') ||
+    text.includes('puzzle toy') || text.includes('צעצוע חשיבה') || text.includes('enrichment') || text.includes('העשרה') ||
+    (text.includes('rubber') && (text.includes('chew') || text.includes('לעיסה'))) ||
+    text.includes('lick mat') || text.includes('slow feeder');
+};
+
+/** Extract puzzle / enrichment stuffing features */
+const extractPuzzleEnrichmentFeatures = (product: any): {
+  isStuffable: boolean;
+  mentalStimulation: string;
+  recipe: { base: string; binder: string; topper: string } | null;
+  materialSpec: string | null;
+  hasErraticBounce: boolean;
+  chewResistance: string | null;
+  expertApproval: boolean;
+  crossSellKeywords: string[];
+} => {
+  const text = `${product.name || ''} ${product.description || ''} ${(product.special_diet || []).join(' ')}`.toLowerCase();
+  const attrs = product.product_attributes || {};
+  const benefits = Array.isArray(product.benefits) ? product.benefits : [];
+  const benefitsText = benefits.map((b: any) => `${b.title || ''} ${b.description || ''}`).join(' ').toLowerCase();
+  const allText = text + ' ' + benefitsText + ' ' + JSON.stringify(attrs).toLowerCase();
+
+  const isStuffable = allText.includes('stuff') || allText.includes('מילוי') || allText.includes('kong') || allText.includes('fill') || allText.includes('treat') || allText.includes('חטיף');
+
+  const mentalStimulation = allText.includes('mental') || allText.includes('מנטלי') || allText.includes('boredom') || allText.includes('שעמום') || allText.includes('enrichment') || allText.includes('העשרה') || allText.includes('instinct') || allText.includes('אינסטינקט')
+    ? 'גירוי מנטלי והפגת שעמום – מספק את הצורך האינסטינקטיבי של הכלב לחפש, ללעוס ולפתור'
+    : 'מעסיק את הכלב ומפחית שעמום והתנהגויות הרסניות';
+
+  // Recipe card - default KONG recipe
+  const isKong = allText.includes('kong') || allText.includes('קונג');
+  const recipe = isStuffable ? {
+    base: 'מזון יבש (Kibble)',
+    binder: 'חמאת בוטנים (ללא קסיליטול!)',
+    topper: isKong ? 'KONG Easy Treat / KONG Snacks' : 'חטיפים או ממרח ייעודי',
+  } : null;
+
+  // Material
+  let materialSpec: string | null = null;
+  if (allText.includes('natural rubber') || allText.includes('גומי טבעי')) materialSpec = '100% גומי טבעי אדום – עמיד במיוחד';
+  else if (allText.includes('rubber') || allText.includes('גומי')) materialSpec = 'גומי עמיד באיכות גבוהה';
+  else if (allText.includes('tpr') || allText.includes('silicone') || allText.includes('סיליקון')) materialSpec = 'חומר TPR / סיליקון בטוח למזון';
+
+  const hasErraticBounce = allText.includes('erratic') || allText.includes('unpredictable') || allText.includes('לא צפוי') || allText.includes('bounce') || allText.includes('קפיצ');
+
+  // Chew resistance
+  let chewResistance: string | null = null;
+  if (allText.includes('power chew') || allText.includes('extreme') || allText.includes('aggressive') || allText.includes('לעיסה חזקה'))
+    chewResistance = 'Power Chewer – לועסים חזקים';
+  else if (allText.includes('average chew') || allText.includes('moderate') || allText.includes('לעיסה בינונית'))
+    chewResistance = 'Average Chewer – לעיסה בינונית';
+  else if (isKong || allText.includes('durable') || allText.includes('עמיד'))
+    chewResistance = 'עמיד ללעיסה ממושכת';
+
+  const expertApproval = allText.includes('veterinar') || allText.includes('וטרינר') || allText.includes('trainer') || allText.includes('מאלף') || allText.includes('recommend') || allText.includes('מומלץ');
+
+  // Cross-sell keywords
+  const crossSellKeywords: string[] = [];
+  if (isStuffable) {
+    crossSellKeywords.push('חמאת בוטנים');
+    if (isKong) crossSellKeywords.push('KONG Snacks', 'KONG Easy Treat');
+    else crossSellKeywords.push('חטיפים');
+  }
+
+  return { isStuffable, mentalStimulation, recipe, materialSpec, hasErraticBounce, chewResistance, expertApproval, crossSellKeywords };
+};
+
 /** Check if product is an interactive plush / teething toy */
 const isPlushToyProduct = (product: any): boolean => {
   const cat = (product.category || '').toLowerCase();
@@ -1351,6 +1424,8 @@ const ProductDetail = () => {
   const desheddingFeatures = useMemo(() => product && isDeshedding ? extractDesheddingFeatures(product) : { efficiencyPct: null, techFeatures: [], sizeGuide: { weightRange: null, coatType: null }, proTip: null, homeHygiene: false }, [product, isDeshedding]);
   const isMedicalProtection = useMemo(() => product ? isMedicalProtectionProduct(product) : false, [product]);
   const medicalFeatures = useMemo(() => product && isMedicalProtection ? extractMedicalProtectionFeatures(product) : { protectionDuration: null, safetyAlerts: [], activeIngredients: [], featureIcons: [], applicationSteps: [], brandAuthority: null }, [product, isMedicalProtection]);
+  const isPuzzleEnrichment = useMemo(() => product ? isPuzzleEnrichmentProduct(product) : false, [product]);
+  const puzzleFeatures = useMemo(() => product && isPuzzleEnrichment ? extractPuzzleEnrichmentFeatures(product) : { isStuffable: false, mentalStimulation: '', recipe: null, materialSpec: null, hasErraticBounce: false, chewResistance: null, expertApproval: false, crossSellKeywords: [] }, [product, isPuzzleEnrichment]);
   const isPlushToy = useMemo(() => product ? isPlushToyProduct(product) : false, [product]);
   const plushFeatures = useMemo(() => product && isPlushToy ? extractPlushToyFeatures(product) : { sensoryFeatures: [], durabilityHighlights: [], usageScenarios: [], safetyEducation: [], isGiftWorthy: false }, [product, isPlushToy]);
   const isPuppy = useMemo(() => product ? isPuppyProduct(product) : false, [product]);
@@ -3068,6 +3143,146 @@ const ProductDetail = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Puzzle Enrichment: Stuffing Potential Badge ── */}
+        {isPuzzleEnrichment && puzzleFeatures.isStuffable && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(25,80%,92%)] to-background border-[hsl(25,60%,60%)]/20 dark:from-[hsl(25,40%,14%)] dark:border-[hsl(25,40%,40%)]/20">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-[hsl(25,70%,80%)]/25 flex items-center justify-center flex-shrink-0">
+                  <Puzzle className="w-6 h-6 text-[hsl(25,70%,45%)]" />
+                </div>
+                <div>
+                  <p className="text-[14px] font-bold text-foreground">🧩 אידיאלי למילוי (Stuffing)</p>
+                  <p className="text-[11px] text-muted-foreground">מלא בחטיפים, הקפא, ותן לכלב לפתור!</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Puzzle Enrichment: Mental Stimulation ── */}
+        {isPuzzleEnrichment && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(260,50%,93%)] to-background border-[hsl(260,40%,65%)]/20 dark:from-[hsl(260,30%,14%)] dark:border-[hsl(260,30%,40%)]/20">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(260,50%,80%)]/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Brain className="w-5 h-5 text-[hsl(260,50%,50%)]" />
+                </div>
+                <div>
+                  <p className="text-[13px] font-bold text-foreground">🧠 גירוי מנטלי</p>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">{puzzleFeatures.mentalStimulation}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Puzzle Enrichment: KONG Recipe Card ── */}
+        {isPuzzleEnrichment && puzzleFeatures.recipe && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
+            <Card className="p-4 border-[hsl(25,60%,60%)]/25">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Cookie className="w-4 h-4 text-[hsl(25,60%,45%)]" />
+                🍯 מתכון מילוי מומלץ
+              </h3>
+              <div className="space-y-2">
+                <div className="flex items-center gap-3 bg-[hsl(25,50%,92%)]/40 dark:bg-[hsl(25,30%,15%)]/50 rounded-lg p-3">
+                  <div className="w-8 h-8 rounded-full bg-[hsl(40,60%,85%)]/30 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm">1️⃣</span>
+                  </div>
+                  <div>
+                    <p className="text-[12px] font-semibold text-foreground">בסיס (Base)</p>
+                    <p className="text-[11px] text-muted-foreground">{puzzleFeatures.recipe.base}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 bg-[hsl(25,50%,92%)]/40 dark:bg-[hsl(25,30%,15%)]/50 rounded-lg p-3">
+                  <div className="w-8 h-8 rounded-full bg-[hsl(30,60%,85%)]/30 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm">2️⃣</span>
+                  </div>
+                  <div>
+                    <p className="text-[12px] font-semibold text-foreground">מדביק (Binder)</p>
+                    <p className="text-[11px] text-muted-foreground">{puzzleFeatures.recipe.binder}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 bg-[hsl(25,50%,92%)]/40 dark:bg-[hsl(25,30%,15%)]/50 rounded-lg p-3">
+                  <div className="w-8 h-8 rounded-full bg-[hsl(20,60%,85%)]/30 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm">3️⃣</span>
+                  </div>
+                  <div>
+                    <p className="text-[12px] font-semibold text-foreground">טופינג (Topper)</p>
+                    <p className="text-[11px] text-muted-foreground">{puzzleFeatures.recipe.topper}</p>
+                  </div>
+                </div>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-2 text-center">💡 טיפ: הקפיאו לאתגר ממושך יותר!</p>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Puzzle Enrichment: Durability & Bounce ── */}
+        {isPuzzleEnrichment && (puzzleFeatures.materialSpec || puzzleFeatures.hasErraticBounce || puzzleFeatures.chewResistance) && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Shield className="w-4 h-4 text-primary" />
+                עמידות וחומרים
+              </h3>
+              <div className="space-y-2">
+                {puzzleFeatures.materialSpec && (
+                  <div className="flex items-start gap-3 bg-primary/5 dark:bg-primary/10 rounded-lg p-3">
+                    <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0 text-primary">
+                      <CircleDashed className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-semibold text-foreground">חומר</p>
+                      <p className="text-[11px] text-muted-foreground">{puzzleFeatures.materialSpec}</p>
+                    </div>
+                  </div>
+                )}
+                {puzzleFeatures.hasErraticBounce && (
+                  <div className="flex items-start gap-3 bg-primary/5 dark:bg-primary/10 rounded-lg p-3">
+                    <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0 text-primary">
+                      <Zap className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-semibold text-foreground">קפיצות לא צפויות</p>
+                      <p className="text-[11px] text-muted-foreground">צורה ייחודית ליצירת קפיצות בלתי צפויות – משחקי הבאה מאתגרים!</p>
+                    </div>
+                  </div>
+                )}
+                {puzzleFeatures.chewResistance && (
+                  <div className="flex items-start gap-3 bg-primary/5 dark:bg-primary/10 rounded-lg p-3">
+                    <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0 text-primary">
+                      <ShieldCheck className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-semibold text-foreground">רמת עמידות</p>
+                      <p className="text-[11px] text-muted-foreground">{puzzleFeatures.chewResistance}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Puzzle Enrichment: Expert Approval ── */}
+        {isPuzzleEnrichment && puzzleFeatures.expertApproval && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.36 }}>
+            <Card className="p-3 bg-gradient-to-br from-[hsl(140,40%,92%)] to-background border-[hsl(140,40%,55%)]/20 dark:from-[hsl(140,25%,14%)] dark:border-[hsl(140,30%,40%)]/20">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-full bg-[hsl(140,40%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Award className="w-5 h-5 text-[hsl(140,45%,40%)]" />
+                </div>
+                <div>
+                  <p className="text-[13px] font-bold text-foreground">✅ מומלץ ע"י וטרינרים ומאלפים</p>
+                  <p className="text-[10px] text-muted-foreground">מוצר מאושר ע"י מומחים ברחבי העולם</p>
+                </div>
               </div>
             </Card>
           </motion.div>
