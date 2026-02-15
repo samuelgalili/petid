@@ -9,7 +9,7 @@ import {
   Calculator, Wrench, Lightbulb, Ruler, Paintbrush, Cookie, GlassWater,
   Eye, Bone, Timer, Smile, Zap, CloudLightning, Stethoscope, Scissors,
   Snowflake, Microwave, Hand, Moon, Sofa, Waves, WashingMachine, Home,
-  Car, Grip, Cog, Droplet, Sun, Wind, Pipette
+  Car, Grip, Cog, Droplet, Sun, Wind, Pipette, Beaker, Flower2, Bug
 } from "lucide-react";
 import { ProductReviews } from "@/components/shop/ProductReviews";
 import { PriceAlertButton } from "@/components/shop/PriceAlertButton";
@@ -506,6 +506,70 @@ const extractGroomingFeatures = (product: any): {
   return { visibleResults, activeIngredients, usageSteps, featureBadges, targetCoatType };
 };
 
+/** Check if product is an advanced hygiene / PH balance product */
+const isHygieneProduct = (product: any): boolean => {
+  const text = `${product.name || ''} ${product.description || ''} ${product.brand || ''}`.toLowerCase();
+  return (text.includes('baking soda') || text.includes('סודה לשתייה') || text.includes('סודה')) ||
+    (text.includes('arm & hammer') || text.includes('arm and hammer')) ||
+    ((text.includes('shampoo') || text.includes('שמפו')) && (text.includes('ph') || text.includes('paraben') || text.includes('פרבן') || text.includes('sulfate') || text.includes('סולפט')));
+};
+
+/** Extract advanced hygiene / PH balance features */
+const extractHygieneFeatures = (product: any): {
+  showScienceCorner: boolean;
+  coreTechnology: { label: string; description: string } | null;
+  isTreatmentSafe: boolean;
+  formulaAttributes: string[];
+  scentProfile: string | null;
+} => {
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''} ${(product.special_diet || []).join(' ')}`.toLowerCase();
+  const attrs = product.product_attributes || {};
+  const benefits = Array.isArray(product.benefits) ? product.benefits : [];
+  const benefitsText = benefits.map((b: any) => `${b.title || ''} ${b.description || ''}`).join(' ').toLowerCase();
+  const allText = text + ' ' + benefitsText;
+
+  // Science corner trigger
+  const showScienceCorner = allText.includes('ph') || allText.includes('baking soda') || allText.includes('סודה') ||
+    allText.includes('arm & hammer') || allText.includes('arm and hammer');
+
+  // Core technology
+  let coreTechnology: { label: string; description: string } | null = null;
+  if (allText.includes('baking soda') || allText.includes('סודה לשתייה') || allText.includes('סודה'))
+    coreTechnology = { label: 'סודה לשתייה (Baking Soda)', description: 'ניקוי עמוק ונטרול ריחות באופן טבעי – ללא חומרים כימיים אגרסיביים' };
+  else if (allText.includes('chlorhexidine') || allText.includes('כלורהקסידין'))
+    coreTechnology = { label: 'כלורהקסידין', description: 'חיטוי אנטי-בקטריאלי לעור רגיש ולמניעת זיהומים' };
+
+  // Treatment safe
+  const isTreatmentSafe = allText.includes('treatment') || allText.includes('טיפול') || allText.includes('flea') || allText.includes('tick') ||
+    allText.includes('פרעושים') || allText.includes('קרציות') || allText.includes('won\'t strip') || allText.includes('spot-on') ||
+    allText.includes('safe') || allText.includes('arm & hammer') || allText.includes('arm and hammer');
+
+  // Formula attributes
+  const formulaAttributes: string[] = [];
+  if (allText.includes('paraben') || allText.includes('פרבן')) formulaAttributes.push('ללא פרבנים');
+  if (allText.includes('sulfate') || allText.includes('סולפט') || allText.includes('sls')) formulaAttributes.push('ללא סולפטים');
+  if (allText.includes('fast') || allText.includes('מהיר') || allText.includes('quick')) formulaAttributes.push('נוסחה מהירה');
+  if (allText.includes('dye') || allText.includes('צבע מלאכותי') || allText.includes('ללא צבע')) formulaAttributes.push('ללא צבעי מאכל');
+  if (allText.includes('tear') || allText.includes('עיניים') || allText.includes('gentle')) formulaAttributes.push('עדין לעיניים');
+  if (allText.includes('moisturiz') || allText.includes('לחות')) formulaAttributes.push('מלחלח');
+
+  // Scent profile
+  let scentProfile: string | null = attrs.scent || attrs['ריח'] || attrs.fragrance || null;
+  if (!scentProfile) {
+    const scents: string[] = [];
+    if (allText.includes('kiwi') || allText.includes('קיווי')) scents.push('פריחת קיווי');
+    if (allText.includes('cucumber') || allText.includes('מלפפון')) scents.push('מלפפון');
+    if (allText.includes('mint') || allText.includes('מנטה')) scents.push('מנטה');
+    if (allText.includes('lavender') || allText.includes('לבנדר')) scents.push('לבנדר');
+    if (allText.includes('oatmeal') || allText.includes('שיבולת שועל')) scents.push('שיבולת שועל');
+    if (allText.includes('coconut') || allText.includes('קוקוס')) scents.push('קוקוס');
+    if (allText.includes('vanilla') || allText.includes('וניל')) scents.push('וניל');
+    if (scents.length > 0) scentProfile = scents.join(' + ');
+  }
+
+  return { showScienceCorner, coreTechnology, isTreatmentSafe, formulaAttributes, scentProfile };
+};
+
 /** Extract enrichment product features */
 const extractEnrichmentFeatures = (product: any): {
   anxietyUses: { icon: React.ReactNode; label: string }[];
@@ -866,6 +930,8 @@ const ProductDetail = () => {
   const utilityFeatures = useMemo(() => product && isUtility ? extractUtilityFeatures(product) : { cleanHomeBadge: false, cleanHomeDesc: [], mechanism: null, usageScenarios: [], techSpecs: [], isNoMessPriority: false }, [product, isUtility]);
   const isGrooming = useMemo(() => product ? isGroomingProduct(product) : false, [product]);
   const groomingFeatures = useMemo(() => product && isGrooming ? extractGroomingFeatures(product) : { visibleResults: [], activeIngredients: [], usageSteps: [], featureBadges: [], targetCoatType: null }, [product, isGrooming]);
+  const isHygiene = useMemo(() => product ? isHygieneProduct(product) : false, [product]);
+  const hygieneFeatures = useMemo(() => product && isHygiene ? extractHygieneFeatures(product) : { showScienceCorner: false, coreTechnology: null, isTreatmentSafe: false, formulaAttributes: [], scentProfile: null }, [product, isHygiene]);
   const isTreat = useMemo(() => product ? isTreatProduct(product) : false, [product]);
   const treatHealthBoosts = useMemo(() => product && isTreat ? deriveTreatHealthBoosts(product) : [], [product, isTreat]);
   const treatUsage = useMemo(() => product && isTreat ? extractTreatUsage(product) : { purpose: null, safetyTip: null, isNatural: false }, [product, isTreat]);
@@ -1907,6 +1973,101 @@ const ProductDetail = () => {
                 <div>
                   <h3 className="text-sm font-bold text-foreground">🐾 מתאים במיוחד ל</h3>
                   <p className="text-[12px] text-muted-foreground mt-0.5">{groomingFeatures.targetCoatType}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Hygiene: PH Science Corner ── */}
+        {isHygiene && hygieneFeatures.showScienceCorner && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(210,70%,95%)] to-background border-[hsl(210,50%,65%)]/20 dark:from-[hsl(210,30%,15%)] dark:border-[hsl(210,40%,40%)]/20">
+              <div className="flex items-start gap-3">
+                <div className="w-12 h-12 rounded-full bg-[hsl(210,60%,80%)]/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Beaker className="w-6 h-6 text-[hsl(210,60%,45%)]" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground mb-1.5">🔬 פינת המדע – הבדל ה-pH</h3>
+                  <p className="text-[12px] text-muted-foreground leading-[1.8]">
+                    עור הכלב פחות חומצי מעור האדם (pH 6.2-7.4 לעומת 5.5). שימוש בשמפו אנושי עלול לשבש את מחסום העור, לגרום ליובש, גירוי ופגיעות לזיהומים. שמפו ייעודי לכלבים שומר על איזון ה-pH הטבעי ומגן על העור.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Hygiene: Core Technology (Baking Soda) ── */}
+        {isHygiene && hygieneFeatures.coreTechnology && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}>
+            <Card className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <FlaskConical className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground font-medium">טכנולוגיית הליבה</p>
+                  <h3 className="text-sm font-bold text-foreground">{hygieneFeatures.coreTechnology.label}</h3>
+                  <p className="text-[12px] text-muted-foreground mt-1 leading-[1.7]">{hygieneFeatures.coreTechnology.description}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Hygiene: Treatment Safe Badge ── */}
+        {isHygiene && hygieneFeatures.isTreatmentSafe && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }}>
+            <Card className="p-4 bg-gradient-to-br from-success/8 to-background border-success/20">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-success/15 flex items-center justify-center flex-shrink-0">
+                  <Bug className="w-5 h-5 text-success" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">🛡️ בטוח לשימוש עם טיפולי פרעושים וקרציות</h3>
+                  <p className="text-[12px] text-muted-foreground mt-0.5">לא פוגע ביעילות טיפולי Spot-On ומוצרים נגד טפילים חיצוניים</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Hygiene: Formula Attributes ── */}
+        {isHygiene && hygieneFeatures.formulaAttributes.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Shield className="w-4 h-4 text-primary" />
+                מאפייני הנוסחה
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {hygieneFeatures.formulaAttributes.map((attr, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.28 + i * 0.05 }}
+                  >
+                    <Badge variant="secondary" className="text-xs px-3 py-1.5 font-medium">✅ {attr}</Badge>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Hygiene: Scent Profile ── */}
+        {isHygiene && hygieneFeatures.scentProfile && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(150,50%,93%)] to-background border-[hsl(150,40%,65%)]/20 dark:from-[hsl(150,30%,15%)] dark:border-[hsl(150,40%,40%)]/20">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(150,50%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Flower2 className="w-5 h-5 text-[hsl(150,50%,40%)]" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">🌸 פרופיל ריח</h3>
+                  <p className="text-[13px] text-muted-foreground mt-0.5">{hygieneFeatures.scentProfile}</p>
                 </div>
               </div>
             </Card>
