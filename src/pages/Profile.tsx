@@ -25,6 +25,8 @@ import { PetWeatherAlert } from "@/components/profile/PetWeatherAlert";
 import { PetPhotoGallery } from "@/components/profile/PetPhotoGallery";
 import { PetMiniCalendar } from "@/components/profile/PetMiniCalendar";
 import { InsuranceSheet, TrainingSheet, GroomingSheet, BoardingSheet, BreedInfoSheet, FoodSheet, ToysSheet, DocumentsSheet, DogWalkerSheet, ProductsSheet, EnergySheet, GroomingProductsSheet, FeedingSheet } from "@/components/pet-services";
+import { SmartRecommendationSheet } from "@/components/pet-services/SmartRecommendationSheet";
+import { MedicalTimeline } from "@/components/profile/MedicalTimeline";
 interface Pet {
   id: string;
   name: string;
@@ -71,6 +73,7 @@ const Profile = () => {
   const [energySheetOpen, setEnergySheetOpen] = useState(false);
   const [groomingSheetOpen, setGroomingSheetOpen] = useState(false);
   const [feedingSheetOpen, setFeedingSheetOpen] = useState(false);
+  const [smartRecCategory, setSmartRecCategory] = useState<'coat' | 'energy' | 'health' | 'feeding' | 'mobility' | 'digestion' | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const collapseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -583,10 +586,13 @@ const Profile = () => {
                     <PetWeatherAlert petType={selectedPet.type} petName={selectedPet.name} />
                     
                     {/* Health Score */}
-                    <PetHealthScore pet={selectedPet} />
+                    <PetHealthScore pet={selectedPet} onViewDetails={() => setSmartRecCategory('health')} />
+                    
+                    {/* Medical Timeline */}
+                    <MedicalTimeline petId={selectedPet.id} petName={selectedPet.name} />
                     
                     {/* Top Recommendation */}
-                    <TopRecommendation pet={selectedPet} onViewPolicy={() => setActiveSheet('insurance')} onEnergyOpen={() => setEnergySheetOpen(true)} onGroomingOpen={() => setGroomingSheetOpen(true)} onFeedingOpen={() => setFeedingSheetOpen(true)} />
+                    <TopRecommendation pet={selectedPet} onViewPolicy={() => setActiveSheet('insurance')} onEnergyOpen={() => setSmartRecCategory('energy')} onGroomingOpen={() => setSmartRecCategory('coat')} onFeedingOpen={() => setSmartRecCategory('feeding')} onMobilityOpen={() => setSmartRecCategory('mobility')} onDigestionOpen={() => setSmartRecCategory('digestion')} />
                     
                     {/* Photo Gallery */}
                     <PetPhotoGallery petId={selectedPet.id} petAvatar={selectedPet.avatar_url} petName={selectedPet.name} />
@@ -691,6 +697,17 @@ const Profile = () => {
         <EnergySheet isOpen={energySheetOpen} onClose={() => setEnergySheetOpen(false)} pet={selectedPet} />
         <GroomingProductsSheet isOpen={groomingSheetOpen} onClose={() => setGroomingSheetOpen(false)} pet={selectedPet} />
         <FeedingSheet isOpen={feedingSheetOpen} onClose={() => setFeedingSheetOpen(false)} pet={selectedPet} />
+        {/* Smart Recommendation Sheet */}
+        {smartRecCategory && (
+          <SmartRecommendationSheet
+            isOpen={!!smartRecCategory}
+            onClose={() => setSmartRecCategory(null)}
+            petId={selectedPet.id}
+            petName={selectedPet.name}
+            category={smartRecCategory}
+            title=""
+          />
+        )}
         <AnimatePresence>
           {showPetShop && selectedPet && <PetShopView pet={selectedPet} onBack={handleClosePetShop} />}
         </AnimatePresence>
