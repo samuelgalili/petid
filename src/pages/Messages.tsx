@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, ChevronDown, Edit, Camera, Ghost, Bot, Sparkles } from "lucide-react";
+import { Loader2, ChevronDown, Edit, Camera, Bot, Sparkles } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import BottomNav from "@/components/BottomNav";
 import { motion } from "framer-motion";
@@ -45,21 +45,21 @@ export default function Messages() {
     fetchCurrentUser();
 
     // Subscribe to new messages
-    const channel = supabase
-      .channel("messages-changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "messages",
-          filter: `receiver_id=eq.${user.id}`,
-        },
-        () => {
-          fetchConversations();
-        }
-      )
-      .subscribe();
+    const channel = supabase.
+    channel("messages-changes").
+    on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "messages",
+        filter: `receiver_id=eq.${user.id}`
+      },
+      () => {
+        fetchConversations();
+      }
+    ).
+    subscribe();
 
     return () => {
       supabase.removeChannel(channel);
@@ -68,11 +68,11 @@ export default function Messages() {
 
   const fetchCurrentUser = async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from("profiles")
-      .select("full_name")
-      .eq("id", user.id)
-      .maybeSingle();
+    const { data } = await supabase.
+    from("profiles").
+    select("full_name").
+    eq("id", user.id).
+    maybeSingle();
     if (data) setCurrentUserName(data.full_name || "");
   };
 
@@ -80,17 +80,17 @@ export default function Messages() {
     if (!user) return;
 
     try {
-      const { data: messages, error } = await supabase
-        .from("messages")
-        .select(
-          `
+      const { data: messages, error } = await supabase.
+      from("messages").
+      select(
+        `
           *,
           sender:profiles!messages_sender_id_fkey(id, full_name, avatar_url),
           receiver:profiles!messages_receiver_id_fkey(id, full_name, avatar_url)
         `
-        )
-        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-        .order("created_at", { ascending: false });
+      ).
+      or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`).
+      order("created_at", { ascending: false });
 
       if (error) throw error;
 
@@ -109,7 +109,7 @@ export default function Messages() {
             lastMessage: message.message_text,
             lastMessageTime: message.created_at,
             unreadCount: 0,
-            isOnline: Math.random() > 0.5, // Simulated for demo
+            isOnline: Math.random() > 0.5 // Simulated for demo
           });
         }
 
@@ -135,8 +135,8 @@ export default function Messages() {
           <Skeleton className="h-6 w-6 rounded-full" />
         </div>
         <div className="space-y-1 p-4">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="flex items-center gap-3 py-3">
+          {[...Array(6)].map((_, i) =>
+          <div key={i} className="flex items-center gap-3 py-3">
               <Skeleton className="w-14 h-14 rounded-full" />
               <div className="flex-1 space-y-2">
                 <Skeleton className="h-4 w-1/3" />
@@ -144,10 +144,10 @@ export default function Messages() {
               </div>
               <Skeleton className="h-3 w-10" />
             </div>
-          ))}
+          )}
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
@@ -166,11 +166,11 @@ export default function Messages() {
               <ChevronDown className="h-5 w-5 text-foreground" />
             </div>
             <div className="flex items-center gap-4">
-              <button 
-                className={`p-1 ${vanishMode ? 'text-purple-500' : ''}`}
-                onClick={() => setShowVanishDialog(true)}
-              >
-                <Ghost className="h-6 w-6" />
+              <button
+                  className={`p-1 ${vanishMode ? 'text-purple-500' : ''}`}
+                  onClick={() => setShowVanishDialog(true)}>
+
+                
               </button>
               <button className="p-1">
                 <Edit className="h-6 w-6 text-foreground" />
@@ -195,7 +195,7 @@ export default function Messages() {
         <div>
           {/* AI Support Chat removed - use central AI Chat instead */}
 
-          {conversations.length === 0 ? (
+          {conversations.length === 0 ?
             <div className="flex flex-col items-center justify-center py-16 px-4">
               <div className="w-20 h-20 rounded-full border border-foreground flex items-center justify-center mb-4">
                 <Camera className="h-10 w-10 text-foreground" strokeWidth={1} />
@@ -209,14 +209,14 @@ export default function Messages() {
               <button className="mt-4 text-primary font-semibold text-sm">
                 שלח הודעה
               </button>
-            </div>
-          ) : (
-            conversations.map((conversation) => (
-              <div
-                key={conversation.userId}
-                onClick={() => navigate(`/messages/${conversation.userId}`)}
-                className="hover:bg-muted transition-colors cursor-pointer"
-              >
+            </div> :
+
+            conversations.map((conversation) =>
+            <div
+              key={conversation.userId}
+              onClick={() => navigate(`/messages/${conversation.userId}`)}
+              className="hover:bg-muted transition-colors cursor-pointer">
+
                 <div className="px-4 py-3 flex items-center gap-3">
                   <div className="relative">
                     <Avatar className="h-14 w-14">
@@ -246,26 +246,26 @@ export default function Messages() {
                     </div>
                   </div>
 
-                  {conversation.unreadCount > 0 && (
-                    <div className="w-2 h-2 rounded-full bg-primary" />
-                  )}
+                  {conversation.unreadCount > 0 &&
+                <div className="w-2 h-2 rounded-full bg-primary" />
+                }
                 </div>
               </div>
-            ))
-          )}
+            )
+            }
         </div>
       </div>
 
       {/* Vanish Mode Dialog */}
       <VanishModeToggle
-        open={showVanishDialog}
-        onOpenChange={setShowVanishDialog}
-        vanishMode={vanishMode}
-        onToggle={setVanishMode}
-      />
+          open={showVanishDialog}
+          onOpenChange={setShowVanishDialog}
+          vanishMode={vanishMode}
+          onToggle={setVanishMode} />
+
       </div>
       
       <BottomNav />
-    </div>
-  );
+    </div>);
+
 }
