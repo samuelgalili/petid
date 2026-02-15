@@ -106,6 +106,29 @@ const AdminQuickImport = () => {
         }
       }
 
+      // Save variants if available from scraping
+      if (scraped.variants?.length > 0 && inserted?.id) {
+        const variantRows = scraped.variants
+          .filter((v: any) => v.label?.trim())
+          .map((v: any, i: number) => ({
+            product_id: inserted.id,
+            variant_type: v.weight ? "weight" : "size",
+            label: v.label.trim(),
+            value: v.label.trim(),
+            weight_kg: v.weight || null,
+            weight_unit: v.weight_unit || null,
+            price: v.price || null,
+            sale_price: v.sale_price || null,
+            sku: v.sku || null,
+            in_stock: true,
+            display_order: i,
+          }));
+
+        if (variantRows.length > 0) {
+          await supabase.from("product_variants").insert(variantRows);
+        }
+      }
+
       setImportedProduct(inserted);
       setStatus("success");
       toast({ title: "המוצר נשמר בהצלחה!", description: inserted.name });
