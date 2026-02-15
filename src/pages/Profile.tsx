@@ -33,6 +33,7 @@ import { VaccineCountdown } from "@/components/profile/VaccineCountdown";
 import { VetHistoryPDF } from "@/components/profile/VetHistoryPDF";
 import { BreedHealthTips } from "@/components/profile/BreedHealthTips";
 import { VetDocumentScanner } from "@/components/profile/VetDocumentScanner";
+import { MyClinicCard } from "@/components/profile/MyClinicCard";
 import { PuppyVaccineScheduler } from "@/components/profile/PuppyVaccineScheduler";
 import { PreventiveCareEngine } from "@/components/profile/PreventiveCareEngine";
 import { MedicalDocumentFAB } from "@/components/profile/MedicalDocumentFAB";
@@ -621,6 +622,15 @@ const Profile = () => {
                       petType={selectedPet.type}
                     />
                     
+                    {/* My Clinic Card */}
+                    {(selectedPet as any).vet_clinic_name && (
+                      <MyClinicCard
+                        clinicName={(selectedPet as any).vet_clinic_name}
+                        clinicPhone={(selectedPet as any).vet_clinic_phone}
+                        clinicAddress={(selectedPet as any).vet_clinic_address}
+                      />
+                    )}
+
                     {/* Vet Document Scanner (OCR) - legacy inline */}
                     <VetDocumentScanner petId={selectedPet.id} petName={selectedPet.name} onScanComplete={triggerHealthRefresh} />
                     

@@ -47,17 +47,26 @@ serve(async (req) => {
 Return ONLY valid JSON with this exact structure:
 {
   "clinicName": "string or null",
+  "clinicPhone": "string or null",
+  "clinicAddress": "string or null",
   "visitDate": "YYYY-MM-DD or null",
   "vaccines": ["list of vaccine names found"],
   "diagnoses": ["list of diagnoses"],
   "medications": ["list of medications"],
   "weight": number_or_null,
   "deworming": true/false,
-  "cost": number_or_null
+  "cost": number_or_null,
+  "ownerName": "string or null",
+  "ownerAddress": "string or null",
+  "ownerCity": "string or null",
+  "ownerPhone": "string or null",
+  "ownerIdNumber": "string or null"
 }
 Look for Hebrew and English text. Common vaccine names: DHPP, DHLPP, כלבת (Rabies), לפטוספירוזיס (Lepto), לישמניה (Leishmania), משושה, מחומש, מרובע.
 Deworming keywords: תילוע, milbemax, drontal, deworm.
-Weight keywords: משקל, kg, ק"ג.`
+Weight keywords: משקל, kg, ק"ג.
+Owner/profile keywords: בעלים, שם, כתובת, טלפון, ת.ז., תעודת זהות, ת"ז, ID.
+Clinic contact keywords: מרפאה, טלפון מרפאה, כתובת מרפאה, clinic.`
           },
           {
             role: "user",
@@ -97,8 +106,10 @@ Weight keywords: משקל, kg, ק"ג.`
     } catch {
       console.error("Failed to parse AI response:", content);
       scanResult = {
-        clinicName: null, visitDate: null, vaccines: [],
+        clinicName: null, clinicPhone: null, clinicAddress: null,
+        visitDate: null, vaccines: [],
         diagnoses: [], medications: [], weight: null, deworming: false, cost: null,
+        ownerName: null, ownerAddress: null, ownerCity: null, ownerPhone: null, ownerIdNumber: null,
       };
     }
 
@@ -145,6 +156,9 @@ Weight keywords: משקל, kg, ק"ג.`
         };
         if (nextVisitDate) petUpdate.next_vet_visit = nextVisitDate;
         if (scanResult.weight) petUpdate.weight = scanResult.weight;
+        if (scanResult.clinicName) petUpdate.vet_clinic_name = scanResult.clinicName;
+        if (scanResult.clinicPhone) petUpdate.vet_clinic_phone = scanResult.clinicPhone;
+        if (scanResult.clinicAddress) petUpdate.vet_clinic_address = scanResult.clinicAddress;
 
         await supabase.from("pets").update(petUpdate).eq("id", petId);
       } else if (scanResult.weight) {

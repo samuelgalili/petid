@@ -6051,6 +6051,9 @@ export type Database = {
           updated_at: string | null
           user_id: string
           vet_clinic: string | null
+          vet_clinic_address: string | null
+          vet_clinic_name: string | null
+          vet_clinic_phone: string | null
           vet_name: string | null
           vet_phone: string | null
           weight: number | null
@@ -6088,6 +6091,9 @@ export type Database = {
           updated_at?: string | null
           user_id: string
           vet_clinic?: string | null
+          vet_clinic_address?: string | null
+          vet_clinic_name?: string | null
+          vet_clinic_phone?: string | null
           vet_name?: string | null
           vet_phone?: string | null
           weight?: number | null
@@ -6125,6 +6131,9 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           vet_clinic?: string | null
+          vet_clinic_address?: string | null
+          vet_clinic_name?: string | null
+          vet_clinic_phone?: string | null
           vet_name?: string | null
           vet_phone?: string | null
           weight?: number | null
@@ -7026,6 +7035,8 @@ export type Database = {
           full_name: string | null
           house_number: string | null
           id: string
+          id_number_encrypted: string | null
+          id_number_last4: string | null
           interests: string[] | null
           is_online: boolean | null
           last_active_at: string | null
@@ -7063,6 +7074,8 @@ export type Database = {
           full_name?: string | null
           house_number?: string | null
           id: string
+          id_number_encrypted?: string | null
+          id_number_last4?: string | null
           interests?: string[] | null
           is_online?: boolean | null
           last_active_at?: string | null
@@ -7100,6 +7113,8 @@ export type Database = {
           full_name?: string | null
           house_number?: string | null
           id?: string
+          id_number_encrypted?: string | null
+          id_number_last4?: string | null
           interests?: string[] | null
           is_online?: boolean | null
           last_active_at?: string | null
