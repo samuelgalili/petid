@@ -20,6 +20,7 @@ import { playAddToCartSound } from "@/lib/sounds";
 import { useCart } from "@/contexts/CartContext";
 import { useFlyingCart } from "@/components/FlyingCartAnimation";
 import { CommentsSheet } from "@/components/CommentsSheet";
+import { ShareSheet } from "@/components/feed/ShareSheet";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { SocialProofLabel } from "@/components/feed";
 import type { FeedPost } from "@/hooks/useSoundtrackFeed";
@@ -58,6 +59,7 @@ export const SoundtrackPostCard = ({
   const [addedToCart, setAddedToCart] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showHeartBurst, setShowHeartBurst] = useState(false);
+  const [showShareSheet, setShowShareSheet] = useState(false);
   const lastTapRef = useRef(0);
   const { addToCart } = useCart();
   const { triggerFly } = useFlyingCart();
@@ -114,16 +116,8 @@ export const SoundtrackPostCard = ({
     lastTapRef.current = now;
   };
 
-  const handleShare = async () => {
-    const shareUrl = `${window.location.origin}/post/${post.id}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: post.caption || "PetID", url: shareUrl });
-      } catch { /* cancelled */ }
-    } else {
-      await navigator.clipboard.writeText(shareUrl);
-      toast.success("הקישור הועתק!");
-    }
+  const handleShare = () => {
+    setShowShareSheet(true);
   };
 
   const handleAddToCart = () => {
@@ -506,6 +500,13 @@ export const SoundtrackPostCard = ({
         }}
         commentsCount={post.comments_count}
         reactionsCount={post.likes_count}
+      />
+
+      <ShareSheet
+        open={showShareSheet}
+        onClose={() => setShowShareSheet(false)}
+        shareUrl={`${window.location.origin}/post/${post.id}`}
+        caption={post.caption}
       />
     </motion.div>
   );
