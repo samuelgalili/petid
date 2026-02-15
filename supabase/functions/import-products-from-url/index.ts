@@ -356,6 +356,22 @@ function extractSingleProduct(html: string, url: string): ScrapedProduct {
     });
   }
 
+  // Brand from known brand list in title
+  if (!product.brand && product.title) {
+    const knownBrands = [
+      "קוואטרו", "רויאל קנין", "הילס", "פרו פלאן", "אקנה", "אוריג'ן",
+      "בריט", "מונג'", "גארד", "נאצ'ר", "טייסט", "פרמיו", "ג'וסרה",
+      "האפי דוג", "וולף", "בלקנדו", "לנדור", "גרנדורף", "סם",
+      "נוטרם", "פרסט צ'ויס", "גו", "נאו", "אדוונס", "יוקנובה",
+    ];
+    for (const brand of knownBrands) {
+      if (product.title.includes(brand)) {
+        product.brand = brand;
+        break;
+      }
+    }
+  }
+
   // ==================== DESCRIPTION ====================
   product.description =
     $(".woocommerce-product-details__short-description").text().trim().substring(0, 1000) ||
@@ -462,17 +478,19 @@ function extractSingleProduct(html: string, url: string): ScrapedProduct {
   // ==================== CATEGORY & PET TYPE ====================
   let decodedUrl = url.toLowerCase();
   try { decodedUrl = decodeURIComponent(url).toLowerCase(); } catch {}
-  const fullText = `${decodedUrl} ${product.title.toLowerCase()} ${(product.description || "").toLowerCase()}`;
+  const additionalInfoText = $("#tab-additional_information, .woocommerce-product-attributes, .shop_attributes").text().toLowerCase();
+  const fullText = `${decodedUrl} ${product.title.toLowerCase()} ${(product.description || "").toLowerCase()} ${additionalInfoText}`;
   const breadcrumbs = $(".woocommerce-breadcrumb, .breadcrumb, nav[aria-label='breadcrumb']").text().toLowerCase();
   const catText = `${fullText} ${breadcrumbs}`;
   
   // Category detection - more specific first, then general
-  if (/מזון.?יבש|dry.?food|kibble/.test(catText)) product.category = "dry-food";
-  else if (/מזון.?רטוב|wet.?food|שימורים/.test(catText)) product.category = "wet-food";
+  if (/מזון.?יבש|dry.?food|kibble|אוכל יבש/.test(catText)) product.category = "dry-food";
+  else if (/מזון.?רטוב|wet.?food|שימורים|אוכל רטוב/.test(catText)) product.category = "wet-food";
   else if (/חטיפ|treat|snack/.test(catText)) product.category = "treats";
   else if (/צעצוע|toy/.test(catText)) product.category = "toys";
   else if (/טיפוח|grooming|שמפו/.test(catText)) product.category = "grooming";
-  else if (/מזון|food|סופר.?פרמיום/.test(catText)) product.category = "food";
+  else if (/רצועה|קולר|collar|leash|harness|רתמ/.test(catText)) product.category = "accessories";
+  else if (/מזון|food|סופר.?פרמיום/.test(catText)) product.category = "dry-food";
   else if (/בריאות|vitamin|תוסף/.test(catText)) product.category = "health";
   
   // Pet type detection

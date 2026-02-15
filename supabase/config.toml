@@ -74,3 +74,6 @@ verify_jwt = false
 
 [functions.generate-shared-feed]
 verify_jwt = false
+
+[functions.rescrape-products]
+verify_jwt = false
