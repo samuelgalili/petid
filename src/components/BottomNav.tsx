@@ -199,17 +199,17 @@ const BottomNav = () => {
             showPill={false}
             icon={
               <div className={cn(
-                "w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all",
+                "w-7 h-7 rounded-xl flex items-center justify-center transition-all",
                 showUploadMenu
-                  ? "border-primary bg-primary rotate-45"
-                  : "border-muted-foreground"
+                  ? "bg-primary rotate-45"
+                  : "bg-muted"
               )}>
-                <Plus
+                <Camera
                   className={cn(
                     "w-4 h-4 transition-colors",
                     showUploadMenu ? "text-primary-foreground" : "text-muted-foreground"
                   )}
-                  strokeWidth={2.5}
+                  strokeWidth={2}
                 />
               </div>
             }
