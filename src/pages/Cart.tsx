@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AppHeader } from "@/components/AppHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { SEO } from "@/components/SEO";
+import { SmartCartLayers } from "@/components/shop/SmartCartLayers";
 
 interface Coupon {
   id: string;
@@ -30,6 +31,7 @@ const Cart = () => {
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+  const [petCoinDiscount, setPetCoinDiscount] = useState(0);
 
   const subtotal = getSubtotal();
   
@@ -46,7 +48,7 @@ const Cart = () => {
     : 0;
   
   // Price already includes VAT - no need to add tax separately
-  const discountedSubtotal = Math.max(0, subtotal - discount);
+  const discountedSubtotal = Math.max(0, subtotal - discount - petCoinDiscount);
   const total = discountedSubtotal + shipping;
 
   const validateCoupon = async () => {
@@ -317,6 +319,9 @@ const Cart = () => {
           </Card>
         </motion.div>
 
+        {/* Smart AI Cart Layers */}
+        <SmartCartLayers items={items} subtotal={subtotal} onPetCoinDiscount={setPetCoinDiscount} />
+
         {/* Order Summary */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -349,6 +354,17 @@ const Cart = () => {
                   </div>
                 )}
                 
+                
+                {/* PetCoin discount */}
+                {petCoinDiscount > 0 && (
+                  <div className="flex justify-between items-center text-primary">
+                    <span className="font-jakarta">הנחת PetCoins 🪙</span>
+                    <span className="font-bold font-jakarta">
+                      -₪{petCoinDiscount.toFixed(0)}
+                    </span>
+                  </div>
+                )}
+
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground font-jakarta">משלוח</span>
                   <span className="font-bold text-foreground font-jakarta">
