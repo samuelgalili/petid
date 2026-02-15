@@ -75,7 +75,7 @@ const navGroups: NavGroup[] = [
       { icon: Contact, label: "CRM", href: "/admin/crm" },
       { icon: UserPlus, label: "לידים", href: "/admin/leads" },
       { icon: Users2, label: "פילוח", href: "/admin/segments" },
-      { icon: Trophy, label: "נאמנות", href: "/admin/loyalty" },
+      
       { icon: CreditCard, label: "חובות", href: "/admin/debts" },
       { icon: Headphones, label: "תמיכה", href: "/admin/helpdesk" },
       { icon: Bot, label: "שירות AI", href: "/admin/ai-service" },

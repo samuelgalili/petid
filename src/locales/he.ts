@@ -420,7 +420,7 @@ export const he = {
     findTrainer: "מצא מאלף",
   },
 
-  // Rewards
+  // Rewards (deprecated - loyalty system removed)
   rewards: {
     rewards: "תגמולים",
     points: "נקודות",

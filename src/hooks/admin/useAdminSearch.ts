@@ -22,7 +22,7 @@ const adminPages: SearchResult[] = [
   { id: 'calendar', type: 'page', title: 'יומן', href: '/admin/calendar', icon: 'CalendarDays' },
   { id: 'ai-service', type: 'page', title: 'שירות AI', href: '/admin/ai-service', icon: 'Bot' },
   { id: 'crm', type: 'page', title: 'CRM', href: '/admin/crm', icon: 'Contact' },
-  { id: 'loyalty', type: 'page', title: 'מועדון נאמנות', href: '/admin/loyalty', icon: 'Trophy' },
+  
   { id: 'helpdesk', type: 'page', title: 'תמיכה', href: '/admin/helpdesk', icon: 'Headphones' },
   { id: 'leads', type: 'page', title: 'לידים', href: '/admin/leads', icon: 'UserPlus' },
   { id: 'debts', type: 'page', title: 'חובות לקוחות', href: '/admin/debts', icon: 'CreditCard' },

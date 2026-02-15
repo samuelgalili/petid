@@ -347,22 +347,6 @@ const AdminCRM = () => {
     enabled: !!selectedCustomer
   });
 
-  // Fetch customer loyalty events
-  const { data: customerLoyalty } = useQuery({
-    queryKey: ['customer-loyalty', selectedCustomer?.id],
-    queryFn: async () => {
-      if (!selectedCustomer) return [];
-      const { data, error } = await supabase
-        .from('loyalty_events')
-        .select('*')
-        .eq('user_id', selectedCustomer.id)
-        .order('created_at', { ascending: false })
-        .limit(20);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!selectedCustomer
-  });
 
   // Fetch customer achievements
   const { data: customerAchievements } = useQuery({
@@ -1551,7 +1535,7 @@ const AdminCRM = () => {
                     {/* Activity Tab - Posts, Reviews, Grooming, Loyalty, Achievements */}
                     <TabsContent value="activity" className="space-y-6">
                       {/* Activity Summary */}
-                      <div className="grid grid-cols-5 gap-3">
+                      <div className="grid grid-cols-4 gap-3">
                         <Card className="p-3 text-center">
                           <Image className="h-4 w-4 mx-auto mb-1 text-primary" />
                           <p className="text-xl font-bold">{customerPosts?.length || 0}</p>
@@ -1566,13 +1550,6 @@ const AdminCRM = () => {
                           <Scissors className="h-4 w-4 mx-auto mb-1 text-pink-500" />
                           <p className="text-xl font-bold">{customerGrooming?.length || 0}</p>
                           <p className="text-xs text-muted-foreground">טיפוח</p>
-                        </Card>
-                        <Card className="p-3 text-center">
-                          <Gem className="h-4 w-4 mx-auto mb-1 text-violet-500" />
-                          <p className="text-xl font-bold">
-                            {customerLoyalty?.reduce((sum: number, e: any) => sum + (e.points_earned || 0), 0) || 0}
-                          </p>
-                          <p className="text-xs text-muted-foreground">נקודות</p>
                         </Card>
                         <Card className="p-3 text-center">
                           <Award className="h-4 w-4 mx-auto mb-1 text-emerald-500" />
@@ -1696,7 +1673,7 @@ const AdminCRM = () => {
                       )}
 
                       {/* Empty state */}
-                      {(!customerPosts?.length && !customerReviews?.length && !customerGrooming?.length && !customerAchievements?.length && !customerLoyalty?.length) && (
+                      {(!customerPosts?.length && !customerReviews?.length && !customerGrooming?.length && !customerAchievements?.length) && (
                         <AdminEmptyState 
                           icon={Activity}
                           title="אין פעילות עדיין"
