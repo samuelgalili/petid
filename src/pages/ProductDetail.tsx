@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Heart, Share2, ShoppingCart, Star, Plus, Minus, ChevronLeft, ChevronRight, Check, Truck, Shield, PackageCheck, Sparkles, Award, Clock, Leaf, Zap, Loader2, Bell, Flag, AlertTriangle } from "lucide-react";
+import { ArrowRight, Heart, Share2, ShoppingCart, Star, Plus, Minus, ChevronLeft, ChevronRight, Check, Truck, Shield, PackageCheck, Clock, Loader2, Bell, Flag, AlertTriangle } from "lucide-react";
 import { ProductReviews } from "@/components/shop/ProductReviews";
 import { PriceAlertButton } from "@/components/shop/PriceAlertButton";
 import { useAuth } from "@/hooks/useAuth";
@@ -64,22 +64,10 @@ const ProductDetail = () => {
   });
 
   // Get product from location state or database
-  const rawProduct = dbProduct || location.state?.product || {
-    name: "מזון פרימיום לכלבים",
-    subtitle: "בריאות טובה יותר. טעם מעולה. חיות מחמד מאושרות.",
-    price: 207.84,
-    originalPrice: 259.80,
-    discount: "20% הנחה",
-    image: "https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=600&h=600&fit=crop",
-    color: "bg-[#B8E3D5]",
-    category: "מזון",
-    description: "מזון פרימיום איכותי לכלבים עשוי ממרכיבים טבעיים. מתאים לכל הגזעים ושלבי החיים. מכיל ויטמינים, מינרלים וחלבונים חיוניים לבריאות מיטבית.",
-    rating: 4.8,
-    reviewCount: 234
-  };
+  const rawProduct = dbProduct || location.state?.product || null;
 
   // Get flavors from database product
-  const productFlavors: string[] = dbProduct?.flavors || rawProduct.flavors || [];
+  const productFlavors: string[] = rawProduct?.flavors || [];
 
   // Set initial variant when product loads
   useEffect(() => {
@@ -95,7 +83,7 @@ const ProductDetail = () => {
   };
 
   // Normalize product data
-  const product = {
+  const product = rawProduct ? {
     ...rawProduct,
     name: rawProduct.name,
     subtitle: rawProduct.description || rawProduct.subtitle || "",
@@ -108,28 +96,7 @@ const ProductDetail = () => {
     reviewCount: rawProduct.reviewCount || 0,
     isFlagged: rawProduct.is_flagged || false,
     flaggedReason: rawProduct.flagged_reason,
-  };
-  const benefits = [{
-    icon: Leaf,
-    title: "100% טבעי",
-    description: "ללא חומרים משמרים מלאכותיים",
-    color: "bg-green-100 text-green-600"
-  }, {
-    icon: Sparkles,
-    title: "מתאים לחיות רגישות",
-    description: "עדין לקיבה, קל לעיכול",
-    color: "bg-purple-100 text-purple-600"
-  }, {
-    icon: Award,
-    title: "איכות פרימיום",
-    description: "מחיר הוגן, רכיבים יוצאי דופן",
-    color: "bg-amber-100 text-amber-600"
-  }, {
-    icon: Zap,
-    title: "משפר אנרגיה",
-    description: "חיונות ושמחה בכל ביס",
-    color: "bg-blue-100 text-blue-600"
-  }];
+  } : null;
   // Fetch related products from database
   const { data: relatedProducts = [] } = useQuery({
     queryKey: ["related-products", id],
@@ -170,29 +137,21 @@ const ProductDetail = () => {
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
-  const images = (rawProduct.images && rawProduct.images.length > 0) ? rawProduct.images : 
+  const images = rawProduct ? 
+    ((rawProduct.images && rawProduct.images.length > 0) ? rawProduct.images : 
     (rawProduct.image_url ? [rawProduct.image_url] : 
-    (rawProduct.image ? [rawProduct.image] : 
-    ["https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=600&h=600&fit=crop"]));
-  const reviews = [{
-    id: 1,
-    author: "שרה מ.",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah",
-    rating: 5,
-    date: "לפני שבועיים",
-    comment: "מוצר מדהים! הכלב שלי פשוט מת על זה. האיכות יוצאת דופן ושמתי לב לשיפור משמעותי בפרווה שלו.",
-    petImage: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=300&h=300&fit=crop",
-    helpful: 24
-  }, {
-    id: 2,
-    author: "יוחנן ד.",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=John",
-    rating: 4,
-    date: "לפני חודש",
-    comment: "תמורה מעולה לכסף. חיית המחמד שלי בריאה יותר מאז שעברנו למוצר הזה. ממליץ בחום!",
-    petImage: "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=300&h=300&fit=crop",
-    helpful: 18
-  }];
+    (rawProduct.image ? [rawProduct.image] : ["/placeholder.svg"])))
+    : ["/placeholder.svg"];
+
+  // If no product found (after all hooks)
+  if (!isLoading && !product) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4" dir="rtl">
+        <p className="text-muted-foreground">המוצר לא נמצא</p>
+        <Button onClick={() => navigate(-1)}>חזרה</Button>
+      </div>
+    );
+  }
   const handleAddToCart = () => {
     addToCart({
       id: `${product.name}-${selectedVariant || 'default'}`,
@@ -567,75 +526,29 @@ const ProductDetail = () => {
             </div>
           )}
 
-          {/* Key Benefits */}
-          <div className="p-5 border-b border-border">
-            <h3 className="text-base font-bold mb-4 text-foreground font-jakarta">למה חיית המחמד שלך תאהב את זה</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {benefits.map((benefit, idx) => {
-                const Icon = benefit.icon;
-                return (
-                  <motion.div 
-                    key={idx} 
-                    className="flex items-center gap-3 p-3 rounded-xl" 
-                    style={{
-                      background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #1E5799, #7DB9E8, #4ECDC4) border-box',
-                      border: '1.5px solid transparent'
-                    }} 
-                    initial={{ opacity: 0, y: 10 }} 
-                    animate={{ opacity: 1, y: 0 }} 
-                    transition={{ delay: 0.2 + idx * 0.05 }}
-                  >
-                    <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{
-                      background: 'linear-gradient(135deg, #1E5799, #4ECDC4)'
-                    }}>
-                      <Icon className="w-4 h-4 text-white" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-foreground text-xs font-jakarta">{benefit.title}</h4>
-                      <p className="text-[10px] text-muted-foreground font-jakarta leading-tight">{benefit.description}</p>
-                    </div>
-                  </motion.div>
-                );
-              })}
+          {/* Product Description */}
+          {product.subtitle && (
+            <div className="p-5 border-b border-border">
+              <h3 className="text-base font-bold mb-3 text-foreground font-jakarta">אודות המוצר</h3>
+              <p className="text-sm text-muted-foreground font-jakarta leading-relaxed whitespace-pre-line">
+                {product.subtitle}
+              </p>
             </div>
-          </div>
+          )}
 
-          {/* Product Details Accordion */}
+          {/* Product Details Accordion - only real data */}
           <div className="p-5">
             <Accordion type="single" collapsible className="w-full space-y-2">
-              <AccordionItem value="description" className="border-0 bg-muted rounded-xl px-4">
-                <AccordionTrigger className="font-jakarta text-sm font-bold text-foreground hover:no-underline py-4">
-                  תיאור מלא
-                </AccordionTrigger>
-                <AccordionContent className="text-sm text-muted-foreground font-jakarta leading-relaxed pb-4">
-                  {product.description}
-                </AccordionContent>
-              </AccordionItem>
-              
-              <AccordionItem value="ingredients" className="border-0 bg-secondary rounded-xl px-4">
-                <AccordionTrigger className="font-jakarta text-sm font-bold text-foreground hover:no-underline py-4">
-                  רכיבים וערכים תזונתיים
-                </AccordionTrigger>
-                <AccordionContent className="text-sm text-muted-foreground font-jakarta space-y-2 pb-4">
-                  <p><strong className="text-foreground">רכיבים עיקריים:</strong> עוף (30%), אורז (25%), ירקות (15%), ויטמינים ומינרלים חיוניים</p>
-                  <p><strong className="text-foreground">ערך תזונתי:</strong> חלבון 28%, שומן 15%, סיבים 3%, לחות 10%</p>
-                  <p><strong className="text-foreground">ללא:</strong> חומרים משמרים, צבעים או טעמים מלאכותיים</p>
-                </AccordionContent>
-              </AccordionItem>
-              
-              <AccordionItem value="usage" className="border-0 bg-secondary rounded-xl px-4">
-                <AccordionTrigger className="font-jakarta text-sm font-bold text-foreground hover:no-underline py-4">
-                  הוראות שימוש
-                </AccordionTrigger>
-                <AccordionContent className="text-sm text-muted-foreground font-jakarta space-y-2 pb-4">
-                  <p>האכילו בהתאם למשקל חיית המחמד:</p>
-                  <ul className="list-disc list-inside space-y-1 mr-2">
-                    <li>כלבים קטנים (עד 10 ק״ג): 100-150 גרם ליום</li>
-                    <li>כלבים בינוניים (10-25 ק״ג): 150-300 גרם ליום</li>
-                    <li>כלבים גדולים (מעל 25 ק״ג): 300-500 גרם ליום</li>
-                  </ul>
-                </AccordionContent>
-              </AccordionItem>
+              {product.description && (
+                <AccordionItem value="description" className="border-0 bg-muted rounded-xl px-4">
+                  <AccordionTrigger className="font-jakarta text-sm font-bold text-foreground hover:no-underline py-4">
+                    תיאור מלא
+                  </AccordionTrigger>
+                  <AccordionContent className="text-sm text-muted-foreground font-jakarta leading-relaxed pb-4 whitespace-pre-line">
+                    {product.description}
+                  </AccordionContent>
+                </AccordionItem>
+              )}
               
               <AccordionItem value="shipping" className="border-0 bg-secondary rounded-xl px-4">
                 <AccordionTrigger className="font-jakarta text-sm font-bold text-foreground hover:no-underline py-4">
