@@ -38,6 +38,7 @@ import BottomNav from "@/components/BottomNav";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import { SEO } from "@/components/SEO";
+import { SmartProductLayers } from "@/components/shop/SmartProductLayers";
 
 // ── Helpers ──────────────────────────────────────────────
 
@@ -2921,6 +2922,15 @@ const ProductDetail = () => {
             </div>
           </Card>
         </motion.div>
+
+        {/* ── Smart AI Layers (Personalized for Active Pet) ── */}
+        <SmartProductLayers
+          productName={product.name}
+          productDescription={product.subtitle || ""}
+          productCategory={product.category || null}
+          productIngredients={product.ingredients || null}
+          productPrice={product.price}
+        />
 
         {/* ── Flavor Selector ── */}
         {productFlavors.length > 0 && (
