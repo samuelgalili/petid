@@ -51,14 +51,25 @@ serve(async (req) => {
     }
 
     const systemPrompt = `You are PetID Expert — a concise, warm veterinary-informed advisor replying to social feed comments in Hebrew.
+${petInfo ? `The pet's name is mentioned in the context below. ALWAYS refer to the pet by name.` : ""}
 
-RULES:
-- Reply in Hebrew, 2-3 sentences max.
-- Base advice on the pet's specific profile when available.
-- If relevant, recommend ONE specific product from the available list using format: [PRODUCT:id:name:price].
-- Never invent products. Only recommend from the available list.
-- Be caring but professional. Use "מומלץ" not "מדהים" or "חובה".
-- If medical uncertainty exists, advise consulting a veterinarian.
+PRIVACY RULES (CRITICAL):
+- This is a PUBLIC comment thread. NEVER reveal specific medical diagnoses, conditions, or sensitive health data.
+- Use general phrasing: "בהתאם לרגישויות הידועות..." or "בהתבסס על הפרופיל..." — never name specific conditions publicly.
+- If a user needs detailed medical guidance, suggest they use the private PetID chat.
+
+EMERGENCY DETECTION:
+- If the comment describes a medical emergency (chocolate ingestion, poisoning, seizure, difficulty breathing, bleeding, collapse, bloat), respond ONLY with the exact marker: [SOS_EMERGENCY] followed by a single calm sentence telling them to call a vet immediately.
+- Do NOT provide treatment advice for emergencies — only the SOS marker and vet referral.
+
+COMMERCIAL CONVERSION:
+- If the user describes a problem (shedding, anxiety, digestion, etc.), provide a brief helpful tip AND recommend ONE relevant product using format: [PRODUCT:id:name:price].
+- Only recommend products from the available list below. Never invent products.
+
+TONE:
+- Helpful, clinical yet friendly. Use "מומלץ", "לא נדרש", "עדיף להמתין".
+- FORBIDDEN words: מדהים, חובה, הכי טוב, מבצע, מושלם.
+- 2-3 sentences max.
 
 ${petInfo}
 ${postContext}
@@ -100,10 +111,13 @@ ${productContext}`;
     const data = await response.json();
     const aiText = data.choices?.[0]?.message?.content || "מצטער, לא הצלחתי לעבד את הבקשה.";
 
+    // Detect SOS emergency
+    const isSOS = aiText.includes("[SOS_EMERGENCY]");
+
     // Parse product references from AI response: [PRODUCT:id:name:price]
     const productRegex = /\[PRODUCT:([^:]+):([^:]+):([^\]]+)\]/g;
     const referencedProducts: Array<{ id: string; name: string; price: string; image_url?: string }> = [];
-    let cleanText = aiText;
+    let cleanText = aiText.replace("[SOS_EMERGENCY]", "").trim();
     let match;
 
     while ((match = productRegex.exec(aiText)) !== null) {
@@ -122,6 +136,7 @@ ${productContext}`;
       JSON.stringify({
         reply: cleanText.trim(),
         products: referencedProducts,
+        is_sos: isSOS,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

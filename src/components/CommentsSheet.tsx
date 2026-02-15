@@ -15,6 +15,7 @@ import { formatDistanceToNow } from "date-fns";
 import { he } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { EmergencyHub } from "@/components/emergency/EmergencyHub";
 
 interface Comment {
   id: string;
@@ -73,6 +74,7 @@ export const CommentsSheet = ({
   const [likedComments, setLikedComments] = useState<Set<string>>(new Set());
   const [aiMode, setAiMode] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
+  const [showSOS, setShowSOS] = useState(false);
 
   useEffect(() => {
     if (isOpen && postId) {
@@ -203,6 +205,11 @@ export const CommentsSheet = ({
           throw error;
         }
 
+        if (data?.is_sos) {
+          // Trigger SOS overlay immediately
+          setShowSOS(true);
+        }
+
         if (data?.reply) {
           const aiComment: Comment = {
             id: `ai-${Date.now()}`,
@@ -248,6 +255,7 @@ export const CommentsSheet = ({
   };
 
   return (
+    <>
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent
         side="bottom"
@@ -654,5 +662,9 @@ export const CommentsSheet = ({
         </div>
       </SheetContent>
     </Sheet>
+
+    {/* Emergency SOS Overlay */}
+    <EmergencyHub open={showSOS} onOpenChange={setShowSOS} />
+    </>
   );
 };
