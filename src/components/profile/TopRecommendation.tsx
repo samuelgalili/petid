@@ -1155,13 +1155,13 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
 
         {/* Breed Traits + Mood + QR - Spacious layout */}
         <div className="grid grid-cols-4 gap-2.5 mb-1">
-          {/* Energy (dogs) / Litter Box Health (cats) */}
+          {/* Energy (dogs) / Environmental Enrichment (cats) */}
           <motion.button
             whileHover={{ scale: 1.03, y: -1 }}
             whileTap={{ scale: 0.97 }}
             onClick={onEnergyOpen}
             className="relative flex flex-col items-center p-3 bg-gradient-to-b from-background to-muted/20 hover:from-primary/5 hover:to-primary/10 rounded-2xl border border-border/30 hover:border-primary/40 transition-all duration-300 shadow-sm hover:shadow-md group"
-            aria-label={pet.type === 'cat' ? 'בריאות שתן' : `אנרגיה: ${activityMinutes || 0} דקות`}
+            aria-label={pet.type === 'cat' ? 'העשרה סביבתית' : `אנרגיה: ${activityMinutes || 0} דקות`}
           >
             <div className="flex gap-0.5 mb-2">
               {[1, 2, 3, 4, 5].map((dot) => (
@@ -1178,14 +1178,14 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
               medicalAffectedCircles.has('energy') ? 'bg-amber-500/15 group-hover:bg-amber-500/25' : 'bg-primary/10 group-hover:bg-primary/20'
             }`}>
               {pet.type === 'cat' ? (
-                <Droplets className={`w-5 h-5 ${medicalAffectedCircles.has('energy') ? 'text-amber-500' : 'text-primary'}`} />
+                <Brain className={`w-5 h-5 ${medicalAffectedCircles.has('energy') ? 'text-amber-500' : 'text-primary'}`} />
               ) : (
                 <Zap className={`w-5 h-5 ${medicalAffectedCircles.has('energy') ? 'text-amber-500' : 'text-primary'}`} />
               )}
             </div>
-            <span className="text-xs font-semibold text-foreground">{pet.type === 'cat' ? 'שתן' : 'אנרגיה'}</span>
+            <span className="text-xs font-semibold text-foreground">{pet.type === 'cat' ? 'העשרה' : 'אנרגיה'}</span>
             {pet.type === 'cat' ? (
-              <span className="text-[10px] text-primary font-bold mt-0.5">{foodBars.litterBox}%</span>
+              <span className="text-[10px] text-primary font-bold mt-0.5">משחק + טיפוס</span>
             ) : activityMinutes ? (
               <span className="text-[10px] text-primary font-bold mt-0.5">{activityMinutes} דק׳</span>
             ) : null}
