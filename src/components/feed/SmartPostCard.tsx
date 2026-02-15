@@ -1,7 +1,7 @@
 /**
  * SmartPostCard — PetID's flagship UGC post card.
- * 9:16 vertical media, glassmorphism badges, shoppable product tag,
- * health-bar overlay, and full RTL support.
+ * V69: Visual Information Density — icon consistency, smart overlay positioning,
+ * save micro-animation, and breed-specific silhouette.
  */
 
 import { useState, useRef } from "react";
@@ -11,10 +11,12 @@ import {
   MessageCircle,
   Bookmark,
   ShoppingBag,
-  Shield,
+  ShieldCheck,
   Star,
   X,
-  ChevronLeft,
+  Dog,
+  Cat,
+  ClipboardPlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -37,6 +39,7 @@ interface SmartPostCardProps {
   userAvatar?: string;
   petName: string;
   petBreed?: string;
+  petType?: "dog" | "cat" | null;
   caption?: string;
   likeCount?: number;
   commentCount?: number;
@@ -51,6 +54,38 @@ interface SmartPostCardProps {
   onAvatarClick?: () => void;
 }
 
+/* ─── Breed silhouette mapping ─── */
+const BREED_SILHOUETTE: Record<string, string> = {
+  "shih tzu": "🐾",
+  "שיצו": "🐾",
+  "golden retriever": "🦮",
+  "גולדן רטריבר": "🦮",
+  "poodle": "🐩",
+  "פודל": "🐩",
+};
+
+/* ─── Save Confirmation Toast ─── */
+const SaveConfirmation = ({ petName, visible }: { petName: string; visible: boolean }) => (
+  <AnimatePresence>
+    {visible && (
+      <motion.div
+        initial={{ opacity: 0, y: 12, scale: 0.9 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -8, scale: 0.95 }}
+        transition={{ type: "spring", stiffness: 500, damping: 28 }}
+        className="absolute z-40 bottom-24 inset-x-0 flex justify-center pointer-events-none"
+      >
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-2xl border border-white/25 shadow-xl">
+          <ClipboardPlus className="w-4 h-4 text-primary" strokeWidth={1.5} />
+          <span className="text-[11px] font-bold text-white">
+            נוסף לתוכנית הטיפול של {petName}
+          </span>
+        </div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
+
 /* ─── Component ─── */
 
 export const SmartPostCard = ({
@@ -60,6 +95,7 @@ export const SmartPostCard = ({
   userAvatar,
   petName,
   petBreed,
+  petType,
   caption,
   likeCount = 0,
   commentCount = 0,
@@ -79,7 +115,13 @@ export const SmartPostCard = ({
   const [saved, setSaved] = useState(isSaved);
   const [showProductCard, setShowProductCard] = useState(false);
   const [showHeartBurst, setShowHeartBurst] = useState(false);
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const lastTapRef = useRef(0);
+
+  /* Breed silhouette emoji */
+  const breedKey = petBreed?.toLowerCase().trim() || "";
+  const breedSilhouette = BREED_SILHOUETTE[breedKey] || null;
+  const BreedIcon = petType === "cat" ? Cat : Dog;
 
   const handleDoubleTap = () => {
     const now = Date.now();
@@ -100,8 +142,13 @@ export const SmartPostCard = ({
   };
 
   const toggleSave = () => {
-    setSaved((v) => !v);
+    const next = !saved;
+    setSaved(next);
     onSave?.();
+    if (next) {
+      setShowSaveConfirm(true);
+      setTimeout(() => setShowSaveConfirm(false), 2200);
+    }
   };
 
   const formatCount = (n: number) => {
@@ -117,10 +164,7 @@ export const SmartPostCard = ({
       dir={isRtl ? "rtl" : "ltr"}
     >
       {/* ─── Media ─── */}
-      <div
-        className="absolute inset-0"
-        onClick={handleDoubleTap}
-      >
+      <div className="absolute inset-0" onClick={handleDoubleTap}>
         {mediaType === "video" ? (
           <video
             src={mediaUrl}
@@ -138,9 +182,8 @@ export const SmartPostCard = ({
             loading="lazy"
           />
         )}
-
-        {/* Cinematic gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20" />
+        {/* Cinematic gradient — heavier at bottom, lighter top to not obscure pet */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/15" />
       </div>
 
       {/* ─── Double-tap heart burst ─── */}
@@ -158,9 +201,11 @@ export const SmartPostCard = ({
         )}
       </AnimatePresence>
 
+      {/* ─── Save Confirmation Micro-animation ─── */}
+      <SaveConfirmation petName={petName} visible={showSaveConfirm} />
+
       {/* ─── Header (Top) ─── */}
       <div className="absolute top-0 inset-x-0 z-20 flex items-center justify-between p-3.5">
-        {/* User info — right side in RTL */}
         <div
           className="flex items-center gap-2.5 cursor-pointer"
           onClick={onAvatarClick}
@@ -189,41 +234,60 @@ export const SmartPostCard = ({
           transition={{ delay: 0.3 }}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-xl border border-white/20 shadow-lg"
         >
-          <Shield className="w-3.5 h-3.5 text-white" strokeWidth={1.5} />
+          <ShieldCheck className="w-3.5 h-3.5 text-white" strokeWidth={1.5} />
           <span className="text-[10px] font-semibold text-white whitespace-nowrap">
             מותאם ל{petName}
           </span>
         </motion.div>
       </div>
 
-      {/* ─── Sidebar Actions (Left in RTL) ─── */}
+      {/* ─── Breed Silhouette (Bottom-corner watermark) ─── */}
+      {(breedSilhouette || petType) && (
+        <div
+          className={cn(
+            "absolute z-10 bottom-20 opacity-[0.08] pointer-events-none",
+            isRtl ? "right-3" : "left-3"
+          )}
+        >
+          {breedSilhouette ? (
+            <span className="text-[72px] leading-none select-none">{breedSilhouette}</span>
+          ) : (
+            <BreedIcon className="w-16 h-16 text-white" strokeWidth={0.8} />
+          )}
+        </div>
+      )}
+
+      {/* ─── Sidebar Actions — positioned at 60% from top to stay below pet's face ─── */}
       <div
         className={cn(
-          "absolute top-1/2 -translate-y-1/2 z-20 flex flex-col items-center gap-5",
-          isRtl ? "left-3" : "right-3"
+          "absolute z-20 flex flex-col items-center gap-4",
+          isRtl ? "left-2.5" : "right-2.5"
         )}
+        style={{ top: "55%", transform: "translateY(-40%)" }}
       >
         {/* Like */}
         <motion.button
           whileTap={{ scale: 0.85 }}
           onClick={toggleLike}
-          className="flex flex-col items-center gap-1"
+          className="flex flex-col items-center gap-0.5"
         >
-          <div className={cn(
-            "w-11 h-11 rounded-full flex items-center justify-center backdrop-blur-md transition-all",
-            liked
-              ? "bg-destructive/30 shadow-[0_0_16px_hsl(var(--destructive)/0.4)]"
-              : "bg-white/10"
-          )}>
+          <div
+            className={cn(
+              "w-11 h-11 rounded-full flex items-center justify-center backdrop-blur-md transition-all",
+              liked
+                ? "bg-destructive/30 shadow-[0_0_16px_hsl(var(--destructive)/0.4)]"
+                : "bg-white/10"
+            )}
+          >
             <Heart
               className={cn(
-                "w-6 h-6 transition-all",
+                "w-[22px] h-[22px] transition-all",
                 liked ? "text-destructive fill-destructive" : "text-white"
               )}
               strokeWidth={1.5}
             />
           </div>
-          <span className="text-[11px] font-semibold text-white drop-shadow-md">
+          <span className="text-[10px] font-semibold text-white drop-shadow-md">
             {formatCount(likeCount + (liked && !isLiked ? 1 : 0))}
           </span>
         </motion.button>
@@ -232,12 +296,12 @@ export const SmartPostCard = ({
         <motion.button
           whileTap={{ scale: 0.85 }}
           onClick={onComment}
-          className="flex flex-col items-center gap-1"
+          className="flex flex-col items-center gap-0.5"
         >
           <div className="w-11 h-11 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center">
-            <MessageCircle className="w-6 h-6 text-white" strokeWidth={1.5} />
+            <MessageCircle className="w-[22px] h-[22px] text-white" strokeWidth={1.5} />
           </div>
-          <span className="text-[11px] font-semibold text-white drop-shadow-md">
+          <span className="text-[10px] font-semibold text-white drop-shadow-md">
             {formatCount(commentCount)}
           </span>
         </motion.button>
@@ -246,20 +310,24 @@ export const SmartPostCard = ({
         <motion.button
           whileTap={{ scale: 0.85 }}
           onClick={toggleSave}
-          className="flex flex-col items-center gap-1"
+          className="flex flex-col items-center gap-0.5"
         >
-          <div className={cn(
-            "w-11 h-11 rounded-full flex items-center justify-center backdrop-blur-md transition-all",
-            saved ? "bg-primary/30" : "bg-white/10"
-          )}>
+          <motion.div
+            animate={saved ? { scale: [1, 1.25, 1] } : {}}
+            transition={{ duration: 0.35 }}
+            className={cn(
+              "w-11 h-11 rounded-full flex items-center justify-center backdrop-blur-md transition-colors",
+              saved ? "bg-primary/30" : "bg-white/10"
+            )}
+          >
             <Bookmark
               className={cn(
-                "w-6 h-6 transition-all",
+                "w-[22px] h-[22px] transition-all",
                 saved ? "text-primary fill-primary" : "text-white"
               )}
               strokeWidth={1.5}
             />
-          </div>
+          </motion.div>
         </motion.button>
 
         {/* Product Tag (Shoppable) */}
@@ -270,13 +338,12 @@ export const SmartPostCard = ({
             transition={{ delay: 0.5, type: "spring", stiffness: 300 }}
             whileTap={{ scale: 0.85 }}
             onClick={() => setShowProductCard((v) => !v)}
-            className="relative flex flex-col items-center gap-1"
+            className="relative flex flex-col items-center gap-0.5"
           >
-            <div className="w-11 h-11 rounded-full bg-primary/25 backdrop-blur-md flex items-center justify-center border border-primary/30 shadow-[0_0_14px_rgba(var(--primary-rgb),0.3)]">
-              <ShoppingBag className="w-5.5 h-5.5 text-white" strokeWidth={1.5} />
+            <div className="w-11 h-11 rounded-full bg-primary/25 backdrop-blur-md flex items-center justify-center border border-primary/30">
+              <ShoppingBag className="w-[22px] h-[22px] text-white" strokeWidth={1.5} />
             </div>
-            {/* Pulse indicator */}
-            <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-primary animate-pulse border-2 border-black/30" />
+            <span className="absolute -top-0.5 ltr:-right-0.5 rtl:-left-0.5 w-2.5 h-2.5 rounded-full bg-primary animate-pulse border border-black/20" />
           </motion.button>
         )}
       </div>
@@ -295,7 +362,6 @@ export const SmartPostCard = ({
             )}
           >
             <div className="w-52 rounded-2xl bg-white/15 backdrop-blur-2xl border border-white/25 shadow-2xl overflow-hidden">
-              {/* Product image */}
               {taggedProduct.image_url && (
                 <img
                   src={taggedProduct.image_url}
@@ -327,7 +393,7 @@ export const SmartPostCard = ({
 
                 {taggedProduct.verified_purchase && (
                   <div className="flex items-center gap-1 text-[10px] font-bold text-primary">
-                    <Shield className="w-3 h-3" />
+                    <ShieldCheck className="w-3 h-3" strokeWidth={1.5} />
                     קנייה מאומתת
                   </div>
                 )}
@@ -337,7 +403,7 @@ export const SmartPostCard = ({
                   onClick={() => onBuyProduct?.(taggedProduct)}
                   className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold"
                 >
-                  <ShoppingBag className="w-3.5 h-3.5" strokeWidth={2} />
+                  <ShoppingBag className="w-3.5 h-3.5" strokeWidth={1.5} />
                   קנה עכשיו
                 </motion.button>
               </div>
@@ -348,7 +414,6 @@ export const SmartPostCard = ({
 
       {/* ─── Bottom: Caption + Health Bar ─── */}
       <div className="absolute bottom-0 inset-x-0 z-20 space-y-0">
-        {/* Caption */}
         {caption && (
           <div className="px-4 pb-2">
             <p className="text-sm text-white drop-shadow-md leading-relaxed line-clamp-2">
@@ -358,7 +423,6 @@ export const SmartPostCard = ({
           </div>
         )}
 
-        {/* Health Progress Bar */}
         {healthImprovement && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -367,7 +431,7 @@ export const SmartPostCard = ({
             className="w-full px-4 py-2.5 bg-black/40 backdrop-blur-lg border-t border-white/10"
           >
             <div className="flex items-center justify-center gap-2">
-              <Star className="w-4 h-4 text-primary" strokeWidth={2} fill="currentColor" />
+              <Star className="w-4 h-4 text-primary" strokeWidth={1.5} fill="currentColor" />
               <span className="text-xs font-bold text-white/90">
                 {healthImprovement.replace("{petName}", petName)}
               </span>
