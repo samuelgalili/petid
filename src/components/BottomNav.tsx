@@ -1,4 +1,4 @@
-import { Home, Plus, ShoppingBag, User, Newspaper, Sparkles, X, Camera, ImagePlus, FileText } from "lucide-react";
+import { Home, Plus, ShoppingBag, User, Newspaper, Sparkles, X, Camera, ImagePlus, FileText, MessageCircle } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -174,20 +174,13 @@ const BottomNav = () => {
           <NavItem
             onClick={() => handleNavClick("/chat")}
             icon={
-              <div className={cn(
-                "w-6 h-6 rounded-full flex items-center justify-center transition-all",
-                isActive("/chat")
-                  ? "bg-primary"
-                  : "bg-primary/10"
-              )}>
-                <Sparkles
-                  className={cn(
-                    "w-3.5 h-3.5",
-                    isActive("/chat") ? "text-primary-foreground" : "text-muted-foreground"
-                  )}
-                  strokeWidth={2}
-                />
-              </div>
+              <MessageCircle
+                className={cn(
+                  "w-6 h-6 transition-colors",
+                  isActive("/chat") ? "text-primary" : "text-muted-foreground"
+                )}
+                strokeWidth={isActive("/chat") ? 2 : 1.5}
+              />
             }
             isActive={isActive("/chat")}
             label="צ'אט AI"
