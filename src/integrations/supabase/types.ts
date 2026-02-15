@@ -6027,6 +6027,7 @@ export type Database = {
           birth_date: string | null
           breed: string | null
           breed_confidence: number | null
+          color: string | null
           created_at: string | null
           current_food: string | null
           current_mood: string | null
@@ -6038,9 +6039,12 @@ export type Database = {
           insurance_company: string | null
           insurance_expiry_date: string | null
           insurance_policy_number: string | null
+          is_dangerous_breed: boolean | null
           is_neutered: boolean | null
           last_vet_visit: string | null
+          license_conditions: string | null
           medical_conditions: string[] | null
+          microchip_number: string | null
           mood_score: number | null
           mood_updated_at: string | null
           name: string
@@ -6067,6 +6071,7 @@ export type Database = {
           birth_date?: string | null
           breed?: string | null
           breed_confidence?: number | null
+          color?: string | null
           created_at?: string | null
           current_food?: string | null
           current_mood?: string | null
@@ -6078,9 +6083,12 @@ export type Database = {
           insurance_company?: string | null
           insurance_expiry_date?: string | null
           insurance_policy_number?: string | null
+          is_dangerous_breed?: boolean | null
           is_neutered?: boolean | null
           last_vet_visit?: string | null
+          license_conditions?: string | null
           medical_conditions?: string[] | null
+          microchip_number?: string | null
           mood_score?: number | null
           mood_updated_at?: string | null
           name: string
@@ -6107,6 +6115,7 @@ export type Database = {
           birth_date?: string | null
           breed?: string | null
           breed_confidence?: number | null
+          color?: string | null
           created_at?: string | null
           current_food?: string | null
           current_mood?: string | null
@@ -6118,9 +6127,12 @@ export type Database = {
           insurance_company?: string | null
           insurance_expiry_date?: string | null
           insurance_policy_number?: string | null
+          is_dangerous_breed?: boolean | null
           is_neutered?: boolean | null
           last_vet_visit?: string | null
+          license_conditions?: string | null
           medical_conditions?: string[] | null
+          microchip_number?: string | null
           mood_score?: number | null
           mood_updated_at?: string | null
           name?: string

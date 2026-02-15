@@ -10,7 +10,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Camera, FileUp, PenLine, X, Loader2,
   Syringe, Building2, Calendar, CheckCircle2, AlertTriangle,
-  CalendarPlus, Weight, Shield, Pill, User, MapPin, Phone, Hash
+  CalendarPlus, Weight, Shield, Pill, User, MapPin, Phone, Hash,
+  PawPrint, Palette, Tag, Cpu
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,9 +45,19 @@ interface ScanResult {
   ownerCity: string | null;
   ownerPhone: string | null;
   ownerIdNumber: string | null;
+  // Pet identity fields
+  petName: string | null;
+  petBreed: string | null;
+  petColor: string | null;
+  petGender: string | null;
+  petBirthDate: string | null;
+  microchipNumber: string | null;
+  isNeutered: boolean | null;
+  licenseConditions: string | null;
+  isDangerousBreed: boolean;
 }
 
-type ModalStep = 'closed' | 'choose' | 'scanning' | 'review' | 'profileReview' | 'manual';
+type ModalStep = 'closed' | 'choose' | 'scanning' | 'review' | 'petReview' | 'profileReview' | 'manual';
 
 // Shih Tzu weight standards by age (months → expected kg range)
 const SHIH_TZU_WEIGHT: Record<number, [number, number]> = {
@@ -154,7 +165,7 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
     reader.readAsDataURL(file);
   };
 
-  // Save only after user confirms
+  // Save medical data after user confirms, then check for pet/profile data
   const handleConfirm = async () => {
     if (!scanResult) return;
     setConfirming(true);
@@ -168,17 +179,19 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
         });
       }
 
-      // Save clinic info to pet
-      if (scanResult.clinicName) {
-        const clinicUpdate: Record<string, unknown> = { vet_clinic_name: scanResult.clinicName };
-        if (scanResult.clinicPhone) clinicUpdate.vet_clinic_phone = scanResult.clinicPhone;
-        if (scanResult.clinicAddress) clinicUpdate.vet_clinic_address = scanResult.clinicAddress;
-        await supabase.from("pets").update(clinicUpdate).eq("id", petId);
-      }
-
       toast({ title: "הנתונים אושרו ✅", description: "ציון הבריאות ולוח החיסונים עודכנו" });
 
-      // Check if profile data was extracted — offer update
+      // Check if pet identity data was extracted — offer update
+      const hasPetData = scanResult.petName || scanResult.petBreed || scanResult.petColor || 
+        scanResult.petGender || scanResult.petBirthDate || scanResult.microchipNumber || 
+        scanResult.isNeutered !== null || scanResult.isDangerousBreed || scanResult.licenseConditions;
+      if (hasPetData) {
+        setStep('petReview');
+        setConfirming(false);
+        return;
+      }
+
+      // Check if profile data was extracted
       const hasProfileData = scanResult.ownerName || scanResult.ownerAddress || scanResult.ownerPhone || scanResult.ownerIdNumber;
       if (hasProfileData) {
         setStep('profileReview');
@@ -192,6 +205,55 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
       toast({ title: "שגיאה בשמירה", variant: "destructive" });
     } finally {
       setConfirming(false);
+    }
+  };
+
+  // Save pet identity data after user approves
+  const handlePetDataConfirm = async () => {
+    if (!scanResult) return;
+    setConfirming(true);
+    try {
+      const petUpdate: Record<string, unknown> = {};
+      if (scanResult.petName) petUpdate.name = scanResult.petName;
+      if (scanResult.petBreed) petUpdate.breed = scanResult.petBreed;
+      if (scanResult.petColor) petUpdate.color = scanResult.petColor;
+      if (scanResult.petGender) petUpdate.gender = scanResult.petGender;
+      if (scanResult.petBirthDate) petUpdate.birth_date = scanResult.petBirthDate;
+      if (scanResult.microchipNumber) petUpdate.microchip_number = scanResult.microchipNumber;
+      if (scanResult.isNeutered !== null && scanResult.isNeutered !== undefined) petUpdate.is_neutered = scanResult.isNeutered;
+      if (scanResult.isDangerousBreed) petUpdate.is_dangerous_breed = true;
+      if (scanResult.licenseConditions) petUpdate.license_conditions = scanResult.licenseConditions;
+
+      if (Object.keys(petUpdate).length > 0) {
+        await supabase.from("pets").update(petUpdate).eq("id", petId);
+      }
+
+      toast({ title: "פרופיל החיה עודכן ✅" });
+
+      // Continue to profile review if owner data exists
+      const hasProfileData = scanResult.ownerName || scanResult.ownerAddress || scanResult.ownerPhone || scanResult.ownerIdNumber;
+      if (hasProfileData) {
+        setStep('profileReview');
+        setConfirming(false);
+        return;
+      }
+
+      onComplete?.();
+      handleClose();
+    } catch {
+      toast({ title: "שגיאה בעדכון", variant: "destructive" });
+    } finally {
+      setConfirming(false);
+    }
+  };
+
+  const handleSkipPetData = () => {
+    const hasProfileData = scanResult?.ownerName || scanResult?.ownerAddress || scanResult?.ownerPhone || scanResult?.ownerIdNumber;
+    if (hasProfileData) {
+      setStep('profileReview');
+    } else {
+      onComplete?.();
+      handleClose();
     }
   };
 
@@ -258,11 +320,10 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
         deworming: false,
         cost: null,
         nextDueDate: extracted.nextVisitDate,
-        ownerName: null,
-        ownerAddress: null,
-        ownerCity: null,
-        ownerPhone: null,
-        ownerIdNumber: null,
+        ownerName: null, ownerAddress: null, ownerCity: null, ownerPhone: null, ownerIdNumber: null,
+        petName: null, petBreed: null, petColor: null, petGender: null,
+        petBirthDate: null, microchipNumber: null, isNeutered: null,
+        licenseConditions: null, isDangerousBreed: false,
       });
       setLastBase64(null); // Manual — already saved by extract-vet-summary
       setStep('review');
@@ -357,6 +418,7 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
                   <h3 className="text-lg font-bold text-foreground">
                     {step === 'choose' && 'הוסף ביקור / חיסון'}
                     {step === 'review' && 'אישור נתונים שזוהו'}
+                    {step === 'petReview' && 'עדכון פרופיל חיה'}
                     {step === 'profileReview' && 'עדכון פרופיל אישי'}
                     {step === 'manual' && 'הזנה ידנית'}
                   </h3>
@@ -578,6 +640,140 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
                       onClick={() => { setScanResult(null); setStep('choose'); }}
                     >
                       סרוק שוב
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Pet Identity Review Step */}
+              {step === 'petReview' && scanResult && (
+                <div className="space-y-4">
+                  <div className="p-4 bg-primary/5 rounded-2xl border border-primary/20">
+                    <div className="flex items-center gap-2 mb-3">
+                      <PawPrint className="w-4 h-4 text-primary" strokeWidth={1.5} />
+                      <p className="text-sm font-semibold text-primary">
+                        זוהו פרטי החיה מהמסמך — האם לעדכן?
+                      </p>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {scanResult.petName && (
+                        <div className="flex items-center gap-3">
+                          <PawPrint className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.5} />
+                          <div>
+                            <p className="text-[10px] text-muted-foreground">שם</p>
+                            <p className="text-sm text-foreground">{scanResult.petName}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {scanResult.petBreed && (
+                        <div className="flex items-center gap-3">
+                          <Tag className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.5} />
+                          <div>
+                            <p className="text-[10px] text-muted-foreground">גזע</p>
+                            <p className="text-sm text-foreground">{scanResult.petBreed}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {scanResult.petColor && (
+                        <div className="flex items-center gap-3">
+                          <Palette className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.5} />
+                          <div>
+                            <p className="text-[10px] text-muted-foreground">צבע</p>
+                            <p className="text-sm text-foreground">{scanResult.petColor}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {scanResult.petGender && (
+                        <div className="flex items-center gap-3">
+                          <User className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.5} />
+                          <div>
+                            <p className="text-[10px] text-muted-foreground">מין</p>
+                            <p className="text-sm text-foreground">{scanResult.petGender === 'male' ? 'זכר' : 'נקבה'}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {scanResult.petBirthDate && (
+                        <div className="flex items-center gap-3">
+                          <Calendar className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.5} />
+                          <div>
+                            <p className="text-[10px] text-muted-foreground">תאריך לידה</p>
+                            <p className="text-sm text-foreground">{new Date(scanResult.petBirthDate).toLocaleDateString("he-IL")}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {scanResult.microchipNumber && (
+                        <div className="flex items-center gap-3">
+                          <Cpu className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.5} />
+                          <div>
+                            <p className="text-[10px] text-muted-foreground">מספר שבב</p>
+                            <p className="text-sm text-foreground font-mono">{scanResult.microchipNumber}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {scanResult.isNeutered !== null && (
+                        <div className="flex items-center gap-3">
+                          <CheckCircle2 className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.5} />
+                          <div>
+                            <p className="text-[10px] text-muted-foreground">מעוקר/מסורס</p>
+                            <p className="text-sm text-foreground">{scanResult.isNeutered ? 'כן ✅' : 'לא'}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {scanResult.isDangerousBreed && (
+                        <div className="p-2.5 bg-red-500/10 rounded-xl border border-red-500/20">
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4 text-red-600" strokeWidth={1.5} />
+                            <span className="text-xs font-semibold text-red-700">⚠️ גזע מוגבל — נדרשת תאימות חוקית</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {scanResult.licenseConditions && (
+                        <div className="p-2.5 bg-amber-500/10 rounded-xl border border-amber-500/20">
+                          <p className="text-[10px] font-semibold text-amber-700 mb-0.5">תנאי רישיון:</p>
+                          <p className="text-xs text-foreground">{scanResult.licenseConditions}</p>
+                        </div>
+                      )}
+
+                      {scanResult.isNeutered && (
+                        <div className="p-2 bg-blue-500/10 rounded-xl">
+                          <p className="text-[10px] font-medium text-blue-700">
+                            💡 עיקור/סירוס — המלצת הקלוריות היומית תעודכן (ירידה של ~20%)
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Button
+                      className="flex-1 h-12 rounded-2xl font-semibold"
+                      onClick={handlePetDataConfirm}
+                      disabled={confirming}
+                    >
+                      {confirming ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-4 h-4 ml-2" />
+                          עדכן פרופיל חיה
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-12 rounded-2xl px-5"
+                      onClick={handleSkipPetData}
+                    >
+                      דלג
                     </Button>
                   </div>
                 </div>
