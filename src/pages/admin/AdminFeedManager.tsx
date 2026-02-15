@@ -25,7 +25,8 @@ import {
   PawPrint, Baby, Stethoscope, Target, Package,
   BarChart3, TrendingUp, ArrowUpRight, ArrowDownRight,
   MoreVertical, Trash2, Edit, Pin, Star, Globe,
-  X, Check, Loader2, FileText, Sparkles,
+  X, Check, Loader2, FileText, Sparkles, Brain,
+  Wand2, Send, AlertTriangle, MapPin, Zap,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -99,6 +100,18 @@ const AdminFeedManager = () => {
   const [scheduledDate, setScheduledDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // AI Post Generation state
+  const [aiPost, setAiPost] = useState<{
+    title_he: string; title_en: string;
+    caption_he: string; caption_en: string;
+    target_species: string; target_age: string;
+    medical_tags?: string[]; target_city?: string;
+    trend_summary: string; urgency: string;
+    suggested_products?: string[];
+  } | null>(null);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [isPublishingAI, setIsPublishingAI] = useState(false);
 
   // ─── Queries ───
   const { data: posts = [], isLoading: loadingPosts } = useQuery({
@@ -336,6 +349,85 @@ const AdminFeedManager = () => {
     queryClient.invalidateQueries({ queryKey: ["admin-feed-posts"] });
     toast.success(!current ? "הפוסט סומן כמומלץ" : "הפוסט הוסר ממומלצים");
   };
+
+  // ─── AI Post Generation ───
+  const handleGenerateAIPost = async () => {
+    setIsGeneratingAI(true);
+    setAiPost(null);
+    try {
+      // Gather trends from chat feedback
+      const { data: chatData } = await supabase
+        .from("chat_message_feedback")
+        .select("message_content")
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      const trendTopics = chatData?.map(c => c.message_content).join("\n") || "No recent chat data";
+
+      // Gather pet stats
+      const { data: petData } = await supabase
+        .from("pets")
+        .select("type, breed, medical_conditions, birth_date")
+        .limit(200);
+
+      const dogCount = petData?.filter(p => p.type === "dog").length || 0;
+      const catCount = petData?.filter(p => p.type === "cat").length || 0;
+      const conditions = petData?.flatMap(p => p.medical_conditions || []) || [];
+      const conditionCounts: Record<string, number> = {};
+      conditions.forEach(c => { conditionCounts[c] = (conditionCounts[c] || 0) + 1; });
+      const topConditions = Object.entries(conditionCounts).sort(([,a],[,b]) => b - a).slice(0, 5);
+
+      const petStats = `Dogs: ${dogCount}, Cats: ${catCount}\nTop conditions: ${topConditions.map(([c,n]) => `${c} (${n})`).join(", ")}`;
+
+      const { data: fnData, error: fnError } = await supabase.functions.invoke("generate-ai-post", {
+        body: { trends: trendTopics, petStats },
+      });
+
+      if (fnError) throw fnError;
+      if (fnData?.error) throw new Error(fnData.error);
+
+      setAiPost(fnData.post);
+      toast.success("הפוסט נוצר בהצלחה על ידי AI!");
+    } catch (err: any) {
+      console.error("AI generation error:", err);
+      if (err?.message?.includes("429") || err?.status === 429) {
+        toast.error("חריגה ממגבלת בקשות. נסה שוב בעוד דקה");
+      } else if (err?.message?.includes("402") || err?.status === 402) {
+        toast.error("נדרש טעינת קרדיטים. עבור להגדרות Workspace");
+      } else {
+        toast.error("שגיאה ביצירת הפוסט");
+      }
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
+  const handleApproveAndPublish = async () => {
+    if (!user || !aiPost) return;
+    setIsPublishingAI(true);
+    try {
+      const caption = `${aiPost.title_he}\n\n${aiPost.caption_he}`;
+      const { error } = await supabase.from("posts").insert({
+        user_id: user.id,
+        image_url: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800",
+        caption,
+        media_type: "image",
+        is_featured: true,
+      });
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ["admin-feed-posts"] });
+      toast.success("הפוסט פורסם בהצלחה! 🎉");
+      setAiPost(null);
+      setActiveTab("posts");
+    } catch (err) {
+      console.error(err);
+      toast.error("שגיאה בפרסום הפוסט");
+    } finally {
+      setIsPublishingAI(false);
+    }
+  };
+
 
   return (
     <AdminLayout title="ניהול פיד ותוכן" icon={Tv} breadcrumbs={[{ label: "פיד ותוכן" }]}>
@@ -629,6 +721,10 @@ const AdminFeedManager = () => {
             <BarChart3 className="w-3.5 h-3.5" />
             ביצועים
           </TabsTrigger>
+          <TabsTrigger value="ai-generate" className="gap-1.5">
+            <Brain className="w-3.5 h-3.5" />
+            AI Content
+          </TabsTrigger>
         </TabsList>
 
         {/* ── Posts Tab ── */}
@@ -841,6 +937,151 @@ const AdminFeedManager = () => {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        </TabsContent>
+
+        {/* ── AI Generated Content Tab ── */}
+        <TabsContent value="ai-generate">
+          <div className="max-w-2xl mx-auto space-y-6">
+            {/* Generator Card */}
+            <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-violet-500/5">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Brain className="w-4 h-4 text-primary" strokeWidth={1.5} />
+                  </div>
+                  יצירת תוכן חכם באמצעות AI
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">
+                  המערכת מנתחת שאלות נפוצות, מצבים רפואיים ומגמות מהצ׳אט — ומייצרת טיפ יומי מותאם.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  onClick={handleGenerateAIPost}
+                  disabled={isGeneratingAI}
+                  className="w-full gap-2"
+                  size="lg"
+                >
+                  {isGeneratingAI ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      מנתח מגמות ויוצר תוכן...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="w-4 h-4" />
+                      צור טיפ יומי חכם
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* AI Generated Post Preview */}
+            {aiPost && (
+              <Card className="border-border/30 overflow-hidden">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-amber-500" strokeWidth={1.5} />
+                      תצוגה מקדימה — פוסט AI
+                    </CardTitle>
+                    <Badge
+                      variant={aiPost.urgency === "high" ? "destructive" : aiPost.urgency === "medium" ? "default" : "secondary"}
+                      className="text-[10px]"
+                    >
+                      {aiPost.urgency === "high" ? "🔴 דחוף" : aiPost.urgency === "medium" ? "🟡 בינוני" : "🟢 רגיל"}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Trend insight */}
+                  <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                    <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 mb-1">
+                      <TrendingUp className="w-3.5 h-3.5 text-amber-600" strokeWidth={1.5} />
+                      מגמה שזוהתה
+                    </p>
+                    <p className="text-xs text-muted-foreground">{aiPost.trend_summary}</p>
+                  </div>
+
+                  {/* Hebrew content */}
+                  <div className="space-y-2" dir="rtl">
+                    <h3 className="text-base font-bold text-foreground">{aiPost.title_he}</h3>
+                    <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">{aiPost.caption_he}</p>
+                  </div>
+
+                  {/* English content */}
+                  <div className="space-y-2 p-3 rounded-lg bg-muted/30 border border-border/20" dir="ltr">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">English Version</p>
+                    <h4 className="text-sm font-semibold text-foreground">{aiPost.title_en}</h4>
+                    <p className="text-xs text-muted-foreground whitespace-pre-line leading-relaxed">{aiPost.caption_en}</p>
+                  </div>
+
+                  {/* Targeting info */}
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline" className="text-[10px] gap-1">
+                      <PawPrint className="w-2.5 h-2.5" strokeWidth={1.5} />
+                      {aiPost.target_species === "dog" ? "כלבים" : aiPost.target_species === "cat" ? "חתולים" : "הכל"}
+                    </Badge>
+                    <Badge variant="outline" className="text-[10px] gap-1">
+                      <Target className="w-2.5 h-2.5" strokeWidth={1.5} />
+                      {aiPost.target_age === "puppy" ? "גורים" : aiPost.target_age === "adult" ? "בוגרים" : aiPost.target_age === "senior" ? "מבוגרים" : "כל הגילאים"}
+                    </Badge>
+                    {aiPost.target_city && (
+                      <Badge variant="outline" className="text-[10px] gap-1">
+                        <MapPin className="w-2.5 h-2.5" strokeWidth={1.5} />
+                        {aiPost.target_city}
+                      </Badge>
+                    )}
+                    {aiPost.medical_tags?.map(tag => (
+                      <Badge key={tag} variant="secondary" className="text-[10px] gap-1">
+                        <Stethoscope className="w-2.5 h-2.5" strokeWidth={1.5} />
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+
+                  {/* Suggested products */}
+                  {aiPost.suggested_products && aiPost.suggested_products.length > 0 && (
+                    <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                      <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 mb-1.5">
+                        <ShoppingCart className="w-3.5 h-3.5 text-emerald-600" strokeWidth={1.5} />
+                        מוצרים מומלצים לתיוג
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {aiPost.suggested_products.map((p, i) => (
+                          <Badge key={i} variant="outline" className="text-[10px]">{p}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action buttons */}
+                  <div className="flex gap-3 pt-2">
+                    <Button
+                      className="flex-1 gap-2"
+                      onClick={handleApproveAndPublish}
+                      disabled={isPublishingAI}
+                    >
+                      {isPublishingAI ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Check className="w-4 h-4" />
+                      )}
+                      {isPublishingAI ? "מפרסם..." : "אשר ופרסם"}
+                    </Button>
+                    <Button variant="outline" className="gap-2" onClick={handleGenerateAIPost} disabled={isGeneratingAI}>
+                      <Wand2 className="w-4 h-4" />
+                      צור מחדש
+                    </Button>
+                    <Button variant="ghost" onClick={() => setAiPost(null)}>
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </TabsContent>
       </Tabs>
