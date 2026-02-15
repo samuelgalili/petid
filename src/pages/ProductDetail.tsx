@@ -7,7 +7,7 @@ import {
   Clock, Loader2, Flag, AlertTriangle, Leaf, FlaskConical, Utensils,
   WheatOff, Beef, Sparkles, Dog, Baby, Scale, Droplets, ShieldCheck,
   Calculator, Wrench, Lightbulb, Ruler, Paintbrush, Cookie, GlassWater,
-  Eye, Bone
+  Eye, Bone, Timer, Smile
 } from "lucide-react";
 import { ProductReviews } from "@/components/shop/ProductReviews";
 import { PriceAlertButton } from "@/components/shop/PriceAlertButton";
@@ -158,6 +158,49 @@ const extractTreatUsage = (product: any): { purpose: string | null; safetyTip: s
   const isNatural = text.includes('טבעי') || text.includes('natural') || text.includes('ללא חומרים משמרים') || text.includes('no preserv') || text.includes('ללא צבעים');
 
   return { purpose, safetyTip, isNatural };
+};
+
+/** Extract treat visual feature data: chew duration, protein %, dental, texture */
+const extractTreatFeatures = (product: any): {
+  chewDuration: number; // 1-5
+  proteinPct: number | null;
+  hasDental: boolean;
+  texture: string | null;
+  isChewPriority: boolean; // Donut/Bone → prioritize chew & dental
+} => {
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''}`.toLowerCase();
+  const attrs = product.product_attributes || {};
+
+  // Chew duration: from attrs or heuristic
+  let chewDuration = parseInt(attrs.chew_duration || attrs['זמן לעיסה'] || '0') || 0;
+  if (!chewDuration) {
+    if (text.includes('ממושכת') || text.includes('long') || text.includes('donut') || text.includes('דונאט') || text.includes('עצם')) chewDuration = 4;
+    else if (text.includes('לעיסה') || text.includes('chew')) chewDuration = 3;
+    else chewDuration = 2;
+  }
+  chewDuration = Math.min(5, Math.max(1, chewDuration));
+
+  // Protein %
+  let proteinPct: number | null = null;
+  const proteinMatch = text.match(/(\d{1,3})\s*%\s*(?:חלבון|protein)/i) || text.match(/(?:חלבון|protein)\s*[:\-–]?\s*(\d{1,3})\s*%/i);
+  if (proteinMatch) proteinPct = parseInt(proteinMatch[1]);
+  if (!proteinPct && attrs.protein_pct) proteinPct = parseInt(attrs.protein_pct);
+
+  // Dental
+  const hasDental = text.includes('שיני') || text.includes('dental') || text.includes('ניקוי שיניים') || text.includes('teeth') || text.includes('היגיינת') || text.includes('hygiene');
+
+  // Texture
+  let texture = attrs.texture || attrs['מרקם'] || null;
+  if (!texture) {
+    if (text.includes('קשה') || text.includes('tough') || text.includes('hard')) texture = 'קשה ועמיד';
+    else if (text.includes('רך') || text.includes('soft')) texture = 'רך וגמיש';
+    else if (text.includes('chewy') || text.includes('לעיס')) texture = 'לעיסתי ועמיד';
+  }
+
+  // Priority for Donut/Bone shapes
+  const isChewPriority = text.includes('donut') || text.includes('דונאט') || text.includes('bone') || text.includes('עצם');
+
+  return { chewDuration, proteinPct, hasDental, texture, isChewPriority };
 };
 
 /** Extract technical specs from product_attributes for accessories */
@@ -379,6 +422,33 @@ const ProductDetail = () => {
     staleTime: 1000 * 60 * 5,
   });
 
+  // Fetch similar treats for comparison
+  const { data: similarTreats = [] } = useQuery({
+    queryKey: ["similar-treats", id, rawProduct?.category],
+    queryFn: async () => {
+      if (!rawProduct) return [];
+      const { data } = await supabase
+        .from("business_products")
+        .select("id, name, price, image_url, category, product_attributes, description")
+        .neq("id", id || "")
+        .in("category", ["treats", "snacks"])
+        .limit(6);
+      if (data && data.length > 0) {
+        return data.map(p => ({
+          id: p.id,
+          name: p.name,
+          price: typeof p.price === 'string' ? parseFloat(p.price) : p.price,
+          image: p.image_url || "/placeholder.svg",
+          attrs: p.product_attributes as any || {},
+          description: p.description || '',
+        }));
+      }
+      return [];
+    },
+    enabled: !!rawProduct && isTreatProduct(rawProduct),
+    staleTime: 1000 * 60 * 5,
+  });
+
   const images = rawProduct
     ? ((rawProduct.images && rawProduct.images.length > 0) ? rawProduct.images : (rawProduct.image_url ? [rawProduct.image_url] : (rawProduct.image ? [rawProduct.image] : ["/placeholder.svg"])))
     : ["/placeholder.svg"];
@@ -393,6 +463,7 @@ const ProductDetail = () => {
   const isTreat = useMemo(() => product ? isTreatProduct(product) : false, [product]);
   const treatHealthBoosts = useMemo(() => product && isTreat ? deriveTreatHealthBoosts(product) : [], [product, isTreat]);
   const treatUsage = useMemo(() => product && isTreat ? extractTreatUsage(product) : { purpose: null, safetyTip: null, isNatural: false }, [product, isTreat]);
+  const treatFeatures = useMemo(() => product && isTreat ? extractTreatFeatures(product) : { chewDuration: 0, proteinPct: null, hasDental: false, texture: null, isChewPriority: false }, [product, isTreat]);
   const analysisData = useMemo(() => product ? parseAnalysis(product) : [], [product]);
   const vitaminsData = useMemo(() => product ? parseVitamins(product) : [], [product]);
   const feedingResult = useMemo(() => {
@@ -968,6 +1039,106 @@ const ProductDetail = () => {
           </motion.div>
         )}
 
+        {/* ── Treat Visual Feature Bar ── */}
+        {isTreat && (treatFeatures.chewDuration > 0 || treatFeatures.proteinPct || treatFeatures.hasDental || treatFeatures.texture) && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-4">
+                <Timer className="w-4 h-4 text-primary" />
+                תכונות עיקריות
+              </h3>
+              <div className="space-y-4">
+                {/* Chew Duration Scale */}
+                {treatFeatures.chewDuration > 0 && (
+                  <div className={`${treatFeatures.isChewPriority ? 'order-first' : ''}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-medium text-muted-foreground">זמן לעיסה</span>
+                      <span className="text-xs font-bold text-foreground">
+                        {treatFeatures.chewDuration <= 2 ? 'קצר' : treatFeatures.chewDuration <= 3 ? 'בינוני' : treatFeatures.chewDuration <= 4 ? 'ארוך' : 'ארוך מאוד'}
+                      </span>
+                    </div>
+                    <div className="flex gap-1.5">
+                      {[1, 2, 3, 4, 5].map(level => (
+                        <motion.div
+                          key={level}
+                          initial={{ scaleY: 0 }}
+                          animate={{ scaleY: 1 }}
+                          transition={{ delay: 0.3 + level * 0.06 }}
+                          className={`flex-1 h-3 rounded-full transition-colors ${
+                            level <= treatFeatures.chewDuration
+                              ? 'bg-primary'
+                              : 'bg-muted'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Protein + Dental + Texture Row */}
+                <div className="flex gap-2.5 flex-wrap">
+                  {/* Protein Circular Badge */}
+                  {treatFeatures.proteinPct && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.35, type: "spring", stiffness: 300 }}
+                      className="flex flex-col items-center"
+                    >
+                      <div className="relative w-16 h-16">
+                        <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                          <circle cx="18" cy="18" r="15.5" fill="none" className="stroke-muted" strokeWidth="3" />
+                          <circle
+                            cx="18" cy="18" r="15.5" fill="none"
+                            className="stroke-primary"
+                            strokeWidth="3"
+                            strokeDasharray={`${treatFeatures.proteinPct} ${100 - treatFeatures.proteinPct}`}
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-sm font-black text-primary">{treatFeatures.proteinPct}%</span>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-bold text-foreground mt-1">חלבון</span>
+                    </motion.div>
+                  )}
+
+                  {/* Dental Care Badge */}
+                  {treatFeatures.hasDental && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.4, type: "spring", stiffness: 300 }}
+                      className={`flex flex-col items-center ${treatFeatures.isChewPriority ? 'order-first' : ''}`}
+                    >
+                      <div className="w-16 h-16 rounded-full bg-success/10 border-2 border-success/30 flex items-center justify-center">
+                        <Smile className="w-7 h-7 text-success" />
+                      </div>
+                      <span className="text-[10px] font-bold text-foreground mt-1">היגיינת שיניים</span>
+                    </motion.div>
+                  )}
+
+                  {/* Texture Badge */}
+                  {treatFeatures.texture && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.45, type: "spring", stiffness: 300 }}
+                      className="flex flex-col items-center"
+                    >
+                      <div className="w-16 h-16 rounded-full bg-accent/10 border-2 border-accent/30 flex items-center justify-center">
+                        <Bone className="w-7 h-7 text-accent-foreground" />
+                      </div>
+                      <span className="text-[10px] font-bold text-foreground mt-1">{treatFeatures.texture}</span>
+                    </motion.div>
+                  )}
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
         {/* ── Treat Health Boosts (treats only) ── */}
         {isTreat && treatHealthBoosts.length > 0 && (
           <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
@@ -1111,6 +1282,39 @@ const ProductDetail = () => {
         {id && (
           <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
             <ProductReviews productId={id} />
+          </motion.div>
+        )}
+
+        {/* ── Compare Similar Treats ── */}
+        {isTreat && similarTreats.length > 0 && (
+          <motion.div className="mt-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.47 }}>
+            <h3 className="text-base font-bold mb-3 text-foreground mx-4 flex items-center gap-2">
+              <Scale className="w-4 h-4 text-primary" />
+              השוואה לחטיפים דומים
+            </h3>
+            <div className="flex gap-3 overflow-x-auto pb-2 px-4 hide-scrollbar">
+              {similarTreats.map((item, idx) => (
+                <motion.div key={item.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.47 + idx * 0.05 }} whileTap={{ scale: 0.98 }} className="flex-shrink-0 w-40 cursor-pointer" onClick={() => navigate(`/product/${item.id}`)}>
+                  <Card className="overflow-hidden h-full">
+                    <div className="aspect-square bg-muted overflow-hidden">
+                      <img src={item.image} alt={item.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+                    </div>
+                    <div className="p-2.5 space-y-1">
+                      <h4 className="font-bold text-xs text-foreground mb-1 line-clamp-2">{item.name}</h4>
+                      <p className="text-sm font-black text-primary">₪{item.price}</p>
+                      <div className="flex gap-1 flex-wrap">
+                        {item.attrs?.protein_pct && (
+                          <Badge variant="outline" className="text-[9px] px-1.5 py-0.5">{item.attrs.protein_pct}% חלבון</Badge>
+                        )}
+                        {(item.description?.toLowerCase().includes('שיני') || item.description?.toLowerCase().includes('dental')) && (
+                          <Badge variant="outline" className="text-[9px] px-1.5 py-0.5">🦷 שיניים</Badge>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
           </motion.div>
         )}
 
