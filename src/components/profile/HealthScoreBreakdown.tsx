@@ -13,6 +13,7 @@ import {
   Smile, Droplets, Wind, AlertTriangle
 } from "lucide-react";
 import { FelineUrinarySupport } from "./FelineUrinarySupport";
+import { FelineRenalCare } from "./FelineRenalCare";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
@@ -694,7 +695,20 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
                   </div>
                 )}
 
-                {/* To-Do List: How to reach 100% */}
+                {/* Feline Renal Care — CKD management UI for cats */}
+                {isCat && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-1.5">
+                      <Activity className="w-4 h-4 text-rose-500" strokeWidth={1.5} />
+                      הגנת כליות — Renal Care
+                    </h3>
+                    <FelineRenalCare
+                      petName={pet.name}
+                      isSenior={lifeStage.stage === 'senior'}
+                    />
+                  </div>
+                )}
+
                 {todos.length > 0 && (
                   <div className="mb-6">
                     <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-1.5">
