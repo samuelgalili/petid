@@ -102,41 +102,69 @@ export const PetHealthScore = ({ pet, onViewDetails }: PetHealthScoreProps) => {
     fetchPetData();
   }, [pet.id]);
 
-  // Calculate real health score
+  // Calculate profile completion percentage
+  const profileCompletion = useMemo(() => {
+    if (!petData) return 0;
+    const fields = [
+      !!pet.birth_date,
+      !!pet.breed,
+      !!petData.weight,
+      petData.is_neutered !== null && petData.is_neutered !== undefined,
+      !!petData.current_food,
+      !!petData.last_vet_visit,
+      petData.has_insurance !== null && petData.has_insurance !== undefined,
+      !!petData.health_notes,
+      !!pet.avatar_url,
+      !!pet.size,
+    ];
+    return Math.round((fields.filter(Boolean).length / fields.length) * 100);
+  }, [pet, petData]);
+
+  // Calculate real health score based on actual pet data + profile completion
   const healthScore = useMemo(() => {
     if (!petData) return 50;
-    let score = 60;
+    
+    // Profile completion contributes up to 30 points
+    let score = Math.round(profileCompletion * 0.3);
+    
+    // Age factor (up to 13 points)
     if (pet.birth_date) {
-      score += 5;
       const birth = new Date(pet.birth_date);
       const ageYears = (Date.now() - birth.getTime()) / (1000 * 60 * 60 * 24 * 365);
-      if (ageYears < 3) score += 8;
-      else if (ageYears <= 7) score += 5;
-      else if (ageYears > 10) score -= 5;
+      if (ageYears < 3) score += 13;
+      else if (ageYears <= 7) score += 10;
+      else if (ageYears <= 10) score += 6;
+      else score += 2;
     }
-    if (petData.weight) score += 5;
-    if (petData.is_neutered === true) score += 3;
+
+    // Medical conditions (up to 15 points)
     const conditions = petData.medical_conditions || [];
     if (conditions.length === 0) {
-      score += 8;
+      score += 15;
     } else {
-      score -= Math.min(conditions.length * 3, 10);
-      score += 3;
+      score += Math.max(0, 15 - conditions.length * 4);
+      score += 2; // Tracking bonus
     }
-    if (petData.current_food) score += 3;
+
+    // Vet visits (up to 15 points)
     if (petData.last_vet_visit) {
-      const lastVisit = new Date(petData.last_vet_visit);
-      const monthsSince = (Date.now() - lastVisit.getTime()) / (1000 * 60 * 60 * 24 * 30);
-      if (monthsSince <= 6) score += 8;
-      else if (monthsSince <= 12) score += 4;
-      else score -= 3;
+      const monthsSince = (Date.now() - new Date(petData.last_vet_visit).getTime()) / (1000 * 60 * 60 * 24 * 30);
+      if (monthsSince <= 6) score += 15;
+      else if (monthsSince <= 12) score += 8;
+      else score += 2;
     }
-    if (petData.has_insurance) score += 5;
-    if (petData.health_notes) score += 2;
-    score += Math.min(vaccineCount * 4, 10);
+
+    // Insurance (up to 7 points)
+    if (petData.has_insurance) score += 7;
+
+    // Vaccine boost (up to 12 points)
+    score += Math.min(vaccineCount * 4, 12);
+
+    // Recovery mode penalty
     if (inRecovery) score -= 8;
+
     return Math.min(100, Math.max(0, score));
-  }, [pet.birth_date, petData, vaccineCount, inRecovery]);
+  }, [pet.birth_date, pet.avatar_url, pet.size, petData, vaccineCount, inRecovery, profileCompletion]);
 
   const isHighRisk = useMemo(() => {
     if (!petData) return false;
@@ -188,10 +216,11 @@ export const PetHealthScore = ({ pet, onViewDetails }: PetHealthScoreProps) => {
     return 'דורש תשומת לב';
   };
 
-  // Sub-label based on score
+  // Sub-label based on score + profile completion
   const getSubLabel = () => {
     if (healthScore >= 85) return `מעולה! ${pet.name} מוגנת`;
     if (healthScore >= 70) return `${pet.name} במצב טוב`;
+    if (profileCompletion < 70) return `השלם פרופיל (${profileCompletion}%) כדי לשפר`;
     if (healthScore >= 50) return `${pet.name} צריכה תשומת לב`;
     return `${pet.name} דורשת טיפול`;
   };

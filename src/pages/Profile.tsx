@@ -31,6 +31,7 @@ import { VetVisitInput } from "@/components/profile/VetVisitInput";
 import { RecoveryBanner } from "@/components/profile/RecoveryBanner";
 import { VaccineCountdown } from "@/components/profile/VaccineCountdown";
 import { VetHistoryPDF } from "@/components/profile/VetHistoryPDF";
+import { BreedHealthTips } from "@/components/profile/BreedHealthTips";
 interface Pet {
   id: string;
   name: string;
@@ -595,6 +596,14 @@ const Profile = () => {
                     {/* Recovery Banner */}
                     <RecoveryBanner petId={selectedPet.id} petName={selectedPet.name} onOpenRecoveryProducts={() => setSmartRecCategory('health')} />
                     
+                    {/* Breed Health Tips (Shih Tzu specific, puppy tips, etc.) */}
+                    <BreedHealthTips
+                      petName={selectedPet.name}
+                      breed={selectedPet.breed}
+                      ageMonths={selectedPet.age_months}
+                      ageYears={selectedPet.age_years}
+                      petType={selectedPet.type}
+                    />
                     {/* Vaccine Countdown */}
                     <VaccineCountdown petId={selectedPet.id} petName={selectedPet.name} />
                     
