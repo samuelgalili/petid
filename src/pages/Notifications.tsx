@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
-import { ChevronRight, Syringe, ShoppingBag, Shield, Heart, Bell } from "lucide-react";
+import { ChevronRight, Syringe, ShoppingBag, Shield, Heart, Bell, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { isToday, isYesterday, isThisWeek } from "date-fns";
@@ -35,6 +35,15 @@ interface NotificationItem {
   };
 }
 
+type FilterTab = 'all' | 'care' | 'shop' | 'insurance';
+
+const FILTER_TABS: { key: FilterTab; label: string; icon: React.ElementType; color: string }[] = [
+  { key: 'all', label: 'הכל', icon: Inbox, color: 'text-foreground' },
+  { key: 'care', label: 'טיפול', icon: Heart, color: 'text-pink-500' },
+  { key: 'shop', label: 'חנות', icon: ShoppingBag, color: 'text-amber-500' },
+  { key: 'insurance', label: 'ביטוח', icon: Shield, color: 'text-blue-500' },
+];
+
 const getCategoryIcon = (category?: string, type?: string) => {
   switch (category || type) {
     case 'medical': return { icon: Syringe, color: 'text-red-500', bg: 'bg-red-500/10' };
@@ -55,21 +64,16 @@ const Notifications = () => {
   } = useRealtimeNotifications();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
 
   useEffect(() => {
-    // Wait for auth to finish loading before checking user
     if (authLoading) return;
-    
-    if (!user) {
-      navigate("/auth");
-      return;
-    }
+    if (!user) { navigate("/auth"); return; }
     fetchNotifications();
   }, [user, authLoading]);
 
   const fetchNotifications = async () => {
     setLoading(true);
-    
     if (!user) return;
 
     const { data, error } = await supabase
@@ -80,56 +84,46 @@ const Notifications = () => {
 
     if (error) {
       console.error("Error fetching notifications:", error);
-      toast({
-        title: "שגיאה",
-        description: "לא ניתן לטעון התראות",
-        variant: "destructive",
-      });
-      setLoading(false);
-      return;
+      toast({ title: "שגיאה", description: "לא ניתן לטעון התראות", variant: "destructive" });
     } else {
       setNotifications((data || []) as unknown as NotificationItem[]);
-      // Mark all as read when viewing
-      if (data && data.length > 0) {
-        markAllNotificationsAsRead();
-      }
+      if (data && data.length > 0) markAllNotificationsAsRead();
     }
-    
     setLoading(false);
   };
 
   const handleFollowBack = async (userId: string) => {
     if (!user) return;
-    
     const { error } = await supabase
       .from("user_follows")
       .insert({ follower_id: user.id, following_id: userId });
-    
-    if (!error) {
-      toast({ description: "עוקב בהצלחה" });
-    }
+    if (!error) toast({ description: "עוקב בהצלחה" });
   };
 
   const getTimeAgo = (date: string) => timeAgo(date);
 
-  // Group notifications by time period
+  // Filter notifications by active tab
+  const filteredNotifications = activeFilter === 'all'
+    ? notifications
+    : notifications.filter(n => {
+        const cat = n.category || n.type;
+        if (activeFilter === 'care') return cat === 'care' || cat === 'medical';
+        return cat === activeFilter;
+      });
+
+  // Group by time period
   const groupNotifications = () => {
     const today: NotificationItem[] = [];
     const yesterday: NotificationItem[] = [];
     const thisWeek: NotificationItem[] = [];
     const older: NotificationItem[] = [];
 
-    notifications.forEach((notification) => {
+    filteredNotifications.forEach((notification) => {
       const date = new Date(notification.created_at);
-      if (isToday(date)) {
-        today.push(notification);
-      } else if (isYesterday(date)) {
-        yesterday.push(notification);
-      } else if (isThisWeek(date)) {
-        thisWeek.push(notification);
-      } else {
-        older.push(notification);
-      }
+      if (isToday(date)) today.push(notification);
+      else if (isYesterday(date)) yesterday.push(notification);
+      else if (isThisWeek(date)) thisWeek.push(notification);
+      else older.push(notification);
     });
 
     return { today, yesterday, thisWeek, older };
@@ -143,23 +137,18 @@ const Notifications = () => {
     const hasUserAvatar = notification.data?.user_avatar;
     const catInfo = getCategoryIcon(notification.category, notification.type);
     const CatIcon = catInfo.icon;
-    
+
     return (
       <motion.div
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
         className={`flex items-center gap-3 py-3 px-4 hover:bg-muted/30 transition-colors cursor-pointer ${!notification.is_read ? 'bg-primary/5' : ''}`}
         onClick={() => {
-          if (notification.data?.post_id) {
-            navigate(`/post/${notification.data.post_id}`);
-          } else if (notification.data?.user_id) {
-            navigate(`/user/${notification.data.user_id}`);
-          } else if (notification.data?.pet_id) {
-            navigate(`/pet/${notification.data.pet_id}`);
-          }
+          if (notification.data?.post_id) navigate(`/post/${notification.data.post_id}`);
+          else if (notification.data?.user_id) navigate(`/user/${notification.data.user_id}`);
+          else if (notification.data?.pet_id) navigate(`/pet/${notification.data.pet_id}`);
         }}
       >
-        {/* Avatar or Category Icon */}
         {hasUserAvatar ? (
           <Avatar className="w-11 h-11 shrink-0">
             <AvatarImage src={notification.data?.user_avatar} />
@@ -173,38 +162,31 @@ const Notifications = () => {
           </div>
         )}
 
-        {/* Content */}
         <div className="flex-1 min-w-0">
           <p className="text-sm text-foreground leading-snug">
-            <span className="font-semibold">{notification.data?.user_name || "משתמש"}</span>
-            {" "}
+            {notification.data?.user_name && (
+              <span className="font-semibold">{notification.data.user_name} </span>
+            )}
             <span className="text-foreground/90">{notification.message}</span>
             {" "}
             <span className="text-muted-foreground">{getTimeAgo(notification.created_at)}</span>
           </p>
         </div>
 
-        {/* Right side - Follow button or Post thumbnail */}
         {isFollowType ? (
           <Button
             size="sm"
             className="rounded-lg px-4 h-8 text-xs font-semibold bg-primary hover:bg-primary/90"
             onClick={(e) => {
               e.stopPropagation();
-              if (notification.data?.user_id) {
-                handleFollowBack(notification.data.user_id);
-              }
+              if (notification.data?.user_id) handleFollowBack(notification.data.user_id);
             }}
           >
             עקוב בחזרה
           </Button>
         ) : hasPostImage ? (
           <div className="w-11 h-11 rounded-md overflow-hidden shrink-0">
-            <img 
-              src={notification.data?.post_image} 
-              alt="" 
-              className="w-full h-full object-cover"
-            />
+            <img src={notification.data?.post_image} alt="" className="w-full h-full object-cover" />
           </div>
         ) : null}
       </motion.div>
@@ -213,7 +195,6 @@ const Notifications = () => {
 
   const NotificationSection = ({ title, items }: { title: string; items: NotificationItem[] }) => {
     if (items.length === 0) return null;
-    
     return (
       <div className="mb-2">
         <h2 className="text-base font-semibold text-foreground px-4 py-3">{title}</h2>
@@ -253,46 +234,72 @@ const Notifications = () => {
     <div className="h-screen bg-background overflow-hidden" dir="rtl">
       <SEO title="התראות" description="התראות ועדכונים על הפעילות שלכם" url="/notifications" noIndex={true} />
       <div className="h-full overflow-y-auto pb-[70px]">
-      {/* Instagram-style Header */}
-      <motion.div 
-        className="sticky top-0 z-20 bg-background/98 backdrop-blur-xl border-b border-border/40"
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-      >
-        <div className="max-w-lg mx-auto px-4 h-12 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => navigate(-1)}
-              className="p-2 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
-            >
-              <ChevronRight className="w-5 h-5 text-foreground" />
-            </button>
-            <h1 className="text-lg font-semibold text-foreground">התראות</h1>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Notifications List - Grouped by Time */}
-      <div className="pt-2">
-        {notifications.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 px-4">
-            <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
-              <span className="text-4xl">❤️</span>
+        {/* Header */}
+        <motion.div
+          className="sticky top-0 z-20 bg-background/98 backdrop-blur-xl border-b border-border/40"
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+        >
+          <div className="max-w-lg mx-auto px-4 h-12 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate(-1)}
+                className="p-2 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
+              >
+                <ChevronRight className="w-5 h-5 text-foreground" />
+              </button>
+              <h1 className="text-lg font-semibold text-foreground">התראות</h1>
             </div>
-            <h2 className="text-lg font-semibold text-foreground mb-1">פעילות</h2>
-            <p className="text-sm text-muted-foreground text-center">
-              כשמישהו יאהב או יגיב על התוכן שלך, זה יופיע כאן
-            </p>
           </div>
-        ) : (
-          <>
-            <NotificationSection title="היום" items={today} />
-            <NotificationSection title="אתמול" items={yesterday} />
-            <NotificationSection title="השבוע" items={thisWeek} />
-            <NotificationSection title="מוקדם יותר" items={older} />
-          </>
-        )}
-      </div>
+
+          {/* Category Filter Tabs */}
+          <div className="max-w-lg mx-auto px-3 pb-2 flex gap-2 overflow-x-auto scrollbar-hide">
+            {FILTER_TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeFilter === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveFilter(tab.key)}
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+                    isActive
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'bg-muted/60 text-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" strokeWidth={1.5} />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </motion.div>
+
+        {/* Notifications List */}
+        <div className="pt-2">
+          {filteredNotifications.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 px-4">
+              <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
+                <span className="text-4xl">❤️</span>
+              </div>
+              <h2 className="text-lg font-semibold text-foreground mb-1">
+                {activeFilter === 'all' ? 'אין התראות' : 'אין התראות בקטגוריה זו'}
+              </h2>
+              <p className="text-sm text-muted-foreground text-center">
+                {activeFilter === 'all'
+                  ? 'כשמישהו יאהב או יגיב על התוכן שלך, זה יופיע כאן'
+                  : 'התראות חדשות יופיעו כאן בזמן אמת'}
+              </p>
+            </div>
+          ) : (
+            <>
+              <NotificationSection title="היום" items={today} />
+              <NotificationSection title="אתמול" items={yesterday} />
+              <NotificationSection title="השבוע" items={thisWeek} />
+              <NotificationSection title="מוקדם יותר" items={older} />
+            </>
+          )}
+        </div>
       </div>
 
       <BottomNav />
