@@ -8,55 +8,64 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 
 interface NavItemProps {
-  to?: string;
   icon: React.ReactNode;
   isActive: boolean;
   label: string;
   onClick?: () => void;
+  showPill?: boolean;
 }
 
 const NavItem = ({
-  to,
   icon,
   isActive,
   label,
-  onClick
+  onClick,
+  showPill = true,
 }: NavItemProps) => {
   const content = (
-    <motion.div 
-      whileTap={{ scale: 0.92 }} 
-      className="flex flex-col items-center gap-0.5"
+    <motion.div
+      whileTap={{ scale: 0.9 }}
+      className="relative flex flex-col items-center gap-0.5"
     >
-      {icon}
-      <span className={cn(
-        "text-[10px] font-medium transition-colors",
-        isActive ? "text-foreground" : "text-muted-foreground"
-      )}>
-        {label}
-      </span>
+      {/* Active pill background */}
+      {showPill && isActive && (
+        <motion.div
+          layoutId="nav-pill"
+          className="absolute -inset-x-2 -inset-y-1 rounded-2xl bg-primary/12"
+          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+        />
+      )}
+      <div className="relative z-10">{icon}</div>
+      <AnimatePresence mode="wait">
+        {isActive && (
+          <motion.span
+            key="label"
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.2 }}
+            className="text-[10px] font-semibold text-primary relative z-10"
+          >
+            {label}
+          </motion.span>
+        )}
+      </AnimatePresence>
+      {!isActive && (
+        <span className="text-[10px] font-medium text-muted-foreground">
+          {label}
+        </span>
+      )}
     </motion.div>
   );
 
-  if (onClick) {
-    return (
-      <button 
-        onClick={onClick} 
-        className="flex flex-col items-center justify-center flex-1 py-2 active:opacity-50 transition-opacity" 
-        aria-label={label}
-      >
-        {content}
-      </button>
-    );
-  }
-  
   return (
-    <Link 
-      to={to || "/"} 
-      className="flex flex-col items-center justify-center flex-1 py-2 active:opacity-50 transition-opacity" 
+    <button
+      onClick={onClick}
+      className="flex flex-col items-center justify-center flex-1 py-2 active:opacity-50 transition-opacity"
       aria-label={label}
     >
       {content}
-    </Link>
+    </button>
   );
 };
 
@@ -154,22 +163,75 @@ const BottomNav = () => {
         )}
       </AnimatePresence>
 
-      {/* Instagram-style bottom nav - height: 56px */}
-      <nav 
-        className="fixed bottom-0 left-0 right-0 z-[9999] bg-background border-t border-border pb-[env(safe-area-inset-bottom)]" 
-        role="navigation" 
+      {/* Bottom nav - height: 56px */}
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-[9999] bg-background/80 backdrop-blur-xl border-t border-border/50 pb-[env(safe-area-inset-bottom)]"
+        role="navigation"
         aria-label="ניווט ראשי"
       >
         <div className="flex justify-around items-center w-full max-w-lg mx-auto h-[56px]">
-          {/* 1. Home */}
-          <NavItem 
-            onClick={() => handleNavClick("/")}
+          {/* 1. Chat AI */}
+          <NavItem
+            onClick={() => handleNavClick("/chat")}
             icon={
               <div className={cn(
-                "rounded-full p-[2px] transition-all",
-                isActive("/") ? "ring-2 ring-foreground" : ""
+                "w-6 h-6 rounded-full flex items-center justify-center transition-all",
+                isActive("/chat")
+                  ? "bg-primary"
+                  : "bg-primary/10"
               )}>
-                <Avatar className="w-6 h-6 rounded-full">
+                <Sparkles
+                  className={cn(
+                    "w-3.5 h-3.5",
+                    isActive("/chat") ? "text-primary-foreground" : "text-muted-foreground"
+                  )}
+                  strokeWidth={2}
+                />
+              </div>
+            }
+            isActive={isActive("/chat")}
+            label="צ'אט AI"
+          />
+
+          {/* 2. Upload (+) */}
+          <NavItem
+            onClick={() => setShowUploadMenu(prev => !prev)}
+            showPill={false}
+            icon={
+              <div className={cn(
+                "w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all",
+                showUploadMenu
+                  ? "border-primary bg-primary rotate-45"
+                  : "border-muted-foreground"
+              )}>
+                <Plus
+                  className={cn(
+                    "w-4 h-4 transition-colors",
+                    showUploadMenu ? "text-primary-foreground" : "text-muted-foreground"
+                  )}
+                  strokeWidth={2.5}
+                />
+              </div>
+            }
+            isActive={showUploadMenu}
+            label="העלאה"
+          />
+
+          {/* 3. Home (Avatar) - Center */}
+          <NavItem
+            onClick={() => handleNavClick("/")}
+            showPill={false}
+            icon={
+              <div className={cn(
+                "rounded-full p-[2.5px] transition-all",
+                isActive("/")
+                  ? "bg-gradient-to-tr from-primary via-accent to-primary ring-1 ring-primary/30"
+                  : ""
+              )}>
+                <Avatar className={cn(
+                  "rounded-full border-2 border-background transition-all",
+                  isActive("/") ? "w-8 h-8" : "w-7 h-7"
+                )}>
                   <AvatarImage src={userAvatar} className="object-cover rounded-full" />
                   <AvatarFallback className="bg-muted text-muted-foreground text-[10px] rounded-full">
                     <User className="w-3.5 h-3.5" />
@@ -181,14 +243,14 @@ const BottomNav = () => {
             label="בית"
           />
 
-          {/* 2. Feed */}
-          <NavItem 
+          {/* 4. Feed */}
+          <NavItem
             onClick={() => handleNavClick("/feed")}
             icon={
-              <Newspaper 
+              <Newspaper
                 className={cn(
-                  "w-6 h-6",
-                  isActive("/feed") ? "text-foreground" : "text-muted-foreground"
+                  "w-6 h-6 transition-colors",
+                  isActive("/feed") ? "text-primary" : "text-muted-foreground"
                 )}
                 strokeWidth={isActive("/feed") ? 2 : 1.5}
               />
@@ -197,60 +259,14 @@ const BottomNav = () => {
             label="פיד"
           />
 
-          {/* 3. Upload (+) - Center */}
-          <NavItem 
-            onClick={() => setShowUploadMenu(prev => !prev)}
-            icon={
-              <div className={cn(
-                "w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all",
-                showUploadMenu
-                  ? "border-foreground bg-foreground rotate-45" 
-                  : "border-muted-foreground"
-              )}>
-                <Plus 
-                  className={cn(
-                    "w-4 h-4 transition-colors",
-                    showUploadMenu ? "text-background" : "text-muted-foreground"
-                  )}
-                  strokeWidth={2.5}
-                />
-              </div>
-            }
-            isActive={showUploadMenu}
-            label="העלאה"
-          />
-
-          {/* 4. AI Chat */}
-          <NavItem 
-            onClick={() => handleNavClick("/chat")}
-            icon={
-              <div className={cn(
-                "w-6 h-6 rounded-full flex items-center justify-center",
-                isActive("/chat") 
-                  ? "bg-primary" 
-                  : "bg-primary/10"
-              )}>
-                <Sparkles 
-                  className={cn(
-                    "w-3.5 h-3.5",
-                    isActive("/chat") ? "text-white" : "text-muted-foreground"
-                  )}
-                  strokeWidth={2}
-                />
-              </div>
-            }
-            isActive={isActive("/chat")}
-            label="צ'אט AI"
-          />
-
           {/* 5. Shop */}
-          <NavItem 
+          <NavItem
             onClick={() => handleNavClick("/shop")}
             icon={
-              <ShoppingBag 
+              <ShoppingBag
                 className={cn(
-                  "w-6 h-6",
-                  isActive("/shop") ? "text-foreground" : "text-muted-foreground"
+                  "w-6 h-6 transition-colors",
+                  isActive("/shop") ? "text-primary" : "text-muted-foreground"
                 )}
                 strokeWidth={isActive("/shop") ? 2 : 1.5}
               />
@@ -259,9 +275,9 @@ const BottomNav = () => {
             label="חנות"
           />
         </div>
-        
-        {/* Safe area for notched devices - iOS safe area */}
-        <div className="bg-background" style={{ height: 'env(safe-area-inset-bottom, 0px)' }} />
+
+        {/* Safe area for notched devices */}
+        <div className="bg-background/80" style={{ height: 'env(safe-area-inset-bottom, 0px)' }} />
       </nav>
     </>
   );
