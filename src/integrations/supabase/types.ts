@@ -8679,11 +8679,14 @@ export type Database = {
       }
       support_tickets: {
         Row: {
+          ai_triage_summary: string | null
           assigned_to: string | null
           category: string | null
           created_at: string
           description: string | null
           id: string
+          internal_notes: string | null
+          pet_id: string | null
           priority: string | null
           related_order_id: string | null
           resolved_at: string | null
@@ -8693,13 +8696,17 @@ export type Database = {
           ticket_number: string
           updated_at: string
           user_id: string | null
+          vet_flag: boolean | null
         }
         Insert: {
+          ai_triage_summary?: string | null
           assigned_to?: string | null
           category?: string | null
           created_at?: string
           description?: string | null
           id?: string
+          internal_notes?: string | null
+          pet_id?: string | null
           priority?: string | null
           related_order_id?: string | null
           resolved_at?: string | null
@@ -8709,13 +8716,17 @@ export type Database = {
           ticket_number: string
           updated_at?: string
           user_id?: string | null
+          vet_flag?: boolean | null
         }
         Update: {
+          ai_triage_summary?: string | null
           assigned_to?: string | null
           category?: string | null
           created_at?: string
           description?: string | null
           id?: string
+          internal_notes?: string | null
+          pet_id?: string | null
           priority?: string | null
           related_order_id?: string | null
           resolved_at?: string | null
@@ -8725,8 +8736,17 @@ export type Database = {
           ticket_number?: string
           updated_at?: string
           user_id?: string | null
+          vet_flag?: boolean | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       system_alerts: {
         Row: {
