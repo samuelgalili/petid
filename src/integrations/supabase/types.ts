@@ -6121,9 +6121,17 @@ export type Database = {
           insurance_expiry_date: string | null
           insurance_policy_number: string | null
           is_dangerous_breed: boolean | null
+          is_lost: boolean
           is_neutered: boolean | null
           last_vet_visit: string | null
           license_conditions: string | null
+          lost_allergy_note: string | null
+          lost_contact_phone: string | null
+          lost_medication_note: string | null
+          lost_reward_text: string | null
+          lost_show_phone: boolean
+          lost_since: string | null
+          lost_temperament: string | null
           medical_conditions: string[] | null
           microchip_number: string | null
           mood_score: number | null
@@ -6165,9 +6173,17 @@ export type Database = {
           insurance_expiry_date?: string | null
           insurance_policy_number?: string | null
           is_dangerous_breed?: boolean | null
+          is_lost?: boolean
           is_neutered?: boolean | null
           last_vet_visit?: string | null
           license_conditions?: string | null
+          lost_allergy_note?: string | null
+          lost_contact_phone?: string | null
+          lost_medication_note?: string | null
+          lost_reward_text?: string | null
+          lost_show_phone?: boolean
+          lost_since?: string | null
+          lost_temperament?: string | null
           medical_conditions?: string[] | null
           microchip_number?: string | null
           mood_score?: number | null
@@ -6209,9 +6225,17 @@ export type Database = {
           insurance_expiry_date?: string | null
           insurance_policy_number?: string | null
           is_dangerous_breed?: boolean | null
+          is_lost?: boolean
           is_neutered?: boolean | null
           last_vet_visit?: string | null
           license_conditions?: string | null
+          lost_allergy_note?: string | null
+          lost_contact_phone?: string | null
+          lost_medication_note?: string | null
+          lost_reward_text?: string | null
+          lost_show_phone?: boolean
+          lost_since?: string | null
+          lost_temperament?: string | null
           medical_conditions?: string[] | null
           microchip_number?: string | null
           mood_score?: number | null

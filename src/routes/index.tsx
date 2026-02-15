@@ -262,8 +262,10 @@ const ClubTerms = lazy(() => import("@/pages/ClubTerms"));
 const Support = lazy(() => import("@/pages/Support"));
 const DataDeletion = lazy(() => import("@/pages/DataDeletion"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
+const FoundPet = lazy(() => import("@/pages/FoundPet"));
 
 export const staticRoutes: RouteObject[] = [
+  { path: "/found-pet/:petId", element: <LazyPage component={FoundPet} pageName="מצאתי חיית מחמד" /> },
   { path: "/accessibility", element: <LazyPage component={Accessibility} pageName="נגישות" /> },
   { path: "/privacy-policy", element: <LazyPage component={Privacy} pageName="מדיניות פרטיות" /> },
   { path: "/terms", element: <LazyPage component={Terms} pageName="תנאי שימוש" /> },
