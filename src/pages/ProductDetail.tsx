@@ -9,7 +9,8 @@ import {
   Calculator, Wrench, Lightbulb, Ruler, Paintbrush, Cookie, GlassWater,
   Eye, Bone, Timer, Smile, Zap, CloudLightning, Stethoscope, Scissors,
   Snowflake, Microwave, Hand, Moon, Sofa, Waves, WashingMachine, Home,
-  Car, Grip, Cog, Droplet, Sun, Wind, Pipette, Beaker, Flower2, Bug
+  Car, Grip, Cog, Droplet, Sun, Wind, Pipette, Beaker, Flower2, Bug,
+  Target, CircleDot, ArrowDownToLine, Armchair, Weight
 } from "lucide-react";
 import { ProductReviews } from "@/components/shop/ProductReviews";
 import { PriceAlertButton } from "@/components/shop/PriceAlertButton";
@@ -635,6 +636,82 @@ const extractEnrichmentFeatures = (product: any): {
   return { anxietyUses, materialSpecs, healthNote, recipes };
 };
 
+/** Check if product is a deshedding/maintenance tool */
+const isDesheddingProduct = (product: any): boolean => {
+  const text = `${product.name || ''} ${product.description || ''} ${product.brand || ''}`.toLowerCase();
+  return text.includes('deshedding') || text.includes('furminator') || text.includes('דישדינג') ||
+    text.includes('הפחתת נשירה') || text.includes('shedding') || text.includes('comb') || text.includes('מסרק') ||
+    text.includes('undercoat') || text.includes('תת-שכבה') || text.includes('rake') || text.includes('stripper') ||
+    (product.category || '').toLowerCase() === 'deshedding' || (product.category || '').toLowerCase() === 'tools';
+};
+
+/** Extract deshedding/maintenance tool features */
+const extractDesheddingFeatures = (product: any): {
+  efficiencyPct: number | null;
+  techFeatures: { icon: React.ReactNode; label: string; description: string }[];
+  sizeGuide: { weightRange: string | null; coatType: string | null };
+  proTip: string | null;
+  homeHygiene: boolean;
+} => {
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''} ${(product.special_diet || []).join(' ')}`.toLowerCase();
+  const attrs = product.product_attributes || {};
+  const benefits = Array.isArray(product.benefits) ? product.benefits : [];
+  const benefitsText = benefits.map((b: any) => `${b.title || ''} ${b.description || ''}`).join(' ').toLowerCase();
+  const allText = text + ' ' + benefitsText;
+
+  // Efficiency %
+  let efficiencyPct: number | null = null;
+  const effMatch = allText.match(/(\d{1,3})\s*%\s*(?:less|reduction|הפחת|נשירה|shedding)/i)
+    || allText.match(/(?:reduces?|מפחית|הפחתה)\s*(?:up to|עד)?\s*(\d{1,3})\s*%/i);
+  if (effMatch) efficiencyPct = parseInt(effMatch[1]) || parseInt(effMatch[2]) || null;
+  if (!efficiencyPct && (allText.includes('furminator') || allText.includes('deshedding'))) efficiencyPct = 90;
+
+  // Technical safety features
+  const techFeatures: { icon: React.ReactNode; label: string; description: string }[] = [];
+  if (allText.includes('furejector') || allText.includes('release') || allText.includes('ניקוי מהיר') || allText.includes('לחיצ') || allText.includes('eject'))
+    techFeatures.push({ icon: <CircleDot className="w-5 h-5" />, label: 'FURejector Button', description: 'ניקוי מהיר בלחיצה אחת – שחרור השיער שנאסף' });
+  if (allText.includes('skin guard') || allText.includes('הגנ') || allText.includes('עור') || allText.includes('skin') || allText.includes('protect'))
+    techFeatures.push({ icon: <Shield className="w-5 h-5" />, label: 'Skin Guard', description: 'הגנה על עור הכלב – קצוות מוגנים למניעת שריטות' });
+  if (allText.includes('curved') || allText.includes('ארגונומ') || allText.includes('ergonomic') || allText.includes('עקום') || allText.includes('contour'))
+    techFeatures.push({ icon: <ArrowDownToLine className="w-5 h-5" />, label: 'Curved Edge', description: 'קצה עקום – מתאים לקווי גוף הכלב בצורה ארגונומית' });
+  if (techFeatures.length === 0) {
+    techFeatures.push({ icon: <Shield className="w-5 h-5" />, label: 'בטיחות מקסימלית', description: 'תכנון ארגונומי להגנה על העור' });
+  }
+
+  // Size guide
+  let weightRange = attrs.weight_range || attrs['טווח משקל'] || null;
+  if (!weightRange) {
+    const wMatch = allText.match(/(\d{1,3})\s*[-–]\s*(\d{1,3})\s*(?:ק[״"]?ג|kg)/i);
+    if (wMatch) weightRange = `${wMatch[1]}-${wMatch[2]} ק"ג`;
+    else if (allText.includes('large') || allText.includes('גדול')) weightRange = '23-41 ק"ג (גזעים גדולים)';
+    else if (allText.includes('medium') || allText.includes('בינוני')) weightRange = '9-23 ק"ג (גזעים בינוניים)';
+    else if (allText.includes('small') || allText.includes('קטן')) weightRange = 'עד 9 ק"ג (גזעים קטנים)';
+  }
+  let coatType = attrs.coat_type || attrs['סוג פרווה'] || null;
+  if (!coatType) {
+    if (allText.includes('long') || allText.includes('ארוך') || allText.includes('5 cm') || allText.includes('5 ס')) coatType = 'פרווה ארוכה (מעל 5 ס"מ)';
+    else if (allText.includes('short') || allText.includes('קצר')) coatType = 'פרווה קצרה (עד 5 ס"מ)';
+  }
+
+  // Pro tip
+  let proTip = attrs.pro_tip || attrs.usage_tip || null;
+  if (!proTip) {
+    if (allText.includes('1-2') || allText.includes('פעמיים') || allText.includes('10-20') || allText.includes('יבשה'))
+      proTip = 'השתמשו 1-2 פעמים בשבוע, 10-20 דקות, על פרווה יבשה בלבד';
+    else if (allText.includes('dry') || allText.includes('יבש'))
+      proTip = 'השתמשו על פרווה יבשה בלבד לתוצאות מיטביות';
+    else
+      proTip = 'השתמשו 1-2 פעמים בשבוע על פרווה יבשה בלבד';
+  }
+
+  // Home hygiene connection
+  const homeHygiene = allText.includes('furniture') || allText.includes('carpet') || allText.includes('רהיט') || allText.includes('שטיח') ||
+    allText.includes('home') || allText.includes('בית') || allText.includes('ניקיון') || allText.includes('clean') ||
+    allText.includes('shedding') || allText.includes('נשירה') || allText.includes('furminator') || allText.includes('deshedding');
+
+  return { efficiencyPct, techFeatures, sizeGuide: { weightRange, coatType }, proTip, homeHygiene };
+};
+
 /** Extract technical specs from product_attributes for accessories */
 const extractTechSpecs = (product: any): { label: string; value: string }[] => {
   const specs: { label: string; value: string }[] = [];
@@ -932,6 +1009,8 @@ const ProductDetail = () => {
   const groomingFeatures = useMemo(() => product && isGrooming ? extractGroomingFeatures(product) : { visibleResults: [], activeIngredients: [], usageSteps: [], featureBadges: [], targetCoatType: null }, [product, isGrooming]);
   const isHygiene = useMemo(() => product ? isHygieneProduct(product) : false, [product]);
   const hygieneFeatures = useMemo(() => product && isHygiene ? extractHygieneFeatures(product) : { showScienceCorner: false, coreTechnology: null, isTreatmentSafe: false, formulaAttributes: [], scentProfile: null }, [product, isHygiene]);
+  const isDeshedding = useMemo(() => product ? isDesheddingProduct(product) : false, [product]);
+  const desheddingFeatures = useMemo(() => product && isDeshedding ? extractDesheddingFeatures(product) : { efficiencyPct: null, techFeatures: [], sizeGuide: { weightRange: null, coatType: null }, proTip: null, homeHygiene: false }, [product, isDeshedding]);
   const isTreat = useMemo(() => product ? isTreatProduct(product) : false, [product]);
   const treatHealthBoosts = useMemo(() => product && isTreat ? deriveTreatHealthBoosts(product) : [], [product, isTreat]);
   const treatUsage = useMemo(() => product && isTreat ? extractTreatUsage(product) : { purpose: null, safetyTip: null, isNatural: false }, [product, isTreat]);
@@ -2068,6 +2147,133 @@ const ProductDetail = () => {
                 <div>
                   <h3 className="text-sm font-bold text-foreground">🌸 פרופיל ריח</h3>
                   <p className="text-[13px] text-muted-foreground mt-0.5">{hygieneFeatures.scentProfile}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Deshedding: Efficiency Badge ── */}
+        {isDeshedding && desheddingFeatures.efficiencyPct && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(25,80%,93%)] to-background border-[hsl(25,60%,65%)]/20 dark:from-[hsl(25,40%,15%)] dark:border-[hsl(25,50%,40%)]/20">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-[hsl(25,70%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <div className="text-center">
+                    <span className="text-xl font-black text-[hsl(25,70%,45%)]">{desheddingFeatures.efficiencyPct}%</span>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">🧹 הפחתת נשירה</h3>
+                  <p className="text-[12px] text-muted-foreground mt-0.5">מפחית עד {desheddingFeatures.efficiencyPct}% מהנשירה – פרווה בריאה, בית נקי יותר</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Deshedding: Technical Safety Grid ── */}
+        {isDeshedding && desheddingFeatures.techFeatures.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Cog className="w-4 h-4 text-primary" />
+                טכנולוגיות פטנט
+              </h3>
+              <div className="grid grid-cols-1 gap-2.5">
+                {desheddingFeatures.techFeatures.map((feat, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.24 + i * 0.06 }}
+                    className="bg-gradient-to-l from-[hsl(25,50%,95%)]/60 to-transparent dark:from-[hsl(25,30%,15%)] rounded-xl p-3.5 border border-[hsl(25,40%,70%)]/15 flex items-center gap-3"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-[hsl(25,50%,80%)]/15 flex items-center justify-center flex-shrink-0 text-[hsl(25,60%,45%)]">
+                      {feat.icon}
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-bold text-foreground">{feat.label}</p>
+                      <p className="text-[11px] text-muted-foreground">{feat.description}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Deshedding: Smart Size Guide ── */}
+        {isDeshedding && (desheddingFeatures.sizeGuide.weightRange || desheddingFeatures.sizeGuide.coatType) && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }}>
+            <Card className="p-4 bg-gradient-to-br from-primary/5 to-background border-primary/20">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Target className="w-4 h-4 text-primary" />
+                מתאים לכלב שלי? 🐕
+              </h3>
+              <div className="grid grid-cols-2 gap-2.5">
+                {desheddingFeatures.sizeGuide.weightRange && (
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }} className="bg-background rounded-xl p-3 border border-border/40 text-center">
+                    <div className="w-8 h-8 mx-auto rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                      <Scale className="w-4 h-4 text-primary" />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground font-medium mb-0.5">משקל הכלב</p>
+                    <p className="text-[12px] font-bold text-foreground">{desheddingFeatures.sizeGuide.weightRange}</p>
+                  </motion.div>
+                )}
+                {desheddingFeatures.sizeGuide.coatType && (
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-background rounded-xl p-3 border border-border/40 text-center">
+                    <div className="w-8 h-8 mx-auto rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                      <Wind className="w-4 h-4 text-primary" />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground font-medium mb-0.5">סוג פרווה</p>
+                    <p className="text-[12px] font-bold text-foreground">{desheddingFeatures.sizeGuide.coatType}</p>
+                  </motion.div>
+                )}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Deshedding: Pro Tip (Care & Usage) ── */}
+        {isDeshedding && desheddingFeatures.proTip && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
+            <Card className="p-4 bg-gradient-to-br from-warning/10 to-background border-warning/30">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-warning/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Lightbulb className="w-5 h-5 text-warning" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground mb-1">💡 טיפ מקצועי</h3>
+                  <p className="text-[13px] text-muted-foreground leading-[1.7]">{desheddingFeatures.proTip}</p>
+                  <Badge variant="outline" className="mt-2 text-[10px]">⚠️ פרווה יבשה בלבד</Badge>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Deshedding: Home Hygiene Connection ── */}
+        {isDeshedding && desheddingFeatures.homeHygiene && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(170,60%,93%)] to-background border-[hsl(170,50%,65%)]/20 dark:from-[hsl(170,30%,15%)] dark:border-[hsl(170,40%,40%)]/20">
+              <div className="flex items-start gap-3">
+                <div className="w-12 h-12 rounded-full bg-[hsl(170,50%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Home className="w-6 h-6 text-[hsl(170,50%,40%)]" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground mb-1.5">🏠 בית נקי יותר</h3>
+                  <div className="space-y-1">
+                    <p className="text-[12px] text-muted-foreground flex items-center gap-1">
+                      <Check className="w-3 h-3 text-[hsl(170,50%,40%)]" /> פחות שיער על רהיטים ושטיחים
+                    </p>
+                    <p className="text-[12px] text-muted-foreground flex items-center gap-1">
+                      <Check className="w-3 h-3 text-[hsl(170,50%,40%)]" /> הפחתת אלרגנים בסביבת המגורים
+                    </p>
+                    <p className="text-[12px] text-muted-foreground flex items-center gap-1">
+                      <Check className="w-3 h-3 text-[hsl(170,50%,40%)]" /> חיסכון בזמן ניקיון יומי
+                    </p>
+                  </div>
                 </div>
               </div>
             </Card>
