@@ -636,6 +636,84 @@ const extractEnrichmentFeatures = (product: any): {
   return { anxietyUses, materialSpecs, healthNote, recipes };
 };
 
+/** Check if product is a puppy food product */
+const isPuppyProduct = (product: any): boolean => {
+  const text = `${product.name || ''} ${product.description || ''} ${product.brand || ''} ${product.life_stage || ''}`.toLowerCase();
+  return text.includes('puppy') || text.includes('גור') || text.includes('גורים') ||
+    text.includes('growth') || text.includes('junior') || text.includes('starter') ||
+    (product.life_stage || '').toLowerCase() === 'puppy';
+};
+
+/** Extract puppy food features */
+const extractPuppyFeatures = (product: any): {
+  hasDHA: boolean;
+  hasAntioxidants: boolean;
+  topIngredient: string | null;
+  grainStatus: { hasBarleyOatmeal: boolean; noCornWheatSoy: boolean };
+  hasSatisfactionGuarantee: boolean;
+  developmentBenefits: { icon: React.ReactNode; label: string; description: string }[];
+  puppyFeedingMatrix: { ageRange: string; rows: { weight: string; amount: string }[] }[];
+} => {
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''} ${(product.special_diet || []).join(' ')}`.toLowerCase();
+  const attrs = product.product_attributes || {};
+  const benefits = Array.isArray(product.benefits) ? product.benefits : [];
+  const benefitsText = benefits.map((b: any) => `${b.title || ''} ${b.description || ''}`).join(' ').toLowerCase();
+  const allText = text + ' ' + benefitsText;
+
+  // DHA & ARA
+  const hasDHA = allText.includes('dha') || allText.includes('ara') || allText.includes('omega') || allText.includes('אומגה');
+
+  // Antioxidant LifeSource Bits
+  const hasAntioxidants = allText.includes('antioxidant') || allText.includes('lifesource') || allText.includes('נוגדי חמצון') || allText.includes('חיסון') || allText.includes('immune');
+
+  // Top ingredient
+  let topIngredient: string | null = null;
+  if (allText.includes('deboned chicken') || allText.includes('עוף ללא עצמות') || allText.includes('עוף טרי')) topIngredient = 'עוף ללא עצמות (Deboned Chicken)';
+  else if (allText.includes('deboned lamb') || allText.includes('כבש')) topIngredient = 'כבש ללא עצמות';
+  else if (allText.includes('deboned fish') || allText.includes('דג')) topIngredient = 'דג ללא עצמות';
+  else if (allText.includes('chicken') || allText.includes('עוף')) topIngredient = 'עוף (Chicken)';
+
+  // Grain status
+  const hasBarleyOatmeal = allText.includes('barley') || allText.includes('שעורה') || allText.includes('oatmeal') || allText.includes('שיבולת שועל');
+  const noCornWheatSoy = (allText.includes('no corn') || allText.includes('ללא תירס') || allText.includes('corn free')) ||
+    (allText.includes('no wheat') || allText.includes('ללא חיטה')) ||
+    (allText.includes('no soy') || allText.includes('ללא סויה'));
+
+  // Satisfaction guarantee
+  const hasSatisfactionGuarantee = allText.includes('satisfaction') || allText.includes('guarantee') || allText.includes('100%') || allText.includes('אחריות') || allText.includes('שביעות רצון');
+
+  // Development benefits
+  const developmentBenefits: { icon: React.ReactNode; label: string; description: string }[] = [];
+  if (hasDHA) developmentBenefits.push({ icon: <Eye className="w-5 h-5" />, label: 'DHA & ARA', description: 'לפיתוח המוח והראייה – קוגניציה וראייה' });
+  if (hasAntioxidants) developmentBenefits.push({ icon: <ShieldCheck className="w-5 h-5" />, label: 'נוגדי חמצון', description: 'תמיכה במערכת החיסון לגורים בשלב הצמיחה' });
+  if (allText.includes('calcium') || allText.includes('סידן') || allText.includes('bone') || allText.includes('עצמות'))
+    developmentBenefits.push({ icon: <Bone className="w-5 h-5" />, label: 'סידן וזרחן', description: 'לפיתוח שלד ושיניים חזקים' });
+  if (allText.includes('protein') || allText.includes('חלבון'))
+    developmentBenefits.push({ icon: <Beef className="w-5 h-5" />, label: 'חלבון איכותי', description: 'לבניית שרירים ורקמות בשלב הצמיחה' });
+  if (developmentBenefits.length === 0) {
+    developmentBenefits.push({ icon: <Baby className="w-5 h-5" />, label: 'תמיכה בצמיחה', description: 'נוסחה מותאמת לצרכי הגור בשלבי ההתפתחות' });
+  }
+
+  // Puppy feeding matrix – parse feeding_guide into age-grouped structure
+  const feedingGuide = Array.isArray(product.feeding_guide) ? product.feeding_guide : [];
+  const puppyFeedingMatrix: { ageRange: string; rows: { weight: string; amount: string }[] }[] = [];
+  
+  // Try to group by age ranges found in feeding guide
+  const ageGroups: Map<string, { weight: string; amount: string }[]> = new Map();
+  for (const row of feedingGuide) {
+    const rangeText = row.range || '';
+    const ageMatch = rangeText.match(/(\d+[-–]\d+)\s*(?:mos|months|חודשים|חוד)/i);
+    const ageKey = ageMatch ? ageMatch[1].replace('–', '-') + ' חודשים' : 'כללי';
+    if (!ageGroups.has(ageKey)) ageGroups.set(ageKey, []);
+    ageGroups.get(ageKey)!.push({ weight: rangeText.replace(/\d+[-–]\d+\s*(?:mos|months|חודשים|חוד)[^,]*/i, '').trim() || rangeText, amount: row.amount || '' });
+  }
+  for (const [ageRange, rows] of ageGroups) {
+    puppyFeedingMatrix.push({ ageRange, rows });
+  }
+
+  return { hasDHA, hasAntioxidants, topIngredient, grainStatus: { hasBarleyOatmeal, noCornWheatSoy }, hasSatisfactionGuarantee, developmentBenefits, puppyFeedingMatrix };
+};
+
 /** Check if product is a deshedding/maintenance tool */
 const isDesheddingProduct = (product: any): boolean => {
   const text = `${product.name || ''} ${product.description || ''} ${product.brand || ''}`.toLowerCase();
@@ -866,6 +944,7 @@ const ProductDetail = () => {
   const [reportDetails, setReportDetails] = useState("");
   const [isReporting, setIsReporting] = useState(false);
   const [dogWeight, setDogWeight] = useState<string>("");
+  const [puppyAgeMonths, setPuppyAgeMonths] = useState<string>("");
   const touchStartX = useRef(0);
 
   // ── Data Fetching ──
@@ -1011,6 +1090,8 @@ const ProductDetail = () => {
   const hygieneFeatures = useMemo(() => product && isHygiene ? extractHygieneFeatures(product) : { showScienceCorner: false, coreTechnology: null, isTreatmentSafe: false, formulaAttributes: [], scentProfile: null }, [product, isHygiene]);
   const isDeshedding = useMemo(() => product ? isDesheddingProduct(product) : false, [product]);
   const desheddingFeatures = useMemo(() => product && isDeshedding ? extractDesheddingFeatures(product) : { efficiencyPct: null, techFeatures: [], sizeGuide: { weightRange: null, coatType: null }, proTip: null, homeHygiene: false }, [product, isDeshedding]);
+  const isPuppy = useMemo(() => product ? isPuppyProduct(product) : false, [product]);
+  const puppyFeatures = useMemo(() => product && isPuppy ? extractPuppyFeatures(product) : { hasDHA: false, hasAntioxidants: false, topIngredient: null, grainStatus: { hasBarleyOatmeal: false, noCornWheatSoy: false }, hasSatisfactionGuarantee: false, developmentBenefits: [], puppyFeedingMatrix: [] }, [product, isPuppy]);
   const isTreat = useMemo(() => product ? isTreatProduct(product) : false, [product]);
   const treatHealthBoosts = useMemo(() => product && isTreat ? deriveTreatHealthBoosts(product) : [], [product, isTreat]);
   const treatUsage = useMemo(() => product && isTreat ? extractTreatUsage(product) : { purpose: null, safetyTip: null, isNatural: false }, [product, isTreat]);
@@ -1021,6 +1102,18 @@ const ProductDetail = () => {
     if (!product?.feeding_guide || !dogWeight) return null;
     return calcFeeding(product.feeding_guide, parseFloat(dogWeight));
   }, [product?.feeding_guide, dogWeight]);
+
+  // Puppy weight warning
+  const puppyWeightWarning = useMemo(() => {
+    if (!isPuppy || !dogWeight) return null;
+    const w = parseFloat(dogWeight);
+    const sizeText = `${product?.dog_size || ''} ${product?.name || ''}`.toLowerCase();
+    if ((sizeText.includes('mini') || sizeText.includes('small') || sizeText.includes('קטן')) && w > 10)
+      return 'נראה שהכלב שלך גדל מהר! מומלץ להתייעץ עם וטרינר לגבי ניהול משקל אופטימלי.';
+    if ((sizeText.includes('puppy') || sizeText.includes('גור')) && !sizeText.includes('large') && w > 25)
+      return 'נראה שהכלב שלך גדל מהר! מומלץ להתייעץ עם וטרינר לגבי ניהול משקל אופטימלי.';
+    return null;
+  }, [isPuppy, dogWeight, product]);
 
   // Price per kg (only for food)
   const pricePerKg = useMemo(() => {
@@ -1320,41 +1413,96 @@ const ProductDetail = () => {
               <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
                 <Calculator className="w-4 h-4 text-primary" />
                 מחשבון מנת האכלה
+                {isPuppy && <Badge variant="secondary" className="text-[10px] px-2 py-0.5">🐾 גורים</Badge>}
               </h3>
-              <div className="flex items-end gap-3">
-                <div className="flex-1">
-                  <Label className="text-xs text-muted-foreground mb-1.5 block">משקל הכלב (ק״ג)</Label>
-                  <Input
-                    type="number"
-                    placeholder="לדוגמה: 5"
-                    value={dogWeight}
-                    onChange={e => setDogWeight(e.target.value)}
-                    className="h-11 text-base"
-                    min="0.5"
-                    max="100"
-                    step="0.5"
-                  />
+              <div className={`grid gap-3 ${isPuppy ? 'grid-cols-1' : ''}`}>
+                <div className={isPuppy ? 'grid grid-cols-2 gap-3' : 'flex items-end gap-3'}>
+                  <div className="flex-1">
+                    <Label className="text-xs text-muted-foreground mb-1.5 block">משקל נוכחי (ק״ג)</Label>
+                    <Input
+                      type="number"
+                      placeholder="לדוגמה: 5"
+                      value={dogWeight}
+                      onChange={e => setDogWeight(e.target.value)}
+                      className="h-11 text-base"
+                      min="0.5"
+                      max="100"
+                      step="0.5"
+                    />
+                  </div>
+                  {isPuppy && (
+                    <div className="flex-1">
+                      <Label className="text-xs text-muted-foreground mb-1.5 block">גיל בחודשים</Label>
+                      <Input
+                        type="number"
+                        placeholder="לדוגמה: 4"
+                        value={puppyAgeMonths}
+                        onChange={e => setPuppyAgeMonths(e.target.value)}
+                        className="h-11 text-base"
+                        min="1"
+                        max="24"
+                        step="1"
+                      />
+                    </div>
+                  )}
+                  {!isPuppy && (
+                    <div className="flex-1">
+                      <AnimatePresence mode="wait">
+                        {feedingResult ? (
+                          <motion.div
+                            key="result"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className="bg-primary/10 border border-primary/20 rounded-xl p-3 text-center"
+                          >
+                            <p className="text-[10px] text-muted-foreground">כמות יומית מומלצת</p>
+                            <p className="text-lg font-black text-primary mt-0.5">{feedingResult}</p>
+                          </motion.div>
+                        ) : (
+                          <motion.div key="empty" className="bg-muted/50 rounded-xl p-3 text-center border border-border/30">
+                            <p className="text-xs text-muted-foreground">הזן משקל לחישוב</p>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  )}
                 </div>
-                <div className="flex-1">
+                {/* Puppy feeding result */}
+                {isPuppy && (
                   <AnimatePresence mode="wait">
                     {feedingResult ? (
                       <motion.div
-                        key="result"
+                        key="puppy-result"
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.9 }}
                         className="bg-primary/10 border border-primary/20 rounded-xl p-3 text-center"
                       >
-                        <p className="text-[10px] text-muted-foreground">כמות יומית מומלצת</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          כמות יומית מומלצת {puppyAgeMonths ? `(גיל ${puppyAgeMonths} חודשים)` : ''}
+                        </p>
                         <p className="text-lg font-black text-primary mt-0.5">{feedingResult}</p>
+                        <p className="text-[10px] text-muted-foreground mt-1">חלקו ל-3-4 ארוחות ביום לגורים</p>
                       </motion.div>
                     ) : (
-                      <motion.div key="empty" className="bg-muted/50 rounded-xl p-3 text-center border border-border/30">
-                        <p className="text-xs text-muted-foreground">הזן משקל לחישוב</p>
+                      <motion.div key="puppy-empty" className="bg-muted/50 rounded-xl p-3 text-center border border-border/30">
+                        <p className="text-xs text-muted-foreground">הזינו משקל {isPuppy ? 'וגיל ' : ''}לחישוב</p>
                       </motion.div>
                     )}
                   </AnimatePresence>
-                </div>
+                )}
+                {/* Puppy weight warning */}
+                {puppyWeightWarning && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-start gap-2 p-3 rounded-xl bg-warning/10 border border-warning/20"
+                  >
+                    <AlertTriangle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
+                    <p className="text-[12px] text-warning leading-[1.6]">{puppyWeightWarning}</p>
+                  </motion.div>
+                )}
               </div>
             </Card>
           </motion.div>
@@ -2274,6 +2422,91 @@ const ProductDetail = () => {
                       <Check className="w-3 h-3 text-[hsl(170,50%,40%)]" /> חיסכון בזמן ניקיון יומי
                     </p>
                   </div>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Puppy: Top Ingredient Badge ── */}
+        {isPuppy && puppyFeatures.topIngredient && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(45,80%,93%)] to-background border-[hsl(45,60%,65%)]/20 dark:from-[hsl(45,40%,15%)] dark:border-[hsl(45,50%,40%)]/20">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-[hsl(45,70%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <span className="text-2xl">🥇</span>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">רכיב #1</h3>
+                  <p className="text-[13px] text-muted-foreground mt-0.5">{puppyFeatures.topIngredient}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Puppy: Development Benefits ── */}
+        {isPuppy && puppyFeatures.developmentBenefits.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Baby className="w-4 h-4 text-primary" />
+                יתרונות להתפתחות הגור
+              </h3>
+              <div className="grid grid-cols-1 gap-2.5">
+                {puppyFeatures.developmentBenefits.map((benefit, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.24 + i * 0.06 }}
+                    className="bg-gradient-to-l from-[hsl(200,50%,95%)]/60 to-transparent dark:from-[hsl(200,30%,15%)] rounded-xl p-3.5 border border-[hsl(200,40%,70%)]/15 flex items-center gap-3"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-[hsl(200,50%,80%)]/15 flex items-center justify-center flex-shrink-0 text-[hsl(200,50%,45%)]">
+                      {benefit.icon}
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-bold text-foreground">{benefit.label}</p>
+                      <p className="text-[11px] text-muted-foreground">{benefit.description}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Puppy: Grain Status ── */}
+        {isPuppy && (puppyFeatures.grainStatus.hasBarleyOatmeal || puppyFeatures.grainStatus.noCornWheatSoy) && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <WheatOff className="w-4 h-4 text-primary" />
+                סטטוס דגנים
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {puppyFeatures.grainStatus.hasBarleyOatmeal && (
+                  <Badge variant="secondary" className="text-xs px-3 py-1.5 font-medium">🌾 מכיל שעורה / שיבולת שועל</Badge>
+                )}
+                {puppyFeatures.grainStatus.noCornWheatSoy && (
+                  <Badge variant="outline" className="text-xs px-3 py-1.5 font-medium border-success/30 text-success">✅ ללא תירס, חיטה או סויה</Badge>
+                )}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Puppy: Satisfaction Guarantee ── */}
+        {isPuppy && puppyFeatures.hasSatisfactionGuarantee && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
+            <Card className="p-4 bg-gradient-to-br from-success/8 to-background border-success/20">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-success/15 flex items-center justify-center flex-shrink-0">
+                  <ShieldCheck className="w-5 h-5 text-success" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">✅ 100% שביעות רצון</h3>
+                  <p className="text-[12px] text-muted-foreground mt-0.5">המותג מציע אחריות שביעות רצון מלאה על המוצר</p>
                 </div>
               </div>
             </Card>
