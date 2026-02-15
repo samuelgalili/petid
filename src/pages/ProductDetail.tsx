@@ -7,7 +7,8 @@ import {
   Clock, Loader2, Flag, AlertTriangle, Leaf, FlaskConical, Utensils,
   WheatOff, Beef, Sparkles, Dog, Baby, Scale, Droplets, ShieldCheck,
   Calculator, Wrench, Lightbulb, Ruler, Paintbrush, Cookie, GlassWater,
-  Eye, Bone, Timer, Smile
+  Eye, Bone, Timer, Smile, Zap, CloudLightning, Stethoscope, Scissors,
+  Snowflake, Microwave, Hand
 } from "lucide-react";
 import { ProductReviews } from "@/components/shop/ProductReviews";
 import { PriceAlertButton } from "@/components/shop/PriceAlertButton";
@@ -52,7 +53,7 @@ const getNumericPrice = (price: string | number): number => {
 /** Check if product is an accessory (non-food) */
 const isAccessoryCategory = (category: string | null): boolean => {
   if (!category) return false;
-  return ['accessories', 'toys', 'grooming', 'collars', 'leashes', 'beds', 'clothing', 'muzzles'].includes(category.toLowerCase());
+  return ['accessories', 'toys', 'grooming', 'collars', 'leashes', 'beds', 'clothing', 'muzzles', 'enrichment'].includes(category.toLowerCase());
 };
 
 /** Check if product is a muzzle */
@@ -256,6 +257,81 @@ const extractWetFoodFeatures = (product: any): {
   }
 
   return { hasHydration, hasJointSupport, texture, origin, mixingTip };
+};
+
+/** Check if product is an enrichment/lick mat product */
+const isEnrichmentProduct = (product: any): boolean => {
+  const cat = (product.category || '').toLowerCase();
+  const text = `${product.name || ''} ${product.description || ''}`.toLowerCase();
+  return cat === 'enrichment' || cat === 'lick-mat' ||
+    text.includes('lickimat') || text.includes('ליקימט') || text.includes('lick mat') ||
+    text.includes('מפית ליקוק') || text.includes('משטח ליקוק') || text.includes('enrichment') ||
+    text.includes('העשרה') || text.includes('slow feeder') || text.includes('אנטי גלופ');
+};
+
+/** Extract enrichment product features */
+const extractEnrichmentFeatures = (product: any): {
+  anxietyUses: { icon: React.ReactNode; label: string }[];
+  materialSpecs: { label: string; value: string }[];
+  healthNote: string | null;
+  recipes: string[];
+} => {
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''}`.toLowerCase();
+  const attrs = product.product_attributes || {};
+  const benefits = Array.isArray(product.benefits) ? product.benefits : [];
+  const benefitsText = benefits.map((b: any) => `${b.title || ''} ${b.description || ''}`).join(' ').toLowerCase();
+  const allText = text + ' ' + benefitsText;
+
+  // Anxiety uses
+  const anxietyUses: { icon: React.ReactNode; label: string }[] = [];
+  if (allText.includes('וטרינר') || allText.includes('vet') || allText.includes('טיפוח') || allText.includes('grooming'))
+    anxietyUses.push({ icon: <Stethoscope className="w-5 h-5" />, label: 'ביקורי וטרינר וטיפוח' });
+  if (allText.includes('זיקוק') || allText.includes('firework') || allText.includes('סופ') || allText.includes('storm') || allText.includes('רעם') || allText.includes('thunder'))
+    anxietyUses.push({ icon: <CloudLightning className="w-5 h-5" />, label: 'זיקוקים וסופות רעמים' });
+  if (allText.includes('שעמום') || allText.includes('boredom') || allText.includes('העסקה') || allText.includes('enrichment') || allText.includes('העשרה'))
+    anxietyUses.push({ icon: <Zap className="w-5 h-5" />, label: 'הפגת שעמום' });
+  if (allText.includes('הפרדה') || allText.includes('separation') || allText.includes('לבד'))
+    anxietyUses.push({ icon: <Heart className="w-5 h-5" />, label: 'חרדת נטישה' });
+  // Fallback: if it's enrichment, at least show boredom
+  if (anxietyUses.length === 0)
+    anxietyUses.push({ icon: <Zap className="w-5 h-5" />, label: 'הפגת שעמום' });
+
+  // Material & safety specs
+  const materialSpecs: { label: string; value: string }[] = [];
+  const material = attrs.material || attrs['חומר'] || null;
+  if (material) materialSpecs.push({ label: 'חומר', value: String(material) });
+  else if (allText.includes('tpr')) materialSpecs.push({ label: 'חומר', value: 'TPR לא רעיל (Food Grade)' });
+  else if (allText.includes('silicone') || allText.includes('סיליקון')) materialSpecs.push({ label: 'חומר', value: 'סיליקון Food Grade' });
+
+  const features: string[] = [];
+  if (allText.includes('מקפיא') || allText.includes('freezer') || allText.includes('freeze')) features.push('בטוח למקפיא ❄️');
+  if (allText.includes('מיקרוגל') || allText.includes('microwave')) features.push('בטוח למיקרוגל');
+  if (allText.includes('מדיח') || allText.includes('dishwasher')) features.push('בטוח למדיח כלים');
+  if (features.length > 0) materialSpecs.push({ label: 'תכונות', value: features.join(' • ') });
+
+  const dims = attrs.dimensions || attrs['מידות'] || attrs.size || attrs['מידה'] || null;
+  if (dims) materialSpecs.push({ label: 'מידות', value: String(dims) });
+
+  // Health note (dental + digestion from licking)
+  let healthNote: string | null = null;
+  if (allText.includes('ליקוק') || allText.includes('lick') || allText.includes('ריר') || allText.includes('saliva') || allText.includes('חניכיים') || allText.includes('gum') || allText.includes('עיכול') || allText.includes('digest')) {
+    healthNote = 'פעולת הליקוק מייצרת ריר שמגן על החניכיים ומסייע בעיכול – שילוב של היגיינת פה ובריאות מערכת העיכול';
+  }
+
+  // Recipes / topper ideas
+  const recipes: string[] = [];
+  if (allText.includes('יוגורט') || allText.includes('yogurt')) recipes.push('🥛 יוגורט טבעי');
+  if (allText.includes('חמאת בוטנים') || allText.includes('peanut butter')) recipes.push('🥜 חמאת בוטנים');
+  if (allText.includes('מזון רטוב') || allText.includes('wet food') || allText.includes('שימורים')) recipes.push('🥫 מזון רטוב');
+  if (allText.includes('תוסף') || allText.includes('supplement') || allText.includes('ויטמין')) recipes.push('💊 תוספי תזונה');
+  if (allText.includes('בננה') || allText.includes('banana')) recipes.push('🍌 בננה מרוסקת');
+  if (allText.includes('דלעת') || allText.includes('pumpkin')) recipes.push('🎃 פירה דלעת');
+  // Defaults if nothing specific found
+  if (recipes.length === 0) {
+    recipes.push('🥛 יוגורט טבעי', '🥜 חמאת בוטנים', '🥫 מזון רטוב', '💊 תוספי תזונה');
+  }
+
+  return { anxietyUses, materialSpecs, healthNote, recipes };
 };
 
 /** Extract technical specs from product_attributes for accessories */
@@ -504,6 +580,34 @@ const ProductDetail = () => {
     staleTime: 1000 * 60 * 5,
   });
 
+  // Fetch "Frequently Bought Together" for enrichment products (wet food, peanut butter, etc.)
+  const { data: enrichmentCompanions = [] } = useQuery({
+    queryKey: ["enrichment-companions", id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("business_products")
+        .select("id, name, price, image_url, category, description")
+        .neq("id", id || "")
+        .limit(20);
+      if (!data) return [];
+      // Prioritize wet food, peanut butter, yogurt-related, supplements
+      const keywords = ['מזון רטוב', 'wet', 'שימורים', 'pate', 'פטה', 'חמאת בוטנים', 'peanut', 'יוגורט', 'yogurt', 'תוסף', 'supplement'];
+      const scored = data.map(p => {
+        const t = `${p.name || ''} ${p.description || ''} ${p.category || ''}`.toLowerCase();
+        const score = keywords.reduce((s, kw) => s + (t.includes(kw) ? 1 : 0), 0);
+        return { ...p, score };
+      }).filter(p => p.score > 0).sort((a, b) => b.score - a.score).slice(0, 6);
+      return scored.map(p => ({
+        id: p.id,
+        name: p.name,
+        price: typeof p.price === 'string' ? parseFloat(p.price) : p.price,
+        image: p.image_url || "/placeholder.svg",
+      }));
+    },
+    enabled: !!rawProduct && isEnrichmentProduct(rawProduct),
+    staleTime: 1000 * 60 * 5,
+  });
+
   const images = rawProduct
     ? ((rawProduct.images && rawProduct.images.length > 0) ? rawProduct.images : (rawProduct.image_url ? [rawProduct.image_url] : (rawProduct.image ? [rawProduct.image] : ["/placeholder.svg"])))
     : ["/placeholder.svg"];
@@ -517,6 +621,8 @@ const ProductDetail = () => {
   const quickFeatures = useMemo(() => product ? deriveQuickFeatures(product) : [], [product]);
   const isWetFood = useMemo(() => product ? isWetFoodProduct(product) : false, [product]);
   const wetFoodFeatures = useMemo(() => product && isWetFood ? extractWetFoodFeatures(product) : { hasHydration: false, hasJointSupport: false, texture: null, origin: null, mixingTip: null }, [product, isWetFood]);
+  const isEnrichment = useMemo(() => product ? isEnrichmentProduct(product) : false, [product]);
+  const enrichmentFeatures = useMemo(() => product && isEnrichment ? extractEnrichmentFeatures(product) : { anxietyUses: [], materialSpecs: [], healthNote: null, recipes: [] }, [product, isEnrichment]);
   const isTreat = useMemo(() => product ? isTreatProduct(product) : false, [product]);
   const treatHealthBoosts = useMemo(() => product && isTreat ? deriveTreatHealthBoosts(product) : [], [product, isTreat]);
   const treatUsage = useMemo(() => product && isTreat ? extractTreatUsage(product) : { purpose: null, safetyTip: null, isNatural: false }, [product, isTreat]);
@@ -1037,6 +1143,115 @@ const ProductDetail = () => {
           </motion.div>
         ) : null}
 
+        {/* ── Enrichment: Anxiety Relief Badges ── */}
+        {isEnrichment && enrichmentFeatures.anxietyUses.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Heart className="w-4 h-4 text-primary" />
+                מתאים במיוחד עבור
+              </h3>
+              <div className="grid grid-cols-2 gap-2.5">
+                {enrichmentFeatures.anxietyUses.map((use, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.22 + i * 0.06 }}
+                    className="bg-gradient-to-br from-[hsl(270,60%,95%)] to-background dark:from-[hsl(270,30%,15%)] rounded-xl p-3.5 border border-[hsl(270,40%,70%)]/20 text-center"
+                  >
+                    <div className="w-10 h-10 mx-auto rounded-full bg-[hsl(270,50%,80%)]/20 flex items-center justify-center text-[hsl(270,50%,50%)] mb-2">
+                      {use.icon}
+                    </div>
+                    <p className="text-[12px] font-bold text-foreground">{use.label}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Enrichment: Material & Safety Grid ── */}
+        {isEnrichment && enrichmentFeatures.materialSpecs.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }}>
+            <Card className="overflow-hidden">
+              <div className="p-4">
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                  <Shield className="w-4 h-4 text-primary" />
+                  חומר ובטיחות
+                </h3>
+                <div className="grid grid-cols-1 gap-2">
+                  {enrichmentFeatures.materialSpecs.map((spec, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.26 + i * 0.05 }}
+                      className="bg-muted/40 rounded-xl p-3 border border-border/30 flex items-center gap-3"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center flex-shrink-0">
+                        {spec.label === 'חומר' ? <ShieldCheck className="w-4 h-4 text-success" /> :
+                         spec.label === 'תכונות' ? <Snowflake className="w-4 h-4 text-success" /> :
+                         <Ruler className="w-4 h-4 text-success" />}
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-muted-foreground font-medium">{spec.label}</p>
+                        <p className="text-[13px] font-bold text-foreground">{spec.value}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Enrichment: Health Benefits (Dental + Digestion) ── */}
+        {isEnrichment && enrichmentFeatures.healthNote && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
+            <Card className="p-4 bg-gradient-to-br from-success/8 to-background border-success/20">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-success/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Smile className="w-5 h-5 text-success" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground mb-1">🦷 שיניים + עיכול</h3>
+                  <p className="text-[13px] text-muted-foreground leading-[1.7]">{enrichmentFeatures.healthNote}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Enrichment: Recipe & Topper Ideas ── */}
+        {isEnrichment && enrichmentFeatures.recipes.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Cookie className="w-4 h-4 text-primary" />
+                מה אפשר למרוח?
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                {enrichmentFeatures.recipes.map((recipe, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 + i * 0.05 }}
+                    className="bg-muted/40 rounded-xl p-3 border border-border/30 text-center"
+                  >
+                    <p className="text-[13px] font-bold text-foreground">{recipe}</p>
+                  </motion.div>
+                ))}
+              </div>
+              <div className="mt-3 flex items-center gap-2 bg-primary/5 rounded-xl p-3 border border-primary/10">
+                <Lightbulb className="w-4 h-4 text-primary flex-shrink-0" />
+                <p className="text-[11px] text-muted-foreground">טיפ: הקפיאו את המריחה לחוויית ליקוק ארוכה יותר!</p>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
         {/* ── Wet Food: Hydration Badge ── */}
         {isWetFood && wetFoodFeatures.hasHydration && (
           <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}>
@@ -1430,6 +1645,31 @@ const ProductDetail = () => {
         {id && (
           <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
             <ProductReviews productId={id} />
+          </motion.div>
+        )}
+
+        {/* ── Enrichment: Frequently Bought Together ── */}
+        {isEnrichment && enrichmentCompanions.length > 0 && (
+          <motion.div className="mt-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.47 }}>
+            <h3 className="text-base font-bold mb-3 text-foreground mx-4 flex items-center gap-2">
+              <ShoppingCart className="w-4 h-4 text-primary" />
+              נקנים יחד לעיתים קרובות
+            </h3>
+            <div className="flex gap-3 overflow-x-auto pb-2 px-4 hide-scrollbar">
+              {enrichmentCompanions.map((item, idx) => (
+                <motion.div key={item.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.47 + idx * 0.05 }} whileTap={{ scale: 0.98 }} className="flex-shrink-0 w-36 cursor-pointer" onClick={() => navigate(`/product/${item.id}`)}>
+                  <Card className="overflow-hidden h-full">
+                    <div className="aspect-square bg-muted overflow-hidden">
+                      <img src={item.image} alt={item.name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+                    </div>
+                    <div className="p-2.5">
+                      <h4 className="font-bold text-xs text-foreground mb-1 line-clamp-2">{item.name}</h4>
+                      <p className="text-sm font-black text-primary">₪{item.price}</p>
+                    </div>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
           </motion.div>
         )}
 
