@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Activity, Syringe, Calendar, Shield, ChevronLeft, AlertTriangle, CreditCard } from "lucide-react";
+import { Activity, Syringe, Calendar, Shield, ChevronLeft, AlertTriangle, CreditCard, Banknote } from "lucide-react";
 import { PetIdCard } from "./PetIdCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -62,10 +62,13 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
   const [hasParasitePrevention, setHasParasitePrevention] = useState(false);
   const [hasRegisteredClinic, setHasRegisteredClinic] = useState(false);
   const [ownerProfileComplete, setOwnerProfileComplete] = useState(false);
+  const [totalVetSpend, setTotalVetSpend] = useState(0);
+  const [pendingClaimsCount, setPendingClaimsCount] = useState(0);
 
   const fetchHealthData = async () => {
       try {
-      const [petResult, vaccineResult, profileResult] = await Promise.all([
+      const userId = (await supabase.auth.getUser()).data.user?.id || '';
+      const [petResult, vaccineResult, profileResult, claimsResult] = await Promise.all([
         supabase
           .from("pets")
           .select("weight, is_neutered, medical_conditions, health_notes, has_insurance, insurance_company, insurance_expiry_date, last_vet_visit, next_vet_visit, current_food, vet_clinic_name")
@@ -80,8 +83,13 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
         supabase
           .from("profiles")
           .select("full_name, city, phone, id_number_last4")
-          .eq("id", (await supabase.auth.getUser()).data.user?.id || '')
+          .eq("id", userId)
           .maybeSingle(),
+        supabase
+          .from("insurance_claims")
+          .select("id, status, total_amount")
+          .eq("pet_id", pet.id)
+          .eq("user_id", userId),
       ]);
 
         if (petResult.data) setPetData(petResult.data as PetFullData);
@@ -124,6 +132,14 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
           v.is_recovery_mode && v.recovery_until && new Date(v.recovery_until) > new Date()
         );
         setInRecovery(!!activeRecovery);
+
+        // Claims tracking
+        const claims = (claimsResult.data || []) as any[];
+        setPendingClaimsCount(claims.filter((c: any) => c.status === 'pending').length);
+        
+        // Calculate total vet spend from claims for savings pitch
+        const spend = claims.reduce((sum: number, c: any) => sum + (Number(c.total_amount) || 0), 0);
+        setTotalVetSpend(spend);
       } catch (error) {
         console.error('Error fetching pet health data:', error);
       } finally {
@@ -299,8 +315,13 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
       result.push({ icon: Activity, text: `${conditions.length} מצבים רפואיים`, type: 'info' });
     }
 
+    // Pending claims alert
+    if (pendingClaimsCount > 0) {
+      result.push({ icon: Banknote, text: `${pendingClaimsCount} תביעות בטיפול`, type: 'info' });
+    }
+
     return result;
-  }, [petData, hasInsurance, isHighRisk, insuranceExpired]);
+  }, [petData, hasInsurance, isHighRisk, insuranceExpired, pendingClaimsCount]);
 
   const gradientColors = getScoreGradientColors();
 
@@ -453,6 +474,15 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
                 <div className="p-2.5 bg-green-500/10 rounded-xl mb-3">
                   <p className="text-[11px] font-medium text-green-700">
                     ✅ הפרטים שלך (ת"ז, כתובת, טלפון) כבר מעודכנים — הטופס ימולא אוטומטית
+                  </p>
+                </div>
+              )}
+
+              {/* Savings calculation pitch */}
+              {totalVetSpend > 0 && (
+                <div className="p-2.5 bg-primary/5 rounded-xl mb-3 border border-primary/10">
+                  <p className="text-[11px] font-medium text-foreground">
+                    💰 הוצאת עד כה ₪{totalVetSpend.toLocaleString()} על ביקורי וטרינר. עם ביטוח Libra, היית יכול לחסוך עד ₪{Math.round(totalVetSpend * 0.75).toLocaleString()}.
                   </p>
                 </div>
               )}
