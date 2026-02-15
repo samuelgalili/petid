@@ -61,30 +61,71 @@ serve(async (req) => {
       }
     }
 
-    const systemPrompt = `You are PetID's visual product scanner. Analyze the provided video frame of a pet.
+    // Fetch pet health data for context
+    let healthScore: number | null = null;
+    let petData: any = null;
+    if (user_id) {
+      const { data: pets } = await supabase
+        .from("pets")
+        .select("id, name, breed, weight, date_of_birth")
+        .eq("owner_id", user_id)
+        .limit(1);
+      if (pets?.length) {
+        petData = pets[0];
+        // Simple health score proxy
+        let score = 70;
+        if (petData.weight) score += 10;
+        if (petData.date_of_birth) score += 10;
+        const { count: vacCount } = await supabase
+          .from("vet_visits")
+          .select("id", { count: "exact", head: true })
+          .eq("pet_id", petData.id);
+        if ((vacCount || 0) > 0) score += 10;
+        healthScore = Math.min(score, 100);
+      }
+    }
 
-TASK 1 — PRODUCT DETECTION:
+    const purchasedInfo = purchasedProductIds.length > 0
+      ? `The user has purchased these product IDs: ${purchasedProductIds.join(", ")}. Prioritize auto-tagging these as 'Shoppable Tags'.`
+      : "";
+
+    const systemPrompt = `You are PetID's visual product scanner and content safety guardian. Analyze the provided video frame of a pet.
+
+TASK 1 — PRODUCT DETECTION & SHOPPABLE TAGS:
 Look for visible pet products: food bags, treats, toys, bowls, leashes, grooming tools, beds, carriers, etc.
 If you detect any, try to match them to these available shop products:
 ${productList}
 
-Return matches as: [PRODUCT:id:name:price]
+${purchasedInfo}
+
+Return matches as JSON objects in the "products" array.
 Only match if confidence is HIGH. Never invent products.
 
 TASK 2 — BREED DETECTION:
 ${pet_breed ? `The pet is a ${pet_breed}.` : "Try to detect the breed."}
 ${pet_name ? `The pet's name is ${pet_name}.` : ""}
 
-TASK 3 — SAFETY CHECK (CRITICAL):
-Scan for dangerous items or behaviors:
+TASK 3 — SAFETY CHECK (CRITICAL — BE RUTHLESS):
+Scan for dangerous items, unsafe feeding, dangerous training methods, or signs of pet distress:
 - Chocolate, grapes, raisins, onions, xylitol, alcohol near a pet
 - Small objects that could be swallowed
 - Toxic plants (lilies, tulips for cats; sago palm for dogs)
 - Dangerous situations (near traffic, heights, hot surfaces)
-- Aggressive or distressed behavior
+- Aggressive, distressed, or fearful body language
+- Unsafe training methods (choke chains used improperly, hitting)
+- Force-feeding or feeding from inappropriate containers
 
-If ANY danger is detected, respond with:
-[DANGER:description of the danger]
+If ANY danger is detected, respond with is_dangerous: true.
+
+TASK 4 — SOCIAL PROOF CAPTION (Hebrew):
+Generate a short, health-focused Hebrew caption for the video that highlights any visible health benefits.
+Examples: "הפרווה של וונדי נוצצת בזכות נוסחת Skin & Coat!" or "שיטסו פעיל ובריא אחרי אימון בחוץ 💪"
+${pet_name ? `Use the pet's name "${pet_name}" in the caption.` : ""}
+${pet_breed ? `The breed is ${pet_breed}.` : ""}
+${healthScore !== null ? `The pet's current health score is ${healthScore}%.` : ""}
+
+TASK 5 — HEALTH SCORE CONTEXT:
+${healthScore !== null ? `The pet's health score is ${healthScore}%. Suggest how sharing this video or following the care routine shown could improve the score. Express as a percentage improvement (e.g., +5%).` : "Skip this task."}
 
 RESPONSE FORMAT (JSON):
 {
@@ -93,7 +134,11 @@ RESPONSE FORMAT (JSON):
   "safety_issues": [{"type": "...", "description": "...", "severity": "high|medium"}],
   "is_dangerous": true/false,
   "danger_message": "Hebrew warning message if dangerous",
-  "description": "Brief Hebrew description of what's in the frame"
+  "description": "Brief Hebrew description of what's in the frame",
+  "suggested_caption": "Hebrew social proof caption highlighting health benefits",
+  "health_score_current": ${healthScore ?? "null"},
+  "health_score_improvement": "+X%",
+  "health_score_tip": "Hebrew tip about how this content helps other pet owners"
 }
 
 Respond ONLY with valid JSON, no markdown.`;
