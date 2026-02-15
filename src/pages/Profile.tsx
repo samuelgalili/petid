@@ -34,6 +34,7 @@ import { VetHistoryPDF } from "@/components/profile/VetHistoryPDF";
 import { BreedHealthTips } from "@/components/profile/BreedHealthTips";
 import { VetDocumentScanner } from "@/components/profile/VetDocumentScanner";
 import { MyClinicCard } from "@/components/profile/MyClinicCard";
+import { DangerousBreedBanner } from "@/components/profile/DangerousBreedBanner";
 import { PuppyVaccineScheduler } from "@/components/profile/PuppyVaccineScheduler";
 import { PreventiveCareEngine } from "@/components/profile/PreventiveCareEngine";
 import { MedicalDocumentFAB } from "@/components/profile/MedicalDocumentFAB";
@@ -622,6 +623,14 @@ const Profile = () => {
                       petType={selectedPet.type}
                     />
                     
+                    {/* Dangerous Breed Banner */}
+                    {(selectedPet as any).is_dangerous_breed && (
+                      <DangerousBreedBanner
+                        breedName={selectedPet.breed}
+                        licenseConditions={(selectedPet as any).license_conditions}
+                      />
+                    )}
+
                     {/* My Clinic Card */}
                     {(selectedPet as any).vet_clinic_name && (
                       <MyClinicCard

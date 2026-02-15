@@ -3,9 +3,30 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 /**
- * scan-vet-document - AI-powered OCR for vet reports/invoices
- * Uses Gemini to extract: clinic name, date, vaccines, diagnoses, weight, deworming
+ * scan-vet-document - V24 AI-powered OCR for vet reports/invoices
+ * Extracts: clinic, date, vaccines, diagnoses, weight, deworming,
+ *           owner profile, pet identity (name, breed, color, gender, DOB, chip, neutered, dangerous breed)
  */
+
+// Israeli dangerous breed list (per Israeli law)
+const DANGEROUS_BREEDS = [
+  'פיטבול', 'pit bull', 'pitbull',
+  'סטפורדשייר', 'staffordshire', 'amstaff', 'am staff',
+  'רוטוויילר', 'rottweiler',
+  'דוגו ארגנטינו', 'dogo argentino',
+  'בול טרייר', 'bull terrier',
+  'טוסה אינו', 'tosa inu', 'tosa',
+  'פילה ברזילאירו', 'fila brasileiro',
+  'קאנה קורסו', 'cane corso',
+  'פרסה קנריו', 'presa canario',
+  'בואל מסטיף', 'boerboel',
+];
+
+function isDangerousBreed(breed: string | null): boolean {
+  if (!breed) return false;
+  const lower = breed.toLowerCase();
+  return DANGEROUS_BREEDS.some(d => lower.includes(d.toLowerCase()));
+}
 
 serve(async (req) => {
   const corsResponse = handleCorsPreflightRequest(req);
@@ -31,7 +52,6 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY not configured");
     }
 
-    // Use Gemini via Lovable AI to analyze the document
     const aiResponse = await fetch("https://api.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -43,7 +63,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a veterinary document analyzer. Extract structured data from vet reports, invoices, and receipts. 
+            content: `You are a veterinary document analyzer. Extract ALL structured data from vet reports, invoices, and receipts.
 Return ONLY valid JSON with this exact structure:
 {
   "clinicName": "string or null",
@@ -60,31 +80,41 @@ Return ONLY valid JSON with this exact structure:
   "ownerAddress": "string or null",
   "ownerCity": "string or null",
   "ownerPhone": "string or null",
-  "ownerIdNumber": "string or null"
+  "ownerIdNumber": "string or null",
+  "petName": "string or null",
+  "petBreed": "string or null",
+  "petColor": "string or null",
+  "petGender": "male/female/null",
+  "petBirthDate": "YYYY-MM-DD or null",
+  "microchipNumber": "string or null",
+  "isNeutered": true/false/null,
+  "licenseConditions": "string or null"
 }
-Look for Hebrew and English text. Common vaccine names: DHPP, DHLPP, כלבת (Rabies), לפטוספירוזיס (Lepto), לישמניה (Leishmania), משושה, מחומש, מרובע.
+Look for Hebrew and English text.
+Vaccine keywords: DHPP, DHLPP, כלבת (Rabies), לפטוספירוזיס (Lepto), לישמניה (Leishmania), משושה, מחומש, מרובע.
 Deworming keywords: תילוע, milbemax, drontal, deworm.
 Weight keywords: משקל, kg, ק"ג.
-Owner/profile keywords: בעלים, שם, כתובת, טלפון, ת.ז., תעודת זהות, ת"ז, ID.
-Clinic contact keywords: מרפאה, טלפון מרפאה, כתובת מרפאה, clinic.`
+Owner keywords: בעלים, שם, כתובת, טלפון, ת.ז., תעודת זהות, ת"ז, ID.
+Clinic keywords: מרפאה, טלפון מרפאה, כתובת מרפאה, clinic.
+Pet identity keywords: שם חיה, גזע, צבע, מין, תאריך לידה, שבב, מספר שבב, chip, microchip.
+Neutered keywords: מעוקר, מסורס, neutered, spayed.
+License keywords: תנאי רישיון, רישיון, license.`
           },
           {
             role: "user",
             content: [
               {
                 type: "image_url",
-                image_url: {
-                  url: `data:image/jpeg;base64,${imageBase64}`,
-                },
+                image_url: { url: `data:image/jpeg;base64,${imageBase64}` },
               },
               {
                 type: "text",
-                text: "Extract all veterinary data from this document image. Return JSON only.",
+                text: "Extract ALL veterinary and pet identity data from this document image. Return JSON only.",
               },
             ],
           },
         ],
-        max_tokens: 1000,
+        max_tokens: 1500,
         temperature: 0.1,
       }),
     });
@@ -97,8 +127,7 @@ Clinic contact keywords: מרפאה, טלפון מרפאה, כתובת מרפא�
 
     const aiData = await aiResponse.json();
     const content = aiData.choices?.[0]?.message?.content || "{}";
-    
-    // Parse AI response — strip markdown code fences if present
+
     let scanResult;
     try {
       const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
@@ -107,22 +136,43 @@ Clinic contact keywords: מרפאה, טלפון מרפאה, כתובת מרפא�
       console.error("Failed to parse AI response:", content);
       scanResult = {
         clinicName: null, clinicPhone: null, clinicAddress: null,
-        visitDate: null, vaccines: [],
-        diagnoses: [], medications: [], weight: null, deworming: false, cost: null,
+        visitDate: null, vaccines: [], diagnoses: [], medications: [],
+        weight: null, deworming: false, cost: null,
         ownerName: null, ownerAddress: null, ownerCity: null, ownerPhone: null, ownerIdNumber: null,
+        petName: null, petBreed: null, petColor: null, petGender: null,
+        petBirthDate: null, microchipNumber: null, isNeutered: null, licenseConditions: null,
       };
     }
 
-    // Only save to database if explicitly requested (user confirmed)
+    // Determine dangerous breed status
+    scanResult.isDangerousBreed = isDangerousBreed(scanResult.petBreed);
+
+    // Save to database if confirmed
     if (shouldSave) {
-      // Save to database
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const supabase = createClient(supabaseUrl, supabaseKey);
 
+      // Build pet update with all extracted fields
+      const petUpdate: Record<string, unknown> = {};
+
+      if (scanResult.petName) petUpdate.name = scanResult.petName;
+      if (scanResult.petBreed) petUpdate.breed = scanResult.petBreed;
+      if (scanResult.petColor) petUpdate.color = scanResult.petColor;
+      if (scanResult.petGender) petUpdate.gender = scanResult.petGender;
+      if (scanResult.petBirthDate) petUpdate.birth_date = scanResult.petBirthDate;
+      if (scanResult.microchipNumber) petUpdate.microchip_number = scanResult.microchipNumber;
+      if (scanResult.isNeutered !== null && scanResult.isNeutered !== undefined) petUpdate.is_neutered = scanResult.isNeutered;
+      if (scanResult.weight) petUpdate.weight = scanResult.weight;
+      if (scanResult.clinicName) petUpdate.vet_clinic_name = scanResult.clinicName;
+      if (scanResult.clinicPhone) petUpdate.vet_clinic_phone = scanResult.clinicPhone;
+      if (scanResult.clinicAddress) petUpdate.vet_clinic_address = scanResult.clinicAddress;
+      if (scanResult.isDangerousBreed) petUpdate.is_dangerous_breed = true;
+      if (scanResult.licenseConditions) petUpdate.license_conditions = scanResult.licenseConditions;
+
       if (scanResult.vaccines?.length > 0 || scanResult.diagnoses?.length > 0) {
         const visitDate = scanResult.visitDate || new Date().toISOString().split('T')[0];
-        
+
         let visitType = 'checkup';
         if (scanResult.vaccines?.length > 0) visitType = 'vaccination';
         if (scanResult.diagnoses?.length > 0 && visitType === 'checkup') visitType = 'treatment';
@@ -151,32 +201,22 @@ Clinic contact keywords: מרפאה, טלפון מרפאה, כתובת מרפא�
           raw_summary: `OCR scan from ${fileName}`,
         });
 
-        const petUpdate: Record<string, unknown> = {
-          last_vet_visit: visitDate,
-        };
+        petUpdate.last_vet_visit = visitDate;
         if (nextVisitDate) petUpdate.next_vet_visit = nextVisitDate;
-        if (scanResult.weight) petUpdate.weight = scanResult.weight;
-        if (scanResult.clinicName) petUpdate.vet_clinic_name = scanResult.clinicName;
-        if (scanResult.clinicPhone) petUpdate.vet_clinic_phone = scanResult.clinicPhone;
-        if (scanResult.clinicAddress) petUpdate.vet_clinic_address = scanResult.clinicAddress;
-
-        await supabase.from("pets").update(petUpdate).eq("id", petId);
-      } else if (scanResult.weight) {
-        const supabaseUrl2 = Deno.env.get("SUPABASE_URL")!;
-        const supabaseKey2 = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-        const supabase2 = createClient(supabaseUrl2, supabaseKey2);
-        await supabase2.from("pets").update({ weight: scanResult.weight }).eq("id", petId);
       }
 
+      // Apply all pet updates
+      if (Object.keys(petUpdate).length > 0) {
+        await supabase.from("pets").update(petUpdate).eq("id", petId);
+      }
+
+      // Deworming tracking
       if (scanResult.deworming) {
-        const supabaseUrl3 = Deno.env.get("SUPABASE_URL")!;
-        const supabaseKey3 = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-        const supabase3 = createClient(supabaseUrl3, supabaseKey3);
         const dewormDate = scanResult.visitDate || new Date().toISOString().split('T')[0];
         const reminder = new Date(dewormDate);
         reminder.setMonth(reminder.getMonth() + 6);
 
-        await supabase3.from("pet_vet_visits").insert({
+        await supabase.from("pet_vet_visits").insert({
           pet_id: petId,
           user_id: userId,
           visit_date: dewormDate,
