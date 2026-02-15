@@ -34,6 +34,7 @@ import { LoginPromptDialog } from "@/components/LoginPromptDialog";
 import { SplashScreen } from "@/components/SplashScreen";
 import ScrollToTop from "@/components/ScrollToTop";
 import Footer from "@/components/Footer";
+import CompleteProfilePrompt from "@/components/CompleteProfilePrompt";
 
 // Route configuration - modular lazy-loaded routes
 import { allRoutes } from "@/routes";
@@ -71,6 +72,7 @@ const AnimatedRoutes = () => {
       <ScrollToTop />
       <LoginPromptDialog />
       <PWAInstallPrompt />
+      <CompleteProfilePrompt />
       
       <div className="flex-1">
         <AnimatePresence mode="wait">

@@ -119,12 +119,21 @@ export const SignupForm = () => {
               }
             }
 
-            // Save birthdate to profile if new user
-            if (data.isNewUser && data.userId && birthdate) {
-              await supabase
-                .from('profiles')
-                .update({ birthdate: birthdate.toISOString().split('T')[0] })
-                .eq('id', data.userId);
+            // Save additional data to profile if new user
+            if (data.isNewUser && data.userId) {
+              const profileUpdate: Record<string, any> = {};
+              if (birthdate) profileUpdate.birthdate = birthdate.toISOString().split('T')[0];
+              if (formData.phone) profileUpdate.phone = formData.phone;
+              const nameParts = formData.fullName.trim().split(' ');
+              profileUpdate.first_name = nameParts[0] || null;
+              profileUpdate.last_name = nameParts.slice(1).join(' ') || null;
+              
+              if (Object.keys(profileUpdate).length > 0) {
+                await supabase
+                  .from('profiles')
+                  .update(profileUpdate)
+                  .eq('id', data.userId);
+              }
             }
 
             if (data.isNewUser) {
@@ -151,12 +160,20 @@ export const SignupForm = () => {
               return;
             }
 
-            // Save birthdate to profile
-            if (authData?.user && birthdate) {
-              await supabase
-                .from('profiles')
-                .update({ birthdate: birthdate.toISOString().split('T')[0] })
-                .eq('id', authData.user.id);
+            // Save additional data to profile
+            if (authData?.user) {
+              const profileUpdate: Record<string, any> = {};
+              if (birthdate) profileUpdate.birthdate = birthdate.toISOString().split('T')[0];
+              const nameParts = formData.fullName.trim().split(' ');
+              profileUpdate.first_name = nameParts[0] || null;
+              profileUpdate.last_name = nameParts.slice(1).join(' ') || null;
+              
+              if (Object.keys(profileUpdate).length > 0) {
+                await supabase
+                  .from('profiles')
+                  .update(profileUpdate)
+                  .eq('id', authData.user.id);
+              }
             }
 
             toast({ title: "החשבון נוצר!", description: "ברוכים הבאים ל-Petid!" });
@@ -260,7 +277,7 @@ export const SignupForm = () => {
         // Email OTP via Supabase
         const { error } = await supabase.auth.signInWithOtp({ 
           email: formData.email, 
-          options: { data: { full_name: formData.fullName } } 
+          options: { data: { full_name: formData.fullName, birthdate: birthdate?.toISOString().split('T')[0] } } 
         });
 
         if (error) {
