@@ -37,6 +37,14 @@ export const MedicalTimeline = ({ petId, petName }: MedicalTimelineProps) => {
           .order("uploaded_at", { ascending: false })
           .limit(10);
 
+        // Fetch from pet_vet_visits (structured vet visit data)
+        const { data: vetVisits } = await supabase
+          .from("pet_vet_visits")
+          .select("id, visit_type, visit_date, diagnosis, treatment, clinic_name, vaccines, is_recovery_mode")
+          .eq("pet_id", petId)
+          .order("visit_date", { ascending: false })
+          .limit(10);
+
         // Fetch pet's last/next vet visit
         const { data: petData } = await (supabase as any)
           .from("pets")
@@ -46,9 +54,34 @@ export const MedicalTimeline = ({ petId, petName }: MedicalTimelineProps) => {
 
         const timeline: MedicalEvent[] = [];
 
-        // Add documents as events
+        // Add vet visits from pet_vet_visits table
+        if (vetVisits) {
+          for (const visit of vetVisits) {
+            const typeMap: Record<string, MedicalEvent['type']> = {
+              vaccination: 'vaccination',
+              surgery: 'surgery',
+              treatment: 'treatment',
+              checkup: 'vet_visit',
+            };
+            const vaccines = (visit.vaccines as string[]) || [];
+            const title = visit.visit_type === 'vaccination' && vaccines.length > 0
+              ? `חיסון: ${vaccines.join(', ')}`
+              : visit.diagnosis || visit.clinic_name || 'ביקור וטרינר';
+            timeline.push({
+              id: visit.id,
+              type: typeMap[visit.visit_type || ''] || 'vet_visit',
+              title,
+              date: visit.visit_date,
+              notes: visit.treatment || null,
+            });
+          }
+        }
+
+        // Add documents as events (only if not duplicating vet visits)
+        const vetVisitIds = new Set(vetVisits?.map((v: any) => v.id) || []);
         if (docs) {
           for (const doc of docs) {
+            if (vetVisitIds.has(doc.id)) continue;
             const typeMap: Record<string, MedicalEvent['type']> = {
               vaccination: 'vaccination',
               vet_visit: 'vet_visit',
@@ -66,15 +99,6 @@ export const MedicalTimeline = ({ petId, petName }: MedicalTimelineProps) => {
         }
 
         // Add vet visits from pet record
-        if (petData?.last_vet_visit) {
-          timeline.push({
-            id: 'last-vet',
-            type: 'vet_visit',
-            title: 'ביקור וטרינר אחרון',
-            date: petData.last_vet_visit,
-          });
-        }
-
         if (petData?.next_vet_visit) {
           timeline.push({
             id: 'next-vet',
@@ -84,7 +108,7 @@ export const MedicalTimeline = ({ petId, petName }: MedicalTimelineProps) => {
           });
         }
 
-        // Sort by date, newest first
+        // Sort by date, newest first, deduplicate
         timeline.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         setEvents(timeline);
       } catch (error) {

@@ -27,6 +27,10 @@ import { PetMiniCalendar } from "@/components/profile/PetMiniCalendar";
 import { InsuranceSheet, TrainingSheet, GroomingSheet, BoardingSheet, BreedInfoSheet, FoodSheet, ToysSheet, DocumentsSheet, DogWalkerSheet, ProductsSheet, EnergySheet, GroomingProductsSheet, FeedingSheet } from "@/components/pet-services";
 import { SmartRecommendationSheet } from "@/components/pet-services/SmartRecommendationSheet";
 import { MedicalTimeline } from "@/components/profile/MedicalTimeline";
+import { VetVisitInput } from "@/components/profile/VetVisitInput";
+import { RecoveryBanner } from "@/components/profile/RecoveryBanner";
+import { VaccineCountdown } from "@/components/profile/VaccineCountdown";
+import { VetHistoryPDF } from "@/components/profile/VetHistoryPDF";
 interface Pet {
   id: string;
   name: string;
@@ -588,8 +592,20 @@ const Profile = () => {
                     {/* Health Score */}
                     <PetHealthScore pet={selectedPet} onViewDetails={() => setSmartRecCategory('health')} />
                     
+                    {/* Recovery Banner */}
+                    <RecoveryBanner petId={selectedPet.id} petName={selectedPet.name} onOpenRecoveryProducts={() => setSmartRecCategory('health')} />
+                    
+                    {/* Vaccine Countdown */}
+                    <VaccineCountdown petId={selectedPet.id} petName={selectedPet.name} />
+                    
+                    {/* Vet Visit Input */}
+                    <VetVisitInput petId={selectedPet.id} petName={selectedPet.name} />
+                    
                     {/* Medical Timeline */}
                     <MedicalTimeline petId={selectedPet.id} petName={selectedPet.name} />
+                    
+                    {/* Vet History PDF Export */}
+                    <VetHistoryPDF petId={selectedPet.id} petName={selectedPet.name} petBreed={selectedPet.breed} petType={selectedPet.type} />
                     
                     {/* Top Recommendation */}
                     <TopRecommendation pet={selectedPet} onViewPolicy={() => setActiveSheet('insurance')} onEnergyOpen={() => setSmartRecCategory('energy')} onGroomingOpen={() => setSmartRecCategory('coat')} onFeedingOpen={() => setSmartRecCategory('feeding')} onMobilityOpen={() => setSmartRecCategory('mobility')} onDigestionOpen={() => setSmartRecCategory('digestion')} />

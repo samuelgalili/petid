@@ -38,17 +38,41 @@ export const PetHealthScore = ({ pet, onViewDetails }: PetHealthScoreProps) => {
   const navigate = useNavigate();
   const [petData, setPetData] = useState<PetFullData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [vaccineCount, setVaccineCount] = useState(0);
+  const [inRecovery, setInRecovery] = useState(false);
 
   useEffect(() => {
     const fetchPetData = async () => {
       try {
-        const { data } = await supabase
-          .from("pets")
-          .select("weight, is_neutered, medical_conditions, health_notes, has_insurance, insurance_company, insurance_expiry_date, last_vet_visit, next_vet_visit, current_food")
-          .eq("id", pet.id)
-          .maybeSingle();
+        const [petResult, vaccineResult] = await Promise.all([
+          supabase
+            .from("pets")
+            .select("weight, is_neutered, medical_conditions, health_notes, has_insurance, insurance_company, insurance_expiry_date, last_vet_visit, next_vet_visit, current_food")
+            .eq("id", pet.id)
+            .maybeSingle(),
+          supabase
+            .from("pet_vet_visits")
+            .select("id, vaccines, visit_date, is_recovery_mode, recovery_until")
+            .eq("pet_id", pet.id)
+            .order("visit_date", { ascending: false })
+            .limit(5),
+        ]);
 
-        if (data) setPetData(data as PetFullData);
+        if (petResult.data) setPetData(petResult.data as PetFullData);
+        
+        // Count recent vaccinations (last 12 months) for health score boost
+        const recentVaccines = (vaccineResult.data || []).filter((v: any) => {
+          const vDate = new Date(v.visit_date);
+          const monthsAgo = (Date.now() - vDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
+          return monthsAgo <= 12 && (v.vaccines as string[])?.length > 0;
+        });
+        setVaccineCount(recentVaccines.length);
+        
+        // Check recovery mode
+        const activeRecovery = (vaccineResult.data || []).find((v: any) =>
+          v.is_recovery_mode && v.recovery_until && new Date(v.recovery_until) > new Date()
+        );
+        setInRecovery(!!activeRecovery);
       } catch (error) {
         console.error('Error fetching pet health data:', error);
       } finally {
@@ -107,8 +131,14 @@ export const PetHealthScore = ({ pet, onViewDetails }: PetHealthScoreProps) => {
     // Health notes present
     if (petData.health_notes) score += 2;
 
+    // Vaccine boost (recent vaccinations)
+    score += Math.min(vaccineCount * 4, 10);
+
+    // Recovery mode penalty
+    if (inRecovery) score -= 8;
+
     return Math.min(100, Math.max(0, score));
-  }, [pet.birth_date, petData]);
+  }, [pet.birth_date, petData, vaccineCount, inRecovery]);
 
   // Determine if pet is high-risk (senior or medical conditions)
   const isHighRisk = useMemo(() => {
