@@ -22,9 +22,13 @@ import { useFlyingCart } from "@/components/FlyingCartAnimation";
 import { CommentsSheet } from "@/components/CommentsSheet";
 import { ShareSheet } from "@/components/feed/ShareSheet";
 import { ConsultAIButton } from "@/components/feed/ConsultAIButton";
+import { RelevanceBadge } from "@/components/feed/RelevanceBadge";
+import { SmartCheckoutSheet } from "@/components/feed/SmartCheckoutSheet";
+import { PetCoinReward } from "@/components/feed/PetCoinReward";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { SocialProofLabel } from "@/components/feed";
 import type { FeedPost } from "@/hooks/useSoundtrackFeed";
+import type { ActivePet } from "@/hooks/useActivePet";
 
 interface SoundtrackPostCardProps {
   post: FeedPost;
@@ -36,6 +40,7 @@ interface SoundtrackPostCardProps {
   onSave: (id: string) => void;
   onFollow: (id: string) => void;
   userId?: string;
+  activePet?: ActivePet | null;
 }
 
 const formatCount = (n: number) => {
@@ -54,6 +59,7 @@ export const SoundtrackPostCard = ({
   onSave,
   onFollow,
   userId,
+  activePet,
 }: SoundtrackPostCardProps) => {
   const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -61,6 +67,7 @@ export const SoundtrackPostCard = ({
   const [showComments, setShowComments] = useState(false);
   const [showHeartBurst, setShowHeartBurst] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(false);
+  const [showSmartCheckout, setShowSmartCheckout] = useState(false);
   const lastTapRef = useRef(0);
   const { addToCart } = useCart();
   const { triggerFly } = useFlyingCart();
@@ -221,6 +228,26 @@ export const SoundtrackPostCard = ({
         }}
       />
 
+      {/* Relevance Badge — top-right */}
+      {activePet && (
+        <div className="absolute top-[68px] right-3 z-40">
+          <RelevanceBadge
+            caption={post.caption}
+            petName={activePet.name}
+            petBreed={activePet.breed}
+            petType={activePet.pet_type}
+            petAgeWeeks={activePet.ageWeeks}
+          />
+        </div>
+      )}
+
+      {/* PetCoin Reward */}
+      <PetCoinReward
+        isActive={isActive}
+        postIndex={index}
+        isEducational={!isProductPost && !isChallengePost && !isCtaPost}
+      />
+
       {/* Double-tap heart burst */}
       <AnimatePresence>
         {showHeartBurst && (
@@ -346,12 +373,12 @@ export const SoundtrackPostCard = ({
           </span>
         </motion.button>
 
-        {/* Consult AI */}
+        {/* Consult AI — "שאל את המוח" */}
         <ConsultAIButton
           postCaption={post.caption}
-          petName={undefined}
-          petBreed={undefined}
-          petType="dog"
+          petName={activePet?.name}
+          petBreed={activePet?.breed}
+          petType={activePet?.pet_type || "dog"}
         />
 
         {/* Spinning disc */}
@@ -376,8 +403,9 @@ export const SoundtrackPostCard = ({
         <div className="absolute top-16 left-0 z-50 flex flex-col items-start gap-2" dir="ltr">
           {/* Price — prominent top badge */}
           {isProductPost && post.product_price && (
-            <div
-              className="pl-3 pr-4 py-1.5 rounded-r-full text-white font-bold flex items-center gap-1.5 shadow-lg"
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowSmartCheckout(true); }}
+              className="pl-3 pr-4 py-1.5 rounded-r-full text-white font-bold flex items-center gap-1.5 shadow-lg cursor-pointer hover:opacity-90 transition-opacity"
               style={{ 
                 background: "linear-gradient(135deg, rgba(255,59,92,0.85), rgba(255,59,92,0.65))",
                 backdropFilter: "blur(16px)",
@@ -386,7 +414,7 @@ export const SoundtrackPostCard = ({
             >
               <ShoppingCart className="w-3.5 h-3.5" />
               ₪{post.product_price}
-            </div>
+            </button>
           )}
           {isChallengePost && (
             <div
@@ -517,6 +545,19 @@ export const SoundtrackPostCard = ({
         shareUrl={`${window.location.origin}/post/${post.id}`}
         caption={post.caption}
       />
+
+      {/* Smart Checkout Sheet */}
+      {isProductPost && post.product_id && (
+        <SmartCheckoutSheet
+          open={showSmartCheckout}
+          onClose={() => setShowSmartCheckout(false)}
+          productId={post.product_id}
+          productName={post.product_name || "מוצר"}
+          productPrice={post.product_price || 0}
+          productWeight={post.product_weight}
+          productImage={allImages[0] || ""}
+        />
+      )}
     </motion.div>
   );
 };

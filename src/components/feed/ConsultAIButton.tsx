@@ -67,8 +67,8 @@ export const ConsultAIButton = ({ postCaption, petName, petBreed, petType }: Con
         >
           <Sparkles className="w-[18px] h-[18px] text-white" strokeWidth={2} />
         </div>
-        <span className="text-[11px] text-white font-semibold" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.7)' }}>
-          AI
+        <span className="text-[10px] text-white font-bold leading-tight text-center" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.7)', maxWidth: '40px' }}>
+          המוח
         </span>
       </button>
 

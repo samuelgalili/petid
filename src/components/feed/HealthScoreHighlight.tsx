@@ -28,7 +28,7 @@ export const HealthScoreHighlight = () => {
       // Get pets with most completed fields (proxy for health score)
       const { data: pets } = await (supabase as any)
         .from("pets")
-        .select("owner_id, name, breed, birth_date, weight, microchip_number, vet_name, current_food, avatar_url, has_insurance, is_neutered, gender")
+        .select("user_id, name, breed, birth_date, weight, microchip_number, vet_name, current_food, avatar_url, has_insurance, is_neutered, gender")
         .eq("archived", false)
         .limit(50);
 
@@ -50,7 +50,7 @@ export const HealthScoreHighlight = () => {
       if (!top.length) { setLoading(false); return; }
 
       // Get profiles
-      const ownerIds = [...new Set(top.map((p: any) => p.owner_id))] as string[];
+      const ownerIds = [...new Set(top.map((p: any) => p.user_id))] as string[];
       const { data: profiles } = await supabase
         .from("profiles")
         .select("id, full_name, avatar_url")
@@ -59,9 +59,9 @@ export const HealthScoreHighlight = () => {
       const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
 
       const result: HighScoreUser[] = top.map((pet: any) => {
-        const profile = profileMap.get(pet.owner_id);
+        const profile = profileMap.get(pet.user_id);
         return {
-          id: pet.owner_id,
+          id: pet.user_id,
           full_name: profile?.full_name || "בעלים אחראי",
           avatar_url: profile?.avatar_url || null,
           petName: pet.name,

@@ -77,7 +77,7 @@ export const DailyInsightCard = () => {
         (supabase as any)
           .from("pets")
           .select("id, name, breed, birth_date, weight, gender, microchip_number, is_neutered, current_food, vet_name, has_insurance, avatar_url")
-          .eq("owner_id", user.id)
+          .eq("user_id", user.id)
           .eq("archived", false)
           .order("created_at", { ascending: false })
           .limit(1),
