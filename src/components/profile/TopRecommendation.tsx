@@ -605,29 +605,54 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
     return insights;
   }, [pet.breed, medicalConditions]);
 
-  // Food-ingredient-based bars for Energy, Satiety, and Coat
+  // Food-ingredient-based bars + product-purchase impact (V17)
   const foodBars = useMemo(() => {
     const foodLower = (currentFood || '').toLowerCase();
+    const purchaseNames = recentPurchases.map(p => (p.product_name || '').toLowerCase());
+    const allContext = [foodLower, ...purchaseNames].join(' ');
     
-    // Energy bar - affected by protein content, activity breeds
+    const hasIngredient = (keywords: string[]) => keywords.some(k => allContext.includes(k));
+
+    // Energy bar
     let energy = 50;
-    if (foodLower.includes('protein') || foodLower.includes('חלבון') || foodLower.includes('high energy') || foodLower.includes('active')) energy = 85;
-    else if (foodLower.includes('senior') || foodLower.includes('light') || foodLower.includes('diet')) energy = 35;
+    if (hasIngredient(['protein', 'חלבון', 'high energy', 'active', 'performance'])) energy = 85;
+    else if (hasIngredient(['senior', 'light', 'diet', 'metabolic'])) energy = 35;
     else if (breedInfo?.energy_level) energy = breedInfo.energy_level * 18;
+    if (hasIngredient(['taurine', 'טאורין'])) energy = Math.min(100, energy + 8);
 
-    // Satiety bar - affected by fiber content
+    // Satiety bar
     let satiety = 55;
-    if (foodLower.includes('fiber') || foodLower.includes('סיבים') || foodLower.includes('satiety')) satiety = 80;
-    else if (foodLower.includes('grain free') || foodLower.includes('ללא דגנים')) satiety = 60;
+    if (hasIngredient(['fiber', 'סיבים', 'satiety', 'שובע'])) satiety = 80;
+    else if (hasIngredient(['grain free', 'ללא דגנים'])) satiety = 60;
     
-    // Coat bar - affected by omega/salmon
+    // Coat bar
     let coat = 50;
-    if (foodLower.includes('salmon') || foodLower.includes('סלמון') || foodLower.includes('omega') || foodLower.includes('אומגה') || foodLower.includes('fish oil') || foodLower.includes('שמן דגים')) coat = 90;
-    else if (foodLower.includes('skin') || foodLower.includes('coat') || foodLower.includes('עור') || foodLower.includes('פרווה')) coat = 80;
+    if (hasIngredient(['salmon', 'סלמון', 'omega', 'אומגה', 'fish oil', 'שמן דגים'])) coat = 90;
+    else if (hasIngredient(['skin', 'coat', 'עור', 'פרווה', 'biotin', 'ביוטין'])) coat = 80;
     else if (breedInfo?.shedding_level) coat = Math.max(30, 80 - breedInfo.shedding_level * 10);
+    if (hasIngredient(['zinc', 'אבץ', 'vitamin e', 'ויטמין e'])) coat = Math.min(100, coat + 10);
 
-    return { energy: Math.min(100, energy), satiety: Math.min(100, satiety), coat: Math.min(100, coat) };
-  }, [currentFood, breedInfo]);
+    // Mobility bar (V17) - glucosamine, chondroitin, joint products
+    let mobility = 60;
+    if (hasIngredient(['glucosamine', 'גלוקוזאמין', 'joint', 'מפרק', 'chondroitin', 'כונדרואיטין', 'mobility'])) mobility = 82;
+    if (hasIngredient(['msm', 'hyaluronic', 'היאלורונ'])) mobility = Math.min(100, mobility + 10);
+    if (pet.birth_date) {
+      const ageYears = (Date.now() - new Date(pet.birth_date).getTime()) / (1000 * 60 * 60 * 24 * 365);
+      if (ageYears > 8 && mobility === 60) mobility = 40;
+    }
+    const breedLower2 = (pet.breed || '').toLowerCase();
+    if (['לברדור', 'גולדן', 'רועה גרמני', 'labrador', 'golden'].some(b => breedLower2.includes(b)) && mobility === 60) mobility = 50;
+
+    // Digestion bar (V17)
+    let digestion = 65;
+    if (hasIngredient(['probiotic', 'פרוביוטיקה', 'gastrointestinal', 'gi', 'digestive', 'עיכול'])) digestion = 85;
+    if (hasIngredient(['prebiotic', 'פרהביוטיקה', 'fos'])) digestion = Math.min(100, digestion + 8);
+
+    return { 
+      energy: Math.min(100, energy), satiety: Math.min(100, satiety), coat: Math.min(100, coat),
+      mobility: Math.min(100, mobility), digestion: Math.min(100, digestion),
+    };
+  }, [currentFood, breedInfo, recentPurchases, pet.birth_date, pet.breed]);
 
   return (
     <>
@@ -1126,8 +1151,8 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
           </motion.div>
         )}
 
-        {/* Food-Based Visual Bars: Energy, Satiety, Coat */}
-        {currentFood && (
+        {/* Food & Purchase Impact Bars (V17) */}
+        {(currentFood || recentPurchases.length > 0) && (
           <motion.div
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1136,13 +1161,15 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
           >
             <div className="flex items-center gap-1.5 mb-2.5">
               <BarChart3 className="w-3.5 h-3.5 text-primary" strokeWidth={1.5} />
-              <span className="text-[11px] font-bold text-foreground">ניתוח מזון נוכחי</span>
+              <span className="text-[11px] font-bold text-foreground">ניתוח תזונה ומוצרים</span>
             </div>
             <div className="space-y-2">
               {[
                 { label: 'אנרגיה', value: foodBars.energy, icon: Zap },
                 { label: 'שובע', value: foodBars.satiety, icon: Utensils },
                 { label: 'פרווה', value: foodBars.coat, icon: Sparkles },
+                { label: 'ניידות', value: foodBars.mobility, icon: TrendingUp },
+                { label: 'עיכול', value: foodBars.digestion, icon: Activity },
               ].map((bar) => (
                 <div key={bar.label} className="flex items-center gap-2">
                   <bar.icon className="w-3 h-3 text-muted-foreground flex-shrink-0" strokeWidth={1.5} />
