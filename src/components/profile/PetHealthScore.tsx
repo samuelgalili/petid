@@ -27,6 +27,7 @@ interface PetFullData {
   last_vet_visit?: string | null;
   next_vet_visit?: string | null;
   current_food?: string | null;
+  vet_clinic_name?: string | null;
 }
 
 interface PetHealthScoreProps {
@@ -57,27 +58,41 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
   const [showInsurancePitch, setShowInsurancePitch] = useState(false);
   const [hasRecentWeight, setHasRecentWeight] = useState(false);
   const [hasParasitePrevention, setHasParasitePrevention] = useState(false);
+  const [hasRegisteredClinic, setHasRegisteredClinic] = useState(false);
+  const [ownerProfileComplete, setOwnerProfileComplete] = useState(false);
 
   const fetchHealthData = async () => {
       try {
-        const [petResult, vaccineResult] = await Promise.all([
-          supabase
-            .from("pets")
-            .select("weight, is_neutered, medical_conditions, health_notes, has_insurance, insurance_company, insurance_expiry_date, last_vet_visit, next_vet_visit, current_food")
-            .eq("id", pet.id)
-            .maybeSingle(),
-          supabase
-            .from("pet_vet_visits")
-            .select("id, vaccines, visit_date, is_recovery_mode, recovery_until, raw_summary")
-            .eq("pet_id", pet.id)
-            .order("visit_date", { ascending: false })
-            .limit(20),
-        ]);
+      const [petResult, vaccineResult, profileResult] = await Promise.all([
+        supabase
+          .from("pets")
+          .select("weight, is_neutered, medical_conditions, health_notes, has_insurance, insurance_company, insurance_expiry_date, last_vet_visit, next_vet_visit, current_food, vet_clinic_name")
+          .eq("id", pet.id)
+          .maybeSingle(),
+        supabase
+          .from("pet_vet_visits")
+          .select("id, vaccines, visit_date, is_recovery_mode, recovery_until, raw_summary")
+          .eq("pet_id", pet.id)
+          .order("visit_date", { ascending: false })
+          .limit(20),
+        supabase
+          .from("profiles")
+          .select("full_name, city, phone, id_number_last4")
+          .eq("id", (await supabase.auth.getUser()).data.user?.id || '')
+          .maybeSingle(),
+      ]);
 
         if (petResult.data) setPetData(petResult.data as PetFullData);
         
         // Weight tracking: has weight been logged
         setHasRecentWeight(!!petResult.data?.weight);
+        
+        // Registered clinic check
+        setHasRegisteredClinic(!!(petResult.data as any)?.vet_clinic_name);
+        
+        // Owner profile completeness
+        const profile = profileResult.data;
+        setOwnerProfileComplete(!!(profile?.full_name && profile?.city && profile?.phone));
         
         const visits = vaccineResult.data || [];
         
@@ -136,39 +151,44 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
     return Math.round((fields.filter(Boolean).length / fields.length) * 100);
   }, [pet, petData]);
 
-  // V21 Health Score: Vaccines (35) + Weight (20) + Parasites (15) + Profile (15) + Vet (15)
+  // V23 Health Score: Vaccines (30) + Weight (15) + Parasites (12) + Profile (10) + Vet (13) + Clinic (10) + Owner (10)
   const healthScore = useMemo(() => {
     if (!petData) return 50;
     
     let score = 0;
 
-    // 1. Completed Vaccines — up to 35 points
-    // Each recent vaccine = 8pts, max 35
-    score += Math.min(vaccineCount * 8, 35);
+    // 1. Completed Vaccines — up to 30 points
+    score += Math.min(vaccineCount * 8, 30);
 
-    // 2. Weight Logs — up to 20 points
-    if (hasRecentWeight) score += 20;
+    // 2. Weight Logs — up to 15 points
+    if (hasRecentWeight) score += 15;
 
-    // 3. Parasite Prevention — up to 15 points
-    if (hasParasitePrevention) score += 15;
+    // 3. Parasite Prevention — up to 12 points
+    if (hasParasitePrevention) score += 12;
 
-    // 4. Profile Completion — up to 15 points
-    score += Math.round(profileCompletion * 0.15);
+    // 4. Profile Completion — up to 10 points
+    score += Math.round(profileCompletion * 0.10);
 
-    // 5. Recent Vet Visit — up to 15 points
+    // 5. Recent Vet Visit — up to 13 points
     if (petData.last_vet_visit) {
       const monthsSince = (Date.now() - new Date(petData.last_vet_visit).getTime()) / (1000 * 60 * 60 * 24 * 30);
-      if (monthsSince <= 3) score += 15;
-      else if (monthsSince <= 6) score += 12;
-      else if (monthsSince <= 12) score += 6;
+      if (monthsSince <= 3) score += 13;
+      else if (monthsSince <= 6) score += 10;
+      else if (monthsSince <= 12) score += 5;
       else score += 2;
     }
+
+    // 6. Registered Clinic — 10 points
+    if (hasRegisteredClinic) score += 10;
+
+    // 7. Owner Profile Complete (name, city, phone) — 10 points
+    if (ownerProfileComplete) score += 10;
 
     // Recovery mode penalty
     if (inRecovery) score -= 8;
 
     return Math.min(100, Math.max(0, score));
-  }, [petData, vaccineCount, hasRecentWeight, hasParasitePrevention, profileCompletion, inRecovery]);
+  }, [petData, vaccineCount, hasRecentWeight, hasParasitePrevention, profileCompletion, inRecovery, hasRegisteredClinic, ownerProfileComplete]);
 
   const isHighRisk = useMemo(() => {
     if (!petData) return false;
@@ -265,6 +285,11 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
       result.push({ icon: Shield, text: 'ביטוח פג תוקף', type: 'warning' });
     } else {
       result.push({ icon: Shield, text: petData?.insurance_company || 'מבוטח', type: 'success' });
+    }
+
+    // Clinic registration alert
+    if (!hasRegisteredClinic) {
+      result.push({ icon: Activity, text: 'אין מרפאה רשומה', type: 'info' });
     }
 
     const conditions = petData?.medical_conditions || [];
@@ -417,6 +442,14 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
                 <p className="text-xs text-foreground leading-relaxed mb-4">
                   ביטוח בריאות יכסה ביקורי וטרינר, ניתוחים וטיפולים עבור {pet.name}. הגנה שקטה לבעלים אחראי.
                 </p>
+              )}
+
+              {ownerProfileComplete && (
+                <div className="p-2.5 bg-green-500/10 rounded-xl mb-3">
+                  <p className="text-[11px] font-medium text-green-700">
+                    ✅ הפרטים שלך (ת"ז, כתובת, טלפון) כבר מעודכנים — הטופס ימולא אוטומטית
+                  </p>
+                </div>
               )}
 
               <div className="flex gap-2">
