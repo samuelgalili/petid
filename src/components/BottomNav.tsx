@@ -174,7 +174,7 @@ const BottomNav = () => {
           <NavItem
             onClick={() => handleNavClick("/chat")}
             icon={
-              <MessageCircle
+              <Sparkles
                 className={cn(
                   "w-6 h-6 transition-colors",
                   isActive("/chat") ? "text-primary" : "text-muted-foreground"
