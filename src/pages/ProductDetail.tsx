@@ -340,6 +340,58 @@ const extractRenalFeatures = (product: any) => {
   return { lowLoad, phBalance, omega3Note, transitionDays, transitionNote, hydrationAlert, vetWarning, feedingMatrix, crossSellHints };
 };
 
+/** Check if product is hepatic/liver support */
+const isHepaticProduct = (product: any): boolean => {
+  const cat = (product.category || '').toLowerCase();
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''}`.toLowerCase();
+  return cat === 'hepatic' || cat === 'liver' ||
+    text.includes('hepatic') || text.includes('כבד') || text.includes('כבדי') ||
+    text.includes('l/d') || text.includes('liver');
+};
+
+/** Extract hepatic care features */
+const extractHepaticFeatures = (product: any) => {
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''}`.toLowerCase();
+  const allText = text + ' ' + JSON.stringify(product.product_attributes || {}).toLowerCase();
+
+  const lowLoad = [
+    { icon: '🧪', label: 'נחושת נמוכה מאוד (5mg/kg)', description: 'מניעת הצטברות רעילה של נחושת בכבד – קריטי במחלות אגירה', color: 'hsl(35,55%,45%)' },
+    { icon: '🥩', label: 'חלבון איכותי (16%)', description: 'רמה מתונה של חלבון קל לעיכול להפחתת ייצור פסולת חנקנית', color: 'hsl(200,55%,45%)' },
+  ];
+
+  const energyBar = {
+    title: 'כוסמין ועמילן אורז – אנרגיה זמינה',
+    description: 'פחמימות קלות לעיכול המספקות אנרגיה זמינה מבלי להעמיס על תהליכי העיכול בכבד',
+  };
+
+  const omega3Match = allText.match(/omega[- ]?3[^%]*?(\d+(?:\.\d+)?)\s*%/i);
+  const omega3 = {
+    value: omega3Match ? `${omega3Match[1]}%` : '0.70%',
+    description: 'הפחתת דלקת בכבד ותמיכה בהתחדשות תאים – חומצות שומן חיוניות',
+  };
+
+  const hasFOS = allText.includes('fos') || allText.includes('פרוקטו');
+  const hasMOS = allText.includes('mos') || allText.includes('מנאן');
+  const digestiveSynergy = (hasFOS || hasMOS)
+    ? 'FOS & MOS – בריאות מעי לצמצום העומס הרעיל שמגיע לכבד מהמעיים'
+    : 'פרה-ביוטיקה – בריאות מעי לצמצום העומס הרעיל שמגיע לכבד';
+
+  const conditions = [
+    { icon: '🫀', label: 'אי ספיקת כבד כרונית', description: 'Chronic Liver Insufficiency – תמיכה תזונתית ארוכת טווח' },
+    { icon: '🧬', label: 'מחלות אגירת נחושת', description: 'Copper Storage Disease – מניעת הצטברות נחושת רעילה' },
+    { icon: '🩺', label: 'התאוששות מדלקות כבד', description: 'Post-Inflammatory Recovery – שיקום לאחר Hepatitis' },
+  ];
+
+  const vetWarning = 'מזון רפואי ייעודי - מחייב אבחון וליווי וטרינרי צמוד. יש לבצע בדיקות דם תקופתיות למעקב אחר אנזימי כבד.';
+
+  const crossSellHints = [
+    'תוספי תמיכה בכבד – Milk Thistle ותוספים בטוחים לכבד',
+    '⚠️ יש להימנע מחטיפים שמנים העלולים להעמיס על הכבד',
+  ];
+
+  return { lowLoad, energyBar, omega3, digestiveSynergy, conditions, vetWarning, crossSellHints };
+};
+
 /** Check if product is joint/orthopedic mobility */
 const isJointProduct = (product: any): boolean => {
   const cat = (product.category || '').toLowerCase();
@@ -2270,6 +2322,8 @@ const ProductDetail = () => {
   const renalFeatures = useMemo(() => product && isRenal ? extractRenalFeatures(product) : { lowLoad: [], phBalance: { title: '', description: '' }, omega3Note: '', transitionDays: '', transitionNote: '', hydrationAlert: '', vetWarning: '', feedingMatrix: [], crossSellHints: [] }, [product, isRenal]);
   const isJointFood = useMemo(() => product ? isJointProduct(product) : false, [product]);
   const jointFoodFeatures = useMemo(() => product && isJointFood ? extractJointFeatures(product) : { cartilage: [], inflammation: { omega3: '', epa: '', dha: '', description: '' }, weightJoint: '', audiences: [], expertTip: '', analysis: [], caPhNote: '', vetWarning: '', crossSellHints: [] }, [product, isJointFood]);
+  const isHepatic = useMemo(() => product ? isHepaticProduct(product) : false, [product]);
+  const hepaticFeatures = useMemo(() => product && isHepatic ? extractHepaticFeatures(product) : { lowLoad: [], energyBar: { title: '', description: '' }, omega3: { value: '', description: '' }, digestiveSynergy: '', conditions: [], vetWarning: '', crossSellHints: [] }, [product, isHepatic]);
   const analysisData = useMemo(() => product ? parseAnalysis(product) : [], [product]);
   const vitaminsData = useMemo(() => product ? parseVitamins(product) : [], [product]);
   const feedingResult = useMemo(() => {
@@ -5719,6 +5773,142 @@ const ProductDetail = () => {
               </h3>
               <div className="space-y-1.5">
                 {jointFoodFeatures.crossSellHints.map((hint, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <span className="text-[10px] text-primary mt-0.5">●</span>
+                    <p className="text-[11px] text-muted-foreground">{hint}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Hepatic: Veterinary Warning ── */}
+        {isHepatic && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
+            <Card className="p-3 border-[hsl(0,60%,50%)]/30 bg-[hsl(0,50%,95%)]/50 dark:bg-[hsl(0,30%,12%)]/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(0,50%,85%)]/30 flex items-center justify-center flex-shrink-0">
+                  <ShieldAlert className="w-5 h-5 text-[hsl(0,60%,50%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-[hsl(0,60%,45%)]">🚨 מוצר רפואי ייעודי</p>
+                  <p className="text-[11px] text-foreground font-medium">{hepaticFeatures.vetWarning}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Hepatic: Liver Detox Dashboard ── */}
+        {isHepatic && hepaticFeatures.lowLoad.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(35,30%,95%)] to-background border-[hsl(35,35%,60%)]/20 dark:from-[hsl(35,20%,14%)]">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Shield className="w-4 h-4 text-[hsl(35,55%,45%)]" />
+                🫀 דשבורד ניקוי כבד – Reduced Load
+              </h3>
+              <div className="space-y-2">
+                {hepaticFeatures.lowLoad.map((item, i) => (
+                  <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 + i * 0.06 }}
+                    className="flex items-center gap-3 rounded-lg p-3" style={{ backgroundColor: `${item.color}10` }}>
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-lg" style={{ backgroundColor: `${item.color}20` }}>
+                      {item.icon}
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-bold text-foreground">{item.label}</p>
+                      <p className="text-[11px] text-muted-foreground">{item.description}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Hepatic: Energy & Bioavailability ── */}
+        {isHepatic && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+            <Card className="p-4">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-2">
+                <Zap className="w-4 h-4 text-[hsl(45,60%,45%)]" />
+                ⚡ אנרגיה וזמינות ביולוגית
+              </h3>
+              <div className="rounded-lg p-3 bg-[hsl(45,50%,45%)]/8">
+                <p className="text-[12px] font-bold text-foreground">{hepaticFeatures.energyBar.title}</p>
+                <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">{hepaticFeatures.energyBar.description}</p>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Hepatic: Anti-Inflammatory Shield ── */}
+        {isHepatic && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.36 }}>
+            <Card className="p-3 bg-gradient-to-br from-[hsl(170,30%,93%)] to-background border-[hsl(170,35%,55%)]/20 dark:from-[hsl(170,20%,14%)]">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-[hsl(170,40%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Fish className="w-5 h-5 text-[hsl(170,50%,40%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-foreground">🛡️ מגן דלקת – Omega-3 ({hepaticFeatures.omega3.value})</p>
+                  <p className="text-[11px] text-muted-foreground">{hepaticFeatures.omega3.description}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Hepatic: Digestive Synergy ── */}
+        {isHepatic && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+            <Card className="p-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-[hsl(140,40%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Salad className="w-5 h-5 text-[hsl(140,50%,40%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-foreground">🌿 סינרגיית עיכול</p>
+                  <p className="text-[11px] text-muted-foreground">{hepaticFeatures.digestiveSynergy}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Hepatic: Target Conditions ── */}
+        {isHepatic && hepaticFeatures.conditions.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.44 }}>
+            <Card className="p-4">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-3">
+                <Target className="w-4 h-4 text-primary" />
+                🎯 מתאים למצבים:
+              </h3>
+              <div className="space-y-2">
+                {hepaticFeatures.conditions.map((c, i) => (
+                  <div key={i} className="flex items-center gap-3 rounded-lg p-2.5 bg-muted/30">
+                    <span className="text-lg flex-shrink-0">{c.icon}</span>
+                    <div>
+                      <p className="text-[12px] font-bold text-foreground">{c.label}</p>
+                      <p className="text-[10px] text-muted-foreground">{c.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Hepatic: Cross-Sell ── */}
+        {isHepatic && hepaticFeatures.crossSellHints.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+            <Card className="p-3">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-2">
+                <Target className="w-4 h-4 text-primary" />
+                💡 משלימים מומלצים
+              </h3>
+              <div className="space-y-1.5">
+                {hepaticFeatures.crossSellHints.map((hint, i) => (
                   <div key={i} className="flex items-start gap-2">
                     <span className="text-[10px] text-primary mt-0.5">●</span>
                     <p className="text-[11px] text-muted-foreground">{hint}</p>
