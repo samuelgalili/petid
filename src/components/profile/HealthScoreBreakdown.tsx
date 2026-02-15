@@ -804,6 +804,10 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
                       </p>
                       <p className="text-[10px] text-destructive/80 font-medium">
                         ⚠️ לעולם אל תשתמשו בתרופות או טיפולי פרעושים המיועדים לכלבים על חתולים.
+                       </p>
+                      <p className="text-[10px] text-muted-foreground leading-relaxed mt-1">
+                        <span className="font-bold text-foreground">⚠️ מעבר תזונתי:</span> שינוי מזון פתאומי בחתולים עלול לגרום ל<span className="font-bold text-destructive">ליפידוזיס כבדית</span> (Hepatic Lipidosis) — מצב מסכן חיים. 
+                        יש לבצע מעבר הדרגתי תוך 7–10 ימים: ערבבו 25% מזון חדש ביום 1–3, 50% ביום 4–5, 75% ביום 6–7, ו-100% מיום 8.
                       </p>
                     </div>
                   </motion.div>
