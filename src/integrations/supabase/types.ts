@@ -5012,6 +5012,7 @@ export type Database = {
           id: string
           order_id: string
           price: number
+          product_id: string | null
           product_image: string
           product_name: string
           quantity: number
@@ -5023,6 +5024,7 @@ export type Database = {
           id?: string
           order_id: string
           price: number
+          product_id?: string | null
           product_image: string
           product_name: string
           quantity: number
@@ -5034,6 +5036,7 @@ export type Database = {
           id?: string
           order_id?: string
           price?: number
+          product_id?: string | null
           product_image?: string
           product_name?: string
           quantity?: number
@@ -5046,6 +5049,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "business_products"
             referencedColumns: ["id"]
           },
         ]
@@ -5098,16 +5108,21 @@ export type Database = {
         Row: {
           coupon_id: string | null
           created_at: string
+          customer_name: string | null
           discount_amount: number | null
           id: string
+          medical_urgency: string | null
           order_date: string
           order_number: string
+          order_type: string
           payment_installments: number | null
           payment_method: string
           payment_status: string
           payment_transaction_id: string | null
+          pet_name: string | null
           shipping: number
           shipping_address: Json
+          special_instructions: string | null
           status: Database["public"]["Enums"]["order_status"]
           subtotal: number
           tax: number
@@ -5118,16 +5133,21 @@ export type Database = {
         Insert: {
           coupon_id?: string | null
           created_at?: string
+          customer_name?: string | null
           discount_amount?: number | null
           id?: string
+          medical_urgency?: string | null
           order_date?: string
           order_number: string
+          order_type?: string
           payment_installments?: number | null
           payment_method: string
           payment_status?: string
           payment_transaction_id?: string | null
+          pet_name?: string | null
           shipping: number
           shipping_address: Json
+          special_instructions?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal: number
           tax: number
@@ -5138,16 +5158,21 @@ export type Database = {
         Update: {
           coupon_id?: string | null
           created_at?: string
+          customer_name?: string | null
           discount_amount?: number | null
           id?: string
+          medical_urgency?: string | null
           order_date?: string
           order_number?: string
+          order_type?: string
           payment_installments?: number | null
           payment_method?: string
           payment_status?: string
           payment_transaction_id?: string | null
+          pet_name?: string | null
           shipping?: number
           shipping_address?: Json
+          special_instructions?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal?: number
           tax?: number
