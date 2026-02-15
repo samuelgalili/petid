@@ -55,9 +55,14 @@ interface CustomerData {
   id: string;
   email: string | null;
   full_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  phone: string | null;
+  city: string | null;
   avatar_url: string | null;
   created_at: string | null;
   blocked_at: string | null;
+  birthdate: string | null;
   roles: string[];
 }
 
@@ -79,7 +84,7 @@ const AICustomers = () => {
     queryFn: async () => {
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
-        .select("id, email, full_name, avatar_url, created_at, blocked_at");
+        .select("id, email, full_name, first_name, last_name, phone, city, avatar_url, created_at, blocked_at, birthdate");
 
       if (profilesError) throw profilesError;
 
@@ -225,7 +230,24 @@ const AICustomers = () => {
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground truncate">{customer.email}</p>
+                         <p className="text-sm text-muted-foreground truncate">{customer.email}</p>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5 text-xs text-muted-foreground">
+                          {customer.phone && (
+                            <span className="flex items-center gap-1">
+                              <Phone className="w-3 h-3" />
+                              {customer.phone}
+                            </span>
+                          )}
+                          {customer.city && (
+                            <span className="flex items-center gap-1">
+                              <Tag className="w-3 h-3" />
+                              {customer.city}
+                            </span>
+                          )}
+                          {!customer.first_name && !customer.phone && !customer.city && (
+                            <span className="text-orange-500">⚠ פרטים חסרים</span>
+                          )}
+                        </div>
                         <div className="flex flex-wrap gap-1 mt-1">
                           {customer.roles.length === 0 ? (
                             <span className="text-xs text-muted-foreground px-2 py-0.5 bg-muted rounded">לקוח</span>
