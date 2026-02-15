@@ -170,7 +170,7 @@ async function fetchBreedInfo(supabase: any, breedName: string, petType: string)
   
   const { data } = await supabase
     .from("breed_information")
-    .select("breed_name, breed_name_he, description_he, health_issues_he, temperament_he, life_expectancy_years, weight_range_kg, height_range_cm, energy_level, grooming_freq, trainability, exercise_needs, grooming_needs, dietary_notes, good_with_children, good_with_other_pets, apartment_friendly, shedding_level")
+    .select("breed_name, breed_name_he, description_he, health_issues_he, health_issues, temperament_he, life_expectancy_years, weight_range_kg, height_range_cm, energy_level, grooming_freq, trainability, exercise_needs, grooming_needs, dietary_notes, good_with_children, good_with_other_pets, apartment_friendly, shedding_level, size_category")
     .or(`breed_name.ilike.%${breedName}%,breed_name_he.ilike.%${breedName}%`)
     .eq("pet_type", petType === "cat" ? "cat" : "dog")
     .limit(1)
@@ -185,6 +185,7 @@ async function fetchBreedInfo(supabase: any, breedName: string, petType: string)
 תוחלת חיים: ${data.life_expectancy_years || "לא ידוע"} שנים
 משקל: ${data.weight_range_kg || "לא ידוע"} ק"ג
 גובה: ${data.height_range_cm || "לא ידוע"} ס"מ
+קטגוריית גודל: ${data.size_category || "לא ידוע"}
 אופי: ${data.temperament_he?.join(", ") || "לא ידוע"}
 בעיות בריאות נפוצות: ${data.health_issues_he?.join(", ") || "לא ידוע"}
 רמת אנרגיה: ${data.energy_level || "?"}/5
@@ -198,6 +199,24 @@ async function fetchBreedInfo(supabase: any, breedName: string, petType: string)
 טיפים לטיפוח: ${data.grooming_needs || "לא ידוע"}
 הערות תזונה: ${data.dietary_notes || "לא ידוע"}
 [/BREED_DATA]`;
+}
+
+// ============= Breed Diet Rules Fetcher =============
+async function fetchBreedDietRules(supabase: any, healthIssues: string[]): Promise<string> {
+  if (!healthIssues || healthIssues.length === 0) return "";
+  
+  const { data } = await supabase
+    .from("breed_disease_diet_rules")
+    .select("disease, diet, required_nutrients, avoid")
+    .in("disease", healthIssues);
+  
+  if (!data || data.length === 0) return "";
+  
+  const rules = data.map((r: any) => 
+    `• ${r.disease}: דיאטה=${r.diet}, נדרש=[${(r.required_nutrients || []).join(",")}], להימנע=[${(r.avoid || []).join(",")}]`
+  ).join("\n");
+  
+  return `\n[BREED_DIET_RULES]\n${rules}\n[/BREED_DIET_RULES]`;
 }
 
 // ============= Main Handler =============
@@ -312,8 +331,18 @@ vet_clinic: ${fullPet.vet_clinic ?? "לא ידוע"}
 
     // ============= Fetch Breed Data if available =============
     let breedContext = "";
+    let dietRulesContext = "";
     if (activePet?.breed) {
       breedContext = await fetchBreedInfo(supabase, activePet.breed, activePet.type);
+      
+      // Extract health issues from breed data to fetch diet rules
+      const breedHealthMatch = breedContext.match(/בעיות בריאות נפוצות: (.+)/);
+      if (breedHealthMatch) {
+        const healthIssues = breedHealthMatch[1].split(",").map((s: string) => s.trim().toLowerCase()).filter((s: string) => s !== "לא ידוע");
+        if (healthIssues.length > 0) {
+          dietRulesContext = await fetchBreedDietRules(supabase, healthIssues);
+        }
+      }
     }
 
     // ============= Order Intent Handler =============
@@ -394,7 +423,7 @@ vet_clinic: ${fullPet.vet_clinic ?? "לא ידוע"}
     const categoryFlow = getFlowForCategory(detectedCategory);
 
     const systemPrompt = `אתה העוזר החכם של PetID — מערכת אחריות לבעלי חיות מחמד.
-${userName}${petCard}${breedContext}${productContext}
+${userName}${petCard}${breedContext}${dietRulesContext}${productContext}
 
 === עקרונות ליבה ===
 • PetID היא מערכת אחריות, לא חנות. בטיחות החיה קודמת לכל.
@@ -403,11 +432,19 @@ ${userName}${petCard}${breedContext}${productContext}
 • מילים אסורות: "חובה", "הכי טוב", "מבצע", "תמהרו". מילים מותרות: "מומלץ", "לא נדרש", "לא מתאים", "עדיף לחכות".
 • אם יש ספק רפואי, מידע סותר, או סיכון לחיה — עצור. הסבר בנחת ובקש הבהרה.
 
+=== Breed Intelligence (חובה!) ===
+• אם הגזע ידוע — השתמש ב-BREED_DATA ובמאגר הידע לחבר כל סימפטום/שאלה לנטייה הגנטית של הגזע.
+• אם הגזע לא ידוע ושום שדה breed לא מוצג — שאל: "איזה גזע הכלב/החתול שלך?"
+• כשמשתמש מציין סימפטום (גירוד, שלשול, צליעה וכו'), אל תגיד סתם "קנה שמפו" — חבר את ההמלצה לגזע הספציפי עם הסבר ביולוגי.
+• כשממליצים על צעצועים — בדוק אם הגזע הוא Power Chewer (סטפי, פיטבול, אמסטף, רוטווילר). אם כן, הזהר שרק צעצועים עמידים (קונג שחור, חבלים עבים) מתאימים.
+• אם יש BREED_DIET_RULES — השתמש בהם להמלצות תזונה מדויקות.
+• אחרי כל המלצה רפואית, הוסף הצעת ביטוח Libra מותאמת לגזע (ראה מאגר ידע).
+
 === שימוש בנתוני החיה ===
 • הנתונים ב-ACTIVE_PET מגיעים ישירות מהמערכת — השתמש בהם!
 • אם יש גיל, גזע, משקל, מצבים רפואיים — אל תשאל שוב. השתמש ישירות.
 • אם שדה מציג "לא ידוע" — רק אז שאל.
-• אם has_insurance=כן — ציין שיש ביטוח קיים.
+• אם has_insurance=כן — ציין שיש ביטוח קיים. אם לא — הצע Libra אחרי המלצה רפואית.
 • אם medical_conditions לא ריק — התייחס למצבים הרפואיים.
 
 === סגנון שיחה ===
