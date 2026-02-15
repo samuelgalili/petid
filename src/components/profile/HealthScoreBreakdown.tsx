@@ -17,6 +17,7 @@ import { FelineRenalCare } from "./FelineRenalCare";
 import { FelineGastrointestinal } from "./FelineGastrointestinal";
 import { FelineNeuteredCare } from "./FelineNeuteredCare";
 import { FelineObesityCare } from "./FelineObesityCare";
+import { FelineDiabeticCare } from "./FelineDiabeticCare";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
@@ -751,6 +752,20 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
                       petName={pet.name}
                       weight={petData?.weight ?? undefined}
                       breed={pet.breed}
+                    />
+                  </div>
+                )}
+
+                {/* Feline Diabetic Care */}
+                {isCat && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-1.5">
+                      <Activity className="w-4 h-4 text-blue-500" strokeWidth={1.5} />
+                      טיפול בסוכרת — Diabetic Care
+                    </h3>
+                    <FelineDiabeticCare
+                      petName={pet.name}
+                      weight={petData?.weight ?? undefined}
                     />
                   </div>
                 )}
