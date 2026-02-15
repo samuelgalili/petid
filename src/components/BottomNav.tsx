@@ -100,7 +100,15 @@ const BottomNav = () => {
 
   if (isHiddenPage) return null;
 
-  const isActive = (path: string) => location.pathname === path;
+  // Smart active detection — highlight parent tab for sub-pages
+  const isActive = (path: string) => {
+    const p = location.pathname;
+    if (path === "/") return p === "/";
+    if (path === "/shop") return p === "/shop" || p.startsWith("/product/") || p === "/cart" || p === "/checkout" || p.startsWith("/shop/");
+    if (path === "/feed") return p === "/feed" || p.startsWith("/post/") || p.startsWith("/story/") || p === "/explore";
+    if (path === "/chat") return p === "/chat";
+    return p === path;
+  };
 
   const handleNavClick = (path: string) => {
     if (location.pathname === path) {
