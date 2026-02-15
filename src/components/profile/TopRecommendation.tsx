@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle, Edit2, Sparkles, Zap, Scissors, Utensils, Wind, Heart, ShoppingBag, Package, Share2, CheckCircle2, Shield, TrendingUp, Lightbulb, CloudSun, BarChart3, Bone, Fish, Brain, Stethoscope, Droplets, AlertTriangle, Activity } from "lucide-react";
+import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle, Edit2, Sparkles, Zap, Scissors, Utensils, Wind, Heart, ShoppingBag, Package, Share2, CheckCircle2, Shield, TrendingUp, Lightbulb, CloudSun, BarChart3, Bone, Fish, Brain, Stethoscope, Droplets, AlertTriangle, Activity, Cpu, Eye, Download, BadgeCheck, Syringe } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -44,6 +44,8 @@ interface BreedInfo {
   grooming_freq?: number;
   shedding_level?: number;
   trainability?: number;
+  health_issues?: string[];
+  health_issues_he?: string[];
 }
 
 interface TopRecommendationProps {
@@ -75,6 +77,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
   const [medicalConditions, setMedicalConditions] = useState<string[]>([]);
   const [currentFood, setCurrentFood] = useState<string | null>(null);
   const [medicalAffectedCircles, setMedicalAffectedCircles] = useState<Set<string>>(new Set());
+  const [petExtras, setPetExtras] = useState<{ microchip_number?: string | null; is_neutered?: boolean | null; next_vet_visit?: string | null; is_dangerous_breed?: boolean | null; license_conditions?: string | null; has_insurance?: boolean | null }>({});
   const isOwner = user?.id === pet.user_id;
 
   // Fetch owner profile
@@ -103,7 +106,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
       if (pet.breed) {
         const { data } = await supabase
           .from('breed_information')
-          .select('size_category, weight_range_kg, life_expectancy_years, exercise_needs, grooming_needs, energy_level, grooming_freq, shedding_level, trainability')
+          .select('size_category, weight_range_kg, life_expectancy_years, exercise_needs, grooming_needs, energy_level, grooming_freq, shedding_level, trainability, health_issues, health_issues_he')
           .or(`breed_name.ilike.%${pet.breed}%,breed_name_he.ilike.%${pet.breed}%`)
           .maybeSingle();
         if (data) setBreedInfo(data);
@@ -112,13 +115,21 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
       // Medical conditions & current food from pet record
       const { data: petFull } = await supabase
         .from('pets')
-        .select('medical_conditions, current_food')
+        .select('medical_conditions, current_food, microchip_number, is_neutered, next_vet_visit, is_dangerous_breed, license_conditions, has_insurance')
         .eq('id', pet.id)
         .maybeSingle();
       
       if (petFull) {
         setMedicalConditions((petFull as any).medical_conditions || []);
         setCurrentFood((petFull as any).current_food || null);
+        setPetExtras({
+          microchip_number: (petFull as any).microchip_number,
+          is_neutered: (petFull as any).is_neutered,
+          next_vet_visit: (petFull as any).next_vet_visit,
+          is_dangerous_breed: (petFull as any).is_dangerous_breed,
+          license_conditions: (petFull as any).license_conditions,
+          has_insurance: (petFull as any).has_insurance,
+        });
         
         // Determine affected dashboard circles from medical conditions
         const conditions = ((petFull as any).medical_conditions || []) as string[];
@@ -509,6 +520,74 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
 
   const petTypeHe = pet.type === 'dog' ? 'כלב' : 'חתול';
 
+  // Computed: Is pet verified (has microchip + owner profile)
+  const isVerified = !!(petExtras.microchip_number && owner?.full_name);
+
+  // Computed: Next vaccine countdown
+  const nextVaccineDays = useMemo(() => {
+    if (!petExtras.next_vet_visit) return null;
+    const next = new Date(petExtras.next_vet_visit);
+    const days = Math.ceil((next.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    return days > 0 ? days : null;
+  }, [petExtras.next_vet_visit]);
+
+  // Computed: Life stage label
+  const lifeStage = useMemo(() => {
+    if (!pet.birth_date) return null;
+    const { years, months } = calculateAge(pet.birth_date);
+    const totalMonths = years * 12 + months;
+    if (totalMonths < 6) return 'גור';
+    if (totalMonths < 12) return 'גור צעיר';
+    if (totalMonths < 24) return 'צעיר/ה';
+    if (years > 7) return 'סניור';
+    return 'בוגר/ת';
+  }, [pet.birth_date]);
+
+  // Computed: Primary breed trait (breed-specific critical need)
+  const primaryBreedTrait = useMemo(() => {
+    const breedLower = (pet.breed || '').toLowerCase();
+    const healthIssues = breedInfo?.health_issues_he || breedInfo?.health_issues || [];
+    
+    // Breed-specific critical traits
+    const breedTraits: Record<string, { label: string; icon: typeof Eye }> = {};
+    const brachyBreeds = ['שי טסו', 'shih tzu', 'בולדוג', 'פאג', 'pug', 'french bulldog', 'frenchie'];
+    const eyeBreeds = ['שי טסו', 'shih tzu', 'פאג', 'pug', 'קוקר', 'cocker'];
+    const hipBreeds = ['גולדן', 'golden', 'לברדור', 'labrador', 'רועה גרמני', 'german shepherd'];
+    const skinBreeds = ['בולדוג', 'bulldog', 'שרפיי', 'shar pei'];
+
+    if (eyeBreeds.some(b => breedLower.includes(b))) {
+      return { label: 'טיפול עיניים', icon: Eye };
+    }
+    if (hipBreeds.some(b => breedLower.includes(b))) {
+      return { label: 'מעקב מפרקים', icon: Activity };
+    }
+    if (skinBreeds.some(b => breedLower.includes(b))) {
+      return { label: 'טיפול עור', icon: Droplets };
+    }
+    if (brachyBreeds.some(b => breedLower.includes(b))) {
+      return { label: 'מעקב נשימה', icon: Stethoscope };
+    }
+    // Fallback: use first health issue
+    if (healthIssues.length > 0) {
+      return { label: healthIssues[0], icon: AlertTriangle };
+    }
+    return null;
+  }, [pet.breed, breedInfo]);
+
+  // Computed: Weight vs ideal comparison
+  const weightComparison = useMemo(() => {
+    if (!pet.weight || !breedInfo?.weight_range_kg) return null;
+    const match = breedInfo.weight_range_kg.match(/(\d+)-(\d+)/);
+    if (!match) return null;
+    const min = parseInt(match[1]);
+    const max = parseInt(match[2]);
+    const ideal = (min + max) / 2;
+    const diff = pet.weight - ideal;
+    if (Math.abs(diff) < 1) return { status: 'ideal' as const, text: 'אידיאלי' };
+    if (diff > 0) return { status: 'over' as const, text: `+${diff.toFixed(1)} ק"ג` };
+    return { status: 'under' as const, text: `${diff.toFixed(1)} ק"ג` };
+  }, [pet.weight, breedInfo?.weight_range_kg]);
+
   const getFieldLabel = () => {
     switch(editField) {
       case 'age': return 'גיל (בשנים)';
@@ -743,8 +822,19 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h3 className="font-bold text-foreground text-xl leading-tight">{pet.name}</h3>
-              {/* #13 Updated tag */}
-              {profileCompletion === 100 && (
+              {/* Verified badge: microchip + owner confirmed */}
+              {isVerified && (
+                <motion.span 
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-primary/15 text-primary rounded-full text-[9px] font-bold"
+                >
+                  <BadgeCheck className="w-3 h-3" />
+                  מאומת
+                </motion.span>
+              )}
+              {/* Profile complete tag */}
+              {!isVerified && profileCompletion === 100 && (
                 <motion.span 
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
@@ -756,37 +846,60 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
               )}
             </div>
             
-            {/* #8 Breed badge */}
-            {pet.breed && (
-              <motion.div 
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
-                className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-primary/8 rounded-full"
-              >
-                <img 
-                  src={pet.type === 'dog' ? dogIcon : catIcon} 
-                  alt="" 
-                  className="w-3 h-3 opacity-60" 
-                />
-                <span className="text-xs text-primary font-medium">{pet.breed}</span>
-              </motion.div>
-            )}
-            {!pet.breed && (
-              <p className="text-sm text-muted-foreground mt-0.5">{petTypeHe}</p>
-            )}
+            {/* Breed badge + Life stage */}
+            <div className="flex items-center gap-1.5 mt-1">
+              {pet.breed && (
+                <motion.div 
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/8 rounded-full"
+                >
+                  <img 
+                    src={pet.type === 'dog' ? dogIcon : catIcon} 
+                    alt="" 
+                    className="w-3 h-3 opacity-60" 
+                  />
+                  <span className="text-xs text-primary font-medium">{pet.breed}</span>
+                </motion.div>
+              )}
+              {!pet.breed && (
+                <span className="text-sm text-muted-foreground">{petTypeHe}</span>
+              )}
+              {lifeStage && (
+                <span className="text-[9px] font-medium text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded-full">{lifeStage}</span>
+              )}
+            </div>
 
-            {/* #6 Next event countdown */}
+            {/* Quick Stats: Microchip, Next Vaccine, Insurance */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
               className="flex flex-wrap gap-1 mt-1.5"
             >
-              {/* #16 Insurance tag */}
-              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-muted text-muted-foreground rounded-full text-[9px] font-medium">
+              {/* Microchip */}
+              {petExtras.microchip_number && (
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-muted text-muted-foreground rounded-full text-[9px] font-medium">
+                  <Cpu className="w-2.5 h-2.5" />
+                  {petExtras.microchip_number.slice(-6)}
+                </span>
+              )}
+              {/* Next Vaccine countdown */}
+              {nextVaccineDays && (
+                <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-medium ${
+                  nextVaccineDays <= 7 ? 'bg-red-500/15 text-red-600' : nextVaccineDays <= 14 ? 'bg-amber-500/15 text-amber-600' : 'bg-muted text-muted-foreground'
+                }`}>
+                  <Syringe className="w-2.5 h-2.5" />
+                  חיסון בעוד {nextVaccineDays} ימים
+                </span>
+              )}
+              {/* Insurance tag */}
+              <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-medium ${
+                petExtras.has_insurance ? 'bg-green-500/15 text-green-600' : 'bg-muted text-muted-foreground'
+              }`}>
                 <Shield className="w-2.5 h-2.5" />
-                ללא ביטוח
+                {petExtras.has_insurance ? 'מבוטח' : 'ללא ביטוח'}
               </span>
             </motion.div>
           </div>
@@ -873,9 +986,9 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
           </motion.div>
         )}
         
-        {/* Pet Details Grid - 3 columns with animated gauge cards */}
-        <div className="grid grid-cols-3 gap-3 mb-5">
-          {/* Age Gauge Card */}
+        {/* About Circles - 4 dynamic circles: Age, Weight, Breed Trait, Status */}
+        <div className="grid grid-cols-4 gap-2.5 mb-5">
+          {/* Age Circle */}
           <motion.button
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -883,151 +996,91 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
             whileHover={{ scale: 1.03, y: -2 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => {
-              if (!hasUserBirthDate && isOwner) {
-                openEditModal('age');
-              } else if (hasUserBirthDate) {
-                navigate('/chat', { state: { petId: pet.id, petName: pet.name, petBreed: pet.breed, category: 'insurance' } });
-              }
+              if (!hasUserBirthDate && isOwner) openEditModal('age');
             }}
-            disabled={!isOwner && !hasUserBirthDate}
-            className="bg-card rounded-2xl p-4 flex flex-col items-center shadow-sm border border-border/20 relative hover:shadow-md hover:border-primary/30 transition-all duration-300"
+            className="bg-card rounded-2xl p-3 flex flex-col items-center shadow-sm border border-border/20 relative hover:shadow-md hover:border-primary/30 transition-all duration-300"
             aria-label={`גיל: ${getAgeDisplay()}`}
           >
-            {isAgeFromBreed && (
-              <motion.div
-                animate={{ rotate: [0, 15, -15, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 3 }}
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-500 absolute top-2 left-2" />
-              </motion.div>
-            )}
-            <span className="text-sm font-semibold text-foreground mb-2">גיל</span>
-            <div className="relative w-18 h-11 mb-1">
-              <svg viewBox="0 0 100 55" className="w-full h-full">
-                <path
-                  d="M 10 50 A 40 40 0 0 1 90 50"
-                  fill="none"
-                  stroke="hsl(var(--muted))"
-                  strokeWidth="10"
-                  strokeLinecap="round"
-                />
-                <motion.path
-                  d="M 10 50 A 40 40 0 0 1 90 50"
-                  fill="none"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth="10"
-                  strokeLinecap="round"
-                  strokeDasharray="126"
-                  initial={{ strokeDashoffset: 126 }}
-                  animate={{ strokeDashoffset: 126 - (hasUserBirthDate ? 80 : 40) }}
-                  transition={{ delay: 0.3, duration: 1, ease: "easeOut" }}
-                />
-              </svg>
+            {isAgeFromBreed && <Sparkles className="w-3 h-3 text-amber-500 absolute top-1.5 left-1.5" />}
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-1.5">
+              <Calendar className="w-5 h-5 text-primary" strokeWidth={1.5} />
             </div>
-            <span className="text-sm text-muted-foreground text-center leading-tight font-medium">{getAgeDisplay()}</span>
+            <span className="text-[11px] font-semibold text-foreground">גיל</span>
+            <span className="text-[10px] text-primary font-bold mt-0.5 text-center leading-tight">{getAgeDisplay()}</span>
           </motion.button>
-          
-          {/* Size Gauge Card */}
-          <motion.div 
+
+          {/* Weight Circle - Current vs Ideal */}
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            whileHover={{ scale: 1.03, y: -2 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              if (!pet.weight && isOwner) openEditModal('weight');
+              else onFeedingOpen?.();
+            }}
+            className="bg-card rounded-2xl p-3 flex flex-col items-center shadow-sm border border-border/20 relative hover:shadow-md hover:border-primary/30 transition-all duration-300"
+            aria-label={`משקל: ${getWeightDisplay()}`}
+          >
+            {isWeightFromBreed && <Sparkles className="w-3 h-3 text-amber-500 absolute top-1.5 left-1.5" />}
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-1.5 ${
+              weightComparison?.status === 'ideal' ? 'bg-green-500/10' : 'bg-primary/10'
+            }`}>
+              <Weight className={`w-5 h-5 ${weightComparison?.status === 'ideal' ? 'text-green-600' : 'text-primary'}`} strokeWidth={1.5} />
+            </div>
+            <span className="text-[11px] font-semibold text-foreground">משקל</span>
+            <span className="text-[10px] text-primary font-bold mt-0.5">{getWeightDisplay()}</span>
+            {weightComparison && (
+              <span className={`text-[8px] font-medium mt-0.5 ${
+                weightComparison.status === 'ideal' ? 'text-green-600' : 'text-amber-600'
+              }`}>{weightComparison.text}</span>
+            )}
+          </motion.button>
+
+          {/* Breed Trait Circle - breed-specific critical need */}
+          <motion.button
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             whileHover={{ scale: 1.03, y: -2 }}
-            className="bg-card rounded-2xl p-4 flex flex-col items-center shadow-sm border border-border/20 relative hover:shadow-md hover:border-primary/30 transition-all duration-300 cursor-default"
-            role="img"
-            aria-label={`גודל: ${getSizeDisplay()}`}
+            whileTap={{ scale: 0.98 }}
+            onClick={onGroomingOpen}
+            className="bg-card rounded-2xl p-3 flex flex-col items-center shadow-sm border border-border/20 relative hover:shadow-md hover:border-primary/30 transition-all duration-300"
+            aria-label={`מאפיין גזע: ${primaryBreedTrait?.label || ''}`}
           >
-            {isSizeFromBreed && (
-              <motion.div
-                animate={{ rotate: [0, 15, -15, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 3 }}
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-500 absolute top-2 left-2" />
-              </motion.div>
-            )}
-            <span className="text-sm font-semibold text-foreground mb-2">גודל</span>
-            <div className="relative w-18 h-11 mb-1">
-              <svg viewBox="0 0 100 55" className="w-full h-full">
-                <path
-                  d="M 10 50 A 40 40 0 0 1 90 50"
-                  fill="none"
-                  stroke="hsl(var(--muted))"
-                  strokeWidth="10"
-                  strokeLinecap="round"
-                />
-                <motion.path
-                  d="M 10 50 A 40 40 0 0 1 90 50"
-                  fill="none"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth="10"
-                  strokeLinecap="round"
-                  strokeDasharray="126"
-                  initial={{ strokeDashoffset: 126 }}
-                  animate={{ strokeDashoffset: 126 - (() => {
-                    const size = pet.size || breedInfo?.size_category || 'medium';
-                    if (size === 'small') return 32;
-                    if (size === 'medium') return 63;
-                    if (size === 'large') return 95;
-                    if (size === 'extra_large') return 126;
-                    return 63;
-                  })() }}
-                  transition={{ delay: 0.4, duration: 1, ease: "easeOut" }}
-                />
-              </svg>
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-1.5 ${
+              primaryBreedTrait ? 'bg-amber-500/10' : 'bg-primary/10'
+            }`}>
+              {primaryBreedTrait ? (
+                <primaryBreedTrait.icon className="w-5 h-5 text-amber-600" strokeWidth={1.5} />
+              ) : (
+                <Brain className="w-5 h-5 text-primary" strokeWidth={1.5} />
+              )}
             </div>
-            <span className="text-sm text-muted-foreground font-medium">{getSizeDisplay()}</span>
-          </motion.div>
-          
-          {/* Weight Gauge Card */}
-          <motion.button
+            <span className="text-[11px] font-semibold text-foreground">מאפיין</span>
+            <span className="text-[10px] text-primary font-bold mt-0.5 text-center leading-tight">
+              {primaryBreedTrait?.label || 'כללי'}
+            </span>
+          </motion.button>
+
+          {/* Status Circle - Neutered/Spayed */}
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            whileHover={{ scale: 1.03, y: -2 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => {
-              if (!pet.weight && isOwner) {
-                openEditModal('weight');
-              } else {
-                onFeedingOpen?.();
-              }
-            }}
-            className="bg-card rounded-2xl p-4 flex flex-col items-center shadow-sm border border-border/20 relative hover:shadow-md hover:border-primary/30 transition-all duration-300"
-            aria-label={`משקל: ${getWeightDisplay()}`}
+            transition={{ delay: 0.25 }}
+            className="bg-card rounded-2xl p-3 flex flex-col items-center shadow-sm border border-border/20 relative transition-all duration-300"
           >
-            {isWeightFromBreed && (
-              <motion.div
-                animate={{ rotate: [0, 15, -15, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 3 }}
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-500 absolute top-2 left-2" />
-              </motion.div>
-            )}
-            <span className="text-sm font-semibold text-foreground mb-2">משקל</span>
-            <div className="relative w-18 h-11 mb-1">
-              <svg viewBox="0 0 100 55" className="w-full h-full">
-                <path
-                  d="M 10 50 A 40 40 0 0 1 90 50"
-                  fill="none"
-                  stroke="hsl(var(--muted))"
-                  strokeWidth="10"
-                  strokeLinecap="round"
-                />
-                <motion.path
-                  d="M 10 50 A 40 40 0 0 1 90 50"
-                  fill="none"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth="10"
-                  strokeLinecap="round"
-                  strokeDasharray="126"
-                  initial={{ strokeDashoffset: 126 }}
-                  animate={{ strokeDashoffset: 126 - Math.min((pet.weight || 10) / 50 * 126, 126) }}
-                  transition={{ delay: 0.5, duration: 1, ease: "easeOut" }}
-                />
-              </svg>
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-1.5 ${
+              petExtras.is_neutered ? 'bg-green-500/10' : 'bg-muted'
+            }`}>
+              <Shield className={`w-5 h-5 ${petExtras.is_neutered ? 'text-green-600' : 'text-muted-foreground'}`} strokeWidth={1.5} />
             </div>
-            <span className="text-sm text-muted-foreground font-medium">{getWeightDisplay()}</span>
-          </motion.button>
+            <span className="text-[11px] font-semibold text-foreground">סטטוס</span>
+            <span className={`text-[10px] font-bold mt-0.5 ${petExtras.is_neutered ? 'text-green-600' : 'text-muted-foreground'}`}>
+              {petExtras.is_neutered === true ? (pet.type === 'dog' ? 'מסורס' : 'מעוקרת') : petExtras.is_neutered === false ? 'לא' : '—'}
+            </span>
+          </motion.div>
         </div>
 
 
@@ -1180,45 +1233,121 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
           </motion.div>
         )}
 
-        {/* Food & Purchase Impact Bars (V17) */}
-        {(currentFood || recentPurchases.length > 0) && (
-          <motion.div
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="mb-3 p-3 bg-muted/20 rounded-xl border border-border/20"
-          >
-            <div className="flex items-center gap-1.5 mb-2.5">
-              <BarChart3 className="w-3.5 h-3.5 text-primary" strokeWidth={1.5} />
-              <span className="text-[11px] font-bold text-foreground">ניתוח תזונה ומוצרים</span>
+        {/* Vitals Section: Daily Fed Meter + Energy + Nutrition Bars */}
+        <motion.div
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="mb-3 p-3.5 bg-muted/20 rounded-xl border border-border/20"
+        >
+          <div className="flex items-center gap-1.5 mb-3">
+            <Activity className="w-3.5 h-3.5 text-primary" strokeWidth={1.5} />
+            <span className="text-[11px] font-bold text-foreground">מדדי בריאות יומיים</span>
+          </div>
+          
+          {/* Daily Fed Meter */}
+          {recommendedGrams && (
+            <div className="mb-3 p-2.5 bg-card rounded-xl border border-border/20">
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center gap-1.5">
+                  {pet.type === 'dog' ? <Bone className="w-3.5 h-3.5 text-primary" strokeWidth={1.5} /> : <Fish className="w-3.5 h-3.5 text-primary" strokeWidth={1.5} />}
+                  <span className="text-[10px] font-bold text-foreground">צריכה יומית מומלצת</span>
+                </div>
+                <span className="text-xs font-bold text-primary">
+                  {feedingGuideline ? `${feedingGuideline.min}-${feedingGuideline.max}` : `~${recommendedGrams}`} גרם
+                </span>
+              </div>
+              <div className="w-full h-3 bg-muted rounded-full overflow-hidden relative">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${Math.min((recommendedGrams / (feedingGuideline?.max || recommendedGrams * 1.2)) * 100, 100)}%` }}
+                  transition={{ delay: 0.6, duration: 1, ease: "easeOut" }}
+                  className="h-full bg-gradient-to-l from-primary to-primary/70 rounded-full"
+                />
+                {/* Target markers */}
+                {feedingGuideline && (
+                  <>
+                    <div className="absolute top-0 bottom-0 border-r border-dashed border-foreground/20" style={{ left: `${(feedingGuideline.min / (feedingGuideline.max * 1.2)) * 100}%` }} />
+                    <div className="absolute top-0 bottom-0 border-r border-dashed border-foreground/20" style={{ left: `${(feedingGuideline.max / (feedingGuideline.max * 1.2)) * 100}%` }} />
+                  </>
+                )}
+              </div>
+              {lifeStage && (
+                <p className="text-[9px] text-muted-foreground mt-1">
+                  {lifeStage === 'גור' || lifeStage === 'גור צעיר' 
+                    ? `${pet.name} ${lifeStage} — נדרש חלבון גבוה לבניית עצמות`
+                    : lifeStage === 'סניור'
+                    ? `${pet.name} ${lifeStage} — מומלץ מזון דל-שומן`
+                    : `${pet.name} ${lifeStage} — תזונה מאוזנת`}
+                </p>
+              )}
             </div>
-            <div className="space-y-2">
-              {[
-                { label: 'אנרגיה', value: foodBars.energy, icon: Zap, onClick: onEnergyOpen },
-                { label: 'שובע', value: foodBars.satiety, icon: Utensils, onClick: onFeedingOpen },
-                { label: 'פרווה', value: foodBars.coat, icon: Sparkles, onClick: onGroomingOpen },
-                { label: 'ניידות', value: foodBars.mobility, icon: TrendingUp, onClick: onMobilityOpen },
-                { label: 'עיכול', value: foodBars.digestion, icon: Activity, onClick: onDigestionOpen },
-              ].map((bar) => (
-                <button key={bar.label} onClick={bar.onClick} className="flex items-center gap-2 w-full hover:bg-muted/30 rounded-md py-0.5 transition-colors cursor-pointer">
-                  <bar.icon className="w-3 h-3 text-muted-foreground flex-shrink-0" strokeWidth={1.5} />
-                  <span className="text-[10px] text-muted-foreground w-10 flex-shrink-0">{bar.label}</span>
-                  <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${bar.value}%` }}
-                      transition={{ delay: 0.6, duration: 0.8, ease: "easeOut" }}
-                      className={`h-full rounded-full ${
-                        bar.value >= 75 ? 'bg-green-500' : bar.value >= 50 ? 'bg-primary' : 'bg-amber-500'
-                      }`}
-                    />
-                  </div>
-                  <span className="text-[10px] font-bold text-foreground w-7 text-left">{bar.value}%</span>
-                </button>
-              ))}
+          )}
+
+          {/* Energy Prediction Bar */}
+          <div className="mb-2 p-2.5 bg-card rounded-xl border border-border/20">
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5 text-amber-500" strokeWidth={1.5} />
+                <span className="text-[10px] font-bold text-foreground">אנרגיה צפויה</span>
+              </div>
+              <span className="text-[10px] font-bold text-amber-600">{foodBars.energy}%</span>
             </div>
-          </motion.div>
-        )}
+            <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${foodBars.energy}%` }}
+                transition={{ delay: 0.7, duration: 0.8, ease: "easeOut" }}
+                className={`h-full rounded-full ${
+                  foodBars.energy >= 75 ? 'bg-green-500' : foodBars.energy >= 50 ? 'bg-amber-500' : 'bg-red-400'
+                }`}
+              />
+            </div>
+            {activityMinutes && (
+              <p className="text-[9px] text-muted-foreground mt-1">
+                מומלץ: {activityMinutes} דקות פעילות יומית
+              </p>
+            )}
+          </div>
+
+          {/* Compact Nutrition bars */}
+          <div className="space-y-1.5">
+            {[
+              { label: 'שובע', value: foodBars.satiety, icon: Utensils, onClick: onFeedingOpen },
+              { label: 'פרווה', value: foodBars.coat, icon: Sparkles, onClick: onGroomingOpen },
+              { label: 'ניידות', value: foodBars.mobility, icon: TrendingUp, onClick: onMobilityOpen },
+              { label: 'עיכול', value: foodBars.digestion, icon: Activity, onClick: onDigestionOpen },
+            ].map((bar) => (
+              <button key={bar.label} onClick={bar.onClick} className="flex items-center gap-2 w-full hover:bg-muted/30 rounded-md py-0.5 transition-colors cursor-pointer">
+                <bar.icon className="w-3 h-3 text-muted-foreground flex-shrink-0" strokeWidth={1.5} />
+                <span className="text-[10px] text-muted-foreground w-10 flex-shrink-0">{bar.label}</span>
+                <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${bar.value}%` }}
+                    transition={{ delay: 0.6, duration: 0.8, ease: "easeOut" }}
+                    className={`h-full rounded-full ${
+                      bar.value >= 75 ? 'bg-green-500' : bar.value >= 50 ? 'bg-primary' : 'bg-amber-500'
+                    }`}
+                  />
+                </div>
+                <span className="text-[10px] font-bold text-foreground w-7 text-left">{bar.value}%</span>
+              </button>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Download ID Card Button */}
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+          onClick={() => navigate(`/pet/${pet.id}/id-card`)}
+          className="w-full mb-3 flex items-center justify-center gap-2 py-2.5 bg-primary/8 hover:bg-primary/15 rounded-xl border border-primary/20 transition-colors"
+        >
+          <Download className="w-4 h-4 text-primary" strokeWidth={1.5} />
+          <span className="text-xs font-semibold text-primary">הורד תעודת זיהוי דיגיטלית</span>
+        </motion.button>
 
         {/* Second row: Life Expectancy + Mood + QR */}
         <div className="grid grid-cols-3 gap-2.5">
