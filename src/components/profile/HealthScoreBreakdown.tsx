@@ -18,6 +18,7 @@ import { FelineGastrointestinal } from "./FelineGastrointestinal";
 import { FelineNeuteredCare } from "./FelineNeuteredCare";
 import { FelineObesityCare } from "./FelineObesityCare";
 import { FelineDiabeticCare } from "./FelineDiabeticCare";
+import { FelineDashboard } from "./FelineDashboard";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
@@ -682,6 +683,25 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
                     );
                   })}
                 </div>
+
+                {/* Feline Dashboard — cat-specific overview */}
+                {isCat && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-1.5">
+                      <Droplets className="w-4 h-4 text-blue-500" strokeWidth={1.5} />
+                      דשבורד חתולי — Feline Dashboard
+                    </h3>
+                    <FelineDashboard
+                      petName={pet.name}
+                      weight={petData?.weight ?? undefined}
+                      breed={pet.breed}
+                      currentFood={petData?.current_food ?? undefined}
+                      isIndoor={true}
+                      isMale={petData?.gender === 'male' || petData?.gender === 'זכר'}
+                      ageYears={lifeStage.months ? Math.floor(lifeStage.months / 12) : undefined}
+                    />
+                  </div>
+                )}
 
                 {/* Feline Urinary Support — detailed Struvite UI for cats */}
                 {isCat && pillarWeights.urinary > 0 && (
