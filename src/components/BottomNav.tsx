@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
+import { CreatePostDialog } from "@/components/CreatePostDialog";
+import { CreateStoryDialog } from "@/components/CreateStoryDialog";
 
 interface NavItemProps {
   icon: React.ReactNode;
@@ -74,6 +76,8 @@ const BottomNav = () => {
   const navigate = useNavigate();
   const [userAvatar, setUserAvatar] = useState<string>("");
   const [showUploadMenu, setShowUploadMenu] = useState(false);
+  const [showCreatePost, setShowCreatePost] = useState(false);
+  const [showCreateStory, setShowCreateStory] = useState(false);
   const { unreadCount } = useRealtimeNotifications();
 
   // Pages where we hide bottom nav completely (fullscreen experiences)
@@ -112,6 +116,21 @@ const BottomNav = () => {
     }
   };
 
+  const handleUploadAction = (action: "story" | "post" | "document") => {
+    setShowUploadMenu(false);
+    switch (action) {
+      case "story":
+        setShowCreateStory(true);
+        break;
+      case "post":
+        setShowCreatePost(true);
+        break;
+      case "document":
+        navigate("/documents");
+        break;
+    }
+  };
+
   return (
     <>
       {/* Upload Menu Overlay */}
@@ -136,14 +155,14 @@ const BottomNav = () => {
               dir="rtl"
             >
               {[
-                { icon: Camera, label: "סטורי", path: "/create-story", color: "text-pink-500", bg: "bg-pink-500/10" },
-                { icon: ImagePlus, label: "פוסט", path: "/create-post", color: "text-blue-500", bg: "bg-blue-500/10" },
-                { icon: FileText, label: "מסמך", path: "/scan-document", color: "text-amber-500", bg: "bg-amber-500/10" },
+                { icon: Camera, label: "סטורי", action: "story" as const, color: "text-pink-500", bg: "bg-pink-500/10" },
+                { icon: ImagePlus, label: "פוסט", action: "post" as const, color: "text-blue-500", bg: "bg-blue-500/10" },
+                { icon: FileText, label: "מסמך", action: "document" as const, color: "text-amber-500", bg: "bg-amber-500/10" },
               ].map((item) => (
                 <motion.button
-                  key={item.path}
+                  key={item.action}
                   whileTap={{ scale: 0.9 }}
-                  onClick={() => { setShowUploadMenu(false); navigate(item.path); }}
+                  onClick={() => handleUploadAction(item.action)}
                   className="flex flex-col items-center gap-1.5"
                 >
                   <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center", item.bg)}>
@@ -156,6 +175,22 @@ const BottomNav = () => {
           </>
         )}
       </AnimatePresence>
+
+      {/* Dialogs */}
+      <CreatePostDialog
+        open={showCreatePost}
+        onOpenChange={setShowCreatePost}
+        onPostCreated={() => {
+          setShowCreatePost(false);
+        }}
+      />
+      <CreateStoryDialog
+        open={showCreateStory}
+        onOpenChange={setShowCreateStory}
+        onStoryCreated={() => {
+          setShowCreateStory(false);
+        }}
+      />
 
       {/* Bottom nav - height: 56px */}
       <nav
