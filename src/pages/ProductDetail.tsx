@@ -8,7 +8,7 @@ import {
   WheatOff, Beef, Sparkles, Dog, Baby, Scale, Droplets, ShieldCheck,
   Calculator, Wrench, Lightbulb, Ruler, Paintbrush, Cookie, GlassWater,
   Eye, Bone, Timer, Smile, Zap, CloudLightning, Stethoscope, Scissors,
-  Snowflake, Microwave, Hand
+  Snowflake, Microwave, Hand, Moon, Sofa, Waves, WashingMachine, Home
 } from "lucide-react";
 import { ProductReviews } from "@/components/shop/ProductReviews";
 import { PriceAlertButton } from "@/components/shop/PriceAlertButton";
@@ -267,6 +267,79 @@ const isEnrichmentProduct = (product: any): boolean => {
     text.includes('lickimat') || text.includes('ליקימט') || text.includes('lick mat') ||
     text.includes('מפית ליקוק') || text.includes('משטח ליקוק') || text.includes('enrichment') ||
     text.includes('העשרה') || text.includes('slow feeder') || text.includes('אנטי גלופ');
+};
+
+/** Check if product is a bedding/comfort product */
+const isBeddingProduct = (product: any): boolean => {
+  const cat = (product.category || '').toLowerCase();
+  const text = `${product.name || ''} ${product.description || ''}`.toLowerCase();
+  return cat === 'beds' || cat === 'bedding' || cat === 'מיטות' ||
+    text.includes('מיטה') || text.includes('bed') || text.includes('mat ') ||
+    text.includes('fluffy') || text.includes('פלאפי') || text.includes('מזרן') ||
+    text.includes('כרית') || text.includes('cushion') || text.includes('snuggle');
+};
+
+/** Extract bedding/comfort features */
+const extractBeddingFeatures = (product: any): {
+  texture: string | null;
+  sleepBenefits: { icon: React.ReactNode; label: string; description: string }[];
+  isWashable: boolean;
+  washTip: string | null;
+  sizing: { diameter: string | null; maxWeight: string | null; bestFor: string | null };
+  isLuxuryDesign: boolean;
+  snuggleFactor: boolean; // Bed/Mat/Fluffy → prioritize snuggle
+} => {
+  const text = `${product.name || ''} ${product.description || ''} ${(product.special_diet || []).join(' ')}`.toLowerCase();
+  const attrs = product.product_attributes || {};
+  const benefits = Array.isArray(product.benefits) ? product.benefits : [];
+  const benefitsText = benefits.map((b: any) => `${b.title || ''} ${b.description || ''}`).join(' ').toLowerCase();
+  const allText = text + ' ' + benefitsText;
+
+  // Texture / Feel
+  let texture = attrs.texture || attrs['מרקם'] || attrs.material || attrs['חומר'] || null;
+  if (!texture) {
+    if (allText.includes('פלאפי') || allText.includes('fluffy') || allText.includes('פרווה')) texture = 'בד פלאפי המדמה פרווה טבעית';
+    else if (allText.includes('קטיפה') || allText.includes('velvet')) texture = 'קטיפה רכה';
+    else if (allText.includes('מרופד') || allText.includes('padded')) texture = 'ריפוד עבה ונוח';
+  }
+
+  // Sleep benefits
+  const sleepBenefits: { icon: React.ReactNode; label: string; description: string }[] = [];
+  if (allText.includes('חרדה') || allText.includes('anxiety') || allText.includes('ביטחון') || allText.includes('security') || allText.includes('קירות גבוה') || allText.includes('raised') || allText.includes('bolster'))
+    sleepBenefits.push({ icon: <Heart className="w-5 h-5" />, label: 'הפחתת חרדה', description: 'קירות גבוהים לתחושת ביטחון' });
+  if (allText.includes('מפרקים') || allText.includes('joint') || allText.includes('אורתופד') || allText.includes('orthop') || allText.includes('מבוגר') || allText.includes('senior') || allText.includes('older'))
+    sleepBenefits.push({ icon: <ShieldCheck className="w-5 h-5" />, label: 'תמיכה למפרקים', description: 'מתאים במיוחד לחיות מבוגרות' });
+  if (allText.includes('שינה עמוקה') || allText.includes('deep sleep') || allText.includes('שינה') || allText.includes('sleep') || allText.includes('מנוחה') || allText.includes('rest'))
+    sleepBenefits.push({ icon: <Moon className="w-5 h-5" />, label: 'שינה עמוקה', description: 'מעודד שינה עמוקה ואיכותית' });
+  // Fallback
+  if (sleepBenefits.length === 0) {
+    sleepBenefits.push({ icon: <Moon className="w-5 h-5" />, label: 'שינה עמוקה', description: 'מעודד שינה עמוקה ואיכותית' });
+  }
+
+  // Washable
+  const isWashable = allText.includes('כביסה') || allText.includes('wash') || allText.includes('ניתן לכבס') || allText.includes('machine wash') || allText.includes('כבסה');
+  let washTip = attrs.care_instructions || attrs['הוראות טיפול'] || null;
+  if (!washTip && isWashable) washTip = 'כביסה עדינה במכונה, ייבוש באוויר';
+
+  // Sizing
+  const diameterMatch = allText.match(/(\d{2,3})\s*(?:ס[״"]?מ|cm)\s*(?:קוטר|diameter)?/i) || allText.match(/(?:קוטר|diameter)\s*[:\-–]?\s*(\d{2,3})/i);
+  const weightMatch = allText.match(/(?:עד|up to|מקסימום|max)\s*(\d{1,3})\s*(?:ק[״"]?ג|kg)/i);
+  const diameter = attrs.diameter || attrs['קוטר'] || (diameterMatch ? `${diameterMatch[1]} ס"מ` : null);
+  const maxWeight = attrs.max_weight || attrs['משקל מקסימלי'] || (weightMatch ? `עד ${weightMatch[1]} ק"ג` : null);
+  let bestFor = attrs.best_for || attrs['מתאים ל'] || null;
+  if (!bestFor) {
+    if (allText.includes('קטן') || allText.includes('small')) bestFor = 'כלבים קטנים עד בינוניים / חתולים';
+    else if (allText.includes('גדול') || allText.includes('large')) bestFor = 'כלבים גדולים';
+    else if (allText.includes('חתול') || allText.includes('cat')) bestFor = 'חתולים';
+  }
+
+  // Luxury design
+  const isLuxuryDesign = allText.includes('יוקרתי') || allText.includes('luxury') || allText.includes('עיצוב') || allText.includes('design') || allText.includes('סלון') || allText.includes('home') || allText.includes('דקורטיב');
+
+  // Snuggle factor
+  const snuggleFactor = allText.includes('bed') || allText.includes('מיטה') || allText.includes('mat') || allText.includes('fluffy') || allText.includes('פלאפי') || allText.includes('snuggle');
+
+  return { texture, sleepBenefits, isWashable, washTip, sizing: { diameter, maxWeight, bestFor }, isLuxuryDesign, snuggleFactor };
 };
 
 /** Extract enrichment product features */
@@ -623,6 +696,8 @@ const ProductDetail = () => {
   const wetFoodFeatures = useMemo(() => product && isWetFood ? extractWetFoodFeatures(product) : { hasHydration: false, hasJointSupport: false, texture: null, origin: null, mixingTip: null }, [product, isWetFood]);
   const isEnrichment = useMemo(() => product ? isEnrichmentProduct(product) : false, [product]);
   const enrichmentFeatures = useMemo(() => product && isEnrichment ? extractEnrichmentFeatures(product) : { anxietyUses: [], materialSpecs: [], healthNote: null, recipes: [] }, [product, isEnrichment]);
+  const isBedding = useMemo(() => product ? isBeddingProduct(product) : false, [product]);
+  const beddingFeatures = useMemo(() => product && isBedding ? extractBeddingFeatures(product) : { texture: null, sleepBenefits: [], isWashable: false, washTip: null, sizing: { diameter: null, maxWeight: null, bestFor: null }, isLuxuryDesign: false, snuggleFactor: false }, [product, isBedding]);
   const isTreat = useMemo(() => product ? isTreatProduct(product) : false, [product]);
   const treatHealthBoosts = useMemo(() => product && isTreat ? deriveTreatHealthBoosts(product) : [], [product, isTreat]);
   const treatUsage = useMemo(() => product && isTreat ? extractTreatUsage(product) : { purpose: null, safetyTip: null, isNatural: false }, [product, isTreat]);
@@ -1329,6 +1404,124 @@ const ProductDetail = () => {
                 <div>
                   <h3 className="text-sm font-bold text-foreground">🦴 בריאות המפרקים</h3>
                   <p className="text-[12px] text-muted-foreground mt-0.5">מכיל גלוקוזאמין וכונדרואיטין – תמיכה בגמישות המפרקים ובניידות</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Bedding: Feel & Texture Highlight ── */}
+        {isBedding && beddingFeatures.texture && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(280,60%,95%)] to-background border-[hsl(280,40%,70%)]/20 dark:from-[hsl(280,30%,15%)] dark:border-[hsl(280,40%,40%)]/20">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-[hsl(280,50%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Waves className="w-6 h-6 text-[hsl(280,50%,50%)]" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">🧸 מרקם ותחושה</h3>
+                  <p className="text-[13px] text-muted-foreground mt-0.5">{beddingFeatures.texture}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Bedding: Sleep Benefits ── */}
+        {isBedding && beddingFeatures.sleepBenefits.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Moon className="w-4 h-4 text-primary" />
+                יתרונות שינה ונוחות
+              </h3>
+              <div className="grid grid-cols-1 gap-2.5">
+                {beddingFeatures.sleepBenefits.map((benefit, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.24 + i * 0.06 }}
+                    className="bg-gradient-to-l from-[hsl(280,50%,95%)]/60 to-transparent dark:from-[hsl(280,30%,15%)] rounded-xl p-3.5 border border-[hsl(280,40%,70%)]/15 flex items-center gap-3"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-[hsl(280,50%,80%)]/15 flex items-center justify-center flex-shrink-0 text-[hsl(280,50%,50%)]">
+                      {benefit.icon}
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-bold text-foreground">{benefit.label}</p>
+                      <p className="text-[11px] text-muted-foreground">{benefit.description}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Bedding: Care & Maintenance ── */}
+        {isBedding && beddingFeatures.isWashable && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(200,60%,93%)] to-background border-[hsl(200,50%,70%)]/20 dark:from-[hsl(200,30%,15%)] dark:border-[hsl(200,40%,40%)]/20">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(200,60%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <WashingMachine className="w-5 h-5 text-[hsl(200,60%,45%)]" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">🧼 ניתנת לכביסה</h3>
+                  {beddingFeatures.washTip && (
+                    <p className="text-[12px] text-muted-foreground mt-0.5">{beddingFeatures.washTip}</p>
+                  )}
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Bedding: Sizing Guide ── */}
+        {isBedding && (beddingFeatures.sizing.diameter || beddingFeatures.sizing.maxWeight || beddingFeatures.sizing.bestFor) && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
+            <Card className="overflow-hidden">
+              <div className="p-4">
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                  <Ruler className="w-4 h-4 text-primary" />
+                  מדריך מידות
+                </h3>
+                <div className="grid grid-cols-3 gap-2">
+                  {beddingFeatures.sizing.diameter && (
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }} className="bg-muted/40 rounded-xl p-3 border border-border/30 text-center">
+                      <p className="text-[10px] text-muted-foreground font-medium mb-1">קוטר</p>
+                      <p className="text-sm font-black text-foreground">{beddingFeatures.sizing.diameter}</p>
+                    </motion.div>
+                  )}
+                  {beddingFeatures.sizing.maxWeight && (
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }} className="bg-muted/40 rounded-xl p-3 border border-border/30 text-center">
+                      <p className="text-[10px] text-muted-foreground font-medium mb-1">משקל מקסימלי</p>
+                      <p className="text-sm font-black text-foreground">{beddingFeatures.sizing.maxWeight}</p>
+                    </motion.div>
+                  )}
+                  {beddingFeatures.sizing.bestFor && (
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.36 }} className="bg-muted/40 rounded-xl p-3 border border-border/30 text-center">
+                      <p className="text-[10px] text-muted-foreground font-medium mb-1">מתאים ל</p>
+                      <p className="text-[11px] font-bold text-foreground">{beddingFeatures.sizing.bestFor}</p>
+                    </motion.div>
+                  )}
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Bedding: Home Decor / Luxury Design Tag ── */}
+        {isBedding && beddingFeatures.isLuxuryDesign && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(40,60%,93%)] to-background border-[hsl(40,50%,70%)]/20 dark:from-[hsl(40,30%,15%)] dark:border-[hsl(40,40%,40%)]/20">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(40,60%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Home className="w-5 h-5 text-[hsl(40,60%,40%)]" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">✨ עיצוב יוקרתי</h3>
+                  <p className="text-[12px] text-muted-foreground mt-0.5">עיצוב אלגנטי המשתלב בכל סגנון עיצוב הבית</p>
                 </div>
               </div>
             </Card>
