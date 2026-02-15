@@ -26,6 +26,7 @@ import { PetPhotoGallery } from "@/components/profile/PetPhotoGallery";
 import { PetMiniCalendar } from "@/components/profile/PetMiniCalendar";
 import { InsuranceSheet, TrainingSheet, GroomingSheet, BoardingSheet, BreedInfoSheet, FoodSheet, ToysSheet, DocumentsSheet, DogWalkerSheet, ProductsSheet, EnergySheet, GroomingProductsSheet, FeedingSheet } from "@/components/pet-services";
 import { SmartRecommendationSheet } from "@/components/pet-services/SmartRecommendationSheet";
+import { HealthScoreBreakdown } from "@/components/profile/HealthScoreBreakdown";
 import { MedicalTimeline } from "@/components/profile/MedicalTimeline";
 import { VetVisitInput } from "@/components/profile/VetVisitInput";
 import { RecoveryBanner } from "@/components/profile/RecoveryBanner";
@@ -87,6 +88,7 @@ const Profile = () => {
   const [feedingSheetOpen, setFeedingSheetOpen] = useState(false);
   const [smartRecCategory, setSmartRecCategory] = useState<'coat' | 'energy' | 'health' | 'feeding' | 'mobility' | 'digestion' | null>(null);
   const [healthRefreshKey, setHealthRefreshKey] = useState(0);
+  const [healthBreakdownOpen, setHealthBreakdownOpen] = useState(false);
   const triggerHealthRefresh = () => setHealthRefreshKey(k => k + 1);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const collapseTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -600,7 +602,7 @@ const Profile = () => {
                     <PetWeatherAlert petType={selectedPet.type} petName={selectedPet.name} />
                     
                     {/* Health Score */}
-                    <PetHealthScore pet={selectedPet} onViewDetails={() => setSmartRecCategory('health')} refreshKey={healthRefreshKey} />
+                    <PetHealthScore pet={selectedPet} onViewDetails={() => setHealthBreakdownOpen(true)} refreshKey={healthRefreshKey} />
                     
                     {/* Recovery Banner */}
                     <RecoveryBanner petId={selectedPet.id} petName={selectedPet.name} onOpenRecoveryProducts={() => setSmartRecCategory('health')} />
@@ -785,6 +787,12 @@ const Profile = () => {
             title=""
           />
         )}
+        {/* Health Score Breakdown */}
+        <HealthScoreBreakdown
+          pet={selectedPet}
+          isOpen={healthBreakdownOpen}
+          onClose={() => setHealthBreakdownOpen(false)}
+        />
         <AnimatePresence>
           {showPetShop && selectedPet && <PetShopView pet={selectedPet} onBack={handleClosePetShop} />}
         </AnimatePresence>
