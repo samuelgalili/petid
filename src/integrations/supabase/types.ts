@@ -6853,6 +6853,65 @@ export type Database = {
           },
         ]
       }
+      product_variants: {
+        Row: {
+          created_at: string
+          display_order: number | null
+          id: string
+          in_stock: boolean | null
+          label: string
+          price: number | null
+          product_id: string
+          sale_price: number | null
+          sku: string | null
+          updated_at: string
+          value: string
+          variant_type: string
+          weight_kg: number | null
+          weight_unit: string | null
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          in_stock?: boolean | null
+          label: string
+          price?: number | null
+          product_id: string
+          sale_price?: number | null
+          sku?: string | null
+          updated_at?: string
+          value: string
+          variant_type: string
+          weight_kg?: number | null
+          weight_unit?: string | null
+        }
+        Update: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          in_stock?: boolean | null
+          label?: string
+          price?: number | null
+          product_id?: string
+          sale_price?: number | null
+          sku?: string | null
+          updated_at?: string
+          value?: string
+          variant_type?: string
+          weight_kg?: number | null
+          weight_unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variants_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "business_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_variations: {
         Row: {
           created_at: string | null
