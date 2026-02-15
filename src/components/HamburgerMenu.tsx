@@ -32,7 +32,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { RoleBadge } from "@/components/RoleBadge";
 import { cn } from "@/lib/utils";
-
+import { usePetPreference } from "@/contexts/PetPreferenceContext";
 interface HamburgerMenuProps {
   isOpen: boolean;
   onClose: () => void;
@@ -181,13 +181,12 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const { language, setLanguage, direction } = useLanguage();
+  const { activePet, pets, switchPet: contextSwitchPet } = usePetPreference();
   const isRtl = direction === "rtl";
   const s = menuStrings[language] || menuStrings.he;
 
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
-  const [activePet, setActivePet] = useState<any>(null);
-  const [pets, setPets] = useState<any[]>([]);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [showPetPicker, setShowPetPicker] = useState(false);
 
@@ -198,15 +197,12 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
       setUser(u);
       if (!u) return;
 
-      const [profileRes, petsRes, notifRes] = await Promise.all([
+      const [profileRes, notifRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", u.id).single(),
-        (supabase as any).from("pets").select("id, name, avatar_url, type, breed").eq("user_id", u.id).eq("archived", false).order("created_at", { ascending: false }),
         supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", u.id).eq("is_read", false),
       ]);
 
       setProfile(profileRes.data);
-      setPets(petsRes.data || []);
-      setActivePet(petsRes.data?.[0] || null);
       setUnreadNotifications(notifRes.count || 0);
     })();
   }, [isOpen]);
@@ -319,7 +315,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                   <div className="flex-1" style={{ textAlign: isRtl ? "right" : "left" }}>
                     <p className="text-sm font-medium text-foreground">{activePet.name}</p>
                     <p className="text-[11px] text-muted-foreground">
-                      {activePet.breed || activePet.type}
+                      {activePet.breed || activePet.pet_type}
                     </p>
                   </div>
                   <ChevronLeft className={cn("w-4 h-4 text-muted-foreground transition-transform", showPetPicker && "rotate-90")} />
@@ -337,7 +333,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                       {pets.filter(p => p.id !== activePet.id).map(pet => (
                         <button
                           key={pet.id}
-                          onClick={() => { setActivePet(pet); setShowPetPicker(false); }}
+                          onClick={() => { contextSwitchPet(pet.id); setShowPetPicker(false); }}
                           className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-muted/60 transition-colors"
                         >
                           <Avatar className="w-8 h-8">

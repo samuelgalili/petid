@@ -1,10 +1,10 @@
 /**
- * useActivePet — Shared hook for feed components to access the active pet's data.
- * Caches in memory to avoid repeated DB calls.
+ * useActivePet — Reads from PetPreferenceContext for global pet state.
+ * Returns the same interface as before so all 18+ consumers work unchanged.
  */
 
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useMemo } from "react";
+import { usePetPreference, type PetProfile } from "@/contexts/PetPreferenceContext";
 
 export interface ActivePet {
   name: string;
@@ -16,56 +16,27 @@ export interface ActivePet {
   medical_conditions: string[] | null;
 }
 
-let cachedPet: ActivePet | null = null;
-let cacheUserId: string | null = null;
-
 export function useActivePet() {
-  const [pet, setPet] = useState<ActivePet | null>(cachedPet);
-  const [loading, setLoading] = useState(!cachedPet);
+  const { activePet, loading } = usePetPreference();
 
-  useEffect(() => {
-    const fetch = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setLoading(false); return; }
-
-      // Use cache if same user
-      if (cachedPet && cacheUserId === user.id) {
-        setPet(cachedPet);
-        setLoading(false);
-        return;
-      }
-
-      const { data: pets } = await (supabase as any)
-        .from("pets")
-        .select("name, breed, type, weight, birth_date, medical_conditions")
-        .eq("user_id", user.id)
-        .eq("archived", false)
-        .order("created_at", { ascending: false })
-        .limit(1);
-
-      const raw = pets?.[0];
-      if (raw) {
-        let ageWeeks: number | null = null;
-        if (raw.birth_date) {
-          ageWeeks = Math.floor((Date.now() - new Date(raw.birth_date).getTime()) / (7 * 24 * 60 * 60 * 1000));
-        }
-        const result: ActivePet = {
-          name: raw.name,
-          breed: raw.breed,
-          pet_type: raw.type || "dog",
-          weight: raw.weight,
-          birth_date: raw.birth_date,
-          ageWeeks,
-          medical_conditions: raw.medical_conditions,
-        };
-        cachedPet = result;
-        cacheUserId = user.id;
-        setPet(result);
-      }
-      setLoading(false);
+  const pet = useMemo<ActivePet | null>(() => {
+    if (!activePet) return null;
+    let ageWeeks: number | null = null;
+    if (activePet.birth_date) {
+      ageWeeks = Math.floor(
+        (Date.now() - new Date(activePet.birth_date).getTime()) / (7 * 24 * 60 * 60 * 1000)
+      );
+    }
+    return {
+      name: activePet.name,
+      breed: activePet.breed,
+      pet_type: activePet.pet_type,
+      weight: activePet.weight,
+      birth_date: activePet.birth_date,
+      ageWeeks,
+      medical_conditions: activePet.medical_conditions,
     };
-    fetch();
-  }, []);
+  }, [activePet]);
 
   return { pet, loading };
 }
