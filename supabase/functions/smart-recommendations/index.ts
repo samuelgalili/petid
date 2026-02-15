@@ -142,8 +142,31 @@ serve(async (req) => {
 
     const petContext: PetContext = pet as PetContext;
     const lifeStage = getLifeStage(petContext.birth_date);
-    const rules = getSearchRules(category);
-    
+    const hasMedicalConditions = petContext.medical_conditions && petContext.medical_conditions.length > 0;
+    let rules = getSearchRules(category);
+
+    // V18 Safety: If pet has medical conditions, prioritize Vet-Diet products for feeding
+    if (hasMedicalConditions && (category === 'feeding' || category === 'digestion')) {
+      const conditions = (petContext.medical_conditions || []).map(c => c.toLowerCase());
+      const vetDietTerms = conditions.flatMap(c => {
+        if (c.includes('allerg')) return ['hypoallergenic', 'היפואלרגני'];
+        if (c.includes('gastr') || c.includes('עיכול')) return ['gastrointestinal', 'gi', 'intestinal'];
+        if (c.includes('renal') || c.includes('כליות')) return ['renal', 'כליות'];
+        if (c.includes('urin') || c.includes('שתן')) return ['urinary', 'struvite'];
+        if (c.includes('diabet') || c.includes('סוכרת')) return ['diabetic', 'סוכרתי'];
+        if (c.includes('obes') || c.includes('השמנ')) return ['metabolic', 'obesity', 'light'];
+        if (c.includes('joint') || c.includes('מפרק')) return ['joint', 'mobility', 'ניידות'];
+        return [c];
+      });
+      if (vetDietTerms.length > 0) {
+        // Prepend a vet-diet rule as highest priority
+        rules = [
+          { label: 'מזון רפואי מומלץ', searchTerms: [...vetDietTerms, 'vet', 'veterinary', 'רפואי'], categoryFilters: ['food', 'מזון', 'vet', 'diet'] },
+          ...rules,
+        ];
+      }
+    }
+
     const results: Array<{
       id: string;
       name: string;
