@@ -3,6 +3,7 @@
  * Refactored: logic in useSoundtrackFeed, card in SoundtrackPostCard
  */
 
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -21,6 +22,8 @@ import {
 import { SoundtrackPostCard } from "@/components/feed/SoundtrackPostCard";
 import { DailyInsightCard } from "@/components/feed/DailyInsightCard";
 import { LocalEventsCard } from "@/components/feed/LocalEventsCard";
+import { FeedProductCards } from "@/components/feed/FeedProductCards";
+import { HealthScoreHighlight } from "@/components/feed/HealthScoreHighlight";
 import { useSoundtrackFeed } from "@/hooks/useSoundtrackFeed";
 
 const SoundtrackFeed = () => {
@@ -185,18 +188,23 @@ const SoundtrackFeed = () => {
             {activeTab === "discover" && <DailyInsightCard />}
 
             {posts.map((post, index) => (
-              <SoundtrackPostCard
-                key={post.id}
-                post={post}
-                index={index}
-                currentIndex={currentIndex}
-                muted={muted}
-                setMuted={setMuted}
-                onLike={handleLike}
-                onSave={handleSave}
-                onFollow={handleFollow}
-                userId={userId}
-              />
+              <React.Fragment key={post.id}>
+                <SoundtrackPostCard
+                  post={post}
+                  index={index}
+                  currentIndex={currentIndex}
+                  muted={muted}
+                  setMuted={setMuted}
+                  onLike={handleLike}
+                  onSave={handleSave}
+                  onFollow={handleFollow}
+                  userId={userId}
+                />
+                {/* Inject product cards after 3rd post */}
+                {index === 2 && activeTab === "discover" && <FeedProductCards />}
+                {/* Inject health score highlight after 6th post */}
+                {index === 5 && activeTab === "discover" && <HealthScoreHighlight />}
+              </React.Fragment>
             ))}
 
             {/* Local Events — After posts */}
