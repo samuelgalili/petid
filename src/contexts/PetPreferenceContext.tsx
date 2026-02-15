@@ -108,6 +108,19 @@ export const PetPreferenceProvider: React.FC<{ children: React.ReactNode }> = ({
       if (pet.pet_type) {
         localStorage.setItem("petPreference", pet.pet_type);
       }
+
+      // Cross-pet safety toast: warn if OTHER pets have medical conditions
+      const sickOthers = pets.filter(
+        (p) => p.id !== petId && p.medical_conditions && p.medical_conditions.length > 0
+      );
+      if (sickOthers.length > 0) {
+        // Dispatch a custom event so any toast system can pick it up
+        window.dispatchEvent(
+          new CustomEvent("petid:fleet-safety", {
+            detail: { sickPets: sickOthers, activePet: pet },
+          })
+        );
+      }
     }
   }, [pets]);
 

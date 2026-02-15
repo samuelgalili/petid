@@ -88,6 +88,23 @@ const BottomNav = () => {
   const [showPetSwitcher, setShowPetSwitcher] = useState(false);
   const { unreadCount } = useRealtimeNotifications();
 
+  // Listen for cross-pet safety events and show toast
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { sickPets } = (e as CustomEvent).detail;
+      if (sickPets?.length > 0) {
+        import("sonner").then(({ toast }) => {
+          const names = sickPets.map((p: any) => p.name).join(", ");
+          toast.warning(`שימו לב: ל${names} יש מצב רפואי פעיל`, {
+            description: "מומלץ לבדוק את המוצרים המתאימים",
+            duration: 4000,
+          });
+        });
+      }
+    };
+    window.addEventListener("petid:fleet-safety", handler);
+    return () => window.removeEventListener("petid:fleet-safety", handler);
+  }, []);
   // Long-press detection
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressTriggered = useRef(false);
