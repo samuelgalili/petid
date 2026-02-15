@@ -104,8 +104,15 @@ RULES:
     - Pumpkin seeds / זרעי דלעת → "סיוע בעיכול" (Digestion Aid)
     - Fatty acids / חומצות שומן / אומגה → "פרווה בריאה" (Shiny Coat)
     - Long chew / לעיסה ממושכת → "הפגת מתח" (Stress Relief)
+    - Teeth cleaning / ניקוי שיניים / dental → "היגיינת שיניים" (Dental Hygiene)
   - special_diet: Include texture and natural claims like ["טבעי", "ללא חומרים משמרים", "ללא צבעים"]
-  - In product_attributes, include: texture, purpose, safety_tip
+  - In product_attributes, include:
+    - texture: describe the chew texture in Hebrew (e.g. "קשה ועמיד", "לעיסתי ועמיד", "רך")
+    - chew_duration: integer 1-5 (1=very short, 2=short, 3=medium, 4=long, 5=very long). If product name includes "Donut", "דונאט", "Bone", or "עצם", default to 4+
+    - protein_pct: extract protein percentage if mentioned (e.g. "70% protein" → 70)
+    - purpose: usage purpose (e.g. "פרס אילוף", "העסקה ולעיסה ממושכת")
+    - safety_tip: safety recommendation if applicable (e.g. "מומלץ לעיסה בפיקוח")
+  - PRIORITY RULE: If product name includes "Donut"/"דונאט"/"Bone"/"עצם", always extract chew_duration and dental-related benefits first
 - For ACCESSORY products:
   - Set feeding_guide to empty array []
   - Set ingredients to null
