@@ -11,7 +11,8 @@ import {
   Snowflake, Microwave, Hand, Moon, Sofa, Waves, WashingMachine, Home,
   Car, Grip, Cog, Droplet, Sun, Wind, Pipette, Beaker, Flower2, Bug,
   Target, CircleDot, ArrowDownToLine, Armchair, Weight, Lock, DoorOpen,
-  Maximize2, FoldVertical, Trash2, PawPrint, ThumbsUp, Box
+  Maximize2, FoldVertical, Trash2, PawPrint, ThumbsUp, Box,
+  Volume2, Gift, Gamepad2, BedDouble, Music, Siren
 } from "lucide-react";
 import { ProductReviews } from "@/components/shop/ProductReviews";
 import { PriceAlertButton } from "@/components/shop/PriceAlertButton";
@@ -972,6 +973,80 @@ const extractMedicalProtectionFeatures = (product: any): {
   return { protectionDuration, safetyAlerts, activeIngredients, featureIcons, applicationSteps, brandAuthority };
 };
 
+/** Check if product is an interactive plush / teething toy */
+const isPlushToyProduct = (product: any): boolean => {
+  const cat = (product.category || '').toLowerCase();
+  const text = `${product.name || ''} ${product.description || ''}`.toLowerCase();
+  return cat === 'plush' || cat === 'plush-toys' || cat === 'teething' ||
+    text.includes('plush') || text.includes('פלאש') || text.includes('בובה') || text.includes('צפצפה') ||
+    text.includes('squeaky') || text.includes('squeaker') || text.includes('crinkle') || text.includes('מרשרש') ||
+    text.includes('teething toy') || text.includes('נשכן') || text.includes('שיניים') ||
+    ((text.includes('toy') || text.includes('צעצוע')) && (text.includes('stuff') || text.includes('soft') || text.includes('רך')));
+};
+
+/** Extract plush / teething toy features */
+const extractPlushToyFeatures = (product: any): {
+  sensoryFeatures: { icon: React.ReactNode; label: string; description: string }[];
+  durabilityHighlights: { icon: React.ReactNode; label: string; description: string }[];
+  usageScenarios: { icon: React.ReactNode; label: string; description: string }[];
+  safetyEducation: { label: string; description: string }[];
+  isGiftWorthy: boolean;
+} => {
+  const text = `${product.name || ''} ${product.description || ''} ${(product.special_diet || []).join(' ')}`.toLowerCase();
+  const attrs = product.product_attributes || {};
+  const benefits = Array.isArray(product.benefits) ? product.benefits : [];
+  const benefitsText = benefits.map((b: any) => `${b.title || ''} ${b.description || ''}`).join(' ').toLowerCase();
+  const allText = text + ' ' + benefitsText;
+
+  // Sensory features
+  const sensoryFeatures: { icon: React.ReactNode; label: string; description: string }[] = [];
+  if (allText.includes('squeaker') || allText.includes('squeaky') || allText.includes('צפצפה') || allText.includes('squeak'))
+    sensoryFeatures.push({ icon: <Volume2 className="w-5 h-5" />, label: 'צפצפה פנימית', description: 'צפצפה מצחיקה שמושכת תשומת לב ומעודדת משחק' });
+  if (allText.includes('crinkle') || allText.includes('מרשרש') || allText.includes('crinkling') || allText.includes('rustl'))
+    sensoryFeatures.push({ icon: <Music className="w-5 h-5" />, label: 'נייר מרשרש', description: 'נייר מרשרש מעורר סקרנות – גירוי שמיעתי מהנה' });
+  if (allText.includes('rope') || allText.includes('חבל') || allText.includes('knot') || allText.includes('קשר'))
+    sensoryFeatures.push({ icon: <Grip className="w-5 h-5" />, label: 'חבל קשרים', description: 'חבל לאחיזה ומשחקי משיכה' });
+  if (sensoryFeatures.length === 0) {
+    sensoryFeatures.push({ icon: <Volume2 className="w-5 h-5" />, label: 'צפצפה פנימית', description: 'צלילים מצחיקים שמעודדים משחק פעיל' });
+  }
+
+  // Durability & texture
+  const durabilityHighlights: { icon: React.ReactNode; label: string; description: string }[] = [];
+  if (allText.includes('pineapple') || allText.includes('אננס') || allText.includes('plaid') || allText.includes('משובץ') || allText.includes('reinforc') || allText.includes('חיזוק'))
+    durabilityHighlights.push({ icon: <Shield className="w-5 h-5" />, label: 'בד משובץ אננס', description: 'מרקם ייחודי לחיזוק העמידות ומניעת קריעה' });
+  if (allText.includes('teething') || allText.includes('נשכן') || allText.includes('שיניים') || allText.includes('חניכיים') || allText.includes('gum') || allText.includes('teeth'))
+    durabilityHighlights.push({ icon: <Smile className="w-5 h-5" />, label: 'תמיכה בבקיעת שיניים', description: 'עזרה בזמן החלפת שיניים והרגעת החניכיים' });
+  if (allText.includes('sturdi') || allText.includes('thick') || allText.includes('עבה') || allText.includes('עמיד') || allText.includes('durable') || allText.includes('tough'))
+    durabilityHighlights.push({ icon: <ShieldCheck className="w-5 h-5" />, label: 'פלאש מחוזק', description: 'בד עבה ועמיד יותר מהסטנדרט – לחיי משחק ארוכים' });
+  if (durabilityHighlights.length === 0) {
+    durabilityHighlights.push({ icon: <ShieldCheck className="w-5 h-5" />, label: 'בד עמיד', description: 'מעוצב לעמידות במשחק יומיומי' });
+  }
+
+  // Usage scenarios
+  const usageScenarios: { icon: React.ReactNode; label: string; description: string }[] = [];
+  if (allText.includes('tug') || allText.includes('pull') || allText.includes('משיכה') || allText.includes('צוואר ארוך') || allText.includes('long neck'))
+    usageScenarios.push({ icon: <Gamepad2 className="w-5 h-5" />, label: 'משחקי משיכה (Tug & Pull)', description: 'מתאים למשחקי משיכה בזכות הצורה הארוכה' });
+  if (allText.includes('fetch') || allText.includes('chase') || allText.includes('זריקה') || allText.includes('הבאה') || allText.includes('throw'))
+    usageScenarios.push({ icon: <Zap className="w-5 h-5" />, label: 'זריקה והבאה (Fetch & Chase)', description: 'מתאים למשחקי זריקה והבאה בחצר או בפארק' });
+  if (allText.includes('cuddle') || allText.includes('sleep') || allText.includes('התכרבל') || allText.includes('כרית') || allText.includes('שינה') || allText.includes('snuggle') || allText.includes('companion'))
+    usageScenarios.push({ icon: <BedDouble className="w-5 h-5" />, label: 'התכרבלות ושינה (Cuddle & Sleep)', description: 'משמש כבובת התכרבלות או כרית לשינה' });
+  if (usageScenarios.length === 0) {
+    usageScenarios.push({ icon: <Gamepad2 className="w-5 h-5" />, label: 'משחק פעיל', description: 'מתאים למשחקי משיכה, זריקה והתכרבלות' });
+  }
+
+  // Safety & education
+  const safetyEducation: { label: string; description: string }[] = [
+    { label: 'אף צעצוע אינו חסין לנצח', description: 'יש להתאים את הצעצוע להרגלי הלעיסה של הכלב ולהחליף בסימני בלאי' },
+    { label: 'למדו משחק נכון', description: 'הנחו את הכלב למשחק עדין ומבוקר – זה מחזק את הקשר ביניכם' },
+  ];
+
+  // Gift worthy
+  const isGiftWorthy = allText.includes('gift') || allText.includes('מתנה') || allText.includes('birthday') || allText.includes('יום הולדת') ||
+    allText.includes('holiday') || allText.includes('חג') || allText.includes('plush') || allText.includes('בובה') || allText.includes('cute') || allText.includes('חמוד');
+
+  return { sensoryFeatures, durabilityHighlights, usageScenarios, safetyEducation, isGiftWorthy };
+};
+
 /** Extract technical specs from product_attributes for accessories */
 const extractTechSpecs = (product: any): { label: string; value: string }[] => {
   const specs: { label: string; value: string }[] = [];
@@ -1276,6 +1351,8 @@ const ProductDetail = () => {
   const desheddingFeatures = useMemo(() => product && isDeshedding ? extractDesheddingFeatures(product) : { efficiencyPct: null, techFeatures: [], sizeGuide: { weightRange: null, coatType: null }, proTip: null, homeHygiene: false }, [product, isDeshedding]);
   const isMedicalProtection = useMemo(() => product ? isMedicalProtectionProduct(product) : false, [product]);
   const medicalFeatures = useMemo(() => product && isMedicalProtection ? extractMedicalProtectionFeatures(product) : { protectionDuration: null, safetyAlerts: [], activeIngredients: [], featureIcons: [], applicationSteps: [], brandAuthority: null }, [product, isMedicalProtection]);
+  const isPlushToy = useMemo(() => product ? isPlushToyProduct(product) : false, [product]);
+  const plushFeatures = useMemo(() => product && isPlushToy ? extractPlushToyFeatures(product) : { sensoryFeatures: [], durabilityHighlights: [], usageScenarios: [], safetyEducation: [], isGiftWorthy: false }, [product, isPlushToy]);
   const isPuppy = useMemo(() => product ? isPuppyProduct(product) : false, [product]);
   const puppyFeatures = useMemo(() => product && isPuppy ? extractPuppyFeatures(product) : { hasDHA: false, hasAntioxidants: false, topIngredient: null, grainStatus: { hasBarleyOatmeal: false, noCornWheatSoy: false }, hasSatisfactionGuarantee: false, developmentBenefits: [], puppyFeedingMatrix: [] }, [product, isPuppy]);
   const isTreat = useMemo(() => product ? isTreatProduct(product) : false, [product]);
@@ -2874,6 +2951,123 @@ const ProductDetail = () => {
                   <p className="text-[13px] font-bold text-foreground">{medicalFeatures.brandAuthority}</p>
                   <p className="text-[10px] text-muted-foreground">מומלץ ע"י וטרינרים מובילים</p>
                 </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Plush Toy: Gift Tag ── */}
+        {isPlushToy && plushFeatures.isGiftWorthy && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <Card className="p-3 bg-gradient-to-br from-[hsl(330,70%,93%)] to-background border-[hsl(330,50%,65%)]/20 dark:from-[hsl(330,30%,15%)] dark:border-[hsl(330,40%,40%)]/20">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-full bg-[hsl(330,60%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Gift className="w-5 h-5 text-[hsl(330,60%,45%)]" />
+                </div>
+                <div>
+                  <p className="text-[13px] font-bold text-foreground">🎁 מתנה מושלמת!</p>
+                  <p className="text-[10px] text-muted-foreground">מתאים ליום הולדת, חג, או פינוק ספונטני</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Plush Toy: Sensory Features Badge ── */}
+        {isPlushToy && plushFeatures.sensoryFeatures.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(280,60%,93%)] to-background border-[hsl(280,50%,65%)]/20 dark:from-[hsl(280,30%,15%)] dark:border-[hsl(280,40%,40%)]/20">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Volume2 className="w-4 h-4 text-[hsl(280,50%,50%)]" />
+                🎵 Fun & Sounds – צלילים ותחושות
+              </h3>
+              <div className="space-y-2.5">
+                {plushFeatures.sensoryFeatures.map((feat, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.24 + i * 0.06 }}
+                    className="flex items-start gap-3 bg-[hsl(280,40%,90%)]/30 dark:bg-[hsl(280,30%,15%)]/50 rounded-xl p-3 border border-[hsl(280,40%,70%)]/15"
+                  >
+                    <div className="w-9 h-9 rounded-full bg-[hsl(280,50%,80%)]/20 flex items-center justify-center flex-shrink-0 text-[hsl(280,50%,50%)]">
+                      {feat.icon}
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-semibold text-foreground">{feat.label}</p>
+                      <p className="text-[11px] text-muted-foreground">{feat.description}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Plush Toy: Durability & Texture Guard ── */}
+        {isPlushToy && plushFeatures.durabilityHighlights.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Shield className="w-4 h-4 text-primary" />
+                עמידות ומרקם
+              </h3>
+              <div className="space-y-2">
+                {plushFeatures.durabilityHighlights.map((item, i) => (
+                  <div key={i} className="flex items-start gap-3 bg-primary/5 dark:bg-primary/10 rounded-lg p-3">
+                    <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0 text-primary">
+                      {item.icon}
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-semibold text-foreground">{item.label}</p>
+                      <p className="text-[11px] text-muted-foreground">{item.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Plush Toy: Usage Scenarios ── */}
+        {isPlushToy && plushFeatures.usageScenarios.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}>
+            <div className="grid grid-cols-1 gap-2">
+              {plushFeatures.usageScenarios.map((scenario, i) => (
+                <Card key={i} className="p-3 flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-full bg-[hsl(200,50%,90%)]/50 dark:bg-[hsl(200,30%,20%)] flex items-center justify-center flex-shrink-0 text-[hsl(200,60%,45%)]">
+                    {scenario.icon}
+                  </div>
+                  <div>
+                    <p className="text-[12px] font-bold text-foreground">{scenario.label}</p>
+                    <p className="text-[10px] text-muted-foreground leading-tight">{scenario.description}</p>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* ── Plush Toy: Safety & Education Box ── */}
+        {isPlushToy && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.36 }}>
+            <Card className="p-4 border-warning/30 bg-warning/5 dark:bg-warning/10">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <AlertTriangle className="w-4 h-4 text-warning" />
+                אחריות הבעלים – בטיחות במשחק
+              </h3>
+              <div className="space-y-2">
+                {plushFeatures.safetyEducation.map((item, i) => (
+                  <div key={i} className="flex items-start gap-2.5">
+                    <div className="w-5 h-5 rounded-full bg-warning/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-[10px] font-bold text-warning">!</span>
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-bold text-foreground">{item.label}</p>
+                      <p className="text-[11px] text-muted-foreground">{item.description}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </Card>
           </motion.div>
