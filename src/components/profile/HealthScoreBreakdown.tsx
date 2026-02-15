@@ -9,7 +9,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, Syringe, Utensils, ShieldCheck, UserCheck, 
   CheckCircle2, Circle, ChevronLeft, Sparkles, 
-  Eye, ShoppingBag, ArrowUpRight, Activity 
+  Eye, ShoppingBag, ArrowUpRight, Activity,
+  Smile, Droplets
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -141,11 +142,44 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
     }
   };
 
+  // Life stage calculation
+  const lifeStage = useMemo(() => {
+    if (!pet.birth_date) return { label: 'לא ידוע', months: 0, stage: 'unknown' as const };
+    const totalMonths = Math.floor((Date.now() - new Date(pet.birth_date).getTime()) / (1000 * 60 * 60 * 24 * 30));
+    if (totalMonths < 6) return { label: 'גור', months: totalMonths, stage: 'puppy' as const };
+    if (totalMonths < 12) return { label: 'גור צעיר', months: totalMonths, stage: 'junior' as const };
+    if (totalMonths < 24) return { label: 'צעיר/ה', months: totalMonths, stage: 'young' as const };
+    const years = Math.floor(totalMonths / 12);
+    if (years > 7) return { label: 'סניור', months: totalMonths, stage: 'senior' as const };
+    return { label: 'בוגר/ת', months: totalMonths, stage: 'adult' as const };
+  }, [pet.birth_date]);
+
+  // Breed detection
+  const isShihTzu = useMemo(() => {
+    const b = (pet.breed || '').toLowerCase();
+    return b.includes('shih tzu') || b.includes('שיצו') || b.includes('שי טסו');
+  }, [pet.breed]);
+
+  // Life-stage-aware pillar weights
+  const pillarWeights = useMemo(() => {
+    const isPuppy = lifeStage.stage === 'puppy' || lifeStage.stage === 'junior';
+    const isSenior = lifeStage.stage === 'senior';
+
+    if (isShihTzu) {
+      if (isPuppy) return { vaccines: 30, nutrition: 18, prevention: 12, profile: 5, eyeCare: 20, dental: 15 };
+      if (isSenior) return { vaccines: 18, nutrition: 22, prevention: 18, profile: 7, eyeCare: 20, dental: 15 };
+      return { vaccines: 25, nutrition: 20, prevention: 15, profile: 10, eyeCare: 18, dental: 12 };
+    }
+
+    if (isPuppy) return { vaccines: 45, nutrition: 25, prevention: 20, profile: 10, eyeCare: 0, dental: 0 };
+    if (isSenior) return { vaccines: 25, nutrition: 30, prevention: 30, profile: 15, eyeCare: 0, dental: 0 };
+    return { vaccines: 35, nutrition: 25, prevention: 25, profile: 15, eyeCare: 0, dental: 0 };
+  }, [lifeStage.stage, isShihTzu]);
+
   // Calculate individual pillar scores
   const pillars: Pillar[] = useMemo(() => {
     if (!petData) return [];
 
-    // Vaccinations (40%)
     const vaccScore = Math.min(vaccineCount * 30, 90);
     const vaccDesc = vaccScore >= 90
       ? `${pet.name} מחוסנת במלואה. כל הכבוד!`
@@ -153,25 +187,16 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
       ? `${pet.name} מחוסנת ב-${vaccScore}%. חסר חיסון משושה להשלמה.`
       : `אין רשומות חיסונים. העלה צילום כדי לעדכן.`;
 
-    // Nutrition (30%)
     const hasFood = !!petData.current_food;
     const hasWeight = !!petData.weight;
     let nutrScore = 0;
     if (hasFood) nutrScore += 50;
     if (hasWeight) nutrScore += 30;
     if (pet.birth_date) nutrScore += 20;
-
-    const ageLabel = pet.birth_date
-      ? (() => {
-          const months = Math.floor((Date.now() - new Date(pet.birth_date).getTime()) / (1000 * 60 * 60 * 24 * 30));
-          return months < 12 ? 'גורה' : 'בוגרת';
-        })()
-      : '';
     const nutrDesc = hasFood
-      ? `תזונה מותאמת לגיל (${ageLabel}) ולגזע (${pet.breed || 'לא ידוע'}).`
+      ? `תזונה מותאמת לגיל (${lifeStage.label}) ולגזע (${pet.breed || 'לא ידוע'}).`
       : `לא הוזן מזון נוכחי. עדכן כדי לקבל המלצות מותאמות.`;
 
-    // Prevention (20%)
     let prevScore = 0;
     if (hasParasitePrevention) prevScore += 60;
     if (hasRegisteredClinic) prevScore += 40;
@@ -179,7 +204,6 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
       ? 'טיפול נגד פרעושים ותולעים בתוקף.'
       : 'לא נמצא רשומת טיפול מונע. העלה צילום מסמך.';
 
-    // Profile Completion (10%)
     const profScore = profileCompletion;
     const missingItems: string[] = [];
     if (!hasMicrochip) missingItems.push('מספר שבב');
@@ -189,13 +213,47 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
       ? 'הפרופיל מלא ומעודכן!'
       : `חסר ${missingItems.join(', ')} להשלמת הפרופיל.`;
 
-    return [
-      { id: 'vaccines', label: 'חיסונים', icon: Syringe, weight: 40, score: vaccScore, description: vaccDesc, color: 'text-blue-500' },
-      { id: 'nutrition', label: 'תזונה', icon: Utensils, weight: 30, score: nutrScore, description: nutrDesc, color: 'text-green-500' },
-      { id: 'prevention', label: 'מניעה', icon: ShieldCheck, weight: 20, score: prevScore, description: prevDesc, color: 'text-amber-500' },
-      { id: 'profile', label: 'השלמת פרופיל', icon: UserCheck, weight: 10, score: profScore, description: profDesc, color: 'text-purple-500' },
+    const result: Pillar[] = [
+      { id: 'vaccines', label: 'חיסונים', icon: Syringe, weight: pillarWeights.vaccines, score: vaccScore, description: vaccDesc, color: 'text-blue-500' },
+      { id: 'nutrition', label: 'תזונה', icon: Utensils, weight: pillarWeights.nutrition, score: nutrScore, description: nutrDesc, color: 'text-green-500' },
+      { id: 'prevention', label: 'מניעה', icon: ShieldCheck, weight: pillarWeights.prevention, score: prevScore, description: prevDesc, color: 'text-amber-500' },
+      { id: 'profile', label: 'השלמת פרופיל', icon: UserCheck, weight: pillarWeights.profile, score: profScore, description: profDesc, color: 'text-purple-500' },
     ];
-  }, [petData, vaccineCount, hasParasitePrevention, hasRegisteredClinic, profileCompletion, hasMicrochip, ownerProfileComplete, pet]);
+
+    // Breed-specific: Eye Care (Shih Tzu)
+    if (pillarWeights.eyeCare > 0) {
+      const eyeScore = hasParasitePrevention ? 70 : 40;
+      result.push({
+        id: 'eye_care',
+        label: 'טיפול עיניים',
+        icon: Eye,
+        weight: pillarWeights.eyeCare,
+        score: eyeScore,
+        description: eyeScore >= 70
+          ? `ניקיון עיניים יומי מומלץ ל${pet.breed}. נראה שאת/ה על זה!`
+          : `${pet.breed} נוטים לדמיעה מוגברת. הקפידו על ניקיון עיניים יומי עם מגבונים ייעודיים.`,
+        color: 'text-sky-500',
+      });
+    }
+
+    // Breed-specific: Dental Hygiene (Shih Tzu / small breeds)
+    if (pillarWeights.dental > 0) {
+      const dentalScore = (petData.weight && petData.weight < 8) ? 50 : 65;
+      result.push({
+        id: 'dental',
+        label: 'היגיינת שיניים',
+        icon: Smile,
+        weight: pillarWeights.dental,
+        score: dentalScore,
+        description: dentalScore >= 65
+          ? 'מומלץ לצחצח שיניים 2-3 פעמים בשבוע ולספק חטיפי לעיסה.'
+          : `גזעים קטנים כמו ${pet.breed} נוטים למחלות חניכיים. צחצוח שיניים קבוע חיוני.`,
+        color: 'text-pink-500',
+      });
+    }
+
+    return result;
+  }, [petData, vaccineCount, hasParasitePrevention, hasRegisteredClinic, profileCompletion, hasMicrochip, ownerProfileComplete, pet, pillarWeights, lifeStage]);
 
   // Total score
   const totalScore = useMemo(() => {
@@ -203,14 +261,14 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
     return Math.round(pillars.reduce((sum, p) => sum + (p.score * p.weight / 100), 0));
   }, [pillars]);
 
-  // Build to-do items
+  // Build to-do items — dynamic based on what's missing
   const todos: TodoItem[] = useMemo(() => {
     const items: TodoItem[] = [];
     if (vaccineCount < 3) {
       items.push({
         id: 'vaccine-upload',
         text: 'העלה צילום של חיסון המשושה',
-        pointsGain: 3,
+        pointsGain: Math.round(pillarWeights.vaccines * 0.1),
         done: false,
         action: () => { onClose(); navigate(`/pet/${pet.id}/vet-log`); },
       });
@@ -219,7 +277,7 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
       items.push({
         id: 'microchip',
         text: 'השלם את מספר השבב מהמסמכים',
-        pointsGain: 2,
+        pointsGain: Math.round(pillarWeights.profile * 0.2),
         done: false,
         action: () => { onClose(); navigate(`/pet/${pet.id}/edit`); },
       });
@@ -228,7 +286,7 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
       items.push({
         id: 'food',
         text: 'עדכן את סוג המזון הנוכחי',
-        pointsGain: 4,
+        pointsGain: Math.round(pillarWeights.nutrition * 0.15),
         done: false,
         action: () => { onClose(); navigate(`/pet/${pet.id}/edit`); },
       });
@@ -237,7 +295,7 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
       items.push({
         id: 'parasite',
         text: 'העלה אישור טיפול נגד פרעושים',
-        pointsGain: 3,
+        pointsGain: Math.round(pillarWeights.prevention * 0.12),
         done: false,
         action: () => { onClose(); navigate(`/pet/${pet.id}/vet-log`); },
       });
@@ -246,13 +304,32 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
       items.push({
         id: 'owner',
         text: 'השלם פרטי בעלים (שם, טלפון, עיר)',
-        pointsGain: 2,
+        pointsGain: Math.round(pillarWeights.profile * 0.2),
         done: false,
         action: () => { onClose(); navigate('/edit-profile'); },
       });
     }
+    // Breed-specific todos
+    if (isShihTzu && pillarWeights.eyeCare > 0) {
+      items.push({
+        id: 'eye-wipes',
+        text: 'רכשו מגבוני עיניים ייעודיים לשיצו',
+        pointsGain: Math.round(pillarWeights.eyeCare * 0.15),
+        done: false,
+        action: () => { onClose(); navigate('/shop'); },
+      });
+    }
+    if (isShihTzu && pillarWeights.dental > 0) {
+      items.push({
+        id: 'dental-chew',
+        text: 'הוסיפו חטיפי לעיסה לשמירה על שיניים',
+        pointsGain: Math.round(pillarWeights.dental * 0.1),
+        done: false,
+        action: () => { onClose(); navigate('/shop'); },
+      });
+    }
     return items;
-  }, [petData, vaccineCount, hasMicrochip, hasParasitePrevention, ownerProfileComplete, pet.id]);
+  }, [petData, vaccineCount, hasMicrochip, hasParasitePrevention, ownerProfileComplete, pet.id, pillarWeights, isShihTzu]);
 
   // Get breed preventive tip
   const breedTip = useMemo(() => {
@@ -276,15 +353,17 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
   useEffect(() => {
     if (!lowestPillar || !isOpen || lowestPillar.score >= 80) return;
     const fetchProducts = async () => {
-      let category = '';
-      if (lowestPillar.id === 'nutrition') category = 'food';
-      else if (lowestPillar.id === 'prevention') category = 'health';
+      let searchTerm = '';
+      if (lowestPillar.id === 'nutrition') searchTerm = 'food';
+      else if (lowestPillar.id === 'prevention') searchTerm = 'health';
+      else if (lowestPillar.id === 'eye_care') searchTerm = 'eye';
+      else if (lowestPillar.id === 'dental') searchTerm = 'dental';
       else return;
 
       const { data } = await supabase
         .from('business_products')
         .select('id, name, price, sale_price, image_url, category')
-        .ilike('category', `%${category}%`)
+        .or(`category.ilike.%${searchTerm}%,name.ilike.%${searchTerm}%`)
         .limit(3);
       setLowPillarProducts(data || []);
     };
@@ -339,7 +418,12 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
                 </div>
                 <div>
                   <h2 className="font-bold text-foreground text-base">פירוט ציון הבריאות</h2>
-                  <p className="text-xs text-muted-foreground">{pet.name} · {pet.breed || pet.type === 'dog' ? 'כלב' : 'חתול'}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {pet.name} · {pet.breed || (pet.type === 'dog' ? 'כלב' : 'חתול')}
+                    {lifeStage.label !== 'לא ידוע' && (
+                      <span className="mr-1 text-primary font-medium"> · {lifeStage.label} ({lifeStage.months} חודשים)</span>
+                    )}
+                  </p>
                 </div>
               </div>
               <button onClick={onClose} className="p-2 hover:bg-muted/60 rounded-xl transition-colors">
@@ -355,11 +439,30 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
               </div>
             ) : (
               <>
+                {/* Life-stage weight explanation */}
+                {lifeStage.label !== 'לא ידוע' && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="p-3 bg-muted/30 rounded-xl border border-border/15 mb-4"
+                  >
+                    <p className="text-[10px] text-muted-foreground leading-relaxed">
+                      <span className="font-bold text-foreground">{pet.name} ({lifeStage.label})</span> — 
+                      {lifeStage.stage === 'puppy' || lifeStage.stage === 'junior'
+                        ? ` בגיל זה, חיסונים מקבלים משקל גבוה יותר (${pillarWeights.vaccines}%) כי מערכת החיסון עדיין מתפתחת.`
+                        : lifeStage.stage === 'senior'
+                        ? ` בגיל מבוגר, מניעה ותזונה מקבלות משקל גבוה יותר לשמירה על איכות החיים.`
+                        : ` המשקלות מאוזנים לשלב חיים בוגר ויציב.`}
+                      {isShihTzu && ` כשיצו, טיפול עיניים (${pillarWeights.eyeCare}%) והיגיינת שיניים (${pillarWeights.dental}%) מוערכים בנפרד.`}
+                    </p>
+                  </motion.div>
+                )}
+
                 {/* Health Pillars */}
                 <div className="space-y-3 mb-6">
                   <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
                     <Activity className="w-4 h-4 text-primary" strokeWidth={1.5} />
-                    עמודי בריאות
+                    עמודי בריאות ({pillars.length})
                   </h3>
                   {pillars.map((pillar, i) => {
                     const Icon = pillar.icon;
