@@ -18,7 +18,7 @@ import {
   Fish, Salad, HeartPulse, Thermometer, Activity, Pill, Syringe, ShieldPlus,
   Luggage, Fan, Link2, Backpack, FoldVertical as FoldIcon, WashingMachine as WashIcon, Plane,
   Flame, Gauge, TrendingDown, AlertCircle, TimerReset,
-  ShieldAlert, Milestone
+  ShieldAlert, Milestone, Atom, Scan, Wheat
 } from "lucide-react";
 import { ProductReviews } from "@/components/shop/ProductReviews";
 import { PriceAlertButton } from "@/components/shop/PriceAlertButton";
@@ -330,6 +330,61 @@ const extractUrinaryFeatures = (product: any) => {
   ];
 
   return { mineralGrid, glucosamineNote, timeline, vetWarning, feedingMatrix, crossSellHints };
+};
+
+/** Check if product is ultra-hypoallergenic / skin care */
+const isHypoallergenicProduct = (product: any): boolean => {
+  const cat = (product.category || '').toLowerCase();
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''}`.toLowerCase();
+  return cat === 'hypoallergenic' || cat === 'dermatology' || cat === 'skin-care' ||
+    text.includes('ultrahypo') || text.includes('hypoallergenic') || text.includes('היפואלרגני') ||
+    text.includes('hydrolyzed') || text.includes('הידרוליזד') || text.includes('מפורק') ||
+    text.includes('atopic') || text.includes('אטופי') ||
+    text.includes('elimination diet') || text.includes('דיאטת אלימינציה') ||
+    (text.includes('skin') && text.includes('allergy')) ||
+    (text.includes('עור') && (text.includes('אלרגי') || text.includes('גירוד')));
+};
+
+/** Extract hypoallergenic features */
+const extractHypoallergenicFeatures = (product: any) => {
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''}`.toLowerCase();
+  const allText = text + ' ' + JSON.stringify(product.product_attributes || {}).toLowerCase();
+
+  // Dalton size
+  const daltonMatch = allText.match(/(\d[\d,]*)\s*dalton/i);
+  const daltonSize = daltonMatch ? daltonMatch[1].replace(',', '') : '6000';
+
+  const skinBenefits = [
+    { icon: <Scan className="w-5 h-5" />, label: 'תמיכה בדרמטיטיס אטופית', description: 'טיפול בעור מגורה ומגרד – הפחתת דלקת וגירוד', color: 'hsl(350,50%,50%)' },
+    { icon: <Activity className="w-5 h-5" />, label: 'שיקום מערכת העיכול', description: 'פתרון לשלשולים חוזרים ובעיות עיכול כרוניות', color: 'hsl(35,60%,48%)' },
+    { icon: <Fish className="w-5 h-5" />, label: 'אומגה 3 – מחסום עור (2.2%)', description: 'ריכוז גבוה של אומגה 3 לחיזוק מחסום העור והברקת הפרווה', color: 'hsl(200,60%,45%)' },
+  ];
+
+  const eliminationTimeline = 'תוצאות נראות לעין באלרגיות עור עשויות לדרוש מספר שבועות של האכלה קפדנית ובלעדית. יש להימנע מכל חטיף או מזון נוסף בתקופת האבחון.';
+
+  const vetWarning = 'מזון רפואי ייעודי - דורש אבחון וליווי של וטרינר. אין לשלב עם מזונות אחרים או חטיפים בזמן תקופת האבחון.';
+
+  const hasRiceStarch = allText.includes('rice starch') || allText.includes('עמילן אורז');
+
+  const feedingMatrix = [
+    { weight: '2 ק"ג', grams: '40-55 גרם' },
+    { weight: '3 ק"ג', grams: '55-70 גרם' },
+    { weight: '5 ק"ג', grams: '75-100 גרם' },
+    { weight: '7 ק"ג', grams: '95-125 גרם' },
+    { weight: '10 ק"ג', grams: '120-160 גרם' },
+    { weight: '15 ק"ג', grams: '165-215 גרם' },
+    { weight: '20 ק"ג', grams: '200-265 גרם' },
+    { weight: '25 ק"ג', grams: '235-310 גרם' },
+    { weight: '30 ק"ג', grams: '265-350 גרם' },
+    { weight: '35 ק"ג', grams: '295-390 גרם' },
+  ];
+
+  const crossSellHints = [
+    'חטיפים היפואלרגניים בלבד – כדי לא לפגוע בדיאטת האלימינציה',
+    'שמפו מרגיע לעור – להקלה חיצונית על גירוד ודלקת',
+  ];
+
+  return { daltonSize, skinBenefits, eliminationTimeline, vetWarning, hasRiceStarch, feedingMatrix, crossSellHints };
 };
 
 /** Check if product is a joint supplement */
@@ -1961,6 +2016,8 @@ const ProductDetail = () => {
   const vetDietFeatures = useMemo(() => product && isVetDiet ? extractVetDietFeatures(product) : { medicalIndicators: [], weightLossTech: [], vetWarning: '', usageTimeline: '', crossSellHints: [], feedingMatrix: [] }, [product, isVetDiet]);
   const isUrinary = useMemo(() => product ? isUrinaryProduct(product) : false, [product]);
   const urinaryFeatures = useMemo(() => product && isUrinary ? extractUrinaryFeatures(product) : { mineralGrid: [], glucosamineNote: null, timeline: [], vetWarning: '', feedingMatrix: [], crossSellHints: [] }, [product, isUrinary]);
+  const isHypoallergenic = useMemo(() => product ? isHypoallergenicProduct(product) : false, [product]);
+  const hypoFeatures = useMemo(() => product && isHypoallergenic ? extractHypoallergenicFeatures(product) : { daltonSize: '6000', skinBenefits: [], eliminationTimeline: '', vetWarning: '', hasRiceStarch: false, feedingMatrix: [], crossSellHints: [] }, [product, isHypoallergenic]);
   const analysisData = useMemo(() => product ? parseAnalysis(product) : [], [product]);
   const vitaminsData = useMemo(() => product ? parseVitamins(product) : [], [product]);
   const feedingResult = useMemo(() => {
@@ -4932,6 +4989,146 @@ const ProductDetail = () => {
               </h3>
               <div className="space-y-1.5">
                 {carrierFeatures.crossSellHints.map((hint, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <span className="text-[10px] text-primary mt-0.5">●</span>
+                    <p className="text-[11px] text-muted-foreground">{hint}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Hypoallergenic: Veterinary Warning ── */}
+        {isHypoallergenic && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
+            <Card className="p-3 border-[hsl(0,60%,50%)]/30 bg-[hsl(0,50%,95%)]/50 dark:bg-[hsl(0,30%,12%)]/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(0,50%,85%)]/30 flex items-center justify-center flex-shrink-0">
+                  <ShieldAlert className="w-5 h-5 text-[hsl(0,60%,50%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-[hsl(0,60%,45%)]">🚨 מזון רפואי ייעודי</p>
+                  <p className="text-[11px] text-foreground font-medium">{hypoFeatures.vetWarning}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Hypoallergenic: Hydrolysis Science Badge ── */}
+        {isHypoallergenic && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(270,25%,95%)] to-background border-[hsl(270,30%,65%)]/20 dark:from-[hsl(270,15%,14%)]">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-2">
+                <Atom className="w-4 h-4 text-[hsl(270,45%,50%)]" />
+                🔬 חלבון מפורק – טכנולוגיית הידרוליזציה
+              </h3>
+              <div className="mt-2 rounded-lg p-3 bg-[hsl(270,35%,50%)]/8 text-center">
+                <p className="text-[22px] font-black text-[hsl(270,45%,50%)]">{hypoFeatures.daltonSize} Dalton</p>
+                <p className="text-[10px] text-muted-foreground mt-1">גודל מולקולרי – מתחת לסף הזיהוי של מערכת החיסון</p>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-3 leading-relaxed">
+                החלבון מפורק לחלקיקים זעירים כך שמערכת החיסון לא מזהה אותם כאלרגנים – מניעת תגובה אלרגית ע״י פירוק מוחלט של מבנה החלבון.
+              </p>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Hypoallergenic: Dermatology & Gut Dashboard ── */}
+        {isHypoallergenic && hypoFeatures.skinBenefits.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
+            <Card className="p-4">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-3">
+                <HeartPulse className="w-4 h-4 text-[hsl(350,50%,50%)]" />
+                🩺 דשבורד עור ועיכול
+              </h3>
+              <div className="space-y-2">
+                {hypoFeatures.skinBenefits.map((b, i) => (
+                  <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + i * 0.05 }}
+                    className="flex items-center gap-3 rounded-lg p-3" style={{ backgroundColor: `${b.color}10` }}>
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${b.color}20`, color: b.color }}>
+                      {b.icon}
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-bold text-foreground">{b.label}</p>
+                      <p className="text-[11px] text-muted-foreground">{b.description}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Hypoallergenic: Elimination Diet Guide ── */}
+        {isHypoallergenic && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }}>
+            <Card className="p-3 bg-gradient-to-br from-[hsl(35,40%,93%)] to-background border-[hsl(35,35%,60%)]/20 dark:from-[hsl(35,20%,14%)]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(35,40%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <TimerReset className="w-5 h-5 text-[hsl(35,55%,45%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-foreground">📋 מדריך דיאטת אלימינציה</p>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">{hypoFeatures.eliminationTimeline}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Hypoallergenic: Clean Ingredient Highlight ── */}
+        {isHypoallergenic && hypoFeatures.hasRiceStarch && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.42 }}>
+            <Card className="p-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-[hsl(45,50%,85%)]/30 flex items-center justify-center flex-shrink-0">
+                  <Wheat className="w-5 h-5 text-[hsl(45,55%,40%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-foreground">🌾 עמילן אורז – פחמימה נקייה</p>
+                  <p className="text-[11px] text-muted-foreground">מקור פחמימות טהור עם פוטנציאל אלרגני מינימלי – למזעור תגובות</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Hypoallergenic: Feeding Matrix ── */}
+        {isHypoallergenic && hypoFeatures.feedingMatrix.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.46 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Calculator className="w-4 h-4 text-primary" />
+                🧮 טבלת מינון יומי
+              </h3>
+              <div className="rounded-lg overflow-hidden border border-border">
+                <div className="grid grid-cols-2 bg-muted/50 text-[10px] font-bold text-foreground p-2 text-center">
+                  <span>משקל</span>
+                  <span>גרמים ליום</span>
+                </div>
+                {hypoFeatures.feedingMatrix.map((row, ri) => (
+                  <div key={ri} className={`grid grid-cols-2 text-[11px] text-center p-1.5 ${ri % 2 === 0 ? 'bg-muted/20' : 'bg-background'}`}>
+                    <span className="font-bold text-foreground">{row.weight}</span>
+                    <span className="text-[hsl(270,45%,50%)] font-semibold">{row.grams}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Hypoallergenic: Cross-Sell ── */}
+        {isHypoallergenic && hypoFeatures.crossSellHints.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.52 }}>
+            <Card className="p-3">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-2">
+                <Target className="w-4 h-4 text-primary" />
+                💡 משלימים מומלצים
+              </h3>
+              <div className="space-y-1.5">
+                {hypoFeatures.crossSellHints.map((hint, i) => (
                   <div key={i} className="flex items-start gap-2">
                     <span className="text-[10px] text-primary mt-0.5">●</span>
                     <p className="text-[11px] text-muted-foreground">{hint}</p>
