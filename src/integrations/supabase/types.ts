@@ -7331,6 +7331,44 @@ export type Database = {
         }
         Relationships: []
       }
+      qr_scan_logs: {
+        Row: {
+          id: string
+          ip_address: string | null
+          latitude: number | null
+          longitude: number | null
+          pet_id: string
+          scanned_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          id?: string
+          ip_address?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          pet_id: string
+          scanned_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          id?: string
+          ip_address?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          pet_id?: string
+          scanned_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qr_scan_logs_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quick_replies: {
         Row: {
           created_at: string

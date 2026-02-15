@@ -54,6 +54,26 @@ const FoundPet = () => {
   const [notFound, setNotFound] = useState(false);
   const [showMedical, setShowMedical] = useState(false);
 
+  const logQrScan = (petId: string) => {
+    const doLog = (lat?: number, lng?: number) => {
+      supabase.from("qr_scan_logs").insert({
+        pet_id: petId,
+        latitude: lat ?? null,
+        longitude: lng ?? null,
+        user_agent: navigator.userAgent,
+      } as any).then(() => {});
+    };
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => doLog(pos.coords.latitude, pos.coords.longitude),
+        () => doLog()
+      );
+    } else {
+      doLog();
+    }
+  };
+
   useEffect(() => {
     const fetchPet = async () => {
       if (!petId) { setNotFound(true); setLoading(false); return; }
@@ -80,6 +100,10 @@ const FoundPet = () => {
         .maybeSingle();
 
       if (ownerData) setOwner(ownerData);
+
+      // Log the QR scan with GPS if available
+      logQrScan(petId);
+
       setLoading(false);
     };
 
