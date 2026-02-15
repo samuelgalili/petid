@@ -282,6 +282,64 @@ const extractDiabeticFeatures = (product: any) => {
   return { bloodSugar, muscleFat, fiberTech, jointNote, feedingTip, vetWarning, feedingMatrix, crossSellHints };
 };
 
+/** Check if product is renal/kidney support */
+const isRenalProduct = (product: any): boolean => {
+  const cat = (product.category || '').toLowerCase();
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''}`.toLowerCase();
+  return cat === 'renal' ||
+    text.includes('renal') || text.includes('כליות') || text.includes('כלייתי') ||
+    text.includes('k/d') || text.includes('kidney');
+};
+
+/** Extract renal care features */
+const extractRenalFeatures = (product: any) => {
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''}`.toLowerCase();
+  const allText = text + ' ' + JSON.stringify(product.product_attributes || {}).toLowerCase();
+
+  const lowLoad = [
+    { icon: '🧪', label: 'זרחן מופחת (Low-P)', description: 'רמות זרחן מופחתות למניעת נזק נוסף לרקמת הכליה', color: 'hsl(200,55%,45%)' },
+    { icon: '🥩', label: 'חלבון מבוקר', description: 'חלבון איכותי אך בכמות מוגבלת להפחתת עומס ה-Urea', color: 'hsl(280,45%,50%)' },
+    { icon: '🧂', label: 'נתרן מופחת', description: 'הפחתת מלחים לשמירה על לחץ דם תקין', color: 'hsl(35,55%,45%)' },
+  ];
+
+  const phBalance = {
+    title: 'חומציות מותאמת (Optimized pH)',
+    description: 'מניעת חמצת מטבולית (Metabolic Acidosis) – מצב נפוץ במחלות כליות שעלול להחמיר את הפגיעה ברקמה',
+  };
+
+  const hasOmega3 = allText.includes('omega') || allText.includes('אומגה') || allText.includes('herring') || allText.includes('fish oil') || allText.includes('שמן דגים');
+  const omega3Note = hasOmega3
+    ? 'אומגה-3 (משמן דג הרינג) – שיפור זרימת דם לכליות והפחתת דלקת מקומית'
+    : 'אומגה-3 – שיפור זרימת דם לכליות והפחתת דלקת';
+
+  const transitionDays = '7-14 ימים';
+  const transitionNote = 'מעבר הדרגתי חובה למניעת בעיות עיכול ודחיית המזון';
+
+  const hydrationAlert = 'מים הם חיים: כלבים עם מחלת כליות חייבים גישה חופשית למים בכל רגע. התייבשות קלה עלולה להחמיר את המצב במהירות.';
+  const vetWarning = 'מזון רפואי ייעודי - מחייב אבחון וליווי וטרינרי. מומלץ לבצע בדיקות דם תקופתיות למעקב אחר תפקוד הכליות.';
+
+  const feedingMatrix = [
+    { weight: '2 ק"ג', grams: '45-60 גרם' },
+    { weight: '5 ק"ג', grams: '85-115 גרם' },
+    { weight: '10 ק"ג', grams: '145-190 גרם' },
+    { weight: '15 ק"ג', grams: '195-255 גרם' },
+    { weight: '20 ק"ג', grams: '240-310 גרם' },
+    { weight: '25 ק"ג', grams: '280-365 גרם' },
+    { weight: '30 ק"ג', grams: '320-415 גרם' },
+    { weight: '40 ק"ג', grams: '390-505 גרם' },
+    { weight: '50 ק"ג', grams: '455-590 גרם' },
+    { weight: '60 ק"ג', grams: '515-670 גרם' },
+    { weight: '70 ק"ג', grams: '575-745 גרם' },
+  ];
+
+  const crossSellHints = [
+    'חטיפים בטוחים לכליות – דלי זרחן ונתרן',
+    'מזרקת מים – לעידוד שתייה מרובה ושמירה על הידרציה',
+  ];
+
+  return { lowLoad, phBalance, omega3Note, transitionDays, transitionNote, hydrationAlert, vetWarning, feedingMatrix, crossSellHints };
+};
+
 /** Check if product is a veterinary diet / metabolic support */
 const isVetDietProduct = (product: any): boolean => {
   const cat = (product.category || '').toLowerCase();
@@ -2143,6 +2201,8 @@ const ProductDetail = () => {
   const gastroFeatures = useMemo(() => product && isGastro ? extractGastroFeatures(product) : { pillars: [], symptoms: [], timeline: [], vetWarning: '', hydrationNote: '', feedingMatrix: [], crossSellHints: [] }, [product, isGastro]);
   const isDiabetic = useMemo(() => product ? isDiabeticProduct(product) : false, [product]);
   const diabeticFeatures = useMemo(() => product && isDiabetic ? extractDiabeticFeatures(product) : { bloodSugar: { glycemicIndex: '', carbSource: '', mechanism: '' }, muscleFat: [], fiberTech: [], jointNote: null, feedingTip: '', vetWarning: '', feedingMatrix: [], crossSellHints: [] }, [product, isDiabetic]);
+  const isRenal = useMemo(() => product ? isRenalProduct(product) : false, [product]);
+  const renalFeatures = useMemo(() => product && isRenal ? extractRenalFeatures(product) : { lowLoad: [], phBalance: { title: '', description: '' }, omega3Note: '', transitionDays: '', transitionNote: '', hydrationAlert: '', vetWarning: '', feedingMatrix: [], crossSellHints: [] }, [product, isRenal]);
   const analysisData = useMemo(() => product ? parseAnalysis(product) : [], [product]);
   const vitaminsData = useMemo(() => product ? parseVitamins(product) : [], [product]);
   const feedingResult = useMemo(() => {
@@ -5274,6 +5334,160 @@ const ProductDetail = () => {
               </h3>
               <div className="space-y-1.5">
                 {diabeticFeatures.crossSellHints.map((hint, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <span className="text-[10px] text-primary mt-0.5">●</span>
+                    <p className="text-[11px] text-muted-foreground">{hint}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Renal: Veterinary Warning ── */}
+        {isRenal && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
+            <Card className="p-3 border-[hsl(0,60%,50%)]/30 bg-[hsl(0,50%,95%)]/50 dark:bg-[hsl(0,30%,12%)]/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(0,50%,85%)]/30 flex items-center justify-center flex-shrink-0">
+                  <ShieldAlert className="w-5 h-5 text-[hsl(0,60%,50%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-[hsl(0,60%,45%)]">🚨 מוצר רפואי ייעודי</p>
+                  <p className="text-[11px] text-foreground font-medium">{renalFeatures.vetWarning}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Renal: Hydration Alert ── */}
+        {isRenal && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }}>
+            <Card className="p-3 border-[hsl(200,60%,50%)]/30 bg-[hsl(200,50%,95%)]/50 dark:bg-[hsl(200,30%,12%)]/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(200,50%,85%)]/30 flex items-center justify-center flex-shrink-0">
+                  <Droplets className="w-5 h-5 text-[hsl(200,60%,50%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-[hsl(200,60%,45%)]">💧 התראת הידרציה</p>
+                  <p className="text-[11px] text-foreground font-medium leading-relaxed">{renalFeatures.hydrationAlert}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Renal: Kidney Relief Dashboard ── */}
+        {isRenal && renalFeatures.lowLoad.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(200,30%,95%)] to-background border-[hsl(200,35%,60%)]/20 dark:from-[hsl(200,20%,14%)]">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Shield className="w-4 h-4 text-[hsl(200,55%,45%)]" />
+                🩺 דשבורד הקלה על הכליות – אסטרטגיית Low-Load
+              </h3>
+              <div className="space-y-2">
+                {renalFeatures.lowLoad.map((item, i) => (
+                  <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.25 + i * 0.06 }}
+                    className="flex items-center gap-3 rounded-lg p-3" style={{ backgroundColor: `${item.color}10` }}>
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-lg" style={{ backgroundColor: `${item.color}20` }}>
+                      {item.icon}
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-bold text-foreground">{item.label}</p>
+                      <p className="text-[11px] text-muted-foreground">{item.description}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Renal: Metabolic pH Balance ── */}
+        {isRenal && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.36 }}>
+            <Card className="p-4">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-2">
+                <Gauge className="w-4 h-4 text-[hsl(280,45%,50%)]" />
+                ⚖️ איזון pH מטבולי
+              </h3>
+              <div className="rounded-lg p-3 bg-[hsl(280,40%,50%)]/8">
+                <p className="text-[12px] font-bold text-foreground">{renalFeatures.phBalance.title}</p>
+                <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">{renalFeatures.phBalance.description}</p>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Renal: Inflammation Shield (Omega-3) ── */}
+        {isRenal && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+            <Card className="p-3 bg-gradient-to-br from-[hsl(170,30%,93%)] to-background border-[hsl(170,35%,55%)]/20 dark:from-[hsl(170,20%,14%)]">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-[hsl(170,40%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Fish className="w-5 h-5 text-[hsl(170,50%,40%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-foreground">🛡️ מגן דלקת – Omega-3</p>
+                  <p className="text-[11px] text-muted-foreground">{renalFeatures.omega3Note}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Renal: Transition Guide ── */}
+        {isRenal && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.44 }}>
+            <Card className="p-3 bg-gradient-to-br from-[hsl(45,45%,92%)] to-background border-[hsl(45,40%,55%)]/20 dark:from-[hsl(45,20%,14%)]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(45,45%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Timer className="w-5 h-5 text-[hsl(45,60%,40%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-foreground">📅 מעבר הדרגתי: {renalFeatures.transitionDays}</p>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">{renalFeatures.transitionNote}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Renal: Feeding Matrix ── */}
+        {isRenal && renalFeatures.feedingMatrix.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.48 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Calculator className="w-4 h-4 text-primary" />
+                🧮 טבלת מינון יומי – Renal
+              </h3>
+              <div className="rounded-lg overflow-hidden border border-border">
+                <div className="grid grid-cols-2 bg-muted/50 text-[10px] font-bold text-foreground p-2 text-center">
+                  <span>משקל</span>
+                  <span>גרמים ליום</span>
+                </div>
+                {renalFeatures.feedingMatrix.map((row, ri) => (
+                  <div key={ri} className={`grid grid-cols-2 text-[11px] text-center p-1.5 ${ri % 2 === 0 ? 'bg-muted/20' : 'bg-background'}`}>
+                    <span className="font-bold text-foreground">{row.weight}</span>
+                    <span className="text-[hsl(200,55%,45%)] font-semibold">{row.grams}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Renal: Cross-Sell ── */}
+        {isRenal && renalFeatures.crossSellHints.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.54 }}>
+            <Card className="p-3">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-2">
+                <Target className="w-4 h-4 text-primary" />
+                💡 משלימים מומלצים
+              </h3>
+              <div className="space-y-1.5">
+                {renalFeatures.crossSellHints.map((hint, i) => (
                   <div key={i} className="flex items-start gap-2">
                     <span className="text-[10px] text-primary mt-0.5">●</span>
                     <p className="text-[11px] text-muted-foreground">{hint}</p>
