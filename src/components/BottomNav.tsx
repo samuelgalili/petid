@@ -123,41 +123,35 @@ const BottomNav = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 z-[9998]"
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9998]"
               onClick={() => setShowUploadMenu(false)}
             />
-            {/* Menu */}
+            {/* Menu - horizontal layout */}
             <motion.div
-              initial={{ y: 100, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 100, opacity: 0 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed bottom-[70px] left-1/2 -translate-x-1/2 z-[9999] w-[200px] bg-background rounded-2xl border border-border shadow-xl overflow-hidden"
+              initial={{ y: 40, opacity: 0, scale: 0.9 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: 40, opacity: 0, scale: 0.9 }}
+              transition={{ type: "spring", damping: 22, stiffness: 350 }}
+              className="fixed bottom-[76px] left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-6 px-6 py-4 bg-background/90 backdrop-blur-xl rounded-2xl border border-border/50 shadow-2xl"
               dir="rtl"
             >
-              <button
-                onClick={() => { setShowUploadMenu(false); navigate('/create-story'); }}
-                className="flex items-center gap-3 w-full px-4 py-3.5 hover:bg-muted/60 transition-colors"
-              >
-                <Camera className="w-5 h-5 text-foreground" strokeWidth={1.5} />
-                <span className="text-sm font-medium text-foreground">סטורי</span>
-              </button>
-              <div className="h-px bg-border mx-3" />
-              <button
-                onClick={() => { setShowUploadMenu(false); navigate('/create-post'); }}
-                className="flex items-center gap-3 w-full px-4 py-3.5 hover:bg-muted/60 transition-colors"
-              >
-                <ImagePlus className="w-5 h-5 text-foreground" strokeWidth={1.5} />
-                <span className="text-sm font-medium text-foreground">פוסט</span>
-              </button>
-              <div className="h-px bg-border mx-3" />
-              <button
-                onClick={() => { setShowUploadMenu(false); navigate('/scan-document'); }}
-                className="flex items-center gap-3 w-full px-4 py-3.5 hover:bg-muted/60 transition-colors"
-              >
-                <FileText className="w-5 h-5 text-foreground" strokeWidth={1.5} />
-                <span className="text-sm font-medium text-foreground">מסמך</span>
-              </button>
+              {[
+                { icon: Camera, label: "סטורי", path: "/create-story", color: "text-pink-500", bg: "bg-pink-500/10" },
+                { icon: ImagePlus, label: "פוסט", path: "/create-post", color: "text-blue-500", bg: "bg-blue-500/10" },
+                { icon: FileText, label: "מסמך", path: "/scan-document", color: "text-amber-500", bg: "bg-amber-500/10" },
+              ].map((item) => (
+                <motion.button
+                  key={item.path}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => { setShowUploadMenu(false); navigate(item.path); }}
+                  className="flex flex-col items-center gap-1.5"
+                >
+                  <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center", item.bg)}>
+                    <item.icon className={cn("w-6 h-6", item.color)} strokeWidth={1.5} />
+                  </div>
+                  <span className="text-xs font-medium text-foreground">{item.label}</span>
+                </motion.button>
+              ))}
             </motion.div>
           </>
         )}
