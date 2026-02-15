@@ -387,6 +387,60 @@ const extractHypoallergenicFeatures = (product: any) => {
   return { daltonSize, skinBenefits, eliminationTimeline, vetWarning, hasRiceStarch, feedingMatrix, crossSellHints };
 };
 
+/** Check if product is gastrointestinal support */
+const isGastroProduct = (product: any): boolean => {
+  const cat = (product.category || '').toLowerCase();
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''}`.toLowerCase();
+  return cat === 'gastrointestinal' || cat === 'gastro' || cat === 'intestinal' ||
+    text.includes('intestinal') || text.includes('gastro') || text.includes('גסטרו') ||
+    text.includes('i/d') || text.includes('gi ') ||
+    text.includes('pancreatitis') || text.includes('דלקת לבלב') ||
+    text.includes('digestive care') || text.includes('עיכול') ||
+    (text.includes('gastrointestinal') && (text.includes('dog') || text.includes('cat') || text.includes('כלב') || text.includes('חתול')));
+};
+
+/** Extract gastro features */
+const extractGastroFeatures = (product: any) => {
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''}`.toLowerCase();
+
+  const pillars = [
+    { icon: <Salad className="w-5 h-5" />, label: 'עיכול קל', description: 'רכיבים בעלי נעצמות גבוהה – אורז ועוף מפורק להקלה על הלבלב והמעי', color: 'hsl(140,50%,40%)' },
+    { icon: <Activity className="w-5 h-5" />, label: 'איזון מיקרוביום', description: 'FOS & MOS – פרה-ביוטיקה לחיזוק החיידקים הטובים ושיקום רירית המעי', color: 'hsl(270,45%,50%)' },
+    { icon: <Fish className="w-5 h-5" />, label: 'אנטי-דלקתי – אומגה 3', description: 'הפחתת דלקות מקומיות במערכת העיכול', color: 'hsl(200,60%,45%)' },
+  ];
+
+  const symptoms = ['שלשולים', 'גזים והתנפחות', 'דלקת לבלב (Pancreatitis)', 'תסמונת המעי הרגיז (IBS)'];
+
+  const timeline = [
+    { stage: 'חריף', duration: '1-2 שבועות', title: 'הפרעות חריפות', description: 'הקלה ראשונית והרגעת מערכת העיכול', color: 'hsl(35,60%,48%)' },
+    { stage: 'עיכול לקוי', duration: '3-21 שבועות', title: 'שיקום עיכול', description: 'שיקום הדרגתי של הפלורה והתפקוד', color: 'hsl(200,55%,45%)' },
+    { stage: 'כרוני', duration: 'לכל החיים', title: 'מצבים כרוניים / לבלב', description: 'תחזוקה מתמשכת בליווי וטרינרי', color: 'hsl(350,50%,50%)' },
+  ];
+
+  const vetWarning = 'מזון רפואי - דורש ליווי וטרינרי. מומלץ לחלק את המנה ל-3-4 ארוחות קטנות ביום להקלה על העיכול.';
+  const hydrationNote = 'בזמן שלשולים, חיוני להקפיד על שתיית מים מרובה למניעת התייבשות.';
+
+  const feedingMatrix = [
+    { weight: '2 ק"ג', grams: '50-65 גרם' },
+    { weight: '5 ק"ג', grams: '95-120 גרם' },
+    { weight: '10 ק"ג', grams: '155-195 גרם' },
+    { weight: '15 ק"ג', grams: '205-260 גרם' },
+    { weight: '20 ק"ג', grams: '250-320 גרם' },
+    { weight: '25 ק"ג', grams: '295-370 גרם' },
+    { weight: '30 ק"ג', grams: '335-420 גרם' },
+    { weight: '40 ק"ג', grams: '410-515 גרם' },
+    { weight: '50 ק"ג', grams: '480-600 גרם' },
+    { weight: '60 ק"ג', grams: '545-680 גרם' },
+  ];
+
+  const crossSellHints = [
+    'תוספי פרוביוטיקה – לחיזוק נוסף של הפלורה המעיית',
+    'קערת האכלה איטית – למניעת אכילה מהירה שמעמיסה על העיכול',
+  ];
+
+  return { pillars, symptoms, timeline, vetWarning, hydrationNote, feedingMatrix, crossSellHints };
+};
+
 /** Check if product is a joint supplement */
 const isJointSupplementProduct = (product: any): boolean => {
   const cat = (product.category || '').toLowerCase();
@@ -2018,6 +2072,8 @@ const ProductDetail = () => {
   const urinaryFeatures = useMemo(() => product && isUrinary ? extractUrinaryFeatures(product) : { mineralGrid: [], glucosamineNote: null, timeline: [], vetWarning: '', feedingMatrix: [], crossSellHints: [] }, [product, isUrinary]);
   const isHypoallergenic = useMemo(() => product ? isHypoallergenicProduct(product) : false, [product]);
   const hypoFeatures = useMemo(() => product && isHypoallergenic ? extractHypoallergenicFeatures(product) : { daltonSize: '6000', skinBenefits: [], eliminationTimeline: '', vetWarning: '', hasRiceStarch: false, feedingMatrix: [], crossSellHints: [] }, [product, isHypoallergenic]);
+  const isGastro = useMemo(() => product ? isGastroProduct(product) : false, [product]);
+  const gastroFeatures = useMemo(() => product && isGastro ? extractGastroFeatures(product) : { pillars: [], symptoms: [], timeline: [], vetWarning: '', hydrationNote: '', feedingMatrix: [], crossSellHints: [] }, [product, isGastro]);
   const analysisData = useMemo(() => product ? parseAnalysis(product) : [], [product]);
   const vitaminsData = useMemo(() => product ? parseVitamins(product) : [], [product]);
   const feedingResult = useMemo(() => {
@@ -4989,6 +5045,157 @@ const ProductDetail = () => {
               </h3>
               <div className="space-y-1.5">
                 {carrierFeatures.crossSellHints.map((hint, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <span className="text-[10px] text-primary mt-0.5">●</span>
+                    <p className="text-[11px] text-muted-foreground">{hint}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Gastro: Veterinary Warning ── */}
+        {isGastro && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
+            <Card className="p-3 border-[hsl(0,60%,50%)]/30 bg-[hsl(0,50%,95%)]/50 dark:bg-[hsl(0,30%,12%)]/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(0,50%,85%)]/30 flex items-center justify-center flex-shrink-0">
+                  <ShieldAlert className="w-5 h-5 text-[hsl(0,60%,50%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-[hsl(0,60%,45%)]">⚠️ מזון רפואי</p>
+                  <p className="text-[11px] text-foreground font-medium">{gastroFeatures.vetWarning}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Gastro: Hydration Note ── */}
+        {isGastro && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }}>
+            <Card className="p-3 bg-gradient-to-br from-[hsl(195,40%,93%)] to-background border-[hsl(195,35%,60%)]/20 dark:from-[hsl(195,25%,14%)]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(195,40%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Droplets className="w-5 h-5 text-[hsl(195,55%,45%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-foreground">💧 תזכורת הידרציה</p>
+                  <p className="text-[11px] text-muted-foreground">{gastroFeatures.hydrationNote}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Gastro: Digestive Relief Dashboard ── */}
+        {isGastro && gastroFeatures.pillars.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}>
+            <Card className="p-4">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-3">
+                <HeartPulse className="w-4 h-4 text-[hsl(140,50%,40%)]" />
+                🩺 3 עמודי ההחלמה
+              </h3>
+              <div className="space-y-2">
+                {gastroFeatures.pillars.map((p, i) => (
+                  <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.24 + i * 0.05 }}
+                    className="flex items-center gap-3 rounded-lg p-3" style={{ backgroundColor: `${p.color}10` }}>
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${p.color}20`, color: p.color }}>
+                      {p.icon}
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-bold text-foreground">{p.label}</p>
+                      <p className="text-[11px] text-muted-foreground">{p.description}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Gastro: Symptom Matcher ── */}
+        {isGastro && gastroFeatures.symptoms.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.34 }}>
+            <Card className="p-4">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-3">
+                <Stethoscope className="w-4 h-4 text-[hsl(270,45%,50%)]" />
+                🎯 מתאים למצבים
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {gastroFeatures.symptoms.map((s, i) => (
+                  <span key={i} className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-[hsl(270,35%,50%)]/10 text-[hsl(270,45%,45%)] border border-[hsl(270,35%,50%)]/15">
+                    {s}
+                  </span>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Gastro: Treatment Timeline ── */}
+        {isGastro && gastroFeatures.timeline.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+            <Card className="p-4">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-3">
+                <Milestone className="w-4 h-4 text-[hsl(35,60%,48%)]" />
+                📅 ציר זמן טיפולי
+              </h3>
+              <div className="space-y-3">
+                {gastroFeatures.timeline.map((t, i) => (
+                  <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.42 + i * 0.08 }}
+                    className="flex gap-3 items-start">
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black text-white" style={{ backgroundColor: t.color }}>{i + 1}</div>
+                      {i < gastroFeatures.timeline.length - 1 && <div className="w-0.5 h-6 bg-border mt-1" />}
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-bold text-foreground">{t.stage}: {t.title}</p>
+                      <p className="text-[10px] font-semibold" style={{ color: t.color }}>{t.duration}</p>
+                      <p className="text-[11px] text-muted-foreground">{t.description}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Gastro: Feeding Matrix ── */}
+        {isGastro && gastroFeatures.feedingMatrix.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.48 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Calculator className="w-4 h-4 text-primary" />
+                🧮 טבלת מינון יומי
+              </h3>
+              <div className="rounded-lg overflow-hidden border border-border">
+                <div className="grid grid-cols-2 bg-muted/50 text-[10px] font-bold text-foreground p-2 text-center">
+                  <span>משקל</span>
+                  <span>גרמים ליום</span>
+                </div>
+                {gastroFeatures.feedingMatrix.map((row, ri) => (
+                  <div key={ri} className={`grid grid-cols-2 text-[11px] text-center p-1.5 ${ri % 2 === 0 ? 'bg-muted/20' : 'bg-background'}`}>
+                    <span className="font-bold text-foreground">{row.weight}</span>
+                    <span className="text-[hsl(140,45%,40%)] font-semibold">{row.grams}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Gastro: Cross-Sell ── */}
+        {isGastro && gastroFeatures.crossSellHints.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.54 }}>
+            <Card className="p-3">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-2">
+                <Target className="w-4 h-4 text-primary" />
+                💡 משלימים מומלצים
+              </h3>
+              <div className="space-y-1.5">
+                {gastroFeatures.crossSellHints.map((hint, i) => (
                   <div key={i} className="flex items-start gap-2">
                     <span className="text-[10px] text-primary mt-0.5">●</span>
                     <p className="text-[11px] text-muted-foreground">{hint}</p>
