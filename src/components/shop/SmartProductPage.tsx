@@ -1,7 +1,8 @@
 /**
  * SmartProductPage — PetID's flagship product detail component.
- * V69: Hero carousel, medical badge, "Why Wendy?" AI card,
- * subscription toggle, expandable specs, sticky footer, full RTL.
+ * V70: Hero carousel, medical badge, "Why Wendy?" AI card,
+ * subscription toggle, expandable specs, sticky footer, full RTL,
+ * conflict warning, restock prediction, cross-sell.
  */
 
 import { useState, useRef, useCallback } from "react";
@@ -22,6 +23,9 @@ import {
   Heart,
   Dog,
   Cat,
+  AlertTriangle,
+  RefreshCw,
+  PackagePlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -43,6 +47,19 @@ interface FeedingRow {
   grams: string;
 }
 
+interface CrossSellProduct {
+  id: string;
+  name: string;
+  imageUrl: string;
+  price: number;
+  reason: string;
+}
+
+interface ConflictWarning {
+  reason: string;
+  severity: "warning" | "danger";
+}
+
 interface SmartProductPageProps {
   images: ProductImage[];
   name: string;
@@ -59,7 +76,11 @@ interface SmartProductPageProps {
   feedingGuide?: FeedingRow[];
   medicalValidation?: boolean;
   healthScoreDelta?: string;
+  conflictWarning?: ConflictWarning | null;
+  restockDays?: number | null;
+  crossSell?: CrossSellProduct | null;
   onAddToCart?: (quantity: number, subscription: boolean) => void;
+  onCrossSellClick?: (productId: string) => void;
   onFavorite?: () => void;
   isFavorited?: boolean;
 }
@@ -133,7 +154,11 @@ export const SmartProductPage = ({
   feedingGuide,
   medicalValidation = false,
   healthScoreDelta,
+  conflictWarning,
+  restockDays,
+  crossSell,
   onAddToCart,
+  onCrossSellClick,
   onFavorite,
   isFavorited = false,
 }: SmartProductPageProps) => {
@@ -307,6 +332,41 @@ export const SmartProductPage = ({
           </div>
         </div>
 
+        {/* ═══ Conflict Warning ═══ */}
+        {conflictWarning && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className={cn(
+              "p-3.5 rounded-2xl border-2 flex items-start gap-3",
+              conflictWarning.severity === "danger"
+                ? "border-destructive/40 bg-destructive/10"
+                : "border-yellow-500/40 bg-yellow-500/10"
+            )}
+          >
+            <div className={cn(
+              "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5",
+              conflictWarning.severity === "danger" ? "bg-destructive/20" : "bg-yellow-500/20"
+            )}>
+              <AlertTriangle
+                className={cn("w-4.5 h-4.5", conflictWarning.severity === "danger" ? "text-destructive" : "text-yellow-600")}
+                strokeWidth={1.5}
+              />
+            </div>
+            <div>
+              <p className={cn(
+                "text-xs font-bold",
+                conflictWarning.severity === "danger" ? "text-destructive" : "text-yellow-700"
+              )}>
+                לא מומלץ עבור {petName}
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                {conflictWarning.reason}
+              </p>
+            </div>
+          </motion.div>
+        )}
+
         {/* ═══ 2. "Why Wendy?" Card ═══ */}
         {whyText && (
           <motion.div
@@ -374,6 +434,16 @@ export const SmartProductPage = ({
               <p className="text-[10px] text-muted-foreground">משלוח חודשי</p>
             </button>
           </div>
+
+          {/* Restock prediction */}
+          {restockDays && restockDays > 0 && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-muted/30 border border-border/20">
+              <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={1.5} />
+              <span className="text-[11px] text-muted-foreground">
+                תדירות מומלצת: כל <span className="font-bold text-foreground">{restockDays}</span> יום (לפי צריכה יומית של {petName})
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Description */}
@@ -445,6 +515,37 @@ export const SmartProductPage = ({
             </ExpandableSection>
           )}
         </div>
+
+        {/* ═══ Cross-Sell ═══ */}
+        {crossSell && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="rounded-2xl border border-border/30 bg-card p-3.5"
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <PackagePlus className="w-4 h-4 text-primary" strokeWidth={1.5} />
+              <h3 className="text-xs font-bold text-foreground">שילוב מומלץ</h3>
+            </div>
+            <button
+              onClick={() => onCrossSellClick?.(crossSell.id)}
+              className="w-full flex items-center gap-3 p-2.5 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors text-right"
+            >
+              <img
+                src={crossSell.imageUrl}
+                alt={crossSell.name}
+                className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-foreground truncate">{crossSell.name}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2 leading-relaxed">{crossSell.reason}</p>
+                <p className="text-xs font-bold text-primary mt-1">₪{crossSell.price.toFixed(0)}</p>
+              </div>
+              <ChevronLeft className={cn("w-4 h-4 text-muted-foreground flex-shrink-0", !isRtl && "rotate-180")} strokeWidth={1.5} />
+            </button>
+          </motion.div>
+        )}
       </div>
 
       {/* ═══ 5. Sticky Footer ═══ */}
