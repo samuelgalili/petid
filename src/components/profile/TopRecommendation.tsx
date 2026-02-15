@@ -74,6 +74,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
   const [feedingGuideline, setFeedingGuideline] = useState<{min: number; max: number} | null>(null);
   const [medicalConditions, setMedicalConditions] = useState<string[]>([]);
   const [currentFood, setCurrentFood] = useState<string | null>(null);
+  const [medicalAffectedCircles, setMedicalAffectedCircles] = useState<Set<string>>(new Set());
   const isOwner = user?.id === pet.user_id;
 
   // Fetch owner profile
@@ -118,6 +119,26 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
       if (petFull) {
         setMedicalConditions((petFull as any).medical_conditions || []);
         setCurrentFood((petFull as any).current_food || null);
+        
+        // Determine affected dashboard circles from medical conditions
+        const conditions = ((petFull as any).medical_conditions || []) as string[];
+        const affected = new Set<string>();
+        const allCondText = conditions.join(' ').toLowerCase();
+        
+        const circleMap: [string[], string][] = [
+          [['skin', 'עור', 'coat', 'פרווה', 'derma', 'allergy', 'אלרגיה', 'fold', 'קפל'], 'coat'],
+          [['joint', 'מפרק', 'hip', 'patella', 'mobility', 'ניידות', 'arthritis', 'dysplasia', 'דיספלזיה'], 'mobility'],
+          [['digest', 'עיכול', 'gastro', 'gi', 'intestin', 'vomit', 'הקאה', 'diarrhea', 'שלשול'], 'digestion'],
+          [['energy', 'אנרגיה', 'lethargy', 'עייפות'], 'energy'],
+          [['food', 'מזון', 'diet', 'דיאט', 'weight', 'משקל', 'obesity', 'השמנ'], 'feeding'],
+        ];
+        
+        for (const [keywords, circle] of circleMap) {
+          if (keywords.some(kw => allCondText.includes(kw))) {
+            affected.add(circle);
+          }
+        }
+        setMedicalAffectedCircles(affected);
       }
     };
 
@@ -1033,8 +1054,10 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
                 />
               ))}
             </div>
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-1.5 group-hover:bg-primary/20 transition-colors">
-              <Zap className="w-5 h-5 text-primary" />
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1.5 transition-colors ${
+              medicalAffectedCircles.has('energy') ? 'bg-amber-500/15 group-hover:bg-amber-500/25' : 'bg-primary/10 group-hover:bg-primary/20'
+            }`}>
+              <Zap className={`w-5 h-5 ${medicalAffectedCircles.has('energy') ? 'text-amber-500' : 'text-primary'}`} />
             </div>
             <span className="text-xs font-semibold text-foreground">אנרגיה</span>
             {activityMinutes && (
@@ -1061,8 +1084,10 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
                 />
               ))}
             </div>
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-1.5 group-hover:bg-primary/20 transition-colors">
-              <Scissors className="w-5 h-5 text-primary" />
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1.5 transition-colors ${
+              medicalAffectedCircles.has('coat') ? 'bg-amber-500/15 group-hover:bg-amber-500/25' : 'bg-primary/10 group-hover:bg-primary/20'
+            }`}>
+              <Scissors className={`w-5 h-5 ${medicalAffectedCircles.has('coat') ? 'text-amber-500' : 'text-primary'}`} />
             </div>
             <span className="text-xs font-semibold text-foreground">טיפוח</span>
             <span className="text-[10px] text-primary font-bold mt-0.5">{getGroomingLevelHe()}</span>
@@ -1084,8 +1109,10 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
                 className="h-full bg-primary rounded-full"
               />
             </div>
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-1.5 group-hover:bg-primary/20 transition-colors">
-              {pet.type === 'dog' ? <Bone className="w-5 h-5 text-primary" /> : <Fish className="w-5 h-5 text-primary" />}
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1.5 transition-colors ${
+              medicalAffectedCircles.has('feeding') ? 'bg-amber-500/15 group-hover:bg-amber-500/25' : 'bg-primary/10 group-hover:bg-primary/20'
+            }`}>
+              {pet.type === 'dog' ? <Bone className={`w-5 h-5 ${medicalAffectedCircles.has('feeding') ? 'text-amber-500' : 'text-primary'}`} /> : <Fish className={`w-5 h-5 ${medicalAffectedCircles.has('feeding') ? 'text-amber-500' : 'text-primary'}`} />}
             </div>
             <span className="text-xs font-semibold text-foreground">האכלה</span>
             {feedingGuideline ? (

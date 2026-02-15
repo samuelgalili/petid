@@ -25,6 +25,8 @@ interface ExtractedData {
   isRecoveryMode: boolean;
   recoveryReason: string | null;
   nextVisitDate: string | null;
+  breedManagementGuide: string | null;
+  affectedDashboardCircles: string[];
 }
 
 export const VetVisitInput = ({ petId, petName, onVisitLogged }: VetVisitInputProps) => {
@@ -220,6 +222,32 @@ export const VetVisitInput = ({ petId, petName, onVisitLogged }: VetVisitInputPr
                         <p className="text-[10px] text-primary">
                           📅 תזכורת חיסון הבא: {new Date(extracted.nextVisitDate).toLocaleDateString("he-IL")}
                         </p>
+                      )}
+
+                      {extracted.breedManagementGuide && (
+                        <div className="p-2.5 bg-primary/5 rounded-lg border border-primary/10 mt-1">
+                          <p className="text-[10px] font-semibold text-primary mb-1">📋 מדריך ניהול גזעי:</p>
+                          {extracted.breedManagementGuide.split('\n').map((line, i) => (
+                            <p key={i} className="text-[10px] text-foreground leading-relaxed">{line}</p>
+                          ))}
+                        </div>
+                      )}
+
+                      {extracted.affectedDashboardCircles && extracted.affectedDashboardCircles.length > 0 && (
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <span className="text-[9px] text-muted-foreground">עיגולים מושפעים:</span>
+                          {extracted.affectedDashboardCircles.map((circle, i) => {
+                            const circleLabels: Record<string, string> = {
+                              coat: 'פרווה', energy: 'אנרגיה', health: 'בריאות',
+                              mobility: 'ניידות', digestion: 'עיכול', feeding: 'האכלה',
+                            };
+                            return (
+                              <span key={i} className="text-[9px] px-1.5 py-0.5 bg-amber-500/15 text-amber-600 rounded-full font-medium">
+                                {circleLabels[circle] || circle}
+                              </span>
+                            );
+                          })}
+                        </div>
                       )}
 
                       <div className="flex justify-center">

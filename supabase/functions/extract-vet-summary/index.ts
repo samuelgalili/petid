@@ -13,6 +13,8 @@ const KNOWN_VACCINES = [
   'rabies', 'כלבת', 'dhpp', 'dhlpp', 'parvo', 'פרבו',
   'distemper', 'bordetella', 'leptospirosis', 'לפטוספירוזיס',
   'fvrcp', 'felv', 'fiv', 'meshusheshet', 'משושה', 'מרובע', 'מחומש',
+  'leishmania', 'לישמניה', 'leishmaniasis', 'לישמניוזיס',
+  'kennel cough', 'שעלת מלונות', 'canine influenza', 'שפעת',
 ];
 
 const SURGERY_KEYWORDS = [
@@ -30,6 +32,60 @@ interface ExtractedData {
   isRecoveryMode: boolean;
   recoveryReason: string | null;
   nextVisitDate: string | null;
+  breedManagementGuide: string | null;
+  affectedDashboardCircles: string[];
+}
+
+// Breed-specific condition management guides (Hebrew)
+const BREED_CONDITION_GUIDES: Record<string, Record<string, string>> = {
+  'french bulldog': {
+    'respiratory': '🫁 מדריך ניהול נשימתי לבולדוג צרפתי:\n• הימנעו ממאמץ יתר בחום — טיולים קצרים בלבד\n• שימרו על משקל תקין (השמנה מחמירה)\n• השתמשו ברתמה ולא בקולר\n• שימו לב לנחירות חריגות\n• שקלו ייעוץ עם מומחה BOAS',
+    'skin': '🧴 מדריך טיפול בעור לבולדוג צרפתי:\n• נקו קפלי עור יומית עם מגבונים ייעודיים\n• ייבשו היטב בין הקפלים\n• בדקו סימני אודם או ריח\n• שמפו היפואלרגני בלבד\n• תוסף אומגה-3 לחיזוק מחסום העור',
+    'eye': '👁️ מדריך טיפול בעיניים לבולדוג צרפתי:\n• בדקו מדי יום דמעות מוגזמות\n• נקו עם תמיסת מלח פיזיולוגי\n• הימנעו מחשיפה לרוח חזקה\n• פנו לוטרינר מיד אם יש אודם או עכירות',
+    'joint': '🦴 מדריך ניידות לבולדוג צרפתי:\n• הימנעו מקפיצות מגובה\n• השתמשו ברמפה לספה/מכונית\n• תוסף גלוקוזאמין יומי\n• שחייה — פעילות מומלצת ללא עומס על מפרקים',
+  },
+  'bulldog': {
+    'respiratory': '🫁 בולדוגים בסיכון גבוה לבעיות נשימה — טיולים קצרים, הימנעות מחום, ומעקב וטרינרי קבוע.',
+    'skin': '🧴 ניקוי קפלי עור יומי הכרחי. שימוש בשמפו עדין ותוסף שמן דגים.',
+  },
+  'pug': {
+    'respiratory': '🫁 פאגים רגישים לחום — טיולים בשעות קרירות בלבד, שמירה על משקל תקין.',
+    'eye': '👁️ עיניים בולטות — בדיקה יומית, ניקוי עדין, הימנעות מחיכוך.',
+  },
+  'golden retriever': {
+    'joint': '🦴 גולדנים נוטים לדיספלזיה — תוסף מפרקים מגיל צעיר, הימנעות מריצה על משטחים קשים.',
+    'skin': '🧴 אלרגיות עור שכיחות — מזון היפואלרגני ותוסף אומגה.',
+  },
+  'labrador': {
+    'joint': '🦴 לברדורים נוטים לבעיות מפרקים — שמירה על משקל, תוסף גלוקוזאמין, ושחייה כפעילות מומלצת.',
+  },
+  'german shepherd': {
+    'joint': '🦴 רועים גרמניים — מעקב אחר דיספלזיה מגיל צעיר, תוסף מפרקים ופעילות מבוקרת.',
+  },
+};
+
+// Map diagnoses to dashboard circles
+function getAffectedCircles(diagnoses: string[], summary: string): string[] {
+  const lower = summary.toLowerCase();
+  const circles: string[] = [];
+  
+  const mappings: [string[], string][] = [
+    [['skin', 'עור', 'coat', 'פרווה', 'derma', 'allergy', 'אלרגיה', 'fold', 'קפל'], 'coat'],
+    [['joint', 'מפרק', 'hip', 'patella', 'mobility', 'ניידות', 'arthritis', 'dysplasia'], 'mobility'],
+    [['digest', 'עיכול', 'gastro', 'gi', 'intestin', 'vomit', 'הקאה', 'diarrhea', 'שלשול'], 'digestion'],
+    [['energy', 'אנרגיה', 'lethargy', 'עייפות', 'fatigue', 'חולשה'], 'energy'],
+    [['food', 'מזון', 'diet', 'דיאט', 'weight', 'משקל', 'obesity', 'השמנ'], 'feeding'],
+    [['respiratory', 'נשימ', 'boas', 'breathing', 'lung', 'ריאות'], 'health'],
+    [['eye', 'עיניים', 'ear', 'אוזניים', 'dental', 'שיניים'], 'health'],
+  ];
+  
+  for (const [keywords, circle] of mappings) {
+    if (keywords.some(kw => lower.includes(kw)) && !circles.includes(circle)) {
+      circles.push(circle);
+    }
+  }
+  
+  return circles;
 }
 
 function extractFromText(summary: string): ExtractedData {
@@ -110,7 +166,9 @@ function extractFromText(summary: string): ExtractedData {
     nextVisitDate = nextYear.toISOString().split('T')[0];
   }
 
-  return { diagnoses, medications, vaccines, isRecoveryMode, recoveryReason, nextVisitDate };
+  const affectedDashboardCircles = getAffectedCircles(diagnoses, summary);
+
+  return { diagnoses, medications, vaccines, isRecoveryMode, recoveryReason, nextVisitDate, breedManagementGuide: null, affectedDashboardCircles };
 }
 
 serve(async (req) => {
@@ -135,6 +193,36 @@ serve(async (req) => {
 
     // Extract data from summary
     const extracted = extractFromText(summary);
+
+    // Look up breed for management guide
+    const { data: petInfo } = await supabase
+      .from("pets")
+      .select("breed")
+      .eq("id", petId)
+      .maybeSingle();
+
+    if (petInfo?.breed && extracted.diagnoses.length > 0) {
+      const breedLower = (petInfo.breed as string).toLowerCase();
+      // Find matching breed guide
+      for (const [breedKey, conditions] of Object.entries(BREED_CONDITION_GUIDES)) {
+        if (breedLower.includes(breedKey) || breedKey.includes(breedLower)) {
+          // Find matching condition category
+          for (const [condKey, guide] of Object.entries(conditions)) {
+            const summaryLower = summary.toLowerCase();
+            if (summaryLower.includes(condKey) || extracted.affectedDashboardCircles.some(c => 
+              (condKey === 'respiratory' && c === 'health') ||
+              (condKey === 'skin' && c === 'coat') ||
+              (condKey === 'eye' && c === 'health') ||
+              (condKey === 'joint' && c === 'mobility')
+            )) {
+              extracted.breedManagementGuide = guide;
+              break;
+            }
+          }
+          break;
+        }
+      }
+    }
 
     // Calculate recovery end date (14 days from visit)
     const visitDt = new Date(visitDate || new Date());
