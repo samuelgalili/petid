@@ -10,7 +10,7 @@ import {
   X, Syringe, Utensils, ShieldCheck, UserCheck, 
   CheckCircle2, Circle, ChevronLeft, Sparkles, 
   Eye, ShoppingBag, ArrowUpRight, Activity,
-  Smile, Droplets
+  Smile, Droplets, Wind
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -51,8 +51,9 @@ interface TodoItem {
   action?: () => void;
 }
 
-// Breed-specific preventive tips
+// Breed-specific preventive tips (dogs + cats)
 const BREED_PREVENTIVE_TIPS: Record<string, string> = {
+  // Dogs
   'shih tzu': 'מכיוון ששיטסו נוטים לבעיות דמעות, שמירה על ניקיון העיניים יומיומי ישמור על ציון הטיפוח שלך גבוה וימנע דלקות עתידיות.',
   'שיצו': 'מכיוון ששיטסו נוטים לבעיות דמעות, שמירה על ניקיון העיניים יומיומי ישמור על ציון הטיפוח שלך גבוה וימנע דלקות עתידיות.',
   'שי טסו': 'מכיוון ששיטסו נוטים לבעיות דמעות, שמירה על ניקיון העיניים יומיומי ישמור על ציון הטיפוח שלך גבוה וימנע דלקות עתידיות.',
@@ -62,6 +63,19 @@ const BREED_PREVENTIVE_TIPS: Record<string, string> = {
   'גולדן רטריבר': 'גולדן רטריברים נוטים לדיספלזיה במפרק הירך. בדיקות תקופתיות ומשקל תקין יסייעו במניעה.',
   'pug': 'פאגים נוטים לבעיות עיניים ונשימה. ניקיון קפלי עור ומעקב עיניים שוטף ישמרו על הבריאות.',
   'פאג': 'פאגים נוטים לבעיות עיניים ונשימה. ניקיון קפלי עור ומעקב עיניים שוטף ישמרו על הבריאות.',
+  // Cats
+  'persian': 'חתולים פרסיים נוטים ל-PKD (מחלת כליות פוליציסטית). בדיקת אולטרסאונד שנתית ותזונה דלת-זרחן חיוניות.',
+  'פרסי': 'חתולים פרסיים נוטים ל-PKD (מחלת כליות פוליציסטית). בדיקת אולטרסאונד שנתית ותזונה דלת-זרחן חיוניות.',
+  'siamese': 'סיאמיים נוטים לבעיות שיניים (FORL) ולאסתמה. בדיקת שיניים שנתית ומעקב נשימתי חשובים.',
+  'סיאמי': 'סיאמיים נוטים לבעיות שיניים (FORL) ולאסתמה. בדיקת שיניים שנתית ומעקב נשימתי חשובים.',
+  'british shorthair': 'בריטיים נוטים ל-HCM (מחלת לב) והשמנה. מעקב אקו-לב שנתי ותזונה מבוקרת קלוריות.',
+  'בריטי קצר שיער': 'בריטיים נוטים ל-HCM (מחלת לב) והשמנה. מעקב אקו-לב שנתי ותזונה מבוקרת קלוריות.',
+  'maine coon': 'מיין קון נוטים ל-HCM ודיספלזיה. בדיקות לב תקופתיות ותמיכת מפרקים מומלצות.',
+  'מיין קון': 'מיין קון נוטים ל-HCM ודיספלזיה. בדיקות לב תקופתיות ותמיכת מפרקים מומלצות.',
+  'ragdoll': 'רגדול נוטים ל-HCM ואבני שתן. מומלץ מזון רטוב ומעקב אקו-לב.',
+  'רגדול': 'רגדול נוטים ל-HCM ואבני שתן. מומלץ מזון רטוב ומעקב אקו-לב.',
+  'scottish fold': 'סקוטיש פולד סובלים מאוסטאוכונדרודיספלזיה. מעקב מפרקים ותנועה חיוני.',
+  'סקוטיש פולד': 'סקוטיש פולד סובלים מאוסטאוכונדרודיספלזיה. מעקב מפרקים ותנועה חיוני.',
 };
 
 export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakdownProps) => {
@@ -75,6 +89,7 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
   const [hasMicrochip, setHasMicrochip] = useState(false);
   const [profileCompletion, setProfileCompletion] = useState(0);
   const [lowPillarProducts, setLowPillarProducts] = useState<any[]>([]);
+  const [breedInfo, setBreedInfo] = useState<any>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -86,7 +101,7 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
       setLoading(true);
       const userId = (await supabase.auth.getUser()).data.user?.id || '';
 
-      const [petResult, vaccineResult, profileResult] = await Promise.all([
+      const [petResult, vaccineResult, profileResult, breedResult] = await Promise.all([
         supabase
           .from("pets")
           .select("weight, is_neutered, medical_conditions, health_notes, has_insurance, current_food, vet_clinic_name, microchip_number, next_vet_visit, last_vet_visit")
@@ -103,7 +118,14 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
           .select("full_name, city, phone, id_number_last4")
           .eq("id", userId)
           .maybeSingle(),
+        pet.breed ? supabase
+          .from('breed_information')
+          .select('grooming_freq')
+          .or(`breed_name.ilike.%${pet.breed}%,breed_name_he.ilike.%${pet.breed}%`)
+          .maybeSingle() : Promise.resolve({ data: null }),
       ]);
+
+      if (breedResult.data) setBreedInfo(breedResult.data);
 
       const pd = petResult.data as any;
       setPetData(pd);
@@ -142,17 +164,27 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
     }
   };
 
-  // Life stage calculation
+  // Life stage calculation (species-aware: cats mature faster)
+  const isCat = pet.type === 'cat';
   const lifeStage = useMemo(() => {
     if (!pet.birth_date) return { label: 'לא ידוע', months: 0, stage: 'unknown' as const };
     const totalMonths = Math.floor((Date.now() - new Date(pet.birth_date).getTime()) / (1000 * 60 * 60 * 24 * 30));
+    if (isCat) {
+      // Cat life stages differ from dogs
+      if (totalMonths < 6) return { label: 'גור', months: totalMonths, stage: 'puppy' as const };
+      if (totalMonths < 12) return { label: 'גור צעיר', months: totalMonths, stage: 'junior' as const };
+      if (totalMonths < 36) return { label: 'צעיר/ה', months: totalMonths, stage: 'young' as const };
+      const years = Math.floor(totalMonths / 12);
+      if (years > 10) return { label: 'סניור', months: totalMonths, stage: 'senior' as const };
+      return { label: 'בוגר/ת', months: totalMonths, stage: 'adult' as const };
+    }
     if (totalMonths < 6) return { label: 'גור', months: totalMonths, stage: 'puppy' as const };
     if (totalMonths < 12) return { label: 'גור צעיר', months: totalMonths, stage: 'junior' as const };
     if (totalMonths < 24) return { label: 'צעיר/ה', months: totalMonths, stage: 'young' as const };
     const years = Math.floor(totalMonths / 12);
     if (years > 7) return { label: 'סניור', months: totalMonths, stage: 'senior' as const };
     return { label: 'בוגר/ת', months: totalMonths, stage: 'adult' as const };
-  }, [pet.birth_date]);
+  }, [pet.birth_date, isCat]);
 
   // Breed detection
   const isShihTzu = useMemo(() => {
@@ -160,21 +192,34 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
     return b.includes('shih tzu') || b.includes('שיצו') || b.includes('שי טסו');
   }, [pet.breed]);
 
-  // Life-stage-aware pillar weights
+  // Cat-specific flags
+  const isIndoorOrNeutered = isCat && (petData?.is_neutered === true);
+
+  // Life-stage-aware pillar weights — species-specific
   const pillarWeights = useMemo(() => {
     const isPuppy = lifeStage.stage === 'puppy' || lifeStage.stage === 'junior';
     const isSenior = lifeStage.stage === 'senior';
 
-    if (isShihTzu) {
-      if (isPuppy) return { vaccines: 30, nutrition: 18, prevention: 12, profile: 5, eyeCare: 20, dental: 15 };
-      if (isSenior) return { vaccines: 18, nutrition: 22, prevention: 18, profile: 7, eyeCare: 20, dental: 15 };
-      return { vaccines: 25, nutrition: 20, prevention: 15, profile: 10, eyeCare: 18, dental: 12 };
+    // === CAT WEIGHTS ===
+    if (isCat) {
+      // Cats: Urinary, Hydration, Hairball are critical; Eye/Dental only for specific breeds
+      if (isPuppy) return { vaccines: 30, nutrition: 20, prevention: 15, profile: 5, eyeCare: 0, dental: 0, urinary: 15, hydration: 10, hairball: 5 };
+      if (isSenior) return { vaccines: 15, nutrition: 15, prevention: 10, profile: 5, eyeCare: 0, dental: 0, urinary: 20, hydration: 20, hairball: 15 };
+      if (isIndoorOrNeutered) return { vaccines: 20, nutrition: 15, prevention: 10, profile: 5, eyeCare: 0, dental: 0, urinary: 20, hydration: 18, hairball: 12 };
+      return { vaccines: 25, nutrition: 18, prevention: 12, profile: 5, eyeCare: 0, dental: 0, urinary: 18, hydration: 15, hairball: 7 };
     }
 
-    if (isPuppy) return { vaccines: 45, nutrition: 25, prevention: 20, profile: 10, eyeCare: 0, dental: 0 };
-    if (isSenior) return { vaccines: 25, nutrition: 30, prevention: 30, profile: 15, eyeCare: 0, dental: 0 };
-    return { vaccines: 35, nutrition: 25, prevention: 25, profile: 15, eyeCare: 0, dental: 0 };
-  }, [lifeStage.stage, isShihTzu]);
+    // === DOG WEIGHTS ===
+    if (isShihTzu) {
+      if (isPuppy) return { vaccines: 30, nutrition: 18, prevention: 12, profile: 5, eyeCare: 20, dental: 15, urinary: 0, hydration: 0, hairball: 0 };
+      if (isSenior) return { vaccines: 18, nutrition: 22, prevention: 18, profile: 7, eyeCare: 20, dental: 15, urinary: 0, hydration: 0, hairball: 0 };
+      return { vaccines: 25, nutrition: 20, prevention: 15, profile: 10, eyeCare: 18, dental: 12, urinary: 0, hydration: 0, hairball: 0 };
+    }
+
+    if (isPuppy) return { vaccines: 45, nutrition: 25, prevention: 20, profile: 10, eyeCare: 0, dental: 0, urinary: 0, hydration: 0, hairball: 0 };
+    if (isSenior) return { vaccines: 25, nutrition: 30, prevention: 30, profile: 15, eyeCare: 0, dental: 0, urinary: 0, hydration: 0, hairball: 0 };
+    return { vaccines: 35, nutrition: 25, prevention: 25, profile: 15, eyeCare: 0, dental: 0, urinary: 0, hydration: 0, hairball: 0 };
+  }, [lifeStage.stage, isShihTzu, isCat, isIndoorOrNeutered]);
 
   // Calculate individual pillar scores
   const pillars: Pillar[] = useMemo(() => {
@@ -252,8 +297,82 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
       });
     }
 
+    // === CAT-SPECIFIC PILLARS ===
+    
+    // Urinary Health (FLUTD/Struvite) — critical for cats
+    if (pillarWeights.urinary > 0) {
+      const foodLower = (petData.current_food || '').toLowerCase();
+      const hasUrinaryFood = ['urinary', 'struvite', 'ph', 'שתן'].some(k => foodLower.includes(k));
+      const isNeutered = petData.is_neutered === true;
+      let urinaryScore = 50;
+      if (hasUrinaryFood) urinaryScore += 30;
+      if (isNeutered) urinaryScore -= 10; // higher risk
+      if (hasRegisteredClinic) urinaryScore += 15;
+      urinaryScore = Math.max(0, Math.min(100, urinaryScore));
+      
+      const conditions = (petData.medical_conditions || []) as string[];
+      const hasUrinaryIssue = conditions.some((c: string) => ['urinary', 'struvite', 'flutd', 'שתן', 'אבני'].some(k => c.toLowerCase().includes(k)));
+      
+      result.push({
+        id: 'urinary',
+        label: 'בריאות שתן',
+        icon: Droplets,
+        weight: pillarWeights.urinary,
+        score: hasUrinaryIssue ? Math.min(urinaryScore, 40) : urinaryScore,
+        description: hasUrinaryIssue
+          ? 'זוהתה בעיית דרכי שתן. מומלץ מזון Urinary S/O ומעבר למזון רטוב בלבד.'
+          : isNeutered
+          ? 'חתולים מעוקרים בסיכון גבוה יותר ל-FLUTD. הקפידו על מזון מבוקר pH ונוזלים מרובים.'
+          : 'בקרת pH ומגנזיום נמוך חיוניים לבריאות דרכי השתן.',
+        color: 'text-cyan-500',
+      });
+    }
+
+    // Hydration Level — cats naturally drink very little
+    if (pillarWeights.hydration > 0) {
+      const foodLower = (petData.current_food || '').toLowerCase();
+      const hasWetFood = ['wet', 'רטוב', 'pate', 'פטה', 'gravy', 'רוטב', 'mousse'].some(k => foodLower.includes(k));
+      let hydrationScore = hasWetFood ? 80 : 35;
+      if (hasRegisteredClinic) hydrationScore += 10;
+      hydrationScore = Math.min(100, hydrationScore);
+
+      result.push({
+        id: 'hydration',
+        label: 'לחות',
+        icon: Droplets,
+        weight: pillarWeights.hydration,
+        score: hydrationScore,
+        description: hasWetFood
+          ? 'מזון רטוב מספק כ-80% לחות — מצוין לבריאות הכליות.'
+          : 'חתולים כמעט לא שותים. מזון רטוב (80%+ לחות) חיוני למניעת בעיות כליות ושתן.',
+        color: 'text-blue-400',
+      });
+    }
+
+    // Hairball Control
+    if (pillarWeights.hairball > 0) {
+      const foodLower = (petData.current_food || '').toLowerCase();
+      const hasHairballFood = ['hairball', 'כדורי שיער', 'fiber', 'סיבים', 'malt'].some(k => foodLower.includes(k));
+      const groomingLevel = breedInfo?.grooming_freq || 3;
+      let hairballScore = hasHairballFood ? 75 : 45;
+      if (groomingLevel >= 4) hairballScore -= 10; // long-haired = more risk
+      hairballScore = Math.max(0, Math.min(100, hairballScore));
+
+      result.push({
+        id: 'hairball',
+        label: 'כדורי שיער',
+        icon: Wind,
+        weight: pillarWeights.hairball,
+        score: hairballScore,
+        description: hasHairballFood
+          ? 'מזון עשיר בסיבים ומאלט מסייע בהוצאת כדורי שיער.'
+          : 'מומלץ מזון עם סיבים מוגברים ומשחת מאלט למניעת חסימות כדורי שיער.',
+        color: 'text-orange-400',
+      });
+    }
+
     return result;
-  }, [petData, vaccineCount, hasParasitePrevention, hasRegisteredClinic, profileCompletion, hasMicrochip, ownerProfileComplete, pet, pillarWeights, lifeStage]);
+  }, [petData, vaccineCount, hasParasitePrevention, hasRegisteredClinic, profileCompletion, hasMicrochip, ownerProfileComplete, pet, pillarWeights, lifeStage, isCat, breedInfo]);
 
   // Total score
   const totalScore = useMemo(() => {
@@ -309,7 +428,7 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
         action: () => { onClose(); navigate('/edit-profile'); },
       });
     }
-    // Breed-specific todos
+    // Breed-specific todos (dogs)
     if (isShihTzu && pillarWeights.eyeCare > 0) {
       items.push({
         id: 'eye-wipes',
@@ -328,8 +447,42 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
         action: () => { onClose(); navigate('/shop'); },
       });
     }
+    // Cat-specific todos
+    if (isCat) {
+      const foodLower = (petData?.current_food || '').toLowerCase();
+      const hasWetFood = ['wet', 'רטוב', 'pate', 'פטה'].some(k => foodLower.includes(k));
+      if (!hasWetFood) {
+        items.push({
+          id: 'wet-food',
+          text: 'הוסיפו מזון רטוב (80%+ לחות) לשיפור ההידרציה',
+          pointsGain: Math.round(pillarWeights.hydration * 0.2),
+          done: false,
+          action: () => { onClose(); navigate('/shop'); },
+        });
+      }
+      const hasUrinaryFood = ['urinary', 'struvite', 'ph'].some(k => foodLower.includes(k));
+      if (!hasUrinaryFood && pillarWeights.urinary > 0) {
+        items.push({
+          id: 'urinary-food',
+          text: 'שקלו מזון Urinary לבקרת pH ומגנזיום נמוך',
+          pointsGain: Math.round(pillarWeights.urinary * 0.15),
+          done: false,
+          action: () => { onClose(); navigate('/shop'); },
+        });
+      }
+      const hasHairballFood = ['hairball', 'כדורי שיער', 'malt'].some(k => foodLower.includes(k));
+      if (!hasHairballFood && pillarWeights.hairball > 0) {
+        items.push({
+          id: 'hairball-food',
+          text: 'הוסיפו משחת מאלט או מזון Hairball Control',
+          pointsGain: Math.round(pillarWeights.hairball * 0.15),
+          done: false,
+          action: () => { onClose(); navigate('/shop'); },
+        });
+      }
+    }
     return items;
-  }, [petData, vaccineCount, hasMicrochip, hasParasitePrevention, ownerProfileComplete, pet.id, pillarWeights, isShihTzu]);
+  }, [petData, vaccineCount, hasMicrochip, hasParasitePrevention, ownerProfileComplete, pet.id, pillarWeights, isShihTzu, isCat]);
 
   // Get breed preventive tip
   const breedTip = useMemo(() => {
@@ -358,6 +511,9 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
       else if (lowestPillar.id === 'prevention') searchTerm = 'health';
       else if (lowestPillar.id === 'eye_care') searchTerm = 'eye';
       else if (lowestPillar.id === 'dental') searchTerm = 'dental';
+      else if (lowestPillar.id === 'urinary') searchTerm = 'urinary';
+      else if (lowestPillar.id === 'hydration') searchTerm = 'wet';
+      else if (lowestPillar.id === 'hairball') searchTerm = 'hairball';
       else return;
 
       const { data } = await supabase
@@ -448,11 +604,21 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
                   >
                     <p className="text-[10px] text-muted-foreground leading-relaxed">
                       <span className="font-bold text-foreground">{pet.name} ({lifeStage.label})</span> — 
-                      {lifeStage.stage === 'puppy' || lifeStage.stage === 'junior'
-                        ? ` בגיל זה, חיסונים מקבלים משקל גבוה יותר (${pillarWeights.vaccines}%) כי מערכת החיסון עדיין מתפתחת.`
-                        : lifeStage.stage === 'senior'
-                        ? ` בגיל מבוגר, מניעה ותזונה מקבלות משקל גבוה יותר לשמירה על איכות החיים.`
-                        : ` המשקלות מאוזנים לשלב חיים בוגר ויציב.`}
+                      {isCat ? (
+                        lifeStage.stage === 'puppy' || lifeStage.stage === 'junior'
+                          ? ` גורי חתולים דורשים חיסונים מוגברים (${pillarWeights.vaccines}%) ותזונה עשירה לצמיחה.`
+                          : lifeStage.stage === 'senior'
+                          ? ` חתולים מבוגרים בסיכון גבוה ל-CKD. בריאות שתן (${pillarWeights.urinary}%) ולחות (${pillarWeights.hydration}%) מקבלים עדיפות.`
+                          : isIndoorOrNeutered
+                          ? ` חתולים מעוקרים/ביתיים: בריאות שתן (${pillarWeights.urinary}%) ולחות (${pillarWeights.hydration}%) קריטיים. ניהול קלוריות חשוב.`
+                          : ` המשקלות מאוזנים עם דגש על בריאות שתן (${pillarWeights.urinary}%) — הנושא הקריטי ביותר אצל חתולים.`
+                      ) : (
+                        lifeStage.stage === 'puppy' || lifeStage.stage === 'junior'
+                          ? ` בגיל זה, חיסונים מקבלים משקל גבוה יותר (${pillarWeights.vaccines}%) כי מערכת החיסון עדיין מתפתחת.`
+                          : lifeStage.stage === 'senior'
+                          ? ` בגיל מבוגר, מניעה ותזונה מקבלות משקל גבוה יותר לשמירה על איכות החיים.`
+                          : ` המשקלות מאוזנים לשלב חיים בוגר ויציב.`
+                      )}
                       {isShihTzu && ` כשיצו, טיפול עיניים (${pillarWeights.eyeCare}%) והיגיינת שיניים (${pillarWeights.dental}%) מוערכים בנפרד.`}
                     </p>
                   </motion.div>
