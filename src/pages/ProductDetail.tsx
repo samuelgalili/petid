@@ -15,7 +15,7 @@ import {
   Volume2, Gift, Gamepad2, BedDouble, Music, Siren,
   Puzzle, Brain, Award, Cherry, Sandwich, CircleDashed,
   Layers, Magnet, MapPin, Footprints, SprayCan, Users, TreePine, EyeOff,
-  Fish, Salad, HeartPulse, Thermometer
+  Fish, Salad, HeartPulse, Thermometer, Activity, Pill, Syringe, ShieldPlus
 } from "lucide-react";
 import { ProductReviews } from "@/components/shop/ProductReviews";
 import { PriceAlertButton } from "@/components/shop/PriceAlertButton";
@@ -103,6 +103,91 @@ const extractBreedRecommendations = (product: any): string[] => {
   if (Array.isArray(breeds)) return breeds;
   if (typeof breeds === 'string') return breeds.split(/[,،、]\s*/);
   return [];
+};
+
+/** Check if product is a joint supplement */
+const isJointSupplementProduct = (product: any): boolean => {
+  const cat = (product.category || '').toLowerCase();
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''}`.toLowerCase();
+  return cat === 'health' || cat === 'supplements' || cat === 'joint-support' ||
+    text.includes('glucosamine') || text.includes('גלוקוזאמין') ||
+    text.includes('joint') || text.includes('מפרק') || text.includes('supplement') || text.includes('תוסף') ||
+    text.includes('chondroitin') || text.includes('כונדרויטין') ||
+    text.includes('msm') || text.includes('green lipped mussel') || text.includes('פטילת ים') ||
+    (text.includes('mobility') && (text.includes('dog') || text.includes('כלב')));
+};
+
+/** Extract joint supplement features */
+const extractJointSupplementFeatures = (product: any): {
+  ingredients: { icon: React.ReactNode; name: string; dosage: string | null; benefit: string; isSecret: boolean }[];
+  dosagePhases: { name: string; rows: { weight: string; dose: string }[] }[];
+  mobilityBenefits: { icon: React.ReactNode; title: string; description: string; color: string }[];
+  humanComparison: string | null;
+  insuranceTip: string | null;
+} => {
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''}`.toLowerCase();
+  const attrs = product.product_attributes || {};
+  const allText = text + ' ' + JSON.stringify(attrs).toLowerCase();
+
+  // Active ingredients
+  const ingredients: { icon: React.ReactNode; name: string; dosage: string | null; benefit: string; isSecret: boolean }[] = [];
+  if (allText.includes('glucosamine') || allText.includes('גלוקוזאמין')) {
+    const dose = allText.match(/glucosamine[^,]*?(\d+)\s*mg/i);
+    let msmDose = allText.match(/msm[^,]*?(\d+)\s*mg/i);
+    const dosageStr = dose ? `${dose[1]}mg` : null;
+    ingredients.push({ icon: <Bone className="w-4 h-4" />, name: 'גלוקוזאמין & MSM', dosage: dosageStr, benefit: 'תיקון סחוס, הפחתת כאב ושיפור גמישות המפרקים', isSecret: false });
+  }
+  if (allText.includes('green lipped mussel') || allText.includes('פטילת ים') || allText.includes('mussel')) {
+    const dose = allText.match(/mussel[^,]*?(\d+)\s*mg/i);
+    ingredients.push({ icon: <Fish className="w-4 h-4" />, name: 'פטילת ים ירוקה (Green Lipped Mussel)', dosage: dose ? `${dose[1]}mg` : '600mg', benefit: 'נוגד דלקת טבעי עוצמתי – "המרכיב הסודי" לבריאות המפרקים', isSecret: true });
+  }
+  if (allText.includes('chondroitin') || allText.includes('כונדרויטין')) {
+    const dose = allText.match(/chondroitin[^,]*?(\d+)\s*mg/i);
+    ingredients.push({ icon: <ShieldCheck className="w-4 h-4" />, name: 'כונדרויטין', dosage: dose ? `${dose[1]}mg` : null, benefit: 'הגנה על הסחוס ושיפור ספיגת נוזלים במפרק', isSecret: false });
+  }
+  if (allText.includes('vitamin c') || allText.includes('ויטמין c') || allText.includes('selenium') || allText.includes('סלניום') || allText.includes('vitamin e') || allText.includes('antioxidant') || allText.includes('נוגדי חמצון')) {
+    ingredients.push({ icon: <ShieldPlus className="w-4 h-4" />, name: 'נוגדי חמצון (ויטמין C, E, סלניום)', dosage: null, benefit: 'מלחמה בדלקות ושמירה על תאי הסחוס מפני נזק חמצוני', isSecret: false });
+  }
+  if (allText.includes('omega') || allText.includes('אומגה')) {
+    ingredients.push({ icon: <Droplets className="w-4 h-4" />, name: 'אומגה 3', dosage: null, benefit: 'הפחתת דלקות ותמיכה בבריאות העור והפרווה', isSecret: false });
+  }
+
+  // Dosage phases
+  const dosagePhases: { name: string; rows: { weight: string; dose: string }[] }[] = [];
+  // Initial phase
+  dosagePhases.push({
+    name: '⚡ שלב ראשוני (שבועות 1-6)',
+    rows: [
+      { weight: 'עד 10 ק"ג', dose: '½ טבליה ליום' },
+      { weight: '10-25 ק"ג', dose: '1 טבליה ליום' },
+      { weight: '25-40 ק"ג', dose: '1.5 טבליות ליום' },
+      { weight: '40+ ק"ג', dose: '2 טבליות ליום' },
+    ]
+  });
+  // Maintenance phase
+  dosagePhases.push({
+    name: '🔄 שלב תחזוקה (אחרי שבוע 6)',
+    rows: [
+      { weight: 'עד 10 ק"ג', dose: '¼ טבליה ליום' },
+      { weight: '10-25 ק"ג', dose: '½ טבליה ליום' },
+      { weight: '25-40 ק"ג', dose: '1 טבליה ליום' },
+      { weight: '40+ ק"ג', dose: '1.5 טבליות ליום' },
+    ]
+  });
+
+  // Mobility benefits
+  const mobilityBenefits: { icon: React.ReactNode; title: string; description: string; color: string }[] = [];
+  mobilityBenefits.push({ icon: <Syringe className="w-5 h-5" />, title: 'שיקום לאחר ניתוח', description: 'תמיכה בתהליך ההחלמה לאחר ניתוחים אורתופדיים', color: 'hsl(200,60%,45%)' });
+  mobilityBenefits.push({ icon: <Activity className="w-5 h-5" />, title: 'שיפור תנועתיות בגיל מבוגר', description: 'שיפור טווח התנועה והגמישות לכלבים מבוגרים', color: 'hsl(140,50%,40%)' });
+  mobilityBenefits.push({ icon: <HeartPulse className="w-5 h-5" />, title: 'הפחתת דלקות וכאבים', description: 'הקלה על כאב כרוני ודלקתי במפרקים ובעמוד השדרה', color: 'hsl(0,55%,50%)' });
+
+  // Human comparison
+  const humanComparison = '"המגה גלופלקס של הכלבים" – תוסף ברמה קלינית, בדיוק כמו מוצרי פרימיום לבני אדם';
+
+  // Insurance tip
+  const insuranceTip = 'לכלב שלך בעיות מפרקים? בדוק אם הפוליסה שלך מכסה טיפולים אורתופדיים ותוספי תזונה.';
+
+  return { ingredients, dosagePhases, mobilityBenefits, humanComparison, insuranceTip };
 };
 
 /** Check if product is a treat/snack */
@@ -1639,6 +1724,8 @@ const ProductDetail = () => {
   const treatHealthBoosts = useMemo(() => product && isTreat ? deriveTreatHealthBoosts(product) : [], [product, isTreat]);
   const treatUsage = useMemo(() => product && isTreat ? extractTreatUsage(product) : { purpose: null, safetyTip: null, isNatural: false }, [product, isTreat]);
   const treatFeatures = useMemo(() => product && isTreat ? extractTreatFeatures(product) : { chewDuration: 0, proteinPct: null, hasDental: false, texture: null, isChewPriority: false }, [product, isTreat]);
+  const isJointSupplement = useMemo(() => product ? isJointSupplementProduct(product) : false, [product]);
+  const jointFeatures = useMemo(() => product && isJointSupplement ? extractJointSupplementFeatures(product) : { ingredients: [], dosagePhases: [], mobilityBenefits: [], humanComparison: null, insuranceTip: null }, [product, isJointSupplement]);
   const analysisData = useMemo(() => product ? parseAnalysis(product) : [], [product]);
   const vitaminsData = useMemo(() => product ? parseVitamins(product) : [], [product]);
   const feedingResult = useMemo(() => {
@@ -4244,6 +4331,142 @@ const ProductDetail = () => {
             <div className="text-center py-3">
               <p className="text-[13px] font-bold text-muted-foreground italic">"🐾 {superfoodFeatures.soulmateMessage}"</p>
             </div>
+          </motion.div>
+        )}
+
+        {/* ── Joint Supplement: Two-Stage Dosage Calculator ── */}
+        {isJointSupplement && jointFeatures.dosagePhases.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Calculator className="w-4 h-4 text-primary" />
+                💊 מחשבון מינון דו-שלבי
+              </h3>
+              {jointFeatures.dosagePhases.map((phase, pi) => (
+                <div key={pi} className="mb-3 last:mb-0">
+                  <div className={`flex items-center gap-2 mb-2 text-[12px] font-bold ${pi === 0 ? 'text-primary' : 'text-[hsl(140,50%,40%)]'}`}>
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-white ${pi === 0 ? 'bg-primary' : 'bg-[hsl(140,50%,40%)]'}`}>
+                      {pi + 1}
+                    </div>
+                    {phase.name}
+                  </div>
+                  <div className="rounded-lg overflow-hidden border border-border">
+                    <div className="grid grid-cols-2 bg-muted/50 text-[10px] font-bold text-foreground p-2 text-center">
+                      <span>משקל הכלב</span>
+                      <span>מינון יומי</span>
+                    </div>
+                    {phase.rows.map((row, ri) => (
+                      <div key={ri} className={`grid grid-cols-2 text-[11px] text-center p-2 ${ri % 2 === 0 ? 'bg-muted/20' : 'bg-background'}`}>
+                        <span className="font-medium text-foreground">{row.weight}</span>
+                        <span className="font-semibold text-primary">{row.dose}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Joint Supplement: Active Ingredients Table ── */}
+        {isJointSupplement && jointFeatures.ingredients.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <FlaskConical className="w-4 h-4 text-[hsl(270,50%,50%)]" />
+                🔬 רכיבים פעילים
+              </h3>
+              <div className="space-y-2">
+                {jointFeatures.ingredients.map((ing, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.28 + i * 0.05 }}
+                    className="flex items-start gap-3 rounded-lg p-3 bg-[hsl(270,40%,95%)]/40 dark:bg-[hsl(270,25%,15%)]/40"
+                  >
+                    <div className="w-9 h-9 rounded-full bg-[hsl(270,40%,80%)]/20 flex items-center justify-center flex-shrink-0 text-[hsl(270,50%,50%)]">
+                      {ing.icon}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[12px] font-bold text-foreground">{ing.name}</p>
+                        {ing.dosage && <span className="text-[10px] font-bold bg-primary/10 text-primary rounded-full px-2 py-0.5">{ing.dosage}</span>}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{ing.benefit}</p>
+                      {ing.isSecret && <span className="inline-block mt-1 text-[9px] font-bold bg-[hsl(45,80%,50%)]/15 text-[hsl(45,80%,40%)] rounded px-1.5 py-0.5">🌟 המרכיב הסודי</span>}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Joint Supplement: Mobility Benefits Icons ── */}
+        {isJointSupplement && jointFeatures.mobilityBenefits.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.34 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Activity className="w-4 h-4 text-[hsl(200,60%,45%)]" />
+                🦴 יתרונות לתנועתיות
+              </h3>
+              <div className="grid grid-cols-1 gap-2">
+                {jointFeatures.mobilityBenefits.map((mb, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.36 + i * 0.05 }}
+                    className="flex items-center gap-3 rounded-lg p-3"
+                    style={{ backgroundColor: `${mb.color}10` }}
+                  >
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: `${mb.color}20`, color: mb.color }}>
+                      {mb.icon}
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-bold text-foreground">{mb.title}</p>
+                      <p className="text-[11px] text-muted-foreground">{mb.description}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Joint Supplement: Human Comparison Tag ── */}
+        {isJointSupplement && jointFeatures.humanComparison && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+            <Card className="p-3 bg-gradient-to-br from-[hsl(45,60%,92%)] to-background border-[hsl(45,50%,60%)]/20 dark:from-[hsl(45,30%,14%)]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(45,50%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Award className="w-5 h-5 text-[hsl(45,70%,45%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-foreground">🏆 השוואה מוכרת</p>
+                  <p className="text-[11px] text-muted-foreground">{jointFeatures.humanComparison}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Joint Supplement: Insurance Tip ── */}
+        {isJointSupplement && jointFeatures.insuranceTip && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.44 }}>
+            <Card className="p-3 bg-gradient-to-br from-[hsl(200,50%,92%)] to-background border-[hsl(200,40%,60%)]/20 dark:from-[hsl(200,25%,14%)]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(200,45%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <ShieldPlus className="w-5 h-5 text-[hsl(200,55%,45%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-foreground">💡 טיפ ביטוחי – Libra</p>
+                  <p className="text-[11px] text-muted-foreground">{jointFeatures.insuranceTip}</p>
+                </div>
+              </div>
+            </Card>
           </motion.div>
         )}
 
