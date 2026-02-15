@@ -17,7 +17,8 @@ import {
   Layers, Magnet, MapPin, Footprints, SprayCan, Users, TreePine, EyeOff,
   Fish, Salad, HeartPulse, Thermometer, Activity, Pill, Syringe, ShieldPlus,
   Luggage, Fan, Link2, Backpack, FoldVertical as FoldIcon, WashingMachine as WashIcon, Plane,
-  Flame, Gauge, TrendingDown, AlertCircle, TimerReset
+  Flame, Gauge, TrendingDown, AlertCircle, TimerReset,
+  ShieldAlert, Milestone
 } from "lucide-react";
 import { ProductReviews } from "@/components/shop/ProductReviews";
 import { PriceAlertButton } from "@/components/shop/PriceAlertButton";
@@ -275,6 +276,60 @@ const extractVetDietFeatures = (product: any): {
   ];
 
   return { medicalIndicators, weightLossTech, vetWarning, usageTimeline, crossSellHints, feedingMatrix };
+};
+
+/** Check if product is a urinary health / stone dissolution product */
+const isUrinaryProduct = (product: any): boolean => {
+  const cat = (product.category || '').toLowerCase();
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''}`.toLowerCase();
+  return cat === 'urinary' || cat === 'struvite' ||
+    text.includes('struvite') || text.includes('סטרוויט') ||
+    text.includes('urinary') || text.includes('דרכי השתן') ||
+    text.includes('s/o') || text.includes('u/c') ||
+    (text.includes('dissolution') && text.includes('stone')) ||
+    text.includes('אבני שתן') || text.includes('ph balance');
+};
+
+/** Extract urinary health features */
+const extractUrinaryFeatures = (product: any) => {
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''}`.toLowerCase();
+  const attrs = product.product_attributes || {};
+  const allText = text + ' ' + JSON.stringify(attrs).toLowerCase();
+
+  const mineralGrid = [
+    { icon: <Beaker className="w-5 h-5" />, label: 'מגנזיום וזרחן נמוכים', description: 'רמות מבוקרות למניעת התגבשות קריסטלים', color: 'hsl(200,55%,45%)' },
+    { icon: <FlaskConical className="w-5 h-5" />, label: 'DL-Methionine – מחמיץ שתן', description: 'החמצת שתן מבוקרת לאיזון ה-pH', color: 'hsl(270,45%,50%)' },
+    { icon: <Droplets className="w-5 h-5" />, label: 'עידוד שתייה', description: 'חשיבות עליונה למים זמינים לעידוד השתנה', color: 'hsl(195,70%,45%)' },
+  ];
+
+  const hasGlucosamine = allText.includes('glucosamine') || allText.includes('גלוקוזאמין');
+  const glucosamineNote = hasGlucosamine ? 'גלוקוזאמין (0.06%) – תמיכה בדופן שלפוחית השתן' : null;
+
+  const timeline = [
+    { stage: 'שלב 1', duration: '5-12 שבועות', title: 'פירוק אבנים פעיל', description: 'המזון פועל להמסת אבני הסטרוויט הקיימות', color: 'hsl(15,65%,50%)' },
+    { stage: 'שלב 2', duration: 'עד 6 חודשים', title: 'מניעה ותחזוקה', description: 'שמירה על סביבת שתן שמונעת הישנות', color: 'hsl(140,50%,40%)' },
+  ];
+
+  const vetWarning = 'מוצר זה דורש מרשם או המלצה וטרינרית. אין להשתמש ללא ליווי מקצועי.';
+
+  const feedingMatrix = [
+    { weight: '2 ק"ג', grams: '35-50 גרם' },
+    { weight: '3 ק"ג', grams: '50-65 גרם' },
+    { weight: '5 ק"ג', grams: '70-95 גרם' },
+    { weight: '7 ק"ג', grams: '90-120 גרם' },
+    { weight: '10 ק"ג', grams: '115-155 גרם' },
+    { weight: '15 ק"ג', grams: '155-205 גרם' },
+    { weight: '20 ק"ג', grams: '190-255 גרם' },
+    { weight: '25 ק"ג', grams: '225-300 גרם' },
+    { weight: '30 ק"ג', grams: '255-340 גרם' },
+  ];
+
+  const crossSellHints = [
+    'חטיפים בטוחים לדרכי השתן – ללא מינרלים עודפים',
+    'מזרקת מים איכותית – לעידוד שתייה מוגברת',
+  ];
+
+  return { mineralGrid, glucosamineNote, timeline, vetWarning, feedingMatrix, crossSellHints };
 };
 
 /** Check if product is a joint supplement */
@@ -1904,6 +1959,8 @@ const ProductDetail = () => {
   const carrierFeatures = useMemo(() => product && isTravelCarrier ? extractCarrierFeatures(product) : { readinessChecklist: [], maxWeightKg: null, dimensions: null, targetPets: '', isExpandable: false, isWashable: false, hasHardBottom: false, proTip: '', crossSellHints: [] }, [product, isTravelCarrier]);
   const isVetDiet = useMemo(() => product ? isVetDietProduct(product) : false, [product]);
   const vetDietFeatures = useMemo(() => product && isVetDiet ? extractVetDietFeatures(product) : { medicalIndicators: [], weightLossTech: [], vetWarning: '', usageTimeline: '', crossSellHints: [], feedingMatrix: [] }, [product, isVetDiet]);
+  const isUrinary = useMemo(() => product ? isUrinaryProduct(product) : false, [product]);
+  const urinaryFeatures = useMemo(() => product && isUrinary ? extractUrinaryFeatures(product) : { mineralGrid: [], glucosamineNote: null, timeline: [], vetWarning: '', feedingMatrix: [], crossSellHints: [] }, [product, isUrinary]);
   const analysisData = useMemo(() => product ? parseAnalysis(product) : [], [product]);
   const vitaminsData = useMemo(() => product ? parseVitamins(product) : [], [product]);
   const feedingResult = useMemo(() => {
@@ -4875,6 +4932,160 @@ const ProductDetail = () => {
               </h3>
               <div className="space-y-1.5">
                 {carrierFeatures.crossSellHints.map((hint, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <span className="text-[10px] text-primary mt-0.5">●</span>
+                    <p className="text-[11px] text-muted-foreground">{hint}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Urinary: Veterinary Warning ── */}
+        {isUrinary && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}>
+            <Card className="p-3 border-[hsl(0,60%,50%)]/30 bg-[hsl(0,50%,95%)]/50 dark:bg-[hsl(0,30%,12%)]/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(0,50%,85%)]/30 flex items-center justify-center flex-shrink-0">
+                  <ShieldAlert className="w-5 h-5 text-[hsl(0,60%,50%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-[hsl(0,60%,45%)]">🚨 מרשם וטרינרי נדרש</p>
+                  <p className="text-[11px] text-foreground font-medium">{urinaryFeatures.vetWarning}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Urinary: Action Badge ── */}
+        {isUrinary && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(270,30%,95%)] to-background border-[hsl(270,35%,60%)]/20 dark:from-[hsl(270,20%,14%)]">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-2">
+                <FlaskConical className="w-4 h-4 text-[hsl(270,45%,50%)]" />
+                🔬 פירוק אבני סטרוויט – פעולה כפולה
+              </h3>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <div className="rounded-lg p-3 text-center bg-[hsl(270,35%,50%)]/10">
+                  <p className="text-[10px] text-muted-foreground mb-1">פעולה 1</p>
+                  <p className="text-[12px] font-bold text-[hsl(270,45%,45%)]">המסת אבנים קיימות</p>
+                </div>
+                <div className="rounded-lg p-3 text-center bg-[hsl(140,40%,45%)]/10">
+                  <p className="text-[10px] text-muted-foreground mb-1">פעולה 2</p>
+                  <p className="text-[12px] font-bold text-[hsl(140,45%,40%)]">מניעת היווצרות חדשות</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Urinary: Controlled Mineral Grid ── */}
+        {isUrinary && urinaryFeatures.mineralGrid.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
+            <Card className="p-4">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-3">
+                <Gauge className="w-4 h-4 text-[hsl(200,55%,45%)]" />
+                ⚗️ לוח בקרת מינרלים
+              </h3>
+              <div className="space-y-2">
+                {urinaryFeatures.mineralGrid.map((m, i) => (
+                  <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + i * 0.05 }}
+                    className="flex items-center gap-3 rounded-lg p-3" style={{ backgroundColor: `${m.color}10` }}>
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${m.color}20`, color: m.color }}>
+                      {m.icon}
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-bold text-foreground">{m.label}</p>
+                      <p className="text-[11px] text-muted-foreground">{m.description}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Urinary: Treatment Timeline ── */}
+        {isUrinary && urinaryFeatures.timeline.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }}>
+            <Card className="p-4">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-3">
+                <Milestone className="w-4 h-4 text-[hsl(35,60%,50%)]" />
+                📅 ציר זמן טיפולי
+              </h3>
+              <div className="space-y-3">
+                {urinaryFeatures.timeline.map((t, i) => (
+                  <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 + i * 0.08 }}
+                    className="flex gap-3 items-start">
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black text-white" style={{ backgroundColor: t.color }}>{i + 1}</div>
+                      {i < urinaryFeatures.timeline.length - 1 && <div className="w-0.5 h-6 bg-border mt-1" />}
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-bold text-foreground">{t.stage}: {t.title}</p>
+                      <p className="text-[10px] font-semibold" style={{ color: t.color }}>{t.duration}</p>
+                      <p className="text-[11px] text-muted-foreground">{t.description}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Urinary: Feeding Matrix ── */}
+        {isUrinary && urinaryFeatures.feedingMatrix.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.46 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Calculator className="w-4 h-4 text-primary" />
+                🧮 טבלת מינון יומי
+              </h3>
+              <div className="rounded-lg overflow-hidden border border-border">
+                <div className="grid grid-cols-2 bg-muted/50 text-[10px] font-bold text-foreground p-2 text-center">
+                  <span>משקל</span>
+                  <span>גרמים ליום</span>
+                </div>
+                {urinaryFeatures.feedingMatrix.map((row, ri) => (
+                  <div key={ri} className={`grid grid-cols-2 text-[11px] text-center p-1.5 ${ri % 2 === 0 ? 'bg-muted/20' : 'bg-background'}`}>
+                    <span className="font-bold text-foreground">{row.weight}</span>
+                    <span className="text-[hsl(270,45%,50%)] font-semibold">{row.grams}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Urinary: Glucosamine Science ── */}
+        {isUrinary && urinaryFeatures.glucosamineNote && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+            <Card className="p-3 bg-gradient-to-br from-[hsl(195,40%,93%)] to-background border-[hsl(195,35%,60%)]/20 dark:from-[hsl(195,25%,14%)]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(195,40%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Beaker className="w-5 h-5 text-[hsl(195,55%,45%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-foreground">🧬 מדע הרכיבים</p>
+                  <p className="text-[11px] text-muted-foreground">{urinaryFeatures.glucosamineNote}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Urinary: Cross-Sell ── */}
+        {isUrinary && urinaryFeatures.crossSellHints.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.54 }}>
+            <Card className="p-3">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-2">
+                <Target className="w-4 h-4 text-primary" />
+                💡 משלימים מומלצים
+              </h3>
+              <div className="space-y-1.5">
+                {urinaryFeatures.crossSellHints.map((hint, i) => (
                   <div key={i} className="flex items-start gap-2">
                     <span className="text-[10px] text-primary mt-0.5">●</span>
                     <p className="text-[11px] text-muted-foreground">{hint}</p>
