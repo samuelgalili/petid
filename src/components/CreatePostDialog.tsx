@@ -1,15 +1,14 @@
 import { useState, useRef } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { MusicPicker, type SelectedMusic } from "@/components/MusicPicker";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Camera, Image as ImageIcon, X, Loader2, Sparkles, Video, MapPin, PawPrint, Users, Calendar, Eye, FileText } from "lucide-react";
+import { Camera, Image as ImageIcon, X, Loader2, Sparkles, Video, MapPin, PawPrint, Users, Calendar, Eye, FileText, ChevronRight, ArrowRight, Music, Hash, Type } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { validateImageFile, compressImage } from "@/lib/validators";
 import { VideoUploader } from "@/components/VideoUploader";
 import { PetTagSelector } from "@/components/PetTagSelector";
@@ -18,6 +17,7 @@ import HashtagInput from "@/components/HashtagInput";
 import { CollaborativePostInvite } from "@/components/CollaborativePostInvite";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 interface CreatePostDialogProps {
   open: boolean;
@@ -33,18 +33,15 @@ interface Location {
 
 export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePostDialogProps) => {
   const { user } = useAuth();
+  const [step, setStep] = useState<"media" | "details">("media");
   const [caption, setCaption] = useState("");
   const [mediaType, setMediaType] = useState<"image" | "video">("image");
   
-  // Image state
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  
-  // Video state
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   
-  // Additional metadata
   const [selectedPets, setSelectedPets] = useState<string[]>([]);
   const [location, setLocation] = useState<Location | null>(null);
   const [hashtags, setHashtags] = useState<string[]>([]);
@@ -54,6 +51,9 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
   const [scheduleDate, setScheduleDate] = useState<Date | undefined>();
   const [showSchedulePicker, setShowSchedulePicker] = useState(false);
   const [selectedMusic, setSelectedMusic] = useState<SelectedMusic | null>(null);
+  
+  // Expandable sections
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
   
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -79,8 +79,9 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
         setImagePreview(reader.result as string);
       };
       reader.readAsDataURL(compressedFile);
-      
       toast.success("התמונה נטענה בהצלחה");
+      // Auto-advance to details
+      setTimeout(() => setStep("details"), 300);
     } catch (error) {
       console.error("Error processing image:", error);
       toast.error("שגיאה בעיבוד התמונה");
@@ -92,11 +93,13 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
     setImagePreview(null);
     setVideoFile(null);
     setVideoPreview(null);
+    setStep("media");
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (cameraInputRef.current) cameraInputRef.current.value = "";
   };
 
   const resetForm = () => {
+    setStep("media");
     setCaption("");
     setMediaType("image");
     setSelectedImage(null);
@@ -110,13 +113,13 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
     setCollaborators([]);
     setScheduleDate(undefined);
     setSelectedMusic(null);
+    setExpandedSection(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (cameraInputRef.current) cameraInputRef.current.value = "";
   };
 
   const saveDraft = async () => {
     if (!user) return;
-    
     try {
       await supabase
         .from('draft_posts')
@@ -154,22 +157,18 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
       let mediaUrl = "";
       
       if (mediaType === "image" && selectedImage && imagePreview) {
-        // Use the base64 preview directly as the image URL
         mediaUrl = imagePreview;
       } else if (mediaType === "video" && videoFile && videoPreview) {
-        // For video, we need storage - show error
         toast.error("העלאת וידאו אינה זמינה כרגע");
         setUploading(false);
         return;
       }
 
-      // Build caption with hashtags
       let fullCaption = caption.trim();
       if (hashtags.length > 0) {
         fullCaption += "\n\n" + hashtags.map(h => `#${h}`).join(" ");
       }
 
-      // If scheduled, save to scheduled_posts
       if (scheduleDate && scheduleDate > new Date()) {
         await supabase
           .from('scheduled_posts')
@@ -188,7 +187,6 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
         return;
       }
 
-      // Create post
       const postData: any = {
         user_id: user.id,
         image_url: mediaUrl,
@@ -215,7 +213,6 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
 
       if (insertError) throw insertError;
 
-      // Add collaborators if any
       if (collaborators.length > 0 && newPost) {
         for (const collabId of collaborators) {
           await supabase
@@ -228,7 +225,6 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
         }
       }
 
-      // Update hashtag counts
       for (const tag of hashtags) {
         const { data: existing } = await supabase
           .from('hashtags')
@@ -262,265 +258,353 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
 
   const hasMedia = mediaType === "image" ? imagePreview : videoPreview;
 
+  const toggleSection = (section: string) => {
+    setExpandedSection(expandedSection === section ? null : section);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto font-jakarta bg-background rounded-3xl" dir="rtl">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-black text-center flex items-center justify-center gap-2">
-            <Sparkles className="w-6 h-6 text-instagram-pink" strokeWidth={1.5} />
-            פוסט חדש
-          </DialogTitle>
-        </DialogHeader>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); onOpenChange(v); }}>
+      <DialogContent className="sm:max-w-md max-h-[92vh] overflow-hidden p-0 font-jakarta bg-background rounded-3xl border-border/30" dir="rtl">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
+          <button
+            onClick={() => {
+              if (step === "details") {
+                setStep("media");
+              } else {
+                resetForm();
+                onOpenChange(false);
+              }
+            }}
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {step === "details" ? (
+              <div className="flex items-center gap-1">
+                <ChevronRight className="w-4 h-4" />
+                חזרה
+              </div>
+            ) : "ביטול"}
+          </button>
 
-        <div className="space-y-5">
-          {/* Media Type Tabs */}
-          <Tabs value={mediaType} onValueChange={(v) => { setMediaType(v as "image" | "video"); handleRemoveMedia(); }}>
-            <TabsList className="grid w-full grid-cols-2 h-12 p-1 rounded-2xl">
-              <TabsTrigger value="image" className="rounded-xl data-[state=active]:bg-background">
-                <ImageIcon className="w-4 h-4 ml-2" />
-                תמונה
-              </TabsTrigger>
-              <TabsTrigger value="video" className="rounded-xl data-[state=active]:bg-background">
-                <Video className="w-4 h-4 ml-2" />
-                וידאו
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="image" className="mt-4">
-              {imagePreview ? (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="relative"
-                >
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="w-full aspect-square object-cover rounded-2xl shadow-lg"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-3 left-3 bg-black/60 hover:bg-black/80 text-white rounded-full shadow-lg w-10 h-10"
-                    onClick={handleRemoveMedia}
-                  >
-                    <X className="w-5 h-5" strokeWidth={1.5} />
-                  </Button>
-                </motion.div>
-              ) : (
-                <div className="grid grid-cols-2 gap-4">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleImageSelect}
-                  />
-                  <input
-                    ref={cameraInputRef}
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    className="hidden"
-                    onChange={handleImageSelect}
-                  />
-                  
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Button
-                      variant="outline"
-                      className="w-full h-32 flex flex-col items-center justify-center gap-3 border-2 border-dashed hover:border-petid-blue hover:bg-petid-blue/5 rounded-2xl transition-all"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <div className="w-12 h-12 bg-gradient-petid rounded-full flex items-center justify-center">
-                        <ImageIcon className="w-6 h-6 text-white" strokeWidth={1.5} />
-                      </div>
-                      <span className="text-sm font-bold">גלריה</span>
-                    </Button>
-                  </motion.div>
-
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Button
-                      variant="outline"
-                      className="w-full h-32 flex flex-col items-center justify-center gap-3 border-2 border-dashed hover:border-instagram-pink hover:bg-gradient-instagram-soft rounded-2xl transition-all"
-                      onClick={() => cameraInputRef.current?.click()}
-                    >
-                      <div className="w-12 h-12 bg-gradient-instagram rounded-full flex items-center justify-center">
-                        <Camera className="w-6 h-6 text-white" strokeWidth={1.5} />
-                      </div>
-                      <span className="text-sm font-bold">מצלמה</span>
-                    </Button>
-                  </motion.div>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="video" className="mt-4">
-              <VideoUploader
-                videoFile={videoFile}
-                videoPreview={videoPreview}
-                onVideoSelect={(file, preview) => {
-                  setVideoFile(file);
-                  setVideoPreview(preview);
-                }}
-                onVideoRemove={() => {
-                  setVideoFile(null);
-                  setVideoPreview(null);
-                }}
-                maxDurationSeconds={90}
-              />
-            </TabsContent>
-          </Tabs>
-
-          {/* Caption */}
-          <div className="space-y-2">
-            <Textarea
-              placeholder="שתף משהו על חיית המחמד שלך... 🐾"
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-              className="min-h-[100px] resize-none rounded-2xl border-2 focus:border-accent"
-              maxLength={500}
-            />
-            <div className="text-xs text-muted-foreground text-left">
-              {caption.length}/500
-            </div>
-          </div>
-
-          {/* Pet Tagging */}
-          <PetTagSelector
-            selectedPets={selectedPets}
-            onChange={setSelectedPets}
-          />
-
-          {/* Location */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <MapPin className="w-4 h-4" />
-              <span>מיקום</span>
-            </div>
-            <LocationPicker
-              value={location}
-              onChange={setLocation}
-            />
-          </div>
-
-          {/* Hashtags */}
-          <HashtagInput
-            value={hashtags}
-            onChange={setHashtags}
-            maxTags={10}
-          />
-
-          {/* Alt Text for Accessibility */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Eye className="w-4 h-4" />
-              <span>טקסט חלופי (נגישות)</span>
-            </div>
-            <Input
-              placeholder="תאר את התמונה לאנשים עם לקות ראייה..."
-              value={altText}
-              onChange={(e) => setAltText(e.target.value)}
-              className="rounded-xl"
-              maxLength={200}
-            />
-          </div>
-
-          {/* Collaborators */}
-          <div className="flex items-center justify-between p-3 rounded-xl border border-border">
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm">פוסט משותף</span>
-              {collaborators.length > 0 && (
-                <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
-                  {collaborators.length}
-                </span>
-              )}
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowCollabInvite(true)}
-            >
-              הוסף
-            </Button>
-          </div>
-
-          {/* Music */}
-          <MusicPicker selectedMusic={selectedMusic} onSelect={setSelectedMusic} />
-
-          {/* Schedule */}
-          <div className="flex items-center justify-between p-3 rounded-xl border border-border">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm">
-                {scheduleDate ? `מתוזמן ל-${scheduleDate.toLocaleDateString('he-IL')}` : "תזמן פרסום"}
-              </span>
-            </div>
-            <Popover open={showSchedulePicker} onOpenChange={setShowSchedulePicker}>
-              <PopoverTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  {scheduleDate ? "שנה" : "בחר"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <CalendarComponent
-                  mode="single"
-                  selected={scheduleDate}
-                  onSelect={(date) => {
-                    setScheduleDate(date);
-                    setShowSchedulePicker(false);
-                  }}
-                  disabled={(date) => date < new Date()}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-2">
-            <Button
-              variant="outline"
-              className="rounded-2xl font-bold h-12"
-              onClick={saveDraft}
-              disabled={uploading || !hasMedia}
-            >
-              <FileText className="w-4 h-4 ml-1" />
-              טיוטה
-            </Button>
-            <Button
-              variant="outline"
-              className="flex-1 rounded-2xl font-bold h-12"
-              onClick={() => onOpenChange(false)}
-              disabled={uploading}
-            >
-              ביטול
-            </Button>
-            <Button
-              className="flex-1 rounded-2xl font-bold h-12 bg-gradient-instagram text-white shadow-lg hover:shadow-xl"
+          <h2 className="text-base font-bold text-foreground">פוסט חדש</h2>
+          
+          {step === "details" ? (
+            <button
               onClick={handleCreatePost}
               disabled={!hasMedia || uploading}
+              className={cn(
+                "text-sm font-bold transition-colors",
+                hasMedia && !uploading
+                  ? "text-primary hover:text-primary/80"
+                  : "text-muted-foreground/50"
+              )}
             >
               {uploading ? (
-                <>
-                  <Loader2 className="w-5 h-5 ml-2 animate-spin" strokeWidth={1.5} />
-                  מפרסם...
-                </>
-              ) : scheduleDate ? (
-                <>
-                  <Calendar className="w-5 h-5 ml-2" strokeWidth={1.5} />
-                  תזמן
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-5 h-5 ml-2" strokeWidth={1.5} />
-                  פרסם
-                </>
-              )}
-            </Button>
-          </div>
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : scheduleDate ? "תזמן" : "שתף"}
+            </button>
+          ) : (
+            <div className="w-10" /> // spacer
+          )}
         </div>
 
-        {/* Collaborative Post Invite Dialog */}
+        {/* Step indicator */}
+        <div className="px-4 pt-1 pb-2 flex gap-2">
+          <div className={cn("h-0.5 flex-1 rounded-full transition-colors", step === "media" || step === "details" ? "bg-primary" : "bg-border/50")} />
+          <div className={cn("h-0.5 flex-1 rounded-full transition-colors", step === "details" ? "bg-primary" : "bg-border/50")} />
+        </div>
+
+        <div className="overflow-y-auto max-h-[calc(92vh-100px)]">
+          <AnimatePresence mode="wait">
+            {step === "media" ? (
+              <motion.div
+                key="media"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+                className="px-4 pb-6 space-y-5"
+              >
+                {/* Media type selector */}
+                <div className="flex gap-2 pt-2">
+                  <button
+                    onClick={() => { setMediaType("image"); handleRemoveMedia(); }}
+                    className={cn(
+                      "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all",
+                      mediaType === "image"
+                        ? "bg-primary/10 text-primary border border-primary/20"
+                        : "bg-muted/50 text-muted-foreground border border-transparent"
+                    )}
+                  >
+                    <ImageIcon className="w-4 h-4" strokeWidth={1.5} />
+                    תמונה
+                  </button>
+                  <button
+                    onClick={() => { setMediaType("video"); handleRemoveMedia(); }}
+                    className={cn(
+                      "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all",
+                      mediaType === "video"
+                        ? "bg-primary/10 text-primary border border-primary/20"
+                        : "bg-muted/50 text-muted-foreground border border-transparent"
+                    )}
+                  >
+                    <Video className="w-4 h-4" strokeWidth={1.5} />
+                    וידאו
+                  </button>
+                </div>
+
+                {mediaType === "image" ? (
+                  <>
+                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+                    <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleImageSelect} />
+
+                    {/* Upload area */}
+                    <motion.div
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => fileInputRef.current?.click()}
+                      className="relative flex flex-col items-center justify-center gap-4 py-16 rounded-3xl border-2 border-dashed border-border/60 hover:border-primary/40 bg-muted/20 hover:bg-primary/5 cursor-pointer transition-all group"
+                    >
+                      <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <ImageIcon className="w-9 h-9 text-primary" strokeWidth={1.5} />
+                      </div>
+                      <div className="text-center space-y-1">
+                        <p className="text-base font-bold text-foreground">בחר תמונה מהגלריה</p>
+                        <p className="text-xs text-muted-foreground">JPG, PNG עד 10MB</p>
+                      </div>
+                    </motion.div>
+
+                    {/* Camera button */}
+                    <button
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="w-full flex items-center gap-3 p-4 rounded-2xl bg-muted/30 hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+                        <Camera className="w-5 h-5 text-accent-foreground" strokeWidth={1.5} />
+                      </div>
+                      <span className="text-sm font-semibold text-foreground">צלם תמונה</span>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground mr-auto rotate-180" />
+                    </button>
+                  </>
+                ) : (
+                  <VideoUploader
+                    videoFile={videoFile}
+                    videoPreview={videoPreview}
+                    onVideoSelect={(file, preview) => {
+                      setVideoFile(file);
+                      setVideoPreview(preview);
+                      setTimeout(() => setStep("details"), 300);
+                    }}
+                    onVideoRemove={() => {
+                      setVideoFile(null);
+                      setVideoPreview(null);
+                    }}
+                    maxDurationSeconds={90}
+                  />
+                )}
+              </motion.div>
+            ) : (
+              <motion.div
+                key="details"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+                className="pb-6"
+              >
+                {/* Media preview + caption */}
+                <div className="flex gap-3 px-4 py-3 border-b border-border/20">
+                  {/* Thumbnail */}
+                  <div className="relative flex-shrink-0">
+                    {imagePreview && (
+                      <div className="relative">
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="w-20 h-20 object-cover rounded-xl"
+                        />
+                        <button
+                          onClick={handleRemoveMedia}
+                          className="absolute -top-1.5 -left-1.5 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-sm"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                    {videoPreview && (
+                      <div className="relative">
+                        <video src={videoPreview} className="w-20 h-20 object-cover rounded-xl" />
+                        <button
+                          onClick={handleRemoveMedia}
+                          className="absolute -top-1.5 -left-1.5 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-sm"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                        <div className="absolute bottom-1 right-1 bg-black/60 rounded px-1">
+                          <Video className="w-3 h-3 text-white" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Caption input */}
+                  <div className="flex-1 min-w-0">
+                    <textarea
+                      placeholder="כתוב כיתוב... 🐾"
+                      value={caption}
+                      onChange={(e) => setCaption(e.target.value)}
+                      className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground resize-none outline-none min-h-[72px]"
+                      maxLength={500}
+                    />
+                    <div className="text-[10px] text-muted-foreground/60 text-left">
+                      {caption.length}/500
+                    </div>
+                  </div>
+                </div>
+
+                {/* Options list */}
+                <div className="divide-y divide-border/20">
+                  {/* Pet Tag */}
+                  <OptionRow
+                    icon={<PawPrint className="w-5 h-5" strokeWidth={1.5} />}
+                    label="תייג חיית מחמד"
+                    value={selectedPets.length > 0 ? `${selectedPets.length} תויגו` : undefined}
+                    expanded={expandedSection === "pets"}
+                    onToggle={() => toggleSection("pets")}
+                  >
+                    <PetTagSelector selectedPets={selectedPets} onChange={setSelectedPets} />
+                  </OptionRow>
+
+                  {/* Location */}
+                  <OptionRow
+                    icon={<MapPin className="w-5 h-5" strokeWidth={1.5} />}
+                    label="הוסף מיקום"
+                    value={location?.name}
+                    expanded={expandedSection === "location"}
+                    onToggle={() => toggleSection("location")}
+                  >
+                    <LocationPicker value={location} onChange={setLocation} />
+                  </OptionRow>
+
+                  {/* Hashtags */}
+                  <OptionRow
+                    icon={<Hash className="w-5 h-5" strokeWidth={1.5} />}
+                    label="האשטאגים"
+                    value={hashtags.length > 0 ? hashtags.map(h => `#${h}`).join(" ") : undefined}
+                    expanded={expandedSection === "hashtags"}
+                    onToggle={() => toggleSection("hashtags")}
+                  >
+                    <HashtagInput value={hashtags} onChange={setHashtags} maxTags={10} />
+                  </OptionRow>
+
+                  {/* Music */}
+                  <OptionRow
+                    icon={<Music className="w-5 h-5" strokeWidth={1.5} />}
+                    label="הוסף מוזיקה"
+                    value={selectedMusic?.title}
+                    expanded={expandedSection === "music"}
+                    onToggle={() => toggleSection("music")}
+                  >
+                    <MusicPicker selectedMusic={selectedMusic} onSelect={setSelectedMusic} />
+                  </OptionRow>
+
+                  {/* Alt Text */}
+                  <OptionRow
+                    icon={<Type className="w-5 h-5" strokeWidth={1.5} />}
+                    label="טקסט חלופי"
+                    value={altText || undefined}
+                    expanded={expandedSection === "alt"}
+                    onToggle={() => toggleSection("alt")}
+                  >
+                    <Input
+                      placeholder="תאר את התמונה לאנשים עם לקות ראייה..."
+                      value={altText}
+                      onChange={(e) => setAltText(e.target.value)}
+                      className="rounded-xl text-sm"
+                      maxLength={200}
+                    />
+                  </OptionRow>
+
+                  {/* Collaborators */}
+                  <OptionRow
+                    icon={<Users className="w-5 h-5" strokeWidth={1.5} />}
+                    label="פוסט משותף"
+                    value={collaborators.length > 0 ? `${collaborators.length} שותפים` : undefined}
+                    expanded={false}
+                    onToggle={() => setShowCollabInvite(true)}
+                  />
+
+                  {/* Schedule */}
+                  <div className="flex items-center justify-between px-4 py-3.5">
+                    <div className="flex items-center gap-3">
+                      <Calendar className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+                      <span className="text-sm font-medium text-foreground">
+                        {scheduleDate ? `מתוזמן ל-${scheduleDate.toLocaleDateString('he-IL')}` : "תזמן פרסום"}
+                      </span>
+                    </div>
+                    <Popover open={showSchedulePicker} onOpenChange={setShowSchedulePicker}>
+                      <PopoverTrigger asChild>
+                        <button className="text-xs font-semibold text-primary">
+                          {scheduleDate ? "שנה" : "בחר"}
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="end">
+                        <CalendarComponent
+                          mode="single"
+                          selected={scheduleDate}
+                          onSelect={(date) => {
+                            setScheduleDate(date);
+                            setShowSchedulePicker(false);
+                          }}
+                          disabled={(date) => date < new Date()}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+
+                {/* Bottom actions */}
+                <div className="px-4 pt-4 flex gap-2">
+                  <button
+                    onClick={saveDraft}
+                    disabled={uploading || !hasMedia}
+                    className="px-4 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground bg-muted/50 hover:bg-muted transition-colors disabled:opacity-40"
+                  >
+                    <FileText className="w-4 h-4 inline ml-1" strokeWidth={1.5} />
+                    טיוטה
+                  </button>
+                  <button
+                    onClick={handleCreatePost}
+                    disabled={!hasMedia || uploading}
+                    className={cn(
+                      "flex-1 py-2.5 rounded-xl text-sm font-bold text-primary-foreground transition-all",
+                      hasMedia && !uploading
+                        ? "bg-primary hover:bg-primary/90 shadow-md shadow-primary/20"
+                        : "bg-muted text-muted-foreground"
+                    )}
+                  >
+                    {uploading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        מפרסם...
+                      </span>
+                    ) : scheduleDate ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Calendar className="w-4 h-4" strokeWidth={1.5} />
+                        תזמן פרסום
+                      </span>
+                    ) : (
+                      <span className="flex items-center justify-center gap-2">
+                        <Sparkles className="w-4 h-4" strokeWidth={1.5} />
+                        פרסם עכשיו
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
         <CollaborativePostInvite
           open={showCollabInvite}
           onOpenChange={setShowCollabInvite}
@@ -532,3 +616,51 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
     </Dialog>
   );
 };
+
+/* Expandable option row */
+interface OptionRowProps {
+  icon: React.ReactNode;
+  label: string;
+  value?: string;
+  expanded: boolean;
+  onToggle: () => void;
+  children?: React.ReactNode;
+}
+
+const OptionRow = ({ icon, label, value, expanded, onToggle, children }: OptionRowProps) => (
+  <div>
+    <button
+      onClick={onToggle}
+      className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-muted/30 transition-colors"
+    >
+      <div className="flex items-center gap-3 min-w-0">
+        <span className="text-muted-foreground">{icon}</span>
+        <span className="text-sm font-medium text-foreground">{label}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        {value && (
+          <span className="text-xs text-primary font-medium truncate max-w-[120px]">{value}</span>
+        )}
+        <ChevronRight className={cn(
+          "w-4 h-4 text-muted-foreground transition-transform",
+          expanded && "rotate-90"
+        )} />
+      </div>
+    </button>
+    <AnimatePresence>
+      {expanded && children && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="overflow-hidden"
+        >
+          <div className="px-4 pb-3">
+            {children}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </div>
+);
