@@ -146,6 +146,7 @@ const ProductDetail = lazy(() => import("@/pages/ProductDetail"));
 const Cart = lazy(() => import("@/pages/Cart"));
 const Checkout = lazy(() => import("@/pages/Checkout"));
 const OrderConfirmation = lazy(() => import("@/pages/OrderConfirmation"));
+const ReorderConfirmation = lazy(() => import("@/pages/ReorderConfirmation"));
 const OrderHistory = lazy(() => import("@/pages/OrderHistory"));
 const Favorites = lazy(() => import("@/pages/Favorites"));
 const PaymentSuccess = lazy(() => import("@/pages/PaymentSuccess"));
@@ -161,6 +162,7 @@ export const shopRoutes: RouteObject[] = [
   { path: "/favorites", element: <Protected><LazyPage component={Favorites} pageName="מועדפים" /></Protected> },
   { path: "/checkout", element: <Protected><LazyPage component={Checkout} pageName="תשלום" /></Protected> },
   { path: "/order-confirmation", element: <Protected><LazyPage component={OrderConfirmation} pageName="אישור הזמנה" /></Protected> },
+  { path: "/reorder-confirmation", element: <Protected><LazyPage component={ReorderConfirmation} pageName="אישור הזמנה מחדש" /></Protected> },
   { path: "/order-history", element: <Protected><LazyPage component={OrderHistory} pageName="היסטוריית הזמנות" /></Protected> },
   
   { path: "/payment-success", element: <LazyPage component={PaymentSuccess} pageName="תשלום הצליח" /> },
