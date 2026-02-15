@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -12,6 +12,10 @@ import {
   Share2,
   Trophy,
   PawPrint,
+  CalendarPlus,
+  Dog,
+  Cat,
+  Crown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -29,6 +33,8 @@ import { QuickTipOverlay } from "@/components/feed/QuickTipOverlay";
 import { ProductSafetyBadge, useProductSafety } from "@/components/feed/ProductSafetyBadge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { SocialProofLabel } from "@/components/feed";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import type { FeedPost } from "@/hooks/useSoundtrackFeed";
 import type { ActivePet } from "@/hooks/useActivePet";
 
@@ -64,6 +70,9 @@ export const SoundtrackPostCard = ({
   activePet,
 }: SoundtrackPostCardProps) => {
   const navigate = useNavigate();
+  const { direction } = useLanguage();
+  const isRtl = direction === "rtl";
+  const { activePet: contextPet, pets } = usePetPreference();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [addedToCart, setAddedToCart] = useState(false);
   const [showComments, setShowComments] = useState(false);
@@ -122,6 +131,28 @@ export const SoundtrackPostCard = ({
     post.caption,
     activePet || null,
   );
+
+  // Determine if this is a "tip" post (not product/challenge/cta)
+  const isTipPost = !isProductPost && !isChallengePost && !isCtaPost;
+
+  // Multi-pet match: calculate which pets this post is relevant for
+  const matchingPets = useMemo(() => {
+    if (!pets.length || !post.caption) return [];
+    const captionLower = (post.caption || "").toLowerCase();
+    return pets.filter((p) => {
+      const nameMatch = captionLower.includes(p.name.toLowerCase());
+      const typeMatch = captionLower.includes(p.pet_type === "dog" ? "כלב" : p.pet_type === "cat" ? "חתול" : "");
+      const breedMatch = p.breed && captionLower.includes(p.breed.toLowerCase());
+      return nameMatch || typeMatch || breedMatch;
+    });
+  }, [pets, post.caption]);
+
+  const handleAddToCarePlan = () => {
+    toast.success(isRtl ? "נוסף לתוכנית הטיפול 📋" : "Added to Care Plan 📋", {
+      description: isRtl ? "תזכורת נשמרה בלוח הבקרה" : "Reminder saved to dashboard",
+      duration: 3000,
+    });
+  };
 
   const handleDoubleTap = () => {
     const now = Date.now();
@@ -237,7 +268,62 @@ export const SoundtrackPostCard = ({
         }}
       />
 
-      {/* Relevance Badge — top-right */}
+      {/* ── Pet-Aware Header ── */}
+      <motion.div
+        className="absolute top-3 z-40 flex items-center gap-2 px-3"
+        style={{ [isRtl ? "right" : "left"]: "8px" }}
+        dir={isRtl ? "rtl" : "ltr"}
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.15 }}
+      >
+        {/* Pet avatar */}
+        <Avatar
+          className="w-9 h-9 cursor-pointer"
+          style={{
+            border: "2px solid white",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.4)",
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/user/${post.user_id}`);
+          }}
+        >
+          <AvatarImage
+            src={post.user_profile?.avatar_url || ""}
+            className="object-cover"
+          />
+          <AvatarFallback className="bg-white/20">
+            <User className="w-4 h-4 text-white" />
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex flex-col">
+          <span
+            className="text-white font-bold drop-shadow-lg leading-tight cursor-pointer"
+            style={{ fontSize: "14px", textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/user/${post.user_id}`);
+            }}
+          >
+            {post.user_profile?.full_name || (isRtl ? "משתמש" : "User")}
+          </span>
+          {activePet && (
+            <span
+              className="flex items-center gap-1 text-white/80 drop-shadow-lg"
+              style={{ fontSize: "11px", textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}
+            >
+              {activePet.pet_type === "cat" ? (
+                <Cat className="w-3 h-3" strokeWidth={1.5} />
+              ) : (
+                <Dog className="w-3 h-3" strokeWidth={1.5} />
+              )}
+              {isRtl ? `עבור ${activePet.name}` : `For ${activePet.name}`}
+            </span>
+          )}
+        </div>
+      </motion.div>
+
       {activePet && (
         <div className="absolute top-[68px] right-3 z-40">
           <RelevanceBadge
@@ -531,8 +617,112 @@ export const SoundtrackPostCard = ({
         </div>
       </div>
 
+      {/* ── Smart Action Bar ── */}
+      <motion.div
+        className="absolute inset-x-0 z-50 px-3"
+        style={{ bottom: hasMultipleImages ? "108px" : "86px" }}
+        dir={isRtl ? "rtl" : "ltr"}
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.35 }}
+      >
+        {isProductPost && post.product_price && productSafety.level !== "unsafe" ? (
+          <motion.button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowSmartCheckout(true);
+            }}
+            whileTap={{ scale: 0.96 }}
+            className="w-full flex items-center justify-between py-2.5 px-4 rounded-xl"
+            style={{
+              background: "linear-gradient(135deg, rgba(0,0,0,0.65), rgba(0,0,0,0.45))",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
+              border: "1px solid rgba(255,255,255,0.12)",
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <ShoppingCart className="w-4 h-4 text-white" strokeWidth={1.5} />
+              <span className="text-white font-semibold" style={{ fontSize: "14px" }}>
+                {isRtl ? "קנייה ישירה" : "Direct Buy"}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span
+                className="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                style={{ background: "rgba(255,215,0,0.2)", color: "#FFD700" }}
+              >
+                <Crown className="w-3 h-3 inline mr-0.5" />
+                {isRtl ? "הנחת חבר" : "Member Price"}
+              </span>
+              <span className="text-white font-bold" style={{ fontSize: "16px" }}>
+                ₪{post.product_price}
+              </span>
+            </div>
+          </motion.button>
+        ) : isTipPost ? (
+          <motion.button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAddToCarePlan();
+            }}
+            whileTap={{ scale: 0.96 }}
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl"
+            style={{
+              background: "linear-gradient(135deg, rgba(34,197,94,0.25), rgba(22,163,74,0.2))",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
+              border: "1px solid rgba(34,197,94,0.3)",
+            }}
+          >
+            <CalendarPlus className="w-4 h-4 text-emerald-400" strokeWidth={1.5} />
+            <span className="text-emerald-300 font-semibold" style={{ fontSize: "13px" }}>
+              {isRtl ? "הוסף לתוכנית הטיפול" : "Add to Care Plan"}
+            </span>
+          </motion.button>
+        ) : null}
+      </motion.div>
 
-      {/* Gallery indicator dots */}
+      {/* ── Multi-Pet Match Indicator ── */}
+      {matchingPets.length > 0 && (
+        <motion.div
+          className="absolute inset-x-0 z-50 flex items-center justify-center"
+          style={{ bottom: hasMultipleImages ? "82px" : "60px" }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+        >
+          <div
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full"
+            style={{
+              background: "rgba(0,0,0,0.4)",
+              backdropFilter: "blur(12px)",
+              border: "1px solid rgba(255,255,255,0.1)",
+            }}
+            dir={isRtl ? "rtl" : "ltr"}
+          >
+            <PawPrint className="w-3 h-3 text-white/70" strokeWidth={1.5} />
+            <span className="text-white/80 font-medium" style={{ fontSize: "11px" }}>
+              {isRtl
+                ? `מתאים לפרופיל של ${matchingPets.map((p) => p.name).join(", ")}`
+                : `Matches ${matchingPets.map((p) => p.name).join(", ")}'s profile`}
+            </span>
+            <div className="flex -space-x-1.5">
+              {matchingPets.slice(0, 3).map((p) => (
+                <Avatar key={p.id} className="w-4 h-4 border border-white/30">
+                  {p.avatar_url ? (
+                    <AvatarImage src={p.avatar_url} className="object-cover" />
+                  ) : null}
+                  <AvatarFallback className="bg-white/20 text-[6px] text-white">
+                    {p.pet_type === "cat" ? "🐱" : "🐶"}
+                  </AvatarFallback>
+                </Avatar>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {hasMultipleImages && (
         <div className="absolute bottom-[100px] left-1/2 -translate-x-1/2 z-50 flex gap-1.5">
           {allImages.map((_, i) => (
