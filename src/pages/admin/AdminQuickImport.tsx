@@ -60,39 +60,40 @@ const AdminQuickImport = () => {
     setErrorMessage("");
 
     try {
-      const { data, error } = await supabase.functions.invoke("import-products-from-url", {
-        body: { url, maxProducts: 1, maxPages: 1, sameDomainOnly: true },
+      // Use smart scraper: Firecrawl + AI extraction
+      const { data, error } = await supabase.functions.invoke("smart-scrape-product", {
+        body: { url },
       });
 
       if (error) throw new Error(error.message);
-      if (!data?.success || !data?.data?.products?.length) {
+      if (!data?.success || !data?.data) {
         setStage("error");
-        setErrorMessage("לא נמצא מוצר בקישור. וודא שזה דף מוצר ספציפי.");
+        setErrorMessage(data?.error || "לא נמצא מוצר בקישור. וודא שזה דף מוצר ספציפי.");
         return;
       }
 
-      const s = data.data.products[0];
+      const s = data.data;
       const parsed: ScrapedData = {
-        name: s.title || "",
-        price: s.basePrice || s.salePrice || 0,
-        original_price: s.basePrice && s.salePrice && s.salePrice < s.basePrice ? s.basePrice : null,
-        sale_price: s.salePrice || null,
+        name: s.name || "",
+        price: s.price || 0,
+        original_price: s.original_price || null,
+        sale_price: s.sale_price || null,
         description: s.description || "",
-        image_url: s.images?.[0] || "/placeholder.svg",
+        image_url: s.image_url || "/placeholder.svg",
         images: s.images || [],
         sku: s.sku || "",
         source_url: s.source_url || url,
-        category: detectCategory(s),
-        pet_type: s.petType || "all",
+        category: s.category || null,
+        pet_type: s.pet_type || "all",
         brand: s.brand || "",
         ingredients: s.ingredients || "",
         benefits: s.benefits || [],
-        feeding_guide: s.feedingGuide || [],
-        product_attributes: s.productAttributes || {},
-        life_stage: s.lifeStage || "",
-        dog_size: s.dogSize || "",
-        special_diet: s.specialDiet || [],
-        variants: s.variants || [],
+        feeding_guide: s.feeding_guide || [],
+        product_attributes: s.product_attributes || {},
+        life_stage: s.life_stage || "",
+        dog_size: s.dog_size || "",
+        special_diet: s.special_diet || [],
+        variants: [],
       };
 
       setScrapedData(parsed);

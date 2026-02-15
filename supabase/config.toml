@@ -77,3 +77,6 @@ verify_jwt = false
 
 [functions.rescrape-products]
 verify_jwt = false
+
+[functions.smart-scrape-product]
+verify_jwt = false
