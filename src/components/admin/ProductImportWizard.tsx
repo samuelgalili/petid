@@ -45,6 +45,13 @@ interface ScrapedData {
   petType: string | null;
   source_url: string;
   feedingGuide?: any[];
+  ingredients?: string | null;
+  benefits?: { title: string; description: string }[];
+  lifeStage?: string | null;
+  dogSize?: string | null;
+  specialDiet?: string[];
+  productAttributes?: Record<string, string>;
+  brand?: string | null;
 }
 
 interface ProductImportWizardProps {
@@ -248,6 +255,14 @@ export const ProductImportWizard = ({
         category: editedCategory || null,
         in_stock: true,
         pet_type: scrapedData?.petType || "all",
+        brand: scrapedData?.brand || null,
+        ingredients: scrapedData?.ingredients || null,
+        benefits: scrapedData?.benefits || [],
+        feeding_guide: scrapedData?.feedingGuide || [],
+        product_attributes: scrapedData?.productAttributes || {},
+        life_stage: scrapedData?.lifeStage || null,
+        dog_size: scrapedData?.dogSize || null,
+        special_diet: scrapedData?.specialDiet || [],
       };
 
       const { data: inserted, error } = await supabase

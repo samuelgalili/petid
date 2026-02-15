@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Heart, Share2, ShoppingCart, Star, Plus, Minus, ChevronLeft, ChevronRight, Check, Truck, Shield, PackageCheck, Clock, Loader2, Bell, Flag, AlertTriangle } from "lucide-react";
+import { ArrowRight, Heart, Share2, ShoppingCart, Star, Plus, Minus, ChevronLeft, ChevronRight, Check, Truck, Shield, PackageCheck, Clock, Loader2, Bell, Flag, AlertTriangle, Leaf, FlaskConical, Utensils } from "lucide-react";
 import { ProductReviews } from "@/components/shop/ProductReviews";
 import { PriceAlertButton } from "@/components/shop/PriceAlertButton";
 import { useAuth } from "@/hooks/useAuth";
@@ -484,7 +484,24 @@ const ProductDetail = () => {
             <div className="flex items-start justify-between gap-3 mb-3">
               <div className="flex-1">
                 <h1 className="text-xl font-bold text-foreground font-jakarta leading-tight">{product.name}</h1>
+                {product.brand && (
+                  <p className="text-xs text-primary font-jakarta font-semibold mt-0.5">{product.brand}</p>
+                )}
                 <p className="text-sm text-muted-foreground font-jakarta mt-1">{product.subtitle}</p>
+                {/* Special Diet & Life Stage Tags */}
+                {(product.special_diet?.length > 0 || product.life_stage || product.dog_size) && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {product.life_stage && (
+                      <Badge variant="secondary" className="text-[10px] font-jakarta">{product.life_stage}</Badge>
+                    )}
+                    {product.dog_size && (
+                      <Badge variant="secondary" className="text-[10px] font-jakarta">{product.dog_size}</Badge>
+                    )}
+                    {product.special_diet?.map((tag: string, i: number) => (
+                      <Badge key={i} variant="outline" className="text-[10px] font-jakarta border-[#4ECDC4]/50 text-[#4ECDC4]">{tag}</Badge>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-1 px-3 py-1.5 rounded-full" style={{
               background: 'linear-gradient(white, white) padding-box, linear-gradient(135deg, #4ECDC4, #7DB9E8) border-box',
@@ -563,9 +580,93 @@ const ProductDetail = () => {
             </div>
           )}
 
-          {/* Shipping Info Accordion */}
+          {/* Benefits Section */}
+          {product.benefits && Array.isArray(product.benefits) && product.benefits.length > 0 && (
+            <div className="p-5 border-b border-border">
+              <h3 className="text-sm font-bold mb-3 text-foreground font-jakarta flex items-center gap-2">
+                <Leaf className="w-4 h-4 text-[#4ECDC4]" />
+                יתרונות עיקריים
+              </h3>
+              <div className="space-y-3">
+                {product.benefits.map((b: any, i: number) => (
+                  <div key={i} className="bg-muted/40 rounded-xl p-3">
+                    <p className="text-[13px] font-bold text-foreground font-jakarta mb-1">{b.title}</p>
+                    <p className="text-[12px] text-muted-foreground font-jakarta leading-[1.7]">{b.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Product Attributes / Specs */}
+          {product.product_attributes && typeof product.product_attributes === 'object' && Object.keys(product.product_attributes).length > 0 && (
+            <div className="p-5 border-b border-border">
+              <h3 className="text-sm font-bold mb-3 text-foreground font-jakarta flex items-center gap-2">
+                <FlaskConical className="w-4 h-4 text-[#7DB9E8]" />
+                מאפייני המוצר
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                {Object.entries(product.product_attributes).map(([key, value]) => (
+                  <div key={key} className="bg-muted/40 rounded-lg p-2.5">
+                    <p className="text-[11px] text-muted-foreground font-jakarta">{key}</p>
+                    <p className="text-[12px] font-semibold text-foreground font-jakarta mt-0.5">{String(value)}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Rich Accordion: Ingredients, Feeding Guide, Shipping */}
           <div className="p-5">
             <Accordion type="single" collapsible className="w-full space-y-2">
+              {/* Ingredients */}
+              {product.ingredients && (
+                <AccordionItem value="ingredients" className="border-0 bg-muted/50 rounded-xl px-4">
+                  <AccordionTrigger className="font-jakarta text-sm font-bold text-foreground hover:no-underline py-4">
+                    <span className="flex items-center gap-2">
+                      <Leaf className="w-4 h-4 text-[#4ECDC4]" />
+                      רכיבים
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-[13px] text-muted-foreground font-jakarta leading-[1.8] pb-4">
+                    {product.ingredients}
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
+              {/* Feeding Guide */}
+              {product.feeding_guide && Array.isArray(product.feeding_guide) && product.feeding_guide.length > 0 && (
+                <AccordionItem value="feeding" className="border-0 bg-muted/50 rounded-xl px-4">
+                  <AccordionTrigger className="font-jakarta text-sm font-bold text-foreground hover:no-underline py-4">
+                    <span className="flex items-center gap-2">
+                      <Utensils className="w-4 h-4 text-[#1E5799]" />
+                      המלצת האכלה
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-4">
+                    <div className="rounded-lg overflow-hidden border border-border">
+                      <table className="w-full text-[12px] font-jakarta">
+                        <thead>
+                          <tr className="bg-muted">
+                            <th className="text-right p-2.5 font-bold text-foreground">משקל הכלב</th>
+                            <th className="text-right p-2.5 font-bold text-foreground">כמות יומית</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {product.feeding_guide.map((row: any, i: number) => (
+                            <tr key={i} className="border-t border-border">
+                              <td className="p-2.5 text-muted-foreground">{row.range}</td>
+                              <td className="p-2.5 text-foreground font-semibold">{row.amount}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
+              {/* Shipping */}
               <AccordionItem value="shipping" className="border-0 bg-muted/50 rounded-xl px-4">
                 <AccordionTrigger className="font-jakarta text-sm font-bold text-foreground hover:no-underline py-4">
                   <span className="flex items-center gap-2">
