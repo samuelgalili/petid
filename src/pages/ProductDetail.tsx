@@ -16,7 +16,8 @@ import {
   Puzzle, Brain, Award, Cherry, Sandwich, CircleDashed,
   Layers, Magnet, MapPin, Footprints, SprayCan, Users, TreePine, EyeOff,
   Fish, Salad, HeartPulse, Thermometer, Activity, Pill, Syringe, ShieldPlus,
-  Luggage, Fan, Link2, Backpack, FoldVertical as FoldIcon, WashingMachine as WashIcon, Plane
+  Luggage, Fan, Link2, Backpack, FoldVertical as FoldIcon, WashingMachine as WashIcon, Plane,
+  Flame, Gauge, TrendingDown, AlertCircle, TimerReset
 } from "lucide-react";
 import { ProductReviews } from "@/components/shop/ProductReviews";
 import { PriceAlertButton } from "@/components/shop/PriceAlertButton";
@@ -211,6 +212,69 @@ const extractCarrierFeatures = (product: any): {
   const crossSellHints = ['הוסיפו בקבוק מים לנסיעות לשתייה נוחה בדרך', 'חטיף מרגיע קטן יהפוך את הנסיעה לחוויה רגועה יותר'];
 
   return { readinessChecklist, maxWeightKg, dimensions, targetPets, isExpandable, isWashable, hasHardBottom, proTip, crossSellHints };
+};
+
+/** Check if product is a veterinary diet / metabolic support */
+const isVetDietProduct = (product: any): boolean => {
+  const cat = (product.category || '').toLowerCase();
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''}`.toLowerCase();
+  return cat === 'veterinary' || cat === 'vet-diet' || cat === 'metabolic' ||
+    text.includes('obesity') || text.includes('השמנה') ||
+    text.includes('diabetic') || text.includes('סוכרת') ||
+    text.includes('vet life') || text.includes('veterinary diet') || text.includes('מזון רפואי') ||
+    (text.includes('metabolic') && (text.includes('dog') || text.includes('כלב'))) ||
+    (text.includes('weight management') && text.includes('prescription')) ||
+    text.includes('l-carnitine') || text.includes('ל-קרניטין');
+};
+
+/** Extract vet diet features */
+const extractVetDietFeatures = (product: any): {
+  medicalIndicators: { label: string; value: string; highlight: string | null; color: string }[];
+  weightLossTech: { icon: React.ReactNode; title: string; description: string; color: string }[];
+  vetWarning: string;
+  usageTimeline: string;
+  crossSellHints: string[];
+  feedingMatrix: { weight: string; diabetic: string; light: string; severe: string }[];
+} => {
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''}`.toLowerCase();
+  const attrs = product.product_attributes || {};
+  const allText = text + ' ' + JSON.stringify(attrs).toLowerCase();
+
+  // Medical indicators
+  const medicalIndicators: { label: string; value: string; highlight: string | null; color: string }[] = [];
+  const fatMatch = allText.match(/(?:fat|שומן)[^%]*?(\d+(?:\.\d+)?)\s*%/i);
+  medicalIndicators.push({ label: 'שומן', value: fatMatch ? `${fatMatch[1]}%` : '6.2%', highlight: 'Low Fat', color: 'hsl(140,50%,40%)' });
+  medicalIndicators.push({ label: 'אינדקס גליקמי', value: 'נמוך', highlight: 'Diabetic Friendly', color: 'hsl(200,60%,45%)' });
+  const kcalMatch = allText.match(/(\d{3,4})\s*kcal/i);
+  medicalIndicators.push({ label: 'צפיפות אנרגיה', value: kcalMatch ? `${kcalMatch[1]} kcal/kg` : '3000 kcal/kg', highlight: null, color: 'hsl(35,60%,50%)' });
+
+  // Weight loss tech
+  const weightLossTech: { icon: React.ReactNode; title: string; description: string; color: string }[] = [];
+  weightLossTech.push({ icon: <Flame className="w-5 h-5" />, title: 'L-Carnitine', description: 'שורף שומן והופך אותו לאנרגיה – מאיץ חילוף חומרים', color: 'hsl(15,70%,50%)' });
+  weightLossTech.push({ icon: <Salad className="w-5 h-5" />, title: 'סיבים תזונתיים גבוהים', description: 'תחושת שובע ממושכת למניעת רעב בין הארוחות', color: 'hsl(140,50%,40%)' });
+
+  const vetWarning = 'שימוש במזון רפואי דורש ליווי וטרינרי. מומלץ להתייעץ עם וטרינר לפני תחילת השימוש.';
+  const usageTimeline = 'עד 6 חודשים לניהול סוכרת, או עד להגעה למשקל היעד – בהתאם להמלצת הווטרינר';
+
+  const crossSellHints = [
+    'חטיפים דלי קלוריות – להמשך הדיאטה ללא פשרות',
+    'LickiMat – להאטת אכילה והגברת תחושת שובע',
+  ];
+
+  // Feeding matrix (Vet Life style)
+  const feedingMatrix: { weight: string; diabetic: string; light: string; severe: string }[] = [
+    { weight: '2 ק"ג', diabetic: '45 גרם', light: '40 גרם', severe: '30 גרם' },
+    { weight: '5 ק"ג', diabetic: '85 גרם', light: '75 גרם', severe: '55 גרם' },
+    { weight: '10 ק"ג', diabetic: '140 גרם', light: '125 גרם', severe: '95 גרם' },
+    { weight: '15 ק"ג', diabetic: '190 גרם', light: '170 גרם', severe: '125 גרם' },
+    { weight: '20 ק"ג', diabetic: '235 גרם', light: '210 גרם', severe: '155 גרם' },
+    { weight: '30 ק"ג', diabetic: '315 גרם', light: '280 גרם', severe: '210 גרם' },
+    { weight: '40 ק"ג', diabetic: '385 גרם', light: '345 גרם', severe: '260 גרם' },
+    { weight: '50 ק"ג', diabetic: '455 גרם', light: '405 גרם', severe: '305 גרם' },
+    { weight: '60 ק"ג', diabetic: '520 גרם', light: '465 גרם', severe: '345 גרם' },
+  ];
+
+  return { medicalIndicators, weightLossTech, vetWarning, usageTimeline, crossSellHints, feedingMatrix };
 };
 
 /** Check if product is a joint supplement */
@@ -1838,6 +1902,8 @@ const ProductDetail = () => {
   const omegaFeatures = useMemo(() => product && isOmegaLiquid ? extractOmegaFeatures(product) : { benefits: [], servingSuggestion: '', purityBadge: null, isMultiPet: false, lifeStageTags: [], crossSellHints: [] }, [product, isOmegaLiquid]);
   const isTravelCarrier = useMemo(() => product ? isTravelCarrierProduct(product) : false, [product]);
   const carrierFeatures = useMemo(() => product && isTravelCarrier ? extractCarrierFeatures(product) : { readinessChecklist: [], maxWeightKg: null, dimensions: null, targetPets: '', isExpandable: false, isWashable: false, hasHardBottom: false, proTip: '', crossSellHints: [] }, [product, isTravelCarrier]);
+  const isVetDiet = useMemo(() => product ? isVetDietProduct(product) : false, [product]);
+  const vetDietFeatures = useMemo(() => product && isVetDiet ? extractVetDietFeatures(product) : { medicalIndicators: [], weightLossTech: [], vetWarning: '', usageTimeline: '', crossSellHints: [], feedingMatrix: [] }, [product, isVetDiet]);
   const analysisData = useMemo(() => product ? parseAnalysis(product) : [], [product]);
   const vitaminsData = useMemo(() => product ? parseVitamins(product) : [], [product]);
   const feedingResult = useMemo(() => {
@@ -4809,6 +4875,136 @@ const ProductDetail = () => {
               </h3>
               <div className="space-y-1.5">
                 {carrierFeatures.crossSellHints.map((hint, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <span className="text-[10px] text-primary mt-0.5">●</span>
+                    <p className="text-[11px] text-muted-foreground">{hint}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Vet Diet: Veterinary Warning ── */}
+        {isVetDiet && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }}>
+            <Card className="p-3 border-[hsl(0,60%,50%)]/30 bg-[hsl(0,50%,95%)]/50 dark:bg-[hsl(0,30%,12%)]/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(0,50%,85%)]/30 flex items-center justify-center flex-shrink-0">
+                  <AlertCircle className="w-5 h-5 text-[hsl(0,60%,50%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-[hsl(0,60%,45%)]">⚠️ אזהרה רפואית</p>
+                  <p className="text-[11px] text-foreground font-medium">{vetDietFeatures.vetWarning}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Vet Diet: Triple-Condition Feeding Calculator ── */}
+        {isVetDiet && vetDietFeatures.feedingMatrix.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Calculator className="w-4 h-4 text-primary" />
+                🧮 מחשבון האכלה רפואי משולש
+              </h3>
+              <div className="rounded-lg overflow-hidden border border-border">
+                <div className="grid grid-cols-4 bg-muted/50 text-[9px] font-bold text-foreground p-2 text-center">
+                  <span>משקל</span>
+                  <span>סוכרתי / תחזוקה</span>
+                  <span>עודף קל (15-30%)</span>
+                  <span>עודף חמור (&gt;30%)</span>
+                </div>
+                {vetDietFeatures.feedingMatrix.map((row, ri) => (
+                  <div key={ri} className={`grid grid-cols-4 text-[10px] text-center p-1.5 ${ri % 2 === 0 ? 'bg-muted/20' : 'bg-background'}`}>
+                    <span className="font-bold text-foreground">{row.weight}</span>
+                    <span className="text-[hsl(200,60%,45%)] font-semibold">{row.diabetic}</span>
+                    <span className="text-[hsl(35,60%,45%)] font-semibold">{row.light}</span>
+                    <span className="text-[hsl(0,55%,50%)] font-semibold">{row.severe}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Vet Diet: Medical Indicators Bar ── */}
+        {isVetDiet && vetDietFeatures.medicalIndicators.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.34 }}>
+            <Card className="p-4">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-3">
+                <Gauge className="w-4 h-4 text-[hsl(270,50%,50%)]" />
+                📊 מדדים רפואיים
+              </h3>
+              <div className="grid grid-cols-3 gap-2">
+                {vetDietFeatures.medicalIndicators.map((ind, i) => (
+                  <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.36 + i * 0.05 }}
+                    className="rounded-lg p-3 text-center" style={{ backgroundColor: `${ind.color}10` }}>
+                    <p className="text-[10px] text-muted-foreground mb-1">{ind.label}</p>
+                    <p className="text-[14px] font-black" style={{ color: ind.color }}>{ind.value}</p>
+                    {ind.highlight && <span className="inline-block mt-1 text-[8px] font-bold rounded px-1.5 py-0.5" style={{ backgroundColor: `${ind.color}15`, color: ind.color }}>{ind.highlight}</span>}
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Vet Diet: Active Weight-Loss Tech ── */}
+        {isVetDiet && vetDietFeatures.weightLossTech.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.42 }}>
+            <Card className="p-4">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-3">
+                <TrendingDown className="w-4 h-4 text-[hsl(15,70%,50%)]" />
+                🔥 טכנולוגיית הרזיה פעילה
+              </h3>
+              <div className="space-y-2">
+                {vetDietFeatures.weightLossTech.map((tech, i) => (
+                  <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.44 + i * 0.05 }}
+                    className="flex items-center gap-3 rounded-lg p-3" style={{ backgroundColor: `${tech.color}10` }}>
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${tech.color}20`, color: tech.color }}>
+                      {tech.icon}
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-bold text-foreground">{tech.title}</p>
+                      <p className="text-[11px] text-muted-foreground">{tech.description}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Vet Diet: Usage Timeline ── */}
+        {isVetDiet && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+            <Card className="p-3 bg-gradient-to-br from-[hsl(200,45%,92%)] to-background border-[hsl(200,35%,60%)]/20 dark:from-[hsl(200,25%,14%)]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(200,40%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <TimerReset className="w-5 h-5 text-[hsl(200,55%,45%)]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-foreground">⏱️ משך שימוש מומלץ</p>
+                  <p className="text-[11px] text-muted-foreground">{vetDietFeatures.usageTimeline}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Vet Diet: Cross-Sell ── */}
+        {isVetDiet && vetDietFeatures.crossSellHints.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.54 }}>
+            <Card className="p-3">
+              <h3 className="text-[12px] font-bold text-foreground flex items-center gap-2 mb-2">
+                <Target className="w-4 h-4 text-primary" />
+                💡 משלימים לדיאטה
+              </h3>
+              <div className="space-y-1.5">
+                {vetDietFeatures.crossSellHints.map((hint, i) => (
                   <div key={i} className="flex items-start gap-2">
                     <span className="text-[10px] text-primary mt-0.5">●</span>
                     <p className="text-[11px] text-muted-foreground">{hint}</p>
