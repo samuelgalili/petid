@@ -14,7 +14,7 @@ import {
   Maximize2, FoldVertical, Trash2, PawPrint, ThumbsUp, Box,
   Volume2, Gift, Gamepad2, BedDouble, Music, Siren,
   Puzzle, Brain, Award, Cherry, Sandwich, CircleDashed,
-  Layers, Magnet, MapPin, Footprints
+  Layers, Magnet, MapPin, Footprints, SprayCan, Users, TreePine, EyeOff
 } from "lucide-react";
 import { ProductReviews } from "@/components/shop/ProductReviews";
 import { PriceAlertButton } from "@/components/shop/PriceAlertButton";
@@ -1047,14 +1047,17 @@ const extractPuzzleEnrichmentFeatures = (product: any): {
   return { isStuffable, mentalStimulation, recipe, materialSpec, hasErraticBounce, chewResistance, expertApproval, crossSellKeywords };
 };
 
-/** Check if product is a potty training / hygiene pad product */
+/** Check if product is a potty training / hygiene pad / attractant spray product */
 const isPottyTrainingProduct = (product: any): boolean => {
   const cat = (product.category || '').toLowerCase();
   const text = `${product.name || ''} ${product.description || ''} ${product.brand || ''}`.toLowerCase();
-  return cat === 'potty-training' || cat === 'training-pads' || cat === 'hygiene-pads' ||
+  return cat === 'potty-training' || cat === 'training-pads' || cat === 'hygiene-pads' || cat === 'attractant-spray' ||
     text.includes('training pad') || text.includes('puppy pad') || text.includes('pee pad') ||
     text.includes('פד אילוף') || text.includes('פדים') || text.includes('רפידות') || text.includes('רפידה') ||
     text.includes('potty') || text.includes('wee-wee') || text.includes('absorbent pad') ||
+    text.includes('attractant spray') || text.includes('potty spray') || text.includes('ספריי אילוף') ||
+    text.includes('housebreaking') || text.includes('house training spray') ||
+    (text.includes('spray') && (text.includes('potty') || text.includes('training') || text.includes('attractant'))) ||
     (text.includes('pad') && (text.includes('absorb') || text.includes('leak') || text.includes('ספיגה')));
 };
 
@@ -1069,6 +1072,14 @@ const extractPottyTrainingFeatures = (product: any): {
   quantity: string | null;
   expertTip: string;
   crossSellKeyword: string | null;
+  isSpray: boolean;
+  trainingBooster: string | null;
+  naturalIngredients: boolean;
+  familySafe: boolean;
+  indoorOutdoor: boolean;
+  spraySteps: { step: number; title: string; description: string }[];
+  safetyWarnings: { icon: React.ReactNode; label: string; description: string }[];
+  bundleSuggestion: string | null;
 } => {
   const text = `${product.name || ''} ${product.description || ''}`.toLowerCase();
   const attrs = product.product_attributes || {};
@@ -1076,7 +1087,11 @@ const extractPottyTrainingFeatures = (product: any): {
   const benefitsText = benefits.map((b: any) => `${b.title || ''} ${b.description || ''}`).join(' ').toLowerCase();
   const allText = text + ' ' + benefitsText + ' ' + JSON.stringify(attrs).toLowerCase();
 
-  // Absorbency
+  // Detect if spray sub-type
+  const isSpray = allText.includes('spray') || allText.includes('ספריי') || allText.includes('attractant') ||
+    allText.includes('housebreaking') || allText.includes('drops') || allText.includes('liquid');
+
+  // Absorbency (pads only)
   let absorbencyBadge: string | null = null;
   const cupMatch = allText.match(/(\d+)\s*cups?/i);
   if (cupMatch) absorbencyBadge = `ספיגה מוגברת של עד ${cupMatch[1]} כוסות נוזל`;
@@ -1091,13 +1106,21 @@ const extractPottyTrainingFeatures = (product: any): {
   const hasAttractant = allText.includes('attractant') || allText.includes('חומר משיכה') || allText.includes('attract');
   const hasOdorNeutralizer = allText.includes('odor') || allText.includes('ריח') || allText.includes('neutraliz') || allText.includes('מנטרל');
 
-  // Training steps
-  const trainingSteps = [
+  // Training steps (pads)
+  const trainingSteps = isSpray ? [] : [
     { step: 1, title: 'פרוס והנח', description: 'פתח את הרפידה והנח על הרצפה – הצד הכחול כלפי מטה' },
     { step: 2, title: 'בחר מיקום', description: 'הרחק ממקום השינה והאוכל – פינה שקטה ונגישה' },
     { step: 3, title: 'חיזוק חיובי', description: 'הבא את הגור להריח את הרפידה – עודד אותו להשתמש בה' },
     { step: 4, title: 'פרס על הצלחה', description: 'שבח והענק חטיף מיד לאחר שימוש נכון!' },
   ];
+
+  // Spray steps
+  const spraySteps = isSpray ? [
+    { step: 1, title: 'רסס כמות קטנה', description: 'רסס על אזור היעד – רפידה, דשא, או מקום ייעודי' },
+    { step: 2, title: 'תן לגור להריח', description: 'הבא את הגור להריח את המקום – הריח מושך באופן טבעי' },
+    { step: 3, title: 'שבח ופרס', description: 'ברגע שהגור עושה צרכים במקום – שבח והענק חטיף מיד!' },
+    { step: 4, title: 'חזור על התהליך', description: 'חזור אחרי ארוחות, תנומות ומשחק – עקביות היא המפתח' },
+  ] : [];
 
   // Dimensions
   let dimensions: string | null = null;
@@ -1113,13 +1136,41 @@ const extractPottyTrainingFeatures = (product: any): {
   const qtyMatch = allText.match(/(\d+)\s*(?:pads?|count|pack|רפידות|יחידות)/i);
   if (qtyMatch) quantity = `${qtyMatch[1]} רפידות באריזה`;
 
-  const expertTip = 'עקביות היא המפתח! הזיזו את הרפידה לאט לאט לכיוון הדלת – כך הגור ילמד בהדרגה לצאת החוצה לצרכים.';
+  const expertTip = isSpray
+    ? 'עקביות היא המפתח! השתמשו בספריי באותו מקום בכל פעם. שלבו עם רפידות אילוף לתוצאות מהירות יותר.'
+    : 'עקביות היא המפתח! הזיזו את הרפידה לאט לאט לכיוון הדלת – כך הגור ילמד בהדרגה לצאת החוצה לצרכים.';
 
   // Cross-sell
   const brand = (product.brand || '').toLowerCase();
   const crossSellKeyword = brand ? `${product.brand} Treats` : 'חטיפי אילוף';
 
-  return { absorbencyBadge, layerCount, hasAttractant, hasOdorNeutralizer, trainingSteps, dimensions, quantity, expertTip, crossSellKeyword };
+  // Spray-specific: Training Booster
+  let trainingBooster: string | null = null;
+  if (isSpray) {
+    if (allText.includes('pheromone') || allText.includes('פרומון') || allText.includes('scent') || allText.includes('fatty acid') || allText.includes('חומצות שומן'))
+      trainingBooster = 'מקצר את זמן האילוף – ריח דמוי פרומונים מושך את הגור לעשות צרכים במקום הנכון';
+    else
+      trainingBooster = 'מקצר את זמן האילוף לצרכים בעזרת חומר משיכה ייעודי';
+  }
+
+  // Natural & safe
+  const naturalIngredients = allText.includes('natural') || allText.includes('טבעי') || allText.includes('fatty acid') || allText.includes('חומצות שומן') || allText.includes('non-toxic') || allText.includes('לא רעיל');
+  const familySafe = allText.includes('family') || allText.includes('children') || allText.includes('ילדים') || allText.includes('safe') || allText.includes('בטוח') || allText.includes('pet safe');
+  const indoorOutdoor = allText.includes('indoor') || allText.includes('outdoor') || allText.includes('בתוך הבית') || allText.includes('חצר') || (allText.includes('pad') && allText.includes('yard'));
+
+  // Safety warnings
+  const safetyWarnings: { icon: React.ReactNode; label: string; description: string }[] = [];
+  if (allText.includes('eye') || allText.includes('עיניים') || allText.includes('contact'))
+    safetyWarnings.push({ icon: <EyeOff className="w-4 h-4" />, label: 'שטיפת עיניים', description: 'במקרה של מגע עם העיניים – שטוף מיד במים רבים' });
+  if (allText.includes('children') || allText.includes('ילדים') || allText.includes('reach'))
+    safetyWarnings.push({ icon: <Users className="w-4 h-4" />, label: 'הרחק מילדים', description: 'יש לאחסן במקום שאינו בהישג ידם של ילדים' });
+  if (allText.includes('ingest') || allText.includes('swallow') || allText.includes('בליעה'))
+    safetyWarnings.push({ icon: <AlertTriangle className="w-4 h-4" />, label: 'אין לבלוע', description: 'למגע חיצוני בלבד – במקרה של בליעה פנו לרופא' });
+
+  // Bundle suggestion for spray → pads
+  const bundleSuggestion = isSpray ? 'רפידות אילוף (Training Pads)' : null;
+
+  return { absorbencyBadge, layerCount, hasAttractant, hasOdorNeutralizer, trainingSteps, dimensions, quantity, expertTip, crossSellKeyword, isSpray, trainingBooster, naturalIngredients, familySafe, indoorOutdoor, spraySteps, safetyWarnings, bundleSuggestion };
 };
 
 /** Check if product is an interactive plush / teething toy */
@@ -1503,7 +1554,7 @@ const ProductDetail = () => {
   const isPuzzleEnrichment = useMemo(() => product ? isPuzzleEnrichmentProduct(product) : false, [product]);
   const puzzleFeatures = useMemo(() => product && isPuzzleEnrichment ? extractPuzzleEnrichmentFeatures(product) : { isStuffable: false, mentalStimulation: '', recipe: null, materialSpec: null, hasErraticBounce: false, chewResistance: null, expertApproval: false, crossSellKeywords: [] }, [product, isPuzzleEnrichment]);
   const isPottyTraining = useMemo(() => product ? isPottyTrainingProduct(product) : false, [product]);
-  const pottyFeatures = useMemo(() => product && isPottyTraining ? extractPottyTrainingFeatures(product) : { absorbencyBadge: null, layerCount: null, hasAttractant: false, hasOdorNeutralizer: false, trainingSteps: [], dimensions: null, quantity: null, expertTip: '', crossSellKeyword: null }, [product, isPottyTraining]);
+  const pottyFeatures = useMemo(() => product && isPottyTraining ? extractPottyTrainingFeatures(product) : { absorbencyBadge: null, layerCount: null, hasAttractant: false, hasOdorNeutralizer: false, trainingSteps: [], dimensions: null, quantity: null, expertTip: '', crossSellKeyword: null, isSpray: false, trainingBooster: null, naturalIngredients: false, familySafe: false, indoorOutdoor: false, spraySteps: [], safetyWarnings: [], bundleSuggestion: null }, [product, isPottyTraining]);
   const isPlushToy = useMemo(() => product ? isPlushToyProduct(product) : false, [product]);
   const plushFeatures = useMemo(() => product && isPlushToy ? extractPlushToyFeatures(product) : { sensoryFeatures: [], durabilityHighlights: [], usageScenarios: [], safetyEducation: [], isGiftWorthy: false }, [product, isPlushToy]);
   const isPuppy = useMemo(() => product ? isPuppyProduct(product) : false, [product]);
@@ -3505,6 +3556,143 @@ const ProductDetail = () => {
                 <div>
                   <p className="text-[13px] font-bold text-foreground">🎁 השלימו את האילוף!</p>
                   <p className="text-[10px] text-muted-foreground">חפשו "{pottyFeatures.crossSellKeyword}" כפרס מושלם לאחר הצלחה</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Potty Spray: Training Booster Badge ── */}
+        {isPottyTraining && pottyFeatures.isSpray && pottyFeatures.trainingBooster && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(160,50%,92%)] to-background border-[hsl(160,45%,55%)]/20 dark:from-[hsl(160,30%,14%)] dark:border-[hsl(160,30%,40%)]/20">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-[hsl(160,45%,80%)]/25 flex items-center justify-center flex-shrink-0">
+                  <SprayCan className="w-6 h-6 text-[hsl(160,50%,40%)]" />
+                </div>
+                <div>
+                  <p className="text-[14px] font-bold text-foreground">⚡ מקצר את זמן האילוף</p>
+                  <p className="text-[11px] text-muted-foreground">{pottyFeatures.trainingBooster}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Potty Spray: Natural & Safety Icons ── */}
+        {isPottyTraining && pottyFeatures.isSpray && (pottyFeatures.naturalIngredients || pottyFeatures.familySafe || pottyFeatures.indoorOutdoor) && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Leaf className="w-4 h-4 text-[hsl(140,45%,40%)]" />
+                בטיחות ורכיבים
+              </h3>
+              <div className="space-y-2">
+                {pottyFeatures.naturalIngredients && (
+                  <div className="flex items-start gap-3 bg-[hsl(140,40%,93%)]/40 dark:bg-[hsl(140,25%,15%)]/50 rounded-lg p-3">
+                    <div className="w-8 h-8 rounded-full bg-[hsl(140,40%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                      <Leaf className="w-4 h-4 text-[hsl(140,45%,40%)]" />
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-semibold text-foreground">תרכובת טבעית</p>
+                      <p className="text-[11px] text-muted-foreground">מבוסס על חומצות שומן טבעיות, ללא כימיקלים רעילים</p>
+                    </div>
+                  </div>
+                )}
+                {pottyFeatures.familySafe && (
+                  <div className="flex items-start gap-3 bg-[hsl(210,40%,93%)]/40 dark:bg-[hsl(210,25%,15%)]/50 rounded-lg p-3">
+                    <div className="w-8 h-8 rounded-full bg-[hsl(210,40%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                      <Users className="w-4 h-4 text-[hsl(210,50%,45%)]" />
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-semibold text-foreground">בטוח למשפחה</p>
+                      <p className="text-[11px] text-muted-foreground">בטוח לשימוש בסביבת ילדים וחיות מחמד לפי ההוראות</p>
+                    </div>
+                  </div>
+                )}
+                {pottyFeatures.indoorOutdoor && (
+                  <div className="flex items-start gap-3 bg-[hsl(30,40%,93%)]/40 dark:bg-[hsl(30,25%,15%)]/50 rounded-lg p-3">
+                    <div className="w-8 h-8 rounded-full bg-[hsl(30,40%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                      <TreePine className="w-4 h-4 text-[hsl(30,50%,45%)]" />
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-semibold text-foreground">בפנים ובחוץ</p>
+                      <p className="text-[11px] text-muted-foreground">מתאים לשימוש בתוך הבית, על רפידות, או בחצר</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Potty Spray: Step-by-Step Spray Guide ── */}
+        {isPottyTraining && pottyFeatures.isSpray && pottyFeatures.spraySteps.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Footprints className="w-4 h-4 text-primary" />
+                🐾 מדריך שימוש בספריי
+              </h3>
+              <div className="space-y-2">
+                {pottyFeatures.spraySteps.map((step) => (
+                  <motion.div
+                    key={step.step}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.28 + step.step * 0.06 }}
+                    className="flex items-start gap-3 bg-primary/5 dark:bg-primary/10 rounded-lg p-3"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0 text-sm font-bold">
+                      {step.step}
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-bold text-foreground">{step.title}</p>
+                      <p className="text-[11px] text-muted-foreground">{step.description}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Potty Spray: Safety Warning Box ── */}
+        {isPottyTraining && pottyFeatures.isSpray && pottyFeatures.safetyWarnings.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.36 }}>
+            <Card className="p-4 border-destructive/30 bg-destructive/5 dark:bg-destructive/10">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <AlertTriangle className="w-4 h-4 text-destructive" />
+                אזהרות בטיחות
+              </h3>
+              <div className="space-y-2">
+                {pottyFeatures.safetyWarnings.map((warning, i) => (
+                  <div key={i} className="flex items-start gap-2.5">
+                    <div className="w-6 h-6 rounded-full bg-destructive/15 flex items-center justify-center flex-shrink-0 mt-0.5 text-destructive">
+                      {warning.icon}
+                    </div>
+                    <div>
+                      <p className="text-[12px] font-bold text-foreground">{warning.label}</p>
+                      <p className="text-[11px] text-muted-foreground">{warning.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Potty Spray: Bundle Suggestion ── */}
+        {isPottyTraining && pottyFeatures.isSpray && pottyFeatures.bundleSuggestion && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+            <Card className="p-3 bg-gradient-to-br from-[hsl(270,45%,93%)] to-background border-[hsl(270,35%,60%)]/20 dark:from-[hsl(270,25%,14%)]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-full bg-[hsl(270,40%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                  <Puzzle className="w-5 h-5 text-[hsl(270,45%,50%)]" />
+                </div>
+                <div>
+                  <p className="text-[13px] font-bold text-foreground">🧩 Perfect Match – שילוב מנצח!</p>
+                  <p className="text-[10px] text-muted-foreground">שלבו עם {pottyFeatures.bundleSuggestion} לתוצאות אילוף מהירות יותר</p>
                 </div>
               </div>
             </Card>
