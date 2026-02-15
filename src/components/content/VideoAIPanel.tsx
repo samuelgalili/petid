@@ -40,6 +40,10 @@ interface AnalysisResult {
   is_dangerous: boolean;
   danger_message?: string;
   description?: string;
+  suggested_caption?: string;
+  health_score_current?: number | null;
+  health_score_improvement?: string;
+  health_score_tip?: string;
 }
 
 interface VideoAIPanelProps {
@@ -49,6 +53,7 @@ interface VideoAIPanelProps {
   userId: string | null;
   onProductsTagged: (products: DetectedProduct[]) => void;
   onSafetyBlock: (message: string) => void;
+  onCaptionGenerated?: (caption: string) => void;
 }
 
 export const VideoAIPanel = ({
@@ -58,6 +63,7 @@ export const VideoAIPanel = ({
   userId,
   onProductsTagged,
   onSafetyBlock,
+  onCaptionGenerated,
 }: VideoAIPanelProps) => {
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -108,6 +114,11 @@ export const VideoAIPanel = ({
           data.danger_message || "זוהה תוכן מסוכן בסרטון. לא ניתן לפרסם."
         );
         return;
+      }
+
+      // Pass suggested caption up
+      if (data.suggested_caption && onCaptionGenerated) {
+        onCaptionGenerated(data.suggested_caption);
       }
 
       if (data.products?.length > 0) {
@@ -249,6 +260,43 @@ export const VideoAIPanel = ({
                   זיהוי גזע: {result.breed_detected}
                 </span>
               </div>
+            )}
+
+            {/* Social Proof Caption */}
+            {result.suggested_caption && (
+              <motion.div
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="p-3 rounded-xl bg-secondary/50 border border-border/30"
+              >
+                <p className="text-[10px] font-semibold text-muted-foreground mb-1">כיתוב מוצע:</p>
+                <p className="text-xs text-foreground leading-relaxed">{result.suggested_caption}</p>
+              </motion.div>
+            )}
+
+            {/* Health Score Context */}
+            {result.health_score_current != null && result.health_score_improvement && (
+              <motion.div
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="flex items-start gap-2.5 p-3 rounded-xl bg-primary/5 border border-primary/10"
+              >
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-black text-primary">{result.health_score_current}%</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-foreground">
+                    ציון הבריאות שלך: {result.health_score_current}% · שיפור אפשרי: {result.health_score_improvement}
+                  </p>
+                  {result.health_score_tip && (
+                    <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                      {result.health_score_tip}
+                    </p>
+                  )}
+                </div>
+              </motion.div>
             )}
           </motion.div>
         )}
