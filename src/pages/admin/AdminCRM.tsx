@@ -1570,7 +1570,7 @@ const AdminCRM = () => {
                         <Card className="p-3 text-center">
                           <Gem className="h-4 w-4 mx-auto mb-1 text-violet-500" />
                           <p className="text-xl font-bold">
-                            {customerLoyalty?.reduce((sum: number, e: any) => sum + (e.points || 0), 0) || 0}
+                            {customerLoyalty?.reduce((sum: number, e: any) => sum + (e.points_earned || 0), 0) || 0}
                           </p>
                           <p className="text-xs text-muted-foreground">נקודות</p>
                         </Card>
