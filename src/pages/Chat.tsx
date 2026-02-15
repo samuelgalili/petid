@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ChevronRight, Sparkles, Bot, Shield, Scissors, GraduationCap, TreePine, FolderOpen, Building2, Package, Dog, Home } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -26,6 +26,7 @@ import { StoreCategoryPicker } from "@/components/chat/StoreCategoryPicker";
 import { AdoptionTraitPicker } from "@/components/chat/AdoptionTraitPicker";
 import { AdoptionRequirementPicker } from "@/components/chat/AdoptionRequirementPicker";
 import { ChatProvider, useChatContext, type Message } from "@/contexts/ChatContext";
+import { ExpertSpheres, type ExpertSphere } from "@/components/chat/ExpertSpheres";
 
 const ChatContent = () => {
   const {
@@ -46,6 +47,7 @@ const ChatContent = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [showExpertSpheres, setShowExpertSpheres] = useState(true);
 
   // Category buttons for quick selection
   const categoryButtons = [
@@ -77,7 +79,29 @@ const ChatContent = () => {
 
   const handleCategorySelect = async (category: { id: string; label: string; icon: string }) => {
     setShowCategories(false);
+    setShowExpertSpheres(false);
     const userMessage: Message = { role: "user", content: `${category.icon} ${category.label}` };
+    setMessages((prev) => [...prev, userMessage]);
+    setIsLoading(true);
+
+    try {
+      await streamChat([...messages, userMessage]);
+    } catch (error) {
+      console.error("Error:", error);
+      toast({
+        title: "שגיאה",
+        description: error instanceof Error ? error.message : "משהו השתבש",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleExpertSphereSelect = async (sphere: ExpertSphere) => {
+    setShowExpertSpheres(false);
+    setShowCategories(false);
+    const userMessage: Message = { role: "user", content: sphere.contextualPrompt };
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
 
@@ -226,8 +250,9 @@ const ChatContent = () => {
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
-    // Hide categories when user types freely
+    // Hide categories and spheres when user types freely
     setShowCategories(false);
+    setShowExpertSpheres(false);
 
     const userMessage: Message = { role: "user", content: input.trim() };
     setMessages((prev) => [...prev, userMessage]);
@@ -556,8 +581,8 @@ const ChatContent = () => {
               </motion.div>
             ))}
 
-            {/* Category Quick Buttons */}
-            {showCategories && !isLoading && (
+            {/* Legacy Category Quick Buttons - kept for programmatic use */}
+            {showCategories && !isLoading && !showExpertSpheres && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -639,6 +664,23 @@ const ChatContent = () => {
           </AnimatePresence>
           <div ref={messagesEndRef} />
         </div>
+
+        {/* Expert Spheres - scrollable category circles above input */}
+        <AnimatePresence>
+          {showExpertSpheres && !isLoading && messages.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="border-t border-border/20"
+            >
+              <ExpertSpheres
+                onSelect={handleExpertSphereSelect}
+                disabled={isLoading}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Input Area */}
         <ChatInputBar
