@@ -6,7 +6,7 @@ import {
   ChevronLeft, ChevronRight, Check, Truck, Shield, PackageCheck, 
   Clock, Loader2, Flag, AlertTriangle, Leaf, FlaskConical, Utensils,
   WheatOff, Beef, Sparkles, Dog, Baby, Scale, Droplets, ShieldCheck,
-  Calculator
+  Calculator, Wrench, Lightbulb, Ruler, Paintbrush
 } from "lucide-react";
 import { ProductReviews } from "@/components/shop/ProductReviews";
 import { PriceAlertButton } from "@/components/shop/PriceAlertButton";
@@ -48,25 +48,81 @@ const getNumericPrice = (price: string | number): number => {
   return parseFloat(price.replace(/[₪,]/g, '')) || 0;
 };
 
+/** Check if product is an accessory (non-food) */
+const isAccessoryCategory = (category: string | null): boolean => {
+  if (!category) return false;
+  return ['accessories', 'toys', 'grooming', 'collars', 'leashes', 'beds', 'clothing'].includes(category.toLowerCase());
+};
+
+/** Extract technical specs from product_attributes for accessories */
+const extractTechSpecs = (product: any): { label: string; value: string }[] => {
+  const specs: { label: string; value: string }[] = [];
+  const attrs = product.product_attributes || {};
+  
+  const specMap: Record<string, string> = {
+    material: 'חומר',
+    size: 'מידה',
+    color: 'צבע',
+    dimensions: 'מידות',
+    weight: 'משקל',
+    features: 'תכונות',
+    closure: 'סוג סגירה',
+    width: 'רוחב',
+    length: 'אורך',
+    'חומר': 'חומר',
+    'מידה': 'מידה',
+    'צבע': 'צבע',
+    'תכונות': 'תכונות',
+    'רוחב': 'רוחב',
+    'אורך': 'אורך',
+  };
+
+  for (const [key, value] of Object.entries(attrs)) {
+    const label = specMap[key.toLowerCase()] || key;
+    if (value && String(value).trim()) {
+      specs.push({ label, value: String(value) });
+    }
+  }
+  return specs;
+};
+
 /** Derive quick-feature badges from product data */
 const deriveQuickFeatures = (product: any) => {
   const features: { icon: React.ReactNode; label: string }[] = [];
   const text = `${product.name || ''} ${product.description || ''} ${(product.special_diet || []).join(' ')}`.toLowerCase();
+  const isAccessory = isAccessoryCategory(product.category);
 
-  if (text.includes('ללא חיטה') || text.includes('wheat free') || text.includes('grain free') || text.includes('ללא דגנים'))
-    features.push({ icon: <WheatOff className="w-4 h-4" />, label: 'ללא חיטה' });
-  if (text.includes('חלבון גבוה') || text.includes('high protein') || /חלבון.{0,10}2[5-9]|3[0-9]/.test(text))
-    features.push({ icon: <Beef className="w-4 h-4" />, label: 'עשיר בחלבון' });
-  if (text.includes('בררנ') || text.includes('picky'))
-    features.push({ icon: <Sparkles className="w-4 h-4" />, label: 'לבררנים' });
-  if (text.includes('עור') || text.includes('פרווה') || text.includes('skin') || text.includes('coat'))
-    features.push({ icon: <Droplets className="w-4 h-4" />, label: 'עור ופרווה' });
-  if (text.includes('עיכול') || text.includes('digest'))
-    features.push({ icon: <ShieldCheck className="w-4 h-4" />, label: 'תמיכה בעיכול' });
-  if (product.life_stage)
-    features.push({ icon: product.life_stage.includes('גור') ? <Baby className="w-4 h-4" /> : <Dog className="w-4 h-4" />, label: product.life_stage });
-  if (product.dog_size)
-    features.push({ icon: <Scale className="w-4 h-4" />, label: product.dog_size });
+  if (isAccessory) {
+    // Accessory-specific badges
+    if (text.includes('nylon') || text.includes('ניילון'))
+      features.push({ icon: <Wrench className="w-4 h-4" />, label: 'ניילון עמיד' });
+    if (text.includes('quick') || text.includes('שחרור מהיר'))
+      features.push({ icon: <Sparkles className="w-4 h-4" />, label: 'שחרור מהיר' });
+    if (text.includes('stainless') || text.includes("נירוסטה") || text.includes('d-ring'))
+      features.push({ icon: <Shield className="w-4 h-4" />, label: 'טבעת נירוסטה' });
+    if (text.includes('רפלקטיב') || text.includes('reflective'))
+      features.push({ icon: <Lightbulb className="w-4 h-4" />, label: 'רפלקטיבי' });
+    if (text.includes('מרופד') || text.includes('padded'))
+      features.push({ icon: <ShieldCheck className="w-4 h-4" />, label: 'מרופד' });
+    if (product.dog_size)
+      features.push({ icon: <Ruler className="w-4 h-4" />, label: product.dog_size });
+  } else {
+    // Food-specific badges
+    if (text.includes('ללא חיטה') || text.includes('wheat free') || text.includes('grain free') || text.includes('ללא דגנים'))
+      features.push({ icon: <WheatOff className="w-4 h-4" />, label: 'ללא חיטה' });
+    if (text.includes('חלבון גבוה') || text.includes('high protein') || /חלבון.{0,10}2[5-9]|3[0-9]/.test(text))
+      features.push({ icon: <Beef className="w-4 h-4" />, label: 'עשיר בחלבון' });
+    if (text.includes('בררנ') || text.includes('picky'))
+      features.push({ icon: <Sparkles className="w-4 h-4" />, label: 'לבררנים' });
+    if (text.includes('עור') || text.includes('פרווה') || text.includes('skin') || text.includes('coat'))
+      features.push({ icon: <Droplets className="w-4 h-4" />, label: 'עור ופרווה' });
+    if (text.includes('עיכול') || text.includes('digest'))
+      features.push({ icon: <ShieldCheck className="w-4 h-4" />, label: 'תמיכה בעיכול' });
+    if (product.life_stage)
+      features.push({ icon: product.life_stage.includes('גור') ? <Baby className="w-4 h-4" /> : <Dog className="w-4 h-4" />, label: product.life_stage });
+    if (product.dog_size)
+      features.push({ icon: <Scale className="w-4 h-4" />, label: product.dog_size });
+  }
   
   return features.slice(0, 6);
 };
@@ -222,6 +278,8 @@ const ProductDetail = () => {
     : ["/placeholder.svg"];
 
   // ── Derived Data ──
+  const isAccessory = useMemo(() => product ? isAccessoryCategory(product.category) : false, [product]);
+  const techSpecs = useMemo(() => product ? extractTechSpecs(product) : [], [product]);
   const quickFeatures = useMemo(() => product ? deriveQuickFeatures(product) : [], [product]);
   const analysisData = useMemo(() => product ? parseAnalysis(product) : [], [product]);
   const vitaminsData = useMemo(() => product ? parseVitamins(product) : [], [product]);
@@ -230,9 +288,9 @@ const ProductDetail = () => {
     return calcFeeding(product.feeding_guide, parseFloat(dogWeight));
   }, [product?.feeding_guide, dogWeight]);
 
-  // Price per kg
+  // Price per kg (only for food)
   const pricePerKg = useMemo(() => {
-    if (!product) return null;
+    if (!product || isAccessory) return null;
     const text = `${product.name || ''} ${product.description || ''}`;
     const weightMatch = text.match(/([\d.]+)\s*(?:ק"ג|קג|kg)/i);
     if (weightMatch) {
@@ -240,6 +298,13 @@ const ProductDetail = () => {
       if (w > 0) return (product.price / w).toFixed(1);
     }
     return null;
+  }, [product, isAccessory]);
+
+  // Care instructions from product_attributes
+  const careInstructions = useMemo(() => {
+    if (!product) return null;
+    const attrs = product.product_attributes || {};
+    return attrs.care_instructions || attrs['הוראות טיפול'] || null;
   }, [product]);
 
   // ── Early Returns ──
@@ -506,8 +571,8 @@ const ProductDetail = () => {
           </motion.div>
         )}
 
-        {/* ── Feeding Calculator ── */}
-        {hasFeedingGuide && (
+        {/* ── Feeding Calculator (food only) ── */}
+        {!isAccessory && hasFeedingGuide && (
           <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
             <Card className="p-4 border-primary/20 bg-gradient-to-br from-primary/5 to-background">
               <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
@@ -553,8 +618,69 @@ const ProductDetail = () => {
           </motion.div>
         )}
 
-        {/* ── Nutrition Tabs ── */}
-        {hasNutritionData && (
+        {/* ── Technical Specifications (accessories only) ── */}
+        {isAccessory && techSpecs.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <Card className="overflow-hidden">
+              <div className="p-4">
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                  <Wrench className="w-4 h-4 text-primary" />
+                  מפרט טכני
+                </h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {techSpecs.map((spec, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 + i * 0.05 }}
+                      className="bg-muted/40 rounded-xl p-3 border border-border/30"
+                    >
+                      <p className="text-[10px] text-muted-foreground font-medium mb-0.5">{spec.label}</p>
+                      <p className="text-sm font-bold text-foreground">{spec.value}</p>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Care Instructions (accessories only) ── */}
+        {isAccessory && careInstructions && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+            <Card className="p-4 border-accent/20 bg-gradient-to-br from-accent/5 to-background">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-2">
+                <Paintbrush className="w-4 h-4 text-accent-foreground" />
+                הוראות טיפול
+              </h3>
+              <p className="text-[13px] text-muted-foreground leading-[1.7]">{careInstructions}</p>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Pro Tip: Two Fingers Rule (collar accessories) ── */}
+        {isAccessory && product.category?.includes('collar') || (isAccessory && `${product.name} ${product.description}`.toLowerCase().match(/קולר|collar|צווארון/)) ? (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+            <Card className="p-4 bg-gradient-to-br from-warning/10 to-background border-warning/30">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-warning/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Lightbulb className="w-5 h-5 text-warning" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground mb-1">טיפ מקצועי – כלל שתי האצבעות ✌️</h3>
+                  <p className="text-[13px] text-muted-foreground leading-[1.7]">
+                    בעת התאמת הקולר, וודאו שניתן להכניס שתי אצבעות בין הקולר לצוואר הכלב. 
+                    קולר צמוד מדי עלול לגרום לאי-נוחות, ורפוי מדי עלול להחליק ולהיות מסוכן.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        ) : null}
+
+        {/* ── Nutrition Tabs (food only) ── */}
+        {!isAccessory && hasNutritionData && (
           <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
             <Card className="overflow-hidden">
               <div className="p-4 pb-0">
