@@ -93,8 +93,8 @@ export const feedRoutes: RouteObject[] = [
   { path: "/", element: <Protected><LazyPage component={ProfilePage} pageName="בית" /></Protected> },
   // Feed = Soundtrack-style feed
   { path: "/feed", element: <LazyPage component={SoundtrackFeed} pageName="פיד" /> },
-  // Legacy feed route redirect
-  { path: "/old-feed", element: <LazyPage component={Feed} pageName="הפיד" /> },
+  // Legacy routes - redirect to new locations
+  { path: "/old-feed", element: <Navigate to="/feed" replace /> },
   { path: "/explore", element: <LazyPage component={Explore} pageName="גילוי" /> },
   { path: "/reels", element: <LazyPage component={Reels} pageName="Reels" dark /> },
   { path: "/user/:userId", element: <Navigate to="/" replace /> },
@@ -177,9 +177,7 @@ const ArchivedPets = lazy(() => import("@/pages/ArchivedPets"));
 const BreedHistory = lazy(() => import("@/pages/BreedHistory"));
 const Photos = lazy(() => import("@/pages/Photos"));
 const Documents = lazy(() => import("@/pages/Documents"));
-const Training = lazy(() => import("@/pages/Training"));
-const Grooming = lazy(() => import("@/pages/Grooming"));
-const Insurance = lazy(() => import("@/pages/Insurance"));
+// Training, Grooming, Insurance - removed (redirected to /chat)
 const Adoption = lazy(() => import("@/pages/Adoption"));
 const Breeds = lazy(() => import("@/pages/Breeds"));
 const BreedQuiz = lazy(() => import("@/pages/BreedQuiz"));
@@ -218,7 +216,8 @@ const PrivacySettings = lazy(() => import("@/pages/PrivacySettings"));
 const Chat = lazy(() => import("@/pages/Chat"));
 
 export const userRoutes: RouteObject[] = [
-  // Profile is now at root, redirect /profile there
+  // Profile is now at root
+  { path: "/profile", element: <Navigate to="/" replace /> },
   { path: "/edit-profile", element: <Protected><LazyPage component={EditProfile} pageName="עריכת פרופיל" /></Protected> },
   { path: "/settings", element: <Protected><LazyPage component={Settings} pageName="הגדרות" /></Protected> },
   { path: "/notifications", element: <Protected><LazyPage component={Notifications} pageName="התראות" /></Protected> },
