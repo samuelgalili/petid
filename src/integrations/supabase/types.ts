@@ -1395,9 +1395,11 @@ export type Database = {
       }
       business_products: {
         Row: {
+          auto_restock: boolean | null
           average_rating: number | null
           benefits: Json | null
           brand: string | null
+          breed_tags: string[] | null
           business_id: string
           category: string | null
           created_at: string
@@ -1415,6 +1417,7 @@ export type Database = {
           is_featured: boolean | null
           is_flagged: boolean | null
           life_stage: string | null
+          medical_tags: string[] | null
           name: string
           needs_image_review: boolean | null
           needs_price_review: boolean | null
@@ -1424,6 +1427,7 @@ export type Database = {
           price_per_weight: number | null
           price_suggestion_reason: string | null
           product_attributes: Json | null
+          restock_interval_days: number | null
           review_count: number | null
           sale_price: number | null
           sku: string | null
@@ -1434,9 +1438,11 @@ export type Database = {
           weight_unit: string | null
         }
         Insert: {
+          auto_restock?: boolean | null
           average_rating?: number | null
           benefits?: Json | null
           brand?: string | null
+          breed_tags?: string[] | null
           business_id: string
           category?: string | null
           created_at?: string
@@ -1454,6 +1460,7 @@ export type Database = {
           is_featured?: boolean | null
           is_flagged?: boolean | null
           life_stage?: string | null
+          medical_tags?: string[] | null
           name: string
           needs_image_review?: boolean | null
           needs_price_review?: boolean | null
@@ -1463,6 +1470,7 @@ export type Database = {
           price_per_weight?: number | null
           price_suggestion_reason?: string | null
           product_attributes?: Json | null
+          restock_interval_days?: number | null
           review_count?: number | null
           sale_price?: number | null
           sku?: string | null
@@ -1473,9 +1481,11 @@ export type Database = {
           weight_unit?: string | null
         }
         Update: {
+          auto_restock?: boolean | null
           average_rating?: number | null
           benefits?: Json | null
           brand?: string | null
+          breed_tags?: string[] | null
           business_id?: string
           category?: string | null
           created_at?: string
@@ -1493,6 +1503,7 @@ export type Database = {
           is_featured?: boolean | null
           is_flagged?: boolean | null
           life_stage?: string | null
+          medical_tags?: string[] | null
           name?: string
           needs_image_review?: boolean | null
           needs_price_review?: boolean | null
@@ -1502,6 +1513,7 @@ export type Database = {
           price_per_weight?: number | null
           price_suggestion_reason?: string | null
           product_attributes?: Json | null
+          restock_interval_days?: number | null
           review_count?: number | null
           sale_price?: number | null
           sku?: string | null
