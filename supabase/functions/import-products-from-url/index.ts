@@ -463,30 +463,90 @@ function extractSingleProduct(html: string, url: string): ScrapedProduct {
   let decodedUrl = url.toLowerCase();
   try { decodedUrl = decodeURIComponent(url).toLowerCase(); } catch {}
   const fullText = `${decodedUrl} ${product.title.toLowerCase()} ${(product.description || "").toLowerCase()}`;
-  
-  if (/מזון.?יבש|dry.?food|kibble/.test(fullText)) product.category = "dry-food";
-  else if (/מזון.?רטוב|wet.?food|שימורים/.test(fullText)) product.category = "wet-food";
-  else if (/חטיפ|treat|snack/.test(fullText)) product.category = "treats";
-  else if (/צעצוע|toy/.test(fullText)) product.category = "toys";
-  else if (/טיפוח|grooming|שמפו/.test(fullText)) product.category = "grooming";
-  else if (/בריאות|health|vitamin|תוסף/.test(fullText)) product.category = "health";
-  else if (/מזון|food/.test(fullText)) product.category = "food";
-  
-  // Also check breadcrumbs for category
   const breadcrumbs = $(".woocommerce-breadcrumb, .breadcrumb, nav[aria-label='breadcrumb']").text().toLowerCase();
-  if (!product.category && breadcrumbs) {
-    if (/מזון יבש|dry food/.test(breadcrumbs)) product.category = "dry-food";
-    else if (/מזון רטוב|wet food/.test(breadcrumbs)) product.category = "wet-food";
-    else if (/חטיפ|treats/.test(breadcrumbs)) product.category = "treats";
+  const catText = `${fullText} ${breadcrumbs}`;
+  
+  // Category detection - more specific first, then general
+  if (/מזון.?יבש|dry.?food|kibble/.test(catText)) product.category = "dry-food";
+  else if (/מזון.?רטוב|wet.?food|שימורים/.test(catText)) product.category = "wet-food";
+  else if (/חטיפ|treat|snack/.test(catText)) product.category = "treats";
+  else if (/צעצוע|toy/.test(catText)) product.category = "toys";
+  else if (/טיפוח|grooming|שמפו/.test(catText)) product.category = "grooming";
+  else if (/מזון|food|סופר.?פרמיום/.test(catText)) product.category = "food";
+  else if (/בריאות|vitamin|תוסף/.test(catText)) product.category = "health";
+  
+  // Pet type detection
+  if (/כלב|dog|לכלבים|גור/.test(catText)) product.petType = "dog";
+  else if (/חתול|cat|לחתולים/.test(catText)) product.petType = "cat";
+  else if (/ציפור|bird|תוכי/.test(catText)) product.petType = "bird";
+  else if (/דג|fish|אקווריום/.test(catText)) product.petType = "fish";
+
+  // ==================== INGREDIENTS ====================
+  const descriptionHtml = $("#tab-description").html() || $(".woocommerce-Tabs-panel--description").html() || "";
+  const ingredientsMatch = descriptionHtml.match(/רכיבים[:\s]*<\/[^>]*>\s*([\s\S]*?)(?:<h[2-6]|<hr|תוספי תזונה|ערכים תזונתיים|$)/i);
+  if (ingredientsMatch) {
+    const ingredientsEl = cheerio.load(`<div>${ingredientsMatch[1]}</div>`);
+    (product as any).ingredients = ingredientsEl("div").text().trim().replace(/\s+/g, " ").substring(0, 1000);
   }
-  
-  // Pet type detection from URL, title, description AND breadcrumbs
-  const petText = `${fullText} ${breadcrumbs}`;
-  if (/כלב|dog|לכלבים|גור/.test(petText)) product.petType = "dog";
-  else if (/חתול|cat|לחתולים/.test(petText)) product.petType = "cat";
-  else if (/ציפור|bird|תוכי/.test(petText)) product.petType = "bird";
-  else if (/דג|fish|אקווריום/.test(petText)) product.petType = "fish";
-  
+  if (!(product as any).ingredients) {
+    const fullDescText = $("#tab-description").text() || "";
+    const ingIdx = fullDescText.indexOf("רכיבים:");
+    if (ingIdx !== -1) {
+      const afterIng = fullDescText.substring(ingIdx + 7).trim();
+      const endIdx = afterIng.search(/\n\s*(תוספי|המלצ|הנחי|מידע|ערכים)/);
+      (product as any).ingredients = (endIdx > 0 ? afterIng.substring(0, endIdx) : afterIng.substring(0, 500)).trim();
+    }
+  }
+
+  // ==================== BENEFITS ====================
+  (product as any).benefits = [];
+  $("#tab-description h4, #tab-description h3, .woocommerce-Tabs-panel--description h4, .woocommerce-Tabs-panel--description h3").each((_, el) => {
+    const heading = $(el).text().trim().replace(/^\d+\.\s*/, "").replace(/\*\*/g, "").replace(/-$/, "").trim();
+    if (!heading || heading.includes("המלצת") || heading.includes("הנחיות") || heading.includes("רכיבים") || heading.includes("הכמות") || heading.length < 4) return;
+    
+    let desc = "";
+    let next = $(el).next();
+    while (next.length && !next.is("h3, h4, h2, hr, table")) {
+      const text = next.text().trim();
+      if (text) desc += (desc ? " " : "") + text;
+      next = next.next();
+    }
+    if (desc && heading.length > 3) {
+      (product as any).benefits.push({ title: heading, description: desc.substring(0, 500) });
+    }
+  });
+
+  // ==================== FEEDING GUIDE TABLE ====================
+  (product as any).feedingGuide = [];
+  $("table tr").each((_, el) => {
+    const cells = $(el).find("td");
+    if (cells.length >= 2) {
+      const range = $(cells[0]).text().trim();
+      const amount = $(cells[1]).text().trim();
+      if (range && amount && (range.includes("קילו") || range.includes("kg") || range.includes("גרם") || /\d/.test(range))) {
+        (product as any).feedingGuide.push({ range, amount });
+      }
+    }
+  });
+
+  // ==================== PRODUCT ATTRIBUTES ====================
+  (product as any).productAttributes = {};
+  $("#tab-additional_information table tr, .woocommerce-product-attributes tr, .shop_attributes tr").each((_, el) => {
+    const label = $(el).find("th, td:first-child").first().text().trim();
+    const value = $(el).find("td:last-child, td").last().text().trim();
+    if (label && value && label !== value) {
+      (product as any).productAttributes[label] = value;
+    }
+  });
+
+  // ==================== LIFE STAGE & DOG SIZE & SPECIAL DIET ====================
+  const attrs = (product as any).productAttributes;
+  (product as any).lifeStage = attrs["שלב בחיים"] || null;
+  (product as any).dogSize = attrs["גודל הכלב"] || null;
+  (product as any).specialDiet = attrs["תזונה מיוחדת"] 
+    ? attrs["תזונה מיוחדת"].split(",").map((s: string) => s.trim()).filter(Boolean) 
+    : [];
+
   // SKU fallback: check JSON-LD
   if (!product.sku) {
     $('script[type="application/ld+json"]').each((_, el) => {
