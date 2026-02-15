@@ -18,6 +18,7 @@ import { CollaborativePostInvite } from "@/components/CollaborativePostInvite";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { VideoAIPanel, RewardVisualization, SafetyBlockOverlay } from "@/components/content/VideoAIPanel";
 
 interface CreatePostDialogProps {
   open: boolean;
@@ -58,6 +59,29 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // AI Content Creator state
+  const [taggedProducts, setTaggedProducts] = useState<any[]>([]);
+  const [safetyBlock, setSafetyBlock] = useState<string | null>(null);
+  const [petInfo, setPetInfo] = useState<{ name: string | null; breed: string | null }>({ name: null, breed: null });
+
+  // Fetch pet info when dialog opens
+  useState(() => {
+    if (!user) return;
+    (supabase as any)
+      .from("pets")
+      .select("name, breed")
+      .eq("user_id", user.id)
+      .eq("archived", false)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .then(({ data }: any) => {
+        if (data?.[0]) {
+          setPetInfo({ name: data[0].name, breed: data[0].breed });
+        }
+      });
+  });
 
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -432,7 +456,7 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
                     )}
                     {videoPreview && (
                       <div className="relative">
-                        <video src={videoPreview} className="w-20 h-20 object-cover rounded-xl" />
+                        <video ref={videoRef} src={videoPreview} className="w-20 h-20 object-cover rounded-xl" />
                         <button
                           onClick={handleRemoveMedia}
                           className="absolute -top-1.5 -left-1.5 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-sm"
@@ -460,6 +484,35 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
                     </div>
                   </div>
                 </div>
+
+                {/* AI Video Analysis Panel */}
+                {mediaType === "video" && videoPreview && (
+                  <div className="px-4 py-3 border-b border-border/20 relative">
+                    {safetyBlock && (
+                      <SafetyBlockOverlay
+                        message={safetyBlock}
+                        onDismiss={() => {
+                          setSafetyBlock(null);
+                          handleRemoveMedia();
+                        }}
+                      />
+                    )}
+                    <VideoAIPanel
+                      videoElement={videoRef.current}
+                      petName={petInfo.name}
+                      petBreed={petInfo.breed}
+                      userId={user?.id || null}
+                      onProductsTagged={setTaggedProducts}
+                      onSafetyBlock={setSafetyBlock}
+                    />
+                    <div className="mt-2">
+                      <RewardVisualization
+                        petBreed={petInfo.breed}
+                        taggedProductsCount={taggedProducts.length}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/* Options list */}
                 <div className="divide-y divide-border/20">
