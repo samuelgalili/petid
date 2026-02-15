@@ -194,6 +194,45 @@ export const FelineDiabeticCare = ({ petName, weight }: FelineDiabeticCareProps)
         </div>
       </div>
 
+      {/* === Cross-Condition: Carb/Sugar Filter Warning === */}
+      <div className="p-4 bg-amber-500/5 rounded-xl border border-amber-500/20">
+        <div className="flex items-start gap-2.5">
+          <div className="w-8 h-8 rounded-full bg-amber-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <ShoppingBag className="w-4 h-4 text-amber-500" strokeWidth={1.5} />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-foreground mb-1">סינון חנות חכם — Smart Shop Filter</h4>
+            <p className="text-[10px] text-muted-foreground leading-relaxed">
+              המערכת <span className="font-bold text-foreground">מסננת אוטומטית</span> חטיפים וממרחים עם סוכר מוסף או פחמימות גבוהות. 
+              רק מוצרים עם אינדקס גליקמי נמוך יוצגו ב{petName ? `חנות של ${petName}` : 'חנות'}.
+            </p>
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {['חוסם סוכר', 'חוסם פחמימות >15%', 'מוצרים מאושרים בלבד'].map(tag => (
+                <span key={tag} className="text-[9px] bg-amber-500/10 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* === Obligate Carnivore Reminder === */}
+      <div className="p-3 bg-muted/20 rounded-xl border border-border/20">
+        <div className="flex items-start gap-2.5">
+          <div className="w-7 h-7 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <Droplets className="w-3.5 h-3.5 text-red-500" strokeWidth={1.5} />
+          </div>
+          <div>
+            <h4 className="text-[10px] font-bold text-foreground">טורף מחייב — Obligate Carnivore</h4>
+            <p className="text-[9px] text-muted-foreground leading-relaxed mt-0.5">
+              חתולים סוכרתיים <span className="font-bold text-foreground">חייבים</span> חלבון מן החי כמקור אנרגיה עיקרי. 
+              דיאטה צמחית או דלת-חלבון עלולה להחמיר את המצב המטבולי באופן מסכן חיים.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* === Safety Alert === */}
       <motion.div
         initial={{ opacity: 0, scale: 0.97 }}

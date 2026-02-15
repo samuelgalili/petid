@@ -6,7 +6,7 @@
 import { motion } from "framer-motion";
 import { useState, useMemo } from "react";
 import {
-  Flame, Leaf, AlertTriangle, TrendingDown, Target
+  Flame, Leaf, AlertTriangle, TrendingDown, Target, Activity
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -230,6 +230,47 @@ export const FelineObesityCare = ({ petName, weight, breed }: FelineObesityCareP
           </div>
         </div>
       )}
+
+      {/* === Cross-Condition: Diabetic Risk Monitoring === */}
+      {weight && weight > idealMid && (
+        <div className="p-4 bg-amber-500/5 rounded-xl border border-amber-500/20">
+          <div className="flex items-start gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-amber-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Activity className="w-4 h-4 text-amber-500" strokeWidth={1.5} />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-foreground mb-1">ניטור סיכון סוכרת — Diabetic Risk</h4>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                חתולים עם <span className="font-bold text-foreground">עודף משקל</span> נמצאים בסיכון מוגבר פי 4 לפתח סוכרת מסוג 2. 
+                מומלץ לבצע בדיקת גלוקוז תקופתית אצל הווטרינר.
+              </p>
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {['בדיקת גלוקוז תקופתית', 'מעקב משקל שבועי', 'דיאטה דלת-פחמימות'].map(tag => (
+                  <span key={tag} className="text-[9px] bg-amber-500/10 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* === Obligate Carnivore Reminder === */}
+      <div className="p-3 bg-muted/20 rounded-xl border border-border/20">
+        <div className="flex items-start gap-2.5">
+          <div className="w-7 h-7 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <Flame className="w-3.5 h-3.5 text-red-500" strokeWidth={1.5} />
+          </div>
+          <div>
+            <h4 className="text-[10px] font-bold text-foreground">טורף מחייב — Obligate Carnivore</h4>
+            <p className="text-[9px] text-muted-foreground leading-relaxed mt-0.5">
+              חתולים חייבים חלבון מן החי לשרוד. דיאטת ירידה במשקל <span className="font-bold text-foreground">חייבת</span> לשמור על רמת חלבון גבוהה — 
+              לעולם לא להפחית חלבון על חשבון קלוריות.
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* === Hepatic Risk Alert === */}
       <motion.div
