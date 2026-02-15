@@ -219,6 +219,107 @@ async function fetchBreedDietRules(supabase: any, healthIssues: string[]): Promi
   return `\n[BREED_DIET_RULES]\n${rules}\n[/BREED_DIET_RULES]`;
 }
 
+// ============= Data Harvesting: Extract pet data from user messages =============
+interface HarvestedData {
+  breed?: string;
+  weight?: number;
+  age?: number;
+  medical_conditions?: string[];
+  name?: string;
+}
+
+function harvestPetData(text: string): HarvestedData {
+  const t = text.toLowerCase();
+  const data: HarvestedData = {};
+
+  // Breed detection (Hebrew breed names)
+  const breedPatterns = [
+    /(?:הגזע|גזע)\s+(?:שלו|שלה|הוא|היא)?\s*[:\-–]?\s*(.+?)(?:\.|,|$)/,
+    /(?:הוא|היא)\s+(גולדן|לברדור|בולדוג|פאג|רועה גרמני|צ'יוואווה|יורקי|האסקי|ביגל|פודל|שי טסו|מלטז|רוטווילר|דוברמן|בורדר קולי|סטפי|פיטבול|ווסטי|ביצ'ון|דני גדול|שבא|שפיץ|קוקר|בוקסר|דלמטי|אקיטה)/,
+  ];
+  for (const p of breedPatterns) {
+    const m = text.match(p);
+    if (m) { data.breed = m[1].trim(); break; }
+  }
+
+  // Weight detection
+  const weightMatch = text.match(/(?:שוקל|משקל|ק"ג|קילו)\s*[:\-–]?\s*(\d+(?:\.\d+)?)/);
+  if (weightMatch) data.weight = parseFloat(weightMatch[1]);
+
+  // Age detection  
+  const ageMatch = text.match(/(?:בן|בת|גיל)\s*[:\-–]?\s*(\d+)\s*(?:שנ|שנה|שנים)/);
+  if (ageMatch) data.age = parseInt(ageMatch[1]);
+
+  // Medical condition mentions
+  const conditions: string[] = [];
+  const conditionMap: Record<string, string> = {
+    "סוכרת": "diabetes", "סוכרתי": "diabetes",
+    "אלרגי": "allergies", "אטופי": "allergies",
+    "גירוד": "skin_issues", "מגרד": "skin_issues", "עור": "skin_issues",
+    "מפרק": "joint_issues", "צולע": "joint_issues", "דיספלזי": "joint_issues",
+    "עיכול": "digestive", "שלשול": "digestive", "הקאה": "digestive",
+    "לב": "heart", "אפילפסי": "epilepsy", "כליות": "kidney",
+    "שתן": "urinary", "שיניים": "dental",
+  };
+  for (const [keyword, condition] of Object.entries(conditionMap)) {
+    if (t.includes(keyword) && !conditions.includes(condition)) {
+      conditions.push(condition);
+    }
+  }
+  if (conditions.length > 0) data.medical_conditions = conditions;
+
+  return data;
+}
+
+async function savePetDataFromConversation(
+  supabase: any, petId: string, harvested: HarvestedData
+): Promise<void> {
+  if (!petId || Object.keys(harvested).length === 0) return;
+  
+  const updateData: Record<string, any> = {};
+  
+  if (harvested.breed) updateData.breed = harvested.breed;
+  if (harvested.weight) updateData.weight = harvested.weight;
+  if (harvested.age) updateData.age = harvested.age;
+  
+  // For medical conditions, merge with existing
+  if (harvested.medical_conditions) {
+    const { data: existing } = await supabase
+      .from("pets")
+      .select("medical_conditions")
+      .eq("id", petId)
+      .maybeSingle();
+    
+    const existingConditions = existing?.medical_conditions || [];
+    const merged = [...new Set([...existingConditions, ...harvested.medical_conditions])];
+    updateData.medical_conditions = merged;
+  }
+
+  if (Object.keys(updateData).length > 0) {
+    await supabase.from("pets").update(updateData).eq("id", petId);
+  }
+}
+
+// ============= Fetch Recent Medical History for Proactive Follow-up =============
+async function fetchRecentMedicalNotes(supabase: any, petId: string): Promise<string> {
+  if (!petId) return "";
+  
+  const { data: pet } = await supabase
+    .from("pets")
+    .select("medical_conditions, health_notes")
+    .eq("id", petId)
+    .maybeSingle();
+  
+  if (!pet) return "";
+  
+  const conditions = pet.medical_conditions?.length ? pet.medical_conditions.join(", ") : null;
+  const notes = pet.health_notes;
+  
+  if (!conditions && !notes) return "";
+  
+  return `\n[PET_MEDICAL_MEMORY]\n${conditions ? `מצבים רפואיים ידועים: ${conditions}` : ""}${notes ? `\nהערות בריאות: ${notes}` : ""}\n[/PET_MEDICAL_MEMORY]`;
+}
+
 // ============= Main Handler =============
 serve(async (req) => {
   const corsResponse = handleCorsPreflightRequest(req);
@@ -329,9 +430,21 @@ vet_clinic: ${fullPet.vet_clinic ?? "לא ידוע"}
 
     const userName = userContext?.userName ? `\nשם הלקוח: ${userContext.userName}` : '';
 
+    // ============= Data Harvesting: Extract & save pet info from user message =============
+    if (activePet?.id && lastUserMsg) {
+      const harvested = harvestPetData(lastUserMsg);
+      if (Object.keys(harvested).length > 0) {
+        // Fire-and-forget: don't block the response
+        savePetDataFromConversation(supabase, activePet.id, harvested).catch(e =>
+          console.error("Data harvest save error:", e)
+        );
+      }
+    }
+
     // ============= Fetch Breed Data if available =============
     let breedContext = "";
     let dietRulesContext = "";
+    let medicalMemory = "";
     if (activePet?.breed) {
       breedContext = await fetchBreedInfo(supabase, activePet.breed, activePet.type);
       
@@ -343,6 +456,11 @@ vet_clinic: ${fullPet.vet_clinic ?? "לא ידוע"}
           dietRulesContext = await fetchBreedDietRules(supabase, healthIssues);
         }
       }
+    }
+    
+    // Fetch medical memory for proactive follow-up
+    if (activePet?.id) {
+      medicalMemory = await fetchRecentMedicalNotes(supabase, activePet.id);
     }
 
     // ============= Order Intent Handler =============
@@ -423,7 +541,7 @@ vet_clinic: ${fullPet.vet_clinic ?? "לא ידוע"}
     const categoryFlow = getFlowForCategory(detectedCategory);
 
     const systemPrompt = `אתה העוזר החכם של PetID — מערכת אחריות לבעלי חיות מחמד.
-${userName}${petCard}${breedContext}${dietRulesContext}${productContext}
+${userName}${petCard}${breedContext}${dietRulesContext}${medicalMemory}${productContext}
 
 === עקרונות ליבה ===
 • PetID היא מערכת אחריות, לא חנות. בטיחות החיה קודמת לכל.
@@ -439,6 +557,15 @@ ${userName}${petCard}${breedContext}${dietRulesContext}${productContext}
 • כשממליצים על צעצועים — בדוק אם הגזע הוא Power Chewer (סטפי, פיטבול, אמסטף, רוטווילר). אם כן, הזהר שרק צעצועים עמידים (קונג שחור, חבלים עבים) מתאימים.
 • אם יש BREED_DIET_RULES — השתמש בהם להמלצות תזונה מדויקות.
 • אחרי כל המלצה רפואית, הוסף הצעת ביטוח Libra מותאמת לגזע (ראה מאגר ידע).
+
+=== זיכרון דינמי ומעקב (Dynamic Memory) ===
+• כל נתון שהמשתמש מזכיר (גזע, גיל, משקל, מצב רפואי) נשמר אוטומטית בפרופיל החיה. אתה לא צריך לעשות כלום — המערכת שומרת ברקע.
+• אם יש PET_MEDICAL_MEMORY — השתמש בו! אם החיה סובלת ממצב ידוע (סוכרת, אלרגיות, בעיות מפרקים), שאל מדי פעם לגבי מעקב:
+  - דוגמה: "איך {שם} מרגיש עם ה{מצב}? הטיפול עוזר או שננסה משהו אחר?"
+  - אל תשאל בכל הודעה — רק כשרלוונטי או אחרי 3+ הודעות ללא אזכור.
+• אם המשתמש צופה במוצר שמתנגש עם פרופיל החיה (למשל חטיף מסוכרר לכלב סוכרתי), הזהר:
+  - "⚠️ שים לב, בגלל ש{שם} {מצב רפואי}, {מוצר} עלול {סיכון}. כדאי לבחור ב{אלטרנטיבה}."
+• כדי לראות ולערוך מה ה-AI זוכר — הפנה את המשתמש ל"פרופיל החיה" בתפריט האישי.
 
 === שימוש בנתוני החיה ===
 • הנתונים ב-ACTIVE_PET מגיעים ישירות מהמערכת — השתמש בהם!

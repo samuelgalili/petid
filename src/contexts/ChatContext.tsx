@@ -148,24 +148,43 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         setUserPets(pets);
         if (pets.length === 1) {
           setSelectedPet(pets[0]);
-          // Don't force categories — user can type freely
-          setMessages([{
-            role: "assistant",
-            content: `היי ${firstName}, איזה כיף לראות אותך! 🐾\n\nאיך אוכל לעזור היום עם ${pets[0].name}?`,
-          }]);
+          
+          // Fetch medical context for personalized greeting
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: petData } = await (supabase as any)
+            .from("pets")
+            .select("medical_conditions, health_notes")
+            .eq("id", pets[0].id)
+            .maybeSingle();
+          
+          const conditions = petData?.medical_conditions as string[] | null;
+          let greeting = `היי ${firstName}! מה שלום ${pets[0].name}? 🐾\n\nאיך אוכל לעזור היום?`;
+          
+          // Proactive medical follow-up if conditions exist
+          if (conditions && conditions.length > 0) {
+            const conditionLabels: Record<string, string> = {
+              diabetes: "הסוכרת", allergies: "האלרגיות", skin_issues: "בעיות העור",
+              joint_issues: "בעיות המפרקים", digestive: "בעיות העיכול",
+              heart: "בעיות הלב", epilepsy: "האפילפסיה", kidney: "בעיות הכליות",
+              urinary: "בעיות השתן", dental: "בעיות השיניים",
+            };
+            const firstCondition = conditions[0];
+            const label = conditionLabels[firstCondition] || firstCondition;
+            greeting = `היי ${firstName}! מה שלום ${pets[0].name}? 🐾\n\nאיך ${pets[0].name} מרגיש/ה עם ${label}? אשמח לעזור בכל שאלה.`;
+          }
+          
+          setMessages([{ role: "assistant", content: greeting }]);
         } else {
-          // Multiple pets — ask via chat with pet name suggestions
           setMessages([{
             role: "assistant",
-            content: `היי ${firstName}, איזה כיף לראות אותך! 🐾\n\nאני רואה שיש לך כמה חיות מחמד.\nעל מי נדבר היום?`,
+            content: `היי ${firstName}! מה שלום? 🐾\n\nאני רואה שיש לך כמה חיות מחמד.\nעל מי נדבר היום?`,
             suggestions: pets.map(p => p.name),
           }]);
         }
       } else {
-        // No pets — user can type freely, no forced categories
         setMessages([{
           role: "assistant",
-          content: `היי ${firstName}, איזה כיף לראות אותך! 🐾\n\nאני העוזר החכם של PetID.\nבמה אוכל לעזור היום?`,
+          content: `היי ${firstName}! 🐾\n\nאני העוזר החכם של PetID.\nבמה אוכל לעזור היום?`,
         }]);
       }
     };
