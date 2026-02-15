@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ShoppingCart, ShoppingBag, Plus, Minus, SlidersHorizontal, TrendingUp, Tag, Heart, Grid3X3, Bookmark, X, Search, Clock, Share2, Truck, Shield, Star, ChevronLeft, Dog, Cat, Info, Loader2, Flag, AlertTriangle, MessageCircle } from "lucide-react";
+import { ShoppingCart, ShoppingBag, Plus, Minus, SlidersHorizontal, TrendingUp, Tag, Heart, Grid3X3, Bookmark, X, Search, Clock, Share2, Truck, Shield, Star, ChevronLeft, Dog, Cat, Info, Loader2, Flag, AlertTriangle, MessageCircle, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { useFlyingCart } from "@/components/FlyingCartAnimation";
@@ -22,12 +22,19 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import petidIcon from "@/assets/petid-icon.png";
 import { SEO } from "@/components/SEO";
+import { SmartRecommendations } from "@/components/shop/SmartRecommendations";
+import { MedicalPharmacy } from "@/components/shop/MedicalPharmacy";
+import { PetCoinPrice } from "@/components/shop/PetCoinPrice";
+import { SubscribeAndSave } from "@/components/shop/SubscribeAndSave";
+import { checkProductSafety, SafetyBadge } from "@/components/shop/ShopSafetyFilter";
+import { useActivePet } from "@/hooks/useActivePet";
 
 const Shop = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { addToCart, getTotalItems, cartShake } = useCart();
   const { triggerFly, setCartIconPosition } = useFlyingCart();
+  const { pet: activePet } = useActivePet();
   const { toast } = useToast();
   const cartIconRef = useRef<HTMLButtonElement>(null);
   const productImageRef = useRef<HTMLDivElement>(null);
@@ -533,6 +540,12 @@ const Shop = () => {
 
       {/* Instagram-style Category Carousels */}
       <div className="max-w-lg mx-auto pb-24">
+        {/* Smart Recommendations — Top Priority */}
+        {activeTab === "grid" && <SmartRecommendations />}
+
+        {/* Medical Pharmacy Section */}
+        {activeTab === "grid" && <MedicalPharmacy />}
+
         {/* Group products by category and display as carousels */}
         {activeTab === "grid" && filteredAndSortedProducts.length > 0 && (
           <>
@@ -567,10 +580,18 @@ const Shop = () => {
                         <div className="relative rounded-lg overflow-hidden bg-card shadow-sm border border-border/30">
                           {/* Small Square Image */}
                           <div className="relative aspect-square bg-muted">
+                            {(() => {
+                              const safety = checkProductSafety(`${product.name} ${product.description}`, activePet);
+                              return safety.level !== "safe" && (
+                                <SafetyBadge level={safety.level} reason={safety.reason} compact />
+                              );
+                            })()}
                             <OptimizedImage
                               src={product.image}
                               alt={product.name}
-                              className={`w-full h-full ${product.isFlagged ? 'opacity-50' : ''}`}
+                              className={`w-full h-full ${product.isFlagged ? 'opacity-50' : ''} ${
+                                checkProductSafety(`${product.name} ${product.description}`, activePet).level === "unsafe" ? 'opacity-40 grayscale' : ''
+                              }`}
                               objectFit="cover"
                               sizes="112px"
                             />
@@ -599,7 +620,10 @@ const Shop = () => {
                             <h3 className="text-[11px] font-medium text-foreground line-clamp-1 mb-0.5">
                               {product.name}
                             </h3>
-                            <span className="text-xs font-bold text-primary">₪{product.price}</span>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold text-primary">₪{product.price}</span>
+                              <PetCoinPrice priceNIS={product.price} compact />
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -717,6 +741,7 @@ const Shop = () => {
                       <span className="text-sm text-muted-foreground line-through">₪{selectedProduct.originalPrice}</span>
                     )}
                   </div>
+                  <PetCoinPrice priceNIS={selectedProduct.price} />
                 </div>
 
                 {/* Quick Actions */}
@@ -766,6 +791,26 @@ const Shop = () => {
                   </div>
                 </div>
               )}
+
+              {/* Safety Warning */}
+              {(() => {
+                const safety = checkProductSafety(`${selectedProduct.name} ${selectedProduct.description}`, activePet);
+                return safety.level !== "safe" && (
+                  <div className="px-5 pb-2">
+                    <SafetyBadge level={safety.level} reason={safety.reason} petName={activePet?.name} />
+                  </div>
+                );
+              })()}
+
+              {/* Subscribe & Save */}
+              <div className="px-5">
+                <SubscribeAndSave
+                  productName={selectedProduct.name}
+                  productPrice={selectedProduct.price}
+                  productWeight={null}
+                  onSubscribe={(days) => toast({ title: `מנוי נוצר! 📦`, description: `נשלח כל ${days} ימים`, duration: 2000 })}
+                />
+              </div>
 
               {/* Action Bar - With extra padding for BottomNav */}
               <div className="px-5 pt-4 pb-24 bg-background border-t border-border/20 mt-auto">
