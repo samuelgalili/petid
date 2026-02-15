@@ -36,8 +36,8 @@ export const FeedProductCards = () => {
       // Get user's primary pet for personalization
       const { data: pets } = await (supabase as any)
         .from("pets")
-        .select("name, breed, birth_date, pet_type, medical_conditions, current_food")
-        .eq("owner_id", user.id)
+        .select("name, breed, birth_date, type, medical_conditions, current_food")
+        .eq("user_id", user.id)
         .eq("archived", false)
         .order("created_at", { ascending: false })
         .limit(1);

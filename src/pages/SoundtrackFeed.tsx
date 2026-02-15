@@ -5,6 +5,7 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useActivePet } from "@/hooks/useActivePet";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Heart } from "lucide-react";
@@ -24,11 +25,13 @@ import { DailyInsightCard } from "@/components/feed/DailyInsightCard";
 import { LocalEventsCard } from "@/components/feed/LocalEventsCard";
 import { FeedProductCards } from "@/components/feed/FeedProductCards";
 import { HealthScoreHighlight } from "@/components/feed/HealthScoreHighlight";
+import { FeedPollCard } from "@/components/feed/FeedPollCard";
 import { useSoundtrackFeed } from "@/hooks/useSoundtrackFeed";
 
 const SoundtrackFeed = () => {
   const navigate = useNavigate();
   const { unreadCount } = useRealtimeNotifications();
+  const { pet: activePet } = useActivePet();
   const {
     posts,
     loading,
@@ -199,11 +202,14 @@ const SoundtrackFeed = () => {
                   onSave={handleSave}
                   onFollow={handleFollow}
                   userId={userId}
+                  activePet={activePet}
                 />
                 {/* Inject product cards after 3rd post */}
                 {index === 2 && activeTab === "discover" && <FeedProductCards />}
-                {/* Inject health score highlight after 6th post */}
-                {index === 5 && activeTab === "discover" && <HealthScoreHighlight />}
+                {/* Inject poll every 5th post */}
+                {index === 4 && activeTab === "discover" && <FeedPollCard />}
+                {/* Inject health score highlight after 7th post */}
+                {index === 6 && activeTab === "discover" && <HealthScoreHighlight />}
               </React.Fragment>
             ))}
 
