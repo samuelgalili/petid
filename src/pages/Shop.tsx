@@ -24,7 +24,7 @@ import petidIcon from "@/assets/petid-icon.png";
 import { SEO } from "@/components/SEO";
 import { SmartRecommendations } from "@/components/shop/SmartRecommendations";
 import { MedicalPharmacy } from "@/components/shop/MedicalPharmacy";
-import { PetCoinPrice } from "@/components/shop/PetCoinPrice";
+
 import { SubscribeAndSave } from "@/components/shop/SubscribeAndSave";
 import { checkProductSafety, SafetyBadge } from "@/components/shop/ShopSafetyFilter";
 import { useActivePet } from "@/hooks/useActivePet";
@@ -622,7 +622,7 @@ const Shop = () => {
                             </h3>
                             <div className="flex items-center justify-between">
                               <span className="text-xs font-bold text-primary">₪{product.price}</span>
-                              <PetCoinPrice priceNIS={product.price} compact />
+                              
                             </div>
                           </div>
                         </div>
@@ -741,7 +741,7 @@ const Shop = () => {
                       <span className="text-sm text-muted-foreground line-through">₪{selectedProduct.originalPrice}</span>
                     )}
                   </div>
-                  <PetCoinPrice priceNIS={selectedProduct.price} />
+                  
                 </div>
 
                 {/* Quick Actions */}

@@ -4,14 +4,14 @@
  * 2. "Next Vaccine" Sync Banner
  * 3. Health Score Impact Preview
  * 4. Smart Quantity Adjustment
- * 5. PetCoin Redemption Slider
+ * 5. (Removed — PetCoin system deactivated)
  * 6. Final Safety Check Badge
  */
 
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Sparkles, Syringe, TrendingUp, Scale, Coins, ShieldCheck,
+  Sparkles, Syringe, TrendingUp, Scale, ShieldCheck,
   Plus, AlertTriangle, ChevronDown, ChevronUp, Calendar,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -333,79 +333,7 @@ const SmartQuantityToggle = ({ items, pet, onQuantityNote }: {
   );
 };
 
-// ── 5. PetCoin Redemption Slider ──
-
-const PetCoinRedemption = ({ subtotal, onDiscountChange }: {
-  subtotal: number;
-  onDiscountChange: (discount: number) => void;
-}) => {
-  const [balance, setBalance] = useState(0);
-  const [applied, setApplied] = useState(0);
-  const COIN_VALUE = 0.10; // 1 PetCoin = ₪0.10
-
-  useEffect(() => {
-    const fetchBalance = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data } = await (supabase as any)
-        .from("profiles")
-        .select("petid_coins")
-        .eq("id", user.id)
-        .maybeSingle();
-      if (data?.petid_coins) setBalance(data.petid_coins);
-    };
-    fetchBalance();
-  }, []);
-
-  if (balance <= 0) return null;
-
-  const maxDiscount = Math.min(balance * COIN_VALUE, subtotal * 0.3); // Max 30% of subtotal
-  const maxCoins = Math.floor(maxDiscount / COIN_VALUE);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const coins = parseInt(e.target.value);
-    setApplied(coins);
-    onDiscountChange(coins * COIN_VALUE);
-  };
-
-  return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-      <Card className="p-3.5 border-border/30">
-        <div className="flex items-center justify-between mb-2.5">
-          <div className="flex items-center gap-2">
-            <Coins className="w-4 h-4 text-amber-500" strokeWidth={1.5} />
-            <p className="text-xs font-bold text-foreground">שלם עם PetCoins</p>
-          </div>
-          <span className="text-[10px] font-semibold text-muted-foreground">
-            יתרה: {balance.toLocaleString()} 🪙
-          </span>
-        </div>
-
-        <input
-          type="range"
-          min={0}
-          max={maxCoins}
-          value={applied}
-          onChange={handleChange}
-          className="w-full h-2 bg-muted rounded-full appearance-none cursor-pointer accent-primary"
-        />
-
-        <div className="flex items-center justify-between mt-2">
-          <span className="text-[10px] text-muted-foreground">0 🪙</span>
-          <motion.span
-            key={applied}
-            initial={{ scale: 1.2 }}
-            animate={{ scale: 1 }}
-            className="text-sm font-black text-primary"
-          >
-            {applied > 0 ? `-₪${(applied * COIN_VALUE).toFixed(0)}` : "—"}
-          </motion.span>
-          <span className="text-[10px] text-muted-foreground">{maxCoins.toLocaleString()} 🪙</span>
-        </div>
-      </Card>
-    </motion.div>
-  );
-};
+// ── 5. (PetCoin Redemption removed — replaced by health milestones) ──
 
 // ── 6. Final Safety Check Badge ──
 
@@ -465,10 +393,9 @@ const FinalSafetyBadge = ({ items, pet }: { items: CartItem[]; pet: ActivePet })
 interface SmartCartLayersProps {
   items: CartItem[];
   subtotal: number;
-  onPetCoinDiscount: (discount: number) => void;
 }
 
-export const SmartCartLayers = ({ items, subtotal, onPetCoinDiscount }: SmartCartLayersProps) => {
+export const SmartCartLayers = ({ items, subtotal }: SmartCartLayersProps) => {
   const { pet, loading } = useActivePet();
 
   if (loading || !pet || items.length === 0) return null;
@@ -479,7 +406,6 @@ export const SmartCartLayers = ({ items, subtotal, onPetCoinDiscount }: SmartCar
       <VaccineSyncBanner pet={pet} />
       <HealthScoreImpact items={items} pet={pet} />
       <SmartQuantityToggle items={items} pet={pet} onQuantityNote={() => {}} />
-      <PetCoinRedemption subtotal={subtotal} onDiscountChange={onPetCoinDiscount} />
       <FinalSafetyBadge items={items} pet={pet} />
     </div>
   );
