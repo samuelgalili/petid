@@ -1,8 +1,6 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import giftIcon from "@/assets/gift-icon.gif";
-import { buttonHover, buttonTap, wiggle } from "@/lib/animations";
-import { MICROCOPY } from "@/lib/microcopy";
+import { Heart } from "lucide-react";
 import { getAccessibleButtonProps, TAP_TARGET } from "@/lib/accessibility";
 
 interface RewardsHeaderProps {
@@ -24,22 +22,21 @@ export const RewardsHeader = ({ userName, greeting, onMenuOpen }: RewardsHeaderP
     >
       {/* Main Content: Icon (Right) + Text Column (Left) */}
       <div className="flex flex-row-reverse items-center gap-[14px]">
-        {/* Gift Icon - Right Side - Playful & Accessible */}
+        {/* Health Icon - Right Side */}
         <motion.button
-          onClick={() => navigate('/shop')}
-          whileHover={{ scale: 1.05, rotate: [0, -2, 2, -2, 0] }}
+          onClick={() => navigate('/pet')}
+          whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           transition={{ duration: 0.2 }}
           className="flex-shrink-0 w-20 h-20 rounded-full bg-surface-elevated flex items-center justify-center shadow-lg border-2 border-border-light transition-shadow focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
           style={{ minWidth: TAP_TARGET.comfortable, minHeight: TAP_TARGET.comfortable }}
-          {...getAccessibleButtonProps("עבור למתנות ותגמולים")}
+          {...getAccessibleButtonProps("עבור לדשבורד הבריאות")}
         >
-          <img src={giftIcon} alt="מתנה" className="w-14 h-14 object-contain drop-shadow-sm" />
+          <Heart className="w-10 h-10 text-primary" strokeWidth={1.5} />
         </motion.button>
 
         {/* Text Column - Left Side */}
         <div className="flex-1 text-right space-y-1 overflow-visible min-w-0">
-          {/* Greeting Line - Top - Slightly Larger */}
           <div className="text-[15px] leading-tight font-normal text-foreground mb-1 whitespace-nowrap overflow-visible">
             {greeting},{" "}
             <button
@@ -51,30 +48,30 @@ export const RewardsHeader = ({ userName, greeting, onMenuOpen }: RewardsHeaderP
             </button>
           </div>
           
-          {/* Main Headline - Marketing Message */}
+          {/* Main Headline - Health Focus */}
           <h1 className="text-[0.95rem] leading-tight font-black text-foreground mb-1 whitespace-nowrap">
-            קונים, צוברים, נהנים — בכל רכישה מחדש!
+            בריאות, תזונה, שקט נפשי — הכל במקום אחד
           </h1>
           
-          {/* Small Info Line - 11px */}
+          {/* Small Info Line */}
           <p className="text-[0.6875rem] leading-tight font-normal text-muted-foreground mb-2">
-            צוברים 5% מכל קנייה ב Petid ונהנים
+            עדכנו את הפרופיל הרפואי ושמרו על ציון בריאות מיטבי
           </p>
         </div>
       </div>
 
-      {/* Link Button - Bottom Left Corner - Enhanced Accessibility */}
+      {/* Link Button - Bottom Left Corner */}
       <div className="mt-3 text-left">
         <motion.button
-          onClick={() => navigate('/shop')}
+          onClick={() => navigate('/pet')}
           whileHover={{ x: -2 }}
           whileTap={{ scale: 0.95 }}
           transition={{ duration: 0.15 }}
           className="text-[13px] leading-none font-medium text-primary hover:opacity-80 transition-opacity inline-flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded px-2"
           style={{ minHeight: TAP_TARGET.minimum }}
-          {...getAccessibleButtonProps("צפה בתגמולים והטבות")}
+          {...getAccessibleButtonProps("צפה בדשבורד הבריאות")}
         >
-          צבירה ומימוש
+          מדדי בריאות
           <span className="text-sm">‹</span>
         </motion.button>
       </div>

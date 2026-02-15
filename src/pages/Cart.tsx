@@ -31,7 +31,7 @@ const Cart = () => {
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
-  const [petCoinDiscount, setPetCoinDiscount] = useState(0);
+  
 
   const subtotal = getSubtotal();
   
@@ -48,7 +48,7 @@ const Cart = () => {
     : 0;
   
   // Price already includes VAT - no need to add tax separately
-  const discountedSubtotal = Math.max(0, subtotal - discount - petCoinDiscount);
+  const discountedSubtotal = Math.max(0, subtotal - discount);
   const total = discountedSubtotal + shipping;
 
   const validateCoupon = async () => {
@@ -320,7 +320,7 @@ const Cart = () => {
         </motion.div>
 
         {/* Smart AI Cart Layers */}
-        <SmartCartLayers items={items} subtotal={subtotal} onPetCoinDiscount={setPetCoinDiscount} />
+        <SmartCartLayers items={items} subtotal={subtotal} />
 
         {/* Order Summary */}
         <motion.div
@@ -355,15 +355,6 @@ const Cart = () => {
                 )}
                 
                 
-                {/* PetCoin discount */}
-                {petCoinDiscount > 0 && (
-                  <div className="flex justify-between items-center text-primary">
-                    <span className="font-jakarta">הנחת PetCoins 🪙</span>
-                    <span className="font-bold font-jakarta">
-                      -₪{petCoinDiscount.toFixed(0)}
-                    </span>
-                  </div>
-                )}
 
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground font-jakarta">משלוח</span>

@@ -24,7 +24,7 @@ import { ShareSheet } from "@/components/feed/ShareSheet";
 import { ConsultAIButton } from "@/components/feed/ConsultAIButton";
 import { RelevanceBadge } from "@/components/feed/RelevanceBadge";
 import { SmartCheckoutSheet } from "@/components/feed/SmartCheckoutSheet";
-import { PetCoinReward } from "@/components/feed/PetCoinReward";
+
 import { QuickTipOverlay } from "@/components/feed/QuickTipOverlay";
 import { ProductSafetyBadge, useProductSafety } from "@/components/feed/ProductSafetyBadge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -251,12 +251,6 @@ export const SoundtrackPostCard = ({
         </div>
       )}
 
-      {/* PetCoin Reward */}
-      <PetCoinReward
-        isActive={isActive}
-        postIndex={index}
-        isEducational={!isProductPost && !isChallengePost && !isCtaPost}
-      />
 
       {/* Quick Tip Overlay — contextual pet-specific tips */}
       <QuickTipOverlay
