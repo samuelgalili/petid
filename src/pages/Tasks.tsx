@@ -9,7 +9,6 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { useLoyalty } from "@/hooks/useLoyalty";
 import confetti from "canvas-confetti";
 import { AppHeader } from "@/components/AppHeader";
 
@@ -25,8 +24,6 @@ interface Task {
 
 const Tasks = () => {
   const { toast } = useToast();
-  const { stats, awardPoints } = useLoyalty();
-  const totalPoints = stats?.totalPoints || 0;
   const [streak, setStreak] = useState(7);
 
   const [tasks, setTasks] = useState<Task[]>([
@@ -118,10 +115,6 @@ const Tasks = () => {
     if (!task || task.completed) return;
 
     try {
-      // Award points based on task category
-      const actionType = task.category === 'feeding' ? 'use_bag_reminder' : 'rate_product';
-      await awardPoints(actionType);
-      
       setTasks((prevTasks) =>
         prevTasks.map((t) => 
           t.id === taskId ? { ...t, completed: true } : t
@@ -137,7 +130,6 @@ const Tasks = () => {
 
       toast({
         title: "משימה הושלמה! 🎉",
-        description: `צברת ${task.points} נקודות!`,
       });
     } catch (error) {
       // Error already handled in context
@@ -175,33 +167,15 @@ const Tasks = () => {
         />
         
         <div className="px-4 pt-4">
-          {/* Points & Streak Card */}
+          {/* Streak Card */}
+          {/* Streak Card */}
           <div className="bg-card border border-border rounded-2xl p-5 mb-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center shadow-md">
-                  <svg width="32" height="32" viewBox="0 0 28 28" fill="none">
-                    <path d="M14 5C9.5 5 7 8 7 11.5C7 14 8.5 16.5 11 17.5L12 21L16 21L17 17.5C19.5 16.5 21 14 21 11.5C21 8 18.5 5 14 5Z" fill="hsl(var(--error))"/>
-                    <circle cx="11.5" cy="11" r="1.5" fill="white"/>
-                    <circle cx="16.5" cy="11" r="1.5" fill="white"/>
-                    <path d="M8.5 7.5C8.5 6 7 5 5.5 6.5C4 8 5 10 6.5 10C7.5 10 8.5 9 8.5 7.5Z" fill="hsl(var(--error))"/>
-                    <path d="M19.5 7.5C19.5 6 21 5 22.5 6.5C24 8 23 10 21.5 10C20.5 10 19.5 9 19.5 7.5Z" fill="hsl(var(--error))"/>
-                  </svg>
-                </div>
-                <div>
-                  <div className="text-3xl font-bold text-foreground">{totalPoints}</div>
-                  <div className="text-sm text-foreground/70">סה״כ נקודות</div>
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center gap-1 mb-1">
-                  <Flame className="w-5 h-5 text-warning" strokeWidth={1.5} />
-                  <span className="text-2xl font-bold text-foreground">{streak}</span>
-                </div>
-                <div className="text-xs text-foreground/70">ימים ברצף</div>
-              </div>
+            <div className="flex items-center justify-center gap-3">
+              <Flame className="w-6 h-6 text-warning" strokeWidth={1.5} />
+              <span className="text-2xl font-bold text-foreground">{streak}</span>
+              <span className="text-sm text-foreground/70">ימים ברצף</span>
             </div>
-        </div>
+          </div>
 
         {/* Tasks Content */}
         <Tabs defaultValue="daily" className="w-full">
@@ -274,9 +248,6 @@ const Tasks = () => {
                             </h3>
                           </div>
                           <p className="text-sm text-muted-foreground mb-2">{task.description}</p>
-                          <Badge variant="secondary" className="bg-accent/20 text-foreground">
-                            +{task.points} נקודות
-                          </Badge>
                         </div>
                       </div>
                     </Card>
@@ -345,9 +316,6 @@ const Tasks = () => {
                             </h3>
                           </div>
                           <p className="text-sm text-muted-foreground mb-2">{task.description}</p>
-                          <Badge variant="secondary" className="bg-accent/20 text-foreground">
-                            +{task.points} נקודות
-                          </Badge>
                         </div>
                       </div>
                     </Card>
