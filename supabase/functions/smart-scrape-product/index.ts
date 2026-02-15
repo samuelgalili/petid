@@ -82,8 +82,10 @@ Analyze the following scraped product page content and extract ALL data into the
 CATEGORY DETECTION - CRITICAL:
 - If the page contains keywords like "מחסום", "muzzle", "זמם" → set category to "muzzles"
 - If the page contains keywords like "חטיף", "treat", "snack", "חטיפון", "מקל לעיסה", "עצם לעיסה", "לעיסה", "chew", "פרס", "reward", "זרעי דלעת" → set category to "treats"
+- If the page contains keywords like "שימורים", "פטה", "pate", "paté", "פחית", "canned", "wet food", "מזון רטוב" AND/OR weight ~400g → set category to "wet-food"
 - If the page contains keywords like "collar", "קולר", "צווארון", "רצועה", "leash", "harness", "הרנס", "מיטה", "bed", "toy", "צעצוע", "nylon", "ניילון", "D-ring", "buckle", "אבזם", "quick-release", "שחרור מהיר" → set category to "accessories"
-- If the page contains keywords like "מזון", "food", "kibble", "שימורים" → set appropriate food category (dry-food, wet-food, food)
+- If the page contains keywords like "מזון", "food", "kibble" → set category to "dry-food" or "food"
+- For WET FOOD: populate product_attributes with texture (e.g. "פטה", "נתחים ברוטב", "מוס"), origin/made_in (e.g. "איטליה", "Italy"), moisture_pct if mentioned. If text mentions glucosamine/chondroitin/מפרקים, note joint_support: true. If text mentions hydration/כליות/kidney/לחות, note hydration_support: true. Also extract mixing_tip if topper/mixed feeding is mentioned.
 - For accessories/muzzles: populate product_attributes with technical specs (material, size, color, features, closure, dimensions, care_instructions)
 - For muzzles specifically: map "היקף" to "circumference", "אורך" to "length", extract size_number, and add breed_recommendations as an array of breed names
 - For TREATS/SNACKS: populate product_attributes with texture (e.g. "קשה", "רך"), purpose (e.g. "פרס אילוף", "העסקה ולעיסה"), safety_tip (e.g. "מומלץ לעיסה בפיקוח"), and highlight special ingredients like "זרעי דלעת", "כבד עוף"
@@ -120,6 +122,7 @@ RULES:
   - For MUZZLE products specifically: in product_attributes also include circumference (map from "היקף"), length (map from "אורך"), size_number, and breed_recommendations as an array of Hebrew breed names the muzzle fits (e.g. ["ברניז", "באסט האונד", "רוטוויילר"])
   - benefits: Product features/advantages as [{ "title": "name", "description": "short description" }]
 - category: one of: dry-food, wet-food, treats, toys, grooming, health, food, accessories, collars, leashes, beds, clothing, muzzles. Use null if unclear.
+- PRIORITY RULE: If product weight is ~400g and keywords like "Pate"/"פטה"/"Can"/"פחית"/"שימורים" appear, always set category to "wet-food" and extract hydration/moisture benefits first
 - pet_type: dog, cat, or all.
 - life_stage: puppy, kitten, adult, senior, all. Use null if unclear.
 - dog_size: small, medium, large, all. Use null if unclear.

@@ -203,6 +203,61 @@ const extractTreatFeatures = (product: any): {
   return { chewDuration, proteinPct, hasDental, texture, isChewPriority };
 };
 
+/** Check if product is wet food */
+const isWetFoodProduct = (product: any): boolean => {
+  const cat = (product.category || '').toLowerCase();
+  const text = `${product.name || ''} ${product.description || ''} ${(product.special_diet || []).join(' ')}`.toLowerCase();
+  const weightText = (product.weight_text || '').toLowerCase();
+  // Direct category match
+  if (cat === 'wet-food' || cat === 'wet food') return true;
+  // Keyword detection
+  if (text.includes('שימורים') || text.includes('פטה') || text.includes('pate') || text.includes('פחית') || text.includes('can ') || text.includes('canned')) return true;
+  // Weight heuristic: ~400g cans
+  if (weightText.match(/400\s*(?:גרם|גר|g)/i) && (text.includes('pate') || text.includes('פטה') || text.includes('can') || text.includes('פחית'))) return true;
+  return false;
+};
+
+/** Extract wet food features */
+const extractWetFoodFeatures = (product: any): {
+  hasHydration: boolean;
+  hasJointSupport: boolean;
+  texture: string | null;
+  origin: string | null;
+  mixingTip: string | null;
+} => {
+  const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''} ${(product.special_diet || []).join(' ')}`.toLowerCase();
+  const attrs = product.product_attributes || {};
+  const benefits = Array.isArray(product.benefits) ? product.benefits : [];
+  const benefitsText = benefits.map((b: any) => `${b.title || ''} ${b.description || ''}`).join(' ').toLowerCase();
+
+  const hasHydration = text.includes('הידרציה') || text.includes('hydration') || text.includes('כליות') || text.includes('kidney') || text.includes('לחות') || text.includes('moisture') || benefitsText.includes('הידרציה') || benefitsText.includes('כליות');
+  const hasJointSupport = text.includes('גלוקוזאמין') || text.includes('glucosamine') || text.includes('כונדרואיטין') || text.includes('chondroitin') || text.includes('מפרקים') || text.includes('joint') || benefitsText.includes('מפרקים') || benefitsText.includes('joint');
+
+  let texture = attrs.texture || attrs['מרקם'] || null;
+  if (!texture) {
+    if (text.includes('פטה') || text.includes('pate') || text.includes('paté')) texture = 'פטה (Pâté)';
+    else if (text.includes('נתחים') || text.includes('chunks')) texture = 'נתחים ברוטב';
+    else if (text.includes('מוס') || text.includes('mousse')) texture = 'מוס';
+  }
+
+  let origin = attrs.origin || attrs['מקור ייצור'] || attrs.made_in || null;
+  if (!origin) {
+    if (text.includes('איטליה') || text.includes('italy') || text.includes('italian')) origin = 'איטליה 🇮🇹';
+    else if (text.includes('גרמניה') || text.includes('germany')) origin = 'גרמניה 🇩🇪';
+    else if (text.includes('צרפת') || text.includes('france')) origin = 'צרפת 🇫🇷';
+  }
+
+  let mixingTip = attrs.mixing_tip || attrs['טיפ ערבוב'] || null;
+  if (!mixingTip && (text.includes('topper') || text.includes('ערבוב') || text.includes('mix') || text.includes('מזון יבש'))) {
+    mixingTip = 'ערבבו ¼ פחית עם המזון היבש להעשרת הטעם והלחות';
+  }
+  if (!mixingTip) {
+    mixingTip = 'ניתן להגיש בנפרד או כתוספת (Topper) למזון יבש';
+  }
+
+  return { hasHydration, hasJointSupport, texture, origin, mixingTip };
+};
+
 /** Extract technical specs from product_attributes for accessories */
 const extractTechSpecs = (product: any): { label: string; value: string }[] => {
   const specs: { label: string; value: string }[] = [];
@@ -460,6 +515,8 @@ const ProductDetail = () => {
   const sizeMatrix = useMemo(() => product ? extractSizeMatrix(product) : [], [product]);
   const breedRecommendations = useMemo(() => product ? extractBreedRecommendations(product) : [], [product]);
   const quickFeatures = useMemo(() => product ? deriveQuickFeatures(product) : [], [product]);
+  const isWetFood = useMemo(() => product ? isWetFoodProduct(product) : false, [product]);
+  const wetFoodFeatures = useMemo(() => product && isWetFood ? extractWetFoodFeatures(product) : { hasHydration: false, hasJointSupport: false, texture: null, origin: null, mixingTip: null }, [product, isWetFood]);
   const isTreat = useMemo(() => product ? isTreatProduct(product) : false, [product]);
   const treatHealthBoosts = useMemo(() => product && isTreat ? deriveTreatHealthBoosts(product) : [], [product, isTreat]);
   const treatUsage = useMemo(() => product && isTreat ? extractTreatUsage(product) : { purpose: null, safetyTip: null, isNatural: false }, [product, isTreat]);
@@ -667,9 +724,17 @@ const ProductDetail = () => {
           <Card className="overflow-hidden border-border/50">
             {/* Brand + Title + Price */}
             <div className="p-5">
-              {product.brand && (
-                <span className="text-xs font-bold text-primary uppercase tracking-wider">{product.brand}</span>
-              )}
+              <div className="flex items-center justify-between">
+                {product.brand && (
+                  <span className="text-xs font-bold text-primary uppercase tracking-wider">{product.brand}</span>
+                )}
+                {isWetFood && wetFoodFeatures.origin && (
+                  <Badge variant="secondary" className="text-[10px] font-bold gap-1">
+                    <Flag className="w-3 h-3" />
+                    מיוצר ב{wetFoodFeatures.origin}
+                  </Badge>
+                )}
+              </div>
               <h1 className="text-xl font-bold text-foreground leading-tight mt-1">{product.name}</h1>
               
               {/* Rating + Price Per Kg */}
@@ -971,6 +1036,89 @@ const ProductDetail = () => {
             </Card>
           </motion.div>
         ) : null}
+
+        {/* ── Wet Food: Hydration Badge ── */}
+        {isWetFood && wetFoodFeatures.hasHydration && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(200,80%,93%)] to-background border-[hsl(200,70%,70%)]/30 dark:from-[hsl(200,40%,15%)] dark:border-[hsl(200,50%,40%)]/30">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-[hsl(200,70%,80%)]/30 flex items-center justify-center flex-shrink-0">
+                  <Droplets className="w-6 h-6 text-[hsl(200,70%,45%)]" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">💧 תמיכה בהידרציה</h3>
+                  <p className="text-[12px] text-muted-foreground mt-0.5">מזון רטוב מסייע בצריכת נוזלים ותומך בבריאות הכליות ומערכת השתן</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Wet Food: Texture Info ── */}
+        {isWetFood && wetFoodFeatures.texture && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}>
+            <Card className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Utensils className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground font-medium">מרקם (Texture)</p>
+                  <p className="text-sm font-bold text-foreground">{wetFoodFeatures.texture}</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Wet Food: Mixed Feeding / Topper Guide ── */}
+        {isWetFood && wetFoodFeatures.mixingTip && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }}>
+            <Card className="p-4 bg-gradient-to-br from-accent/5 to-background border-accent/20">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Cookie className="w-4 h-4 text-accent-foreground" />
+                מדריך הגשה – Mixed Feeding
+              </h3>
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-3 bg-muted/40 rounded-xl p-3 border border-border/30">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Utensils className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground font-medium">טיפ Topper</p>
+                    <p className="text-[13px] font-bold text-foreground">{wetFoodFeatures.mixingTip}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 bg-[hsl(200,80%,95%)]/60 dark:bg-[hsl(200,40%,15%)] rounded-xl p-3 border border-[hsl(200,60%,70%)]/20">
+                  <div className="w-8 h-8 rounded-full bg-[hsl(200,70%,80%)]/20 flex items-center justify-center flex-shrink-0">
+                    <GlassWater className="w-4 h-4 text-[hsl(200,60%,45%)]" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground font-medium">תזכורת</p>
+                    <p className="text-[13px] font-bold text-foreground">הקפידו על מים טריים בכל עת 💧</p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Wet Food: Joint Support Tag ── */}
+        {isWetFood && wetFoodFeatures.hasJointSupport && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
+            <Card className="p-4 bg-gradient-to-br from-success/8 to-background border-success/20">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-success/15 flex items-center justify-center flex-shrink-0">
+                  <ShieldCheck className="w-5 h-5 text-success" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">🦴 בריאות המפרקים</h3>
+                  <p className="text-[12px] text-muted-foreground mt-0.5">מכיל גלוקוזאמין וכונדרואיטין – תמיכה בגמישות המפרקים ובניידות</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
 
         {/* ── Nutrition Tabs (food only) ── */}
         {!isAccessory && hasNutritionData && (
