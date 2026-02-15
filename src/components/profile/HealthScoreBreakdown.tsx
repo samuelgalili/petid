@@ -12,6 +12,7 @@ import {
   Eye, ShoppingBag, ArrowUpRight, Activity,
   Smile, Droplets, Wind, AlertTriangle
 } from "lucide-react";
+import { FelineUrinarySupport } from "./FelineUrinarySupport";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
@@ -676,6 +677,22 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
                     );
                   })}
                 </div>
+
+                {/* Feline Urinary Support — detailed Struvite UI for cats */}
+                {isCat && pillarWeights.urinary > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-1.5">
+                      <Droplets className="w-4 h-4 text-cyan-500" strokeWidth={1.5} />
+                      תמיכה אורולוגית — Struvite
+                    </h3>
+                    <FelineUrinarySupport
+                      petName={pet.name}
+                      isNeutered={petData?.is_neutered ?? undefined}
+                      isMale={petData?.gender === 'male' || petData?.gender === 'זכר'}
+                      weight={petData?.weight ?? undefined}
+                    />
+                  </div>
+                )}
 
                 {/* To-Do List: How to reach 100% */}
                 {todos.length > 0 && (
