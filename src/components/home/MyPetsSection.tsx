@@ -3,24 +3,41 @@ import { Plus, PawPrint } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { PetCard, AddPetCard } from "./PetCard";
+import { LostModePanel } from "./LostModePanel";
 import { ComponentErrorBoundary } from "@/components/common/ComponentErrorBoundary";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MyPetsSectionProps {
   pets: any[];
   newlyAddedPetIds: Set<string>;
   onPetLongPressStart: (pet: any) => void;
   onPetLongPressEnd: () => void;
+  onPetsRefresh?: () => void;
 }
 
 export const MyPetsSection = ({ 
   pets, 
   newlyAddedPetIds, 
   onPetLongPressStart, 
-  onPetLongPressEnd 
+  onPetLongPressEnd,
+  onPetsRefresh,
 }: MyPetsSectionProps) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [selectedPetId, setSelectedPetId] = useState<string | null>(null);
+  const [ownerPhone, setOwnerPhone] = useState<string | undefined>();
+
+  // Fetch owner phone for lost mode (lazy)
+  useState(() => {
+    if (user?.id) {
+      supabase.from("profiles").select("phone").eq("id", user.id).maybeSingle()
+        .then(({ data }) => { if (data?.phone) setOwnerPhone(data.phone); });
+    }
+  });
+
+  const lostPets = pets.filter(p => p.is_lost);
 
   return (
     <ComponentErrorBoundary
@@ -126,6 +143,30 @@ export const MyPetsSection = ({
               index={pets.length} 
               onAddPet={() => navigate('/add-pet')} 
             />
+          </div>
+        )}
+
+        {/* Lost Mode Panels for lost pets */}
+        {lostPets.map((pet) => (
+          <LostModePanel
+            key={`lost-${pet.id}`}
+            pet={pet}
+            ownerPhone={ownerPhone}
+            onUpdate={() => onPetsRefresh?.()}
+          />
+        ))}
+
+        {/* Lost Mode Activation for non-lost pets */}
+        {pets.filter(p => !p.is_lost).length > 0 && pets.length > 0 && (
+          <div className="mt-2">
+            {pets.filter(p => !p.is_lost).map((pet) => (
+              <LostModePanel
+                key={`activate-${pet.id}`}
+                pet={pet}
+                ownerPhone={ownerPhone}
+                onUpdate={() => onPetsRefresh?.()}
+              />
+            ))}
           </div>
         )}
       </motion.div>
