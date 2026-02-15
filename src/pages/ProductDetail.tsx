@@ -51,7 +51,49 @@ const getNumericPrice = (price: string | number): number => {
 /** Check if product is an accessory (non-food) */
 const isAccessoryCategory = (category: string | null): boolean => {
   if (!category) return false;
-  return ['accessories', 'toys', 'grooming', 'collars', 'leashes', 'beds', 'clothing'].includes(category.toLowerCase());
+  return ['accessories', 'toys', 'grooming', 'collars', 'leashes', 'beds', 'clothing', 'muzzles'].includes(category.toLowerCase());
+};
+
+/** Check if product is a muzzle */
+const isMuzzleProduct = (product: any): boolean => {
+  const text = `${product.name || ''} ${product.description || ''} ${product.category || ''}`.toLowerCase();
+  return text.includes('מחסום') || text.includes('muzzle') || text.includes('זמם') || product.category?.toLowerCase() === 'muzzles';
+};
+
+/** Extract size matrix (circumference, length, size number) from product_attributes */
+const extractSizeMatrix = (product: any): { label: string; value: string }[] => {
+  const matrix: { label: string; value: string }[] = [];
+  const attrs = product.product_attributes || {};
+  
+  const sizeFields: Record<string, string> = {
+    size_number: 'מספר מידה',
+    'מספר מידה': 'מספר מידה',
+    circumference: 'היקף',
+    'היקף': 'היקף',
+    length: 'אורך',
+    'אורך': 'אורך',
+    width: 'רוחב',
+    'רוחב': 'רוחב',
+    size: 'מידה',
+    'מידה': 'מידה',
+  };
+
+  for (const [key, label] of Object.entries(sizeFields)) {
+    const val = attrs[key];
+    if (val && String(val).trim()) {
+      matrix.push({ label, value: String(val) });
+    }
+  }
+  return matrix;
+};
+
+/** Extract breed recommendations from product_attributes */
+const extractBreedRecommendations = (product: any): string[] => {
+  const attrs = product.product_attributes || {};
+  const breeds = attrs.breed_recommendations || attrs['גזעים מומלצים'] || attrs.recommended_breeds || [];
+  if (Array.isArray(breeds)) return breeds;
+  if (typeof breeds === 'string') return breeds.split(/[,،、]\s*/);
+  return [];
 };
 
 /** Extract technical specs from product_attributes for accessories */
@@ -279,7 +321,10 @@ const ProductDetail = () => {
 
   // ── Derived Data ──
   const isAccessory = useMemo(() => product ? isAccessoryCategory(product.category) : false, [product]);
+  const isMuzzle = useMemo(() => product ? isMuzzleProduct(product) : false, [product]);
   const techSpecs = useMemo(() => product ? extractTechSpecs(product) : [], [product]);
+  const sizeMatrix = useMemo(() => product ? extractSizeMatrix(product) : [], [product]);
+  const breedRecommendations = useMemo(() => product ? extractBreedRecommendations(product) : [], [product]);
   const quickFeatures = useMemo(() => product ? deriveQuickFeatures(product) : [], [product]);
   const analysisData = useMemo(() => product ? parseAnalysis(product) : [], [product]);
   const vitaminsData = useMemo(() => product ? parseVitamins(product) : [], [product]);
@@ -659,8 +704,118 @@ const ProductDetail = () => {
           </motion.div>
         )}
 
+        {/* ── Muzzle Safety Alert (Panting / הלחתה) ── */}
+        {isMuzzle && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+            <Card className="p-4 bg-gradient-to-br from-[hsl(30,90%,95%)] to-background border-[hsl(30,80%,70%)]/40 dark:from-[hsl(30,50%,15%)] dark:border-[hsl(30,60%,40%)]/30">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-[hsl(30,80%,70%)]/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <AlertTriangle className="w-5 h-5 text-[hsl(30,80%,45%)]" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground mb-1">⚠️ חשוב – הלחתה (Panting)</h3>
+                  <p className="text-[13px] text-muted-foreground leading-[1.7]">
+                    יש לוודא שהמחסום מאפשר לכלב להלחית (לנשום עם פה פתוח) בחופשיות. 
+                    מחסום שאינו מאפשר הלחתה עלול לגרום לחימום יתר, מצוקה נשימתית וסכנה לחיי הכלב. 
+                    מומלץ להשתמש במחסום סלסלה פתוח ולא במחסום בד צמוד.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Size & Specs Matrix (accessories with measurements) ── */}
+        {isAccessory && sizeMatrix.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
+            <Card className="overflow-hidden">
+              <div className="p-4">
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                  <Ruler className="w-4 h-4 text-primary" />
+                  מידות ומפרט
+                </h3>
+                <div className="rounded-xl overflow-hidden border border-border">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-muted/60">
+                        <th className="text-right p-3 font-bold text-foreground text-xs">מדד</th>
+                        <th className="text-right p-3 font-bold text-foreground text-xs">ערך</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sizeMatrix.map((item, i) => (
+                        <tr key={i} className="border-t border-border/50">
+                          <td className="p-3 text-muted-foreground text-xs">{item.label}</td>
+                          <td className="p-3 text-foreground font-semibold text-xs">{item.value}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Breed Recommendations Tag Cloud ── */}
+        {isAccessory && breedRecommendations.length > 0 && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+            <Card className="p-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+                <Dog className="w-4 h-4 text-primary" />
+                מתאים לגזעים
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {breedRecommendations.map((breed, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.3 + i * 0.04 }}
+                  >
+                    <Badge variant="secondary" className="text-xs px-3 py-1.5 font-medium">
+                      🐕 {breed}
+                    </Badge>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── How to Measure Guide (accessories with sizing) ── */}
+        {isAccessory && (isMuzzle || sizeMatrix.length > 0) && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}>
+            <Card className="p-4 bg-gradient-to-br from-primary/5 to-background border-primary/20">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Ruler className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground mb-1">📏 איך למדוד נכון?</h3>
+                  <div className="text-[13px] text-muted-foreground leading-[1.7] space-y-1.5">
+                    {isMuzzle ? (
+                      <>
+                        <p><strong>היקף הלוע:</strong> מדדו סביב הלוע הסגור, בנקודה הרחבה ביותר, כ-1 ס"מ מתחת לעיניים.</p>
+                        <p><strong>אורך הלוע:</strong> מדדו מקצה האף ועד לנקודה שבין העיניים.</p>
+                        <p><strong>טיפ:</strong> הוסיפו 1-2 ס"מ להיקף כדי לוודא שהכלב יכול להלחית בנוחות.</p>
+                      </>
+                    ) : (
+                      <>
+                        <p><strong>צוואר:</strong> מדדו את היקף הצוואר במקום בו הקולר ינוח, השאירו מרווח של 2 אצבעות.</p>
+                        <p><strong>חזה:</strong> מדדו סביב החלק הרחב ביותר של בית החזה, מאחורי הרגליים הקדמיות.</p>
+                        <p><strong>אורך גב:</strong> מדדו מבסיס הצוואר ועד בסיס הזנב.</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
         {/* ── Pro Tip: Two Fingers Rule (collar accessories) ── */}
-        {isAccessory && product.category?.includes('collar') || (isAccessory && `${product.name} ${product.description}`.toLowerCase().match(/קולר|collar|צווארון/)) ? (
+        {isAccessory && !isMuzzle && (product.category?.includes('collar') || `${product.name} ${product.description}`.toLowerCase().match(/קולר|collar|צווארון/)) ? (
           <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
             <Card className="p-4 bg-gradient-to-br from-warning/10 to-background border-warning/30">
               <div className="flex items-start gap-3">
