@@ -9,7 +9,7 @@ import {
   Plug, HardDrive, Contact, FolderTree, CalendarDays, Headphones,
   Building2, DollarSign, Webhook, PlaySquare, Trophy, Zap, Clock,
   Search, PanelLeftClose, PanelLeft, Home, Upload, Crown, Brain,
-  Plus, Eye, PackageSearch, ArrowUpRight, Sparkles
+  Plus, Eye, PackageSearch, ArrowUpRight, Sparkles, Tv
 } from "lucide-react";
 import { Database as DatabaseIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -91,6 +91,7 @@ const navGroups: NavGroup[] = [
     icon: FileText,
     items: [
       { icon: DatabaseIcon, label: "Data Hub", href: "/admin/data-hub" },
+      { icon: Tv, label: "ניהול פיד", href: "/admin/feed-manager" },
       { icon: PlaySquare, label: "סטוריז", href: "/admin/stories" },
       { icon: FileText, label: "בלוג", href: "/admin/blog" },
       { icon: Flag, label: "דיווחים", href: "/admin/reports" },
