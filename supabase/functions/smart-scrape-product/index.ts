@@ -75,23 +75,34 @@ serve(async (req) => {
     console.log("Scraped successfully, markdown length:", markdown.length, "image:", mainImage ? "found" : "none");
 
     // ── Step 2: Send to LLM for structured extraction ──
-    const extractionPrompt = `You are a product data extraction specialist for a pet food e-commerce platform.
+    const extractionPrompt = `You are a product data extraction specialist for a pet e-commerce platform that sells BOTH food AND accessories (collars, leashes, toys, beds, grooming tools).
 
 Analyze the following scraped product page content and extract ALL data into the exact JSON structure below.
+
+CATEGORY DETECTION - CRITICAL:
+- If the page contains keywords like "collar", "קולר", "צווארון", "רצועה", "leash", "harness", "הרנס", "מיטה", "bed", "toy", "צעצוע", "nylon", "ניילון", "D-ring", "buckle", "אבזם", "quick-release", "שחרור מהיר" → set category to "accessories"
+- If the page contains keywords like "מזון", "food", "kibble", "חטיף", "treat", "שימורים" → set appropriate food category
+- For accessories: populate product_attributes with technical specs (material, size, color, features, closure, dimensions, care_instructions)
+- For food: populate product_attributes with nutritional values (protein_pct, fat_pct, fiber_pct, moisture_pct, ash_pct)
 
 RULES:
 - Extract EXACTLY what is on the page. Do NOT invent or hallucinate data.
 - For Hebrew text, keep it in Hebrew.
-- For the feeding_guide, extract EVERY row from any feeding table/chart found. Format each as { "range": "weight range text", "amount": "daily amount text" }.
-- For ingredients, extract the FULL ingredients list as a single string.
-- For benefits, extract health benefits as an array of objects: [{ "title": "benefit name", "description": "short description" }].
-- For product_attributes, extract any nutritional analysis values (protein %, fat %, fiber %, moisture %, ash %, etc.) as key-value pairs.
-- For category, detect one of: dry-food, wet-food, treats, toys, grooming, health, food, accessories. Use null if unclear.
-- For pet_type, detect: dog, cat, or all.
-- For life_stage: puppy, kitten, adult, senior, all. Use null if unclear.
-- For dog_size: small, medium, large, all. Use null if unclear.
+- For FOOD products:
+  - feeding_guide: Extract EVERY row from feeding tables. Format: { "range": "weight range text", "amount": "daily amount text" }
+  - ingredients: Extract the FULL ingredients list as a single string
+  - benefits: Health benefits as [{ "title": "name", "description": "short description" }]
+- For ACCESSORY products:
+  - Set feeding_guide to empty array []
+  - Set ingredients to null
+  - In product_attributes, include: material, size, color, features (as comma-separated text), closure type, dimensions, and care_instructions (e.g. "ניקוי במטלית לחה")
+  - benefits: Product features/advantages as [{ "title": "name", "description": "short description" }]
+- category: one of: dry-food, wet-food, treats, toys, grooming, health, food, accessories, collars, leashes, beds, clothing. Use null if unclear.
+- pet_type: dog, cat, or all.
+- life_stage: puppy, kitten, adult, senior, all. Use null if unclear.
+- dog_size: small, medium, large, all. Use null if unclear.
 - brand: Extract the brand/manufacturer name.
-- special_diet: Array of dietary features like ["grain-free", "hypoallergenic", "high-protein"].
+- special_diet: Array of dietary features (food) or product features (accessories) like ["grain-free"] or ["reflective", "padded"].
 
 Return ONLY valid JSON, no markdown fences, no explanation.
 
@@ -106,7 +117,7 @@ JSON STRUCTURE:
   "ingredients": "string or null",
   "benefits": [{"title":"string","description":"string"}],
   "feeding_guide": [{"range":"string","amount":"string"}],
-  "product_attributes": {"protein_pct": number, "fat_pct": number, ...},
+  "product_attributes": {},
   "category": "string or null",
   "pet_type": "string",
   "life_stage": "string or null",
