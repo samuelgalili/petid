@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Check, CreditCard, MapPin, Package, Truck, Smartphone, Wallet, Tag, X, Loader2, Heart, Shield, Bell, AlertTriangle } from "lucide-react";
+import { CheckoutSafetyCheck } from "@/components/shop/CheckoutSafetyCheck";
+import { InsuranceUpsell } from "@/components/shop/InsuranceUpsell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -1087,6 +1089,12 @@ const Checkout = () => {
                   </span>
                 </div>
               </Card>
+
+              {/* Safety Check */}
+              <CheckoutSafetyCheck items={items} />
+
+              {/* Insurance Upsell */}
+              <InsuranceUpsell />
 
               {/* Recurring Order Option - Brand Voice */}
               <Card className="p-4 border-dashed border-primary/30 bg-primary/5 max-w-md mx-auto">
