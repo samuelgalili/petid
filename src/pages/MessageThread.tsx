@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, ChevronRight, Phone, Video, Info, Heart, Image, Mic, Smile, Sparkles, Bot, RotateCcw, ShoppingCart, Plus, ExternalLink, Users } from "lucide-react";
+import { Loader2, ChevronRight, Phone, Video, Info, Heart, Image, Mic, Smile, Sparkles, Bot, RotateCcw, ShoppingCart, Plus, ExternalLink, Users, EyeOff } from "lucide-react";
 import { SharedFeedPanel } from "@/components/chat/SharedFeedPanel";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
@@ -74,6 +74,7 @@ export default function MessageThread() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [showSharedFeed, setShowSharedFeed] = useState(false);
+  const [vanishMode, setVanishMode] = useState(false);
   
   // Check if this is an AI chat
   const isAIChat = userId === AI_SUPPORT_ID;
@@ -586,22 +587,29 @@ ${petType} ראיתי שיש לך את ${petNames}${mainPet.breed ? ` (${mainPet
               <RotateCcw className="h-5 w-5 text-muted-foreground" />
             </button>
           ) : (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5">
               <button 
                 onClick={() => setShowSharedFeed(true)}
-                className="p-2 rounded-full hover:bg-primary/10 transition-colors group"
+                className="p-2.5 rounded-full hover:bg-primary/10 active:scale-90 transition-all"
                 title="פיד משותף"
               >
-                <Users className="h-5 w-5 text-foreground group-hover:text-primary transition-colors" />
+                <Users className="h-[22px] w-[22px] text-foreground" strokeWidth={1.5} />
               </button>
-              <button className="p-2 rounded-full hover:bg-muted transition-colors">
-                <Phone className="h-6 w-6 text-foreground" />
+              <button 
+                onClick={() => {
+                  setVanishMode(prev => !prev);
+                  toast(vanishMode ? "מצב נעלם כבוי" : "מצב נעלם פעיל — ההודעות יימחקו לאחר צפייה", { icon: vanishMode ? "👁️" : "👻" });
+                }}
+                className={`p-2.5 rounded-full active:scale-90 transition-all ${vanishMode ? "bg-primary/15" : "hover:bg-muted"}`}
+                title="מצב נעלם"
+              >
+                <EyeOff className={`h-[22px] w-[22px] transition-colors ${vanishMode ? "text-primary" : "text-foreground"}`} strokeWidth={1.5} />
               </button>
-              <button className="p-2 rounded-full hover:bg-muted transition-colors">
-                <Video className="h-6 w-6 text-foreground" />
+              <button className="p-2.5 rounded-full hover:bg-muted active:scale-90 transition-all">
+                <Phone className="h-[22px] w-[22px] text-foreground" strokeWidth={1.5} />
               </button>
-              <button className="p-2 rounded-full hover:bg-muted transition-colors">
-                <Info className="h-6 w-6 text-foreground" />
+              <button className="p-2.5 rounded-full hover:bg-muted active:scale-90 transition-all">
+                <Video className="h-[22px] w-[22px] text-foreground" strokeWidth={1.5} />
               </button>
             </div>
           )}
