@@ -376,11 +376,27 @@ const AdminFeedManager = () => {
       const conditionCounts: Record<string, number> = {};
       conditions.forEach(c => { conditionCounts[c] = (conditionCounts[c] || 0) + 1; });
       const topConditions = Object.entries(conditionCounts).sort(([,a],[,b]) => b - a).slice(0, 5);
-
       const petStats = `Dogs: ${dogCount}, Cats: ${catCount}\nTop conditions: ${topConditions.map(([c,n]) => `${c} (${n})`).join(", ")}`;
 
+      // Gather OCR-extracted medical insights
+      const { data: ocrData } = await supabase
+        .from("pet_document_extracted_data")
+        .select("vaccination_type, treatment_type, diagnosis")
+        .order("created_at", { ascending: false })
+        .limit(100);
+
+      const ocrInsights = ocrData?.length
+        ? [...new Set(ocrData.flatMap(d => [d.vaccination_type, d.treatment_type, d.diagnosis].filter(Boolean)))].slice(0, 20).join(", ")
+        : "No OCR data";
+
+      // Breed distribution
+      const breedCounts: Record<string, number> = {};
+      petData?.forEach(p => { if (p.breed) breedCounts[p.breed] = (breedCounts[p.breed] || 0) + 1; });
+      const topBreeds = Object.entries(breedCounts).sort(([,a],[,b]) => b - a).slice(0, 10);
+      const breedDistribution = topBreeds.map(([b,n]) => `${b} (${n})`).join(", ");
+
       const { data: fnData, error: fnError } = await supabase.functions.invoke("generate-ai-post", {
-        body: { trends: trendTopics, petStats },
+        body: { trends: trendTopics, petStats, ocrInsights, breedDistribution },
       });
 
       if (fnError) throw fnError;
@@ -406,7 +422,7 @@ const AdminFeedManager = () => {
     if (!user || !aiPost) return;
     setIsPublishingAI(true);
     try {
-      const caption = `${aiPost.title_he}\n\n${aiPost.caption_he}`;
+      const caption = `${aiPost.title_he}\n\n${aiPost.caption_he}\n\n---\n🎯 ${aiPost.target_species === "dog" ? "כלבים" : aiPost.target_species === "cat" ? "חתולים" : "כל החיות"} | ${aiPost.target_age === "all" ? "כל הגילאים" : aiPost.target_age} ${aiPost.medical_tags?.length ? `| ${aiPost.medical_tags.join(", ")}` : ""}`;
       const { error } = await supabase.from("posts").insert({
         user_id: user.id,
         image_url: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800",

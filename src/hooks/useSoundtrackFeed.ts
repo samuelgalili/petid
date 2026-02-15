@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { toast } from "sonner";
 import { PROMO_POSTS } from "@/data/promoPostsConfig";
+import { useActivePet } from "@/hooks/useActivePet";
 
 export interface FeedPost {
   id: string;
@@ -42,9 +43,61 @@ export interface FeedPost {
   music_artist?: string | null;
 }
 
+// Health-keyword scoring for OCR-driven ranking
+const HEALTH_RANK_KEYWORDS: Record<string, string[]> = {
+  "סוכרת": ["סוכרת", "diabetic", "diabetes", "insulin", "סוכר בדם"],
+  "כליות": ["כליות", "renal", "kidney", "חלבון מופחת"],
+  "אלרגיה": ["אלרגיה", "allergy", "היפואלרגני", "hypoallergenic", "רגישות"],
+  "עיכול": ["עיכול", "digestive", "gastro", "פרוביוטיקה"],
+  "עור": ["עור", "skin", "derma", "אומגה", "omega", "פרווה"],
+  "משקל": ["משקל", "weight", "דיאטה", "diet", "obesity"],
+  "מפרקים": ["מפרקים", "joint", "mobility", "glucosamine"],
+  "לב": ["לב", "cardiac", "heart", "taurine"],
+};
+
+function scorePostForPet(
+  caption: string | null,
+  petType: string | null,
+  breed: string | null,
+  ageWeeks: number | null,
+  conditions: string[]
+): number {
+  if (!caption) return 0;
+  const lower = caption.toLowerCase();
+  let score = 0;
+
+  // Species match
+  if (petType === "dog" && (lower.includes("כלב") || lower.includes("dog"))) score += 5;
+  if (petType === "cat" && (lower.includes("חתול") || lower.includes("cat"))) score += 5;
+
+  // Breed match
+  if (breed && lower.includes(breed.toLowerCase())) score += 15;
+
+  // Age match
+  if (ageWeeks !== null) {
+    if (ageWeeks < 26 && (lower.includes("גור") || lower.includes("puppy"))) score += 10;
+    if (ageWeeks > 364 && (lower.includes("מבוגר") || lower.includes("senior"))) score += 10;
+  }
+
+  // Medical condition match (strongest signal)
+  for (const cond of conditions) {
+    const condLower = cond.toLowerCase();
+    for (const [key, keywords] of Object.entries(HEALTH_RANK_KEYWORDS)) {
+      if (condLower.includes(key)) {
+        for (const kw of keywords) {
+          if (lower.includes(kw)) { score += 20; break; }
+        }
+      }
+    }
+  }
+
+  return score;
+}
+
 export function useSoundtrackFeed() {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const { pet: activePet } = useActivePet();
   const [activeTab, setActiveTab] = useState<"discover" | "following">("discover");
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -143,6 +196,17 @@ export function useSoundtrackFeed() {
           media_type: mediaType,
         };
       });
+
+      // OCR-driven health-aware ranking: boost posts matching pet's conditions
+      const petConditions = [...(activePet?.medical_conditions || [])];
+      if (activeTab === "discover" && petConditions.length > 0) {
+        enrichedPosts.sort((a, b) => {
+          const scoreA = scorePostForPet(a.caption, activePet?.pet_type || null, activePet?.breed || null, activePet?.ageWeeks ?? null, petConditions);
+          const scoreB = scorePostForPet(b.caption, activePet?.pet_type || null, activePet?.breed || null, activePet?.ageWeeks ?? null, petConditions);
+          if (scoreA !== scoreB) return scoreB - scoreA;
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
+      }
 
       // Insert promo posts at configured positions
       const allPosts = [...enrichedPosts];

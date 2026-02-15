@@ -12,7 +12,7 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const { trends, petStats } = await req.json();
+    const { trends, petStats, ocrInsights, breedDistribution } = await req.json();
 
     const systemPrompt = `You are PetID's Content Strategist AI. Your job is to generate a helpful "Daily Tip" post for pet owners based on trending topics and user data.
 
@@ -49,7 +49,13 @@ ${trends || "No specific trends detected"}
 PET POPULATION STATS:
 ${petStats || "No stats available"}
 
-Based on this data, identify the most important trend or common issue and generate a "Daily Tip" post that addresses it. Make it helpful and specific.`;
+OCR-EXTRACTED MEDICAL INSIGHTS (from uploaded vet documents):
+${ocrInsights || "No OCR data available"}
+
+BREED DISTRIBUTION:
+${breedDistribution || "No breed data available"}
+
+Based on this data, identify the most important trend or common issue and generate a "Daily Tip" post that addresses it. Target the post to the specific breeds, age groups, and medical conditions that are most relevant. Make it helpful and specific.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
