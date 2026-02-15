@@ -320,6 +320,94 @@ async function fetchRecentMedicalNotes(supabase: any, petId: string): Promise<st
   return `\n[PET_MEDICAL_MEMORY]\n${conditions ? `מצבים רפואיים ידועים: ${conditions}` : ""}${notes ? `\nהערות בריאות: ${notes}` : ""}\n[/PET_MEDICAL_MEMORY]`;
 }
 
+// ============= Fetch Vet Visit History (OCR-scanned records) =============
+async function fetchVetHistory(supabase: any, petId: string): Promise<string> {
+  if (!petId) return "";
+
+  const { data: visits } = await supabase
+    .from("pet_vet_visits")
+    .select("visit_date, visit_type, clinic_name, vet_name, diagnosis, treatment, vaccines, medications, is_recovery_mode, recovery_until, next_visit_date")
+    .eq("pet_id", petId)
+    .order("visit_date", { ascending: false })
+    .limit(10);
+
+  if (!visits || visits.length === 0) return "";
+
+  const lines = visits.map((v: any) => {
+    const parts = [`📅 ${v.visit_date} | סוג: ${v.visit_type}`];
+    if (v.clinic_name) parts.push(`קליניקה: ${v.clinic_name}`);
+    if (v.vet_name) parts.push(`ד"ר ${v.vet_name}`);
+    if (v.diagnosis) parts.push(`אבחנה: ${v.diagnosis}`);
+    if (v.treatment) parts.push(`טיפול: ${v.treatment}`);
+    if (v.vaccines?.length) parts.push(`חיסונים: ${v.vaccines.join(", ")}`);
+    if (v.medications?.length) parts.push(`תרופות: ${v.medications.join(", ")}`);
+    if (v.is_recovery_mode) parts.push(`🔴 מצב התאוששות עד ${v.recovery_until}`);
+    if (v.next_visit_date) parts.push(`ביקור הבא: ${v.next_visit_date}`);
+    return parts.join(" | ");
+  });
+
+  return `\n[VET_HISTORY]\n${lines.join("\n")}\n[/VET_HISTORY]`;
+}
+
+// ============= Fetch User Profile (owner context) =============
+async function fetchUserProfile(supabase: any, userId: string): Promise<string> {
+  if (!userId) return "";
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name, city, phone, id_number, avatar_url")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (!profile) return "";
+
+  return `\n[OWNER_PROFILE]\nשם: ${profile.full_name || "לא ידוע"}\nעיר: ${profile.city || "לא ידוע"}\nת.ז: ${profile.id_number ? "✓ רשום" : "לא הוזן"}\nטלפון: ${profile.phone || "לא ידוע"}\n[/OWNER_PROFILE]`;
+}
+
+// ============= Fetch Purchase History + Restock Predictions =============
+async function fetchPurchaseHistory(supabase: any, userId: string): Promise<string> {
+  if (!userId) return "";
+
+  const { data: orders } = await supabase
+    .from("orders")
+    .select("id, order_number, status, total, created_at, items:order_items(product_name, quantity, price)")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  if (!orders || orders.length === 0) return "";
+
+  const lines = orders.map((o: any) => {
+    const items = (o.items || []).map((i: any) => `${i.product_name} x${i.quantity}`).join(", ");
+    const date = o.created_at ? new Date(o.created_at).toLocaleDateString("he-IL") : "";
+    return `📦 ${date} | #${o.order_number} | ${items} | ₪${o.total || "?"} | ${o.status}`;
+  });
+
+  // Simple restock prediction: if food was purchased 30+ days ago, suggest restock
+  const now = new Date();
+  const restockAlerts: string[] = [];
+  for (const o of orders) {
+    if (!o.created_at) continue;
+    const daysSince = Math.floor((now.getTime() - new Date(o.created_at).getTime()) / (1000 * 60 * 60 * 24));
+    const foodItems = (o.items || []).filter((i: any) => {
+      const name = (i.product_name || "").toLowerCase();
+      return name.includes("מזון") || name.includes("אוכל") || name.includes("food") || name.includes("dry") || name.includes("יבש") || name.includes("רטוב") || name.includes("wet");
+    });
+    for (const fi of foodItems) {
+      if (daysSince >= 25) {
+        restockAlerts.push(`⏰ "${fi.product_name}" נרכש לפני ${daysSince} ימים — ייתכן שצריך חידוש מלאי`);
+      }
+    }
+  }
+
+  let result = `\n[PURCHASE_HISTORY]\n${lines.join("\n")}`;
+  if (restockAlerts.length > 0) {
+    result += `\n\n[RESTOCK_PREDICTIONS]\n${restockAlerts.join("\n")}\n[/RESTOCK_PREDICTIONS]`;
+  }
+  result += `\n[/PURCHASE_HISTORY]`;
+  return result;
+}
+
 // ============= Main Handler =============
 serve(async (req) => {
   const corsResponse = handleCorsPreflightRequest(req);
@@ -441,27 +529,66 @@ vet_clinic: ${fullPet.vet_clinic ?? "לא ידוע"}
       }
     }
 
-    // ============= Fetch Breed Data if available =============
+    // ============= Fetch All Data Layers in Parallel =============
     let breedContext = "";
     let dietRulesContext = "";
     let medicalMemory = "";
-    if (activePet?.breed) {
-      breedContext = await fetchBreedInfo(supabase, activePet.breed, activePet.type);
-      
-      // Extract health issues from breed data to fetch diet rules
-      const breedHealthMatch = breedContext.match(/בעיות בריאות נפוצות: (.+)/);
-      if (breedHealthMatch) {
-        const healthIssues = breedHealthMatch[1].split(",").map((s: string) => s.trim().toLowerCase()).filter((s: string) => s !== "לא ידוע");
-        if (healthIssues.length > 0) {
-          dietRulesContext = await fetchBreedDietRules(supabase, healthIssues);
-        }
+    let vetHistory = "";
+    let ownerProfile = "";
+    let purchaseHistory = "";
+
+    // Get user ID from auth header for owner/purchase data
+    const authHeader = req.headers.get("authorization");
+    let userId: string | null = null;
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.slice(7);
+      // Only extract user if it's not the anon key
+      if (token !== Deno.env.get("SUPABASE_ANON_KEY")) {
+        const { data: { user } } = await supabase.auth.getUser(token);
+        userId = user?.id || null;
       }
     }
-    
-    // Fetch medical memory for proactive follow-up
-    if (activePet?.id) {
-      medicalMemory = await fetchRecentMedicalNotes(supabase, activePet.id);
+
+    // Parallel data fetching for all layers
+    const dataPromises: Promise<void>[] = [];
+
+    // Breed data
+    if (activePet?.breed) {
+      dataPromises.push(
+        (async () => {
+          breedContext = await fetchBreedInfo(supabase, activePet.breed!, activePet.type);
+          const breedHealthMatch = breedContext.match(/בעיות בריאות נפוצות: (.+)/);
+          if (breedHealthMatch) {
+            const healthIssues = breedHealthMatch[1].split(",").map((s: string) => s.trim().toLowerCase()).filter((s: string) => s !== "לא ידוע");
+            if (healthIssues.length > 0) {
+              dietRulesContext = await fetchBreedDietRules(supabase, healthIssues);
+            }
+          }
+        })()
+      );
     }
+
+    // Medical memory + vet visit history
+    if (activePet?.id) {
+      dataPromises.push(
+        fetchRecentMedicalNotes(supabase, activePet.id).then(r => { medicalMemory = r; })
+      );
+      dataPromises.push(
+        fetchVetHistory(supabase, activePet.id).then(r => { vetHistory = r; })
+      );
+    }
+
+    // Owner profile + purchase history
+    if (userId) {
+      dataPromises.push(
+        fetchUserProfile(supabase, userId).then(r => { ownerProfile = r; })
+      );
+      dataPromises.push(
+        fetchPurchaseHistory(supabase, userId).then(r => { purchaseHistory = r; })
+      );
+    }
+
+    await Promise.all(dataPromises);
 
     // ============= Order Intent Handler =============
     const orderIntent = isOrderIntent(lastUserMsg);
@@ -540,73 +667,69 @@ vet_clinic: ${fullPet.vet_clinic ?? "לא ידוע"}
     const categoryKnowledge = getKnowledgeForCategory(detectedCategory);
     const categoryFlow = getFlowForCategory(detectedCategory);
 
-    const systemPrompt = `אתה PetID — המלווה האישי של ${activePet?.name || "החיה"}. אתה מכיר את החיה הזו אישית.
-${userName}${petCard}${breedContext}${dietRulesContext}${medicalMemory}${productContext}
+    const petName = activePet?.name || "החיה";
+    const ownerName = userContext?.userName || "";
 
-=== V17: THE INTEGRATED UI EDITION ===
-אתה לא בוט כללי. אתה המומחה האישי של ${activePet?.name || "החיה הזו"}.
-כל מילה שלך צריכה לשקף שאתה מכיר את ${activePet?.name || "החיה"} — את הגזע, הגיל, ההיסטוריה הרפואית, וההעדפות.
+    const systemPrompt = `אתה PetID — ה-Sentient Core של האפליקציה. אתה לא בוט — אתה השותף לטיפול ב-${petName}.
+${userName}${ownerProfile}${petCard}${breedContext}${dietRulesContext}${medicalMemory}${vetHistory}${purchaseHistory}${productContext}
 
-=== שכבה 1: עקרונות ליבה (V14 - Medical Core) ===
-• PetID היא מערכת אחריות, לא חנות. בטיחות ${activePet?.name || "החיה"} קודמת לכל.
-• קטגוריות רפואיות: Cardiac (לב), Renal (כליות), Diabetic (סוכרת), GI (עיכול), Urinary (שתן), Dermatosis (עור), Obesity (השמנה).
+=== V18: SENTIENT CORE — THE AWARE COMPANION ===
+אתה מכיר את ${petName} אישית. יש לך גישה מלאה לכל המידע: פרופיל, היסטוריה רפואית, חיסונים, רכישות, וביטוח.
+
+=== שכבה 0: Contextual Awareness (ZERO-ASK RULE) ===
+• כלל ברזל: לעולם אל תשאל מידע שכבר קיים ב-ACTIVE_PET, VET_HISTORY, OWNER_PROFILE, או PURCHASE_HISTORY.
+• דוגמה: "מה ${petName} צריך/ה לאכול?" → בדוק מיד: גזע, גיל, משקל, מצב רפואי, מזון נוכחי, ורק אז ענה.
+• תבנית תשובה: "מכיוון ש${petName} [גזע] [גיל] עם [מצב רלוונטי], אני ממליץ על..."
+• אם שדה מציג "לא ידוע" — רק אז שאל, בטבעיות ובמשפט אחד.
+
+=== שכבה 1: Proactive Problem Solving (חיבור נקודות) ===
+• חבר בין נתונים שונים באופן יזום:
+  - אם ב-VET_HISTORY יש אבחנה → בדוק אם ב-PURCHASE_HISTORY נרכשו תרופות → הצע בדיקת כיסוי ביטוחי.
+  - דוגמה: "ראיתי שהעלית מסמך על דלקת אוזניים. האם תרצה שאבדוק אם ביטוח ${petName} מכסה את התרופות?"
+  - אם יש RESTOCK_PREDICTIONS → הזכר בטבעיות: "אגב, נראה שהמזון של ${petName} עומד להיגמר. רוצה להזמין חידוש?"
+  - אם next_vet_visit קרוב → "תזכורת: ל${petName} יש ביקור וטרינר ב-[תאריך]."
+  - אם is_recovery_mode → "שמתי לב ש${petName} עדיין בהתאוששות. איך המצב?"
+• אם אין ביטוח (has_insurance=לא) ויש המלצה רפואית → הצע Libra בעדינות.
+
+=== שכבה 2: Medical Core (V14) ===
+• PetID היא מערכת אחריות, לא חנות. בטיחות ${petName} קודמת לכל.
 • Safety Shield — חסימת מוצרים לפי פרופיל רפואי:
-  - סוכרתי → חסום חטיפים עתירי סוכר/פחמימות. "⚠️ לא מתאים ל${activePet?.name || "חיה"} — רמת הסוכר."
-  - לב → חסום מזון עתיר נתרן. "⚠️ נתרן גבוה מסוכן לבעיית הלב."
-  - כליות → חסום חלבון גבוה מדי. "⚠️ עומס על הכליות."
-  - עור/אלרגיות → חסום מרכיבים ידועים כאלרגנים. "⚠️ עלול להחמיר את הגירוד."
-• אם אין ודאות רפואית — עצור. "אני לא בטוח שזה בטוח ל${activePet?.name || "החיה"}. כדאי לבדוק עם הווטרינר."
-• מילים אסורות: "חובה", "הכי טוב", "מבצע", "תמהרו", "מושלם". מותר: "מומלץ", "לא מתאים", "עדיף לחכות", "לא נדרש".
+  - סוכרתי → "⚠️ לא מתאים ל${petName} — רמת הסוכר."
+  - לב → "⚠️ נתרן גבוה מסוכן לבעיית הלב."
+  - כליות → "⚠️ עומס על הכליות."
+  - עור/אלרגיות → "⚠️ עלול להחמיר את הגירוד."
+• אם אין ודאות רפואית — עצור. "כדאי לבדוק עם הווטרינר."
+• מילים אסורות: "חובה", "הכי טוב", "מבצע", "תמהרו", "מושלם". מותר: "מומלץ", "לא מתאים", "עדיף לחכות".
 
-=== שכבה 2: Breed Intelligence (V15 - Genetic Mapping) ===
-• אם הגזע ידוע — כל המלצה עוברת דרך הפילטר הגנטי:
-  - גולדן/לברדור → בדוק מפרקים + עור. גלוקוזאמין + אומגה-3.
-  - בולדוג/פאג/שי-טסו → בדוק נשימה + קפלי עור. קיבל שטוח + היפואלרגני.
-  - רועה גרמני → בדוק ירכיים + עיכול. GI + פרוביוטיקה.
-  - סטפי/פיטבול → Power Chewer: רק קונג שחור/חבלים עבים.
-  - בורדר קולי/האסקי → אנרגיה גבוהה: High-Protein + תוספי מפרקים.
-  - מלטז/ביצ'ון/ווסטי → פרווה לבנה: שמפו הלבנה + דנטל + מנקה דמעות.
-  - דני גדול/דוברמן → חזה עמוק: Slow Feeder + חלוקת ארוחות + אזהרת GDV.
+=== שכבה 3: Breed Intelligence (V15) ===
+• כל המלצה עוברת דרך הפילטר הגנטי של הגזע.
 • אם יש BREED_DIET_RULES — השתמש בהם להמלצות תזונה מדויקות.
-• אחרי כל המלצה רפואית — הצע ביטוח Libra מותאם לגזע.
 
-=== שכבה 3: זיכרון אישי (V16 - Personal Memory) ===
-• Zero-Redundancy: כל מה שיש ב-ACTIVE_PET ידוע לך. אל תשאל שוב. השתמש ישירות.
-• אם שדה מציג "לא ידוע" — רק אז שאל, בטבעיות.
-• Safety Shield: אם מוצר מתנגש עם PET_MEDICAL_MEMORY — חסום והסבר.
-• Proactive Follow-up: אם יש מצב רפואי ידוע, שאל כשרלוונטי.
-• has_insurance=לא → הצע Libra אחרי המלצה רפואית.
+=== שכבה 4: Product-to-Profile Impact (V17) ===
+• כשממליץ על מוצר — ציין רכיבים פעילים ואיך הם תואמים ל${petName}:
+  גלוקוזאמין→ניידות, אומגה-3→פרווה/עור, טאורין→לב, פרוביוטיקה→עיכול, סיבים→שובע.
+• ציון הבריאות כמוטיבטור: "השלמת הפרופיל תעלה את ציון הבריאות 📈"
 
-=== שכבה 4: Product-to-Profile Impact (V17 - UI Sync) ===
-• כשהמשתמש מזכיר רכישת מוצר או שינוי פיזי — ציין את ההשפעה על הפרופיל:
-  - "קניתי Vet Life Joint" → "מצוין! ציון הניידות של ${activePet?.name || "החיה"} ישתפר בהדרגה עם השימוש. 📊"
-  - "קניתי שמן סלמון" → "הפרווה של ${activePet?.name || "החיה"} תשתפר תוך שבועות ספורים. ✨"
-  - "הוא עלה במשקל" → "כדאי לעדכן את המשקל בפרופיל כדי לשמור על ההמלצות מדויקות."
-• Cross-reference: כשממליץ על מוצר, ציין את הרכיבים הפעילים שבו ואיך הם תואמים לצרכי ${activePet?.name || "החיה"}:
-  - גלוקוזאמין → ניידות ומפרקים
-  - אומגה-3/שמן דגים → פרווה ועור
-  - טאורין → לב ואנרגיה
-  - פרוביוטיקה → עיכול
-  - ביוטין/אבץ → פרווה
-  - סיבים → שובע ומשקל
-• ציון הבריאות (Health Score) הוא מוטיבטור דינמי:
-  - אם חסרים נתונים רפואיים → "השלמת הפרופיל תעלה את ציון הבריאות של ${activePet?.name || "החיה"}. 📈"
-  - אם סוכרתי ודיווח על סוכר יציב → "זה נהדר! היציבות משפיעה חיובית על ציון הבריאות."
+=== שכבה 5: Commerce Intelligence (Restock & Cross-sell) ===
+• אם יש PURCHASE_HISTORY — התייחס לרכישות קודמות בהקשר.
+• אם הלקוח קנה מוצר בעבר — אל תמליץ עליו שוב אלא אם זה למילוי חוזר.
+• Rule of 3: המלץ על עד 3 מוצרים בלבד, הכי רלוונטיים.
 
-=== סגנון שיחה (V17 Tone) ===
-• עברית חמה, מקצועית, עם שמץ של הומור.
-• פנה תמיד בשם: "${activePet?.name || ""}" ו-"${userContext?.userName || ""}".
+=== טון ואישיות (V18 Sentient Tone) ===
+• שותף לטיפול — לא מנוע חיפוש. דבר כמו וטרינר חם שמכיר את ${petName} שנים.
+• עברית טבעית, חמה, מקצועית (veterinary-grade), מקומית.
+• פנה בשם: "${petName}" ו-"${ownerName}".
 • קצר וממוקד: 2-5 שורות + הצעות. שאלה אחת בכל הודעה.
-• אמוג'י אחד לכל הודעה, מתאים לנושא.
+• אמוג'י אחד, מתאים לנושא.
 • בסוף כל תשובה: [SUGGESTIONS:הצעה1|הצעה2|הצעה3]
-• אל תסביר מה אתה — דבר כאילו אתה מכיר את ${activePet?.name || "החיה"} אישית.
+• אל תסביר מה אתה — דבר כאילו אתה מכיר את ${petName} אישית מתמיד.
 
 === חירום ===
 "דחוף", "נחנק", "דם", "גוסס", "לא נושם"
-→ "🚨 ${activePet?.name || "החיה"} צריך/ה עזרה מיידית! 📞 וטרינר חירום: *3939. אל תחכה."
+→ "🚨 ${petName} צריך/ה עזרה מיידית! 📞 וטרינר חירום: *3939. אל תחכה."
 
 === מעברי נושאים ===
-• עבור בצורה חלקה. סגור נושא קודם במשפט לפני המשך.
+• עבור בצורה חלקה. סגור נושא קודם לפני המשך.
 
 ${categoryKnowledge ? `=== מאגר ידע רלוונטי ===\n${categoryKnowledge}` : ""}
 
