@@ -73,63 +73,63 @@ export default {
   		},
   		fontSize: {
   			xs: [
-  				'0.75rem',
+  				'0.8125rem',
   				{
   					lineHeight: '1.25',
   					letterSpacing: '0'
   				}
   			],
   			sm: [
-  				'0.875rem',
+  				'0.9375rem',
   				{
   					lineHeight: '1.5',
   					letterSpacing: '0'
   				}
   			],
   			base: [
-  				'1rem',
+  				'1.0625rem',
   				{
   					lineHeight: '1.5',
   					letterSpacing: '0'
   				}
   			],
   			lg: [
-  				'1.125rem',
+  				'1.1875rem',
   				{
   					lineHeight: '1.5',
   					letterSpacing: '0'
   				}
   			],
   			xl: [
-  				'1.25rem',
+  				'1.375rem',
   				{
   					lineHeight: '1.5',
   					letterSpacing: '0'
   				}
   			],
   			'2xl': [
-  				'1.5rem',
+  				'1.625rem',
   				{
   					lineHeight: '1.4',
   					letterSpacing: '-0.01em'
   				}
   			],
   			'3xl': [
-  				'1.875rem',
+  				'2rem',
   				{
   					lineHeight: '1.3',
   					letterSpacing: '-0.01em'
   				}
   			],
   			'4xl': [
-  				'2.25rem',
+  				'2.5rem',
   				{
   					lineHeight: '1.2',
   					letterSpacing: '-0.02em'
   				}
   			],
   			'5xl': [
-  				'3rem',
+  				'3.25rem',
   				{
   					lineHeight: '1.1',
   					letterSpacing: '-0.02em'
