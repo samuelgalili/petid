@@ -177,8 +177,7 @@ const ArchivedPets = lazy(() => import("@/pages/ArchivedPets"));
 const BreedHistory = lazy(() => import("@/pages/BreedHistory"));
 const Photos = lazy(() => import("@/pages/Photos"));
 const Documents = lazy(() => import("@/pages/Documents"));
-// Training, Grooming, Insurance - removed (redirected to /chat)
-const Adoption = lazy(() => import("@/pages/Adoption"));
+// Training, Grooming, Insurance, Adoption - removed (redirected to /chat)
 const Breeds = lazy(() => import("@/pages/Breeds"));
 const BreedQuiz = lazy(() => import("@/pages/BreedQuiz"));
 const BreedDetect = lazy(() => import("@/pages/BreedDetect"));
@@ -196,7 +195,7 @@ export const petRoutes: RouteObject[] = [
   { path: "/grooming", element: <Navigate to="/chat" replace /> },
   { path: "/insurance", element: <Navigate to="/chat" replace /> },
   { path: "/dog-parks", element: <Navigate to="/chat" replace /> },
-  { path: "/adoption", element: <LazyPage component={Adoption} pageName="אימוץ" /> },
+  { path: "/adoption", element: <Navigate to="/chat" replace /> },
   { path: "/breeds", element: <LazyPage component={Breeds} pageName="אנציקלופדיית גזעים" /> },
   { path: "/breed-quiz", element: <LazyPage component={BreedQuiz} pageName="שאלון התאמת גזע" /> },
   { path: "/breed-detect", element: <LazyPage component={BreedDetect} pageName="זיהוי גזע" /> },
@@ -235,7 +234,7 @@ const BusinessDirectory = lazy(() => import("@/pages/BusinessDirectory"));
 const BusinessProfile = lazy(() => import("@/pages/BusinessProfile"));
 const ConvertToBusiness = lazy(() => import("@/pages/ConvertToBusiness"));
 const AdCampaigns = lazy(() => import("@/pages/AdCampaigns"));
-const Parks = lazy(() => import("@/pages/Parks"));
+// Parks - removed (redirected to /chat)
 const Experiences = lazy(() => import("@/pages/Experiences"));
 const Guides = lazy(() => import("@/pages/Guides"));
 
@@ -244,7 +243,7 @@ export const businessRoutes: RouteObject[] = [
   { path: "/business/:id", element: <LazyPage component={BusinessProfile} pageName="פרופיל עסק" /> },
   { path: "/convert-to-business", element: <Protected><LazyPage component={ConvertToBusiness} pageName="המרה לעסק" /></Protected> },
   { path: "/ad-campaigns", element: <LazyPage component={AdCampaigns} pageName="קמפיינים" /> },
-  { path: "/parks", element: <LazyPage component={Parks} pageName="גינות כלבים" /> },
+  { path: "/parks", element: <Navigate to="/chat" replace /> },
   { path: "/experiences", element: <LazyPage component={Experiences} pageName="חוויות" /> },
   { path: "/guides", element: <LazyPage component={Guides} pageName="מדריכים" /> },
 ];
