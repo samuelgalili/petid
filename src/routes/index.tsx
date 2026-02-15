@@ -213,6 +213,7 @@ const Settings = lazy(() => import("@/pages/Settings"));
 const Notifications = lazy(() => import("@/pages/Notifications"));
 const Messages = lazy(() => import("@/pages/Messages"));
 const MessageThread = lazy(() => import("@/pages/MessageThread"));
+const NewMessage = lazy(() => import("@/pages/NewMessage"));
 const PrivacySettings = lazy(() => import("@/pages/PrivacySettings"));
 const Chat = lazy(() => import("@/pages/Chat"));
 
@@ -222,6 +223,7 @@ export const userRoutes: RouteObject[] = [
   { path: "/settings", element: <Protected><LazyPage component={Settings} pageName="הגדרות" /></Protected> },
   { path: "/notifications", element: <Protected><LazyPage component={Notifications} pageName="התראות" /></Protected> },
   { path: "/messages", element: <Protected><LazyPage component={Messages} pageName="הודעות" /></Protected> },
+  { path: "/messages/new", element: <Protected><LazyPage component={NewMessage} pageName="הודעה חדשה" /></Protected> },
   { path: "/messages/:userId", element: <Protected><LazyPage component={MessageThread} pageName="שיחה" /></Protected> },
   { path: "/privacy-settings", element: <Protected><LazyPage component={PrivacySettings} pageName="הגדרות פרטיות" /></Protected> },
   { path: "/chat", element: <Protected><LazyPage component={Chat} pageName="צ'אט" /></Protected> },
