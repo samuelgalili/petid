@@ -3470,6 +3470,81 @@ export type Database = {
           },
         ]
       }
+      insurance_claims: {
+        Row: {
+          clinic_name: string | null
+          created_at: string
+          deductible_amount: number | null
+          diagnosis: string | null
+          id: string
+          owner_id_number: string | null
+          owner_name: string | null
+          paid_amount: number | null
+          paid_at: string | null
+          pet_id: string
+          pet_microchip: string | null
+          pet_name: string | null
+          receipt_image_url: string | null
+          reviewed_at: string | null
+          status: string
+          status_note: string | null
+          submitted_at: string
+          total_amount: number | null
+          treatment: string | null
+          updated_at: string
+          user_id: string
+          visit_date: string | null
+        }
+        Insert: {
+          clinic_name?: string | null
+          created_at?: string
+          deductible_amount?: number | null
+          diagnosis?: string | null
+          id?: string
+          owner_id_number?: string | null
+          owner_name?: string | null
+          paid_amount?: number | null
+          paid_at?: string | null
+          pet_id: string
+          pet_microchip?: string | null
+          pet_name?: string | null
+          receipt_image_url?: string | null
+          reviewed_at?: string | null
+          status?: string
+          status_note?: string | null
+          submitted_at?: string
+          total_amount?: number | null
+          treatment?: string | null
+          updated_at?: string
+          user_id: string
+          visit_date?: string | null
+        }
+        Update: {
+          clinic_name?: string | null
+          created_at?: string
+          deductible_amount?: number | null
+          diagnosis?: string | null
+          id?: string
+          owner_id_number?: string | null
+          owner_name?: string | null
+          paid_amount?: number | null
+          paid_at?: string | null
+          pet_id?: string
+          pet_microchip?: string | null
+          pet_name?: string | null
+          receipt_image_url?: string | null
+          reviewed_at?: string | null
+          status?: string
+          status_note?: string | null
+          submitted_at?: string
+          total_amount?: number | null
+          treatment?: string | null
+          updated_at?: string
+          user_id?: string
+          visit_date?: string | null
+        }
+        Relationships: []
+      }
       insurance_leads: {
         Row: {
           age_years: number | null

@@ -35,6 +35,7 @@ import { BreedHealthTips } from "@/components/profile/BreedHealthTips";
 import { VetDocumentScanner } from "@/components/profile/VetDocumentScanner";
 import { MyClinicCard } from "@/components/profile/MyClinicCard";
 import { DangerousBreedBanner } from "@/components/profile/DangerousBreedBanner";
+import { ClaimsHistory } from "@/components/profile/ClaimsHistory";
 import { PuppyVaccineScheduler } from "@/components/profile/PuppyVaccineScheduler";
 import { PreventiveCareEngine } from "@/components/profile/PreventiveCareEngine";
 import { MedicalDocumentFAB } from "@/components/profile/MedicalDocumentFAB";
@@ -603,6 +604,9 @@ const Profile = () => {
                     
                     {/* Recovery Banner */}
                     <RecoveryBanner petId={selectedPet.id} petName={selectedPet.name} onOpenRecoveryProducts={() => setSmartRecCategory('health')} />
+
+                    {/* Insurance Claims History */}
+                    <ClaimsHistory petId={selectedPet.id} />
                     
                     {/* Breed Health Tips (Shih Tzu specific, puppy tips, etc.) */}
                     <BreedHealthTips
