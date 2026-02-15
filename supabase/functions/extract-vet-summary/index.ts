@@ -26,7 +26,47 @@ const CAT_VACCINES = [
   'felv', 'feline leukemia', 'לוקמיה של חתולים', 'לוקמיה',
   'fiv', 'feline immunodeficiency', 'איידס של חתולים',
   'chlamydia', 'כלמידיה',
+  'fip', 'peritonitis', 'פריטוניטיס', 'feline infectious peritonitis',
 ];
+
+// === FELINE URINARY ALERT TRIGGERS ===
+const FELINE_URINARY_TRIGGERS = [
+  'crystals', 'קריסטלים', 'גבישים', 'struvite', 'סטרוויט', 'סטרוביט',
+  'inappropriate urination', 'השתנה מחוץ לארגז', 'השתנה לא מתאימה',
+  'urinary blockage', 'חסימת שתן', 'חסימה', 'blocked', 'hematuria', 'דם בשתן',
+  'flutd', 'feline lower urinary', 'דרכי שתן תחתונות',
+  'cystitis', 'דלקת שלפוחית', 'oxalate', 'אוקסלט',
+];
+
+// === STERILIZATION KEYWORDS ===
+const STERILIZATION_KEYWORDS = [
+  'spayed', 'מעוקרת', 'neutered', 'מסורס', 'sterilized', 'מעוקר',
+  'castrated', 'סורס', 'ovariohysterectomy', 'כריתת רחם ושחלות',
+  'orchiectomy', 'כריתת אשכים', 'gonadectomy',
+];
+
+// === CAT-FRIENDLY CLINIC INDICATORS ===
+const CAT_FRIENDLY_INDICATORS = [
+  'cat friendly', 'cat-friendly', 'ידידותית לחתולים', 'קליניקה לחתולים',
+  'feline only', 'חתולים בלבד', 'cat clinic', 'קליניקת חתולים',
+  'isfm', 'aafp', 'gold certified', 'silver certified',
+  'cat friendly practice', 'cat friendly clinic',
+];
+
+// === FELINE BREED IDEAL WEIGHTS (kg) for 100g precision ===
+const FELINE_BREED_WEIGHTS: Record<string, { min: number; max: number }> = {
+  'persian': { min: 3.5, max: 5.5 }, 'פרסי': { min: 3.5, max: 5.5 },
+  'siamese': { min: 3.0, max: 5.0 }, 'סיאמי': { min: 3.0, max: 5.0 },
+  'maine coon': { min: 5.5, max: 8.0 }, 'מיין קון': { min: 5.5, max: 8.0 },
+  'british shorthair': { min: 4.0, max: 7.0 }, 'בריטי': { min: 4.0, max: 7.0 },
+  'ragdoll': { min: 4.5, max: 7.0 }, 'רגדול': { min: 4.5, max: 7.0 },
+  'bengal': { min: 3.5, max: 5.5 }, 'בנגלי': { min: 3.5, max: 5.5 },
+  'abyssinian': { min: 3.0, max: 4.5 }, 'אביסיני': { min: 3.0, max: 4.5 },
+  'sphynx': { min: 3.0, max: 5.0 }, 'ספינקס': { min: 3.0, max: 5.0 },
+  'scottish fold': { min: 3.0, max: 5.5 }, 'סקוטי': { min: 3.0, max: 5.5 },
+  'russian blue': { min: 3.0, max: 5.5 }, 'רוסי כחול': { min: 3.0, max: 5.5 },
+  'default': { min: 3.5, max: 5.5 },
+};
 
 // Combined for backwards compatibility
 const KNOWN_VACCINES = [...new Set([...DOG_VACCINES, ...CAT_VACCINES])];
@@ -71,6 +111,19 @@ interface ExtractedData {
   nextVisitDate: string | null;
   breedManagementGuide: string | null;
   affectedDashboardCircles: string[];
+  // Feline-specific extracted fields
+  felineUrinaryAlert: boolean;
+  felineUrinaryTriggers: string[];
+  sterilizationDetected: boolean;
+  sterilizationType: string | null;
+  catFriendlyClinic: boolean;
+  catFriendlyClinicName: string | null;
+  felineWeightAssessment: {
+    currentWeight: number | null;
+    idealRange: { min: number; max: number } | null;
+    diffGrams: number | null;
+    status: 'underweight' | 'ideal' | 'overweight' | 'obese' | null;
+  } | null;
 }
 
 // Breed-specific condition management guides (Hebrew)
@@ -288,7 +341,70 @@ function extractFromText(summary: string): ExtractedData {
 
   const affectedDashboardCircles = getAffectedCircles(diagnoses, summary);
 
-  return { diagnoses, medications, vaccines, isRecoveryMode, recoveryReason, nextVisitDate, breedManagementGuide: null, affectedDashboardCircles };
+  // === FELINE URINARY ALERT DETECTION ===
+  const felineUrinaryTriggers: string[] = [];
+  for (const trigger of FELINE_URINARY_TRIGGERS) {
+    if (lower.includes(trigger.toLowerCase())) {
+      felineUrinaryTriggers.push(trigger);
+    }
+  }
+  const felineUrinaryAlert = felineUrinaryTriggers.length > 0;
+  if (felineUrinaryAlert && !affectedDashboardCircles.includes('urinary')) {
+    affectedDashboardCircles.push('urinary');
+  }
+
+  // === STERILIZATION AUTO-DETECT ===
+  let sterilizationDetected = false;
+  let sterilizationType: string | null = null;
+  for (const kw of STERILIZATION_KEYWORDS) {
+    if (lower.includes(kw.toLowerCase())) {
+      sterilizationDetected = true;
+      // Determine type
+      if (['spayed', 'מעוקרת', 'ovariohysterectomy', 'כריתת רחם ושחלות'].some(s => lower.includes(s))) {
+        sterilizationType = 'spayed';
+      } else {
+        sterilizationType = 'neutered';
+      }
+      break;
+    }
+  }
+
+  // === CAT-FRIENDLY CLINIC DETECTION ===
+  let catFriendlyClinic = false;
+  let catFriendlyClinicName: string | null = null;
+  for (const indicator of CAT_FRIENDLY_INDICATORS) {
+    if (lower.includes(indicator.toLowerCase())) {
+      catFriendlyClinic = true;
+      // Try to extract clinic name from nearby text
+      const idx = lower.indexOf(indicator.toLowerCase());
+      const nearby = summary.substring(Math.max(0, idx - 50), idx + indicator.length + 50);
+      const clinicMatch = nearby.match(/(?:קליניק[הת]|clinic|מרפאה)\s*[:"']?\s*([^\n,;]+)/i);
+      if (clinicMatch) catFriendlyClinicName = clinicMatch[1].trim();
+      break;
+    }
+  }
+
+  // === FELINE WEIGHT EXTRACTION (100g precision) ===
+  let felineWeightAssessment: ExtractedData['felineWeightAssessment'] = null;
+  const weightMatch = lower.match(/(?:weight|משקל)[:\s]*(\d+(?:\.\d+)?)\s*(?:kg|ק"ג|קילו)/);
+  if (weightMatch) {
+    const currentWeight = parseFloat(weightMatch[1]);
+    felineWeightAssessment = {
+      currentWeight,
+      idealRange: null,
+      diffGrams: null,
+      status: null,
+    };
+  }
+
+  return {
+    diagnoses, medications, vaccines, isRecoveryMode, recoveryReason,
+    nextVisitDate, breedManagementGuide: null, affectedDashboardCircles,
+    felineUrinaryAlert, felineUrinaryTriggers,
+    sterilizationDetected, sterilizationType,
+    catFriendlyClinic, catFriendlyClinicName,
+    felineWeightAssessment,
+  };
 }
 
 serve(async (req) => {
@@ -314,12 +430,72 @@ serve(async (req) => {
     // Extract data from summary
     const extracted = extractFromText(summary);
 
-    // Look up breed for management guide
+    // Look up breed for management guide + weight benchmarking
     const { data: petInfo } = await supabase
       .from("pets")
-      .select("breed")
+      .select("breed, type, weight, is_neutered")
       .eq("id", petId)
       .maybeSingle();
+
+    const actualPetType = petType || petInfo?.type || 'dog';
+    const isCat = actualPetType === 'cat';
+
+    // === FELINE WEIGHT BENCHMARKING (100g precision) ===
+    if (isCat && extracted.felineWeightAssessment?.currentWeight) {
+      const breedLower = ((petInfo?.breed as string) || '').toLowerCase();
+      let idealRange = FELINE_BREED_WEIGHTS['default'];
+      for (const [breedKey, range] of Object.entries(FELINE_BREED_WEIGHTS)) {
+        if (breedKey !== 'default' && (breedLower.includes(breedKey) || breedKey.includes(breedLower))) {
+          idealRange = range;
+          break;
+        }
+      }
+      const cw = extracted.felineWeightAssessment.currentWeight;
+      const idealMid = (idealRange.min + idealRange.max) / 2;
+      const diffGrams = Math.round((cw - idealMid) * 1000); // 100g precision
+      let status: 'underweight' | 'ideal' | 'overweight' | 'obese' = 'ideal';
+      if (cw < idealRange.min) status = 'underweight';
+      else if (cw > idealRange.max * 1.2) status = 'obese';
+      else if (cw > idealRange.max) status = 'overweight';
+
+      extracted.felineWeightAssessment.idealRange = idealRange;
+      extracted.felineWeightAssessment.diffGrams = diffGrams;
+      extracted.felineWeightAssessment.status = status;
+    } else if (isCat && petInfo?.weight) {
+      // Use pet record weight if not in document
+      const breedLower = ((petInfo?.breed as string) || '').toLowerCase();
+      let idealRange = FELINE_BREED_WEIGHTS['default'];
+      for (const [breedKey, range] of Object.entries(FELINE_BREED_WEIGHTS)) {
+        if (breedKey !== 'default' && (breedLower.includes(breedKey) || breedKey.includes(breedLower))) {
+          idealRange = range;
+          break;
+        }
+      }
+      const cw = petInfo.weight as number;
+      const idealMid = (idealRange.min + idealRange.max) / 2;
+      const diffGrams = Math.round((cw - idealMid) * 1000);
+      let status: 'underweight' | 'ideal' | 'overweight' | 'obese' = 'ideal';
+      if (cw < idealRange.min) status = 'underweight';
+      else if (cw > idealRange.max * 1.2) status = 'obese';
+      else if (cw > idealRange.max) status = 'overweight';
+
+      extracted.felineWeightAssessment = {
+        currentWeight: cw,
+        idealRange,
+        diffGrams,
+        status,
+      };
+    }
+
+    // === STERILIZATION AUTO-UPDATE ===
+    if (isCat && extracted.sterilizationDetected && !petInfo?.is_neutered) {
+      await supabase.from("pets").update({ is_neutered: true }).eq("id", petId);
+    }
+
+    // === CAT-FRIENDLY CLINIC: update clinic name if detected ===
+    if (isCat && extracted.catFriendlyClinic && extracted.catFriendlyClinicName) {
+      // Store in the vet visit record below
+    }
 
     if (petInfo?.breed && extracted.diagnoses.length > 0) {
       const breedLower = (petInfo.breed as string).toLowerCase();
@@ -406,18 +582,6 @@ serve(async (req) => {
     await supabase.from("pets").update(petUpdate).eq("id", petId);
 
     // === SAFETY CHECK: Cross-species medication warnings ===
-    const resolvedPetType = petType || (petInfo as any)?.type || 'dog';
-    // If petType not passed, try fetching it
-    let actualPetType = resolvedPetType;
-    if (!petType) {
-      const { data: petTypeData } = await supabase
-        .from("pets")
-        .select("type")
-        .eq("id", petId)
-        .maybeSingle();
-      if (petTypeData?.type) actualPetType = petTypeData.type;
-    }
-    
     const safetyWarnings = checkCrossSpeciesSafety(extracted.medications, actualPetType);
 
     return new Response(JSON.stringify({
@@ -426,6 +590,16 @@ serve(async (req) => {
       recoveryUntil,
       safetyWarnings,
       petType: actualPetType,
+      // Feline-specific response fields
+      felineData: isCat ? {
+        urinaryAlert: extracted.felineUrinaryAlert,
+        urinaryTriggers: extracted.felineUrinaryTriggers,
+        sterilizationDetected: extracted.sterilizationDetected,
+        sterilizationType: extracted.sterilizationType,
+        catFriendlyClinic: extracted.catFriendlyClinic,
+        catFriendlyClinicName: extracted.catFriendlyClinicName,
+        weightAssessment: extracted.felineWeightAssessment,
+      } : null,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
