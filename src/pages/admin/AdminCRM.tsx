@@ -31,7 +31,8 @@ import {
   UserCheck, UserX, Zap, Award, ArrowUpRight, Gift, Heart,
   CreditCard, Receipt, DollarSign, Banknote, Package, Percent, Trash2, Minus,
   RefreshCw, Building2, Send, ExternalLink, MapPin, Home, Edit, Save, PawPrint,
-  Syringe, Stethoscope, FileText, GraduationCap, Scale, Shield, ShieldCheck, ShieldX
+  Syringe, Stethoscope, FileText, GraduationCap, Scale, Shield, ShieldCheck, ShieldX,
+  Image, ThumbsUp, Scissors, Gem
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, differenceInDays, subDays } from "date-fns";
@@ -291,6 +292,88 @@ const AdminCRM = () => {
         .select('*')
         .eq('customer_id', selectedCustomer.id)
         .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!selectedCustomer
+  });
+
+  // Fetch customer posts
+  const { data: customerPosts } = useQuery({
+    queryKey: ['customer-posts', selectedCustomer?.id],
+    queryFn: async () => {
+      if (!selectedCustomer) return [];
+      const { data, error } = await supabase
+        .from('posts')
+        .select('id, content, image_url, created_at, likes_count, comments_count')
+        .eq('user_id', selectedCustomer.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!selectedCustomer
+  });
+
+  // Fetch customer product reviews
+  const { data: customerReviews } = useQuery({
+    queryKey: ['customer-reviews', selectedCustomer?.id],
+    queryFn: async () => {
+      if (!selectedCustomer) return [];
+      const { data, error } = await supabase
+        .from('product_reviews')
+        .select('id, rating, comment, created_at, product_id, business_products(name, image_url)')
+        .eq('user_id', selectedCustomer.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!selectedCustomer
+  });
+
+  // Fetch customer grooming bookings
+  const { data: customerGrooming } = useQuery({
+    queryKey: ['customer-grooming', selectedCustomer?.id],
+    queryFn: async () => {
+      if (!selectedCustomer) return [];
+      const { data, error } = await supabase
+        .from('grooming_appointments')
+        .select('*')
+        .eq('user_id', selectedCustomer.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!selectedCustomer
+  });
+
+  // Fetch customer loyalty events
+  const { data: customerLoyalty } = useQuery({
+    queryKey: ['customer-loyalty', selectedCustomer?.id],
+    queryFn: async () => {
+      if (!selectedCustomer) return [];
+      const { data, error } = await supabase
+        .from('loyalty_events')
+        .select('*')
+        .eq('user_id', selectedCustomer.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!selectedCustomer
+  });
+
+  // Fetch customer achievements
+  const { data: customerAchievements } = useQuery({
+    queryKey: ['customer-achievements', selectedCustomer?.id],
+    queryFn: async () => {
+      if (!selectedCustomer) return [];
+      const { data, error } = await supabase
+        .from('achievements')
+        .select('*, badges(name, name_he, icon, rarity, description)')
+        .eq('user_id', selectedCustomer.id)
+        .order('earned_at', { ascending: false });
       if (error) throw error;
       return data || [];
     },
@@ -838,28 +921,32 @@ const AdminCRM = () => {
 
                   {/* Tabs */}
                   <Tabs defaultValue="details" className="p-6">
-                    <TabsList className="w-full mb-6 grid grid-cols-6">
-                      <TabsTrigger value="details" className="gap-2">
+                    <TabsList className="w-full mb-6 grid grid-cols-7">
+                      <TabsTrigger value="details" className="gap-1 text-xs">
                         <Users className="h-4 w-4" />
                         פרטים
                       </TabsTrigger>
-                      <TabsTrigger value="overview" className="gap-2">
+                      <TabsTrigger value="overview" className="gap-1 text-xs">
                         <Activity className="h-4 w-4" />
                         סקירה
                       </TabsTrigger>
-                      <TabsTrigger value="billing" className="gap-2">
+                      <TabsTrigger value="activity" className="gap-1 text-xs">
+                        <Heart className="h-4 w-4" />
+                        פעילות
+                      </TabsTrigger>
+                      <TabsTrigger value="billing" className="gap-1 text-xs">
                         <CreditCard className="h-4 w-4" />
                         חיובים
                       </TabsTrigger>
-                      <TabsTrigger value="history" className="gap-2">
+                      <TabsTrigger value="history" className="gap-1 text-xs">
                         <History className="h-4 w-4" />
                         היסטוריה
                       </TabsTrigger>
-                      <TabsTrigger value="notes" className="gap-2">
+                      <TabsTrigger value="notes" className="gap-1 text-xs">
                         <MessageSquare className="h-4 w-4" />
                         הערות
                       </TabsTrigger>
-                      <TabsTrigger value="reminders" className="gap-2">
+                      <TabsTrigger value="reminders" className="gap-1 text-xs">
                         <Bell className="h-4 w-4" />
                         תזכורות
                       </TabsTrigger>
@@ -1459,6 +1546,163 @@ const AdminCRM = () => {
                           <Plus className="h-4 w-4" />
                         </Button>
                       </div>
+                    </TabsContent>
+
+                    {/* Activity Tab - Posts, Reviews, Grooming, Loyalty, Achievements */}
+                    <TabsContent value="activity" className="space-y-6">
+                      {/* Activity Summary */}
+                      <div className="grid grid-cols-5 gap-3">
+                        <Card className="p-3 text-center">
+                          <Image className="h-4 w-4 mx-auto mb-1 text-primary" />
+                          <p className="text-xl font-bold">{customerPosts?.length || 0}</p>
+                          <p className="text-xs text-muted-foreground">פוסטים</p>
+                        </Card>
+                        <Card className="p-3 text-center">
+                          <Star className="h-4 w-4 mx-auto mb-1 text-amber-500" />
+                          <p className="text-xl font-bold">{customerReviews?.length || 0}</p>
+                          <p className="text-xs text-muted-foreground">ביקורות</p>
+                        </Card>
+                        <Card className="p-3 text-center">
+                          <Scissors className="h-4 w-4 mx-auto mb-1 text-pink-500" />
+                          <p className="text-xl font-bold">{customerGrooming?.length || 0}</p>
+                          <p className="text-xs text-muted-foreground">טיפוח</p>
+                        </Card>
+                        <Card className="p-3 text-center">
+                          <Gem className="h-4 w-4 mx-auto mb-1 text-violet-500" />
+                          <p className="text-xl font-bold">
+                            {customerLoyalty?.reduce((sum: number, e: any) => sum + (e.points || 0), 0) || 0}
+                          </p>
+                          <p className="text-xs text-muted-foreground">נקודות</p>
+                        </Card>
+                        <Card className="p-3 text-center">
+                          <Award className="h-4 w-4 mx-auto mb-1 text-emerald-500" />
+                          <p className="text-xl font-bold">{customerAchievements?.length || 0}</p>
+                          <p className="text-xs text-muted-foreground">הישגים</p>
+                        </Card>
+                      </div>
+
+                      {/* Recent Posts */}
+                      {customerPosts && customerPosts.length > 0 && (
+                        <Card className="p-4">
+                          <h4 className="font-medium mb-3 flex items-center gap-2 text-primary">
+                            <Image className="h-4 w-4" />
+                            פוסטים אחרונים ({customerPosts.length})
+                          </h4>
+                          <div className="space-y-2">
+                            {customerPosts.slice(0, 5).map((post: any) => (
+                              <div key={post.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/30">
+                                {post.image_url && (
+                                  <img src={post.image_url} alt="" className="w-10 h-10 rounded object-cover" />
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm truncate">{post.content || 'ללא תוכן'}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {format(new Date(post.created_at), 'dd/MM/yyyy', { locale: he })}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                  <span className="flex items-center gap-1">
+                                    <ThumbsUp className="h-3 w-3" />
+                                    {post.likes_count || 0}
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <MessageSquare className="h-3 w-3" />
+                                    {post.comments_count || 0}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </Card>
+                      )}
+
+                      {/* Product Reviews */}
+                      {customerReviews && customerReviews.length > 0 && (
+                        <Card className="p-4">
+                          <h4 className="font-medium mb-3 flex items-center gap-2 text-primary">
+                            <Star className="h-4 w-4" />
+                            ביקורות מוצרים ({customerReviews.length})
+                          </h4>
+                          <div className="space-y-2">
+                            {customerReviews.slice(0, 5).map((review: any) => (
+                              <div key={review.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/30">
+                                {review.business_products?.image_url && (
+                                  <img src={review.business_products.image_url} alt="" className="w-10 h-10 rounded object-cover" />
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium">{review.business_products?.name || 'מוצר'}</p>
+                                  <p className="text-xs text-muted-foreground truncate">{review.comment || '-'}</p>
+                                </div>
+                                <div className="flex items-center gap-0.5">
+                                  {Array.from({ length: 5 }).map((_, i) => (
+                                    <Star key={i} className={cn("h-3 w-3", i < review.rating ? "text-amber-500 fill-amber-500" : "text-muted")} />
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </Card>
+                      )}
+
+                      {/* Grooming Bookings */}
+                      {customerGrooming && customerGrooming.length > 0 && (
+                        <Card className="p-4">
+                          <h4 className="font-medium mb-3 flex items-center gap-2 text-primary">
+                            <Scissors className="h-4 w-4" />
+                            תורי טיפוח ({customerGrooming.length})
+                          </h4>
+                          <div className="space-y-2">
+                            {customerGrooming.slice(0, 5).map((booking: any) => (
+                              <div key={booking.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
+                                <div>
+                                  <p className="text-sm font-medium">{booking.service_type || 'טיפוח'}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {booking.appointment_date ? format(new Date(booking.appointment_date), 'dd/MM/yyyy', { locale: he }) : '-'}
+                                  </p>
+                                </div>
+                                <Badge variant="outline" className={cn(
+                                  "text-xs",
+                                  booking.status === 'completed' && "bg-emerald-500/10 text-emerald-700 border-emerald-500/30",
+                                  booking.status === 'pending' && "bg-amber-500/10 text-amber-700 border-amber-500/30",
+                                  booking.status === 'cancelled' && "bg-rose-500/10 text-rose-700 border-rose-500/30"
+                                )}>
+                                  {booking.status === 'completed' ? 'הושלם' : booking.status === 'pending' ? 'ממתין' : booking.status === 'cancelled' ? 'בוטל' : booking.status || 'ממתין'}
+                                </Badge>
+                              </div>
+                            ))}
+                          </div>
+                        </Card>
+                      )}
+
+                      {/* Achievements */}
+                      {customerAchievements && customerAchievements.length > 0 && (
+                        <Card className="p-4">
+                          <h4 className="font-medium mb-3 flex items-center gap-2 text-primary">
+                            <Award className="h-4 w-4" />
+                            הישגים ({customerAchievements.length})
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {customerAchievements.map((achievement: any) => (
+                              <Badge key={achievement.id} variant="outline" className="gap-1 py-1.5 px-3">
+                                <span>{achievement.badges?.icon || '🏆'}</span>
+                                <span>{achievement.badges?.name_he || achievement.badges?.name || 'הישג'}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  +{achievement.points_awarded}
+                                </span>
+                              </Badge>
+                            ))}
+                          </div>
+                        </Card>
+                      )}
+
+                      {/* Empty state */}
+                      {(!customerPosts?.length && !customerReviews?.length && !customerGrooming?.length && !customerAchievements?.length && !customerLoyalty?.length) && (
+                        <AdminEmptyState 
+                          icon={Activity}
+                          title="אין פעילות עדיין"
+                          description="הלקוח עדיין לא ביצע פעילות במערכת"
+                        />
+                      )}
                     </TabsContent>
 
                     {/* Billing Tab */}
