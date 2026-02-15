@@ -97,7 +97,8 @@ export const feedRoutes: RouteObject[] = [
   { path: "/old-feed", element: <Navigate to="/feed" replace /> },
   { path: "/explore", element: <LazyPage component={Explore} pageName="גילוי" /> },
   { path: "/reels", element: <LazyPage component={Reels} pageName="Reels" dark /> },
-  { path: "/user/:userId", element: <Navigate to="/" replace /> },
+  { path: "/user/:userId", element: <LazyPage component={UserProfile} pageName="פרופיל משתמש" /> },
+  { path: "/profile/:userId", element: <LazyPage component={UserProfile} pageName="פרופיל משתמש" /> },
   { path: "/post/:postId", element: <LazyPage component={PostDetail} pageName="פוסט" /> },
   { 
     path: "/story/:userId", 

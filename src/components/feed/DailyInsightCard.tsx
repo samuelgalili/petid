@@ -201,7 +201,7 @@ export const DailyInsightCard = () => {
               ))}
             </div>
             <button
-              onClick={() => navigate("/pet-profile")}
+              onClick={() => navigate("/")}
               className="mt-3 w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
             >
               <Sparkles className="w-3.5 h-3.5" />

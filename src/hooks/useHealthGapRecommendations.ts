@@ -83,19 +83,35 @@ const CONDITION_PRODUCT_MAP: Record<string, Omit<HealthGap, "condition">> = {
     product_categories: ["food", "מזון", "תוספים"],
     product_keywords: ["cardiac", "heart", "לב", "taurine", "טאורין"],
   },
+  // Cat-specific conditions
+  "שתן": {
+    severity: "high",
+    reason_he: "מזון לתמיכה בבריאות מערכת השתן",
+    product_categories: ["food", "מזון"],
+    product_keywords: ["urinary", "שתן", "FLUTD", "struvite", "pH"],
+  },
+  "כדורי שיער": {
+    severity: "low",
+    reason_he: "מוצרים למניעת כדורי שיער",
+    product_categories: ["food", "treats", "מזון", "חטיפים"],
+    product_keywords: ["hairball", "כדורי שיער", "malt", "מאלט", "fiber", "סיבים"],
+  },
 };
 
-// Age-based gaps
+// Age-based gaps — species-aware
 function getAgeGaps(pet: ActivePet): HealthGap[] {
   const gaps: HealthGap[] = [];
+  const isCat = pet.pet_type === "cat";
   if (pet.ageWeeks !== null) {
     if (pet.ageWeeks < 26) {
       gaps.push({
-        condition: "puppy_growth",
+        condition: isCat ? "kitten_growth" : "puppy_growth",
         severity: "medium",
-        reason_he: "מוצרי גדילה מותאמים לגורים",
+        reason_he: isCat ? "מוצרי גדילה מותאמים לגורי חתולים" : "מוצרי גדילה מותאמים לגורים",
         product_categories: ["food", "מזון", "חטיפים"],
-        product_keywords: ["puppy", "גורים", "growth", "junior", "starter"],
+        product_keywords: isCat
+          ? ["kitten", "גורי חתולים", "growth", "junior", "starter"]
+          : ["puppy", "גורים", "growth", "junior", "starter"],
       });
     } else if (pet.ageWeeks > 364) {
       gaps.push({
