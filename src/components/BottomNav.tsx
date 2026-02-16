@@ -138,6 +138,7 @@ const BottomNav = () => {
   const handleSwitchPet = (petId: string) => {
     contextSwitchPet(petId);
     setShowPetSwitcher(false);
+    navigate("/");
   };
 
   // Hidden routes
@@ -225,14 +226,25 @@ const BottomNav = () => {
       key: "pets",
       render: () => (
         <div key="pets" className="flex flex-col items-center justify-center flex-1 relative">
-          <motion.button
-            whileTap={{ scale: 0.88 }}
-            transition={{ type: "spring", stiffness: 500, damping: 18 }}
-            onClick={() => setShowPetSwitcher(true)}
-            className="relative -mt-5 flex flex-col items-center gap-0.5"
-            aria-label={labels.pets}
+          <motion.div
+            whileTap={{ scale: 0.9 }}
+            onPointerDown={handlePetPointerDown}
+            onPointerUp={handlePetPointerUp}
+            onPointerLeave={handlePetPointerLeave}
+            className="relative -mt-5 flex flex-col items-center gap-0.5 cursor-pointer select-none"
           >
-            <div className="w-[48px] h-[48px] rounded-full ring-2 ring-primary/30 p-[2px] bg-background shadow-lg">
+            <div
+              className={cn(
+                "w-[48px] h-[48px] rounded-full p-[2px] bg-background shadow-lg transition-all",
+                isActive("/") ? "ring-[2.5px]" : "ring-2 ring-border/50"
+              )}
+              style={isActive("/") && petAccent
+                ? { boxShadow: `0 0 0 2.5px ${petAccent}, 0 2px 10px ${petAccent}40` }
+                : isActive("/")
+                  ? { boxShadow: "0 0 0 2.5px hsl(var(--primary)), 0 2px 10px hsl(var(--primary) / 0.3)" }
+                  : undefined
+              }
+            >
               <Avatar className="w-full h-full border-2 border-background">
                 {activePet?.avatar_url ? (
                   <AvatarImage src={activePet.avatar_url} className="object-cover" />
@@ -242,8 +254,23 @@ const BottomNav = () => {
                 </AvatarFallback>
               </Avatar>
             </div>
-          </motion.button>
-          <span className="text-[10px] font-medium text-foreground mt-0.5">{activePet?.name || labels.pets}</span>
+            {/* Multi-pet indicator */}
+            {pets.length > 1 && (
+              <span
+                className="absolute top-0 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-background z-20"
+                style={{ backgroundColor: petAccent || "hsl(var(--primary))" }}
+              />
+            )}
+          </motion.div>
+          <span
+            className={cn(
+              "text-[10px] font-medium mt-0.5 transition-colors",
+              isActive("/") ? "font-semibold" : "text-muted-foreground"
+            )}
+            style={isActive("/") && petAccent ? { color: petAccent } : isActive("/") ? { color: "hsl(var(--primary))" } : undefined}
+          >
+            {activePet?.name || labels.pets}
+          </span>
         </div>
       ),
     },
@@ -309,60 +336,57 @@ const BottomNav = () => {
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: 20, opacity: 0, scale: 0.92 }}
               transition={{ type: "spring", damping: 25, stiffness: 400 }}
-              className="fixed bottom-[76px] inset-x-0 mx-auto w-fit z-[9999] px-3 py-2.5 bg-background/95 backdrop-blur-xl rounded-2xl border border-border/50 shadow-2xl"
+              className="fixed bottom-[76px] inset-x-0 mx-auto w-fit z-[9999] px-4 py-3 bg-background/95 backdrop-blur-xl rounded-2xl border border-border/50 shadow-2xl"
               dir={direction}
             >
-              <p className="text-[11px] font-medium text-muted-foreground px-2 pb-1.5">
-                {labels.switchPet}
-              </p>
-              <div className="flex items-center gap-3 px-1">
-                {pets.map((pet) => (
-                  <motion.button
-                    key={pet.id}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => handleSwitchPet(pet.id)}
-                    className={cn(
-                      "flex flex-col items-center gap-1 p-1.5 rounded-xl transition-colors min-w-[56px]",
-                      pet.id === activePet?.id ? "bg-primary/10" : "hover:bg-muted/60"
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        "rounded-full p-[2px] transition-all",
-                        pet.id === activePet?.id ? "ring-2" : "ring-1 ring-border"
-                      )}
-                      style={pet.id === activePet?.id ? { boxShadow: `0 0 8px ${pet.theme_color || "hsl(var(--primary))"}40` } : undefined}
-                    >
-                      <Avatar className="w-10 h-10 border-2 border-background">
-                        {pet.avatar_url ? <AvatarImage src={pet.avatar_url} className="object-cover" /> : null}
-                        <AvatarFallback className="bg-muted text-muted-foreground">
-                          {pet.pet_type === "cat" ? <Cat className="w-4 h-4" /> : <Dog className="w-4 h-4" />}
-                        </AvatarFallback>
-                      </Avatar>
-                    </div>
-                    <span className={cn(
-                      "text-[11px] font-medium max-w-[56px] truncate",
-                      pet.id === activePet?.id ? "text-primary" : "text-foreground"
-                    )}>
-                      {pet.name}
-                    </span>
-                  </motion.button>
-                ))}
-                {/* Add Pet Button */}
+              <div className="flex items-center gap-4">
+                {/* Add Pet */}
                 <motion.button
                   whileTap={{ scale: 0.9 }}
                   onClick={() => { setShowPetSwitcher(false); navigate('/add-pet'); }}
-                  className="flex flex-col items-center gap-1 p-1.5 rounded-xl hover:bg-muted/60 transition-colors min-w-[56px]"
+                  className="flex flex-col items-center gap-1.5 min-w-[60px]"
                 >
-                  <div className="rounded-full p-[2px] ring-1 ring-dashed ring-border">
-                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                      <Plus className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
-                    </div>
+                  <div className="w-14 h-14 rounded-full border-2 border-dashed border-muted-foreground/40 flex items-center justify-center">
+                    <Plus className="w-6 h-6 text-muted-foreground" strokeWidth={1.5} />
                   </div>
                   <span className="text-[11px] font-medium text-muted-foreground">
                     {labels.addPet}
                   </span>
                 </motion.button>
+
+                {/* Pet list */}
+                {pets.map((pet) => (
+                  <motion.button
+                    key={pet.id}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => handleSwitchPet(pet.id)}
+                    className="flex flex-col items-center gap-1.5 min-w-[60px]"
+                  >
+                    <div
+                      className={cn(
+                        "w-14 h-14 rounded-full p-[2.5px] transition-all",
+                        pet.id === activePet?.id ? "ring-[2.5px]" : "ring-1 ring-border"
+                      )}
+                      style={pet.id === activePet?.id 
+                        ? { boxShadow: `0 0 0 2.5px ${pet.theme_color || "hsl(var(--primary))"}` } 
+                        : undefined
+                      }
+                    >
+                      <Avatar className="w-full h-full border-2 border-background">
+                        {pet.avatar_url ? <AvatarImage src={pet.avatar_url} className="object-cover" /> : null}
+                        <AvatarFallback className="bg-muted text-muted-foreground">
+                          {pet.pet_type === "cat" ? <Cat className="w-5 h-5" /> : <Dog className="w-5 h-5" />}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                    <span className={cn(
+                      "text-[11px] font-medium max-w-[60px] truncate",
+                      pet.id === activePet?.id ? "text-primary font-semibold" : "text-foreground"
+                    )}>
+                      {pet.name}
+                    </span>
+                  </motion.button>
+                ))}
               </div>
             </motion.div>
           </>
