@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import splashGif from "@/assets/splash-animation.gif";
 
@@ -8,14 +8,28 @@ interface SplashScreenProps {
 
 export const SplashScreen = ({ onFinish }: SplashScreenProps) => {
   const [fadeOut, setFadeOut] = useState(false);
+  const finishedRef = useRef(false);
+
+  const startFadeOut = useCallback(() => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+    setFadeOut(true);
+    setTimeout(onFinish, 500);
+  }, [onFinish]);
+
+  // Safety timeout — never stay on splash more than 5 seconds
+  useEffect(() => {
+    const timer = setTimeout(startFadeOut, 5000);
+    return () => clearTimeout(timer);
+  }, [startFadeOut]);
 
   const handleLoad = useCallback(() => {
-    // GIF duration — adjust to match your actual GIF length
-    setTimeout(() => {
-      setFadeOut(true);
-      setTimeout(onFinish, 500); // wait for fade-out animation
-    }, 3500);
-  }, [onFinish]);
+    setTimeout(startFadeOut, 3500);
+  }, [startFadeOut]);
+
+  const handleError = useCallback(() => {
+    startFadeOut();
+  }, [startFadeOut]);
 
   return (
     <AnimatePresence>
@@ -30,6 +44,7 @@ export const SplashScreen = ({ onFinish }: SplashScreenProps) => {
             src={splashGif}
             alt="PetID"
             onLoad={handleLoad}
+            onError={handleError}
             className="w-[85vw] max-w-[420px] object-contain"
             style={{ filter: 'drop-shadow(0 0 0 transparent)' }}
           />
