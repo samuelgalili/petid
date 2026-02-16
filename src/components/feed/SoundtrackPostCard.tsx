@@ -38,6 +38,76 @@ import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import type { FeedPost } from "@/hooks/useSoundtrackFeed";
 import type { ActivePet } from "@/hooks/useActivePet";
 
+/* ─── Smart tag → shop category mapping ─── */
+const TAG_CATEGORY_MAP: Record<string, { path: string; label: string }> = {
+  "חרדה": { path: "/shop?category=calming", label: "תוספי הרגעה" },
+  "anxiety": { path: "/shop?category=calming", label: "תוספי הרגעה" },
+  "stress": { path: "/shop?category=calming", label: "תוספי הרגעה" },
+  "לחץ": { path: "/shop?category=calming", label: "תוספי הרגעה" },
+  "תזונה": { path: "/shop?category=food", label: "מזון ותזונה" },
+  "nutrition": { path: "/shop?category=food", label: "מזון ותזונה" },
+  "אוכל": { path: "/shop?category=food", label: "מזון ותזונה" },
+  "food": { path: "/shop?category=food", label: "מזון ותזונה" },
+  "טיפוח": { path: "/shop?category=grooming", label: "טיפוח ופרווה" },
+  "grooming": { path: "/shop?category=grooming", label: "טיפוח ופרווה" },
+  "פרווה": { path: "/shop?category=grooming", label: "טיפוח ופרווה" },
+  "fur": { path: "/shop?category=grooming", label: "טיפוח ופרווה" },
+  "צעצוע": { path: "/shop?category=toys", label: "צעצועים" },
+  "toys": { path: "/shop?category=toys", label: "צעצועים" },
+  "משחק": { path: "/shop?category=toys", label: "צעצועים" },
+  "בריאות": { path: "/shop?category=health", label: "תוספי בריאות" },
+  "health": { path: "/shop?category=health", label: "תוספי בריאות" },
+  "ויטמין": { path: "/shop?category=health", label: "ויטמינים ותוספים" },
+  "vitamin": { path: "/shop?category=health", label: "ויטמינים ותוספים" },
+  "מפרקים": { path: "/shop?category=joints", label: "בריאות מפרקים" },
+  "joint": { path: "/shop?category=joints", label: "בריאות מפרקים" },
+  "עור": { path: "/shop?category=skin", label: "בריאות העור" },
+  "skin": { path: "/shop?category=skin", label: "בריאות העור" },
+  "אימון": { path: "/shop?category=training", label: "ציוד אימון" },
+  "training": { path: "/shop?category=training", label: "ציוד אימון" },
+};
+
+function getSmartShopLink(caption: string | null): { path: string; label: string } | null {
+  if (!caption) return null;
+  const lower = caption.toLowerCase();
+  for (const [keyword, target] of Object.entries(TAG_CATEGORY_MAP)) {
+    if (lower.includes(keyword)) return target;
+  }
+  return null;
+}
+
+/* ─── Engagement topic tracking ─── */
+const TOPIC_KEYWORDS: Record<string, string[]> = {
+  grooming: ["טיפוח", "grooming", "פרווה", "fur", "רחצה", "bath"],
+  nutrition: ["תזונה", "nutrition", "אוכל", "food", "מזון", "diet"],
+  health: ["בריאות", "health", "ויטמין", "vitamin", "תוסף", "supplement"],
+  training: ["אימון", "training", "משמעת", "discipline"],
+  toys: ["צעצוע", "toy", "משחק", "play"],
+  anxiety: ["חרדה", "anxiety", "stress", "לחץ", "הרגעה", "calming"],
+};
+
+function detectPostTopics(caption: string | null): string[] {
+  if (!caption) return [];
+  const lower = caption.toLowerCase();
+  const topics: string[] = [];
+  for (const [topic, keywords] of Object.entries(TOPIC_KEYWORDS)) {
+    if (keywords.some((kw) => lower.includes(kw))) topics.push(topic);
+  }
+  return topics;
+}
+
+function trackLikedTopics(caption: string | null) {
+  const topics = detectPostTopics(caption);
+  if (topics.length === 0) return;
+  try {
+    const stored = JSON.parse(localStorage.getItem("petid_liked_topics") || "{}");
+    for (const t of topics) {
+      stored[t] = (stored[t] || 0) + 1;
+    }
+    localStorage.setItem("petid_liked_topics", JSON.stringify(stored));
+  } catch { /* noop */ }
+}
+
 interface SoundtrackPostCardProps {
   post: FeedPost;
   index: number;
@@ -157,12 +227,19 @@ export const SoundtrackPostCard = ({
   const handleDoubleTap = () => {
     const now = Date.now();
     if (now - lastTapRef.current < 300) {
-      if (!post.is_liked) onLike(post.id);
+      if (!post.is_liked) {
+        onLike(post.id);
+        // V73: Track liked post topics for engagement personalization
+        trackLikedTopics(post.caption);
+      }
       setShowHeartBurst(true);
       setTimeout(() => setShowHeartBurst(false), 800);
     }
     lastTapRef.current = now;
   };
+
+  // V73: Smart shop link derived from post caption tags
+  const smartShopLink = useMemo(() => getSmartShopLink(post.caption), [post.caption]);
 
   const handleShare = () => {
     setShowShareSheet(true);
@@ -277,7 +354,7 @@ export const SoundtrackPostCard = ({
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.15 }}
       >
-        {/* Pet avatar */}
+        {/* User avatar */}
         <Avatar
           className="w-9 h-9 cursor-pointer"
           style={{
@@ -310,14 +387,17 @@ export const SoundtrackPostCard = ({
           </span>
           {activePet && (
             <span
-              className="flex items-center gap-1 text-white/80 drop-shadow-lg"
-              style={{ fontSize: "11px", textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}
+              className="flex items-center gap-1.5 text-white/90 drop-shadow-lg"
+              style={{ fontSize: "12px", textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}
             >
-              {activePet.pet_type === "cat" ? (
-                <Cat className="w-3 h-3" strokeWidth={1.5} />
-              ) : (
-                <Dog className="w-3 h-3" strokeWidth={1.5} />
-              )}
+              <Avatar className="w-4 h-4" style={{ border: "1px solid rgba(255,255,255,0.5)" }}>
+                {activePet.avatar_url ? (
+                  <AvatarImage src={activePet.avatar_url} className="object-cover" />
+                ) : null}
+                <AvatarFallback className="bg-white/20 text-[7px]">
+                  {activePet.pet_type === "cat" ? "🐱" : "🐶"}
+                </AvatarFallback>
+              </Avatar>
               {isRtl ? `עבור ${activePet.name}` : `For ${activePet.name}`}
             </span>
           )}
@@ -424,6 +504,7 @@ export const SoundtrackPostCard = ({
           onClick={(e) => {
             e.stopPropagation();
             onLike(post.id);
+            if (!post.is_liked) trackLikedTopics(post.caption);
           }}
           whileTap={{ scale: 0.85 }}
           className="flex flex-col items-center gap-1"
@@ -661,25 +742,54 @@ export const SoundtrackPostCard = ({
             </div>
           </motion.button>
         ) : isTipPost ? (
-          <motion.button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleAddToCarePlan();
-            }}
-            whileTap={{ scale: 0.96 }}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl"
-            style={{
-              background: "linear-gradient(135deg, rgba(34,197,94,0.25), rgba(22,163,74,0.2))",
-              backdropFilter: "blur(16px)",
-              WebkitBackdropFilter: "blur(16px)",
-              border: "1px solid rgba(34,197,94,0.3)",
-            }}
-          >
-            <CalendarPlus className="w-4 h-4 text-emerald-400" strokeWidth={1.5} />
-            <span className="text-emerald-300 font-semibold" style={{ fontSize: "13px" }}>
-              {isRtl ? "הוסף לתוכנית הטיפול" : "Add to Care Plan"}
-            </span>
-          </motion.button>
+          <div className="w-full flex flex-col gap-2">
+            {/* Smart shop link if tags match a category */}
+            {smartShopLink && (
+              <motion.button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(smartShopLink.path);
+                }}
+                whileTap={{ scale: 0.96 }}
+                className="w-full flex items-center justify-between py-2.5 px-4 rounded-xl"
+                style={{
+                  background: "linear-gradient(135deg, rgba(0,153,230,0.3), rgba(0,120,200,0.2))",
+                  backdropFilter: "blur(16px)",
+                  WebkitBackdropFilter: "blur(16px)",
+                  border: "1px solid rgba(0,153,230,0.3)",
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <ShoppingCart className="w-4 h-4 text-blue-300" strokeWidth={1.5} />
+                  <span className="text-blue-200 font-semibold" style={{ fontSize: "13px" }}>
+                    {smartShopLink.label}
+                  </span>
+                </div>
+                <span className="text-white/60 text-[11px]">
+                  {isRtl ? "צפה בחנות ←" : "View in shop →"}
+                </span>
+              </motion.button>
+            )}
+            <motion.button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAddToCarePlan();
+              }}
+              whileTap={{ scale: 0.96 }}
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl"
+              style={{
+                background: "linear-gradient(135deg, rgba(34,197,94,0.25), rgba(22,163,74,0.2))",
+                backdropFilter: "blur(16px)",
+                WebkitBackdropFilter: "blur(16px)",
+                border: "1px solid rgba(34,197,94,0.3)",
+              }}
+            >
+              <CalendarPlus className="w-4 h-4 text-emerald-400" strokeWidth={1.5} />
+              <span className="text-emerald-300 font-semibold" style={{ fontSize: "13px" }}>
+                {isRtl ? "הוסף לתוכנית הטיפול" : "Add to Care Plan"}
+              </span>
+            </motion.button>
+          </div>
         ) : null}
       </motion.div>
 
