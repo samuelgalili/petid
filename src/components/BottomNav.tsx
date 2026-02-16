@@ -1,12 +1,12 @@
 import {
-  Home,
+  
   ShoppingBag,
   Newspaper,
   Sparkles,
   Camera,
   ImagePlus,
   FileText,
-  AlertTriangle,
+  Plus,
   Dog,
   Cat,
 } from "lucide-react";
@@ -19,15 +19,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { CreatePostDialog } from "@/components/CreatePostDialog";
 import { CreateStoryDialog } from "@/components/CreateStoryDialog";
-import { EmergencyHub } from "@/components/emergency/EmergencyHub";
+
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 
 // ── Translations ──────────────────────────────
 const navLabels = {
-  he: { home: "דף הבית", feed: "פיד", sos: "חירום", shop: "חנות", chat: "צ'אט", upload: "העלאה", story: "סטורי", post: "פוסט", document: "מסמך", switchPet: "החלף חיית מחמד" },
-  en: { home: "Home", feed: "Feed", sos: "SOS", shop: "Shop", chat: "Chat", upload: "Upload", story: "Story", post: "Post", document: "Document", switchPet: "Switch Pet" },
-  ar: { home: "الرئيسية", feed: "فيد", sos: "طوارئ", shop: "متجر", chat: "دردشة", upload: "رفع", story: "ستوري", post: "منشور", document: "مستند", switchPet: "تبديل الحيوان" },
+  he: { home: "דף הבית", feed: "פיד", pets: "חיות", shop: "חנות", chat: "צ'אט", upload: "העלאה", story: "סטורי", post: "פוסט", document: "מסמך", switchPet: "החלף חיית מחמד", addPet: "הוסף חיית מחמד" },
+  en: { home: "Home", feed: "Feed", pets: "Pets", shop: "Shop", chat: "Chat", upload: "Upload", story: "Story", post: "Post", document: "Document", switchPet: "Switch Pet", addPet: "Add Pet" },
+  ar: { home: "الرئيسية", feed: "فيد", pets: "حيوانات", shop: "متجر", chat: "دردشة", upload: "رفع", story: "ستوري", post: "منشور", document: "مستند", switchPet: "تبديل الحيوان", addPet: "إضافة حيوان" },
 };
 
 // ── NavItem ───────────────────────────────────
@@ -84,7 +84,7 @@ const BottomNav = () => {
   const [showUploadMenu, setShowUploadMenu] = useState(false);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [showCreateStory, setShowCreateStory] = useState(false);
-  const [showEmergencyHub, setShowEmergencyHub] = useState(false);
+  
   const [showPetSwitcher, setShowPetSwitcher] = useState(false);
   const { unreadCount } = useRealtimeNotifications();
 
@@ -180,65 +180,25 @@ const BottomNav = () => {
   // ── Nav items ──
   const navItems = [
     {
-      key: "home",
+      key: "upload",
       render: () => (
-        <div key="home" className="flex flex-col items-center justify-center flex-1 relative">
-          <motion.div
-            whileTap={{ scale: 0.9 }}
-            onPointerDown={handlePetPointerDown}
-            onPointerUp={handlePetPointerUp}
-            onPointerLeave={handlePetPointerLeave}
-            className="relative flex flex-col items-center gap-0.5 cursor-pointer select-none"
+        <div key="upload" className="flex flex-col items-center justify-center flex-1 relative">
+          <motion.button
+            whileTap={{ scale: 0.85 }}
+            transition={{ type: "spring", stiffness: 500, damping: 20 }}
+            onClick={() => setShowUploadMenu(!showUploadMenu)}
+            className="relative flex flex-col items-center gap-0.5"
           >
-            {/* Active ring */}
-            {isActive("/") && (
-              <motion.div
-                layoutId="nav-active-pill"
-                className="absolute -inset-x-2 -inset-y-1 rounded-2xl"
-                style={{ backgroundColor: petAccent ? `${petAccent}15` : "hsl(var(--primary) / 0.1)" }}
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            <div className="relative z-10">
+              <Plus
+                className="w-[22px] h-[22px] text-muted-foreground"
+                strokeWidth={1.5}
               />
-            )}
-            {/* Pet Avatar */}
-            <div
-              className={cn(
-                "relative z-10 rounded-full p-[2px] transition-all",
-                isActive("/") ? "ring-2 shadow-md" : "ring-1 ring-border"
-              )}
-              style={isActive("/") && petAccent
-                ? { boxShadow: `0 0 0 2px ${petAccent}, 0 2px 8px ${petAccent}40` }
-                : isActive("/")
-                  ? { boxShadow: "0 2px 8px hsl(var(--primary) / 0.3)" }
-                  : undefined
-              }
-            >
-              <Avatar className="w-7 h-7 border-2 border-background">
-                {activePet?.avatar_url ? (
-                  <AvatarImage src={activePet.avatar_url} className="object-cover" />
-                ) : null}
-                <AvatarFallback className="bg-muted text-muted-foreground">
-                  <PetFallbackIcon className="w-3.5 h-3.5" strokeWidth={1.5} />
-                </AvatarFallback>
-              </Avatar>
             </div>
-            <span
-              className={cn(
-                "text-[10px] font-medium relative z-10 transition-colors",
-                isActive("/") ? "font-semibold" : "text-muted-foreground"
-              )}
-              style={isActive("/") && petAccent ? { color: petAccent } : isActive("/") ? { color: "hsl(var(--primary))" } : undefined}
-            >
-              {activePet?.name || labels.home}
+            <span className="text-[10px] font-medium text-muted-foreground relative z-10">
+              {labels.upload}
             </span>
-
-            {/* Multi-pet indicator dot */}
-            {pets.length > 1 && (
-              <span
-                className="absolute -top-0.5 -right-1 w-2.5 h-2.5 rounded-full border border-background z-20"
-                style={{ backgroundColor: petAccent || "hsl(var(--primary))" }}
-              />
-            )}
-          </motion.div>
+          </motion.button>
         </div>
       ),
     },
@@ -262,20 +222,28 @@ const BottomNav = () => {
       ),
     },
     {
-      key: "sos",
+      key: "pets",
       render: () => (
-        <div key="sos" className="flex flex-col items-center justify-center flex-1 relative">
+        <div key="pets" className="flex flex-col items-center justify-center flex-1 relative">
           <motion.button
             whileTap={{ scale: 0.88 }}
             transition={{ type: "spring", stiffness: 500, damping: 18 }}
-            onClick={() => setShowEmergencyHub(true)}
-            className="relative -mt-6 w-[56px] h-[56px] rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center shadow-lg shadow-red-500/30 ring-4 ring-background active:shadow-red-500/50 transition-shadow"
-            aria-label={labels.sos}
+            onClick={() => setShowPetSwitcher(true)}
+            className="relative -mt-5 flex flex-col items-center gap-0.5"
+            aria-label={labels.pets}
           >
-            <span className="absolute inset-0 rounded-full bg-red-500/20 animate-ping" style={{ animationDuration: "2.5s" }} />
-            <AlertTriangle className="w-6 h-6 text-white relative z-10" strokeWidth={2.2} />
+            <div className="w-[48px] h-[48px] rounded-full ring-2 ring-primary/30 p-[2px] bg-background shadow-lg">
+              <Avatar className="w-full h-full border-2 border-background">
+                {activePet?.avatar_url ? (
+                  <AvatarImage src={activePet.avatar_url} className="object-cover" />
+                ) : null}
+                <AvatarFallback className="bg-muted text-muted-foreground">
+                  <PetFallbackIcon className="w-5 h-5" strokeWidth={1.5} />
+                </AvatarFallback>
+              </Avatar>
+            </div>
           </motion.button>
-          <span className="text-[10px] font-bold text-red-500 mt-0.5">{labels.sos}</span>
+          <span className="text-[10px] font-medium text-foreground mt-0.5">{activePet?.name || labels.pets}</span>
         </div>
       ),
     },
@@ -323,7 +291,7 @@ const BottomNav = () => {
 
   return (
     <>
-      <EmergencyHub open={showEmergencyHub} onOpenChange={setShowEmergencyHub} />
+      
 
       {/* ── Pet Switcher Mini-Menu ──────────── */}
       <AnimatePresence>
@@ -380,6 +348,21 @@ const BottomNav = () => {
                     </span>
                   </motion.button>
                 ))}
+                {/* Add Pet Button */}
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => { setShowPetSwitcher(false); navigate('/add-pet'); }}
+                  className="flex flex-col items-center gap-1 p-1.5 rounded-xl hover:bg-muted/60 transition-colors min-w-[56px]"
+                >
+                  <div className="rounded-full p-[2px] ring-1 ring-dashed ring-border">
+                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                      <Plus className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-medium text-muted-foreground">
+                    {labels.addPet}
+                  </span>
+                </motion.button>
               </div>
             </motion.div>
           </>

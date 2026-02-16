@@ -4,7 +4,7 @@ import { SEO } from "@/components/SEO";
 import { PageTransition } from "@/components/PageTransition";
 import BottomNav from "@/components/BottomNav";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, Plus, Menu, Edit3, ChevronDown, ChevronLeft, Shield, Utensils, Building2, Scissors, Heart, Stethoscope, Info, GraduationCap, FileText, Camera, Video, MessageCircle, Calendar, Dog, Gift, Flame, BookOpen, ShoppingBag, Truck, Handshake, Footprints, Search, Star, Clock, MapPin, Bell } from "lucide-react";
+import { ChevronRight, Plus, Menu, Edit3, ChevronDown, ChevronLeft, Shield, Utensils, Building2, Scissors, Heart, Stethoscope, Info, GraduationCap, FileText, Camera, Video, MessageCircle, Calendar, Dog, Gift, Flame, BookOpen, ShoppingBag, Truck, Handshake, Footprints, Search, Star, Clock, MapPin, Bell, AlertTriangle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -399,7 +399,7 @@ const Profile = () => {
                 <Shield className="w-5 h-5 text-primary" strokeWidth={1.5} />
               </button>}
             <button onClick={() => setShowEmergencyHub(true)} className="p-2" aria-label="מרכז חירום">
-              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-gradient-to-br from-red-500 to-orange-500 text-white text-[11px] font-black leading-none">S</span>
+              <AlertTriangle className="w-5 h-5 text-red-500" strokeWidth={1.5} />
             </button>
             <button onClick={() => navigate('/messages')} className="p-2 relative" aria-label="הודעות">
               <MessageCircle className="w-5 h-5 text-foreground" strokeWidth={1.5} />
