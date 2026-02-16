@@ -139,7 +139,7 @@ export const CareDashboard = ({ className = "" }: CareDashboardProps) => {
           <div className="flex items-start gap-4 mb-4">
             <div 
               className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-secondary p-[2px] cursor-pointer"
-              onClick={() => navigate(`/pet/${primaryPet.id}`)}
+              onClick={() => navigate('/')}
             >
               <div className="w-full h-full rounded-full bg-background flex items-center justify-center overflow-hidden">
                 {primaryPet.avatar_url ? (
@@ -262,7 +262,7 @@ export const CareDashboard = ({ className = "" }: CareDashboardProps) => {
                 key={pet.id}
                 whileTap={{ scale: 0.95 }}
                 className="flex-shrink-0 flex flex-col items-center gap-1 cursor-pointer"
-                onClick={() => navigate(`/pet/${pet.id}`)}
+                onClick={() => navigate('/')}
               >
                 <div className={`w-12 h-12 rounded-full p-[2px] ${
                   pet.id === primaryPet.id 

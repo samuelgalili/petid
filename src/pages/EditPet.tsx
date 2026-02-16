@@ -97,7 +97,7 @@ const EditPet = () => {
       if (error) throw error;
       
       toast({ title: "הפרטים עודכנו בהצלחה!" });
-      navigate(`/pet/${petId}`);
+      navigate('/');
     } catch (error: any) {
       toast({ title: "שגיאה", description: error.message, variant: "destructive" });
     } finally {
