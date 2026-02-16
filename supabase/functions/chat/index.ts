@@ -320,6 +320,67 @@ async function fetchRecentMedicalNotes(supabase: any, petId: string): Promise<st
   return `\n[PET_MEDICAL_MEMORY]\n${conditions ? `מצבים רפואיים ידועים: ${conditions}` : ""}${notes ? `\nהערות בריאות: ${notes}` : ""}\n[/PET_MEDICAL_MEMORY]`;
 }
 
+// ============= Fetch OCR-Extracted Document Data (vaccines, blood tests, allergies) =============
+async function fetchOCRDocumentData(supabase: any, petId: string): Promise<string> {
+  if (!petId) return "";
+
+  const { data: docs } = await supabase
+    .from("pet_document_extracted_data")
+    .select("vaccination_type, vaccination_date, vaccination_expiry, treatment_type, treatment_date, diagnosis, chip_number, provider_name, cost, next_appointment")
+    .eq("pet_id", petId)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  if (!docs || docs.length === 0) return "";
+
+  const vaccineLines: string[] = [];
+  const treatmentLines: string[] = [];
+  const diagnosisLines: string[] = [];
+  let chipNumber: string | null = null;
+
+  for (const doc of docs) {
+    if (doc.chip_number && !chipNumber) chipNumber = doc.chip_number;
+    if (doc.vaccination_type) {
+      const expiry = doc.vaccination_expiry ? new Date(doc.vaccination_expiry) : null;
+      const isExpired = expiry && expiry < new Date();
+      const expiryStr = expiry ? ` (${isExpired ? "⚠️ פג תוקף" : "בתוקף עד"} ${expiry.toLocaleDateString("he-IL")})` : "";
+      vaccineLines.push(`💉 ${doc.vaccination_type}${doc.vaccination_date ? ` — ${new Date(doc.vaccination_date).toLocaleDateString("he-IL")}` : ""}${expiryStr}`);
+    }
+    if (doc.treatment_type) {
+      treatmentLines.push(`💊 ${doc.treatment_type}${doc.treatment_date ? ` — ${new Date(doc.treatment_date).toLocaleDateString("he-IL")}` : ""}${doc.provider_name ? ` (${doc.provider_name})` : ""}`);
+    }
+    if (doc.diagnosis) {
+      diagnosisLines.push(`🔬 ${doc.diagnosis}`);
+    }
+  }
+
+  if (vaccineLines.length === 0 && treatmentLines.length === 0 && diagnosisLines.length === 0) return "";
+
+  let result = "\n[OCR_MEDICAL_RECORDS]";
+  if (chipNumber) result += `\nמספר שבב: ${chipNumber}`;
+  if (vaccineLines.length > 0) result += `\nחיסונים:\n${vaccineLines.join("\n")}`;
+  if (treatmentLines.length > 0) result += `\nטיפולים:\n${treatmentLines.join("\n")}`;
+  if (diagnosisLines.length > 0) result += `\nאבחנות:\n${diagnosisLines.join("\n")}`;
+
+  const overdueVaccines = (docs as any[]).filter((d: any) => d.vaccination_type && d.vaccination_expiry && new Date(d.vaccination_expiry) < new Date());
+  if (overdueVaccines.length > 0) {
+    result += `\n\n⚠️ חיסונים שפג תוקפם: ${overdueVaccines.map((v: any) => v.vaccination_type).join(", ")}`;
+  }
+
+  const now = new Date();
+  const upcoming = (docs as any[]).filter((d: any) => {
+    if (!d.next_appointment) return false;
+    const daysUntil = Math.floor((new Date(d.next_appointment).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    return daysUntil >= 0 && daysUntil <= 14;
+  });
+  if (upcoming.length > 0) {
+    result += `\n📅 תורים קרובים: ${upcoming.map((u: any) => `${u.treatment_type || u.vaccination_type} ב-${new Date(u.next_appointment).toLocaleDateString("he-IL")}`).join(", ")}`;
+  }
+
+  result += "\n[/OCR_MEDICAL_RECORDS]";
+  return result;
+}
+
 // ============= Fetch Vet Visit History (OCR-scanned records) =============
 async function fetchVetHistory(supabase: any, petId: string): Promise<string> {
   if (!petId) return "";
@@ -536,6 +597,7 @@ vet_clinic: ${fullPet.vet_clinic ?? "לא ידוע"}
     let vetHistory = "";
     let ownerProfile = "";
     let purchaseHistory = "";
+    let ocrDocumentData = "";
 
     // Get user ID from auth header for owner/purchase data
     const authHeader = req.headers.get("authorization");
@@ -575,6 +637,9 @@ vet_clinic: ${fullPet.vet_clinic ?? "לא ידוע"}
       );
       dataPromises.push(
         fetchVetHistory(supabase, activePet.id).then(r => { vetHistory = r; })
+      );
+      dataPromises.push(
+        fetchOCRDocumentData(supabase, activePet.id).then(r => { ocrDocumentData = r; })
       );
     }
 
@@ -684,8 +749,38 @@ vet_clinic: ${fullPet.vet_clinic ?? "לא ידוע"}
 • אילוף: שלבי התפתחות ואבני דרך.
 • משקל: סולם BCS (Body Condition Score) 1-9.`;
 
-    const systemPrompt = `אתה PetID V39 — ה-Expert Navigator של האפליקציה. אתה ${speciesHe === "חתול" ? "מומחה חתולי" : "מומחה כלבי"} וטרינרי, לוגיסטי, משפטי ופיננסי ברמה הגבוהה ביותר, והשותף לטיפול ב-${petName}.
-${userName}${ownerProfile}${petCard}${breedContext}${dietRulesContext}${medicalMemory}${vetHistory}${purchaseHistory}${productContext}
+    const systemPrompt = `אתה PetID V71 — ה-Expert Navigator של האפליקציה. אתה ${speciesHe === "חתול" ? "מומחה חתולי" : "מומחה כלבי"} וטרינרי, לוגיסטי, משפטי ופיננסי ברמה הגבוהה ביותר, והשותף לטיפול ב-${petName}.
+${userName}${ownerProfile}${petCard}${breedContext}${dietRulesContext}${medicalMemory}${vetHistory}${ocrDocumentData}${purchaseHistory}${productContext}
+
+=== V71: THE CHAT CONSULTANT — CLINICAL, EMPATHETIC, PROACTIVE ===
+אתה קליני, אמפתי ופרואקטיבי. שלוש שכבות חדשות:
+
+שכבה A — OCR-First Knowledge (עדיפות מידע סרוק):
+• תמיד העדף נתונים מ-OCR_MEDICAL_RECORDS על פני הצהרות כלליות.
+• כשעונה על שאלה רפואית, ציין מקור: "לפי המסמך הסרוק מתאריך X..."
+• אם יש סתירה בין OCR לנתוני פרופיל — העדף OCR והתריע: "שמתי לב לפער — לפי המסמך הסרוק... אבל הפרופיל מציג..."
+• חיסונים: תמיד בדוק תוקף מ-OCR_MEDICAL_RECORDS לפני מתן תשובה.
+
+שכבה B — Visual Analysis Protocol (ניתוח תמונות סימפטומים):
+• כשמשתמש מעלה תמונה של סימפטום (גירוד, נפיחות, פצע, עין אדומה, שלשול):
+  1. תאר מה שאתה רואה בצורה קלינית: "אני רואה [תיאור] באזור [מיקום]."
+  2. הצע אבחנה אפשרית מבוססת גזע: "ב${activePet?.breed || "הגזע הזה"}, זה יכול להיות קשור ל[X]."
+  3. הוסף תמיד: "⚕️ אני AI, לא וטרינר. למצבי חירום, השתמש בכפתור SOS או חייג *3939."
+  4. הצע פעולה: "רוצה שאמצא וטרינר דרמטולוג באזור?"
+• לעולם אל תאבחן סופית — רק תצפית והפניה.
+
+שכבה C — Proactive Cross-Domain Bridge (גשר יזום בין תחומים):
+• כשמשתמש שואל על מזון/תזונה:
+  - בדוק OCR_MEDICAL_RECORDS לחיסונים שפג תוקפם או קרובים
+  - אם נמצא → הוסף בעדינות: "אגב, בזמן שאנחנו מדברים על תזונה — שמתי לב ש${petName} צריך/ה לחדש חיסון [X] בקרוב. כדאי לתאם ביקור."
+• כשמשתמש שואל על טיפוח:
+  - בדוק medical_conditions לרגישויות עור → "בגלל הרגישות הידועה, מומלץ שמפו היפואלרגני."
+• כשמשתמש שואל על אילוף:
+  - בדוק גיל → אם גור, הוסף: "סושיאליזציה קריטית בגיל הזה."
+• כשמשתמש מזכיר מוצר ספציפי:
+  - בדוק medical_conditions לקונפליקטים: סוכרת→סוכר, כליות→נתרן, לב→מלח, עור→אלרגנים.
+  - אם קונפליקט → "⚠️ לא מומלץ עבור ${petName}: [סיבה ספציפית]."
+  - אם מתאים → הצע מוצר משלים (Cross-Sell): "אנשים שקנו את זה ל[גזע] גם הוסיפו [מוצר] כדי לשמור על [בריאות שיניים/פרווה/מפרקים]."
 
 === V39: THE EXPERT NAVIGATOR — ACTION-ORIENTED ORACLE ===
 אתה ה-Brain של PetID. אתה לא מחכה לשאלות — אתה מנתח, מקשר, ומוביל לפעולה.
