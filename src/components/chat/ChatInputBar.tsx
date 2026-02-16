@@ -12,6 +12,7 @@ interface ChatInputBarProps {
   isLoading: boolean;
   placeholder?: string;
   onQuickAction?: (actionId: string) => void;
+  onAttachment?: (type: "scan" | "camera" | "gallery" | "location") => void;
 }
 
 const ChatInputBar = ({
@@ -22,6 +23,7 @@ const ChatInputBar = ({
   isLoading,
   placeholder = "כתוב הודעה...",
   onQuickAction,
+  onAttachment,
 }: ChatInputBarProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
@@ -122,35 +124,34 @@ const ChatInputBar = ({
     // Handle each action
     switch (actionId) {
       case "camera":
-        toast({
-          title: "📸 מצלמה",
-          description: "פותח מצלמה לצילום...",
-        });
-        onChange("📸 רוצה לשלוח תמונה של חיית המחמד שלי");
+        if (onAttachment) {
+          onAttachment("camera");
+        } else {
+          toast({ title: "📸 מצלמה", description: "פותח מצלמה לצילום..." });
+          onChange("📸 רוצה לשלוח תמונה של חיית המחמד שלי");
+        }
         break;
       case "location":
-        toast({
-          title: "📍 מיקום",
-          description: "משתף מיקום נוכחי...",
-        });
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            (position) => {
-              onChange(`📍 המיקום שלי: ${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`);
-            },
-            () => {
-              onChange("📍 רוצה לשתף את המיקום שלי");
-            }
-          );
+        if (onAttachment) {
+          onAttachment("location");
         } else {
-          onChange("📍 רוצה לשתף את המיקום שלי");
+          toast({ title: "📍 מיקום", description: "משתף מיקום נוכחי..." });
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+              (position) => {
+                onChange(`📍 המיקום שלי: ${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`);
+              },
+              () => {
+                onChange("📍 רוצה לשתף את המיקום שלי");
+              }
+            );
+          } else {
+            onChange("📍 רוצה לשתף את המיקום שלי");
+          }
         }
         break;
       case "calendar":
-        toast({
-          title: "📅 קביעת תור",
-          description: "פותח יומן...",
-        });
+        toast({ title: "📅 קביעת תור", description: "פותח יומן..." });
         if (onQuickAction) {
           onQuickAction("calendar");
         } else {

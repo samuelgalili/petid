@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ChevronRight, Sparkles, Bot, Shield, Scissors, GraduationCap, TreePine, FolderOpen, Building2, Package, Dog, Home } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,6 +27,7 @@ import { AdoptionTraitPicker } from "@/components/chat/AdoptionTraitPicker";
 import { AdoptionRequirementPicker } from "@/components/chat/AdoptionRequirementPicker";
 import { ChatProvider, useChatContext, type Message } from "@/contexts/ChatContext";
 import { ExpertSpheres, type ExpertSphere } from "@/components/chat/ExpertSpheres";
+import { useDataIntake, type IntakeType } from "@/hooks/useDataIntake";
 
 const ChatContent = () => {
   const {
@@ -48,6 +49,39 @@ const ChatContent = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [showExpertSpheres, setShowExpertSpheres] = useState(true);
+
+  // V72 Data Intake
+  const { triggerFilePicker } = useDataIntake({
+    petId: selectedPet?.id || null,
+    petName: selectedPet?.name || "החיה שלך",
+  });
+
+  const handleAttachment = useCallback(async (type: IntakeType) => {
+    const result = await triggerFilePicker(type);
+    if (!result || !result.userMessage) return;
+
+    // Inject user message with attachment context
+    const userMsg: Message = { role: "user", content: result.userMessage };
+    setMessages((prev) => [...prev, userMsg]);
+    setIsLoading(true);
+    setShowExpertSpheres(false);
+
+    try {
+      // Send the AI prompt (includes triage metadata) as user context
+      const aiContextMsg: Message = { role: "user", content: result.aiPrompt };
+      // We send the visible user message + hidden AI prompt
+      await streamChat([...messages, userMsg, aiContextMsg]);
+    } catch (error) {
+      console.error("Intake error:", error);
+      toast({
+        title: "שגיאה",
+        description: error instanceof Error ? error.message : "משהו השתבש",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [triggerFilePicker, messages, setMessages, setIsLoading, streamChat, toast]);
 
   // Category buttons for quick selection
   const categoryButtons = [
@@ -690,6 +724,7 @@ const ChatContent = () => {
           onKeyPress={handleKeyPress}
           isLoading={isLoading}
           placeholder="כתוב הודעה..."
+          onAttachment={handleAttachment}
           onQuickAction={(actionId) => {
             if (actionId === "calendar") {
               setShowDatePicker(true);
