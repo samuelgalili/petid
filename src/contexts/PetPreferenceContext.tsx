@@ -62,9 +62,9 @@ export const PetPreferenceProvider: React.FC<{ children: React.ReactNode }> = ({
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
 
-    const { data } = await (supabase as any)
+    const { data } = await supabase
       .from("pets")
-      .select("id, name, breed, type, avatar_url, weight, birth_date, medical_conditions, theme_color")
+      .select("id, name, breed, type, avatar_url, weight, birth_date, medical_conditions")
       .eq("user_id", user.id)
       .eq("archived", false)
       .order("created_at", { ascending: false });
@@ -78,7 +78,7 @@ export const PetPreferenceProvider: React.FC<{ children: React.ReactNode }> = ({
       weight: p.weight,
       birth_date: p.birth_date,
       medical_conditions: p.medical_conditions,
-      theme_color: p.theme_color || PET_COLORS[i % PET_COLORS.length],
+      theme_color: PET_COLORS[i % PET_COLORS.length],
     }));
 
     setPets(list);

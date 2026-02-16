@@ -337,8 +337,9 @@ const AdminPage = ({ component: Component, pageName }: { component: ComponentTyp
 );
 
 export const adminRoutes: RouteObject[] = [
-  // Default admin route - redirects to new system
-  
+  // Default admin route - redirect to growo dashboard
+  { path: "/admin", element: <Navigate to="/admin/growo" replace /> },
+
   // Main admin pages
   { path: "/admin/growo", element: <AdminPage component={AdminGrowo} pageName="לוח בקרה" /> },
   { path: "/admin/orders", element: <AdminPage component={AdminOrders} pageName="הזמנות" /> },
