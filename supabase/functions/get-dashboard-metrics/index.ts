@@ -47,6 +47,15 @@ serve(async (req) => {
     const hasData = metrics && metrics.length > 0;
 
     let totalRevenue = 0, totalOrders = 0, totalExpenses = 0, newCustomers = 0, returningCustomers = 0;
+    let totalPets = 0, totalOcrDocs = 0;
+
+    // Always fetch live counts for pets and OCR docs
+    const [petsRes, ocrRes] = await Promise.all([
+      supabase.from('pets').select('id', { count: 'exact', head: true }),
+      supabase.from('pet_documents').select('id', { count: 'exact', head: true }),
+    ]);
+    totalPets = petsRes.count || 0;
+    totalOcrDocs = ocrRes.count || 0;
 
     if (hasData) {
       totalRevenue = metrics.reduce((sum, m) => sum + parseFloat(m.total_revenue || '0'), 0);
@@ -56,21 +65,18 @@ serve(async (req) => {
       returningCustomers = metrics.reduce((sum, m) => sum + (m.returning_customers || 0), 0);
     } else {
       // Fallback: query live tables for real counts
-      const [usersRes, petsRes, ordersRes, ocrRes] = await Promise.all([
+      const [usersRes, ordersRes] = await Promise.all([
         supabase.from('profiles').select('id', { count: 'exact', head: true }),
-        supabase.from('pets').select('id', { count: 'exact', head: true }),
         supabase.from('normalized_transactions').select('id, total', { count: 'exact' })
           .gte('transaction_date', startDate.toISOString().split('T')[0]),
-        supabase.from('pet_documents').select('id', { count: 'exact', head: true }),
       ]);
 
       newCustomers = usersRes.count || 0;
       totalOrders = ordersRes.count || 0;
       totalRevenue = ordersRes.data?.reduce((sum: number, t: any) => sum + parseFloat(t.total || '0'), 0) || 0;
-      
-      // Store live counts in response for dashboard cards
-      console.log(`Live counts - Users: ${usersRes.count}, Pets: ${petsRes.count}, Orders: ${ordersRes.count}, OCR docs: ${ocrRes.count}`);
     }
+
+    console.log(`Live counts - Users: ${newCustomers}, Pets: ${totalPets}, Orders: ${totalOrders}, OCR docs: ${totalOcrDocs}`);
 
     // Get previous period for comparison
     const previousEnd = startDate;
@@ -162,7 +168,7 @@ serve(async (req) => {
         orders: {
           total: totalOrders,
           change: previousOrders > 0 ? ((totalOrders - previousOrders) / previousOrders) * 100 : 0,
-          pending: 0, // Would need to calculate from transactions
+          pending: 0,
         },
         customers: {
           new: newCustomers,
@@ -170,6 +176,12 @@ serve(async (req) => {
           returningPercent: (newCustomers + returningCustomers) > 0 
             ? (returningCustomers / (newCustomers + returningCustomers)) * 100 
             : 0,
+        },
+        pets: {
+          total: totalPets,
+        },
+        ocrDocuments: {
+          total: totalOcrDocs,
         },
         profit: {
           gross: totalRevenue - totalExpenses,
