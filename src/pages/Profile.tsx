@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { EmergencyHub } from "@/components/emergency/EmergencyHub";
 import { SEO } from "@/components/SEO";
 import { PageTransition } from "@/components/PageTransition";
 import BottomNav from "@/components/BottomNav";
@@ -89,6 +90,7 @@ const Profile = () => {
   const [smartRecCategory, setSmartRecCategory] = useState<'coat' | 'energy' | 'health' | 'feeding' | 'mobility' | 'digestion' | null>(null);
   const [healthRefreshKey, setHealthRefreshKey] = useState(0);
   const [healthBreakdownOpen, setHealthBreakdownOpen] = useState(false);
+  const [showEmergencyHub, setShowEmergencyHub] = useState(false);
   const triggerHealthRefresh = () => setHealthRefreshKey(k => k + 1);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const collapseTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -316,6 +318,7 @@ const Profile = () => {
       </PageTransition>;
   }
   return <PageTransition>
+      <EmergencyHub open={showEmergencyHub} onOpenChange={setShowEmergencyHub} />
       <SEO title="הפרופיל שלי" description="נהלו את חיית המחמד שלכם - ביטוח, טיפוח, אימונים ועוד" url="/profile" type="profile" />
       <div className="h-screen bg-background overflow-hidden flex flex-col" dir="rtl">
         {/* Header with Collapsible Profile */}
@@ -395,6 +398,9 @@ const Profile = () => {
             {isAdmin && <button onClick={() => navigate('/admin/growo')} className="p-2" aria-label="ניהול">
                 <Shield className="w-5 h-5 text-primary" strokeWidth={1.5} />
               </button>}
+            <button onClick={() => setShowEmergencyHub(true)} className="p-2" aria-label="מרכז חירום">
+              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-gradient-to-br from-red-500 to-orange-500 text-white text-[11px] font-black leading-none">S</span>
+            </button>
             <button onClick={() => navigate('/messages')} className="p-2 relative" aria-label="הודעות">
               <MessageCircle className="w-5 h-5 text-foreground" strokeWidth={1.5} />
             </button>
