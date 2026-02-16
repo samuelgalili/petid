@@ -231,43 +231,37 @@ const BottomNav = () => {
             onPointerDown={handlePetPointerDown}
             onPointerUp={handlePetPointerUp}
             onPointerLeave={handlePetPointerLeave}
-            className="relative -mt-5 flex flex-col items-center gap-0.5 cursor-pointer select-none"
+            className="relative -mt-7 flex flex-col items-center cursor-pointer select-none"
           >
             <div
-              className={cn(
-                "w-[48px] h-[48px] rounded-full p-[2px] bg-background shadow-lg transition-all",
-                isActive("/") ? "ring-[2.5px]" : "ring-2 ring-border/50"
-              )}
-              style={isActive("/") && petAccent
-                ? { boxShadow: `0 0 0 2.5px ${petAccent}, 0 2px 10px ${petAccent}40` }
-                : isActive("/")
-                  ? { boxShadow: "0 0 0 2.5px hsl(var(--primary)), 0 2px 10px hsl(var(--primary) / 0.3)" }
-                  : undefined
-              }
+              className="w-[56px] h-[56px] rounded-full p-[3px] bg-background shadow-lg"
+              style={{
+                boxShadow: `0 0 0 3px ${petAccent || "hsl(209, 79%, 52%)"}, 0 2px 12px ${petAccent || "hsl(209, 79%, 52%)"}30`
+              }}
             >
-              <Avatar className="w-full h-full border-2 border-background">
+              <Avatar className="w-full h-full border-[2.5px] border-background rounded-full">
                 {activePet?.avatar_url ? (
                   <AvatarImage src={activePet.avatar_url} className="object-cover" />
                 ) : null}
                 <AvatarFallback className="bg-muted text-muted-foreground">
-                  <PetFallbackIcon className="w-5 h-5" strokeWidth={1.5} />
+                  <PetFallbackIcon className="w-6 h-6" strokeWidth={1.5} />
                 </AvatarFallback>
               </Avatar>
             </div>
             {/* Multi-pet indicator */}
             {pets.length > 1 && (
               <span
-                className="absolute top-0 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-background z-20"
+                className="absolute top-0 -right-0.5 w-3 h-3 rounded-full border-2 border-background z-20"
                 style={{ backgroundColor: petAccent || "hsl(var(--primary))" }}
               />
             )}
           </motion.div>
           <span
             className={cn(
-              "text-[10px] font-medium mt-0.5 transition-colors",
-              isActive("/") ? "font-semibold" : "text-muted-foreground"
+              "text-[10px] font-semibold mt-1 transition-colors",
+              isActive("/") ? "" : "text-muted-foreground"
             )}
-            style={isActive("/") && petAccent ? { color: petAccent } : isActive("/") ? { color: "hsl(var(--primary))" } : undefined}
+            style={{ color: isActive("/") ? (petAccent || "hsl(var(--primary))") : undefined }}
           >
             {activePet?.name || labels.pets}
           </span>
