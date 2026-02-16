@@ -8,6 +8,7 @@ import { ComponentErrorBoundary } from "@/components/common/ComponentErrorBounda
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { usePetPreference } from "@/contexts/PetPreferenceContext";
 
 interface MyPetsSectionProps {
   pets: any[];
@@ -26,6 +27,7 @@ export const MyPetsSection = ({
 }: MyPetsSectionProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { switchPet } = usePetPreference();
   const [selectedPetId, setSelectedPetId] = useState<string | null>(null);
   const [ownerPhone, setOwnerPhone] = useState<string | undefined>();
 
@@ -133,7 +135,7 @@ export const MyPetsSection = ({
                   isSelected={selectedPetId === pet.id}
                   onLongPressStart={() => onPetLongPressStart(pet)}
                   onLongPressEnd={onPetLongPressEnd}
-                  onSelect={() => setSelectedPetId(pet.id)}
+                  onSelect={() => { setSelectedPetId(pet.id); switchPet(pet.id); }}
                 />
               );
             })}
