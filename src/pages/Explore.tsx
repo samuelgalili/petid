@@ -862,7 +862,7 @@ const Explore = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.1 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => navigate(`/pet/${userPetId}?tab=breed`)}
+                onClick={() => navigate('/')}
                 className="flex-shrink-0 flex items-center gap-2.5 bg-card border border-border/50 rounded-full px-3 py-2 hover:bg-muted/50 transition-colors"
               >
                 <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center">
@@ -936,7 +936,7 @@ const Explore = () => {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
-                      onClick={() => navigate(`/pet/${pet.id}`)}
+                      onClick={() => navigate('/')}
                       className="relative cursor-pointer group"
                     >
                       <div className="aspect-[4/5] rounded-3xl overflow-hidden bg-card border border-border/30 shadow-sm hover:shadow-lg transition-all duration-300">

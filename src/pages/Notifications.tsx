@@ -146,7 +146,7 @@ const Notifications = () => {
         onClick={() => {
           if (notification.data?.post_id) navigate(`/post/${notification.data.post_id}`);
           else if (notification.data?.user_id) navigate(`/user/${notification.data.user_id}`);
-          else if (notification.data?.pet_id) navigate(`/pet/${notification.data.pet_id}`);
+          else if (notification.data?.pet_id) navigate('/');
         }}
       >
         {hasUserAvatar ? (

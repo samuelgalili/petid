@@ -78,7 +78,7 @@ export const PetCard = memo(({
       onMouseLeave={onLongPressEnd}
       onClick={() => {
         if (onSelect) onSelect();
-        navigate(`/pet/${pet.id}`);
+        navigate('/');
       }}
       className={`cursor-pointer rounded-2xl border bg-card shadow-card transition-all duration-200 overflow-hidden ${
         isSelected 

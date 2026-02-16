@@ -127,12 +127,11 @@ const BottomNav = () => {
   const handlePetPointerUp = useCallback(() => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
     if (!longPressTriggered.current) {
-      // Short tap — navigate to pet details
-      const petPath = activePet ? `/pet/${activePet.id}` : "/";
-      if (location.pathname === petPath) {
+      // Short tap — navigate to home
+      if (location.pathname === '/') {
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
-        navigate(petPath);
+        navigate('/');
       }
     }
   }, [location.pathname, navigate, activePet]);
@@ -144,7 +143,7 @@ const BottomNav = () => {
   const handleSwitchPet = (petId: string) => {
     contextSwitchPet(petId);
     setShowPetSwitcher(false);
-    navigate(`/pet/${petId}`);
+    navigate('/');
   };
 
   // Hidden routes

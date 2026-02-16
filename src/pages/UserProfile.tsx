@@ -363,7 +363,7 @@ const UserProfile = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.1 }}
-          onClick={() => navigate(`/pet/${pet.id}`)}
+          onClick={() => navigate('/')}
           className="bg-gradient-to-br from-primary/5 to-accent/5 rounded-2xl p-4 cursor-pointer hover:shadow-lg transition-all duration-300 border border-border/50"
         >
           <div className="w-20 h-20 mx-auto rounded-full overflow-hidden ring-4 ring-primary/20 mb-3">
@@ -599,7 +599,7 @@ const UserProfile = () => {
                 <motion.div
                   key={pet.id}
                   whileHover={{ scale: 1.05 }}
-                  onClick={() => navigate(`/pet/${pet.id}`)}
+                  onClick={() => navigate('/')}
                   className="flex-shrink-0 text-center cursor-pointer"
                 >
                   <div className="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-primary to-accent">
