@@ -187,7 +187,7 @@ const BreedDetect = lazy(() => import("@/pages/BreedDetect"));
 
 export const petRoutes: RouteObject[] = [
   { path: "/add-pet", element: <Protected><LazyPage component={AddPet} pageName="הוספת חיית מחמד" /></Protected> },
-  { path: "/pet/:petId", element: <Navigate to="/" replace /> },
+  { path: "/pet/:petId", element: <Protected><LazyPage component={PetDetails} pageName="כרטיסיית חיית מחמד" /></Protected> },
   { path: "/edit-pet/:petId", element: <Protected><LazyPage component={EditPet} pageName="עריכת חיית מחמד" /></Protected> },
   { path: "/pet/:petId/edit", element: <Protected><LazyPage component={EditPet} pageName="עריכת חיית מחמד" /></Protected> },
   { path: "/archived-pets", element: <Protected><LazyPage component={ArchivedPets} pageName="חיות מחמד בארכיון" /></Protected> },

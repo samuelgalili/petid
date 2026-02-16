@@ -122,14 +122,15 @@ const BottomNav = () => {
   const handlePetPointerUp = useCallback(() => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
     if (!longPressTriggered.current) {
-      // Short tap — navigate home
-      if (location.pathname === "/") {
+      // Short tap — navigate to pet details
+      const petPath = activePet ? `/pet/${activePet.id}` : "/";
+      if (location.pathname === petPath) {
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
-        navigate("/");
+        navigate(petPath);
       }
     }
-  }, [location.pathname, navigate]);
+  }, [location.pathname, navigate, activePet]);
 
   const handlePetPointerLeave = useCallback(() => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
@@ -138,7 +139,7 @@ const BottomNav = () => {
   const handleSwitchPet = (petId: string) => {
     contextSwitchPet(petId);
     setShowPetSwitcher(false);
-    navigate("/");
+    navigate(`/pet/${petId}`);
   };
 
   // Hidden routes
@@ -150,7 +151,7 @@ const BottomNav = () => {
   // Smart active detection
   const isActive = (path: string) => {
     const p = location.pathname;
-    if (path === "/") return p === "/";
+    if (path === "/") return p === "/" || p.startsWith("/pet/");
     if (path === "/shop") return p === "/shop" || p.startsWith("/product/") || p === "/cart" || p === "/checkout" || p.startsWith("/shop/");
     if (path === "/feed") return p === "/feed" || p.startsWith("/post/") || p.startsWith("/story/") || p === "/explore";
     if (path === "/chat") return p === "/chat";
