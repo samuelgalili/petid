@@ -13,12 +13,18 @@ import {
   Camera,
   Image as ImageIcon,
   FileText,
-  X,
+  ScanLine,
+  MapPin,
   Sparkles,
   ChevronLeft,
   ShoppingBag,
   ArrowDown,
 } from "lucide-react";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -57,7 +63,7 @@ interface PetAIChatViewProps {
   onSendMessage: (text: string) => void;
   onProductClick?: (productId: string) => void;
   onActionClick?: (actionId: string) => void;
-  onAttachment?: (type: "camera" | "gallery" | "document") => void;
+  onAttachment?: (type: "camera" | "gallery" | "document" | "scan" | "location") => void;
 }
 
 /* ─── Paw Print SVG Pattern ─── */
@@ -188,57 +194,65 @@ const InlineActionButton = ({
   </motion.button>
 );
 
-/* ─── Attachment Menu ─── */
+/* ─── Attachment Bottom Sheet (2×2 Grid) ─── */
 
-const AttachmentMenu = ({
+const attachmentItems = [
+  { type: "scan" as const, icon: ScanLine, label: "סריקת מסמך", sublabel: "OCR חכם", gradient: "from-primary to-primary/80" },
+  { type: "camera" as const, icon: Camera, label: "צילום מהיר", sublabel: "תסמינים ובדיקות", gradient: "from-accent to-accent/80" },
+  { type: "gallery" as const, icon: ImageIcon, label: "גלריית מדיה", sublabel: "בחירת תמונה", gradient: "from-chart-4 to-chart-4/80" },
+  { type: "location" as const, icon: MapPin, label: "שיתוף מיקום", sublabel: "GPS מדויק", gradient: "from-chart-2 to-chart-2/80" },
+] as const;
+
+const AttachmentSheet = ({
+  open,
+  onOpenChange,
   onSelect,
-  onClose,
 }: {
-  onSelect: (type: "camera" | "gallery" | "document") => void;
-  onClose: () => void;
-}) => {
-  const items = [
-    { type: "camera" as const, icon: Camera, label: "צלם תמונה", gradient: "from-primary to-accent" },
-    { type: "gallery" as const, icon: ImageIcon, label: "גלריה", gradient: "from-accent to-primary" },
-    { type: "document" as const, icon: FileText, label: "מסמכים", gradient: "from-muted-foreground to-foreground" },
-  ];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSelect: (type: "camera" | "gallery" | "document" | "scan" | "location") => void;
+}) => (
+  <Drawer open={open} onOpenChange={onOpenChange}>
+    <DrawerContent className="bg-card/95 backdrop-blur-2xl border-t border-border/40 rounded-t-3xl pb-8">
+      {/* Drag handle */}
+      <div className="mx-auto mt-3 mb-4 h-1.5 w-12 rounded-full bg-muted-foreground/20" />
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 20, scale: 0.95 }}
-      className="absolute bottom-full left-0 right-0 mb-2 px-4"
-    >
-      <div className="bg-card/95 backdrop-blur-xl rounded-2xl border border-border/50 p-3 shadow-xl">
-        <div className="flex items-center justify-around gap-2">
-          {items.map((item, index) => {
-            const Icon = item.icon;
-            return (
-              <motion.button
-                key={item.type}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => {
-                  onSelect(item.type);
-                  onClose();
-                }}
-                className="flex flex-col items-center gap-1.5 p-3"
-              >
-                <div className={cn("w-12 h-12 rounded-full bg-gradient-to-br flex items-center justify-center shadow-lg", item.gradient)}>
-                  <Icon className="w-5 h-5 text-primary-foreground" strokeWidth={1.5} />
-                </div>
-                <span className="text-[10px] text-muted-foreground">{item.label}</span>
-              </motion.button>
-            );
-          })}
-        </div>
+      {/* 2×2 Grid */}
+      <div className="grid grid-cols-2 gap-3 px-5 pb-2">
+        {attachmentItems.map((item, index) => {
+          const Icon = item.icon;
+          return (
+            <motion.button
+              key={item.type}
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{
+                delay: index * 0.06,
+                type: "spring",
+                stiffness: 400,
+                damping: 22,
+              }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                onSelect(item.type);
+                onOpenChange(false);
+              }}
+              className="flex flex-col items-center gap-2.5 p-5 rounded-2xl bg-muted/40 border border-border/30 active:bg-muted/70 transition-colors"
+            >
+              <div className={cn("w-14 h-14 rounded-2xl bg-gradient-to-br flex items-center justify-center shadow-lg", item.gradient)}>
+                <Icon className="w-6 h-6 text-primary-foreground" strokeWidth={1.5} />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-semibold text-foreground">{item.label}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{item.sublabel}</p>
+              </div>
+            </motion.button>
+          );
+        })}
       </div>
-    </motion.div>
-  );
-};
+    </DrawerContent>
+  </Drawer>
+);
 
 /* ─── Main Component ─── */
 
@@ -440,17 +454,15 @@ export const PetAIChatView = ({
         )}
       </AnimatePresence>
 
+      {/* ═══ Attachment Bottom Sheet ═══ */}
+      <AttachmentSheet
+        open={showAttachments}
+        onOpenChange={setShowAttachments}
+        onSelect={(type) => onAttachment?.(type)}
+      />
+
       {/* ═══ Input Bar ═══ */}
       <div className="relative">
-        <AnimatePresence>
-          {showAttachments && (
-            <AttachmentMenu
-              onSelect={(type) => onAttachment?.(type)}
-              onClose={() => setShowAttachments(false)}
-            />
-          )}
-        </AnimatePresence>
-
         <div className="px-4 py-3 bg-card/80 backdrop-blur-xl border-t border-border/50">
           <div className={cn(
             "flex items-end gap-2 bg-muted/40 rounded-3xl border transition-all duration-300 p-1.5",
