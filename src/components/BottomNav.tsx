@@ -143,7 +143,6 @@ const BottomNav = () => {
   const handleSwitchPet = (petId: string) => {
     contextSwitchPet(petId);
     setShowPetSwitcher(false);
-    navigate('/');
   };
 
   // Hidden routes
@@ -156,7 +155,7 @@ const BottomNav = () => {
   const isActive = (path: string) => {
     const p = location.pathname;
     if (path === "/profile-nav") return p === "/";
-    if (path === "/") return p === "/" || p.startsWith("/pet/");
+    if (path === "/") return p === "/";
     if (path === "/shop") return p === "/shop" || p.startsWith("/product/") || p === "/cart" || p === "/checkout" || p.startsWith("/shop/");
     if (path === "/feed") return p === "/feed" || p.startsWith("/post/") || p.startsWith("/story/") || p === "/explore";
     if (path === "/chat") return p === "/chat";
