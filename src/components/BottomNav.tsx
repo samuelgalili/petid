@@ -1,14 +1,11 @@
 import {
-  
   ShoppingBag,
   Newspaper,
   Sparkles,
-  Camera,
-  ImagePlus,
-  FileText,
   Plus,
   Dog,
   Cat,
+  User,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -17,8 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
-import { CreatePostDialog } from "@/components/CreatePostDialog";
-import { CreateStoryDialog } from "@/components/CreateStoryDialog";
+import { useAuth } from "@/hooks/useAuth";
 
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
@@ -81,12 +77,21 @@ const BottomNav = () => {
   const labels = navLabels[language] || navLabels.he;
   const { activePet, pets, switchPet: contextSwitchPet } = usePetPreference();
 
-  const [showUploadMenu, setShowUploadMenu] = useState(false);
-  const [showCreatePost, setShowCreatePost] = useState(false);
-  const [showCreateStory, setShowCreateStory] = useState(false);
-  
   const [showPetSwitcher, setShowPetSwitcher] = useState(false);
   const { unreadCount } = useRealtimeNotifications();
+  const { user } = useAuth();
+  const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
+
+  // Fetch user avatar
+  useEffect(() => {
+    if (!user) return;
+    const fetchAvatar = async () => {
+      const { data } = await supabase.from('profiles').select('avatar_url').eq('id', user.id).maybeSingle();
+      const authAvatar = user.user_metadata?.avatar_url || user.user_metadata?.picture;
+      setUserAvatarUrl(data?.avatar_url || authAvatar || null);
+    };
+    fetchAvatar();
+  }, [user]);
 
   // Listen for cross-pet safety events and show toast
   useEffect(() => {
@@ -151,6 +156,7 @@ const BottomNav = () => {
   // Smart active detection
   const isActive = (path: string) => {
     const p = location.pathname;
+    if (path === "/profile-nav") return p === "/";
     if (path === "/") return p === "/" || p.startsWith("/pet/");
     if (path === "/shop") return p === "/shop" || p.startsWith("/product/") || p === "/cart" || p === "/checkout" || p.startsWith("/shop/");
     if (path === "/feed") return p === "/feed" || p.startsWith("/post/") || p.startsWith("/story/") || p === "/explore";
@@ -166,13 +172,6 @@ const BottomNav = () => {
     }
   };
 
-  const handleUploadAction = (action: "story" | "post" | "document") => {
-    setShowUploadMenu(false);
-    if (action === "story") setShowCreateStory(true);
-    else if (action === "post") setShowCreatePost(true);
-    else navigate("/documents");
-  };
-
   // Pet accent color for active states
   const petAccent = activePet?.theme_color || undefined;
 
@@ -182,26 +181,25 @@ const BottomNav = () => {
   // ── Nav items ──
   const navItems = [
     {
-      key: "upload",
+      key: "profile",
       render: () => (
-        <div key="upload" className="flex flex-col items-center justify-center flex-1 relative">
-          <motion.button
-            whileTap={{ scale: 0.85 }}
-            transition={{ type: "spring", stiffness: 500, damping: 20 }}
-            onClick={() => setShowUploadMenu(!showUploadMenu)}
-            className="relative flex flex-col items-center gap-0.5"
-          >
-            <div className="relative z-10">
-              <Plus
-                className="w-[22px] h-[22px] text-muted-foreground"
-                strokeWidth={1.5}
-              />
-            </div>
-            <span className="text-[10px] font-medium text-muted-foreground relative z-10">
-              {labels.upload}
-            </span>
-          </motion.button>
-        </div>
+        <NavItem
+          key="profile"
+          onClick={() => handleNavClick("/")}
+          isActive={isActive("/profile-nav")}
+          label={labels.home}
+          accentColor={petAccent}
+          icon={
+            <Avatar className="w-[24px] h-[24px]">
+              {userAvatarUrl ? (
+                <AvatarImage src={userAvatarUrl} className="object-cover" />
+              ) : null}
+              <AvatarFallback className="bg-muted text-muted-foreground">
+                <User className="w-3.5 h-3.5" strokeWidth={1.5} />
+              </AvatarFallback>
+            </Avatar>
+          }
+        />
       ),
     },
     {
@@ -388,49 +386,8 @@ const BottomNav = () => {
         )}
       </AnimatePresence>
 
-      {/* Upload Menu */}
-      <AnimatePresence>
-        {showUploadMenu && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9998]"
-              onClick={() => setShowUploadMenu(false)}
-            />
-            <motion.div
-              initial={{ y: 40, opacity: 0, scale: 0.9 }}
-              animate={{ y: 0, opacity: 1, scale: 1 }}
-              exit={{ y: 40, opacity: 0, scale: 0.9 }}
-              transition={{ type: "spring", damping: 22, stiffness: 350 }}
-              className="fixed bottom-[80px] inset-x-0 mx-auto w-fit z-[9999] flex items-center gap-6 px-6 py-4 bg-background/90 backdrop-blur-xl rounded-2xl border border-border/50 shadow-2xl"
-              dir={direction}
-            >
-              {[
-                { icon: Camera, label: labels.story, action: "story" as const, color: "text-pink-500", bg: "bg-pink-500/10" },
-                { icon: ImagePlus, label: labels.post, action: "post" as const, color: "text-blue-500", bg: "bg-blue-500/10" },
-                { icon: FileText, label: labels.document, action: "document" as const, color: "text-amber-500", bg: "bg-amber-500/10" },
-              ].map((item) => (
-                <motion.button
-                  key={item.action}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => handleUploadAction(item.action)}
-                  className="flex flex-col items-center gap-1.5"
-                >
-                  <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center", item.bg)}>
-                    <item.icon className={cn("w-6 h-6", item.color)} strokeWidth={1.5} />
-                  </div>
-                  <span className="text-xs font-medium text-foreground">{item.label}</span>
-                </motion.button>
-              ))}
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
 
-      <CreatePostDialog open={showCreatePost} onOpenChange={setShowCreatePost} onPostCreated={() => setShowCreatePost(false)} />
-      <CreateStoryDialog open={showCreateStory} onOpenChange={setShowCreateStory} onStoryCreated={() => setShowCreateStory(false)} />
+
 
       {/* ── Bottom Navigation Bar ─────────────── */}
       <nav

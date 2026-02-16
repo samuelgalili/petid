@@ -3,16 +3,19 @@
  * Refactored: logic in useSoundtrackFeed, card in SoundtrackPostCard
  */
 
-import React from "react";
+import React, { useState } from "react";
 import { ComponentErrorBoundary } from "@/components/common/ComponentErrorBoundary";
 import { motion, AnimatePresence } from "framer-motion";
 import { useActivePet } from "@/hooks/useActivePet";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart } from "lucide-react";
+import { Heart, Plus, Camera, ImagePlus, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import BottomNav from "@/components/BottomNav";
+import { CreatePostDialog } from "@/components/CreatePostDialog";
+import { CreateStoryDialog } from "@/components/CreateStoryDialog";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   FeedPullToRefresh,
   FeedSkeletonList,
@@ -33,6 +36,10 @@ const SoundtrackFeed = () => {
   const navigate = useNavigate();
   const { unreadCount } = useRealtimeNotifications();
   const { pet: activePet } = useActivePet();
+  const { language, direction } = useLanguage();
+  const [showUploadMenu, setShowUploadMenu] = useState(false);
+  const [showCreatePost, setShowCreatePost] = useState(false);
+  const [showCreateStory, setShowCreateStory] = useState(false);
   const {
     posts,
     loading,
@@ -241,6 +248,65 @@ const SoundtrackFeed = () => {
           </>
         )}
       </div>
+
+      {/* Floating Upload Button */}
+      <motion.button
+        whileTap={{ scale: 0.9 }}
+        onClick={() => setShowUploadMenu(!showUploadMenu)}
+        className="fixed bottom-[80px] right-4 z-[9998] w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center"
+        style={{ boxShadow: '0 4px 14px hsl(var(--primary) / 0.4)' }}
+      >
+        <Plus className="w-6 h-6" strokeWidth={2} />
+      </motion.button>
+
+      {/* Upload Menu */}
+      <AnimatePresence>
+        {showUploadMenu && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9998]"
+              onClick={() => setShowUploadMenu(false)}
+            />
+            <motion.div
+              initial={{ y: 40, opacity: 0, scale: 0.9 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: 40, opacity: 0, scale: 0.9 }}
+              transition={{ type: "spring", damping: 22, stiffness: 350 }}
+              className="fixed bottom-[140px] inset-x-0 mx-auto w-fit z-[9999] flex items-center gap-6 px-6 py-4 bg-background/90 backdrop-blur-xl rounded-2xl border border-border/50 shadow-2xl"
+              dir={direction}
+            >
+              {[
+                { icon: Camera, label: language === 'he' ? 'סטורי' : 'Story', action: "story" as const, color: "text-pink-500", bg: "bg-pink-500/10" },
+                { icon: ImagePlus, label: language === 'he' ? 'פוסט' : 'Post', action: "post" as const, color: "text-blue-500", bg: "bg-blue-500/10" },
+                { icon: FileText, label: language === 'he' ? 'מסמך' : 'Document', action: "document" as const, color: "text-amber-500", bg: "bg-amber-500/10" },
+              ].map((item) => (
+                <motion.button
+                  key={item.action}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => {
+                    setShowUploadMenu(false);
+                    if (item.action === "story") setShowCreateStory(true);
+                    else if (item.action === "post") setShowCreatePost(true);
+                    else navigate("/documents");
+                  }}
+                  className="flex flex-col items-center gap-1.5"
+                >
+                  <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center", item.bg)}>
+                    <item.icon className={cn("w-6 h-6", item.color)} strokeWidth={1.5} />
+                  </div>
+                  <span className="text-xs font-medium text-foreground">{item.label}</span>
+                </motion.button>
+              ))}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      <CreatePostDialog open={showCreatePost} onOpenChange={setShowCreatePost} onPostCreated={() => setShowCreatePost(false)} />
+      <CreateStoryDialog open={showCreateStory} onOpenChange={setShowCreateStory} onStoryCreated={() => setShowCreateStory(false)} />
 
       <BottomNav />
     </div>
