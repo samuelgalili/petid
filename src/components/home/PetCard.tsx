@@ -100,7 +100,7 @@ export const PetCard = memo(({
         )}
 
         {/* Pet Type Badge - top left */}
-        <div className="absolute top-2 left-2 bg-background/80 backdrop-blur-sm text-foreground text-[10px] font-bold px-2 py-0.5 rounded-full border border-border/50 flex items-center gap-1">
+        <div className="absolute top-2 left-2 bg-background/80 backdrop-blur-sm text-foreground text-xs font-bold px-2.5 py-1 rounded-full border border-border/50 flex items-center gap-1">
           <span>{petEmoji}</span>
           <span>{petTypeLabel}</span>
         </div>
@@ -146,14 +146,14 @@ export const PetCard = memo(({
       </div>
 
       {/* Info Section */}
-      <div className="p-3 space-y-1.5" dir="rtl">
+      <div className="p-3.5 space-y-2" dir="rtl">
         {/* Name + Gender */}
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-foreground font-jakarta truncate flex-1">
+          <h3 className="text-base font-extrabold text-foreground font-jakarta truncate flex-1">
             {pet.name}
           </h3>
           {genderIcon && (
-            <span className={`text-base font-bold ${genderColor} mr-1`}>
+            <span className={`text-lg font-extrabold ${genderColor} mr-1`}>
               {genderIcon}
             </span>
           )}
@@ -161,7 +161,7 @@ export const PetCard = memo(({
 
         {/* Breed */}
         {pet.breed && (
-          <p className="text-xs text-muted-foreground truncate font-jakarta">
+          <p className="text-sm font-medium text-muted-foreground truncate font-jakarta">
             {pet.breed}
           </p>
         )}
@@ -169,8 +169,8 @@ export const PetCard = memo(({
         {/* Age + Events */}
         <div className="flex items-center justify-between pt-1">
           {age && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Calendar className="w-3 h-3" />
+            <div className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+              <Calendar className="w-3.5 h-3.5" />
               <span>{age}</span>
             </div>
           )}
