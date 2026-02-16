@@ -47,6 +47,18 @@ import { useEngagement } from "@/hooks/useEngagement";
 import { filterSafeContent, sortBySafetyScore } from "@/lib/contentSafety";
 import { useNotificationsBadge } from "@/hooks/useNotificationsBadge";
 import { SEO } from "@/components/SEO";
+import { usePetPreference } from "@/contexts/PetPreferenceContext";
+
+// Health gap keywords — posts matching these are boosted for pets with gaps
+const HEALTH_GAP_KEYWORDS: Record<string, string[]> = {
+  vaccines: ['חיסון', 'חיסונים', 'vaccine', 'vaccination', 'כלבת', 'rabies', 'משושה', 'parvo'],
+  nutrition: ['תזונה', 'מזון', 'אוכל', 'דיאטה', 'nutrition', 'food', 'diet', 'משקל', 'weight', 'השמנה'],
+  dental: ['שיניים', 'dental', 'teeth', 'חניכיים', 'gums'],
+  grooming: ['טיפוח', 'grooming', 'פרווה', 'fur', 'רחצה', 'bath', 'שמפו'],
+  exercise: ['אימון', 'פעילות', 'exercise', 'טיול', 'walk', 'ריצה', 'run', 'משחק', 'play'],
+  medical: ['וטרינר', 'vet', 'בדיקה', 'checkup', 'תרופה', 'medication', 'מחלה', 'disease', 'ניתוח', 'surgery', 'בריאות', 'health'],
+  prevention: ['פרעושים', 'fleas', 'קרציות', 'ticks', 'תולעים', 'worms', 'מניעה', 'prevention'],
+};
 
 // Shop products for feed
 const SHOP_PRODUCTS: FeedProduct[] = [{
@@ -261,6 +273,7 @@ const Feed = () => {
     setCartIconPosition
   } = useFlyingCart();
   const { unreadCount: notificationCount } = useNotificationsBadge();
+  const { activePet } = usePetPreference();
   const cartIconRef = useRef<HTMLButtonElement>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [adoptionPets, setAdoptionPets] = useState<AdoptionPet[]>([]);
@@ -1087,8 +1100,41 @@ const Feed = () => {
         return [...postItems, ...adoptionItems, ...challengeItems].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       case "foryou":
       default:
-        // Start with posts sorted by date
-        const sortedPosts = [...postItems].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        // ── Health-gap scoring: boost posts relevant to active pet's gaps ──
+        const getHealthRelevance = (caption: string): number => {
+          if (!caption || !activePet) return 0;
+          const lower = caption.toLowerCase();
+          let score = 0;
+          const conditions = activePet.medical_conditions || [];
+          
+          // Boost posts matching the pet's medical conditions
+          for (const condition of conditions) {
+            if (lower.includes(condition.toLowerCase())) score += 30;
+          }
+          
+          // Boost posts matching health gap keywords
+          for (const [, keywords] of Object.entries(HEALTH_GAP_KEYWORDS)) {
+            for (const kw of keywords) {
+              if (lower.includes(kw)) { score += 10; break; }
+            }
+          }
+          
+          // Extra boost for medical alerts
+          if (lower.includes('אזהרה') || lower.includes('סכנה') || lower.includes('alert') || lower.includes('warning')) {
+            score += 20;
+          }
+          
+          return score;
+        };
+
+        // Sort posts by health relevance first, then by date
+        const sortedPosts = [...postItems].sort((a, b) => {
+          const captionA = (a.data as Post).caption || '';
+          const captionB = (b.data as Post).caption || '';
+          const relevanceDiff = getHealthRelevance(captionB) - getHealthRelevance(captionA);
+          if (relevanceDiff !== 0) return relevanceDiff;
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
 
         // Distribute non-organic content (challenges, products, ads, adoption, suggested) evenly
         const nonOrganicItems = [...challengeItems, ...adoptionItems, ...productItems.slice(0, 3),
@@ -1123,7 +1169,7 @@ const Feed = () => {
         }
         return applyFeedRules ? applyFeedRules(result) : result;
     }
-  }, [posts, adoptionPets, suggestedPosts, challenges, shopProducts, activeTab, followingIds, sortByPriority, applyFeedRules]);
+  }, [posts, adoptionPets, suggestedPosts, challenges, shopProducts, activeTab, followingIds, sortByPriority, applyFeedRules, activePet]);
 
   // Handle following a suggested user - remove from suggested posts
   const handleSuggestedFollow = useCallback((userId: string) => {

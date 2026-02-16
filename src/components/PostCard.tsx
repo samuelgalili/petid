@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, Share2, Heart, MoreVertical, Flag, Link2, EyeOff, Trash2, User, Music, Disc3 } from "lucide-react";
+import { MessageCircle, Share2, Heart, MoreVertical, Flag, Link2, EyeOff, Trash2, User, Music, Disc3, PawPrint } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { haptic } from "@/lib/haptics";
@@ -12,6 +12,7 @@ import { HeartBurstAnimation } from "@/components/post/HeartBurstAnimation";
 import { ImageCarousel } from "@/components/post/ImageCarousel";
 import { ShareToStoryButton } from "@/components/post/ShareToStoryButton";
 import { supabase } from "@/integrations/supabase/client";
+import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -111,6 +112,7 @@ export const PostCard = ({
   const navigate = useNavigate();
   const { isFollowing, toggleFollow } = useFollow(post.user_id);
   const { checkAuth, isAuthenticated } = useRequireAuth();
+  const { activePet } = usePetPreference();
   const [isLicking, setIsLicking] = useState(false);
   const [showProductTags, setShowProductTags] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
@@ -224,6 +226,28 @@ export const PostCard = ({
         className="absolute inset-x-0 top-0 pointer-events-none z-[5]" 
         style={{ height: '80px', background: 'linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.1) 50%, transparent 100%)' }} 
       />
+
+      {/* Active pet label — top-left */}
+      {activePet && (
+        <div 
+          className="absolute top-3 left-3 z-20 flex items-center gap-1.5 rounded-full px-2.5 py-1"
+          style={{ 
+            backgroundColor: 'rgba(0,0,0,0.4)', 
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255,255,255,0.15)',
+          }}
+        >
+          {activePet.avatar_url ? (
+            <img src={activePet.avatar_url} alt="" className="w-4 h-4 rounded-full object-cover" />
+          ) : (
+            <PawPrint className="w-3.5 h-3.5 text-white/80" strokeWidth={2} />
+          )}
+          <span className="text-white text-[11px] font-semibold" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
+            עבור {activePet.name}
+          </span>
+        </div>
+      )}
 
       {/* Owner menu — top-right */}
       <div className="absolute top-3 right-3 z-20">
