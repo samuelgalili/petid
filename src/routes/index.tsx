@@ -174,7 +174,7 @@ export const shopRoutes: RouteObject[] = [
 // PET MODULE - Lazy loaded
 // ==========================================
 const AddPet = lazy(() => import("@/pages/AddPet"));
-const PetDetails = lazy(() => import("@/pages/PetDetails"));
+// PetDetails page removed — /pet/:petId now redirects to /
 const EditPet = lazy(() => import("@/pages/EditPet"));
 const ArchivedPets = lazy(() => import("@/pages/ArchivedPets"));
 const BreedHistory = lazy(() => import("@/pages/BreedHistory"));
@@ -188,8 +188,9 @@ const BreedDetect = lazy(() => import("@/pages/BreedDetect"));
 export const petRoutes: RouteObject[] = [
   { path: "/add-pet", element: <Protected><LazyPage component={AddPet} pageName="הוספת חיית מחמד" /></Protected> },
   { path: "/pet/:petId", element: <Navigate to="/" replace /> },
+  { path: "/pet/:petId/*", element: <Navigate to="/" replace /> },
+  { path: "/pet-profile", element: <Navigate to="/" replace /> },
   { path: "/edit-pet/:petId", element: <Protected><LazyPage component={EditPet} pageName="עריכת חיית מחמד" /></Protected> },
-  { path: "/pet/:petId/edit", element: <Protected><LazyPage component={EditPet} pageName="עריכת חיית מחמד" /></Protected> },
   { path: "/archived-pets", element: <Protected><LazyPage component={ArchivedPets} pageName="חיות מחמד בארכיון" /></Protected> },
   { path: "/breed-history/:petId", element: <Protected><LazyPage component={BreedHistory} pageName="היסטוריית גזע" /></Protected> },
   { path: "/photos", element: <Protected><LazyPage component={Photos} pageName="תמונות" /></Protected> },

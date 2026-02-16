@@ -398,7 +398,7 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
         text: isCat ? 'העלה צילום של חיסון FVRCP (מרובעת)' : 'העלה צילום של חיסון המשושה',
         pointsGain: Math.round(pillarWeights.vaccines * 0.1),
         done: false,
-        action: () => { onClose(); navigate(`/pet/${pet.id}/vet-log`); },
+        action: () => { onClose(); navigate(`/documents`); },
       });
     }
     if (!hasMicrochip) {
@@ -407,7 +407,7 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
         text: 'השלם את מספר השבב מהמסמכים',
         pointsGain: Math.round(pillarWeights.profile * 0.2),
         done: false,
-        action: () => { onClose(); navigate(`/pet/${pet.id}/edit`); },
+        action: () => { onClose(); navigate(`/edit-pet/${pet.id}`); },
       });
     }
     if (!petData?.current_food) {
@@ -416,7 +416,7 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
         text: 'עדכן את סוג המזון הנוכחי',
         pointsGain: Math.round(pillarWeights.nutrition * 0.15),
         done: false,
-        action: () => { onClose(); navigate(`/pet/${pet.id}/edit`); },
+        action: () => { onClose(); navigate(`/edit-pet/${pet.id}`); },
       });
     }
     if (!hasParasitePrevention) {
@@ -425,7 +425,7 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
         text: 'העלה אישור טיפול נגד פרעושים',
         pointsGain: Math.round(pillarWeights.prevention * 0.12),
         done: false,
-        action: () => { onClose(); navigate(`/pet/${pet.id}/vet-log`); },
+        action: () => { onClose(); navigate(`/documents`); },
       });
     }
     if (!ownerProfileComplete) {

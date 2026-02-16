@@ -1000,7 +1000,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => navigate(`/pet/${pet.id}/edit`)}
+                onClick={() => navigate(`/edit-pet/${pet.id}`)}
                 className="w-9 h-9 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors flex items-center justify-center"
                 title="עריכת פרטים"
               >
@@ -1420,7 +1420,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
-          onClick={() => navigate(`/pet/${pet.id}/id-card`)}
+          onClick={() => navigate(`/`)}
           className="w-full mb-3 flex items-center justify-center gap-2 py-2.5 bg-primary/8 hover:bg-primary/15 rounded-xl border border-primary/20 transition-colors"
         >
           <Download className="w-4 h-4 text-primary" strokeWidth={1.5} />

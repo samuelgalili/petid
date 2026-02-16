@@ -280,7 +280,7 @@ export const PetRecommendationsInline = ({ selectedPet, points = 0 }: PetRecomme
         ) : (
           <EmptyState 
             petName={selectedPet.name} 
-            onUpdate={() => navigate(`/pet/${selectedPet.id}/edit`)}
+            onUpdate={() => navigate(`/edit-pet/${selectedPet.id}`)}
           />
         )}
       </AnimatePresence>
