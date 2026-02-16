@@ -24,6 +24,7 @@ import {
   Globe,
   Star,
   Check,
+  LayoutDashboard,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +34,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { RoleBadge } from "@/components/RoleBadge";
 import { cn } from "@/lib/utils";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
+import { useUserRole } from "@/hooks/useUserRole";
 interface HamburgerMenuProps {
   isOpen: boolean;
   onClose: () => void;
@@ -182,6 +184,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
   const { theme, setTheme } = useTheme();
   const { language, setLanguage, direction } = useLanguage();
   const { activePet, pets, switchPet: contextSwitchPet } = usePetPreference();
+  const { isAdmin } = useUserRole();
   const isRtl = direction === "rtl";
   const s = menuStrings[language] || menuStrings.he;
 
@@ -383,6 +386,15 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
               {/* Content */}
               <MenuItem icon={Camera} label={s.photos} onClick={() => go("/photos")} isRtl={isRtl} />
               <MenuItem icon={FileText} label={s.documents} onClick={() => go("/documents")} isRtl={isRtl} />
+
+              {/* Admin Panel */}
+              {isAdmin && (
+                <>
+                  <SectionDivider />
+                  <SectionLabel>{language === 'he' ? 'ניהול' : 'Admin'}</SectionLabel>
+                  <MenuItem icon={LayoutDashboard} label={language === 'he' ? 'לוח בקרה' : 'Admin Dashboard'} onClick={() => go("/admin/growo")} isRtl={isRtl} />
+                </>
+              )}
 
               <SectionDivider />
 

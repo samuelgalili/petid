@@ -93,6 +93,30 @@ interface AIInsight {
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--success))", "hsl(var(--warning))", "hsl(var(--accent))", "#8884d8"];
 
+const MOCK_METRICS: DashboardMetrics = {
+  overview: {
+    revenue: { total: 0, change: 0, trend: "up" },
+    orders: { total: 0, change: 0, pending: 0 },
+    customers: { new: 0, returning: 0, returningPercent: 0 },
+    profit: { gross: 0, margin: 0 },
+    averageOrderValue: 0,
+  },
+  charts: {
+    revenueByDay: Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(); d.setDate(d.getDate() - (6 - i));
+      return { date: d.toISOString().split("T")[0], revenue: 0, orders: 0 };
+    }),
+    customersByDay: Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(); d.setDate(d.getDate() - (6 - i));
+      return { date: d.toISOString().split("T")[0], new: 0, returning: 0 };
+    }),
+  },
+  topProducts: [],
+  inventory: { lowStock: [], outOfStock: 0 },
+  recentTransactions: [],
+  period: { start: "", end: "", days: 30 },
+};
+
 const AdminGrowo = () => {
   const { toast } = useToast();
   const [period, setPeriod] = useState("30");
@@ -101,7 +125,7 @@ const AdminGrowo = () => {
   const [loadingInsights, setLoadingInsights] = useState(false);
 
   // Fetch dashboard metrics from edge function
-  const { data: metrics, isLoading, refetch, error } = useQuery<DashboardMetrics>({
+  const { data: rawMetrics, isLoading, refetch, error } = useQuery<DashboardMetrics>({
     queryKey: ["growo-dashboard", period],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke("get-dashboard-metrics", {
@@ -110,8 +134,12 @@ const AdminGrowo = () => {
       if (error) throw error;
       return data;
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
   });
+
+  // Always have metrics - use mock fallback
+  const metrics = rawMetrics || (error ? MOCK_METRICS : undefined);
 
   // Fetch customer retention data
   const { data: customerStats } = useQuery({
@@ -358,21 +386,16 @@ const AdminGrowo = () => {
     );
   };
 
-  if (error) {
-    return (
-      <AdminLayout title="Growo Dashboard" icon={Brain}>
-        <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-          <AlertTriangle className="w-16 h-16 text-destructive mb-4" />
-          <h2 className="text-xl font-bold mb-2">שגיאה בטעינת הנתונים</h2>
-          <p className="text-muted-foreground mb-4">לא ניתן לטעון את נתוני הדשבורד</p>
-          <Button onClick={() => refetch()}>
-            <RefreshCcw className="w-4 h-4 mr-2" />
-            נסה שוב
-          </Button>
-        </div>
-      </AdminLayout>
-    );
-  }
+  // Show error toast but don't block UI - fallback to mock data
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "שגיאה בטעינת נתונים",
+        description: "מוצגים נתוני דמו. נסה לרענן.",
+        variant: "destructive",
+      });
+    }
+  }, [error]);
 
   return (
     <AdminLayout title="Growo Dashboard" icon={Brain}>
