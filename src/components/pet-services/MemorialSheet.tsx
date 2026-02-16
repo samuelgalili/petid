@@ -55,7 +55,7 @@ export const MemorialSheet = ({ pet, lifeExpectancy, isOpen, onClose }: Memorial
       window.location.href = `tel:${phone}`;
     } else if (serviceId === 'memorial') {
       // Navigate to memorial page
-      navigate(`/pet/${pet.id}/memorial`);
+      navigate(`/`);
       onClose();
     }
   };
@@ -149,7 +149,7 @@ export const MemorialSheet = ({ pet, lifeExpectancy, isOpen, onClose }: Memorial
             variant="ghost"
             className="w-full text-muted-foreground hover:text-foreground"
             onClick={() => {
-              navigate(`/pet/${pet.id}/memorial/report`);
+              navigate(`/`);
               onClose();
             }}
           >

@@ -330,7 +330,7 @@ const ReorderConfirmation = () => {
             variant="ghost"
             size="lg"
             className="w-full text-muted-foreground hover:text-foreground rounded-xl font-bold h-14 gap-2"
-            onClick={() => navigate("/pet")}
+            onClick={() => navigate("/")}
           >
             <Home className="w-5 h-5" strokeWidth={1.5} />
             חזרה לדשבורד הבריאות

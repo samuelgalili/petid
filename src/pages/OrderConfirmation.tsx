@@ -439,7 +439,7 @@ const OrderConfirmation = () => {
           <Button
             size="lg"
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl font-bold shadow-xl h-14"
-            onClick={() => navigate("/pet")}
+            onClick={() => navigate("/")}
           >
             <Home className="w-5 h-5 ml-2" strokeWidth={1.5} />
             חזרה לדשבורד הבריאות

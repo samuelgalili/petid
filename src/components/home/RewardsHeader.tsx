@@ -24,7 +24,7 @@ export const RewardsHeader = ({ userName, greeting, onMenuOpen }: RewardsHeaderP
       <div className="flex flex-row-reverse items-center gap-[14px]">
         {/* Health Icon - Right Side */}
         <motion.button
-          onClick={() => navigate('/pet')}
+          onClick={() => navigate('/')}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           transition={{ duration: 0.2 }}
@@ -63,7 +63,7 @@ export const RewardsHeader = ({ userName, greeting, onMenuOpen }: RewardsHeaderP
       {/* Link Button - Bottom Left Corner */}
       <div className="mt-3 text-left">
         <motion.button
-          onClick={() => navigate('/pet')}
+          onClick={() => navigate('/')}
           whileHover={{ x: -2 }}
           whileTap={{ scale: 0.95 }}
           transition={{ duration: 0.15 }}
