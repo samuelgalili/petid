@@ -75,7 +75,7 @@ export default {
   			xs: [
   				'0.8125rem',
   				{
-  					lineHeight: '1.25',
+  					lineHeight: '1.4',
   					letterSpacing: '0'
   				}
   			],
@@ -87,30 +87,30 @@ export default {
   				}
   			],
   			base: [
-  				'1.0625rem',
+  				'1rem',
   				{
-  					lineHeight: '1.5',
+  					lineHeight: '1.6',
   					letterSpacing: '0'
   				}
   			],
   			lg: [
-  				'1.1875rem',
+  				'1.125rem',
   				{
-  					lineHeight: '1.5',
+  					lineHeight: '1.55',
   					letterSpacing: '0'
   				}
   			],
   			xl: [
-  				'1.375rem',
+  				'1.3125rem',
   				{
   					lineHeight: '1.5',
-  					letterSpacing: '0'
+  					letterSpacing: '-0.005em'
   				}
   			],
   			'2xl': [
   				'1.625rem',
   				{
-  					lineHeight: '1.4',
+  					lineHeight: '1.35',
   					letterSpacing: '-0.01em'
   				}
   			],
@@ -118,7 +118,7 @@ export default {
   				'2rem',
   				{
   					lineHeight: '1.3',
-  					letterSpacing: '-0.01em'
+  					letterSpacing: '-0.015em'
   				}
   			],
   			'4xl': [
