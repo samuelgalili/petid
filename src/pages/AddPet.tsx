@@ -544,7 +544,13 @@ const AddPet = () => {
                 <ArrowRight className="w-5 h-5 text-foreground" />
               </button>
             ) : (
-              <div className="w-9" />
+              <button
+                type="button"
+                onClick={() => navigate('/')}
+                className="p-2 rounded-xl hover:bg-muted transition-colors"
+              >
+                <ArrowRight className="w-5 h-5 text-foreground" />
+              </button>
             )}
             <div className="flex items-center gap-2">
               <span className="text-xl">🐾</span>
