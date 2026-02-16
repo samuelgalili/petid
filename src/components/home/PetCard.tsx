@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import { Plus, Heart, Calendar, MapPin, Siren } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { memo, useMemo } from "react";
 import { OptimizedImage } from "@/components/OptimizedImage";
 
@@ -46,7 +45,6 @@ export const PetCard = memo(({
   onLongPressEnd,
   onSelect 
 }: PetCardProps) => {
-  const navigate = useNavigate();
   const age = useMemo(() => getAge(pet.birth_date), [pet.birth_date]);
   const genderIcon = useMemo(() => getGenderIcon(pet.gender), [pet.gender]);
   const genderColor = useMemo(() => getGenderColor(pet.gender), [pet.gender]);
@@ -78,7 +76,6 @@ export const PetCard = memo(({
       onMouseLeave={onLongPressEnd}
       onClick={() => {
         if (onSelect) onSelect();
-        navigate('/');
       }}
       className={`cursor-pointer rounded-2xl border bg-card shadow-card transition-all duration-200 overflow-hidden ${
         isSelected 
