@@ -91,6 +91,17 @@ function scorePostForPet(
     }
   }
 
+  // V73: Engagement-based boost from liked topics
+  try {
+    const likedTopics = JSON.parse(localStorage.getItem("petid_liked_topics") || "{}");
+    for (const [topic, count] of Object.entries(likedTopics)) {
+      const topicLower = topic.toLowerCase();
+      if (lower.includes(topicLower)) {
+        score += Math.min(Number(count) * 2, 10); // cap at +10
+      }
+    }
+  } catch { /* noop */ }
+
   return score;
 }
 
@@ -197,12 +208,12 @@ export function useSoundtrackFeed() {
         };
       });
 
-      // OCR-driven health-aware ranking: boost posts matching pet's conditions
+      // Pet-aware feed ranking: always sort by relevance to active pet
       const petConditions = [...(activePet?.medical_conditions || [])];
-      if (activeTab === "discover" && petConditions.length > 0) {
+      if (activeTab === "discover" && activePet) {
         enrichedPosts.sort((a, b) => {
-          const scoreA = scorePostForPet(a.caption, activePet?.pet_type || null, activePet?.breed || null, activePet?.ageWeeks ?? null, petConditions);
-          const scoreB = scorePostForPet(b.caption, activePet?.pet_type || null, activePet?.breed || null, activePet?.ageWeeks ?? null, petConditions);
+          const scoreA = scorePostForPet(a.caption, activePet.pet_type, activePet.breed, activePet.ageWeeks ?? null, petConditions);
+          const scoreB = scorePostForPet(b.caption, activePet.pet_type, activePet.breed, activePet.ageWeeks ?? null, petConditions);
           if (scoreA !== scoreB) return scoreB - scoreA;
           return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         });

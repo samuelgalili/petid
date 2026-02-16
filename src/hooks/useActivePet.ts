@@ -7,6 +7,7 @@ import { useMemo } from "react";
 import { usePetPreference, type PetProfile } from "@/contexts/PetPreferenceContext";
 
 export interface ActivePet {
+  id?: string;
   name: string;
   breed: string | null;
   pet_type: string;
@@ -14,6 +15,7 @@ export interface ActivePet {
   birth_date: string | null;
   ageWeeks: number | null;
   medical_conditions: string[] | null;
+  avatar_url?: string | null;
 }
 
 export function useActivePet() {
@@ -28,6 +30,7 @@ export function useActivePet() {
       );
     }
     return {
+      id: activePet.id,
       name: activePet.name,
       breed: activePet.breed,
       pet_type: activePet.pet_type,
@@ -35,6 +38,7 @@ export function useActivePet() {
       birth_date: activePet.birth_date,
       ageWeeks,
       medical_conditions: activePet.medical_conditions,
+      avatar_url: activePet.avatar_url,
     };
   }, [activePet]);
 
