@@ -573,23 +573,7 @@ const Profile = () => {
           }}>
                 {/* Collapse Handle */}
                 
-                {/* Pet Switcher - Horizontal pet bubbles for quick switching */}
-                {pets.length > 1 && <motion.div className="flex justify-center gap-2 py-3" initial={{
-              opacity: 0
-            }} animate={{
-              opacity: 1
-            }}>
-                    {pets.map(pet => <motion.button key={pet.id} onClick={() => { contextSwitchPet(pet.id); setSelectedPetId(pet.id); }} className={`relative w-12 h-12 rounded-full transition-all ${selectedPetId === pet.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-110' : 'opacity-60 hover:opacity-100'}`} whileTap={{
-                scale: 0.95
-              }}>
-                        <div className="w-full h-full rounded-full overflow-hidden bg-muted">
-                          {pet.avatar_url ? <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center bg-muted">
-                              <img src={pet.type === 'dog' ? dogIcon : catIcon} alt={pet.type} className="w-6 h-6 opacity-60" />
-                            </div>}
-                        </div>
-                        {selectedPetId === pet.id && <motion.div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary" layoutId="pet-indicator" />}
-                      </motion.button>)}
-                  </motion.div>}
+                {/* Pet switching is handled via BottomNav */}
 
                 {/* Pet name shown below switcher */}
                 <AnimatePresence>
