@@ -15,6 +15,7 @@ interface PetInsight {
   healthScore: number;
   missingItems: string[];
   breed: string | null;
+  gender: string | null;
 }
 
 function getGreeting(): string {
@@ -120,6 +121,7 @@ export const DailyInsightCard = () => {
         healthScore: score,
         missingItems: missing.slice(0, 3),
         breed: pet.breed,
+        gender: pet.gender,
       });
       setLoading(false);
     };
@@ -147,7 +149,7 @@ export const DailyInsightCard = () => {
         >
           <p className="text-lg text-muted-foreground">{getGreeting()}{userName ? ` ${userName}` : ""} 👋</p>
           <h1 className="text-2xl font-bold text-foreground mt-1">
-            {insight.petName} היום {insight.ageText ? `בן ${insight.ageText}` : "מחכה לך"}!
+            {insight.petName} היום {insight.ageText ? `${insight.gender === 'female' ? 'בת' : 'בן'} ${insight.ageText}` : "מחכה לך"}!
           </h1>
           {insight.breed && (
             <p className="text-sm text-muted-foreground mt-1">{insight.breed}</p>
