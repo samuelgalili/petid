@@ -128,16 +128,32 @@ const extractOmegaFeatures = (product: any): {
   crossSellHints: string[];
 } => {
   const text = `${product.name || ''} ${product.description || ''} ${product.ingredients || ''}`.toLowerCase();
+  const productBenefits = Array.isArray(product.benefits) ? product.benefits : [];
 
-  const benefits: { icon: React.ReactNode; title: string; description: string; color: string }[] = [
-    { icon: <Sparkles className="w-5 h-5" />, title: 'פרווה ועור', description: 'פרווה מבריקה ועור רך – פתרון לנשירה וגירודים', color: 'hsl(35,70%,50%)' },
-    { icon: <Brain className="w-5 h-5" />, title: 'כוח מוחי', description: 'שיפור ריכוז וערנות – בזכות ה-DHA', color: 'hsl(270,50%,55%)' },
-    { icon: <ShieldPlus className="w-5 h-5" />, title: 'חיזוק חיסוני', description: 'חיזוק מערכת החיסון והתאוששות ממחלות', color: 'hsl(140,50%,40%)' },
-    { icon: <Activity className="w-5 h-5" />, title: 'בריאות מפרקים', description: 'הפחתת נוקשות ושיפור גמישות במפרקים', color: 'hsl(200,60%,45%)' },
-    { icon: <Eye className="w-5 h-5" />, title: 'שמירה על ראייה', description: 'שמירה על ראייה תקינה לאורך השנים', color: 'hsl(170,50%,40%)' },
-  ];
+  // ZERO-HALLUCINATION: Only show benefits that exist in the product's actual data
+  const benefitIconMap: Record<string, { icon: React.ReactNode; color: string }> = {
+    'פרווה': { icon: <Sparkles className="w-5 h-5" />, color: 'hsl(35,70%,50%)' },
+    'עור': { icon: <Sparkles className="w-5 h-5" />, color: 'hsl(35,70%,50%)' },
+    'מוח': { icon: <Brain className="w-5 h-5" />, color: 'hsl(270,50%,55%)' },
+    'ריכוז': { icon: <Brain className="w-5 h-5" />, color: 'hsl(270,50%,55%)' },
+    'dha': { icon: <Brain className="w-5 h-5" />, color: 'hsl(270,50%,55%)' },
+    'חיסון': { icon: <ShieldPlus className="w-5 h-5" />, color: 'hsl(140,50%,40%)' },
+    'מפרק': { icon: <Activity className="w-5 h-5" />, color: 'hsl(200,60%,45%)' },
+    'ראייה': { icon: <Eye className="w-5 h-5" />, color: 'hsl(170,50%,40%)' },
+  };
 
-  const servingSuggestion = 'פשוט להוסיף מעל המזון היבש לשיפור הטעם והתיאבון – לחצו על המשאבה ישירות על הקיבל';
+  const benefits: { icon: React.ReactNode; title: string; description: string; color: string }[] = productBenefits.map((b: any) => {
+    const bText = `${b.title || ''} ${b.description || ''}`.toLowerCase();
+    let matchedIcon: { icon: React.ReactNode; color: string } = { icon: <Sparkles className="w-5 h-5" />, color: 'hsl(200,60%,45%)' };
+    for (const [keyword, val] of Object.entries(benefitIconMap)) {
+      if (bText.includes(keyword)) { matchedIcon = val; break; }
+    }
+    return { icon: matchedIcon.icon, title: b.title || '', description: b.description || '', color: matchedIcon.color };
+  });
+
+  let servingSuggestion: string | null = null;
+  if (text.includes('topper') || text.includes('מזון יבש') || text.includes('משאבה') || text.includes('pump'))
+    servingSuggestion = 'פשוט להוסיף מעל המזון היבש לשיפור הטעם והתיאבון';
 
   let purityBadge: string | null = null;
   if (text.includes('norwegian') || text.includes('נורווגי')) purityBadge = '99.5% שמן סלמון נורווגי טהור';
@@ -146,14 +162,17 @@ const extractOmegaFeatures = (product: any): {
 
   const isMultiPet = text.includes('cat') || text.includes('חתול') || text.includes('dogs and cats') || text.includes('כלבים וחתולים');
 
+  // ZERO-HALLUCINATION: Only show life stage tags if mentioned in actual product text
   const lifeStageTags: string[] = [];
   if (text.includes('puppy') || text.includes('גור') || text.includes('growth') || text.includes('גדילה')) lifeStageTags.push('חיוני לגורים בשלבי גדילה');
   if (text.includes('senior') || text.includes('מבוגר') || text.includes('aging')) lifeStageTags.push('חיוני לחיות מבוגרות');
-  if (lifeStageTags.length === 0) { lifeStageTags.push('חיוני לגורים בשלבי גדילה'); lifeStageTags.push('חיוני לחיות מבוגרות'); }
 
+  // ZERO-HALLUCINATION: Only show cross-sell hints based on actual product context
   const crossSellHints: string[] = [];
-  crossSellHints.push('שדרגו את הארוחה – הוסיפו שמן סלמון למזון היבש');
-  crossSellHints.push('תמיכה טבעית נוגדת דלקת – משלים מצוין לתוספי מפרקים');
+  if (text.includes('topper') || text.includes('מזון יבש') || text.includes('kibble'))
+    crossSellHints.push('שדרגו את הארוחה – הוסיפו שמן סלמון למזון היבש');
+  if (text.includes('מפרק') || text.includes('joint') || text.includes('anti-inflammatory') || text.includes('דלקת'))
+    crossSellHints.push('תמיכה טבעית נוגדת דלקת – משלים מצוין לתוספי מפרקים');
 
   return { benefits, servingSuggestion, purityBadge, isMultiPet, lifeStageTags, crossSellHints };
 };
@@ -5417,7 +5436,7 @@ const ProductDetail = () => {
         )}
 
         {/* ── Omega Liquid: Serving Suggestion ── */}
-        {isOmegaLiquid && (
+        {isOmegaLiquid && omegaFeatures.servingSuggestion && (
           <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
             <Card className="p-3 bg-gradient-to-br from-[hsl(35,50%,92%)] to-background border-[hsl(35,40%,60%)]/20 dark:from-[hsl(35,25%,14%)]">
               <div className="flex items-center gap-3">
@@ -5451,7 +5470,7 @@ const ProductDetail = () => {
         )}
 
         {/* ── Omega Liquid: Multi-Pet + Life Stage Tags ── */}
-        {isOmegaLiquid && (
+        {isOmegaLiquid && (omegaFeatures.isMultiPet || omegaFeatures.lifeStageTags.length > 0) && (
           <motion.div className="mx-4 mt-3 flex flex-wrap gap-2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.58 }}>
             {omegaFeatures.isMultiPet && (
               <Badge variant="outline" className="text-[11px] border-[hsl(140,40%,50%)]/40 text-[hsl(140,40%,40%)] bg-[hsl(140,40%,90%)]/30 dark:bg-[hsl(140,25%,15%)]/40">
@@ -7082,6 +7101,23 @@ const ProductDetail = () => {
                     <p className="text-[12px] text-muted-foreground leading-[1.7]">{b.description}</p>
                   </motion.div>
                 ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── Data Missing Fallback (food products without key data) ── */}
+        {!isAccessory && !hasNutritionData && !hasBenefits && !hasFeedingGuide && (
+          <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+            <Card className="p-4 border-warning/30 bg-warning/5 dark:bg-warning/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-warning/15 flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-warning" />
+                </div>
+                <div>
+                  <p className="text-[13px] font-bold text-foreground">נתונים חסרים</p>
+                  <p className="text-[12px] text-muted-foreground">רכיבים, יתרונות וטבלת האכלה לא נמצאו – יש להזין ידנית באדמין</p>
+                </div>
               </div>
             </Card>
           </motion.div>
