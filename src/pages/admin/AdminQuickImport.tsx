@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Link2, Download, CheckCircle2, AlertCircle, Loader2, ExternalLink,
-  RotateCcw, Pencil, Save, Eye, Sparkles, Package, List, Utensils, Heart
+  RotateCcw, Pencil, Save, Eye, Sparkles, Package, List, Utensils, Heart,
+  Search, Shield, FlaskConical, Flame, Scale, TriangleAlert, Star, Zap,
+  BadgeCheck, XCircle, Info, ChevronLeft, ChevronRight, ScanBarcode,
+  Plus, Trash2, AlertOctagon
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -11,10 +14,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
+import { Progress } from "@/components/ui/progress";
 
 const DEFAULT_BUSINESS_ID = "cf941cc4-e1d1-4d7c-8122-a5df81a1e53c";
 
-type Stage = "input" | "loading" | "preview" | "publishing" | "success" | "error";
+type WizardStep = 1 | 2 | 3 | 4;
+type StepStatus = "idle" | "loading" | "done" | "error";
 
 interface ScrapedData {
   name: string;
@@ -39,35 +44,113 @@ interface ScrapedData {
   variants: any[];
 }
 
+interface RedFlag {
+  name: string;
+  he: string;
+  risk: string;
+  severity: "critical" | "warning" | "info";
+}
+
+interface PositiveIngredient {
+  name: string;
+  he: string;
+  benefit: string;
+}
+
+interface IngredientAnalysis {
+  verdict: "safe" | "caution" | "danger";
+  qualityScore: number | null;
+  confidence: number;
+  redFlags: RedFlag[];
+  positives: PositiveIngredient[];
+  proteinSources: string[];
+  fillerIngredients: string[];
+  summaryHe: string | null;
+  firstFiveAnalysis: string | null;
+  estimatedKcalPerKg: number | null;
+  kcalEstimationMethod: string | null;
+  stats: {
+    totalRedFlags: number;
+    criticalCount: number;
+    warningCount: number;
+    infoCount: number;
+    positiveCount: number;
+  };
+}
+
+interface DuplicateResult {
+  id: string;
+  name: string;
+  sku: string | null;
+  image_url: string;
+  price: number;
+  matchType: string;
+  matchScore: number;
+  reason: string;
+}
+
+const STEP_LABELS = [
+  { num: 1, icon: Search, label: "הצייד", desc: "סריקה וזיהוי כפילויות" },
+  { num: 2, icon: FlaskConical, label: "המדען", desc: "ניתוח רכיבים וסיכונים" },
+  { num: 3, icon: Flame, label: "לוגיקת האכלה", desc: "חישוב Kcal וכמויות" },
+  { num: 4, icon: Package, label: "וריאנטים ופרסום", desc: "תצוגה מקדימה ושמירה" },
+];
+
 const AdminQuickImport = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Wizard state
+  const [step, setStep] = useState<WizardStep>(1);
+  const [stepStatus, setStepStatus] = useState<Record<WizardStep, StepStatus>>({
+    1: "idle", 2: "idle", 3: "idle", 4: "idle",
+  });
+
+  // Step 1: Hunter
   const [url, setUrl] = useState("");
-  const [stage, setStage] = useState<Stage>("input");
-  const [errorMessage, setErrorMessage] = useState("");
   const [scrapedData, setScrapedData] = useState<ScrapedData | null>(null);
   const [editData, setEditData] = useState<ScrapedData | null>(null);
+  const [duplicates, setDuplicates] = useState<DuplicateResult[]>([]);
+  const [possibleDuplicates, setPossibleDuplicates] = useState<DuplicateResult[]>([]);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  // Step 2: Scientist
+  const [analysis, setAnalysis] = useState<IngredientAnalysis | null>(null);
+
+  // Step 4: Publish
   const [publishedProduct, setPublishedProduct] = useState<any>(null);
 
-  // ── Scrape ──
+  const updateStatus = (s: WizardStep, status: StepStatus) => {
+    setStepStatus(prev => ({ ...prev, [s]: status }));
+  };
+
+  const updateField = (field: keyof ScrapedData, value: any) => {
+    if (!editData) return;
+    setEditData({ ...editData, [field]: value });
+  };
+
+  // ═══════════════════════════════════════════
+  // STEP 1: THE HUNTER - Scrape + Duplicate Check
+  // ═══════════════════════════════════════════
   const handleScrape = async () => {
     if (!url || !url.startsWith("http")) {
       toast({ title: "כתובת לא תקינה", description: "הזן כתובת URL מלאה", variant: "destructive" });
       return;
     }
 
-    setStage("loading");
+    updateStatus(1, "loading");
     setErrorMessage("");
+    setDuplicates([]);
+    setPossibleDuplicates([]);
 
     try {
-      // Use smart scraper: Firecrawl + AI extraction
       const { data, error } = await supabase.functions.invoke("smart-scrape-product", {
         body: { url },
       });
 
       if (error) throw new Error(error.message);
       if (!data?.success || !data?.data) {
-        setStage("error");
+        updateStatus(1, "error");
         setErrorMessage(data?.error || "לא נמצא מוצר בקישור. וודא שזה דף מוצר ספציפי.");
         return;
       }
@@ -93,23 +176,70 @@ const AdminQuickImport = () => {
         life_stage: s.life_stage || "",
         dog_size: s.dog_size || "",
         special_diet: s.special_diet || [],
-        variants: [],
+        variants: s.variants || [],
       };
 
       setScrapedData(parsed);
       setEditData({ ...parsed });
-      setStage("preview");
+
+      // Run duplicate check in background
+      if (parsed.name) {
+        try {
+          const { data: dupData } = await supabase.functions.invoke("product-duplicate-check", {
+            body: { productName: parsed.name, sku: parsed.sku },
+          });
+          if (dupData) {
+            setDuplicates(dupData.duplicates || []);
+            setPossibleDuplicates(dupData.possibleDuplicates || []);
+          }
+        } catch (dupErr) {
+          console.warn("Duplicate check failed:", dupErr);
+        }
+      }
+
+      updateStatus(1, "done");
     } catch (err: any) {
       console.error("Scrape failed:", err);
-      setStage("error");
+      updateStatus(1, "error");
       setErrorMessage(err.message || "שגיאה בסריקת הקישור.");
     }
   };
 
-  // ── Publish ──
+  // ═══════════════════════════════════════════
+  // STEP 2: THE SCIENTIST - AI Ingredient Analysis
+  // ═══════════════════════════════════════════
+  const runIngredientAnalysis = async () => {
+    if (!editData) return;
+    updateStatus(2, "loading");
+
+    try {
+      const { data, error } = await supabase.functions.invoke("analyze-product-ingredients", {
+        body: {
+          ingredients: editData.ingredients,
+          petType: editData.pet_type,
+          productName: editData.name,
+          category: editData.category,
+        },
+      });
+
+      if (error) throw new Error(error.message);
+      if (!data?.success) throw new Error(data?.error || "Analysis failed");
+
+      setAnalysis(data as IngredientAnalysis);
+      updateStatus(2, "done");
+    } catch (err: any) {
+      console.error("Analysis failed:", err);
+      updateStatus(2, "error");
+      toast({ title: "שגיאה בניתוח", description: err.message, variant: "destructive" });
+    }
+  };
+
+  // ═══════════════════════════════════════════
+  // STEP 4: PUBLISH
+  // ═══════════════════════════════════════════
   const handlePublish = async () => {
     if (!editData) return;
-    setStage("publishing");
+    updateStatus(4, "loading");
 
     try {
       const productData: any = {
@@ -186,30 +316,36 @@ const AdminQuickImport = () => {
       }
 
       setPublishedProduct(inserted);
-      setStage("success");
+      updateStatus(4, "done");
       toast({ title: "המוצר פורסם בהצלחה!", description: inserted.name });
     } catch (err: any) {
       console.error("Publish failed:", err);
-      setStage("error");
+      updateStatus(4, "error");
       setErrorMessage(err.message || "שגיאה בשמירת המוצר.");
     }
   };
 
   const handleReset = () => {
     setUrl("");
-    setStage("input");
+    setStep(1);
+    setStepStatus({ 1: "idle", 2: "idle", 3: "idle", 4: "idle" });
     setErrorMessage("");
     setScrapedData(null);
     setEditData(null);
+    setDuplicates([]);
+    setPossibleDuplicates([]);
+    setAnalysis(null);
     setPublishedProduct(null);
   };
 
-  const updateField = (field: keyof ScrapedData, value: any) => {
-    if (!editData) return;
-    setEditData({ ...editData, [field]: value });
+  const goToStep = (s: WizardStep) => {
+    if (s === 2 && !editData) return;
+    if (s === 3 && !editData) return;
+    if (s === 4 && !editData) return;
+    setStep(s);
   };
 
-  // ── Feeding guide edit helpers ──
+  // Feeding guide helpers
   const updateFeedingRow = (index: number, key: string, value: string) => {
     if (!editData) return;
     const updated = [...editData.feeding_guide];
@@ -219,7 +355,7 @@ const AdminQuickImport = () => {
 
   const removeFeedingRow = (index: number) => {
     if (!editData) return;
-    setEditData({ ...editData, feeding_guide: editData.feeding_guide.filter((_, i) => i !== index) });
+    setEditData({ ...editData, feeding_guide: editData.feeding_guide.filter((_: any, i: number) => i !== index) });
   };
 
   const addFeedingRow = () => {
@@ -227,261 +363,641 @@ const AdminQuickImport = () => {
     setEditData({ ...editData, feeding_guide: [...editData.feeding_guide, { range: "", amount: "" }] });
   };
 
+  // Variant helpers
+  const addVariant = () => {
+    if (!editData) return;
+    setEditData({ ...editData, variants: [...editData.variants, { label: "", weight: null, weight_unit: "kg", price: null, sku: "" }] });
+  };
+
+  const updateVariant = (index: number, key: string, value: any) => {
+    if (!editData) return;
+    const updated = [...editData.variants];
+    updated[index] = { ...updated[index], [key]: value };
+    setEditData({ ...editData, variants: updated });
+  };
+
+  const removeVariant = (index: number) => {
+    if (!editData) return;
+    setEditData({ ...editData, variants: editData.variants.filter((_: any, i: number) => i !== index) });
+  };
+
+  const progressPct = ((step - 1) / 3) * 100;
+
   return (
-    <AdminLayout title="סריקה וייבוא מוצר" icon={Download} breadcrumbs={[{ label: "מוצרים", href: "/admin/products" }, { label: "ייבוא מהיר" }]}>
-      <div className="max-w-4xl mx-auto space-y-6">
+    <AdminLayout title="אשף ייבוא מוצר" icon={Download} breadcrumbs={[{ label: "מוצרים", href: "/admin/products" }, { label: "ייבוא מהיר" }]}>
+      <div className="max-w-5xl mx-auto space-y-6" dir="rtl">
 
-        {/* ── Step 1: URL Input ── */}
-        <div className="p-6 bg-card rounded-2xl shadow-lg border border-border">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 bg-primary rounded-lg text-primary-foreground">
-              <Download size={22} strokeWidth={1.5} />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold">מייבא מוצרים – PetID</h2>
-              <p className="text-muted-foreground text-sm">הדבק קישור מהספק, סרוק, ערוך ופרסם</p>
-            </div>
+        {/* ═══ Progress Bar + Steps ═══ */}
+        <div className="p-5 bg-card rounded-2xl shadow-lg border border-border">
+          <div className="flex items-center justify-between mb-4">
+            {STEP_LABELS.map((s, i) => {
+              const Icon = s.icon;
+              const isActive = step === s.num;
+              const isDone = stepStatus[s.num as WizardStep] === "done";
+              const isError = stepStatus[s.num as WizardStep] === "error";
+              return (
+                <button
+                  key={s.num}
+                  onClick={() => goToStep(s.num as WizardStep)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all text-sm font-bold ${
+                    isActive
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : isDone
+                        ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
+                        : isError
+                          ? "bg-destructive/10 text-destructive"
+                          : "text-muted-foreground hover:bg-muted/50"
+                  }`}
+                >
+                  {isDone ? <CheckCircle2 size={18} /> : isError ? <XCircle size={18} /> : <Icon size={18} />}
+                  <span className="hidden sm:inline">{s.label}</span>
+                </button>
+              );
+            })}
           </div>
-
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <input
-                type="text"
-                placeholder="https://ken-hatuki.co.il/product/..."
-                className="w-full p-3 pr-10 rounded-xl border border-border bg-background text-foreground focus:ring-2 focus:ring-ring focus:outline-none transition-all text-left text-sm"
-                dir="ltr"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && stage !== "loading" && handleScrape()}
-                disabled={stage === "loading" || stage === "publishing"}
-              />
-              <Link2 className="absolute right-3 top-3 text-muted-foreground" size={18} />
-            </div>
-            <Button
-              onClick={handleScrape}
-              disabled={stage === "loading" || stage === "publishing" || !url}
-              className="gap-2 px-6"
-            >
-              {stage === "loading" ? (
-                <><Loader2 className="animate-spin" size={16} /> סורק...</>
-              ) : (
-                <><Sparkles size={16} /> סרוק וצפה</>
-              )}
-            </Button>
-          </div>
+          <Progress value={progressPct} className="h-2" />
+          <p className="text-xs text-muted-foreground mt-2 text-center">
+            {STEP_LABELS[step - 1].desc}
+          </p>
         </div>
 
-        {/* ── Error ── */}
-        <AnimatePresence>
-          {stage === "error" && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className="flex items-center gap-3 p-4 bg-destructive/10 text-destructive rounded-xl border border-destructive/20"
-            >
-              <AlertCircle size={20} />
-              <span className="flex-1">{errorMessage}</span>
-              <Button variant="outline" size="sm" onClick={handleReset}>נסה שוב</Button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* ── Step 2: Live Preview + Edit ── */}
-        <AnimatePresence>
-          {(stage === "preview" || stage === "publishing") && editData && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className="space-y-4"
-            >
-              {/* Product Header Card */}
+        {/* ═══ STEP 1: THE HUNTER ═══ */}
+        <AnimatePresence mode="wait">
+          {step === 1 && (
+            <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
               <div className="p-6 bg-card rounded-2xl shadow-lg border border-border">
-                <div className="flex items-start gap-4 mb-6">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Eye size={16} /> תצוגה מקדימה – ערוך לפני פרסום
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="p-3 bg-primary rounded-xl text-primary-foreground">
+                    <Search size={24} strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-extrabold">שלב 1: הצייד</h2>
+                    <p className="text-muted-foreground text-base">הדבק קישור או ברקוד – נביא לך את כל הנתונים</p>
                   </div>
                 </div>
 
-                <div className="flex flex-col md:flex-row gap-6">
-                  {/* Image */}
-                  <div className="w-full md:w-48 h-48 rounded-xl overflow-hidden bg-muted border border-border shrink-0">
-                    <img src={editData.image_url} alt="" className="w-full h-full object-cover" />
+                <div className="flex gap-3">
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      placeholder="https://store.co.il/product/... או ברקוד"
+                      className="w-full p-4 pr-12 rounded-xl border-2 border-border bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-primary focus:outline-none transition-all text-left text-base font-medium"
+                      dir="ltr"
+                      value={url}
+                      onChange={(e) => setUrl(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && stepStatus[1] !== "loading" && handleScrape()}
+                      disabled={stepStatus[1] === "loading"}
+                    />
+                    <ScanBarcode className="absolute right-4 top-4 text-muted-foreground" size={20} />
                   </div>
-
-                  {/* Core Fields */}
-                  <div className="flex-1 space-y-3">
-                    <EditableField label="שם המוצר" value={editData.name} onChange={(v) => updateField("name", v)} />
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      <EditableField label="מחיר (₪)" value={String(editData.price)} onChange={(v) => updateField("price", parseFloat(v) || 0)} type="number" />
-                      <EditableField label="מחיר מבצע (₪)" value={String(editData.sale_price || "")} onChange={(v) => updateField("sale_price", v ? parseFloat(v) : null)} type="number" />
-                      <EditableField label="SKU" value={editData.sku} onChange={(v) => updateField("sku", v)} />
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      <EditableField label="מותג" value={editData.brand} onChange={(v) => updateField("brand", v)} />
-                      <EditableField label="קטגוריה" value={editData.category || ""} onChange={(v) => updateField("category", v)} />
-                      <EditableField label="סוג חיית מחמד" value={editData.pet_type} onChange={(v) => updateField("pet_type", v)} />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <EditableField label="שלב בחיים" value={editData.life_stage} onChange={(v) => updateField("life_stage", v)} />
-                      <EditableField label="גודל כלב" value={editData.dog_size} onChange={(v) => updateField("dog_size", v)} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Tabs: Description, Ingredients, Feeding, Benefits */}
-              <div className="bg-card rounded-2xl shadow-lg border border-border overflow-hidden">
-                <Tabs defaultValue="description" dir="rtl">
-                  <TabsList className="w-full justify-start rounded-none border-b border-border bg-muted/30 p-0 h-auto">
-                    <TabsTrigger value="description" className="gap-1.5 rounded-none border-b-2 border-transparent data-[state=active]:border-primary py-3 px-4">
-                      <Package size={14} /> תיאור
-                    </TabsTrigger>
-                    <TabsTrigger value="ingredients" className="gap-1.5 rounded-none border-b-2 border-transparent data-[state=active]:border-primary py-3 px-4">
-                      <List size={14} /> רכיבים
-                    </TabsTrigger>
-                    <TabsTrigger value="feeding" className="gap-1.5 rounded-none border-b-2 border-transparent data-[state=active]:border-primary py-3 px-4">
-                      <Utensils size={14} /> טבלת האכלה
-                    </TabsTrigger>
-                    <TabsTrigger value="benefits" className="gap-1.5 rounded-none border-b-2 border-transparent data-[state=active]:border-primary py-3 px-4">
-                      <Heart size={14} /> יתרונות
-                    </TabsTrigger>
-                  </TabsList>
-
-                  <div className="p-5">
-                    {/* Description */}
-                    <TabsContent value="description" className="mt-0">
-                      <textarea
-                        value={editData.description}
-                        onChange={(e) => updateField("description", e.target.value)}
-                        className="w-full min-h-[120px] p-3 rounded-xl border border-border bg-background text-foreground text-sm resize-y focus:ring-2 focus:ring-ring focus:outline-none"
-                        dir="rtl"
-                      />
-                    </TabsContent>
-
-                    {/* Ingredients */}
-                    <TabsContent value="ingredients" className="mt-0">
-                      <textarea
-                        value={editData.ingredients}
-                        onChange={(e) => updateField("ingredients", e.target.value)}
-                        className="w-full min-h-[120px] p-3 rounded-xl border border-border bg-background text-foreground text-sm resize-y focus:ring-2 focus:ring-ring focus:outline-none"
-                        dir="rtl"
-                        placeholder="רשימת רכיבים..."
-                      />
-                      {!editData.ingredients && (
-                        <p className="text-xs text-warning mt-2 flex items-center gap-1">
-                          <AlertCircle size={12} /> חסרים רכיבים – המוצר יסומן לבדיקה
-                        </p>
-                      )}
-                    </TabsContent>
-
-                    {/* Feeding Table */}
-                    <TabsContent value="feeding" className="mt-0 space-y-3">
-                      {editData.feeding_guide.length > 0 ? (
-                        <div className="space-y-2">
-                          <div className="grid grid-cols-[1fr_1fr_auto] gap-2 text-xs font-medium text-muted-foreground px-1">
-                            <span>טווח משקל</span>
-                            <span>כמות יומית</span>
-                            <span></span>
-                          </div>
-                          {editData.feeding_guide.map((row: any, i: number) => (
-                            <div key={i} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-center">
-                              <Input
-                                value={row.range || ""}
-                                onChange={(e) => updateFeedingRow(i, "range", e.target.value)}
-                                className="text-sm h-9"
-                                dir="ltr"
-                                placeholder="1-5 kg"
-                              />
-                              <Input
-                                value={row.amount || ""}
-                                onChange={(e) => updateFeedingRow(i, "amount", e.target.value)}
-                                className="text-sm h-9"
-                                dir="ltr"
-                                placeholder="50-100g"
-                              />
-                              <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive hover:text-destructive" onClick={() => removeFeedingRow(i)}>
-                                ✕
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground text-center py-4">לא נמצאה טבלת האכלה</p>
-                      )}
-                      <Button variant="outline" size="sm" onClick={addFeedingRow} className="gap-1">
-                        + הוסף שורה
-                      </Button>
-                    </TabsContent>
-
-                    {/* Benefits */}
-                    <TabsContent value="benefits" className="mt-0">
-                      <textarea
-                        value={
-                          Array.isArray(editData.benefits)
-                            ? editData.benefits.map((b: any) => typeof b === "string" ? b : b.title || b.text || JSON.stringify(b)).join("\n")
-                            : String(editData.benefits || "")
-                        }
-                        onChange={(e) => updateField("benefits", e.target.value.split("\n").filter(Boolean).map(t => ({ title: t })))}
-                        className="w-full min-h-[100px] p-3 rounded-xl border border-border bg-background text-foreground text-sm resize-y focus:ring-2 focus:ring-ring focus:outline-none"
-                        dir="rtl"
-                        placeholder="יתרון אחד בכל שורה..."
-                      />
-                    </TabsContent>
-                  </div>
-                </Tabs>
-              </div>
-
-              {/* Publish Bar */}
-              <div className="flex items-center justify-between p-4 bg-card rounded-2xl shadow-lg border border-border">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Pencil size={14} />
-                  <span>ערוך כל שדה לפני הפרסום</span>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={handleReset} className="gap-1.5">
-                    <RotateCcw size={14} /> התחל מחדש
-                  </Button>
-                  <Button onClick={handlePublish} disabled={stage === "publishing"} className="gap-1.5 px-6">
-                    {stage === "publishing" ? (
-                      <><Loader2 className="animate-spin" size={14} /> שומר...</>
+                  <Button
+                    onClick={handleScrape}
+                    disabled={stepStatus[1] === "loading" || !url}
+                    size="lg"
+                    className="gap-2 px-8 text-base font-bold"
+                  >
+                    {stepStatus[1] === "loading" ? (
+                      <><Loader2 className="animate-spin" size={18} /> סורק...</>
                     ) : (
-                      <><Save size={14} /> פרסם ב-PetID</>
+                      <><Sparkles size={18} /> סרוק</>
                     )}
                   </Button>
                 </div>
               </div>
+
+              {/* Error */}
+              {stepStatus[1] === "error" && (
+                <div className="flex items-center gap-3 p-4 bg-destructive/10 text-destructive rounded-xl border border-destructive/20">
+                  <AlertCircle size={22} />
+                  <span className="flex-1 text-base font-semibold">{errorMessage}</span>
+                  <Button variant="outline" size="sm" onClick={handleReset}>נסה שוב</Button>
+                </div>
+              )}
+
+              {/* Duplicate Alert */}
+              {duplicates.length > 0 && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 bg-destructive/10 rounded-xl border-2 border-destructive/30">
+                  <div className="flex items-center gap-2 mb-3">
+                    <AlertOctagon size={22} className="text-destructive" />
+                    <span className="text-lg font-extrabold text-destructive">⚠️ נמצאו כפילויות!</span>
+                  </div>
+                  {duplicates.map((d) => (
+                    <div key={d.id} className="flex items-center gap-3 p-3 bg-background rounded-lg mb-2 border border-border">
+                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted shrink-0">
+                        <img src={d.image_url} alt="" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-base truncate">{d.name}</p>
+                        <p className="text-sm text-muted-foreground">₪{d.price} • {d.reason}</p>
+                      </div>
+                      <span className="text-xs bg-destructive/20 text-destructive px-2 py-1 rounded-lg font-bold">
+                        {Math.round(d.matchScore * 100)}%
+                      </span>
+                    </div>
+                  ))}
+                </motion.div>
+              )}
+
+              {possibleDuplicates.length > 0 && duplicates.length === 0 && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TriangleAlert size={18} className="text-amber-600" />
+                    <span className="text-base font-bold text-amber-700 dark:text-amber-400">מוצרים דומים במערכת</span>
+                  </div>
+                  {possibleDuplicates.slice(0, 3).map((d) => (
+                    <div key={d.id} className="flex items-center gap-3 py-2">
+                      <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted shrink-0">
+                        <img src={d.image_url} alt="" className="w-full h-full object-cover" />
+                      </div>
+                      <span className="text-sm font-medium truncate flex-1">{d.name}</span>
+                      <span className="text-xs text-amber-600 font-bold">{Math.round(d.matchScore * 100)}%</span>
+                    </div>
+                  ))}
+                </motion.div>
+              )}
+
+              {/* Scraped Preview Summary */}
+              {stepStatus[1] === "done" && editData && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-5 bg-card rounded-2xl shadow-lg border border-border">
+                  <div className="flex items-start gap-4">
+                    <div className="w-24 h-24 rounded-xl overflow-hidden bg-muted border border-border shrink-0">
+                      <img src={editData.image_url} alt="" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-xl font-extrabold truncate">{editData.name}</h3>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="text-2xl font-extrabold text-primary">₪{editData.price}</span>
+                        {editData.sale_price && (
+                          <span className="text-sm text-destructive line-through">₪{editData.original_price || editData.price}</span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {editData.brand && <span className="text-xs bg-muted px-2 py-1 rounded-lg font-semibold">{editData.brand}</span>}
+                        {editData.category && <span className="text-xs bg-muted px-2 py-1 rounded-lg font-semibold">{editData.category}</span>}
+                        {editData.pet_type && <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-lg font-semibold">{editData.pet_type}</span>}
+                        {editData.ingredients && <span className="text-xs bg-emerald-100 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded-lg font-semibold">✓ רכיבים</span>}
+                        {editData.feeding_guide?.length > 0 && <span className="text-xs bg-emerald-100 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded-lg font-semibold">✓ טבלת האכלה</span>}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-end mt-4">
+                    <Button onClick={() => goToStep(2)} className="gap-2 text-base font-bold" size="lg">
+                      המשך לניתוח <ChevronLeft size={18} />
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
             </motion.div>
           )}
-        </AnimatePresence>
 
-        {/* ── Step 3: Success ── */}
-        <AnimatePresence>
-          {stage === "success" && publishedProduct && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className="space-y-4"
-            >
-              <div className="flex items-center gap-3 p-4 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 rounded-xl border border-emerald-200 dark:border-emerald-800">
-                <CheckCircle2 size={20} />
-                <span className="font-medium">המוצר פורסם בהצלחה!</span>
-              </div>
-
-              <div className="flex items-center gap-4 p-4 bg-card rounded-xl border border-border">
-                <div className="w-16 h-16 rounded-xl overflow-hidden bg-muted border border-border shrink-0">
-                  <img src={publishedProduct.image_url} alt="" className="w-full h-full object-cover" />
+          {/* ═══ STEP 2: THE SCIENTIST ═══ */}
+          {step === 2 && editData && (
+            <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+              <div className="p-6 bg-card rounded-2xl shadow-lg border border-border">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="p-3 bg-amber-500 rounded-xl text-white">
+                    <FlaskConical size={24} strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-extrabold">שלב 2: המדען</h2>
+                    <p className="text-muted-foreground text-base">ניתוח רכיבים מבוסס מחקר מדעי – Zero Hallucination</p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold truncate">{publishedProduct.name}</p>
-                  <p className="text-sm text-muted-foreground">₪{publishedProduct.price}</p>
+
+                {/* Ingredients editor */}
+                <div className="mb-4">
+                  <label className="text-sm font-bold text-foreground mb-2 block">רכיבים (ניתן לעריכה)</label>
+                  <textarea
+                    value={editData.ingredients}
+                    onChange={(e) => updateField("ingredients", e.target.value)}
+                    className="w-full min-h-[100px] p-4 rounded-xl border-2 border-border bg-background text-foreground text-base resize-y focus:ring-2 focus:ring-ring focus:outline-none font-medium"
+                    dir="rtl"
+                    placeholder="הדבק כאן את רשימת הרכיבים מהאריזה..."
+                  />
+                </div>
+
+                {!analysis && (
+                  <Button
+                    onClick={runIngredientAnalysis}
+                    disabled={stepStatus[2] === "loading" || !editData.ingredients}
+                    size="lg"
+                    className="gap-2 w-full text-base font-bold"
+                    variant={editData.ingredients ? "default" : "outline"}
+                  >
+                    {stepStatus[2] === "loading" ? (
+                      <><Loader2 className="animate-spin" size={18} /> מנתח רכיבים...</>
+                    ) : (
+                      <><Shield size={18} /> הפעל ניתוח מדעי</>
+                    )}
+                  </Button>
+                )}
+
+                {!editData.ingredients && (
+                  <p className="text-center text-sm text-amber-600 dark:text-amber-400 mt-3 font-semibold flex items-center justify-center gap-2">
+                    <Info size={16} /> ללא רכיבים – ניתן לדלג ולהמשיך
+                  </p>
+                )}
+              </div>
+
+              {/* Analysis Results */}
+              {analysis && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                  {/* Verdict Banner */}
+                  <div className={`p-5 rounded-2xl border-2 ${
+                    analysis.verdict === "safe"
+                      ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800"
+                      : analysis.verdict === "caution"
+                        ? "bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800"
+                        : "bg-red-50 dark:bg-red-950/30 border-red-300 dark:border-red-800"
+                  }`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        {analysis.verdict === "safe" ? (
+                          <BadgeCheck size={28} className="text-emerald-600" />
+                        ) : analysis.verdict === "caution" ? (
+                          <TriangleAlert size={28} className="text-amber-600" />
+                        ) : (
+                          <AlertOctagon size={28} className="text-red-600" />
+                        )}
+                        <span className="text-xl font-extrabold">
+                          {analysis.verdict === "safe" ? "מוצר בטוח" : analysis.verdict === "caution" ? "נדרשת תשומת לב" : "נמצאו סיכונים"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {analysis.qualityScore && (
+                          <div className="text-center">
+                            <div className="text-3xl font-extrabold">{analysis.qualityScore}/10</div>
+                            <div className="text-xs text-muted-foreground font-semibold">ציון איכות</div>
+                          </div>
+                        )}
+                        <div className="text-center">
+                          <div className="text-3xl font-extrabold">{Math.round(analysis.confidence * 100)}%</div>
+                          <div className="text-xs text-muted-foreground font-semibold">אמינות</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {analysis.summaryHe && (
+                      <p className="text-base font-medium leading-relaxed">{analysis.summaryHe}</p>
+                    )}
+                  </div>
+
+                  {/* Red Flags */}
+                  {analysis.redFlags.length > 0 && (
+                    <div className="p-5 bg-card rounded-2xl shadow-lg border border-border">
+                      <h3 className="text-lg font-extrabold text-destructive flex items-center gap-2 mb-3">
+                        <XCircle size={20} /> דגלים אדומים ({analysis.redFlags.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {analysis.redFlags.map((flag, i) => (
+                          <div key={i} className={`flex items-start gap-3 p-3 rounded-xl border ${
+                            flag.severity === "critical"
+                              ? "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900"
+                              : flag.severity === "warning"
+                                ? "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900"
+                                : "bg-muted/30 border-border"
+                          }`}>
+                            <span className={`text-xs font-extrabold px-2 py-0.5 rounded-md shrink-0 mt-0.5 ${
+                              flag.severity === "critical" ? "bg-red-200 dark:bg-red-900 text-red-800 dark:text-red-200"
+                              : flag.severity === "warning" ? "bg-amber-200 dark:bg-amber-900 text-amber-800 dark:text-amber-200"
+                              : "bg-muted text-muted-foreground"
+                            }`}>
+                              {flag.severity === "critical" ? "קריטי" : flag.severity === "warning" ? "אזהרה" : "מידע"}
+                            </span>
+                            <div>
+                              <p className="font-bold text-base">{flag.he}</p>
+                              <p className="text-sm text-muted-foreground">{flag.risk}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Positives */}
+                  {analysis.positives.length > 0 && (
+                    <div className="p-5 bg-card rounded-2xl shadow-lg border border-border">
+                      <h3 className="text-lg font-extrabold text-emerald-600 flex items-center gap-2 mb-3">
+                        <Star size={20} /> רכיבים חיוביים ({analysis.positives.length})
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {analysis.positives.map((pos, i) => (
+                          <div key={i} className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900">
+                            <Zap size={14} className="text-emerald-500 shrink-0" />
+                            <div>
+                              <span className="font-bold text-sm">{pos.he}</span>
+                              <span className="text-xs text-muted-foreground mr-1">– {pos.benefit}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* First Five Analysis */}
+                  {analysis.firstFiveAnalysis && (
+                    <div className="p-5 bg-card rounded-2xl shadow-lg border border-border">
+                      <h3 className="text-lg font-extrabold flex items-center gap-2 mb-2">
+                        <FlaskConical size={20} /> ניתוח 5 הרכיבים הראשונים
+                      </h3>
+                      <p className="text-base leading-relaxed">{analysis.firstFiveAnalysis}</p>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {/* Navigation */}
+              <div className="flex items-center justify-between p-4 bg-card rounded-2xl shadow-lg border border-border">
+                <Button variant="outline" onClick={() => goToStep(1)} className="gap-2 font-bold">
+                  <ChevronRight size={16} /> חזרה
+                </Button>
+                <Button onClick={() => { if (!analysis && editData.ingredients) runIngredientAnalysis(); goToStep(3); }} className="gap-2 text-base font-bold" size="lg">
+                  המשך ללוגיקת האכלה <ChevronLeft size={18} />
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ═══ STEP 3: FEEDING LOGIC ═══ */}
+          {step === 3 && editData && (
+            <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+              <div className="p-6 bg-card rounded-2xl shadow-lg border border-border">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="p-3 bg-orange-500 rounded-xl text-white">
+                    <Flame size={24} strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-extrabold">שלב 3: לוגיקת האכלה</h2>
+                    <p className="text-muted-foreground text-base">חישוב קלוריות ואימות כמויות מול נוסחאות מדעיות</p>
+                  </div>
+                </div>
+
+                {/* Kcal Estimation */}
+                {analysis?.estimatedKcalPerKg ? (
+                  <div className="p-4 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800 mb-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-2xl font-extrabold">{analysis.estimatedKcalPerKg} Kcal/kg</p>
+                        <p className="text-sm text-muted-foreground font-medium">
+                          {analysis.kcalEstimationMethod || "חישוב AI"}
+                        </p>
+                      </div>
+                      <Scale size={32} className="text-amber-500" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-muted/50 rounded-xl border border-border mb-4">
+                    <div className="flex items-center gap-3">
+                      <Scale size={24} className="text-muted-foreground" />
+                      <div>
+                        <p className="text-base font-bold">אין נתוני קלוריות זמינים</p>
+                        <p className="text-sm text-muted-foreground">הזן ידנית או המשך ללא – יחושב מנתוני היצרן</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Feeding Table Editor */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-extrabold flex items-center gap-2">
+                    <Utensils size={20} /> טבלת האכלה
+                  </h3>
+
+                  {editData.feeding_guide.length > 0 ? (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-[1fr_1fr_auto] gap-3 text-sm font-bold text-muted-foreground px-1">
+                        <span>טווח משקל</span>
+                        <span>כמות יומית</span>
+                        <span></span>
+                      </div>
+                      {editData.feeding_guide.map((row: any, i: number) => (
+                        <div key={i} className="grid grid-cols-[1fr_1fr_auto] gap-3 items-center">
+                          <Input
+                            value={row.range || ""}
+                            onChange={(e) => updateFeedingRow(i, "range", e.target.value)}
+                            className="text-base h-11 font-medium"
+                            dir="ltr"
+                            placeholder="1-5 kg"
+                          />
+                          <Input
+                            value={row.amount || ""}
+                            onChange={(e) => updateFeedingRow(i, "amount", e.target.value)}
+                            className="text-base h-11 font-medium"
+                            dir="ltr"
+                            placeholder="50-100g"
+                          />
+                          <Button variant="ghost" size="icon" className="h-11 w-11 text-destructive hover:text-destructive" onClick={() => removeFeedingRow(i)}>
+                            <Trash2 size={16} />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-muted-foreground">
+                      <Utensils size={32} className="mx-auto mb-2 opacity-40" />
+                      <p className="text-base font-medium">לא נמצאה טבלת האכלה</p>
+                      <p className="text-sm">הוסף שורות ידנית או דלג</p>
+                    </div>
+                  )}
+                  <Button variant="outline" onClick={addFeedingRow} className="gap-2 font-bold">
+                    <Plus size={14} /> הוסף שורה
+                  </Button>
                 </div>
               </div>
 
-              <div className="flex gap-2">
-                <Button onClick={() => navigate(`/product/${publishedProduct.id}`)} className="flex-1 gap-2">
-                  <ExternalLink size={16} /> צפה בדף המוצר
+              {/* Navigation */}
+              <div className="flex items-center justify-between p-4 bg-card rounded-2xl shadow-lg border border-border">
+                <Button variant="outline" onClick={() => goToStep(2)} className="gap-2 font-bold">
+                  <ChevronRight size={16} /> חזרה
                 </Button>
-                <Button variant="outline" onClick={handleReset} className="gap-2">
-                  <RotateCcw size={16} /> ייבא עוד
+                <Button onClick={() => goToStep(4)} className="gap-2 text-base font-bold" size="lg">
+                  המשך לפרסום <ChevronLeft size={18} />
                 </Button>
               </div>
+            </motion.div>
+          )}
+
+          {/* ═══ STEP 4: VARIANT & PUBLISH ═══ */}
+          {step === 4 && editData && (
+            <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+              {stepStatus[4] !== "done" ? (
+                <>
+                  {/* Variants Manager */}
+                  <div className="p-6 bg-card rounded-2xl shadow-lg border border-border">
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="p-3 bg-violet-500 rounded-xl text-white">
+                        <Package size={24} strokeWidth={1.5} />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-extrabold">שלב 4: וריאנטים ופרסום</h2>
+                        <p className="text-muted-foreground text-base">נהל משקלים/מידות וצפה בתצוגה מקדימה</p>
+                      </div>
+                    </div>
+
+                    {/* Variant list */}
+                    <h3 className="text-lg font-extrabold mb-3">וריאנטים ({editData.variants.length})</h3>
+                    {editData.variants.length > 0 ? (
+                      <div className="space-y-2 mb-4">
+                        {editData.variants.map((v: any, i: number) => (
+                          <div key={i} className="grid grid-cols-[2fr_1fr_1fr_auto] gap-2 items-center">
+                            <Input
+                              value={v.label || ""}
+                              onChange={(e) => updateVariant(i, "label", e.target.value)}
+                              className="text-base h-11 font-medium"
+                              placeholder='תיאור (למשל 12 ק"ג)'
+                              dir="rtl"
+                            />
+                            <Input
+                              type="number"
+                              value={v.weight || ""}
+                              onChange={(e) => updateVariant(i, "weight", parseFloat(e.target.value) || null)}
+                              className="text-base h-11 font-medium"
+                              placeholder="משקל"
+                              dir="ltr"
+                            />
+                            <Input
+                              type="number"
+                              value={v.price || ""}
+                              onChange={(e) => updateVariant(i, "price", parseFloat(e.target.value) || null)}
+                              className="text-base h-11 font-medium"
+                              placeholder="מחיר ₪"
+                              dir="ltr"
+                            />
+                            <Button variant="ghost" size="icon" className="h-11 w-11 text-destructive" onClick={() => removeVariant(i)}>
+                              <Trash2 size={16} />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-center py-4 text-muted-foreground text-base">אין וריאנטים – ניתן להוסיף</p>
+                    )}
+                    <Button variant="outline" onClick={addVariant} className="gap-2 font-bold">
+                      <Plus size={14} /> הוסף וריאנט
+                    </Button>
+                  </div>
+
+                  {/* Edit Core Fields */}
+                  <div className="p-6 bg-card rounded-2xl shadow-lg border border-border">
+                    <h3 className="text-lg font-extrabold mb-4 flex items-center gap-2">
+                      <Pencil size={18} /> עריכה מהירה
+                    </h3>
+                    <div className="space-y-3">
+                      <EditableField label="שם המוצר" value={editData.name} onChange={(v) => updateField("name", v)} />
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <EditableField label="מחיר (₪)" value={String(editData.price)} onChange={(v) => updateField("price", parseFloat(v) || 0)} type="number" />
+                        <EditableField label="מחיר מבצע (₪)" value={String(editData.sale_price || "")} onChange={(v) => updateField("sale_price", v ? parseFloat(v) : null)} type="number" />
+                        <EditableField label="SKU" value={editData.sku} onChange={(v) => updateField("sku", v)} />
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <EditableField label="מותג" value={editData.brand} onChange={(v) => updateField("brand", v)} />
+                        <EditableField label="קטגוריה" value={editData.category || ""} onChange={(v) => updateField("category", v)} />
+                        <EditableField label="סוג חיית מחמד" value={editData.pet_type} onChange={(v) => updateField("pet_type", v)} />
+                      </div>
+                      <div>
+                        <label className="text-sm font-bold text-muted-foreground mb-1 block">תיאור</label>
+                        <textarea
+                          value={editData.description}
+                          onChange={(e) => updateField("description", e.target.value)}
+                          className="w-full min-h-[80px] p-3 rounded-xl border-2 border-border bg-background text-foreground text-base resize-y focus:ring-2 focus:ring-ring focus:outline-none font-medium"
+                          dir="rtl"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Product Card Preview */}
+                  <div className="p-6 bg-card rounded-2xl shadow-lg border border-border">
+                    <h3 className="text-lg font-extrabold mb-4 flex items-center gap-2">
+                      <Eye size={18} /> תצוגה מקדימה
+                    </h3>
+                    <div className="max-w-sm mx-auto">
+                      <div className="bg-background rounded-2xl border-2 border-border overflow-hidden shadow-md">
+                        <div className="aspect-square bg-muted relative">
+                          <img src={editData.image_url} alt="" className="w-full h-full object-cover" />
+                          {analysis && (
+                            <div className={`absolute top-3 left-3 px-3 py-1.5 rounded-lg text-xs font-extrabold ${
+                              analysis.verdict === "safe"
+                                ? "bg-emerald-500 text-white"
+                                : analysis.verdict === "caution"
+                                  ? "bg-amber-500 text-white"
+                                  : "bg-red-500 text-white"
+                            }`}>
+                              {analysis.qualityScore && `${analysis.qualityScore}/10`}
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-4">
+                          {editData.brand && <p className="text-xs text-muted-foreground font-semibold mb-1">{editData.brand}</p>}
+                          <h4 className="text-base font-extrabold leading-tight mb-2">{editData.name}</h4>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl font-extrabold text-primary">₪{editData.sale_price || editData.price}</span>
+                            {editData.sale_price && editData.price > editData.sale_price && (
+                              <span className="text-sm text-muted-foreground line-through">₪{editData.price}</span>
+                            )}
+                          </div>
+                          {editData.variants.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mt-3">
+                              {editData.variants.slice(0, 4).map((v: any, i: number) => (
+                                <span key={i} className="text-xs bg-muted px-2 py-1 rounded-lg font-semibold">{v.label}</span>
+                              ))}
+                              {editData.variants.length > 4 && <span className="text-xs text-muted-foreground font-bold">+{editData.variants.length - 4}</span>}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Publish Bar */}
+                  <div className="flex items-center justify-between p-4 bg-card rounded-2xl shadow-lg border border-border">
+                    <Button variant="outline" onClick={() => goToStep(3)} className="gap-2 font-bold">
+                      <ChevronRight size={16} /> חזרה
+                    </Button>
+                    <div className="flex gap-2">
+                      <Button variant="outline" onClick={handleReset} className="gap-2 font-bold">
+                        <RotateCcw size={14} /> התחל מחדש
+                      </Button>
+                      <Button onClick={handlePublish} disabled={stepStatus[4] === "loading"} className="gap-2 px-8 text-base font-bold" size="lg">
+                        {stepStatus[4] === "loading" ? (
+                          <><Loader2 className="animate-spin" size={18} /> שומר...</>
+                        ) : (
+                          <><Save size={18} /> פרסם ב-PetID</>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* Success State */
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                  <div className="flex items-center gap-3 p-5 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 rounded-2xl border-2 border-emerald-200 dark:border-emerald-800">
+                    <CheckCircle2 size={28} />
+                    <span className="text-xl font-extrabold">המוצר פורסם בהצלחה!</span>
+                  </div>
+
+                  {publishedProduct && (
+                    <div className="flex items-center gap-4 p-5 bg-card rounded-2xl border border-border">
+                      <div className="w-20 h-20 rounded-xl overflow-hidden bg-muted border border-border shrink-0">
+                        <img src={publishedProduct.image_url} alt="" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xl font-extrabold truncate">{publishedProduct.name}</p>
+                        <p className="text-lg text-muted-foreground font-bold">₪{publishedProduct.price}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-3">
+                    <Button onClick={() => navigate(`/product/${publishedProduct?.id}`)} className="flex-1 gap-2 text-base font-bold" size="lg">
+                      <ExternalLink size={18} /> צפה בדף המוצר
+                    </Button>
+                    <Button variant="outline" onClick={handleReset} className="gap-2 text-base font-bold" size="lg">
+                      <RotateCcw size={18} /> ייבא עוד
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -499,12 +1015,12 @@ function EditableField({ label, value, onChange, type = "text" }: {
 }) {
   return (
     <div>
-      <label className="text-xs font-medium text-muted-foreground mb-1 block">{label}</label>
+      <label className="text-sm font-bold text-muted-foreground mb-1 block">{label}</label>
       <Input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="text-sm h-9"
+        className="text-base h-11 font-medium"
         dir={type === "number" ? "ltr" : "rtl"}
       />
     </div>
@@ -512,26 +1028,6 @@ function EditableField({ label, value, onChange, type = "text" }: {
 }
 
 // ── Utility Helpers ──
-function detectCategory(scraped: any): string | null {
-  const text = `${scraped.title || ""} ${scraped.description || ""} ${scraped.source_url || ""}`.toLowerCase();
-  try {
-    const decoded = decodeURIComponent(text);
-    if (decoded !== text) return detectFromText(decoded);
-  } catch {}
-  return detectFromText(text);
-}
-
-function detectFromText(text: string): string | null {
-  if (/מזון יבש|dry.?food|kibble/.test(text)) return "dry-food";
-  if (/מזון רטוב|wet.?food|can/.test(text)) return "wet-food";
-  if (/חטיף|treat|snack/.test(text)) return "treats";
-  if (/צעצוע|toy/.test(text)) return "toys";
-  if (/טיפוח|grooming|שמפו/.test(text)) return "grooming";
-  if (/בריאות|health|vitamin/.test(text)) return "health";
-  if (/מזון|food/.test(text)) return "food";
-  return null;
-}
-
 function parseWeightMin(range: string): number | null {
   const match = range.match(/(\d+(?:\.\d+)?)/);
   return match ? parseFloat(match[1]) : null;
