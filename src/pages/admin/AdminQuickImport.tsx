@@ -668,28 +668,143 @@ const AdminQuickImport = () => {
                     </div>
                   </div>
 
+                  {/* Description */}
+                  <div className="p-6 bg-card rounded-2xl shadow-lg border border-border">
+                    <h3 className="text-lg font-extrabold mb-3 flex items-center gap-2">
+                      <Pencil size={20} className="text-primary" /> תיאור המוצר
+                    </h3>
+                    {editData.description ? (
+                      <textarea
+                        value={editData.description}
+                        onChange={(e) => updateField("description", e.target.value)}
+                        className="w-full min-h-[100px] p-4 rounded-xl border-2 border-border bg-background text-foreground text-base resize-y focus:ring-2 focus:ring-ring focus:outline-none font-medium leading-relaxed"
+                        dir="rtl"
+                      />
+                    ) : (
+                      <div className="flex items-center gap-2 p-4 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800">
+                        <AlertCircle size={18} className="text-amber-600 shrink-0" />
+                        <span className="text-base font-bold text-amber-700 dark:text-amber-400">לא נמצא (Not Found)</span>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Raw Ingredients (read-only transparency) */}
-                  {editData.ingredients && (
-                    <div className="p-6 bg-card rounded-2xl shadow-lg border border-border">
-                      <h3 className="text-lg font-extrabold mb-3 flex items-center gap-2">
-                        <List size={20} className="text-primary" /> רכיבים גולמיים (מהמקור)
-                      </h3>
-                      <div className="p-4 bg-muted/50 rounded-xl border border-border">
-                        <p className="text-sm font-medium leading-relaxed text-muted-foreground whitespace-pre-wrap" dir="ltr">
-                          {editData.ingredients}
+                  <div className="p-6 bg-card rounded-2xl shadow-lg border border-border">
+                    <h3 className="text-lg font-extrabold mb-3 flex items-center gap-2">
+                      <List size={20} className="text-primary" /> רכיבים גולמיים (מהמקור)
+                    </h3>
+                    {editData.ingredients ? (
+                      <>
+                        <div className="p-4 bg-muted/50 rounded-xl border border-border">
+                          <p className="text-sm font-medium leading-relaxed text-muted-foreground whitespace-pre-wrap" dir="ltr">
+                            {editData.ingredients}
+                          </p>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                          <Info size={12} /> נתון זה חולץ ישירות מעמוד המוצר – ללא עריכה או השלמה
+                        </p>
+                      </>
+                    ) : (
+                      <div className="flex items-center gap-2 p-4 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800">
+                        <AlertCircle size={18} className="text-amber-600 shrink-0" />
+                        <span className="text-base font-bold text-amber-700 dark:text-amber-400">לא נמצא (Not Found)</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Benefits Preview */}
+                  <div className="p-6 bg-card rounded-2xl shadow-lg border border-border">
+                    <h3 className="text-lg font-extrabold mb-3 flex items-center gap-2">
+                      <Star size={20} className="text-primary" /> יתרונות מרכזיים
+                    </h3>
+                    {editData.benefits && editData.benefits.length > 0 ? (
+                      <div className="space-y-2">
+                        {editData.benefits.slice(0, 5).map((b: any, i: number) => (
+                          <div key={i} className="flex items-start gap-3 p-3 bg-muted/30 rounded-xl border border-border">
+                            <BadgeCheck size={18} className="text-emerald-500 mt-0.5 shrink-0" />
+                            <div>
+                              <p className="text-base font-bold">{b.title}</p>
+                              {b.description && <p className="text-sm text-muted-foreground">{b.description}</p>}
+                            </div>
+                          </div>
+                        ))}
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Info size={12} /> סוכם מתוך הטקסט המקורי בלבד – ללא המצאה
                         </p>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                        <Info size={12} /> נתון זה חולץ ישירות מעמוד המוצר – ללא עריכה או השלמה
-                      </p>
-                    </div>
-                  )}
+                    ) : (
+                      <div className="flex items-center gap-2 p-4 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800">
+                        <AlertCircle size={18} className="text-amber-600 shrink-0" />
+                        <span className="text-base font-bold text-amber-700 dark:text-amber-400">לא נמצא (Not Found)</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Feeding Table Preview */}
+                  <div className="p-6 bg-card rounded-2xl shadow-lg border border-border">
+                    <h3 className="text-lg font-extrabold mb-3 flex items-center gap-2">
+                      <Utensils size={20} className="text-primary" /> טבלת האכלה (JSON)
+                    </h3>
+                    {editData.feeding_guide && editData.feeding_guide.length > 0 ? (
+                      <>
+                        <div className="overflow-hidden rounded-xl border border-border">
+                          <table className="w-full text-base">
+                            <thead>
+                              <tr className="bg-muted/50">
+                                <th className="text-right p-3 font-bold text-muted-foreground">טווח משקל</th>
+                                <th className="text-right p-3 font-bold text-muted-foreground">כמות יומית</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {editData.feeding_guide.map((row: any, i: number) => (
+                                <tr key={i} className="border-t border-border">
+                                  <td className="p-3 font-medium" dir="ltr">{row.range || "—"}</td>
+                                  <td className="p-3 font-medium" dir="ltr">{row.amount || "—"}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                          <Info size={12} /> {editData.feeding_guide.length} שורות חולצו מהמקור
+                        </p>
+                      </>
+                    ) : (
+                      <div className="flex items-center gap-2 p-4 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800">
+                        <AlertCircle size={18} className="text-amber-600 shrink-0" />
+                        <span className="text-base font-bold text-amber-700 dark:text-amber-400">לא נמצא (Not Found)</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Price Display */}
+                  <div className="p-6 bg-card rounded-2xl shadow-lg border border-border">
+                    <h3 className="text-lg font-extrabold mb-3 flex items-center gap-2">
+                      <Zap size={20} className="text-primary" /> מחיר
+                    </h3>
+                    {editData.price > 0 ? (
+                      <div className="flex items-center gap-4">
+                        <span className="text-3xl font-extrabold text-primary">₪{editData.price}</span>
+                        {editData.sale_price && (
+                          <span className="text-lg text-emerald-600 font-bold">מבצע: ₪{editData.sale_price}</span>
+                        )}
+                        {editData.original_price && editData.original_price !== editData.price && (
+                          <span className="text-lg text-muted-foreground line-through">₪{editData.original_price}</span>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 p-4 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800">
+                        <AlertCircle size={18} className="text-amber-600 shrink-0" />
+                        <span className="text-base font-bold text-amber-700 dark:text-amber-400">לא נמצא (Not Found)</span>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Zero-Hallucination Notice */}
                   <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl border border-border">
                     <Shield size={18} className="text-primary shrink-0" />
                     <p className="text-sm font-semibold text-muted-foreground">
-                      <span className="text-foreground">Zero-Hallucination:</span> שדות ריקים = המידע לא נמצא במקור. אין השלמה אוטומטית של נתונים חסרים.
+                      <span className="text-foreground">Zero-Hallucination:</span> שדות המסומנים "לא נמצא" – המידע לא קיים בעמוד המקור. אין השלמה אוטומטית של נתונים חסרים.
                     </p>
                   </div>
 
