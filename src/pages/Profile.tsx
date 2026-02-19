@@ -352,16 +352,16 @@ const Profile = () => {
           </div>
           
           <div className="flex items-center gap-0">
-            {isAdmin && <button onClick={() => navigate('/admin/growo')} className="p-2" aria-label="ניהול">
+            {isAdmin && <button onClick={() => navigate('/admin/growo')} className="p-1.5" aria-label="ניהול">
                 <Shield className="w-5 h-5 text-primary" strokeWidth={1.5} />
               </button>}
-            <button onClick={() => setShowEmergencyHub(true)} className="p-2" aria-label="מרכז חירום">
+            <button onClick={() => setShowEmergencyHub(true)} className="p-1.5" aria-label="מרכז חירום">
               <AlertTriangle className="w-5 h-5 text-red-500" strokeWidth={1.5} />
             </button>
-            <button onClick={() => navigate('/messages')} className="p-2 relative" aria-label="הודעות">
+            <button onClick={() => navigate('/messages')} className="p-1.5 relative" aria-label="הודעות">
               <MessageCircle className="w-5 h-5 text-foreground" strokeWidth={1.5} />
             </button>
-            <button onClick={() => setIsMenuOpen(true)} className="p-2 -ml-2" aria-label="תפריט">
+            <button onClick={() => setIsMenuOpen(true)} className="p-1.5" aria-label="תפריט">
               <Menu className="w-5 h-5 text-foreground" strokeWidth={1.5} />
             </button>
           </div>
