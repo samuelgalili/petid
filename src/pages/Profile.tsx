@@ -394,7 +394,7 @@ const Profile = () => {
             </AnimatePresence>
           </div>
           
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0">
             {isAdmin && <button onClick={() => navigate('/admin/growo')} className="p-2" aria-label="ניהול">
                 <Shield className="w-5 h-5 text-primary" strokeWidth={1.5} />
               </button>}
