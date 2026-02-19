@@ -2237,10 +2237,10 @@ const ProductDetail = () => {
     name: rawProduct.name,
     subtitle: rawProduct.description || rawProduct.subtitle || "",
     image: rawProduct.image_url || rawProduct.image,
-    price: getNumericPrice(rawProduct.price),
-    originalPrice: rawProduct.original_price ? getNumericPrice(rawProduct.original_price) : (rawProduct.originalPrice ? getNumericPrice(rawProduct.originalPrice) : null),
-    discount: rawProduct.original_price || rawProduct.originalPrice
-      ? `${Math.round((1 - getNumericPrice(rawProduct.price) / getNumericPrice(rawProduct.original_price || rawProduct.originalPrice)) * 100)}% הנחה`
+    price: rawProduct.sale_price ? getNumericPrice(rawProduct.sale_price) : getNumericPrice(rawProduct.price),
+    originalPrice: rawProduct.sale_price ? getNumericPrice(rawProduct.price) : null,
+    discount: rawProduct.sale_price && getNumericPrice(rawProduct.sale_price) < getNumericPrice(rawProduct.price)
+      ? `${Math.round((1 - getNumericPrice(rawProduct.sale_price) / getNumericPrice(rawProduct.price)) * 100)}% הנחה`
       : null,
     rating: rawProduct.rating || 4.5,
     reviewCount: rawProduct.reviewCount || 0,
