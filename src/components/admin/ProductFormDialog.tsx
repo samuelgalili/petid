@@ -1647,19 +1647,6 @@ export const ProductFormDialog = ({
                     placeholder="אופציונלי"
                   />
                 </div>
-
-                {/* Original Price */}
-                <div>
-                  <Label>מחיר מקורי</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={product.original_price || ""}
-                    onChange={(e) => onProductChange({ ...product, original_price: parseFloat(e.target.value) || null })}
-                    placeholder="לפני הנחה"
-                  />
-                </div>
               </div>
 
               {/* Competitor Price Comparison */}
