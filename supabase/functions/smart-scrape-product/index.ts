@@ -227,7 +227,7 @@ JSON STRUCTURE:
 }
 
 PAGE CONTENT:
-${markdown.slice(0, 12000)}`;
+${markdown.slice(0, 24000)}`;
 
     console.log("Sending to AI for extraction...");
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
