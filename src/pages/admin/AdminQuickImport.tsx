@@ -425,6 +425,7 @@ const AdminQuickImport = () => {
         <AnimatePresence mode="wait">
           {step === 1 && (
             <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+              {/* URL / Barcode Input Card */}
               <div className="p-6 bg-card rounded-2xl shadow-lg border border-border">
                 <div className="flex items-center gap-3 mb-5">
                   <div className="p-3 bg-primary rounded-xl text-primary-foreground">
@@ -459,7 +460,7 @@ const AdminQuickImport = () => {
                     {stepStatus[1] === "loading" ? (
                       <><Loader2 className="animate-spin" size={18} /> סורק...</>
                     ) : (
-                      <><Sparkles size={18} /> סרוק</>
+                      <><Sparkles size={18} /> סרוק ונתח</>
                     )}
                   </Button>
                 </div>
@@ -479,7 +480,7 @@ const AdminQuickImport = () => {
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 bg-destructive/10 rounded-xl border-2 border-destructive/30">
                   <div className="flex items-center gap-2 mb-3">
                     <AlertOctagon size={22} className="text-destructive" />
-                    <span className="text-lg font-extrabold text-destructive">⚠️ נמצאו כפילויות!</span>
+                    <span className="text-lg font-extrabold text-destructive">⚠️ מוצר דומה נמצא במערכת!</span>
                   </div>
                   {duplicates.map((d) => (
                     <div key={d.id} className="flex items-center gap-3 p-3 bg-background rounded-lg mb-2 border border-border">
@@ -516,34 +517,200 @@ const AdminQuickImport = () => {
                 </motion.div>
               )}
 
-              {/* Scraped Preview Summary */}
+              {/* ═══ Data Extraction Preview + Form Fields ═══ */}
               {stepStatus[1] === "done" && editData && (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-5 bg-card rounded-2xl shadow-lg border border-border">
-                  <div className="flex items-start gap-4">
-                    <div className="w-24 h-24 rounded-xl overflow-hidden bg-muted border border-border shrink-0">
-                      <img src={editData.image_url} alt="" className="w-full h-full object-cover" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-xl font-extrabold truncate">{editData.name}</h3>
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className="text-2xl font-extrabold text-primary">₪{editData.price}</span>
-                        {editData.sale_price && (
-                          <span className="text-sm text-destructive line-through">₪{editData.original_price || editData.price}</span>
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+
+                  {/* Product Identity + Image */}
+                  <div className="p-6 bg-card rounded-2xl shadow-lg border border-border">
+                    <h3 className="text-lg font-extrabold mb-4 flex items-center gap-2">
+                      <Package size={20} className="text-primary" /> זהות המוצר
+                    </h3>
+                    <div className="flex gap-5">
+                      {/* Main Image Preview */}
+                      <div className="shrink-0">
+                        <div className="w-32 h-32 rounded-xl overflow-hidden bg-muted border-2 border-border shadow-sm">
+                          <img src={editData.image_url} alt={editData.name} className="w-full h-full object-cover" />
+                        </div>
+                        {editData.source_url && (
+                          <a href={editData.source_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-primary mt-2 hover:underline font-medium">
+                            <ExternalLink size={12} /> מקור
+                          </a>
                         )}
                       </div>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {editData.brand && <span className="text-xs bg-muted px-2 py-1 rounded-lg font-semibold">{editData.brand}</span>}
-                        {editData.category && <span className="text-xs bg-muted px-2 py-1 rounded-lg font-semibold">{editData.category}</span>}
-                        {editData.pet_type && <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-lg font-semibold">{editData.pet_type}</span>}
-                        {editData.ingredients && <span className="text-xs bg-emerald-100 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded-lg font-semibold">✓ רכיבים</span>}
-                        {editData.feeding_guide?.length > 0 && <span className="text-xs bg-emerald-100 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded-lg font-semibold">✓ טבלת האכלה</span>}
+
+                      {/* Identity Fields */}
+                      <div className="flex-1 space-y-3">
+                        <div>
+                          <label className="text-sm font-bold text-muted-foreground mb-1 block">שם המוצר (מנוקה) <span className="text-destructive">*</span></label>
+                          <Input
+                            value={editData.name}
+                            onChange={(e) => updateField("name", e.target.value)}
+                            className="text-base h-12 font-bold"
+                            dir="rtl"
+                            placeholder="שם המוצר..."
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          <div>
+                            <label className="text-sm font-bold text-muted-foreground mb-1 block">מותג <span className="text-destructive">*</span></label>
+                            <Input
+                              value={editData.brand}
+                              onChange={(e) => updateField("brand", e.target.value)}
+                              className="text-base h-11 font-medium"
+                              dir="rtl"
+                              placeholder="שם המותג"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-bold text-muted-foreground mb-1 block">SKU / ברקוד</label>
+                            <Input
+                              value={editData.sku}
+                              onChange={(e) => updateField("sku", e.target.value)}
+                              className="text-base h-11 font-medium"
+                              dir="ltr"
+                              placeholder="מק״ט"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-bold text-muted-foreground mb-1 block">מחיר (₪) <span className="text-destructive">*</span></label>
+                            <Input
+                              type="number"
+                              value={editData.price || ""}
+                              onChange={(e) => updateField("price", parseFloat(e.target.value) || 0)}
+                              className="text-base h-11 font-bold"
+                              dir="ltr"
+                              placeholder="0.00"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-sm font-bold text-muted-foreground mb-1 block">Source URL</label>
+                          <Input
+                            value={editData.source_url}
+                            onChange={(e) => updateField("source_url", e.target.value)}
+                            className="text-sm h-10 font-medium text-muted-foreground"
+                            dir="ltr"
+                            readOnly
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
-                  <div className="flex justify-end mt-4">
-                    <Button onClick={() => goToStep(2)} className="gap-2 text-base font-bold" size="lg">
-                      המשך לניתוח <ChevronLeft size={18} />
+
+                  {/* Pet Context + Categorization */}
+                  <div className="p-6 bg-card rounded-2xl shadow-lg border border-border">
+                    <h3 className="text-lg font-extrabold mb-4 flex items-center gap-2">
+                      <Heart size={20} className="text-primary" /> הקשר חיית מחמד וסיווג
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {/* Pet Type */}
+                      <div>
+                        <label className="text-sm font-bold text-muted-foreground mb-1 block">סוג חיה</label>
+                        <select
+                          value={editData.pet_type || "all"}
+                          onChange={(e) => updateField("pet_type", e.target.value)}
+                          className="w-full h-11 rounded-xl border-2 border-border bg-background text-foreground px-3 text-base font-medium focus:ring-2 focus:ring-ring focus:outline-none"
+                        >
+                          <option value="all">הכל</option>
+                          <option value="dog">כלב</option>
+                          <option value="cat">חתול</option>
+                          <option value="other">אחר</option>
+                        </select>
+                      </div>
+                      {/* Life Stage */}
+                      <div>
+                        <label className="text-sm font-bold text-muted-foreground mb-1 block">שלב חיים</label>
+                        <select
+                          value={editData.life_stage || ""}
+                          onChange={(e) => updateField("life_stage", e.target.value)}
+                          className="w-full h-11 rounded-xl border-2 border-border bg-background text-foreground px-3 text-base font-medium focus:ring-2 focus:ring-ring focus:outline-none"
+                        >
+                          <option value="">לא צוין</option>
+                          <option value="puppy">גור (Puppy/Kitten)</option>
+                          <option value="adult">בוגר (Adult)</option>
+                          <option value="senior">מבוגר (Senior)</option>
+                          <option value="all">כל הגילאים</option>
+                        </select>
+                      </div>
+                      {/* Size */}
+                      <div>
+                        <label className="text-sm font-bold text-muted-foreground mb-1 block">גודל</label>
+                        <select
+                          value={editData.dog_size || ""}
+                          onChange={(e) => updateField("dog_size", e.target.value)}
+                          className="w-full h-11 rounded-xl border-2 border-border bg-background text-foreground px-3 text-base font-medium focus:ring-2 focus:ring-ring focus:outline-none"
+                        >
+                          <option value="">לא צוין</option>
+                          <option value="small">קטן (Small)</option>
+                          <option value="medium">בינוני (Medium)</option>
+                          <option value="large">גדול (Large)</option>
+                          <option value="all">כל הגדלים</option>
+                        </select>
+                      </div>
+                      {/* Main Category */}
+                      <div>
+                        <label className="text-sm font-bold text-muted-foreground mb-1 block">קטגוריה ראשית</label>
+                        <select
+                          value={editData.category || ""}
+                          onChange={(e) => updateField("category", e.target.value)}
+                          className="w-full h-11 rounded-xl border-2 border-border bg-background text-foreground px-3 text-base font-medium focus:ring-2 focus:ring-ring focus:outline-none"
+                        >
+                          <option value="">לא צוין</option>
+                          <option value="מזון יבש">מזון יבש (Dry Food)</option>
+                          <option value="מזון רטוב">מזון רטוב (Wet Food)</option>
+                          <option value="חטיפים">חטיפים (Treats)</option>
+                          <option value="רפואי">רפואי (Medical)</option>
+                          <option value="תוספי תזונה">תוספי תזונה (Supplements)</option>
+                          <option value="ציוד">ציוד (Equipment)</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Raw Ingredients (read-only transparency) */}
+                  {editData.ingredients && (
+                    <div className="p-6 bg-card rounded-2xl shadow-lg border border-border">
+                      <h3 className="text-lg font-extrabold mb-3 flex items-center gap-2">
+                        <List size={20} className="text-primary" /> רכיבים גולמיים (מהמקור)
+                      </h3>
+                      <div className="p-4 bg-muted/50 rounded-xl border border-border">
+                        <p className="text-sm font-medium leading-relaxed text-muted-foreground whitespace-pre-wrap" dir="ltr">
+                          {editData.ingredients}
+                        </p>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                        <Info size={12} /> נתון זה חולץ ישירות מעמוד המוצר – ללא עריכה או השלמה
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Zero-Hallucination Notice */}
+                  <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl border border-border">
+                    <Shield size={18} className="text-primary shrink-0" />
+                    <p className="text-sm font-semibold text-muted-foreground">
+                      <span className="text-foreground">Zero-Hallucination:</span> שדות ריקים = המידע לא נמצא במקור. אין השלמה אוטומטית של נתונים חסרים.
+                    </p>
+                  </div>
+
+                  {/* Navigation - Next disabled until mandatory fields filled */}
+                  <div className="flex items-center justify-between p-4 bg-card rounded-2xl shadow-lg border border-border">
+                    <Button variant="outline" onClick={handleReset} className="gap-2 font-bold">
+                      <RotateCcw size={14} /> התחל מחדש
                     </Button>
+                    <div className="flex items-center gap-3">
+                      {(!editData.name || !editData.brand || !editData.price) && (
+                        <p className="text-xs text-destructive font-semibold">חובה: שם, מותג, מחיר</p>
+                      )}
+                      <Button
+                        onClick={() => goToStep(2)}
+                        disabled={!editData.name || !editData.brand || !editData.price}
+                        className="gap-2 text-base font-bold"
+                        size="lg"
+                      >
+                        המשך לניתוח <ChevronLeft size={18} />
+                      </Button>
+                    </div>
                   </div>
                 </motion.div>
               )}
