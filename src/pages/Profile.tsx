@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { EmergencyHub } from "@/components/emergency/EmergencyHub";
 import { SEO } from "@/components/SEO";
 import { PageTransition } from "@/components/PageTransition";
@@ -61,6 +62,7 @@ const Profile = () => {
     role,
     isAdmin
   } = useUserRole();
+  const { switchPet: contextSwitchPet } = usePetPreference();
 
   // Map role to Hebrew display text
   const getRoleDisplayText = (role: string): string => {
@@ -163,9 +165,10 @@ const Profile = () => {
 
   // Handle pet click - opens the services panel
   const handlePetClick = (petId: string) => {
+    contextSwitchPet(petId);
     setSelectedPetId(petId);
     setActiveHub(null);
-    setIsExpanded(true); // Show services panel with categories
+    setIsExpanded(true);
   };
 
   // Open pet shop view
