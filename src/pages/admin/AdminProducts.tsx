@@ -557,7 +557,7 @@ const AdminProducts = () => {
               עריכה מלאה
             </DropdownMenuItem>
             <DropdownMenuItem 
-              onClick={() => window.open(`/product/${product.id}`, '_blank')}
+              onClick={() => navigate(`/product/${product.id}`)}
             >
               <Eye className="w-4 h-4 ml-2" />
               צפייה בחנות
