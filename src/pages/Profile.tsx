@@ -62,7 +62,7 @@ const Profile = () => {
     role,
     isAdmin
   } = useUserRole();
-  const { switchPet: contextSwitchPet } = usePetPreference();
+  const { switchPet: contextSwitchPet, activePet: globalActivePet } = usePetPreference();
 
   // Map role to Hebrew display text
   const getRoleDisplayText = (role: string): string => {
@@ -96,6 +96,15 @@ const Profile = () => {
   const triggerHealthRefresh = () => setHealthRefreshKey(k => k + 1);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const collapseTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Sync selectedPetId when global active pet changes (e.g. from BottomNav)
+  useEffect(() => {
+    if (globalActivePet?.id && pets.length > 0 && globalActivePet.id !== selectedPetId) {
+      setSelectedPetId(globalActivePet.id);
+      setIsExpanded(true);
+      setActiveHub(null);
+    }
+  }, [globalActivePet?.id, pets.length]);
 
   // Collapse profile section when a pet is selected (expanded)
   useEffect(() => {
@@ -152,9 +161,12 @@ const Profile = () => {
       const fetchedPets = (petsData || []) as Pet[];
       setPets(fetchedPets);
 
-      // Auto-select first pet if available
+      // Sync with global active pet, or default to first
       if (fetchedPets.length > 0 && !selectedPetId) {
-        setSelectedPetId(fetchedPets[0].id);
+        const initialPetId = (globalActivePet?.id && fetchedPets.some(p => p.id === globalActivePet.id))
+          ? globalActivePet.id
+          : fetchedPets[0].id;
+        setSelectedPetId(initialPetId);
       }
     } catch (error: any) {
       console.error("Error fetching data:", error);
@@ -567,7 +579,7 @@ const Profile = () => {
             }} animate={{
               opacity: 1
             }}>
-                    {pets.map(pet => <motion.button key={pet.id} onClick={() => setSelectedPetId(pet.id)} className={`relative w-12 h-12 rounded-full transition-all ${selectedPetId === pet.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-110' : 'opacity-60 hover:opacity-100'}`} whileTap={{
+                    {pets.map(pet => <motion.button key={pet.id} onClick={() => { contextSwitchPet(pet.id); setSelectedPetId(pet.id); }} className={`relative w-12 h-12 rounded-full transition-all ${selectedPetId === pet.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-110' : 'opacity-60 hover:opacity-100'}`} whileTap={{
                 scale: 0.95
               }}>
                         <div className="w-full h-full rounded-full overflow-hidden bg-muted">
