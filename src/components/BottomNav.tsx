@@ -127,14 +127,16 @@ const BottomNav = () => {
   const handlePetPointerUp = useCallback(() => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
     if (!longPressTriggered.current) {
-      // Short tap — navigate to home
-      if (location.pathname === '/') {
+      // Short tap — open pet switcher if multiple pets, otherwise go home
+      if (pets.length > 1) {
+        setShowPetSwitcher(true);
+      } else if (location.pathname === '/') {
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
         navigate('/');
       }
     }
-  }, [location.pathname, navigate, activePet]);
+  }, [location.pathname, navigate, pets.length]);
 
   const handlePetPointerLeave = useCallback(() => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
