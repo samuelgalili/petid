@@ -93,7 +93,7 @@ const Profile = () => {
   const [healthRefreshKey, setHealthRefreshKey] = useState(0);
   const [healthBreakdownOpen, setHealthBreakdownOpen] = useState(false);
   const [showEmergencyHub, setShowEmergencyHub] = useState(false);
-  const triggerHealthRefresh = () => setHealthRefreshKey(k => k + 1);
+  const triggerHealthRefresh = () => setHealthRefreshKey((k) => k + 1);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const collapseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -125,7 +125,7 @@ const Profile = () => {
   };
 
   // Get selected pet object
-  const selectedPet = pets.find(p => p.id === selectedPetId) || null;
+  const selectedPet = pets.find((p) => p.id === selectedPetId) || null;
   useEffect(() => {
     fetchAllData();
   }, []);
@@ -163,9 +163,9 @@ const Profile = () => {
 
       // Sync with global active pet, or default to first
       if (fetchedPets.length > 0 && !selectedPetId) {
-        const initialPetId = (globalActivePet?.id && fetchedPets.some(p => p.id === globalActivePet.id))
-          ? globalActivePet.id
-          : fetchedPets[0].id;
+        const initialPetId = globalActivePet?.id && fetchedPets.some((p) => p.id === globalActivePet.id) ?
+        globalActivePet.id :
+        fetchedPets[0].id;
         setSelectedPetId(initialPetId);
       }
     } catch (error: any) {
@@ -205,14 +205,14 @@ const Profile = () => {
       health: '/tracker',
       memorial: '/feed',
       life_story: '/feed',
-      delivery: '/shop',
+      delivery: '/shop'
     };
-    
+
     if (navigationMap[categoryId]) {
       navigate(navigationMap[categoryId]);
       return;
     }
-    
+
     // Open bottom sheet for service categories
     setActiveSheet(categoryId);
   };
@@ -324,7 +324,7 @@ const Profile = () => {
       icon: BookOpen
     }]
   }];
-  const activeHubData = hubs.find(h => h.id === activeHub);
+  const activeHubData = hubs.find((h) => h.id === activeHub);
 
   if (loading) {
     return <PageTransition>
@@ -508,14 +508,14 @@ const Profile = () => {
                   stiffness: 200
                 }}
                 whileHover={{ scale: 1.08, y: -4 }}
-                whileTap={{ scale: 0.95 }}
-                >
+                whileTap={{ scale: 0.95 }}>
+
                           {/* Pet Avatar with gradient ring (#3) */}
                           <div className={`w-18 h-18 rounded-full p-[2.5px] ${
-                            pet.type === 'dog' 
-                              ? 'bg-gradient-to-br from-primary via-primary/60 to-[hsl(210,80%,60%)]' 
-                              : 'bg-gradient-to-br from-[hsl(270,60%,60%)] via-primary/60 to-primary'
-                          } group-hover:shadow-lg group-hover:shadow-primary/20 transition-shadow`}>
+                  pet.type === 'dog' ?
+                  'bg-gradient-to-br from-primary via-primary/60 to-[hsl(210,80%,60%)]' :
+                  'bg-gradient-to-br from-[hsl(270,60%,60%)] via-primary/60 to-primary'} group-hover:shadow-lg group-hover:shadow-primary/20 transition-shadow`
+                  }>
                             <div className="w-full h-full rounded-full overflow-hidden bg-card p-[1px]">
                               <div className="w-full h-full rounded-full overflow-hidden bg-muted">
                                 {pet.avatar_url ? <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center bg-muted">
@@ -617,39 +617,39 @@ const Profile = () => {
                     
                     {/* Breed Health Tips (Shih Tzu specific, puppy tips, etc.) */}
                     <BreedHealthTips
-                      petName={selectedPet.name}
-                      breed={selectedPet.breed}
-                      ageMonths={selectedPet.age_months}
-                      ageYears={selectedPet.age_years}
-                      petType={selectedPet.type}
-                    />
+                petName={selectedPet.name}
+                breed={selectedPet.breed}
+                ageMonths={selectedPet.age_months}
+                ageYears={selectedPet.age_years}
+                petType={selectedPet.type} />
+
                     {/* Vaccine Countdown */}
                     <VaccineCountdown petId={selectedPet.id} petName={selectedPet.name} />
                     
                     {/* Puppy Vaccine Scheduler */}
                     <PuppyVaccineScheduler
-                      petName={selectedPet.name}
-                      birthDate={(selectedPet as any).birth_date}
-                      breed={selectedPet.breed}
-                      petType={selectedPet.type}
-                    />
+                petName={selectedPet.name}
+                birthDate={(selectedPet as any).birth_date}
+                breed={selectedPet.breed}
+                petType={selectedPet.type} />
+
                     
                     {/* Dangerous Breed Banner */}
-                    {(selectedPet as any).is_dangerous_breed && (
-                      <DangerousBreedBanner
-                        breedName={selectedPet.breed}
-                        licenseConditions={(selectedPet as any).license_conditions}
-                      />
-                    )}
+                    {(selectedPet as any).is_dangerous_breed &&
+              <DangerousBreedBanner
+                breedName={selectedPet.breed}
+                licenseConditions={(selectedPet as any).license_conditions} />
+
+              }
 
                     {/* My Clinic Card */}
-                    {(selectedPet as any).vet_clinic_name && (
-                      <MyClinicCard
-                        clinicName={(selectedPet as any).vet_clinic_name}
-                        clinicPhone={(selectedPet as any).vet_clinic_phone}
-                        clinicAddress={(selectedPet as any).vet_clinic_address}
-                      />
-                    )}
+                    {(selectedPet as any).vet_clinic_name &&
+              <MyClinicCard
+                clinicName={(selectedPet as any).vet_clinic_name}
+                clinicPhone={(selectedPet as any).vet_clinic_phone}
+                clinicAddress={(selectedPet as any).vet_clinic_address} />
+
+              }
 
                     {/* Vet Document Scanner (OCR) - legacy inline */}
                     <VetDocumentScanner petId={selectedPet.id} petName={selectedPet.name} onScanComplete={triggerHealthRefresh} />
@@ -662,12 +662,12 @@ const Profile = () => {
                     
                     {/* Preventive Care Engine (Weight, Dental, Deworming, Emergency, Next Steps) */}
                     <PreventiveCareEngine
-                      petId={selectedPet.id}
-                      petName={selectedPet.name}
-                      breed={selectedPet.breed}
-                      birthDate={(selectedPet as any).birth_date}
-                      petType={selectedPet.type}
-                    />
+                petId={selectedPet.id}
+                petName={selectedPet.name}
+                breed={selectedPet.breed}
+                birthDate={(selectedPet as any).birth_date}
+                petType={selectedPet.type} />
+
                     
                     {/* Medical Timeline */}
                     <MedicalTimeline petId={selectedPet.id} petName={selectedPet.name} />
@@ -758,7 +758,7 @@ const Profile = () => {
         <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
         {/* Profile Image Editor */}
-        <ProfileImageEditor isOpen={isImageEditorOpen} onClose={() => setIsImageEditorOpen(false)} currentImageUrl={profile?.avatar_url} onImageUpdated={url => {
+        <ProfileImageEditor isOpen={isImageEditorOpen} onClose={() => setIsImageEditorOpen(false)} currentImageUrl={profile?.avatar_url} onImageUpdated={(url) => {
         setProfile((prev: any) => ({
           ...prev,
           avatar_url: url
@@ -782,22 +782,22 @@ const Profile = () => {
         <GroomingProductsSheet isOpen={groomingSheetOpen} onClose={() => setGroomingSheetOpen(false)} pet={selectedPet} />
         <FeedingSheet isOpen={feedingSheetOpen} onClose={() => setFeedingSheetOpen(false)} pet={selectedPet} />
         {/* Smart Recommendation Sheet */}
-        {smartRecCategory && (
-          <SmartRecommendationSheet
-            isOpen={!!smartRecCategory}
-            onClose={() => setSmartRecCategory(null)}
-            petId={selectedPet.id}
-            petName={selectedPet.name}
-            category={smartRecCategory}
-            title=""
-          />
-        )}
+        {smartRecCategory &&
+      <SmartRecommendationSheet
+        isOpen={!!smartRecCategory}
+        onClose={() => setSmartRecCategory(null)}
+        petId={selectedPet.id}
+        petName={selectedPet.name}
+        category={smartRecCategory}
+        title="" />
+
+      }
         {/* Health Score Breakdown */}
         <HealthScoreBreakdown
-          pet={selectedPet}
-          isOpen={healthBreakdownOpen}
-          onClose={() => setHealthBreakdownOpen(false)}
-        />
+        pet={selectedPet}
+        isOpen={healthBreakdownOpen}
+        onClose={() => setHealthBreakdownOpen(false)} />
+
         <AnimatePresence>
           {showPetShop && selectedPet && <PetShopView pet={selectedPet} onBack={handleClosePetShop} />}
         </AnimatePresence>
