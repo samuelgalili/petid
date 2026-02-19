@@ -72,7 +72,38 @@ serve(async (req) => {
       || html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/i);
     const mainImage = ogImage || (imageMatch ? imageMatch[1] : "");
 
-    console.log("Scraped successfully, markdown length:", markdown.length, "image:", mainImage ? "found" : "none");
+    // Extract price directly from HTML as fallback
+    let htmlPrice: number | null = null;
+    let htmlSalePrice: number | null = null;
+    let htmlOriginalPrice: number | null = null;
+    
+    // WooCommerce sale price pattern: <del><bdi>original</bdi></del> <ins><bdi>sale</bdi></ins>
+    const salePriceMatch = html.match(/<del[^>]*>.*?<bdi[^>]*>.*?([\d,.]+).*?<\/bdi>.*?<\/del>[\s\S]*?<ins[^>]*>.*?<bdi[^>]*>.*?([\d,.]+).*?<\/bdi>.*?<\/ins>/i);
+    if (salePriceMatch) {
+      htmlOriginalPrice = parseFloat(salePriceMatch[1].replace(/,/g, ""));
+      htmlSalePrice = parseFloat(salePriceMatch[2].replace(/,/g, ""));
+      htmlPrice = htmlOriginalPrice;
+    }
+    
+    // WooCommerce single price
+    if (!htmlPrice) {
+      const priceMatch = html.match(/<(?:span|p|bdi)[^>]*class="[^"]*(?:woocommerce-Price-amount|price)[^"]*"[^>]*>.*?([\d,.]+).*?<\/(?:span|p|bdi)>/i)
+        || html.match(/<meta[^>]+property="product:price:amount"[^>]+content="([\d,.]+)"/i)
+        || html.match(/₪\s*([\d,.]+)/);
+      if (priceMatch) {
+        htmlPrice = parseFloat(priceMatch[1].replace(/,/g, ""));
+      }
+    }
+
+    // Also try markdown for price (often near top)
+    if (!htmlPrice) {
+      const mdPriceMatch = markdown.match(/₪\s*([\d,.]+)/);
+      if (mdPriceMatch) {
+        htmlPrice = parseFloat(mdPriceMatch[1].replace(/,/g, ""));
+      }
+    }
+
+    console.log("Scraped successfully, markdown length:", markdown.length, "image:", mainImage ? "found" : "none", "htmlPrice:", htmlPrice);
 
     // ── Step 2: Send to LLM for structured extraction ──
     const extractionPrompt = `You are a product data extraction specialist for a pet e-commerce platform that sells BOTH food AND accessories (collars, leashes, toys, beds, grooming tools).
@@ -252,9 +283,9 @@ ${markdown.slice(0, 12000)}`;
     const result = {
       name: extracted.name || metadata?.title || "",
       brand: extracted.brand || null,
-      price: extracted.price || 0,
-      sale_price: extracted.sale_price || null,
-      original_price: extracted.original_price || null,
+      price: extracted.price || htmlPrice || 0,
+      sale_price: extracted.sale_price || htmlSalePrice || null,
+      original_price: extracted.original_price || htmlOriginalPrice || null,
       description: extracted.description || "",
       image_url: mainImage || "/placeholder.svg",
       images: mainImage ? [mainImage] : [],
