@@ -1395,6 +1395,7 @@ export type Database = {
       }
       business_products: {
         Row: {
+          api_sync_enabled: boolean | null
           auto_restock: boolean | null
           average_rating: number | null
           benefits: Json | null
@@ -1402,6 +1403,7 @@ export type Database = {
           breed_tags: string[] | null
           business_id: string
           category: string | null
+          cost_price: number | null
           created_at: string
           description: string | null
           dog_size: string | null
@@ -1416,6 +1418,7 @@ export type Database = {
           ingredients: string | null
           is_featured: boolean | null
           is_flagged: boolean | null
+          kcal_per_kg: number | null
           life_stage: string | null
           medical_tags: string[] | null
           name: string
@@ -1429,15 +1432,18 @@ export type Database = {
           product_attributes: Json | null
           restock_interval_days: number | null
           review_count: number | null
+          safety_score: number | null
           sale_price: number | null
           sku: string | null
           source_url: string | null
           special_diet: string[] | null
           suggested_price: number | null
+          supplier_id: string | null
           updated_at: string
           weight_unit: string | null
         }
         Insert: {
+          api_sync_enabled?: boolean | null
           auto_restock?: boolean | null
           average_rating?: number | null
           benefits?: Json | null
@@ -1445,6 +1451,7 @@ export type Database = {
           breed_tags?: string[] | null
           business_id: string
           category?: string | null
+          cost_price?: number | null
           created_at?: string
           description?: string | null
           dog_size?: string | null
@@ -1459,6 +1466,7 @@ export type Database = {
           ingredients?: string | null
           is_featured?: boolean | null
           is_flagged?: boolean | null
+          kcal_per_kg?: number | null
           life_stage?: string | null
           medical_tags?: string[] | null
           name: string
@@ -1472,15 +1480,18 @@ export type Database = {
           product_attributes?: Json | null
           restock_interval_days?: number | null
           review_count?: number | null
+          safety_score?: number | null
           sale_price?: number | null
           sku?: string | null
           source_url?: string | null
           special_diet?: string[] | null
           suggested_price?: number | null
+          supplier_id?: string | null
           updated_at?: string
           weight_unit?: string | null
         }
         Update: {
+          api_sync_enabled?: boolean | null
           auto_restock?: boolean | null
           average_rating?: number | null
           benefits?: Json | null
@@ -1488,6 +1499,7 @@ export type Database = {
           breed_tags?: string[] | null
           business_id?: string
           category?: string | null
+          cost_price?: number | null
           created_at?: string
           description?: string | null
           dog_size?: string | null
@@ -1502,6 +1514,7 @@ export type Database = {
           ingredients?: string | null
           is_featured?: boolean | null
           is_flagged?: boolean | null
+          kcal_per_kg?: number | null
           life_stage?: string | null
           medical_tags?: string[] | null
           name?: string
@@ -1515,11 +1528,13 @@ export type Database = {
           product_attributes?: Json | null
           restock_interval_days?: number | null
           review_count?: number | null
+          safety_score?: number | null
           sale_price?: number | null
           sku?: string | null
           source_url?: string | null
           special_diet?: string[] | null
           suggested_price?: number | null
+          supplier_id?: string | null
           updated_at?: string
           weight_unit?: string | null
         }
@@ -1529,6 +1544,13 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "business_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_products_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]
