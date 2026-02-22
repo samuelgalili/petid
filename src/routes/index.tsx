@@ -58,6 +58,7 @@ import Signup from "@/pages/Signup";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import Install from "@/pages/Install";
+const Onboarding = lazy(() => import("@/pages/Onboarding"));
 
 export const authRoutes: RouteObject[] = [
   { path: "/auth", element: <PageTransition><Auth /></PageTransition> },
@@ -65,6 +66,7 @@ export const authRoutes: RouteObject[] = [
   { path: "/forgot-password", element: <PageTransition><ForgotPassword /></PageTransition> },
   { path: "/reset-password", element: <PageTransition><ResetPassword /></PageTransition> },
   { path: "/install", element: <PageTransition><Install /></PageTransition> },
+  { path: "/onboarding", element: <Protected><LazyPage component={Onboarding} pageName="הצטרפות" /></Protected> },
 ];
 
 // ==========================================

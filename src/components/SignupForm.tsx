@@ -138,7 +138,7 @@ export const SignupForm = () => {
 
             if (data.isNewUser) {
               toast({ title: "החשבון נוצר!", description: "ברוכים הבאים ל-Petid!" });
-              navigate("/add-pet");
+              navigate("/onboarding");
             } else {
               toast({ title: "התחברת בהצלחה!", description: "ברוכים השבים!" });
               navigate("/");
@@ -177,7 +177,7 @@ export const SignupForm = () => {
             }
 
             toast({ title: "החשבון נוצר!", description: "ברוכים הבאים ל-Petid!" });
-            navigate("/add-pet");
+            navigate("/onboarding");
           }
         } catch {
           setGeneralError("אירעה שגיאה לא צפויה.");
