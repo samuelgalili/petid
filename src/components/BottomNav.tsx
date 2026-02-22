@@ -7,6 +7,7 @@ import {
   Camera,
   ScanLine,
   MessageCircle,
+  Navigation,
   X,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -29,18 +30,18 @@ const navLabels = {
 const quickActions = {
   he: [
     { key: "upload", icon: Camera, label: "העלאה", path: "/feed", color: "#FF6B8A" },
-    { key: "scan", icon: ScanLine, label: "סריקה", path: "/chat", color: "#4ECDC4" },
-    { key: "chat", icon: MessageCircle, label: "צ'אט", path: "/chat", color: "#7C5CFC" },
+    { key: "radar", icon: Navigation, label: "רדאר", path: "/radar", color: "#4ECDC4" },
+    { key: "scan", icon: ScanLine, label: "סריקה", path: "/chat", color: "#7C5CFC" },
   ],
   en: [
     { key: "upload", icon: Camera, label: "Upload", path: "/feed", color: "#FF6B8A" },
-    { key: "scan", icon: ScanLine, label: "Scan", path: "/chat", color: "#4ECDC4" },
-    { key: "chat", icon: MessageCircle, label: "Chat", path: "/chat", color: "#7C5CFC" },
+    { key: "radar", icon: Navigation, label: "Radar", path: "/radar", color: "#4ECDC4" },
+    { key: "scan", icon: ScanLine, label: "Scan", path: "/chat", color: "#7C5CFC" },
   ],
   ar: [
     { key: "upload", icon: Camera, label: "رفع", path: "/feed", color: "#FF6B8A" },
-    { key: "scan", icon: ScanLine, label: "مسح", path: "/chat", color: "#4ECDC4" },
-    { key: "chat", icon: MessageCircle, label: "دردشة", path: "/chat", color: "#7C5CFC" },
+    { key: "radar", icon: Navigation, label: "رادار", path: "/radar", color: "#4ECDC4" },
+    { key: "scan", icon: ScanLine, label: "مسح", path: "/chat", color: "#7C5CFC" },
   ],
 };
 
