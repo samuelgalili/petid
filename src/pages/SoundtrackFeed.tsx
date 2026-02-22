@@ -9,10 +9,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useActivePet } from "@/hooks/useActivePet";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Plus, Camera, ImagePlus, FileText } from "lucide-react";
+import { Heart, Camera, ImagePlus, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
-import BottomNav from "@/components/BottomNav";
+// BottomNav is rendered by MainShell — not needed here
 import { CreatePostDialog } from "@/components/CreatePostDialog";
 import { CreateStoryDialog } from "@/components/CreateStoryDialog";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -68,10 +68,9 @@ const SoundtrackFeed = () => {
   if (loading) {
     return (
       <div className="h-screen bg-background overflow-hidden" dir="rtl">
-        <div className="h-full pb-[70px] overflow-hidden">
+        <div className="h-full overflow-hidden">
           <FeedSkeletonList />
         </div>
-        <BottomNav />
       </div>
     );
   }
@@ -168,7 +167,7 @@ const SoundtrackFeed = () => {
       {/* Feed */}
       <div
         ref={containerRef}
-        className="h-full pb-[70px] overflow-y-auto snap-y snap-mandatory scroll-smooth"
+        className="h-full overflow-y-auto snap-y snap-mandatory scroll-smooth"
         onScroll={handleScroll}
         style={{ scrollSnapType: "y mandatory", scrollPaddingTop: "8px" }}
         {...pullHandlers}
@@ -249,15 +248,7 @@ const SoundtrackFeed = () => {
         )}
       </div>
 
-      {/* Floating Upload Button */}
-      <motion.button
-        whileTap={{ scale: 0.9 }}
-        onClick={() => setShowUploadMenu(!showUploadMenu)}
-        className="fixed bottom-[80px] right-4 z-[9998] w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center"
-        style={{ boxShadow: '0 4px 14px hsl(var(--primary) / 0.4)' }}
-      >
-        <Plus className="w-6 h-6" strokeWidth={2} />
-      </motion.button>
+      {/* Upload FAB removed — handled by BottomNav FAB */}
 
       {/* Upload Menu */}
       <AnimatePresence>
@@ -308,7 +299,7 @@ const SoundtrackFeed = () => {
       <CreatePostDialog open={showCreatePost} onOpenChange={setShowCreatePost} onPostCreated={() => setShowCreatePost(false)} />
       <CreateStoryDialog open={showCreateStory} onOpenChange={setShowCreateStory} onStoryCreated={() => setShowCreateStory(false)} />
 
-      <BottomNav />
+      
     </div>
   );
 };

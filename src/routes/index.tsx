@@ -89,8 +89,7 @@ const LivePage = lazy(() => import("@/pages/LivePage"));
 const LiveStreamViewer = lazy(() => import("@/components/live/LiveStreamViewer").then(m => ({ default: m.LiveStreamViewer })));
 const LiveBroadcaster = lazy(() => import("@/components/live/LiveBroadcaster").then(m => ({ default: m.LiveBroadcaster })));
 
-// Soundtrack-style Feed (used internally by MainShell)
-const SoundtrackFeed = lazy(() => import("@/pages/SoundtrackFeed"));
+// SoundtrackFeed is loaded internally by MainShell — no route-level import needed
 
 export const feedRoutes: RouteObject[] = [
   // Main shell handles /, /feed, /chat, /shop — Feed always stays mounted
