@@ -24,6 +24,12 @@ const overlayVariants = {
   exit: { y: "100%" },
 };
 
+const dashboardVariants = {
+  hidden: { y: "-100%" },
+  visible: { y: 0 },
+  exit: { y: "-100%" },
+};
+
 const overlayTransition = { type: "spring" as const, damping: 30, stiffness: 300 };
 
 const LoadingFallback = () => (
@@ -90,14 +96,14 @@ const MainShell = () => {
         {dashboardOpen && (
           <motion.div
             key="dashboard-overlay"
-            variants={overlayVariants}
+            variants={dashboardVariants}
             initial="hidden"
             animate="visible"
             exit="exit"
             transition={overlayTransition}
             className="fixed inset-0 z-[250] bg-background overflow-auto"
           >
-            {/* Close handle */}
+            {/* Close handle (top) */}
             <motion.button
               onClick={closeDashboard}
               className="sticky top-0 z-10 w-full flex items-center justify-center py-2 bg-background/80 backdrop-blur-md"

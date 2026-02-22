@@ -62,32 +62,37 @@ const BottomNav = () => {
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressTriggered = useRef(false);
 
-  // Single tap → open dashboard directly; Long press → pet switcher
+  // Single tap → open pet switcher; Long press → also pet switcher
   const handlePetPointerDown = useCallback(() => {
     longPressTriggered.current = false;
     longPressTimer.current = setTimeout(() => {
       longPressTriggered.current = true;
       if (navigator.vibrate) navigator.vibrate(20);
-      if (pets.length > 1) setShowPetSwitcher(true);
     }, 500);
-  }, [pets.length]);
+  }, []);
 
   const handlePetPointerUp = useCallback(() => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
     if (!longPressTriggered.current) {
       triggerRandom();
       if (navigator.vibrate) navigator.vibrate(10);
-      openDashboard();
+      setShowPetSwitcher(true);
     }
-  }, [triggerRandom, openDashboard]);
+  }, [triggerRandom]);
 
   const handlePetPointerLeave = useCallback(() => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
   }, []);
 
-  // When a pet is selected from switcher → switch pet + open dashboard
+  // When a pet is selected from switcher → switch pet + open dashboard (slides from top)
   const handleSwitchPet = (petId: string) => {
     contextSwitchPet(petId);
+    setShowPetSwitcher(false);
+    openDashboard();
+  };
+
+  // Tap active pet in switcher → open its dashboard
+  const handleOpenActivePetDashboard = () => {
     setShowPetSwitcher(false);
     openDashboard();
   };
@@ -202,38 +207,41 @@ const BottomNav = () => {
                   </div>
                   <span className="text-[11px] font-medium text-muted-foreground">{labels.addPet}</span>
                 </motion.button>
-                {pets.map((pet) => (
-                  <motion.button
-                    key={pet.id}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => handleSwitchPet(pet.id)}
-                    className="flex flex-col items-center gap-1.5 min-w-[60px]"
-                  >
-                    <div
-                      className={cn(
-                        "w-14 h-14 rounded-full p-[2.5px] transition-all",
-                        pet.id === activePet?.id ? "ring-[2.5px]" : "ring-1 ring-border"
-                      )}
-                      style={pet.id === activePet?.id
-                        ? { boxShadow: `0 0 0 2.5px ${pet.theme_color || "hsl(var(--primary))"}` }
-                        : undefined
-                      }
+                {pets.map((pet) => {
+                  const isCurrentActive = pet.id === activePet?.id;
+                  return (
+                    <motion.button
+                      key={pet.id}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => isCurrentActive ? handleOpenActivePetDashboard() : handleSwitchPet(pet.id)}
+                      className="flex flex-col items-center gap-1.5 min-w-[60px]"
                     >
-                      <Avatar className="w-full h-full border-2 border-background">
-                        {pet.avatar_url ? <AvatarImage src={pet.avatar_url} className="object-cover" /> : null}
-                        <AvatarFallback className="bg-muted text-muted-foreground">
-                          {pet.pet_type === "cat" ? <Cat className="w-5 h-5" /> : <Dog className="w-5 h-5" />}
-                        </AvatarFallback>
-                      </Avatar>
-                    </div>
-                    <span className={cn(
-                      "text-[11px] font-medium max-w-[60px] truncate",
-                      pet.id === activePet?.id ? "text-primary font-semibold" : "text-foreground"
-                    )}>
-                      {pet.name}
-                    </span>
-                  </motion.button>
-                ))}
+                      <div
+                        className={cn(
+                          "w-14 h-14 rounded-full p-[2.5px] transition-all",
+                          isCurrentActive ? "ring-[2.5px]" : "ring-1 ring-border"
+                        )}
+                        style={isCurrentActive
+                          ? { boxShadow: `0 0 0 2.5px ${pet.theme_color || "hsl(var(--primary))"}` }
+                          : undefined
+                        }
+                      >
+                        <Avatar className="w-full h-full border-2 border-background">
+                          {pet.avatar_url ? <AvatarImage src={pet.avatar_url} className="object-cover" /> : null}
+                          <AvatarFallback className="bg-muted text-muted-foreground">
+                            {pet.pet_type === "cat" ? <Cat className="w-5 h-5" /> : <Dog className="w-5 h-5" />}
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+                      <span className={cn(
+                        "text-[11px] font-medium max-w-[60px] truncate",
+                        isCurrentActive ? "text-primary font-semibold" : "text-foreground"
+                      )}>
+                        {pet.name}
+                      </span>
+                    </motion.button>
+                  );
+                })}
               </div>
             </motion.div>
           </>
