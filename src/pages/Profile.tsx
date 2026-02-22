@@ -43,6 +43,9 @@ import { PuppyVaccineScheduler } from "@/components/profile/PuppyVaccineSchedule
 import { PreventiveCareEngine } from "@/components/profile/PreventiveCareEngine";
 import { MedicalDocumentFAB } from "@/components/profile/MedicalDocumentFAB";
 import { DiscoveryCards } from "@/components/profile/DiscoveryCards";
+import { MemoryCard } from "@/components/profile/MemoryCard";
+import { HeartRain } from "@/components/profile/HeartRain";
+import { haptic } from "@/lib/haptics";
 interface Pet {
   id: string;
   name: string;
@@ -97,6 +100,13 @@ const Profile = () => {
   const triggerHealthRefresh = () => setHealthRefreshKey((k) => k + 1);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const collapseTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [heartRainActive, setHeartRainActive] = useState(false);
+
+  const triggerHeartRain = () => {
+    haptic("success");
+    setHeartRainActive(true);
+    setTimeout(() => setHeartRainActive(false), 2500);
+  };
 
   // Sync selectedPetId when global active pet changes (e.g. from BottomNav)
   useEffect(() => {
@@ -334,6 +344,7 @@ const Profile = () => {
       </PageTransition>;
   }
   return <PageTransition>
+      <HeartRain active={heartRainActive} />
       <EmergencyHub open={showEmergencyHub} onOpenChange={setShowEmergencyHub} />
       <SEO title="הפרופיל שלי" description="נהלו את חיית המחמד שלכם - ביטוח, טיפוח, אימונים ועוד" url="/profile" type="profile" />
       <div className="h-screen bg-background overflow-hidden flex flex-col" dir="rtl">
@@ -532,7 +543,14 @@ const Profile = () => {
               }} transition={{
                 duration: 0.3
               }}>
-                      <h3 className="font-bold text-foreground text-lg">{selectedPet.name}</h3>
+                      {/* Tappable pet name for heart rain */}
+                      <motion.button
+                        onClick={triggerHeartRain}
+                        whileTap={{ scale: 0.95 }}
+                        className="inline-block"
+                      >
+                        <h3 className="font-bold text-foreground text-lg">{selectedPet.name} 🐾</h3>
+                      </motion.button>
                       <p className="text-xs text-muted-foreground">
                         {selectedPet.breed || (selectedPet.type === 'dog' ? 'כלב' : 'חתול')}
                         {selectedPet.age_years ? ` • ${selectedPet.age_years} שנים` : ''}
@@ -552,8 +570,11 @@ const Profile = () => {
                     {/* Health Score */}
                     <PetHealthScore pet={selectedPet} onViewDetails={() => setHealthBreakdownOpen(true)} refreshKey={healthRefreshKey} />
                     
-                    {/* Discovery Cards — soft nudges */}
+                    {/* Discovery Bubbles — gamified treasure tasks */}
                     <DiscoveryCards petId={selectedPet.id} petName={selectedPet.name} petType={selectedPet.type} />
+                    
+                    {/* Memory Card — lifestyle scrapbook */}
+                    <MemoryCard petId={selectedPet.id} petName={selectedPet.name} />
                     
                     {/* Recovery Banner */}
                     <RecoveryBanner petId={selectedPet.id} petName={selectedPet.name} onOpenRecoveryProducts={() => setSmartRecCategory('health')} />
