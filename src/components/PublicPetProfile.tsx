@@ -7,11 +7,13 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import {
   ChevronLeft, ShoppingBag, PawPrint, UserPlus,
-  Gift, Grid3x3, Shield, ExternalLink, Dog, Cat, MessageCircle, Bone,
+  Gift, Grid3x3, Shield, Dog, Cat, MessageCircle, Bone,
+  Heart, Star, Sparkles, Award, BadgeCheck,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
@@ -30,6 +32,7 @@ interface PetData {
   type: string;
   avatar_url: string | null;
   user_id: string;
+  created_at: string | null;
 }
 
 interface FeaturedProduct {
@@ -74,6 +77,70 @@ const PublicPetProfile = ({ petId, onClose }: PublicPetProfileProps) => {
     return Math.round(avg * 10) / 10;
   }, [products]);
 
+  // Scientist Verified: all products have safety_score >= 8.5
+  const isScientistVerified = useMemo(() => {
+    if (products.length === 0) return false;
+    return products.every((p) => p.safety_score != null && p.safety_score >= 8.5);
+  }, [products]);
+
+  // Achievement badges
+  const achievementBadges = useMemo(() => {
+    const badges: { id: string; icon: React.ReactNode; label: string; labelHe: string; desc: string; descHe: string; glow: string }[] = [];
+
+    if (avgSafeScore !== null && avgSafeScore > 8.5) {
+      badges.push({
+        id: "healthy_hero",
+        icon: <Heart className="w-4 h-4" />,
+        label: "Healthy Hero",
+        labelHe: "גיבור בריאות",
+        desc: "Average SafeScore above 8.5",
+        descHe: "ממוצע SafeScore מעל 8.5",
+        glow: "from-emerald-400 to-green-500",
+      });
+    }
+
+    if (pawsCount >= 500) {
+      badges.push({
+        id: "community_star",
+        icon: <Star className="w-4 h-4" />,
+        label: "Community Star",
+        labelHe: "כוכב קהילה",
+        desc: "Received 500+ Paws from the community",
+        descHe: "קיבל 500+ כפות מהקהילה",
+        glow: "from-amber-400 to-yellow-500",
+      });
+    }
+
+    if (pet?.created_at) {
+      const createdDate = new Date(pet.created_at);
+      if (createdDate.getFullYear() === 2026 && createdDate.getMonth() <= 1) {
+        badges.push({
+          id: "early_adopter",
+          icon: <Sparkles className="w-4 h-4" />,
+          label: "Early Adopter",
+          labelHe: "מאמץ מוקדם",
+          desc: "Joined in Feb 2026 or earlier",
+          descHe: "הצטרף בפברואר 2026 או לפני",
+          glow: "from-violet-400 to-purple-500",
+        });
+      }
+    }
+
+    if (isScientistVerified) {
+      badges.push({
+        id: "scientist_verified",
+        icon: <BadgeCheck className="w-4 h-4" />,
+        label: "Scientist Verified",
+        labelHe: "מאומת מדעית",
+        desc: "All products score 8.5+ SafeScore",
+        descHe: "כל המוצרים עם SafeScore מעל 8.5",
+        glow: "from-blue-400 to-cyan-500",
+      });
+    }
+
+    return badges;
+  }, [avgSafeScore, pawsCount, pet?.created_at, isScientistVerified]);
+
   // Cover photo: use first post image or pet avatar
   const coverPhoto = useMemo(() => {
     for (const p of posts) {
@@ -98,7 +165,7 @@ const PublicPetProfile = ({ petId, onClose }: PublicPetProfileProps) => {
     const load = async () => {
       const { data: petData } = await supabase
         .from("pets" as any)
-        .select("id, name, breed, type, avatar_url, user_id")
+        .select("id, name, breed, type, avatar_url, user_id, created_at")
         .eq("id", petId)
         .maybeSingle();
 
@@ -373,10 +440,10 @@ const PublicPetProfile = ({ petId, onClose }: PublicPetProfileProps) => {
               backdropFilter: "blur(16px)",
               WebkitBackdropFilter: "blur(16px)",
               border: isFollowing
-                ? "1px solid rgba(255,255,255,0.2)"
+                ? "1.5px solid hsl(45, 90%, 55%)"
                 : "1px solid rgba(255,255,255,0.3)",
-              color: isFollowing ? "rgba(255,255,255,0.9)" : "white",
-              boxShadow: isFollowing ? "none" : "0 4px 16px rgba(0,0,0,0.3)",
+              color: isFollowing ? "hsl(45, 90%, 65%)" : "white",
+              boxShadow: isFollowing ? "0 0 10px hsla(45, 90%, 55%, 0.25)" : "0 4px 16px rgba(0,0,0,0.3)",
             }}
           >
             {isFollowing ? (
@@ -403,7 +470,58 @@ const PublicPetProfile = ({ petId, onClose }: PublicPetProfileProps) => {
         />
       </div>
 
-      {/* ── Action Row: Message + Treat + SafeScore ── */}
+      {/* ── Achievement Badges ── */}
+      {achievementBadges.length > 0 && (
+        <TooltipProvider delayDuration={200}>
+          <div className="flex items-center gap-2 px-5 py-3">
+            {achievementBadges.map((badge, i) => (
+              <Tooltip key={badge.id}>
+                <TooltipTrigger asChild>
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: i * 0.1, type: "spring", stiffness: 300 }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white cursor-default bg-gradient-to-r ${badge.glow}`}
+                    style={{
+                      boxShadow: "0 0 12px rgba(255,255,255,0.15), inset 0 1px 0 rgba(255,255,255,0.2)",
+                    }}
+                  >
+                    {badge.icon}
+                    <span>{isRtl ? badge.labelHe : badge.label}</span>
+                  </motion.div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-[200px]">
+                  <p className="text-xs font-medium text-center">
+                    {isRtl ? badge.descHe : badge.desc}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            ))}
+          </div>
+        </TooltipProvider>
+      )}
+
+      {/* ── Scientist Verified Banner ── */}
+      {isScientistVerified && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mx-4 mb-2 flex items-center gap-2 px-4 py-2.5 rounded-xl border border-primary/20 bg-primary/5"
+        >
+          <BadgeCheck className="w-5 h-5 text-primary shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-foreground">
+              {isRtl ? "מאומת מדעית" : "Scientist Verified"}
+            </p>
+            <p className="text-[10px] text-muted-foreground">
+              {isRtl ? "כל המוצרים בפרופיל עם ציון בטיחות גבוה" : "All products scored high on SafeScore"}
+            </p>
+          </div>
+          <Shield className="w-4 h-4 text-primary/50" />
+        </motion.div>
+      )}
+
       <div className="flex items-center gap-2 px-4 py-4 flex-wrap">
         {/* Message */}
         <motion.button
