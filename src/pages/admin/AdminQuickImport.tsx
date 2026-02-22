@@ -292,6 +292,17 @@ const AdminQuickImport = () => {
         api_sync_enabled: apiSyncEnabled,
       };
 
+      // Apply automated curation logic
+      const { determineCurationStatus } = await import("@/hooks/admin/useProductCuration");
+      const curation = determineCurationStatus(
+        productData.safety_score,
+        productData.ingredients
+      );
+      (productData as any).curation_status = curation.status;
+      if (curation.status === "pending_review") {
+        (productData as any).curation_notes = curation.reason;
+      }
+
       const { data: inserted, error: insertError } = await supabase
         .from("business_products")
         .insert(productData)
