@@ -22,6 +22,7 @@ import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
+import { usePetButtonAnimation, PetButtonOverlay } from "@/components/ui/PetButtonAnimations";
 
 const navLabels = {
   he: { home: "בית", feed: "פיד", shop: "חנות", chat: "AI", addPet: "הוסף חיית מחמד" },
@@ -61,6 +62,7 @@ const BottomNav = () => {
   const { unreadCount } = useRealtimeNotifications();
   const { user } = useAuth();
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
+  const { activeAnim, triggerRandom } = usePetButtonAnimation();
 
   useEffect(() => {
     if (!user) return;
@@ -103,6 +105,8 @@ const BottomNav = () => {
   const handlePetPointerUp = useCallback(() => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
     if (!longPressTriggered.current) {
+      // Trigger random micro-animation
+      triggerRandom();
       if (pets.length > 1) {
         setShowPetSwitcher(true);
       } else if (location.pathname === '/') {
@@ -111,7 +115,7 @@ const BottomNav = () => {
         navigate('/');
       }
     }
-  }, [location.pathname, navigate, pets.length]);
+  }, [location.pathname, navigate, pets.length, triggerRandom]);
 
   const handlePetPointerLeave = useCallback(() => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
@@ -343,6 +347,8 @@ const BottomNav = () => {
                   style={{ backgroundColor: petAccent || "hsl(var(--primary))" }}
                 />
               )}
+              {/* Randomized micro-animations */}
+              <PetButtonOverlay activeAnim={activeAnim} />
             </motion.div>
             <span
               className="text-[10px] font-semibold mt-0.5 transition-colors truncate max-w-[56px]"

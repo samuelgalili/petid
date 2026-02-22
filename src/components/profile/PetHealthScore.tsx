@@ -4,6 +4,8 @@ import { Activity, Syringe, Calendar, Shield, ChevronLeft, AlertTriangle, Credit
 import { PetIdCard } from "./PetIdCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { GlowRing } from "@/components/ui/GlowRing";
+import { AdaptiveBackground } from "@/components/ui/AdaptiveBackground";
 
 interface Pet {
   id: string;
@@ -341,6 +343,7 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
 
   return (
     <>
+      <AdaptiveBackground healthScore={healthScore}>
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -348,7 +351,8 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
       >
         <div className="w-full p-4 bg-card rounded-2xl border border-border/30 text-right">
           <div className="flex items-center gap-4">
-            {/* Circular Score Gauge - linked to vet log */}
+            {/* Circular Score Gauge with GlowRing */}
+            <GlowRing score={healthScore} size={64}>
             <button onClick={onViewDetails} className="relative w-16 h-16 flex-shrink-0 hover:scale-105 transition-transform">
               {/* Pulse glow ring for incomplete profiles */}
               {healthScore < 85 && (
@@ -401,6 +405,7 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
                 )}
               </AnimatePresence>
             </button>
+            </GlowRing>
 
             {/* Score Info */}
             <div className="flex-1 min-w-0">
@@ -449,6 +454,7 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
           </div>
         </div>
       </motion.div>
+      </AdaptiveBackground>
 
       {/* Insurance Pitch Dialog */}
       <AnimatePresence>
