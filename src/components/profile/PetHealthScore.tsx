@@ -350,7 +350,25 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
           <div className="flex items-center gap-4">
             {/* Circular Score Gauge - linked to vet log */}
             <button onClick={onViewDetails} className="relative w-16 h-16 flex-shrink-0 hover:scale-105 transition-transform">
-              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+              {/* Pulse glow ring for incomplete profiles */}
+              {healthScore < 85 && (
+                <motion.div
+                  className="absolute inset-[-4px] rounded-full"
+                  style={{ 
+                    background: `radial-gradient(circle, ${gradientColors.start}20 0%, transparent 70%)`,
+                  }}
+                  animate={{ 
+                    scale: [1, 1.15, 1],
+                    opacity: [0.4, 0.8, 0.4],
+                  }}
+                  transition={{ 
+                    duration: 2.5,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                />
+              )}
+              <svg className="w-full h-full transform -rotate-90 relative z-10" viewBox="0 0 36 36">
                 <circle cx="18" cy="18" r="15.5" fill="none" stroke="hsl(var(--muted))" strokeWidth="3" />
                 <motion.circle
                   cx="18" cy="18" r="15.5" fill="none"
