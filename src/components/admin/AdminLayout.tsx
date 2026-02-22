@@ -2,7 +2,7 @@ import { ReactNode, useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { LucideIcon } from "lucide-react";
 import { 
-  LayoutDashboard, Users, ShoppingCart, Package, Flag, Heart, Store, 
+  LayoutDashboard, Users, ShoppingCart, Package, Flag, Heart, Store, ShieldAlert, 
   FileText, Settings, Bell, Shield, History, ChevronRight, ChevronDown,
   Menu, LogOut, MapPin, Ticket, Bot, Wallet, ListTodo, Truck, UserPlus,
   CreditCard, Boxes, Receipt, Megaphone, Users2, RotateCcw, BarChart3,
@@ -55,6 +55,7 @@ const navGroups: NavGroup[] = [
     icon: ShoppingCart,
     items: [
       { icon: Package, label: "מוצרים", href: "/admin/products" },
+      { icon: ShieldAlert, label: "תור ביקורת", href: "/admin/review-queue" },
       { icon: Sparkles, label: "עורך חכם", href: "/admin/smart-editor" },
       { icon: FolderTree, label: "קטגוריות", href: "/admin/categories" },
       { icon: DollarSign, label: "תמחור", href: "/admin/pricing" },

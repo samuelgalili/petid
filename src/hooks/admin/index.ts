@@ -9,3 +9,4 @@ export * from './useAdminGoals';
 export * from './useQuickActions';
 export * from './useAdminNotes';
 export * from './useActivityFeed';
+export * from './useProductCuration';
