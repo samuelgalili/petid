@@ -249,6 +249,7 @@ const AdCampaigns = lazy(() => import("@/pages/AdCampaigns"));
 // Parks - removed (redirected to /chat)
 const Experiences = lazy(() => import("@/pages/Experiences"));
 const Guides = lazy(() => import("@/pages/Guides"));
+const Radar = lazy(() => import("@/pages/Radar"));
 
 export const businessRoutes: RouteObject[] = [
   { path: "/businesses", element: <LazyPage component={BusinessDirectory} pageName="ספריית עסקים" /> },
@@ -258,6 +259,7 @@ export const businessRoutes: RouteObject[] = [
   { path: "/parks", element: <Navigate to="/chat" replace /> },
   { path: "/experiences", element: <LazyPage component={Experiences} pageName="חוויות" /> },
   { path: "/guides", element: <LazyPage component={Guides} pageName="מדריכים" /> },
+  { path: "/radar", element: <Protected><LazyPage component={Radar} pageName="רדאר" dark /></Protected> },
 ];
 
 // ==========================================
