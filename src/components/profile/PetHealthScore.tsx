@@ -254,19 +254,19 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
   };
 
   const getStatusText = () => {
-    if (healthScore >= 85) return 'מצוין';
-    if (healthScore >= 70) return 'טוב';
-    if (healthScore >= 50) return 'סביר';
-    return 'דורש תשומת לב';
+    if (healthScore >= 85) return `${pet.name} זוהר/ת! ✨`;
+    if (healthScore >= 70) return `${pet.name} במסלול מעולה 🌟`;
+    if (healthScore >= 50) return `${pet.name} מתקדמ/ת יפה 💪`;
+    return `בואו נדאג ל${pet.name} ❤️`;
   };
 
   // Sub-label based on score + profile completion
   const getSubLabel = () => {
-    if (healthScore >= 85) return `מעולה! ${pet.name} מוגנת`;
-    if (healthScore >= 70) return `${pet.name} במצב טוב`;
-    if (profileCompletion < 70) return `השלם פרופיל (${profileCompletion}%) כדי לשפר`;
-    if (healthScore >= 50) return `${pet.name} צריכה תשומת לב`;
-    return `${pet.name} דורשת טיפול`;
+    if (healthScore >= 85) return `כל הכבוד! הפרופיל מושלם`;
+    if (healthScore >= 70) return `עוד קצת ו${pet.name} זוהר/ת`;
+    if (profileCompletion < 70) return `גלו עוד על ${pet.name} כדי לשפר`;
+    if (healthScore >= 50) return `${pet.name} אוהב/ת שדואגים לו`;
+    return `כל צעד קטן חשוב ל${pet.name}`;
   };
 
   // Build alerts
@@ -385,7 +385,10 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className={`text-lg font-bold ${getScoreColor()}`}>{healthScore}</span>
+                <span className={`text-[11px] font-bold ${getScoreColor()} leading-tight text-center px-1`}>
+                  {healthScore >= 85 ? '🌟' : healthScore >= 70 ? '💪' : healthScore >= 50 ? '🐾' : '❤️'}
+                </span>
+                <span className="text-[8px] text-muted-foreground font-medium">{healthScore}%</span>
               </div>
 
               {/* Vaccine boost '+' animation */}
@@ -411,7 +414,7 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
                 <Activity className="w-4 h-4 text-primary" strokeWidth={1.5} />
-                <span className="font-semibold text-foreground">ציון בריאות</span>
+                <span className="font-semibold text-foreground">מצב הרוח של {pet.name}</span>
               </div>
               <p className={`text-sm font-medium ${getScoreColor()}`}>{getStatusText()}</p>
               {/* Sub-label */}

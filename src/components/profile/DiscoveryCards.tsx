@@ -1,16 +1,18 @@
 /**
- * DiscoveryCards — Soft, non-stressful nudge cards for the pet dashboard.
- * Encourages completing profile data (microchip, insurance, food, etc.)
- * without pressure. Uses glassmorphism and gentle animations.
+ * DiscoveryBubbles — Gamified "Treasure Tasks" that feel like mini-games.
+ * Each bubble rewards the user with a celebration animation on completion.
+ * Glassmorphism, floating animation, non-stressful.
  */
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   Cpu, Shield, Utensils, Syringe, Camera, Heart,
-  ChevronLeft, Sparkles
+  Sparkles, Check
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { haptic } from "@/lib/haptics";
+import confetti from "canvas-confetti";
 
 interface DiscoveryCardsProps {
   petId: string;
@@ -22,70 +24,76 @@ interface DiscoveryItem {
   id: string;
   icon: React.ElementType;
   title: string;
-  subtitle: string;
+  emoji: string;
   gradient: string;
-  iconColor: string;
-  action: string; // route or action key
+  iconBg: string;
+  action: string;
   checkField?: string;
+  reward: string;
 }
 
 const ALL_DISCOVERIES: DiscoveryItem[] = [
   {
     id: "microchip",
     icon: Cpu,
-    title: "בואו נאבטח את {name}",
-    subtitle: "הוסיפו מספר שבב ותעודת זיהוי",
-    gradient: "from-[hsla(180,50%,45%,0.08)] to-[hsla(180,50%,45%,0.02)]",
-    iconColor: "text-[hsl(180,50%,45%)]",
+    title: "הוסיפו שבב",
+    emoji: "🔒",
+    gradient: "from-[hsla(180,50%,45%,0.12)] to-[hsla(180,50%,45%,0.03)]",
+    iconBg: "bg-[hsla(180,50%,45%,0.15)]",
     action: "/pet-id-card",
-    checkField: "health_notes", // proxy — no chip_number column
+    checkField: "health_notes",
+    reward: "+10 נקודות",
   },
   {
     id: "insurance",
     icon: Shield,
-    title: "הגנה על {name}",
-    subtitle: "ביטוח בריאות מתחיל מ-49₪/חודש",
-    gradient: "from-[hsla(209,79%,52%,0.08)] to-[hsla(209,79%,52%,0.02)]",
-    iconColor: "text-primary",
+    title: "ביטוח בריאות",
+    emoji: "🛡️",
+    gradient: "from-primary/10 to-primary/3",
+    iconBg: "bg-primary/15",
     action: "insurance",
     checkField: "has_insurance",
+    reward: "+15 נקודות",
   },
   {
     id: "food",
     icon: Utensils,
-    title: "מה {name} אוכל/ת?",
-    subtitle: "נתאים המלצות תזונה אישיות",
-    gradient: "from-[hsla(25,90%,55%,0.08)] to-[hsla(25,90%,55%,0.02)]",
-    iconColor: "text-[hsl(25,90%,55%)]",
+    title: "סוג מזון",
+    emoji: "🥗",
+    gradient: "from-[hsla(25,90%,55%,0.12)] to-[hsla(25,90%,55%,0.03)]",
+    iconBg: "bg-[hsla(25,90%,55%,0.15)]",
     action: "food",
     checkField: "current_food",
+    reward: "+8 נקודות",
   },
   {
     id: "vaccine",
     icon: Syringe,
-    title: "חיסונים של {name}",
-    subtitle: "עדכנו את לוח החיסונים",
-    gradient: "from-[hsla(142,60%,45%,0.08)] to-[hsla(142,60%,45%,0.02)]",
-    iconColor: "text-[hsl(142,60%,45%)]",
+    title: "חיסונים",
+    emoji: "💉",
+    gradient: "from-[hsla(142,60%,45%,0.12)] to-[hsla(142,60%,45%,0.03)]",
+    iconBg: "bg-[hsla(142,60%,45%,0.15)]",
     action: "/vet-log",
     checkField: "last_vet_visit",
+    reward: "+12 נקודות",
   },
   {
     id: "photo",
     icon: Camera,
-    title: "תמונה חדשה של {name}?",
-    subtitle: "עדכנו את תמונת הפרופיל",
-    gradient: "from-[hsla(330,60%,55%,0.08)] to-[hsla(330,60%,55%,0.02)]",
-    iconColor: "text-[hsl(330,60%,55%)]",
+    title: "תמונה חדשה",
+    emoji: "📸",
+    gradient: "from-[hsla(330,60%,55%,0.12)] to-[hsla(330,60%,55%,0.03)]",
+    iconBg: "bg-[hsla(330,60%,55%,0.15)]",
     action: "photo",
     checkField: "avatar_url",
+    reward: "+5 נקודות",
   },
 ];
 
 export const DiscoveryCards = ({ petId, petName, petType }: DiscoveryCardsProps) => {
   const navigate = useNavigate();
   const [completedFields, setCompletedFields] = useState<Set<string>>(new Set());
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [justCompleted, setJustCompleted] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCompletion = async () => {
@@ -108,67 +116,141 @@ export const DiscoveryCards = ({ petId, petName, petType }: DiscoveryCardsProps)
     fetchCompletion();
   }, [petId]);
 
-  // Filter to only show incomplete items, max 3
+  const handleBubbleClick = (card: DiscoveryItem) => {
+    haptic("medium");
+    if (card.action.startsWith("/")) {
+      navigate(card.action);
+    }
+    // Non-route actions handled by parent
+  };
+
+  // Simulate completion celebration (would be triggered by actual data change)
+  const triggerCelebration = (id: string) => {
+    setJustCompleted(id);
+    haptic("success");
+    confetti({
+      particleCount: 50,
+      spread: 60,
+      origin: { y: 0.6 },
+      colors: ["hsl(var(--primary))", "hsl(45,93%,58%)", "hsl(142,71%,45%)"],
+      ticks: 80,
+    });
+    setTimeout(() => setJustCompleted(null), 2000);
+  };
+
+  // Filter to only show incomplete items, max 4
   const visibleCards = ALL_DISCOVERIES
-    .filter((d) => d.checkField && !completedFields.has(d.checkField) && !dismissed.has(d.id))
-    .slice(0, 3);
+    .filter((d) => d.checkField && !completedFields.has(d.checkField))
+    .slice(0, 4);
+
+  const completedCount = ALL_DISCOVERIES.filter(d => d.checkField && completedFields.has(d.checkField)).length;
+  const totalCount = ALL_DISCOVERIES.length;
 
   if (visibleCards.length === 0) return null;
 
   return (
-    <div className="mx-4 mb-4 space-y-2.5" dir="rtl">
-      <div className="flex items-center gap-2 mb-1">
-        <Sparkles className="w-4 h-4 text-primary" />
-        <span className="text-xs font-semibold text-muted-foreground">המלצות ל{petName}</span>
+    <div className="mx-4 mb-4" dir="rtl">
+      {/* Header with progress */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <motion.div
+            animate={{ rotate: [0, 10, -10, 0] }}
+            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+          >
+            <Sparkles className="w-4 h-4 text-primary" />
+          </motion.div>
+          <span className="text-xs font-bold text-foreground">גלו עוד על {petName}</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="flex gap-0.5">
+            {ALL_DISCOVERIES.map((d, i) => (
+              <motion.div
+                key={i}
+                className={`w-2 h-2 rounded-full ${
+                  d.checkField && completedFields.has(d.checkField)
+                    ? "bg-primary"
+                    : "bg-muted"
+                }`}
+                animate={d.checkField && completedFields.has(d.checkField) ? { scale: [1, 1.3, 1] } : {}}
+                transition={{ delay: i * 0.1 }}
+              />
+            ))}
+          </div>
+          <span className="text-[10px] text-muted-foreground font-medium">{completedCount}/{totalCount}</span>
+        </div>
       </div>
 
-      <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
+      {/* Bubbles grid */}
+      <div className="grid grid-cols-2 gap-2.5">
         {visibleCards.map((card, i) => {
           const Icon = card.icon;
+          const isJustDone = justCompleted === card.id;
+          
           return (
             <motion.button
               key={card.id}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.08, type: "spring", damping: 20, stiffness: 250 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => {
-                if (card.action.startsWith("/")) {
-                  navigate(card.action);
-                }
-                // Actions like "insurance", "food", "photo" can be handled by parent
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ 
+                opacity: 1, 
+                scale: 1,
+                y: [0, -3, 0],
               }}
-              className={`flex-shrink-0 w-[200px] p-4 rounded-2xl border border-border/20 bg-gradient-to-br ${card.gradient} backdrop-blur-sm text-right relative overflow-hidden group`}
+              transition={{ 
+                opacity: { delay: i * 0.06 },
+                scale: { delay: i * 0.06, type: "spring" },
+                y: { delay: i * 0.5, duration: 3, repeat: Infinity, ease: "easeInOut" },
+              }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => handleBubbleClick(card)}
+              className={`relative p-3.5 rounded-2xl border border-border/20 bg-gradient-to-br ${card.gradient} backdrop-blur-xl text-right overflow-hidden group`}
             >
-              {/* Subtle glow */}
+              {/* Floating glow */}
               <motion.div
-                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none rounded-2xl"
                 style={{
-                  background: `radial-gradient(circle at 30% 30%, ${card.iconColor.replace("text-", "").includes("primary") ? "hsla(209,79%,52%,0.06)" : "hsla(0,0%,50%,0.04)"} 0%, transparent 70%)`,
+                  background: "radial-gradient(circle at 50% 50%, hsla(var(--primary), 0.06) 0%, transparent 70%)",
                 }}
               />
 
-              <div className="flex items-start gap-3 relative z-10">
-                <div className="w-10 h-10 rounded-xl bg-background/80 border border-border/30 flex items-center justify-center flex-shrink-0 shadow-sm">
-                  <Icon className={`w-5 h-5 ${card.iconColor}`} strokeWidth={1.5} />
-                </div>
+              <div className="flex items-center gap-2.5 relative z-10">
+                <motion.div 
+                  className={`w-10 h-10 rounded-xl ${card.iconBg} flex items-center justify-center flex-shrink-0`}
+                  animate={{ rotate: [0, 5, -5, 0] }}
+                  transition={{ duration: 4, repeat: Infinity, delay: i * 0.3 }}
+                >
+                  {isJustDone ? (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring" }}
+                    >
+                      <Check className="w-5 h-5 text-primary" strokeWidth={2.5} />
+                    </motion.div>
+                  ) : (
+                    <span className="text-lg">{card.emoji}</span>
+                  )}
+                </motion.div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground leading-tight mb-0.5">
-                    {card.title.replace("{name}", petName)}
+                  <p className="text-sm font-semibold text-foreground leading-tight">
+                    {card.title}
                   </p>
-                  <p className="text-[11px] text-muted-foreground leading-snug">
-                    {card.subtitle}
+                  <p className="text-[10px] text-primary/70 font-medium mt-0.5">
+                    {card.reward}
                   </p>
                 </div>
               </div>
 
-              {/* Arrow hint */}
-              <div className="flex justify-start mt-2.5">
-                <div className="flex items-center gap-1 text-[10px] font-medium text-primary/70">
-                  <span>התחל</span>
-                  <ChevronLeft className="w-3 h-3" />
-                </div>
-              </div>
+              {/* Completion burst */}
+              <AnimatePresence>
+                {isJustDone && (
+                  <motion.div
+                    initial={{ scale: 0, opacity: 1 }}
+                    animate={{ scale: 3, opacity: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 rounded-2xl bg-primary/20 pointer-events-none"
+                  />
+                )}
+              </AnimatePresence>
             </motion.button>
           );
         })}
