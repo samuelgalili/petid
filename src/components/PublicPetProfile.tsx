@@ -1,13 +1,13 @@
 /**
- * PublicPetProfile — Full-screen overlay showing another pet's public profile.
- * Includes: follow, stats, featured products, media grid, send treat, message owner.
- * Swipe-down gesture dismisses the overlay to reveal the Feed beneath.
+ * PublicPetProfile — Slide-from-right overlay showing another pet's public profile.
+ * Elite Instagram-style: cover photo, glassmorphism follow, SafeScore stamp,
+ * treat animation, 3-column media grid, public stats only.
  */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import {
-  Heart, ChevronDown, ShoppingBag, PawPrint, Users, UserPlus,
-  Gift, Grid3x3, Shield, ExternalLink, X, Dog, Cat, MessageCircle,
+  ChevronLeft, ShoppingBag, PawPrint, UserPlus,
+  Gift, Grid3x3, Shield, ExternalLink, Dog, Cat, MessageCircle, Bone,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import { haptic } from "@/lib/haptics";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface PublicPetProfileProps {
   petId: string;
@@ -49,6 +50,8 @@ interface PetPost {
 const PublicPetProfile = ({ petId, onClose }: PublicPetProfileProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { direction } = useLanguage();
+  const isRtl = direction === "rtl";
 
   const [pet, setPet] = useState<PetData | null>(null);
   const [ownerName, setOwnerName] = useState("");
@@ -63,12 +66,29 @@ const PublicPetProfile = ({ petId, onClose }: PublicPetProfileProps) => {
   const [showTreatAnim, setShowTreatAnim] = useState(false);
   const [pawPulse, setPawPulse] = useState(false);
 
-  // Drag-to-dismiss
-  const dragY = useMotionValue(0);
-  const overlayOpacity = useTransform(dragY, [0, 300], [1, 0.2]);
+  // Average SafeScore across featured products
+  const avgSafeScore = useMemo(() => {
+    const scored = products.filter((p) => p.safety_score != null);
+    if (scored.length === 0) return null;
+    const avg = scored.reduce((sum, p) => sum + (p.safety_score || 0), 0) / scored.length;
+    return Math.round(avg * 10) / 10;
+  }, [products]);
+
+  // Cover photo: use first post image or pet avatar
+  const coverPhoto = useMemo(() => {
+    for (const p of posts) {
+      const img = p.media_urls?.[0] || p.image_url;
+      if (img) return img;
+    }
+    return pet?.avatar_url || null;
+  }, [posts, pet]);
+
+  // Drag-to-dismiss (horizontal for slide-from-right)
+  const dragX = useMotionValue(0);
+  const overlayOpacity = useTransform(dragX, [0, 300], [1, 0.2]);
 
   const handleDragEnd = (_: any, info: PanInfo) => {
-    if (info.offset.y > 120 || info.velocity.y > 500) {
+    if (info.offset.x > 120 || info.velocity.x > 500) {
       onClose();
     }
   };
@@ -137,7 +157,7 @@ const PublicPetProfile = ({ petId, onClose }: PublicPetProfileProps) => {
         .gte("safety_score", 8)
         .eq("in_stock", true)
         .order("safety_score", { ascending: false })
-        .limit(3);
+        .limit(4);
       setProducts((prodData || []) as FeaturedProduct[]);
     };
 
@@ -163,7 +183,6 @@ const PublicPetProfile = ({ petId, onClose }: PublicPetProfileProps) => {
         .insert({ follower_id: user.id, pet_id: petId });
       setIsFollowing(true);
       setFollowersCount((c) => c + 1);
-      // Paw-Pulse animation + haptic
       setPawPulse(true);
       haptic("success");
       setTimeout(() => setPawPulse(false), 800);
@@ -185,262 +204,337 @@ const PublicPetProfile = ({ petId, onClose }: PublicPetProfileProps) => {
     haptic("success");
 
     confetti({
-      particleCount: 60,
-      spread: 80,
-      origin: { y: 0.7 },
+      particleCount: 80,
+      spread: 90,
+      origin: { y: 0.5 },
       colors: ["#FF6B8A", "#FFD93D", "#6BCB77", "#4D96FF"],
     });
 
-    toast.success("🦴 Treat sent!", { duration: 2000 });
+    toast.success(isRtl ? "🦴 פינוק נשלח!" : "🦴 Treat sent!", { duration: 2000 });
     setTimeout(() => {
       setShowTreatAnim(false);
       setTreatSending(false);
     }, 1500);
-  }, [user, treatSending, petId]);
+  }, [user, treatSending, petId, isRtl]);
 
   // Message Owner
   const handleMessageOwner = useCallback(() => {
     if (!pet?.user_id || !user) {
-      toast.error("Sign in to send messages");
+      toast.error(isRtl ? "התחבר כדי לשלוח הודעה" : "Sign in to send messages");
       return;
     }
     if (pet.user_id === user.id) {
-      toast("That's your own pet! 🐾");
+      toast(isRtl ? "זה החיה שלך! 🐾" : "That's your own pet! 🐾");
       return;
     }
     haptic("light");
     onClose();
     navigate(`/messages/${pet.user_id}`);
-  }, [pet, user, onClose, navigate]);
+  }, [pet, user, onClose, navigate, isRtl]);
 
-  // Share product into a chat
   const handleShareProduct = useCallback(
     async (product: FeaturedProduct) => {
       haptic("light");
       const url = `${window.location.origin}/product/${product.id}`;
       if (navigator.share) {
         try {
-          await navigator.share({ title: product.name, text: `Check out ${product.name} — ₪${product.price}`, url });
+          await navigator.share({ title: product.name, text: `${product.name} — ₪${product.price}`, url });
         } catch { /* cancelled */ }
       } else {
         navigator.clipboard.writeText(url);
-        toast.success("Product link copied!");
+        toast.success(isRtl ? "הקישור הועתק!" : "Link copied!");
       }
     },
-    [],
+    [isRtl],
   );
 
   const PetIcon = pet?.type === "cat" ? Cat : Dog;
 
   const formatCount = (n: number) => {
-    if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
     return n.toString();
   };
 
   return (
     <motion.div
-      initial={{ y: "100%" }}
-      animate={{ y: 0 }}
-      exit={{ y: "100%" }}
+      initial={{ x: "100%" }}
+      animate={{ x: 0 }}
+      exit={{ x: "100%" }}
       transition={{ type: "spring", damping: 30, stiffness: 300 }}
-      style={{ y: dragY, opacity: overlayOpacity }}
-      drag="y"
-      dragConstraints={{ top: 0, bottom: 0 }}
-      dragElastic={{ top: 0, bottom: 0.6 }}
+      style={{ x: dragX, opacity: overlayOpacity }}
+      drag="x"
+      dragConstraints={{ left: 0, right: 0 }}
+      dragElastic={{ left: 0, right: 0.6 }}
       onDragEnd={handleDragEnd}
-      className="fixed inset-0 z-[300] bg-background overflow-auto touch-pan-y"
+      className="fixed inset-0 z-[300] bg-background overflow-auto touch-pan-x"
+      dir={direction}
     >
-      {/* ── Close Handle (drag hint) ── */}
-      <div className="sticky top-0 z-10 w-full flex items-center justify-center py-2 bg-background/80 backdrop-blur-md">
-        <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
-      </div>
-      <button
-        onClick={onClose}
-        className="absolute top-3 right-4 z-20 w-8 h-8 rounded-full bg-muted/60 flex items-center justify-center"
-      >
-        <ChevronDown className="w-5 h-5 text-foreground" />
-      </button>
-
-      {/* ── Header: Avatar + Name + Follow ── */}
-      <div className="flex flex-col items-center px-4 pt-2 pb-4">
-        <div className="relative">
-          <Avatar className="w-24 h-24 border-4 border-primary/20">
-            {pet?.avatar_url ? (
-              <AvatarImage src={pet.avatar_url} className="object-cover" />
-            ) : null}
-            <AvatarFallback className="bg-muted">
-              <PetIcon className="w-10 h-10 text-muted-foreground" />
-            </AvatarFallback>
-          </Avatar>
-
-          {/* Paw-Pulse overlay */}
-          <AnimatePresence>
-            {pawPulse && (
-              <>
-                <motion.div
-                  initial={{ scale: 0.5, opacity: 1 }}
-                  animate={{ scale: 2.5, opacity: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.8 }}
-                  className="absolute inset-0 rounded-full border-4 border-primary"
-                />
-                {/* Paw burst */}
-                {[...Array(6)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ scale: 0, opacity: 1, x: 0, y: 0 }}
-                    animate={{
-                      scale: [0, 1.2, 0],
-                      opacity: [1, 0.8, 0],
-                      x: Math.cos((i * Math.PI * 2) / 6) * 50,
-                      y: Math.sin((i * Math.PI * 2) / 6) * 50,
-                    }}
-                    transition={{ duration: 0.7, delay: i * 0.04 }}
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                  >
-                    <PawPrint className="w-4 h-4 text-primary" />
-                  </motion.div>
-                ))}
-              </>
-            )}
-          </AnimatePresence>
+      {/* ── Cover Photo + Avatar + Glassmorphism Follow ── */}
+      <div className="relative w-full" style={{ height: "280px" }}>
+        {/* Cover */}
+        <div className="absolute inset-0 bg-muted overflow-hidden">
+          {coverPhoto ? (
+            <img src={coverPhoto} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
+              <PetIcon className="w-16 h-16 text-muted-foreground/30" />
+            </div>
+          )}
+          {/* Gradient overlay */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.15) 50%, transparent 100%)",
+            }}
+          />
         </div>
 
-        <h2 className="text-xl font-bold mt-3 text-foreground">{pet?.name || "..."}</h2>
-        <p className="text-sm text-muted-foreground">{pet?.breed || ""}</p>
-        {ownerName && (
-          <p className="text-xs text-muted-foreground/70 mt-0.5">
-            by {ownerName}
-          </p>
-        )}
+        {/* Back button */}
+        <motion.button
+          onClick={onClose}
+          whileTap={{ scale: 0.9 }}
+          className="absolute top-4 z-20 w-9 h-9 rounded-full flex items-center justify-center"
+          style={{
+            [isRtl ? "right" : "left"]: "16px",
+            background: "rgba(255,255,255,0.15)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            border: "1px solid rgba(255,255,255,0.2)",
+          }}
+        >
+          <ChevronLeft className={`w-5 h-5 text-white ${isRtl ? "rotate-180" : ""}`} />
+        </motion.button>
 
-        {/* Follow + Message + Treat buttons */}
-        <div className="flex gap-2 mt-4 flex-wrap justify-center">
+        {/* Avatar + Name overlapping cover bottom */}
+        <div className="absolute bottom-0 inset-x-0 z-10 flex items-end gap-3 px-5 pb-4">
+          <div className="relative shrink-0">
+            <Avatar className="w-20 h-20 border-[3px] border-background shadow-xl">
+              {pet?.avatar_url ? (
+                <AvatarImage src={pet.avatar_url} className="object-cover" />
+              ) : null}
+              <AvatarFallback className="bg-muted">
+                <PetIcon className="w-8 h-8 text-muted-foreground" />
+              </AvatarFallback>
+            </Avatar>
+
+            {/* Paw-Pulse overlay on follow */}
+            <AnimatePresence>
+              {pawPulse && (
+                <>
+                  <motion.div
+                    initial={{ scale: 0.5, opacity: 1 }}
+                    animate={{ scale: 2.5, opacity: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.8 }}
+                    className="absolute inset-0 rounded-full border-4 border-primary"
+                  />
+                  {[...Array(6)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ scale: 0, opacity: 1, x: 0, y: 0 }}
+                      animate={{
+                        scale: [0, 1.2, 0],
+                        opacity: [1, 0.8, 0],
+                        x: Math.cos((i * Math.PI * 2) / 6) * 40,
+                        y: Math.sin((i * Math.PI * 2) / 6) * 40,
+                      }}
+                      transition={{ duration: 0.7, delay: i * 0.04 }}
+                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                    >
+                      <PawPrint className="w-3.5 h-3.5 text-primary" />
+                    </motion.div>
+                  ))}
+                </>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <div className="flex-1 min-w-0 mb-1">
+            <h2 className="text-xl font-bold text-white drop-shadow-lg truncate">{pet?.name || "..."}</h2>
+            <p className="text-sm text-white/70 drop-shadow truncate">{pet?.breed || ""}</p>
+            {ownerName && (
+              <p className="text-xs text-white/50 drop-shadow mt-0.5">
+                {isRtl ? `מאת ${ownerName}` : `by ${ownerName}`}
+              </p>
+            )}
+          </div>
+
+          {/* Glassmorphism Follow Button */}
           <motion.button
             whileTap={{ scale: 0.92 }}
             onClick={toggleFollow}
             disabled={followLoading}
-            className={`px-5 py-2 rounded-full text-sm font-semibold flex items-center gap-2 transition-all backdrop-blur-md ${
-              isFollowing
-                ? "bg-muted/80 text-foreground border border-border"
-                : "text-primary-foreground shadow-md"
-            }`}
-            style={
-              !isFollowing
-                ? {
-                    background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.8))",
-                    backdropFilter: "blur(8px)",
-                  }
-                : undefined
-            }
+            className="shrink-0 px-5 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-all mb-1"
+            style={{
+              background: isFollowing
+                ? "rgba(255,255,255,0.12)"
+                : "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.8))",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
+              border: isFollowing
+                ? "1px solid rgba(255,255,255,0.2)"
+                : "1px solid rgba(255,255,255,0.3)",
+              color: isFollowing ? "rgba(255,255,255,0.9)" : "white",
+              boxShadow: isFollowing ? "none" : "0 4px 16px rgba(0,0,0,0.3)",
+            }}
           >
             {isFollowing ? (
               <>
-                <PawPrint className="w-4 h-4" /> Following
+                <PawPrint className="w-4 h-4" /> {isRtl ? "עוקב" : "Following"}
               </>
             ) : (
               <>
-                <UserPlus className="w-4 h-4" /> Follow
+                <UserPlus className="w-4 h-4" /> {isRtl ? "עקוב" : "Follow"}
               </>
             )}
           </motion.button>
-
-          {/* Message Owner */}
-          <motion.button
-            whileTap={{ scale: 0.92 }}
-            onClick={handleMessageOwner}
-            className="px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2 bg-card/80 backdrop-blur-md border border-border/50 text-foreground hover:bg-muted/60 transition-all"
-          >
-            <MessageCircle className="w-4 h-4" />
-            Message
-          </motion.button>
-
-          <motion.button
-            whileTap={{ scale: 0.88 }}
-            onClick={sendTreat}
-            disabled={treatSending}
-            className="px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2 bg-accent/20 text-accent-foreground border border-accent/30 hover:bg-accent/30 transition-all"
-          >
-            <Gift className="w-4 h-4" />
-            Treat
-          </motion.button>
         </div>
-
-        {/* Treat animation */}
-        <AnimatePresence>
-          {showTreatAnim && (
-            <motion.div
-              initial={{ y: 0, opacity: 1, scale: 1 }}
-              animate={{ y: -80, opacity: 0, scale: 1.5 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 1.2 }}
-              className="absolute top-1/3 text-4xl"
-            >
-              🦴
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
       {/* ── Stats Bar ── */}
-      <div className="flex justify-around py-4 border-y border-border mx-4">
-        <StatItem label="Followers" value={formatCount(followersCount)} />
-        <StatItem label="Following" value={formatCount(followingCount)} />
-        <StatItem label="Paws" value={formatCount(pawsCount)} icon={<PawPrint className="w-3.5 h-3.5 text-primary" />} />
+      <div className="flex justify-around py-4 border-b border-border mx-4">
+        <StatItem label={isRtl ? "עוקבים" : "Followers"} value={formatCount(followersCount)} />
+        <StatItem label={isRtl ? "עוקב" : "Following"} value={formatCount(followingCount)} />
+        <StatItem
+          label={isRtl ? "כפות" : "Paws"}
+          value={formatCount(pawsCount)}
+          icon={<PawPrint className="w-3.5 h-3.5 text-primary" />}
+        />
       </div>
+
+      {/* ── Action Row: Message + Treat + SafeScore ── */}
+      <div className="flex items-center gap-2 px-4 py-4 flex-wrap">
+        {/* Message */}
+        <motion.button
+          whileTap={{ scale: 0.92 }}
+          onClick={handleMessageOwner}
+          className="flex-1 min-w-[100px] py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 bg-card border border-border/50 text-foreground transition-colors hover:bg-muted/60"
+        >
+          <MessageCircle className="w-4 h-4" />
+          {isRtl ? "הודעה" : "Message"}
+        </motion.button>
+
+        {/* Send Treat */}
+        <motion.button
+          whileTap={{ scale: 0.88 }}
+          onClick={sendTreat}
+          disabled={treatSending}
+          className="flex-1 min-w-[100px] py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all relative overflow-hidden"
+          style={{
+            background: "linear-gradient(135deg, hsl(45, 100%, 60%), hsl(35, 100%, 55%))",
+            color: "#3d2800",
+            boxShadow: "0 2px 10px hsl(45, 100%, 60%, 0.3)",
+          }}
+        >
+          <Gift className="w-4 h-4" />
+          {isRtl ? "שלח פינוק" : "Send Treat"}
+        </motion.button>
+
+        {/* SafeScore Stamp */}
+        {avgSafeScore !== null && (
+          <div
+            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-bold shrink-0"
+            style={{
+              background: avgSafeScore >= 8
+                ? "rgba(34,197,94,0.1)"
+                : avgSafeScore >= 6
+                ? "rgba(245,158,11,0.1)"
+                : "rgba(239,68,68,0.1)",
+              border: `1px solid ${
+                avgSafeScore >= 8
+                  ? "rgba(34,197,94,0.2)"
+                  : avgSafeScore >= 6
+                  ? "rgba(245,158,11,0.2)"
+                  : "rgba(239,68,68,0.2)"
+              }`,
+              color: avgSafeScore >= 8
+                ? "hsl(142, 71%, 45%)"
+                : avgSafeScore >= 6
+                ? "hsl(38, 92%, 50%)"
+                : "hsl(0, 84%, 60%)",
+            }}
+          >
+            <Shield className="w-4 h-4" />
+            {avgSafeScore}
+          </div>
+        )}
+      </div>
+
+      {/* Treat falling animation */}
+      <AnimatePresence>
+        {showTreatAnim && (
+          <div className="fixed inset-0 z-[350] pointer-events-none overflow-hidden">
+            {[...Array(8)].map((_, i) => (
+              <motion.div
+                key={i}
+                initial={{
+                  y: -60,
+                  x: Math.random() * (typeof window !== "undefined" ? window.innerWidth : 300),
+                  rotate: Math.random() * 60 - 30,
+                  opacity: 1,
+                }}
+                animate={{
+                  y: typeof window !== "undefined" ? window.innerHeight + 60 : 900,
+                  rotate: Math.random() * 360,
+                  opacity: [1, 1, 0.6, 0],
+                }}
+                transition={{
+                  duration: 1.5 + Math.random() * 0.5,
+                  delay: i * 0.08,
+                  ease: "easeIn",
+                }}
+                className="absolute"
+              >
+                {i % 2 === 0 ? (
+                  <Bone className="w-8 h-8 text-amber-400 drop-shadow-lg" strokeWidth={1.5} />
+                ) : (
+                  <span className="text-3xl">🦴</span>
+                )}
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* ── Featured Products ── */}
       {products.length > 0 && (
-        <div className="px-4 py-5">
+        <div className="px-4 py-4">
           <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
             <ShoppingBag className="w-4 h-4 text-primary" />
-            Featured Products
+            {isRtl ? "מוצרים מומלצים" : "Featured Products"}
+            {avgSafeScore !== null && (
+              <span className="text-xs font-medium text-muted-foreground">
+                {isRtl ? `(ממוצע SafeScore: ${avgSafeScore})` : `(avg SafeScore: ${avgSafeScore})`}
+              </span>
+            )}
           </h3>
-          <div className="space-y-3">
+          <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: "none" }}>
             {products.map((product) => (
               <motion.div
                 key={product.id}
-                whileTap={{ scale: 0.98 }}
-                className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border/50 cursor-pointer hover:bg-muted/50 transition-colors"
+                whileTap={{ scale: 0.97 }}
+                onClick={() => { onClose(); navigate(`/product/${product.id}`); }}
+                className="shrink-0 w-[140px] rounded-xl bg-card border border-border/40 overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
               >
                 <img
                   src={product.image_url}
                   alt={product.name}
-                  className="w-14 h-14 rounded-lg object-cover bg-muted"
-                  onClick={() => {
-                    onClose();
-                    navigate(`/product/${product.id}`);
-                  }}
+                  className="w-full h-[100px] object-cover bg-muted"
+                  loading="lazy"
                 />
-                <div
-                  className="flex-1 min-w-0"
-                  onClick={() => {
-                    onClose();
-                    navigate(`/product/${product.id}`);
-                  }}
-                >
-                  <p className="text-sm font-semibold text-foreground truncate">{product.name}</p>
-                  {product.brand && (
-                    <p className="text-xs text-muted-foreground">{product.brand}</p>
-                  )}
-                  <div className="flex items-center gap-2 mt-1">
+                <div className="p-2.5">
+                  <p className="text-xs font-semibold text-foreground truncate">{product.name}</p>
+                  <div className="flex items-center justify-between mt-1">
                     <span className="text-sm font-bold text-primary">₪{product.price}</span>
                     {product.safety_score && (
-                      <span className="flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600">
-                        <Shield className="w-3 h-3" />
-                        {product.safety_score}/10
+                      <span className="flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600">
+                        <Shield className="w-2.5 h-2.5" />
+                        {product.safety_score}
                       </span>
                     )}
                   </div>
                 </div>
-                {/* Share product to chat */}
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleShareProduct(product); }}
-                  className="w-8 h-8 rounded-full bg-muted/60 flex items-center justify-center shrink-0 hover:bg-muted transition-colors"
-                  aria-label="Share product"
-                >
-                  <ExternalLink className="w-4 h-4 text-muted-foreground" />
-                </button>
               </motion.div>
             ))}
           </div>
@@ -451,30 +545,21 @@ const PublicPetProfile = ({ petId, onClose }: PublicPetProfileProps) => {
       <div className="px-4 pb-6">
         <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
           <Grid3x3 className="w-4 h-4 text-primary" />
-          Posts
+          {isRtl ? "פוסטים" : "Posts"}
         </h3>
         {posts.length > 0 ? (
-          <div className="grid grid-cols-3 gap-1 rounded-xl overflow-hidden">
+          <div className="grid grid-cols-3 gap-[2px] rounded-xl overflow-hidden">
             {posts.map((post) => {
-              const thumb =
-                post.media_urls?.[0] || post.image_url || "";
+              const thumb = post.media_urls?.[0] || post.image_url || "";
               return (
                 <motion.div
                   key={post.id}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    onClose();
-                    navigate(`/post/${post.id}`);
-                  }}
+                  onClick={() => { onClose(); navigate(`/post/${post.id}`); }}
                   className="aspect-square bg-muted cursor-pointer overflow-hidden"
                 >
                   {thumb ? (
-                    <img
-                      src={thumb}
-                      alt=""
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
+                    <img src={thumb} alt="" className="w-full h-full object-cover" loading="lazy" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <PawPrint className="w-6 h-6 text-muted-foreground/30" />
@@ -486,12 +571,12 @@ const PublicPetProfile = ({ petId, onClose }: PublicPetProfileProps) => {
           </div>
         ) : (
           <div className="py-10 text-center text-muted-foreground text-sm">
-            No posts yet
+            {isRtl ? "אין פוסטים עדיין" : "No posts yet"}
           </div>
         )}
       </div>
 
-      {/* Bottom padding for nav */}
+      {/* Bottom padding */}
       <div className="h-24" />
     </motion.div>
   );

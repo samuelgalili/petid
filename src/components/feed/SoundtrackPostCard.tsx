@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -14,6 +14,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import { playAddToCartSound } from "@/lib/sounds";
@@ -30,6 +31,7 @@ import { ProductSafetyBadge, useProductSafety } from "@/components/feed/ProductS
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
+import { useOverlayNav } from "@/contexts/OverlayNavContext";
 import type { FeedPost } from "@/hooks/useSoundtrackFeed";
 import type { ActivePet } from "@/hooks/useActivePet";
 
@@ -138,6 +140,7 @@ export const SoundtrackPostCard = ({
   const { direction } = useLanguage();
   const isRtl = direction === "rtl";
   const { activePet: contextPet, pets } = usePetPreference();
+  const { openPublicPet } = useOverlayNav();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [addedToCart, setAddedToCart] = useState(false);
   const [showComments, setShowComments] = useState(false);
@@ -151,6 +154,31 @@ export const SoundtrackPostCard = ({
   const { triggerFly } = useFlyingCart();
   const productImageRef = useRef<HTMLImageElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [authorPetId, setAuthorPetId] = useState<string | null>(null);
+
+  // Look up the post author's pet (for opening public profile)
+  useEffect(() => {
+    if (!post.user_id) return;
+    supabase
+      .from("pets" as any)
+      .select("id")
+      .eq("user_id", post.user_id)
+      .eq("archived", false)
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setAuthorPetId((data as any).id);
+      });
+  }, [post.user_id]);
+
+  const handleOpenAuthorProfile = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (authorPetId) {
+      openPublicPet(authorPetId);
+    } else {
+      navigate(`/user/${post.user_id}`);
+    }
+  }, [authorPetId, openPublicPet, navigate, post.user_id]);
 
   // Auto-play music when this post is the current visible post
   const isActive = index === currentIndex;
@@ -554,18 +582,20 @@ export const SoundtrackPostCard = ({
             </div>
           )}
 
-          {/* Pet name + Caption — clean, small, bottom-left feel */}
+          {/* Author name (tappable → opens public profile) + Caption */}
           <div className="px-3.5 py-2.5">
             <div className="flex items-center gap-2 mb-1">
-              {activePet && (
-                <span
-                  className="text-white/90 font-semibold drop-shadow-lg"
+              {/* Post author name — tappable to open their public pet profile */}
+              {post.user_profile?.full_name && (
+                <button
+                  onClick={handleOpenAuthorProfile}
+                  className="text-white/90 font-semibold drop-shadow-lg hover:text-white transition-colors"
                   style={{ fontSize: "13px" }}
                 >
-                  {activePet.name}
-                </span>
+                  {post.user_profile.full_name}
+                </button>
               )}
-              {/* Scientist pill — small, near pet name */}
+              {/* Scientist pill — relevance to viewer's pet */}
               {activePet && (
                 <RelevanceBadge
                   caption={post.caption}
