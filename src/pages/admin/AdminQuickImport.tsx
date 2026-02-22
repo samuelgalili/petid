@@ -124,6 +124,8 @@ const AdminQuickImport = () => {
 
   // Step 2: Scientist
   const [analysis, setAnalysis] = useState<IngredientAnalysis | null>(null);
+  const [showOriginalLang, setShowOriginalLang] = useState(false);
+  const [originalIngredients, setOriginalIngredients] = useState<string>("");
 
   // Step 4: Publish
   const [publishedProduct, setPublishedProduct] = useState<any>(null);
@@ -202,6 +204,8 @@ const AdminQuickImport = () => {
 
       setScrapedData(parsed);
       setEditData({ ...parsed });
+      // Save original ingredients for translation toggle
+      if (parsed.ingredients) setOriginalIngredients(parsed.ingredients);
 
       // Run duplicate check in background
       if (parsed.name) {
@@ -466,7 +470,54 @@ const AdminQuickImport = () => {
           {step === 1 && (
             <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
               {/* URL / Barcode Input Card */}
-              <div className="p-6 bg-card rounded-2xl shadow-lg border border-border">
+              <div className="p-6 bg-card rounded-2xl shadow-lg border border-border relative overflow-hidden">
+                {/* Focus Lens Animation */}
+                {stepStatus[1] === "loading" && (
+                  <motion.div
+                    className="absolute inset-0 pointer-events-none z-10"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    {/* Scanning line */}
+                    <motion.div
+                      className="absolute left-0 right-0 h-0.5"
+                      style={{
+                        background: "linear-gradient(90deg, transparent, hsl(var(--primary)), transparent)",
+                        boxShadow: "0 0 20px hsl(var(--primary) / 0.5)",
+                      }}
+                      animate={{ top: ["0%", "100%", "0%"] }}
+                      transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                    {/* Corner brackets */}
+                    {["top-2 left-2", "top-2 right-2", "bottom-2 left-2", "bottom-2 right-2"].map((pos, i) => (
+                      <motion.div
+                        key={pos}
+                        className={`absolute ${pos} w-6 h-6`}
+                        style={{
+                          borderColor: "hsl(var(--primary))",
+                          borderWidth: "2px",
+                          borderStyle: "solid",
+                          borderRadius: "2px",
+                          borderTop: pos.includes("bottom") ? "none" : undefined,
+                          borderBottom: pos.includes("top") ? "none" : undefined,
+                          borderLeft: pos.includes("right") ? "none" : undefined,
+                          borderRight: pos.includes("left") ? "none" : undefined,
+                        }}
+                        animate={{ opacity: [0.4, 1, 0.4], scale: [0.95, 1.05, 0.95] }}
+                        transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
+                      />
+                    ))}
+                    {/* Pulse ring */}
+                    <motion.div
+                      className="absolute inset-0 rounded-2xl"
+                      style={{ border: "2px solid hsl(var(--primary) / 0.3)" }}
+                      animate={{ opacity: [0, 0.6, 0], scale: [0.98, 1.02, 0.98] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    />
+                  </motion.div>
+                )}
+
                 <div className="flex items-center gap-3 mb-5">
                   <div className="p-3 bg-primary rounded-xl text-primary-foreground">
                     <Search size={24} strokeWidth={1.5} />
@@ -886,32 +937,62 @@ const AdminQuickImport = () => {
                   </div>
                 </div>
 
-                {/* Ingredients editor */}
+                {/* Ingredients editor with translation toggle */}
                 <div className="mb-4">
-                  <label className="text-sm font-bold text-foreground mb-2 block">רכיבים (ניתן לעריכה)</label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm font-bold text-foreground">רכיבים (ניתן לעריכה)</label>
+                    {originalIngredients && originalIngredients !== editData.ingredients && (
+                      <button
+                        type="button"
+                        onClick={() => setShowOriginalLang(!showOriginalLang)}
+                        className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-colors bg-muted hover:bg-muted/80 text-muted-foreground"
+                      >
+                        <span>{showOriginalLang ? "🇮🇱 עברית" : "🌐 מקור"}</span>
+                      </button>
+                    )}
+                  </div>
                   <textarea
-                    value={editData.ingredients}
-                    onChange={(e) => updateField("ingredients", e.target.value)}
+                    value={showOriginalLang ? originalIngredients : editData.ingredients}
+                    onChange={(e) => {
+                      if (showOriginalLang) {
+                        setOriginalIngredients(e.target.value);
+                      } else {
+                        updateField("ingredients", e.target.value);
+                      }
+                    }}
                     className="w-full min-h-[100px] p-4 rounded-xl border-2 border-border bg-background text-foreground text-base resize-y focus:ring-2 focus:ring-ring focus:outline-none font-medium"
-                    dir="rtl"
+                    dir={showOriginalLang ? "ltr" : "rtl"}
                     placeholder="הדבק כאן את רשימת הרכיבים מהאריזה..."
                   />
                 </div>
 
                 {!analysis && (
-                  <Button
-                    onClick={runIngredientAnalysis}
-                    disabled={stepStatus[2] === "loading" || !editData.ingredients}
-                    size="lg"
-                    className="gap-2 w-full text-base font-bold"
-                    variant={editData.ingredients ? "default" : "outline"}
-                  >
-                    {stepStatus[2] === "loading" ? (
-                      <><Loader2 className="animate-spin" size={18} /> מנתח רכיבים...</>
-                    ) : (
-                      <><Shield size={18} /> הפעל ניתוח מדעי</>
+                  <div className="relative">
+                    {/* Golden Pulse during analysis */}
+                    {stepStatus[2] === "loading" && (
+                      <motion.div
+                        className="absolute -inset-2 rounded-2xl pointer-events-none"
+                        style={{
+                          background: "radial-gradient(circle, rgba(255,215,0,0.15) 0%, transparent 70%)",
+                        }}
+                        animate={{ scale: [1, 1.08, 1], opacity: [0.3, 0.8, 0.3] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                      />
                     )}
-                  </Button>
+                    <Button
+                      onClick={runIngredientAnalysis}
+                      disabled={stepStatus[2] === "loading" || !editData.ingredients}
+                      size="lg"
+                      className="gap-2 w-full text-base font-bold relative z-10"
+                      variant={editData.ingredients ? "default" : "outline"}
+                    >
+                      {stepStatus[2] === "loading" ? (
+                        <><Loader2 className="animate-spin" size={18} /> מנתח רכיבים...</>
+                      ) : (
+                        <><Shield size={18} /> הפעל ניתוח מדעי</>
+                      )}
+                    </Button>
+                  </div>
                 )}
 
                 {!editData.ingredients && (

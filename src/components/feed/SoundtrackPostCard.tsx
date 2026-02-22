@@ -151,7 +151,9 @@ export const SoundtrackPostCard = ({
   const [showHeartBurst, setShowHeartBurst] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(false);
   const [showSmartCheckout, setShowSmartCheckout] = useState(false);
+  const [overlayDimmed, setOverlayDimmed] = useState(false);
   const lastTapRef = useRef(0);
+  const dimTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { addToCart } = useCart();
   const { triggerFly } = useFlyingCart();
   const productImageRef = useRef<HTMLImageElement>(null);
@@ -159,6 +161,15 @@ export const SoundtrackPostCard = ({
 
   // Auto-play music when this post is the current visible post
   const isActive = index === currentIndex;
+
+  // Auto-dim bottom overlay after 3 seconds of inactivity
+  useEffect(() => {
+    if (!isActive) { setOverlayDimmed(false); return; }
+    setOverlayDimmed(false);
+    if (dimTimerRef.current) clearTimeout(dimTimerRef.current);
+    dimTimerRef.current = setTimeout(() => setOverlayDimmed(true), 3000);
+    return () => { if (dimTimerRef.current) clearTimeout(dimTimerRef.current); };
+  }, [isActive, currentImageIndex]);
   useEffect(() => {
     if (!post.music_url) return;
     
@@ -617,8 +628,10 @@ export const SoundtrackPostCard = ({
       <motion.div
         className="absolute inset-x-0 bottom-0 z-40"
         initial={{ y: 30, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.25, type: "spring", stiffness: 300, damping: 30 }}
+        animate={{ y: 0, opacity: overlayDimmed ? 0.3 : 1 }}
+        transition={overlayDimmed ? { duration: 1, ease: "easeOut" } : { delay: 0.25, type: "spring", stiffness: 300, damping: 30 }}
+        onTouchStart={() => { setOverlayDimmed(false); if (dimTimerRef.current) clearTimeout(dimTimerRef.current); dimTimerRef.current = setTimeout(() => setOverlayDimmed(true), 3000); }}
+        onClick={() => { setOverlayDimmed(false); if (dimTimerRef.current) clearTimeout(dimTimerRef.current); dimTimerRef.current = setTimeout(() => setOverlayDimmed(true), 3000); }}
       >
         <div
           className="mx-2 mb-2 rounded-2xl overflow-hidden"
