@@ -824,6 +824,21 @@ const Feed = () => {
       table: 'challenges'
     }, () => {
       fetchChallenges();
+    }).on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'business_products',
+      filter: 'in_stock=eq.true'
+    }, () => {
+      // Auto-published products appear in feed instantly
+      fetchShopProducts();
+      setNewPostsAvailable(true);
+    }).on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'business_products'
+    }, () => {
+      fetchShopProducts();
     }).subscribe();
     channelRef.current = channel;
     return () => {
