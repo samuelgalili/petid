@@ -242,10 +242,11 @@ export const SoundtrackPostCard = ({
     if (now - lastTapRef.current < 300) {
       if (!post.is_liked) {
         onLike(post.id);
-        // V73: Track liked post topics for engagement personalization
         trackLikedTopics(post.caption);
       }
       setShowHeartBurst(true);
+      // Haptic feedback for paw-confetti
+      if (navigator.vibrate) navigator.vibrate([15, 30, 15]);
       setTimeout(() => setShowHeartBurst(false), 800);
     }
     lastTapRef.current = now;
@@ -726,9 +727,27 @@ export const SoundtrackPostCard = ({
               )}
             </div>
             {post.caption && (
-              <p className="text-white/90 line-clamp-2" style={{ fontSize: "13px", lineHeight: 1.5 }}>
-                {post.caption}
-              </p>
+              <div className="flex items-start gap-1.5">
+                <p className="text-white/90 line-clamp-2 flex-1" style={{ fontSize: "13px", lineHeight: 1.5 }}>
+                  {post.caption}
+                </p>
+                {/* Minimalist translation toggle */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Future: toggle between original/translated caption
+                    import("sonner").then(({ toast }) => toast.info(isRtl ? "תרגום אוטומטי בקרוב" : "Auto-translate coming soon"));
+                  }}
+                  className="flex-shrink-0 mt-0.5 w-6 h-6 rounded-full flex items-center justify-center"
+                  style={{
+                    background: "rgba(255,255,255,0.1)",
+                    border: "1px solid rgba(255,255,255,0.15)",
+                  }}
+                  aria-label="Translate"
+                >
+                  <span className="text-[9px] font-bold text-white/70">A/א</span>
+                </button>
+              </div>
             )}
           </div>
 
