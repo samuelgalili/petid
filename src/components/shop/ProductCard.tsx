@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { LazyImage } from '@/components/common/LazyImage';
 import { motion } from 'framer-motion';
-import { Heart, Star, ShoppingCart, BadgeCheck } from 'lucide-react';
+import { Heart, Star, ShoppingCart, BadgeCheck, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,6 +9,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
+import { NearbyStockDrawer } from '@/components/shop/NearbyStockDrawer';
 
 interface ProductCardProps {
   product: any;
@@ -30,7 +31,7 @@ export const ProductCard = ({
   const { addToCart } = useCart();
   const queryClient = useQueryClient();
   const [isInWishlist, setIsInWishlist] = useState(initialIsInWishlist);
-
+  const [showNearbyStock, setShowNearbyStock] = useState(false);
   const business = product.business_profiles;
   const hasDiscount = product.sale_price && product.sale_price < product.price;
   const discountPercent = hasDiscount 
@@ -232,17 +233,37 @@ export const ProductCard = ({
           </div>
 
           {!compact && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={handleAddToCart}
-            >
-              <ShoppingCart className="w-4 h-4" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowNearbyStock(true);
+                }}
+              >
+                <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={handleAddToCart}
+              >
+                <ShoppingCart className="w-4 h-4" />
+              </Button>
+            </div>
           )}
         </div>
       </div>
+
+      <NearbyStockDrawer
+        open={showNearbyStock}
+        onClose={() => setShowNearbyStock(false)}
+        productName={product.name}
+        productId={product.id}
+      />
     </motion.div>
   );
 };
