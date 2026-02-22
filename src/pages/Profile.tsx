@@ -5,7 +5,7 @@ import { SEO } from "@/components/SEO";
 import { PageTransition } from "@/components/PageTransition";
 import BottomNav from "@/components/BottomNav";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, Plus, Menu, Edit3, ChevronDown, ChevronLeft, Shield, Utensils, Building2, Scissors, Heart, Stethoscope, Info, GraduationCap, FileText, Camera, Video, MessageCircle, Calendar, Dog, Gift, Flame, BookOpen, ShoppingBag, Truck, Handshake, Footprints, Search, Star, Clock, MapPin, Bell, AlertTriangle } from "lucide-react";
+import { ChevronRight, Plus, Menu, Edit3, ChevronDown, ChevronLeft, Utensils, Building2, Scissors, Heart, Stethoscope, Info, GraduationCap, FileText, Camera, Video, MessageCircle, Calendar, Dog, Gift, Flame, BookOpen, ShoppingBag, Truck, Handshake, Footprints, Search, Star, Clock, MapPin, Bell, AlertTriangle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -365,7 +365,7 @@ const Profile = () => {
           
           <div className="flex items-center gap-0">
             {isAdmin && <button onClick={() => navigate('/admin/growo')} className="p-1.5" aria-label="ניהול">
-                <Shield className="w-5 h-5 text-primary" strokeWidth={1.5} />
+                
               </button>}
             <button onClick={() => setShowEmergencyHub(true)} className="p-1.5" aria-label="מרכז חירום">
               <AlertTriangle className="w-5 h-5 text-red-500" strokeWidth={1.5} />
@@ -545,10 +545,10 @@ const Profile = () => {
               }}>
                       {/* Tappable pet name for heart rain */}
                       <motion.button
-                        onClick={triggerHeartRain}
-                        whileTap={{ scale: 0.95 }}
-                        className="inline-block"
-                      >
+                  onClick={triggerHeartRain}
+                  whileTap={{ scale: 0.95 }}
+                  className="inline-block">
+
                         <h3 className="font-bold text-foreground text-lg">{selectedPet.name} 🐾</h3>
                       </motion.button>
                       <p className="text-xs text-muted-foreground">
