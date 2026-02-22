@@ -389,9 +389,17 @@ const Shop = () => {
         animate={{ y: 0, opacity: 1 }}
       >
         <div className="max-w-lg mx-auto px-4 py-3">
-          {/* Top Row: Logo + Cart */}
+          {/* Top Row: Back + Logo + Cart */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => navigate("/feed")}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
+                aria-label="חזרה לפיד"
+              >
+                <ChevronLeft className="w-5 h-5 text-foreground" />
+              </motion.button>
               <img src={petidIcon} alt="PetID" className="w-7 h-7 object-contain" />
               <h1 className="text-lg font-semibold text-foreground">חנות</h1>
             </div>
