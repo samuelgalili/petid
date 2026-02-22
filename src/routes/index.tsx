@@ -68,9 +68,13 @@ export const authRoutes: RouteObject[] = [
 ];
 
 // ==========================================
+// MAIN SHELL — persistent Feed + overlays
+// ==========================================
+const MainShell = lazy(() => import("@/components/MainShell"));
+
+// ==========================================
 // FEED MODULE - Lazy loaded
 // ==========================================
-const Feed = lazy(() => import("@/pages/Feed"));
 const Explore = lazy(() => import("@/pages/Explore"));
 const Reels = lazy(() => import("@/pages/Reels"));
 const UserProfile = lazy(() => import("@/pages/UserProfile"));
@@ -83,16 +87,13 @@ const LivePage = lazy(() => import("@/pages/LivePage"));
 const LiveStreamViewer = lazy(() => import("@/components/live/LiveStreamViewer").then(m => ({ default: m.LiveStreamViewer })));
 const LiveBroadcaster = lazy(() => import("@/components/live/LiveBroadcaster").then(m => ({ default: m.LiveBroadcaster })));
 
-// Soundtrack-style Feed
+// Soundtrack-style Feed (used internally by MainShell)
 const SoundtrackFeed = lazy(() => import("@/pages/SoundtrackFeed"));
-// Profile page (primary home)
-const ProfilePage = lazy(() => import("@/pages/Profile"));
 
 export const feedRoutes: RouteObject[] = [
-  // Home = Profile page (primary landing)
-  { path: "/", element: <Protected><LazyPage component={ProfilePage} pageName="בית" /></Protected> },
-  // Feed = Soundtrack-style feed
-  { path: "/feed", element: <LazyPage component={SoundtrackFeed} pageName="פיד" /> },
+  // Main shell handles /, /feed, /chat, /shop — Feed always stays mounted
+  { path: "/", element: <Protected><LazyPage component={MainShell} pageName="בית" /></Protected> },
+  { path: "/feed", element: <LazyPage component={MainShell} pageName="פיד" /> },
   // Legacy routes - redirect to new locations
   { path: "/old-feed", element: <Navigate to="/feed" replace /> },
   { path: "/explore", element: <LazyPage component={Explore} pageName="גילוי" /> },
@@ -155,7 +156,8 @@ const PaymentFailed = lazy(() => import("@/pages/PaymentFailed"));
 
 
 export const shopRoutes: RouteObject[] = [
-  { path: "/shop", element: <LazyPage component={Shop} pageName="החנות" /> },
+  // /shop is handled by MainShell overlay — this route points to MainShell
+  { path: "/shop", element: <LazyPage component={MainShell} pageName="החנות" /> },
   { path: "/shop/explore", element: <LazyPage component={ShopExplore} pageName="גילוי מוצרים" /> },
   
   { path: "/product/:id", element: <LazyPage component={ProductDetail} pageName="פרטי מוצר" /> },
@@ -229,7 +231,8 @@ export const userRoutes: RouteObject[] = [
   { path: "/messages/new", element: <Protected><LazyPage component={NewMessage} pageName="הודעה חדשה" /></Protected> },
   { path: "/messages/:userId", element: <Protected><LazyPage component={MessageThread} pageName="שיחה" /></Protected> },
   { path: "/privacy-settings", element: <Protected><LazyPage component={PrivacySettings} pageName="הגדרות פרטיות" /></Protected> },
-  { path: "/chat", element: <Protected><LazyPage component={Chat} pageName="צ'אט" /></Protected> },
+  // /chat is handled by MainShell overlay
+  { path: "/chat", element: <Protected><LazyPage component={MainShell} pageName="צ'אט" /></Protected> },
   { path: "/owner-profile", element: <Protected><LazyPage component={OwnerProfile} pageName="הפרופיל שלי" /></Protected> },
 ];
 

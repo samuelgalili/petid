@@ -8,7 +8,7 @@
  * - Splash screen on initial load
  */
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -22,6 +22,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { PetPreferenceProvider } from "@/contexts/PetPreferenceContext";
+import { OverlayNavProvider } from "@/contexts/OverlayNavContext";
 import { GuestProvider } from "@/contexts/GuestContext";
 import { GameProvider } from "@/contexts/GameContext";
 import { CartProvider } from "@/contexts/CartContext";
@@ -59,6 +60,8 @@ const AUTH_PAGES = ['/auth', '/signup', '/forgot-password', '/reset-password', '
  * AnimatedRoutes Component
  * Handles route rendering with animations and footer visibility
  */
+const MAIN_SHELL_ROUTES = ['/', '/feed', '/chat', '/shop'];
+
 const AnimatedRoutes = () => {
   const location = useLocation();
   
@@ -66,6 +69,9 @@ const AnimatedRoutes = () => {
   useAdminNotifications();
   
   const showFooter = !AUTH_PAGES.includes(location.pathname);
+
+  // Stable key for main shell routes so Feed never unmounts
+  const routeKey = MAIN_SHELL_ROUTES.includes(location.pathname) ? 'main-shell' : location.pathname;
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -76,7 +82,7 @@ const AnimatedRoutes = () => {
       
       <div className="flex-1">
         <AnimatePresence mode="wait">
-          <Routes location={location} key={location.pathname}>
+          <Routes location={location} key={routeKey}>
             {allRoutes.map((route) => (
               <Route
                 key={route.path || 'not-found'}
@@ -103,17 +109,19 @@ const GlobalProviders = ({ children }: { children: React.ReactNode }) => (
       <AccessibilityProvider>
         <LanguageProvider>
           <PetPreferenceProvider>
-            <GuestProvider>
-              <GameProvider>
-                <CartProvider>
-                  <FlyingCartProvider>
-                    <TooltipProvider>
-                      {children}
-                    </TooltipProvider>
-                  </FlyingCartProvider>
-                </CartProvider>
-              </GameProvider>
-            </GuestProvider>
+            <OverlayNavProvider>
+              <GuestProvider>
+                <GameProvider>
+                  <CartProvider>
+                    <FlyingCartProvider>
+                      <TooltipProvider>
+                        {children}
+                      </TooltipProvider>
+                    </FlyingCartProvider>
+                  </CartProvider>
+                </GameProvider>
+              </GuestProvider>
+            </OverlayNavProvider>
           </PetPreferenceProvider>
         </LanguageProvider>
       </AccessibilityProvider>

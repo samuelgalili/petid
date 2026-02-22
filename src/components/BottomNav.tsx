@@ -10,7 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useState, useRef, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,6 +18,7 @@ import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { usePetButtonAnimation, PetButtonOverlay } from "@/components/ui/PetButtonAnimations";
+import { useOverlayNav } from "@/contexts/OverlayNavContext";
 
 const navLabels = {
   he: { feed: "פיד", shop: "חנות", chat: "AI", addPet: "הוסף חיית מחמד" },
@@ -52,45 +53,24 @@ const BottomNav = () => {
   const actions = quickActions[language] || quickActions.he;
   const { activePet, pets, switchPet: contextSwitchPet } = usePetPreference();
 
+  const { openDashboard, closeDashboard, dashboardOpen } = useOverlayNav();
+
   const [showPetSwitcher, setShowPetSwitcher] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
   const { activeAnim, triggerRandom } = usePetButtonAnimation();
 
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const longPressTriggered = useRef(false);
+  // Single tap → open pet switcher; Long press not needed anymore
+  const handlePetTap = useCallback(() => {
+    triggerRandom();
+    if (navigator.vibrate) navigator.vibrate(10);
+    setShowPetSwitcher(true);
+  }, [triggerRandom]);
 
-  // Single tap → navigate to dashboard; Long press → pet switcher
-  const handlePetPointerDown = useCallback(() => {
-    longPressTriggered.current = false;
-    longPressTimer.current = setTimeout(() => {
-      longPressTriggered.current = true;
-      if (navigator.vibrate) navigator.vibrate(20);
-      if (pets.length > 1) {
-        setShowPetSwitcher(true);
-      }
-    }, 500);
-  }, [pets.length]);
-
-  const handlePetPointerUp = useCallback(() => {
-    if (longPressTimer.current) clearTimeout(longPressTimer.current);
-    if (!longPressTriggered.current) {
-      triggerRandom();
-      // Single tap: always navigate to dashboard
-      if (location.pathname === '/') {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      } else {
-        navigate('/');
-      }
-    }
-  }, [location.pathname, navigate, triggerRandom]);
-
-  const handlePetPointerLeave = useCallback(() => {
-    if (longPressTimer.current) clearTimeout(longPressTimer.current);
-  }, []);
-
+  // When a pet is selected from switcher → open dashboard
   const handleSwitchPet = (petId: string) => {
     contextSwitchPet(petId);
     setShowPetSwitcher(false);
+    openDashboard();
   };
 
   const hiddenRoutes = ["/auth", "/signup", "/forgot-password", "/reset-password", "/splash", "/add-pet", "/onboarding", "/stories", "/story"];
@@ -99,7 +79,7 @@ const BottomNav = () => {
 
   const isActive = (path: string) => {
     const p = location.pathname;
-    if (path === "/feed") return p === "/feed" || p.startsWith("/post/") || p.startsWith("/story/") || p === "/explore";
+    if (path === "/feed") return p === "/feed" || p === "/" || p.startsWith("/post/") || p.startsWith("/story/") || p === "/explore";
     if (path === "/shop") return p === "/shop" || p.startsWith("/product/") || p === "/cart" || p === "/checkout" || p.startsWith("/shop/");
     if (path === "/chat") return p === "/chat";
     return p === path;
@@ -292,9 +272,7 @@ const BottomNav = () => {
           <div className="flex flex-col items-center justify-center relative">
             <motion.div
               whileTap={{ scale: 0.9 }}
-              onPointerDown={handlePetPointerDown}
-              onPointerUp={handlePetPointerUp}
-              onPointerLeave={handlePetPointerLeave}
+              onClick={handlePetTap}
               className="relative -mt-8 flex flex-col items-center cursor-pointer select-none"
             >
               <div
