@@ -10,7 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useState, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
@@ -59,14 +59,33 @@ const BottomNav = () => {
   const [showQuickActions, setShowQuickActions] = useState(false);
   const { activeAnim, triggerRandom } = usePetButtonAnimation();
 
-  // Single tap → open pet switcher; Long press not needed anymore
-  const handlePetTap = useCallback(() => {
-    triggerRandom();
-    if (navigator.vibrate) navigator.vibrate(10);
-    setShowPetSwitcher(true);
-  }, [triggerRandom]);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressTriggered = useRef(false);
 
-  // When a pet is selected from switcher → open dashboard
+  // Single tap → open dashboard directly; Long press → pet switcher
+  const handlePetPointerDown = useCallback(() => {
+    longPressTriggered.current = false;
+    longPressTimer.current = setTimeout(() => {
+      longPressTriggered.current = true;
+      if (navigator.vibrate) navigator.vibrate(20);
+      if (pets.length > 1) setShowPetSwitcher(true);
+    }, 500);
+  }, [pets.length]);
+
+  const handlePetPointerUp = useCallback(() => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    if (!longPressTriggered.current) {
+      triggerRandom();
+      if (navigator.vibrate) navigator.vibrate(10);
+      openDashboard();
+    }
+  }, [triggerRandom, openDashboard]);
+
+  const handlePetPointerLeave = useCallback(() => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+  }, []);
+
+  // When a pet is selected from switcher → switch pet + open dashboard
   const handleSwitchPet = (petId: string) => {
     contextSwitchPet(petId);
     setShowPetSwitcher(false);
@@ -272,7 +291,9 @@ const BottomNav = () => {
           <div className="flex flex-col items-center justify-center relative">
             <motion.div
               whileTap={{ scale: 0.9 }}
-              onClick={handlePetTap}
+              onPointerDown={handlePetPointerDown}
+              onPointerUp={handlePetPointerUp}
+              onPointerLeave={handlePetPointerLeave}
               className="relative -mt-8 flex flex-col items-center cursor-pointer select-none"
             >
               <div
