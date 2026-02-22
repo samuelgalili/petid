@@ -5703,6 +5703,27 @@ export type Database = {
           },
         ]
       }
+      pet_follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          id: string
+          pet_id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          id?: string
+          pet_id: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          id?: string
+          pet_id?: string
+        }
+        Relationships: []
+      }
       pet_grooming_bookings: {
         Row: {
           admin_notes: string | null
@@ -6088,6 +6109,30 @@ export type Database = {
           trainer_phone?: string | null
           training_type?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      pet_treats: {
+        Row: {
+          created_at: string
+          id: string
+          pet_id: string
+          sender_id: string
+          treat_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pet_id: string
+          sender_id: string
+          treat_type?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pet_id?: string
+          sender_id?: string
+          treat_type?: string
         }
         Relationships: []
       }

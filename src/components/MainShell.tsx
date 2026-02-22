@@ -16,6 +16,7 @@ const SoundtrackFeed = lazy(() => import("@/pages/SoundtrackFeed"));
 const Chat = lazy(() => import("@/pages/Chat"));
 const Shop = lazy(() => import("@/pages/Shop"));
 const ProfilePage = lazy(() => import("@/pages/Profile"));
+const PublicPetProfile = lazy(() => import("@/components/PublicPetProfile"));
 
 const overlayVariants = {
   hidden: { y: "100%" },
@@ -34,7 +35,7 @@ const LoadingFallback = () => (
 const MainShell = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { dashboardOpen, closeDashboard } = useOverlayNav();
+  const { dashboardOpen, closeDashboard, publicPetId, closePublicPet } = useOverlayNav();
 
   const showChat = location.pathname === "/chat";
   const showShop = location.pathname === "/shop" || location.pathname.startsWith("/shop/");
@@ -116,6 +117,15 @@ const MainShell = () => {
               <ProfilePage />
             </Suspense>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ═══ OVERLAY: Public Pet Profile ═══ */}
+      <AnimatePresence>
+        {publicPetId && (
+          <Suspense fallback={<LoadingFallback />}>
+            <PublicPetProfile petId={publicPetId} onClose={closePublicPet} />
+          </Suspense>
         )}
       </AnimatePresence>
 
