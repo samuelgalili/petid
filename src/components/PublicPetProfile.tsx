@@ -1,12 +1,13 @@
 /**
  * PublicPetProfile — Full-screen overlay showing another pet's public profile.
- * Includes: follow, stats, featured products, media grid, send treat.
+ * Includes: follow, stats, featured products, media grid, send treat, message owner.
+ * Swipe-down gesture dismisses the overlay to reveal the Feed beneath.
  */
 import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import {
   Heart, ChevronDown, ShoppingBag, PawPrint, Users, UserPlus,
-  Gift, Grid3x3, Shield, ExternalLink, X, Dog, Cat,
+  Gift, Grid3x3, Shield, ExternalLink, X, Dog, Cat, MessageCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,6 +15,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
+import { haptic } from "@/lib/haptics";
 
 interface PublicPetProfileProps {
   petId: string;
@@ -61,10 +63,19 @@ const PublicPetProfile = ({ petId, onClose }: PublicPetProfileProps) => {
   const [showTreatAnim, setShowTreatAnim] = useState(false);
   const [pawPulse, setPawPulse] = useState(false);
 
+  // Drag-to-dismiss
+  const dragY = useMotionValue(0);
+  const overlayOpacity = useTransform(dragY, [0, 300], [1, 0.2]);
+
+  const handleDragEnd = (_: any, info: PanInfo) => {
+    if (info.offset.y > 120 || info.velocity.y > 500) {
+      onClose();
+    }
+  };
+
   // Fetch pet data + stats
   useEffect(() => {
     const load = async () => {
-      // Pet info
       const { data: petData } = await supabase
         .from("pets" as any)
         .select("id, name, breed, type, avatar_url, user_id")
@@ -74,7 +85,6 @@ const PublicPetProfile = ({ petId, onClose }: PublicPetProfileProps) => {
       if (petData) {
         setPet(petData as any);
 
-        // Owner name
         const { data: profile } = await supabase
           .from("profiles")
           .select("full_name")
@@ -82,7 +92,6 @@ const PublicPetProfile = ({ petId, onClose }: PublicPetProfileProps) => {
           .maybeSingle();
         if (profile) setOwnerName((profile as any).full_name || "");
 
-        // Posts by this pet's owner
         const { data: postsData } = await supabase
           .from("posts")
           .select("id, image_url, media_urls")
@@ -92,14 +101,12 @@ const PublicPetProfile = ({ petId, onClose }: PublicPetProfileProps) => {
         setPosts((postsData || []) as PetPost[]);
       }
 
-      // Followers count
       const { count: fCount } = await supabase
         .from("pet_follows" as any)
         .select("*", { count: "exact", head: true })
         .eq("pet_id", petId);
       setFollowersCount(fCount || 0);
 
-      // Following count (pets this pet's owner follows)
       if (petData) {
         const { count: fgCount } = await supabase
           .from("pet_follows" as any)
@@ -108,14 +115,12 @@ const PublicPetProfile = ({ petId, onClose }: PublicPetProfileProps) => {
         setFollowingCount(fgCount || 0);
       }
 
-      // Paws (treats) received
       const { count: tCount } = await supabase
         .from("pet_treats" as any)
         .select("*", { count: "exact", head: true })
         .eq("pet_id", petId);
       setPawsCount(tCount || 0);
 
-      // Is current user following?
       if (user) {
         const { data: followData } = await supabase
           .from("pet_follows" as any)
@@ -126,7 +131,6 @@ const PublicPetProfile = ({ petId, onClose }: PublicPetProfileProps) => {
         setIsFollowing(!!followData);
       }
 
-      // Featured products — top 3 with high safety_score
       const { data: prodData } = await supabase
         .from("business_products")
         .select("id, name, price, image_url, safety_score, brand")
@@ -159,9 +163,9 @@ const PublicPetProfile = ({ petId, onClose }: PublicPetProfileProps) => {
         .insert({ follower_id: user.id, pet_id: petId });
       setIsFollowing(true);
       setFollowersCount((c) => c + 1);
-      // Paw-Pulse animation
+      // Paw-Pulse animation + haptic
       setPawPulse(true);
-      if (navigator.vibrate) navigator.vibrate([15, 50, 15]);
+      haptic("success");
       setTimeout(() => setPawPulse(false), 800);
     }
     setFollowLoading(false);
@@ -178,9 +182,8 @@ const PublicPetProfile = ({ petId, onClose }: PublicPetProfileProps) => {
 
     setPawsCount((c) => c + 1);
     setShowTreatAnim(true);
-    if (navigator.vibrate) navigator.vibrate([10, 30, 10, 30, 10]);
+    haptic("success");
 
-    // Confetti burst
     confetti({
       particleCount: 60,
       spread: 80,
@@ -195,6 +198,38 @@ const PublicPetProfile = ({ petId, onClose }: PublicPetProfileProps) => {
     }, 1500);
   }, [user, treatSending, petId]);
 
+  // Message Owner
+  const handleMessageOwner = useCallback(() => {
+    if (!pet?.user_id || !user) {
+      toast.error("Sign in to send messages");
+      return;
+    }
+    if (pet.user_id === user.id) {
+      toast("That's your own pet! 🐾");
+      return;
+    }
+    haptic("light");
+    onClose();
+    navigate(`/messages/${pet.user_id}`);
+  }, [pet, user, onClose, navigate]);
+
+  // Share product into a chat
+  const handleShareProduct = useCallback(
+    async (product: FeaturedProduct) => {
+      haptic("light");
+      const url = `${window.location.origin}/product/${product.id}`;
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: product.name, text: `Check out ${product.name} — ₪${product.price}`, url });
+        } catch { /* cancelled */ }
+      } else {
+        navigator.clipboard.writeText(url);
+        toast.success("Product link copied!");
+      }
+    },
+    [],
+  );
+
   const PetIcon = pet?.type === "cat" ? Cat : Dog;
 
   const formatCount = (n: number) => {
@@ -208,9 +243,14 @@ const PublicPetProfile = ({ petId, onClose }: PublicPetProfileProps) => {
       animate={{ y: 0 }}
       exit={{ y: "100%" }}
       transition={{ type: "spring", damping: 30, stiffness: 300 }}
-      className="fixed inset-0 z-[300] bg-background overflow-auto"
+      style={{ y: dragY, opacity: overlayOpacity }}
+      drag="y"
+      dragConstraints={{ top: 0, bottom: 0 }}
+      dragElastic={{ top: 0, bottom: 0.6 }}
+      onDragEnd={handleDragEnd}
+      className="fixed inset-0 z-[300] bg-background overflow-auto touch-pan-y"
     >
-      {/* ── Close Handle ── */}
+      {/* ── Close Handle (drag hint) ── */}
       <div className="sticky top-0 z-10 w-full flex items-center justify-center py-2 bg-background/80 backdrop-blur-md">
         <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
       </div>
@@ -236,13 +276,32 @@ const PublicPetProfile = ({ petId, onClose }: PublicPetProfileProps) => {
           {/* Paw-Pulse overlay */}
           <AnimatePresence>
             {pawPulse && (
-              <motion.div
-                initial={{ scale: 0.5, opacity: 1 }}
-                animate={{ scale: 2.5, opacity: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.8 }}
-                className="absolute inset-0 rounded-full border-4 border-primary"
-              />
+              <>
+                <motion.div
+                  initial={{ scale: 0.5, opacity: 1 }}
+                  animate={{ scale: 2.5, opacity: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.8 }}
+                  className="absolute inset-0 rounded-full border-4 border-primary"
+                />
+                {/* Paw burst */}
+                {[...Array(6)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ scale: 0, opacity: 1, x: 0, y: 0 }}
+                    animate={{
+                      scale: [0, 1.2, 0],
+                      opacity: [1, 0.8, 0],
+                      x: Math.cos((i * Math.PI * 2) / 6) * 50,
+                      y: Math.sin((i * Math.PI * 2) / 6) * 50,
+                    }}
+                    transition={{ duration: 0.7, delay: i * 0.04 }}
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                  >
+                    <PawPrint className="w-4 h-4 text-primary" />
+                  </motion.div>
+                ))}
+              </>
             )}
           </AnimatePresence>
         </div>
@@ -255,16 +314,16 @@ const PublicPetProfile = ({ petId, onClose }: PublicPetProfileProps) => {
           </p>
         )}
 
-        {/* Follow + Treat buttons */}
-        <div className="flex gap-3 mt-4">
+        {/* Follow + Message + Treat buttons */}
+        <div className="flex gap-2 mt-4 flex-wrap justify-center">
           <motion.button
             whileTap={{ scale: 0.92 }}
             onClick={toggleFollow}
             disabled={followLoading}
-            className={`px-5 py-2 rounded-full text-sm font-semibold flex items-center gap-2 transition-all ${
+            className={`px-5 py-2 rounded-full text-sm font-semibold flex items-center gap-2 transition-all backdrop-blur-md ${
               isFollowing
-                ? "bg-muted text-foreground border border-border"
-                : "bg-primary text-primary-foreground shadow-md"
+                ? "bg-muted/80 text-foreground border border-border"
+                : "text-primary-foreground shadow-md"
             }`}
             style={
               !isFollowing
@@ -286,14 +345,24 @@ const PublicPetProfile = ({ petId, onClose }: PublicPetProfileProps) => {
             )}
           </motion.button>
 
+          {/* Message Owner */}
+          <motion.button
+            whileTap={{ scale: 0.92 }}
+            onClick={handleMessageOwner}
+            className="px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2 bg-card/80 backdrop-blur-md border border-border/50 text-foreground hover:bg-muted/60 transition-all"
+          >
+            <MessageCircle className="w-4 h-4" />
+            Message
+          </motion.button>
+
           <motion.button
             whileTap={{ scale: 0.88 }}
             onClick={sendTreat}
             disabled={treatSending}
-            className="px-5 py-2 rounded-full text-sm font-semibold flex items-center gap-2 bg-accent/20 text-accent-foreground border border-accent/30 hover:bg-accent/30 transition-all"
+            className="px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2 bg-accent/20 text-accent-foreground border border-accent/30 hover:bg-accent/30 transition-all"
           >
             <Gift className="w-4 h-4" />
-            Send Treat
+            Treat
           </motion.button>
         </div>
 
@@ -332,18 +401,24 @@ const PublicPetProfile = ({ petId, onClose }: PublicPetProfileProps) => {
               <motion.div
                 key={product.id}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => {
-                  onClose();
-                  navigate(`/product/${product.id}`);
-                }}
                 className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border/50 cursor-pointer hover:bg-muted/50 transition-colors"
               >
                 <img
                   src={product.image_url}
                   alt={product.name}
                   className="w-14 h-14 rounded-lg object-cover bg-muted"
+                  onClick={() => {
+                    onClose();
+                    navigate(`/product/${product.id}`);
+                  }}
                 />
-                <div className="flex-1 min-w-0">
+                <div
+                  className="flex-1 min-w-0"
+                  onClick={() => {
+                    onClose();
+                    navigate(`/product/${product.id}`);
+                  }}
+                >
                   <p className="text-sm font-semibold text-foreground truncate">{product.name}</p>
                   {product.brand && (
                     <p className="text-xs text-muted-foreground">{product.brand}</p>
@@ -358,7 +433,14 @@ const PublicPetProfile = ({ petId, onClose }: PublicPetProfileProps) => {
                     )}
                   </div>
                 </div>
-                <ExternalLink className="w-4 h-4 text-muted-foreground shrink-0" />
+                {/* Share product to chat */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleShareProduct(product); }}
+                  className="w-8 h-8 rounded-full bg-muted/60 flex items-center justify-center shrink-0 hover:bg-muted transition-colors"
+                  aria-label="Share product"
+                >
+                  <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                </button>
               </motion.div>
             ))}
           </div>
