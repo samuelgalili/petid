@@ -62,24 +62,24 @@ const BottomNav = () => {
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressTriggered = useRef(false);
 
-  // Single tap → open dashboard directly; Long press → pet switcher
+  // Single tap → floating pet switcher; Long press → open dashboard directly
   const handlePetPointerDown = useCallback(() => {
     longPressTriggered.current = false;
     longPressTimer.current = setTimeout(() => {
       longPressTriggered.current = true;
       if (navigator.vibrate) navigator.vibrate(20);
-      setShowPetSwitcher(true);
+      openDashboard();
     }, 500);
-  }, []);
+  }, [openDashboard]);
 
   const handlePetPointerUp = useCallback(() => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
     if (!longPressTriggered.current) {
       triggerRandom();
       if (navigator.vibrate) navigator.vibrate(10);
-      openDashboard();
+      setShowPetSwitcher(true);
     }
-  }, [triggerRandom, openDashboard]);
+  }, [triggerRandom]);
 
   const handlePetPointerLeave = useCallback(() => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
