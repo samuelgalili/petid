@@ -9,9 +9,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useActivePet } from "@/hooks/useActivePet";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Camera, ImagePlus, FileText } from "lucide-react";
+import { Camera, ImagePlus, FileText, Menu, Shield, Store, Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useNotificationsBadge } from "@/hooks/useNotificationsBadge";
+import { HamburgerMenu } from "@/components/HamburgerMenu";
 // BottomNav is rendered by MainShell — not needed here
 import { CreatePostDialog } from "@/components/CreatePostDialog";
 import { CreateStoryDialog } from "@/components/CreateStoryDialog";
@@ -34,12 +36,14 @@ import { useSoundtrackFeed } from "@/hooks/useSoundtrackFeed";
 
 const SoundtrackFeed = () => {
   const navigate = useNavigate();
-  const { unreadCount } = useRealtimeNotifications();
+  const { isAdmin, isBusiness } = useUserRole();
+  const { unreadCount } = useNotificationsBadge();
   const { pet: activePet } = useActivePet();
   const { language, direction } = useLanguage();
   const [showUploadMenu, setShowUploadMenu] = useState(false);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [showCreateStory, setShowCreateStory] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const {
     posts,
     loading,
@@ -89,19 +93,31 @@ const SoundtrackFeed = () => {
       <NewPostToast visible={newPostCount > 0} count={newPostCount} onTap={handleNewPostTap} />
       <FeedOnboarding />
 
-      {/* Header */}
+      <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+
+      {/* Floating Glass Header */}
       <motion.header
-        className="absolute top-0 left-0 right-0 z-50 pointer-events-none pt-2"
+        className="absolute top-0 left-0 right-0 z-50 pointer-events-none"
+        style={{ paddingTop: "calc(4px + env(safe-area-inset-top))" }}
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
       >
-        <div className="flex items-center justify-between h-12 relative pointer-events-auto px-4">
-          {/* Left: DailyStreak */}
-          <div className="w-10 flex items-center justify-center">
-            <DailyStreak />
-          </div>
+        <div className="flex items-center justify-between h-11 pointer-events-auto px-4">
+          {/* Right (RTL): Menu */}
+          <motion.button
+            whileTap={{ scale: 0.85 }}
+            onClick={() => setIsMenuOpen(true)}
+            className="w-9 h-9 rounded-full flex items-center justify-center"
+            style={{
+              background: "rgba(0,0,0,0.2)",
+              backdropFilter: "blur(12px)",
+            }}
+            aria-label="תפריט"
+          >
+            <Menu className="w-[18px] h-[18px] text-white" strokeWidth={1.5} />
+          </motion.button>
 
-          {/* Center: Tabs — absolutely centered */}
+          {/* Center: Tabs */}
           <div className="absolute left-1/2 -translate-x-1/2">
             <Tabs
               value={activeTab}
@@ -138,29 +154,42 @@ const SoundtrackFeed = () => {
             </Tabs>
           </div>
 
-          {/* Right: Heart/Notifications */}
-          <button
-            onClick={() => navigate('/notifications')}
-            className="relative w-10 h-10 flex items-center justify-center"
-            aria-label="התראות"
+          {/* Left (RTL): Role Action */}
+          <motion.button
+            whileTap={{ scale: 0.85 }}
+            onClick={() => {
+              if (isAdmin) navigate("/admin/growo");
+              else if (isBusiness) navigate("/business-dashboard");
+              else navigate("/notifications");
+            }}
+            className="w-9 h-9 rounded-full flex items-center justify-center relative"
+            style={{
+              background: "rgba(0,0,0,0.2)",
+              backdropFilter: "blur(12px)",
+            }}
+            aria-label={isAdmin ? "ניהול" : isBusiness ? "חנות" : "התראות"}
           >
-            <Heart className="w-[26px] h-[26px] text-white" strokeWidth={1.5} style={{ filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.5))' }} />
-            <AnimatePresence mode="wait">
-              {unreadCount > 0 && (
-                <motion.span
-                  key={unreadCount}
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0, opacity: 0 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                  className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full text-[10px] font-bold flex items-center justify-center px-1"
-                  style={{ background: 'linear-gradient(135deg, #FF3B30, #FF1744)', boxShadow: '0 2px 6px rgba(255,59,48,0.5)' }}
-                >
-                  <span className="text-white">{unreadCount > 9 ? '9+' : unreadCount}</span>
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </button>
+            {isAdmin ? (
+              <Shield className="w-[18px] h-[18px] text-white" strokeWidth={1.5} />
+            ) : isBusiness ? (
+              <Store className="w-[18px] h-[18px] text-white" strokeWidth={1.5} />
+            ) : (
+              <Bell className="w-[18px] h-[18px] text-white" strokeWidth={1.5} />
+            )}
+            {!isAdmin && !isBusiness && unreadCount > 0 && (
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="absolute -top-0.5 -left-0.5 min-w-[14px] h-[14px] rounded-full text-[8px] font-bold flex items-center justify-center px-[3px] text-white"
+                style={{
+                  background: "hsl(var(--destructive))",
+                  boxShadow: "0 0 6px hsl(var(--destructive) / 0.5)",
+                }}
+              >
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </motion.span>
+            )}
+          </motion.button>
         </div>
       </motion.header>
 
