@@ -8,7 +8,7 @@ import { ComponentErrorBoundary } from "@/components/common/ComponentErrorBounda
 import { motion, AnimatePresence } from "framer-motion";
 import { useActivePet } from "@/hooks/useActivePet";
 import { cn } from "@/lib/utils";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LayoutGrid } from "lucide-react";
 import { Camera, ImagePlus, FileText, Menu, Shield, Store, Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -117,79 +117,110 @@ const SoundtrackFeed = () => {
             <Menu className="w-[18px] h-[18px] text-white" strokeWidth={1.5} />
           </motion.button>
 
-          {/* Center: Tabs */}
-          <div className="absolute left-1/2 -translate-x-1/2">
-            <Tabs
-              value={activeTab}
-              onValueChange={(v) => setActiveTab(v as "discover" | "following")}
+          {/* Center: For You / Following Switcher */}
+          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-5">
+            <button
+              onClick={() => setActiveTab("discover")}
+              className="relative pb-1 transition-all duration-200"
             >
-              <TabsList className="bg-transparent gap-6 h-auto p-0">
-                <TabsTrigger
-                  value="following"
-                  className={cn(
-                    "bg-transparent border-0 shadow-none text-[15px] font-bold px-1 py-1.5 rounded-none transition-all duration-200",
-                    "data-[state=active]:bg-transparent data-[state=active]:shadow-none",
-                    activeTab === "following"
-                      ? "text-white border-b-[2.5px] border-white"
-                      : "text-white/50 hover:text-white/70"
-                  )}
-                  style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}
-                >
-                  עוקבים
-                </TabsTrigger>
-                <TabsTrigger
-                  value="discover"
-                  className={cn(
-                    "bg-transparent border-0 shadow-none text-[15px] font-bold px-1 py-1.5 rounded-none transition-all duration-200",
-                    "data-[state=active]:bg-transparent data-[state=active]:shadow-none",
-                    activeTab === "discover"
-                      ? "text-white border-b-[2.5px] border-white"
-                      : "text-white/50 hover:text-white/70"
-                  )}
-                  style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}
-                >
-                  גלה
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+              <span
+                className={cn(
+                  "text-[15px] font-bold transition-colors duration-200",
+                  activeTab === "discover" ? "text-white" : "text-white/50"
+                )}
+                style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}
+              >
+                עבורי
+              </span>
+              {activeTab === "discover" && (
+                <motion.div
+                  layoutId="feedUnderline"
+                  className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-white rounded-full"
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab("following")}
+              className="relative pb-1 transition-all duration-200"
+            >
+              <span
+                className={cn(
+                  "text-[15px] font-bold transition-colors duration-200",
+                  activeTab === "following" ? "text-white" : "text-white/50"
+                )}
+                style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}
+              >
+                עוקבים
+              </span>
+              {activeTab === "following" && (
+                <motion.div
+                  layoutId="feedUnderline"
+                  className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-white rounded-full"
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                />
+              )}
+            </button>
           </div>
 
-          {/* Left (RTL): Role Action */}
-          <motion.button
-            whileTap={{ scale: 0.85 }}
-            onClick={() => {
-              if (isAdmin) navigate("/admin/growo");
-              else if (isBusiness) navigate("/business-dashboard");
-              else navigate("/notifications");
-            }}
-            className="w-9 h-9 rounded-full flex items-center justify-center relative"
-            style={{
-              background: "rgba(0,0,0,0.2)",
-              backdropFilter: "blur(12px)",
-            }}
-            aria-label={isAdmin ? "ניהול" : isBusiness ? "חנות" : "התראות"}
-          >
-            {isAdmin ? (
-              <Shield className="w-[18px] h-[18px] text-white" strokeWidth={1.5} />
-            ) : isBusiness ? (
-              <Store className="w-[18px] h-[18px] text-white" strokeWidth={1.5} />
-            ) : (
-              <Bell className="w-[18px] h-[18px] text-white" strokeWidth={1.5} />
-            )}
-            {!isAdmin && !isBusiness && unreadCount > 0 && (
-              <motion.span
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="absolute -top-0.5 -left-0.5 min-w-[14px] h-[14px] rounded-full text-[8px] font-bold flex items-center justify-center px-[3px] text-white"
+          {/* Left (RTL): Bell + Role Icon */}
+          <div className="flex items-center gap-1.5">
+            {/* Admin/Business management icon */}
+            {isAdmin && (
+              <motion.button
+                whileTap={{ scale: 0.85 }}
+                onClick={() => navigate("/admin/growo")}
+                className="w-8 h-8 rounded-full flex items-center justify-center"
                 style={{
-                  background: "hsl(var(--destructive))",
-                  boxShadow: "0 0 6px hsl(var(--destructive) / 0.5)",
+                  background: "rgba(0,0,0,0.2)",
+                  backdropFilter: "blur(12px)",
                 }}
+                aria-label="ניהול"
               >
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </motion.span>
+                <Shield className="w-[16px] h-[16px] text-white" strokeWidth={1.5} />
+              </motion.button>
             )}
-          </motion.button>
+            {!isAdmin && isBusiness && (
+              <motion.button
+                whileTap={{ scale: 0.85 }}
+                onClick={() => navigate("/business-dashboard")}
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{
+                  background: "rgba(0,0,0,0.2)",
+                  backdropFilter: "blur(12px)",
+                }}
+                aria-label="חנות"
+              >
+                <Store className="w-[16px] h-[16px] text-white" strokeWidth={1.5} />
+              </motion.button>
+            )}
+
+            {/* Notification Bell — always visible */}
+            <motion.button
+              whileTap={{ scale: 0.85 }}
+              onClick={() => navigate("/notifications")}
+              className="w-9 h-9 rounded-full flex items-center justify-center relative"
+              style={{
+                background: "rgba(0,0,0,0.2)",
+                backdropFilter: "blur(12px)",
+              }}
+              aria-label="התראות"
+            >
+              <Bell className="w-[18px] h-[18px] text-white" strokeWidth={1.5} />
+              {unreadCount > 0 && (
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: [1, 1.3, 1] }}
+                  transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                  className="absolute top-0.5 right-0.5 w-[8px] h-[8px] rounded-full"
+                  style={{
+                    background: "#FF6B9D",
+                    boxShadow: "0 0 8px #FF6B9D",
+                  }}
+                />
+              )}
+            </motion.button>
+          </div>
         </div>
       </motion.header>
 
