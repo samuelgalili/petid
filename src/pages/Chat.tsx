@@ -341,41 +341,16 @@ const ChatContent = () => {
   return (
     <div className="min-h-screen bg-background pb-20" dir="rtl">
       <SEO title="צ'אט AI" description="שאלו את העוזר החכם שלנו כל שאלה על חיות מחמד - אילוף, תזונה, בריאות" url="/chat" />
-      {/* Compact Sticky Header — auto-hides on scroll */}
-      <motion.div
-        className="sticky top-0 z-50 border-b border-border/30"
-        initial={{ y: 0 }}
-        animate={{ y: headerHidden ? -60 : 0 }}
-        transition={{ type: "spring", stiffness: 400, damping: 35 }}
-        style={{ willChange: "transform" }}
-      >
-        <div className="bg-background/95 backdrop-blur-xl">
-          <div className="flex items-center justify-between px-4 py-2">
-            <button 
-              onClick={() => navigate("/feed")}
-              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
-              aria-label="חזרה לפיד"
-            >
-              <ChevronRight className="w-5 h-5 text-foreground" />
-            </button>
-            
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/60 p-[1.5px]">
-                  <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
-                    <img src={petidIcon} alt="PetAI" className="w-4.5 h-4.5 object-contain" />
-                  </div>
-                </div>
-                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-[1.5px] border-card" />
-              </div>
-              <span className="text-sm font-bold text-foreground">PetAI</span>
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-            </div>
-            
-            <div className="w-9 h-9" />
-          </div>
-        </div>
-      </motion.div>
+      {/* Minimal back arrow header */}
+      <div className="sticky top-0 z-50 bg-background/90 backdrop-blur-md px-3 py-2">
+        <button 
+          onClick={() => navigate("/feed")}
+          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
+          aria-label="חזרה לפיד"
+        >
+          <ChevronRight className="w-5 h-5 text-foreground" />
+        </button>
+      </div>
 
       <div className="flex flex-col h-[calc(100vh-140px)]">
         {/* Messages Container */}

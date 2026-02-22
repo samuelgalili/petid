@@ -8,7 +8,6 @@ import {
   ScanLine,
   MessageCircle,
   X,
-  Home,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useRef, useCallback } from "react";
@@ -242,15 +241,11 @@ const BottomNav = () => {
         )}
       </AnimatePresence>
 
-      {/* ── Floating FAB (+) ── */}
+      {/* Floating FAB (+) — always bottom-right */}
       <motion.button
         whileTap={{ scale: 0.85 }}
         onClick={() => setShowQuickActions((v) => !v)}
-        className={cn(
-          "fixed z-[10000] w-12 h-12 rounded-full shadow-lg flex items-center justify-center",
-          "bg-primary text-primary-foreground",
-          isRtl ? "left-4" : "right-4"
-        )}
+        className="fixed z-[10000] w-12 h-12 rounded-full shadow-lg flex items-center justify-center bg-primary text-primary-foreground right-4"
         style={{ bottom: `calc(72px + env(safe-area-inset-bottom))` }}
         aria-label="Quick actions"
       >
@@ -279,7 +274,7 @@ const BottomNav = () => {
         dir={direction}
       >
         <div className="flex justify-around items-center w-full max-w-lg mx-auto h-[64px]">
-          {/* Chat (AI) */}
+          {/* Chat (AI) — Left */}
           <NavButton
             onClick={() => handleNavClick("/chat")}
             active={isActive("/chat")}
@@ -290,20 +285,6 @@ const BottomNav = () => {
               className={cn("w-[22px] h-[22px] transition-colors", !isActive("/chat") && "text-muted-foreground")}
               style={isActive("/chat") ? { color: petAccent || "hsl(var(--primary))" } : undefined}
               strokeWidth={isActive("/chat") ? 2.2 : 1.5}
-            />
-          </NavButton>
-
-          {/* Feed (Home) */}
-          <NavButton
-            onClick={() => handleNavClick("/feed")}
-            active={isActive("/feed")}
-            label={labels.feed}
-            accent={petAccent}
-          >
-            <Home
-              className={cn("w-[22px] h-[22px] transition-colors", !isActive("/feed") && "text-muted-foreground")}
-              style={isActive("/feed") ? { color: petAccent || "hsl(var(--primary))" } : undefined}
-              strokeWidth={isActive("/feed") ? 2.2 : 1.5}
             />
           </NavButton>
 
@@ -393,9 +374,9 @@ function NavButton({
       >
         {active && (
           <motion.div
-            layoutId="nav-active-pill"
-            className="absolute -inset-x-3 -inset-y-1 rounded-2xl"
-            style={{ backgroundColor: accent ? `${accent}15` : "hsl(var(--primary) / 0.06)" }}
+            layoutId="nav-active-dot"
+            className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full"
+            style={{ backgroundColor: accent || "hsl(var(--primary))" }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
           />
         )}
