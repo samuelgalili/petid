@@ -5,7 +5,8 @@ import {
   RotateCcw, Pencil, Save, Eye, Sparkles, Package, List, Utensils, Heart,
   Search, Shield, FlaskConical, Flame, Scale, TriangleAlert, Star, Zap,
   BadgeCheck, XCircle, Info, ChevronLeft, ChevronRight, ScanBarcode,
-  Plus, Trash2, AlertOctagon, Building2, Truck, ToggleLeft, ToggleRight
+  Plus, Trash2, AlertOctagon, Building2, Truck, ToggleLeft, ToggleRight,
+  Lightbulb, Leaf
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const DEFAULT_BUSINESS_ID = "cf941cc4-e1d1-4d7c-8122-a5df81a1e53c";
 
@@ -52,12 +54,15 @@ interface RedFlag {
   he: string;
   risk: string;
   severity: "critical" | "warning" | "info";
+  whyItMatters?: string;
+  suggestion?: string;
 }
 
 interface PositiveIngredient {
   name: string;
   he: string;
   benefit: string;
+  scientistTip?: string;
 }
 
 interface IngredientAnalysis {
@@ -908,32 +913,35 @@ const AdminQuickImport = () => {
               {/* Analysis Results */}
               {analysis && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-                  {/* Verdict Banner */}
+                  {/* Verdict Banner — Soft Palette */}
                   <div className={`p-5 rounded-2xl border-2 ${
                     analysis.verdict === "safe"
                       ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800"
                       : analysis.verdict === "caution"
-                        ? "bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800"
-                        : "bg-red-50 dark:bg-red-950/30 border-red-300 dark:border-red-800"
+                        ? "bg-[#FFF5EB] dark:bg-orange-950/20 border-[#F5D5B5] dark:border-orange-800"
+                        : "bg-[#FFF0E6] dark:bg-orange-950/30 border-[#F0C5A0] dark:border-orange-700"
                   }`}>
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
                         {analysis.verdict === "safe" ? (
                           <BadgeCheck size={28} className="text-emerald-600" />
                         ) : analysis.verdict === "caution" ? (
-                          <TriangleAlert size={28} className="text-amber-600" />
+                          <FlaskConical size={28} className="text-orange-500" />
                         ) : (
-                          <AlertOctagon size={28} className="text-red-600" />
+                          <FlaskConical size={28} className="text-orange-600" />
                         )}
                         <span className="text-xl font-extrabold">
-                          {analysis.verdict === "safe" ? "מוצר בטוח" : analysis.verdict === "caution" ? "נדרשת תשומת לב" : "נמצאו סיכונים"}
+                          {analysis.verdict === "safe" ? "מוצר בטוח ✨" : analysis.verdict === "caution" ? "כדאי לשים לב 🔍" : "יש מה לבדוק 🔬"}
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
-                        {analysis.qualityScore && (
+                        {analysis.qualityScore != null && (
                           <div className="text-center">
-                            <div className="text-3xl font-extrabold">{analysis.qualityScore}/10</div>
+                            <div className="text-3xl font-extrabold">{getProteinBoostedScore(analysis)}/10</div>
                             <div className="text-xs text-muted-foreground font-semibold">ציון איכות</div>
+                            {hasProteinBonus(analysis) && (
+                              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-100 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded-full">+1 חלבון איכותי</span>
+                            )}
                           </div>
                         )}
                         <div className="text-center">
@@ -948,31 +956,50 @@ const AdminQuickImport = () => {
                     )}
                   </div>
 
-                  {/* Red Flags */}
+                  {/* Findings — Soft Orange/Beige with Why + Suggestion */}
                   {analysis.redFlags.length > 0 && (
                     <div className="p-5 bg-card rounded-2xl shadow-lg border border-border">
-                      <h3 className="text-lg font-extrabold text-destructive flex items-center gap-2 mb-3">
-                        <XCircle size={20} /> דגלים אדומים ({analysis.redFlags.length})
+                      <h3 className="text-lg font-extrabold text-orange-600 dark:text-orange-400 flex items-center gap-2 mb-3">
+                        <FlaskConical size={20} /> ממצאים לתשומת לב ({analysis.redFlags.length})
                       </h3>
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         {analysis.redFlags.map((flag, i) => (
-                          <div key={i} className={`flex items-start gap-3 p-3 rounded-xl border ${
+                          <div key={i} className={`p-4 rounded-xl border ${
                             flag.severity === "critical"
-                              ? "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900"
+                              ? "bg-[#FFF0E6] dark:bg-orange-950/20 border-[#F0C5A0] dark:border-orange-800"
                               : flag.severity === "warning"
-                                ? "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900"
+                                ? "bg-[#FFF8F0] dark:bg-amber-950/15 border-[#F5DFC5] dark:border-amber-800"
                                 : "bg-muted/30 border-border"
                           }`}>
-                            <span className={`text-xs font-extrabold px-2 py-0.5 rounded-md shrink-0 mt-0.5 ${
-                              flag.severity === "critical" ? "bg-red-200 dark:bg-red-900 text-red-800 dark:text-red-200"
-                              : flag.severity === "warning" ? "bg-amber-200 dark:bg-amber-900 text-amber-800 dark:text-amber-200"
-                              : "bg-muted text-muted-foreground"
-                            }`}>
-                              {flag.severity === "critical" ? "קריטי" : flag.severity === "warning" ? "אזהרה" : "מידע"}
-                            </span>
-                            <div>
-                              <p className="font-bold text-base">{flag.he}</p>
-                              <p className="text-sm text-muted-foreground">{flag.risk}</p>
+                            <div className="flex items-start gap-3">
+                              <span className={`text-xs font-extrabold px-2 py-0.5 rounded-md shrink-0 mt-0.5 ${
+                                flag.severity === "critical" ? "bg-orange-200 dark:bg-orange-900 text-orange-800 dark:text-orange-200"
+                                : flag.severity === "warning" ? "bg-amber-200 dark:bg-amber-900 text-amber-800 dark:text-amber-200"
+                                : "bg-muted text-muted-foreground"
+                              }`}>
+                                {flag.severity === "critical" ? "חשוב" : flag.severity === "warning" ? "לידיעה" : "מידע"}
+                              </span>
+                              <div className="flex-1">
+                                <p className="font-bold text-base">{flag.he}</p>
+                                <p className="text-sm text-muted-foreground mt-0.5">{flag.risk}</p>
+                                {/* Why it matters */}
+                                <div className="mt-2 p-2.5 rounded-lg bg-[#FFF8F0] dark:bg-amber-950/20 border border-[#F5DFC5] dark:border-amber-800/50">
+                                  <p className="text-xs font-semibold text-orange-700 dark:text-orange-300 flex items-center gap-1.5">
+                                    <Lightbulb size={12} className="shrink-0" />
+                                    למה זה חשוב?
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                    {flag.whyItMatters || getDefaultWhyItMatters(flag.name, flag.severity)}
+                                  </p>
+                                </div>
+                                {/* Positive suggestion */}
+                                <div className="mt-1.5 flex items-start gap-1.5">
+                                  <Leaf size={12} className="text-emerald-500 mt-0.5 shrink-0" />
+                                  <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                                    {flag.suggestion || getDefaultSuggestion(flag.name)}
+                                  </p>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -980,7 +1007,7 @@ const AdminQuickImport = () => {
                     </div>
                   )}
 
-                  {/* Positives */}
+                  {/* Positives with Scientist Tip Pop-ups */}
                   {analysis.positives.length > 0 && (
                     <div className="p-5 bg-card rounded-2xl shadow-lg border border-border">
                       <h3 className="text-lg font-extrabold text-emerald-600 flex items-center gap-2 mb-3">
@@ -988,13 +1015,31 @@ const AdminQuickImport = () => {
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {analysis.positives.map((pos, i) => (
-                          <div key={i} className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900">
-                            <Zap size={14} className="text-emerald-500 shrink-0" />
-                            <div>
-                              <span className="font-bold text-sm">{pos.he}</span>
-                              <span className="text-xs text-muted-foreground mr-1">– {pos.benefit}</span>
-                            </div>
-                          </div>
+                          <Popover key={i}>
+                            <PopoverTrigger asChild>
+                              <button className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900 hover:bg-emerald-100/60 dark:hover:bg-emerald-950/40 transition-colors text-right w-full cursor-pointer">
+                                <Zap size={14} className="text-emerald-500 shrink-0" />
+                                <div className="flex-1">
+                                  <span className="font-bold text-sm">{pos.he}</span>
+                                  <span className="text-xs text-muted-foreground mr-1">– {pos.benefit}</span>
+                                </div>
+                                <Info size={12} className="text-muted-foreground shrink-0" />
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent side="top" className="w-72 p-3" dir="rtl">
+                              <div className="flex items-start gap-2">
+                                <div className="p-1.5 rounded-lg bg-[#FFF0E6] dark:bg-orange-950/30">
+                                  <FlaskConical size={14} className="text-orange-500" />
+                                </div>
+                                <div>
+                                  <p className="text-xs font-bold text-foreground mb-1">טיפ מהמדען 🔬</p>
+                                  <p className="text-xs text-muted-foreground leading-relaxed">
+                                    {pos.scientistTip || getDefaultScientistTip(pos.name)}
+                                  </p>
+                                </div>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
                         ))}
                       </div>
                     </div>
@@ -1007,6 +1052,14 @@ const AdminQuickImport = () => {
                         <FlaskConical size={20} /> ניתוח 5 הרכיבים הראשונים
                       </h3>
                       <p className="text-base leading-relaxed">{analysis.firstFiveAnalysis}</p>
+                      {hasProteinBonus(analysis) && (
+                        <div className="mt-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 flex items-center gap-2">
+                          <Sparkles size={16} className="text-emerald-500" />
+                          <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                            בונוס! חלבון איכותי מופיע ב-3 הרכיבים הראשונים — ציון האיכות קיבל +1
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </motion.div>
@@ -1452,6 +1505,67 @@ function parseGramsMin(amount: string): number | null {
 function parseGramsMax(amount: string): number | null {
   const matches = amount.match(/(\d+(?:\.\d+)?)/g);
   return matches && matches.length >= 2 ? Math.round(parseFloat(matches[1])) : parseGramsMin(amount);
+}
+
+// ── Scientist Helpers ──
+const HIGH_QUALITY_PROTEINS = [
+  "chicken", "salmon", "turkey", "lamb", "beef", "duck", "venison", "rabbit",
+  "deboned chicken", "deboned salmon", "fresh salmon", "fresh chicken",
+  "עוף", "סלמון", "הודו", "כבש", "בקר", "ברווז",
+];
+
+function hasProteinBonus(analysis: IngredientAnalysis): boolean {
+  if (!analysis.proteinSources || analysis.proteinSources.length === 0) return false;
+  const firstThree = analysis.proteinSources.slice(0, 3).map(s => s.toLowerCase());
+  return firstThree.some(p => HIGH_QUALITY_PROTEINS.some(hp => p.includes(hp)));
+}
+
+function getProteinBoostedScore(analysis: IngredientAnalysis): number {
+  const base = analysis.qualityScore || 0;
+  const bonus = hasProteinBonus(analysis) ? 1 : 0;
+  return Math.min(10, base + bonus);
+}
+
+function getDefaultWhyItMatters(ingredientName: string, severity: string): string {
+  const defaults: Record<string, string> = {
+    "BHA": "BHA הוא חומר משמר סינתטי שמחקרים מסוימים קישרו לסיכון בריאותי מוגבר בשימוש ארוך טווח.",
+    "BHT": "BHT הוא נוגד חמצון מלאכותי – קיימות חלופות טבעיות בטוחות יותר כמו טוקופרולים.",
+    "Xylitol": "קסיליטול רעיל מאוד לכלבים, גם בכמות קטנה. חובה לוודא שהמוצר לא מכיל אותו.",
+    "Ethoxyquin": "אתוקסיקווין הוא חומר משמר שנוי במחלוקת – רשויות רבות הגבילו את השימוש בו.",
+  };
+  return defaults[ingredientName] || (
+    severity === "critical"
+      ? "רכיב זה עלול להשפיע על בריאות חיית המחמד בטווח הארוך. מומלץ לבדוק חלופות."
+      : "רכיב שכדאי לשים לב אליו – לא בהכרח מסוכן, אבל יש חלופות איכותיות יותר."
+  );
+}
+
+function getDefaultSuggestion(ingredientName: string): string {
+  const suggestions: Record<string, string> = {
+    "BHA": "חפשו מוצרים עם משמרים טבעיים כמו ויטמין E (טוקופרולים) 🌿",
+    "BHT": "נסו לחפש מוצרים עם נוגדי חמצון טבעיים כמו רוזמרין 🌱",
+    "Xylitol": "בחרו חטיפים ללא ממתיקים מלאכותיים – בטוח יותר 🐾",
+    "corn": "שקלו מוצרים עם דגנים מלאים כמו אורז חום או שיבולת שועל 🌾",
+    "wheat": "חפשו חלופות ללא גלוטן כמו תפוח אדמה מתוק או חומוס 💛",
+    "soy": "נסו מוצרים עם מקורות חלבון בשריים במקום סויה 🥩",
+  };
+  return suggestions[ingredientName] || "חפשו מוצרים עם רכיבים טבעיים ומינימליים – פשוט יותר = בטוח יותר 🌿";
+}
+
+function getDefaultScientistTip(ingredientName: string): string {
+  const tips: Record<string, string> = {
+    "Omega-3": "ידעת? אומגה-3 זה כמו טיפול ספא לעור של חיית המחמד שלך! עוזר לפרווה בריאה ומבריקה ✨",
+    "omega-3": "ידעת? אומגה-3 זה כמו טיפול ספא לעור של חיית המחמד שלך! עוזר לפרווה בריאה ומבריקה ✨",
+    "Salmon": "סלמון הוא מקור חלבון מעולה ועשיר באומגה-3. מצוין לעור, פרווה ובריאות המפרקים 🐟",
+    "salmon": "סלמון הוא מקור חלבון מעולה ועשיר באומגה-3. מצוין לעור, פרווה ובריאות המפרקים 🐟",
+    "Chicken": "עוף הוא מקור חלבון רזה ונגיש – אידיאלי לבניית שרירים ותחזוקת אנרגיה 🍗",
+    "chicken": "עוף הוא מקור חלבון רזה ונגיש – אידיאלי לבניית שרירים ותחזוקת אנרגיה 🍗",
+    "Probiotics": "פרוביוטיקה תומכת במערכת העיכול ומחזקת את מערכת החיסון – כמו יוגורט לכלב שלך! 🦠",
+    "probiotics": "פרוביוטיקה תומכת במערכת העיכול ומחזקת את מערכת החיסון – כמו יוגורט לכלב שלך! 🦠",
+    "Glucosamine": "גלוקוזמין הוא שומר מפרקים – חשוב במיוחד לגזעים גדולים ולכלבים מבוגרים 🦴",
+    "glucosamine": "גלוקוזמין הוא שומר מפרקים – חשוב במיוחד לגזעים גדולים ולכלבים מבוגרים 🦴",
+  };
+  return tips[ingredientName] || `${ingredientName} הוא רכיב מעניין! לחצו כאן כדי ללמוד עוד על היתרונות שלו לחיית המחמד 🔬`;
 }
 
 export default AdminQuickImport;
