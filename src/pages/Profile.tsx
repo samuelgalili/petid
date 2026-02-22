@@ -42,6 +42,7 @@ import { ClaimsHistory } from "@/components/profile/ClaimsHistory";
 import { PuppyVaccineScheduler } from "@/components/profile/PuppyVaccineScheduler";
 import { PreventiveCareEngine } from "@/components/profile/PreventiveCareEngine";
 import { MedicalDocumentFAB } from "@/components/profile/MedicalDocumentFAB";
+import { DiscoveryCards } from "@/components/profile/DiscoveryCards";
 interface Pet {
   id: string;
   name: string;
@@ -550,6 +551,9 @@ const Profile = () => {
                     
                     {/* Health Score */}
                     <PetHealthScore pet={selectedPet} onViewDetails={() => setHealthBreakdownOpen(true)} refreshKey={healthRefreshKey} />
+                    
+                    {/* Discovery Cards — soft nudges */}
+                    <DiscoveryCards petId={selectedPet.id} petName={selectedPet.name} petType={selectedPet.type} />
                     
                     {/* Recovery Banner */}
                     <RecoveryBanner petId={selectedPet.id} petName={selectedPet.name} onOpenRecoveryProducts={() => setSmartRecCategory('health')} />
