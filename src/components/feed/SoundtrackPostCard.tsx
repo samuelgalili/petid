@@ -329,12 +329,12 @@ export const SoundtrackPostCard = ({
         )}
       </div>
 
-      {/* Bottom gradient — TikTok: very subtle, ~25% height */}
+      {/* Bottom gradient — refined for glassmorphism overlay */}
       <div
         className="absolute inset-x-0 bottom-0 z-10 pointer-events-none"
         style={{
-          height: "20%",
-          background: "linear-gradient(to top, rgba(0,0,0,0.35) 0%, transparent 100%)",
+          height: "35%",
+          background: "linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 50%, transparent 100%)",
         }}
       />
       <div
@@ -345,7 +345,7 @@ export const SoundtrackPostCard = ({
         }}
       />
 
-      {/* ── Pet-Aware Header ── */}
+      {/* ── Pet-Aware Header — minimal, clean ── */}
       <motion.div
         className="absolute top-3 z-40 flex items-center gap-2 px-3"
         style={{ [isRtl ? "right" : "left"]: "8px" }}
@@ -354,7 +354,6 @@ export const SoundtrackPostCard = ({
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.15 }}
       >
-        {/* User avatar */}
         <Avatar
           className="w-9 h-9 cursor-pointer"
           style={{
@@ -417,8 +416,7 @@ export const SoundtrackPostCard = ({
         </div>
       )}
 
-
-      {/* Quick Tip Overlay — contextual pet-specific tips */}
+      {/* Quick Tip Overlay */}
       <QuickTipOverlay
         caption={post.caption}
         activePet={activePet || null}
@@ -440,7 +438,7 @@ export const SoundtrackPostCard = ({
         )}
       </AnimatePresence>
 
-      {/* RIGHT SIDEBAR — aligned so avatar sits at ~50% screen height */}
+      {/* RIGHT SIDEBAR — clean, minimal */}
       <motion.div
         className="absolute right-3 z-50 flex flex-col items-center gap-4"
         style={{ bottom: '16px' }}
@@ -448,7 +446,7 @@ export const SoundtrackPostCard = ({
         animate={{ x: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
       >
-        {/* CTA — top of sidebar, above avatar */}
+        {/* CTA — top of sidebar */}
         {hasPromotion && (
           <motion.button
             onClick={(e) => {
@@ -551,7 +549,7 @@ export const SoundtrackPostCard = ({
           </span>
         </motion.button>
 
-        {/* Consult AI — "שאל את המוח" */}
+        {/* Consult AI */}
         <ConsultAIButton
           postCaption={post.caption}
           petName={activePet?.name}
@@ -576,262 +574,188 @@ export const SoundtrackPostCard = ({
         </motion.div>
       </motion.div>
 
-      {/* Product info — top-right, vertical */}
-      {(isProductPost || isCtaPost || isChallengePost) && (
-        <div className="absolute top-16 left-0 z-50 flex flex-col items-start gap-2" dir="ltr">
-          {/* Price — prominent top badge (hidden if unsafe) */}
-          {isProductPost && post.product_price && productSafety.level !== "unsafe" && (
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowSmartCheckout(true); }}
-              className="pl-3 pr-4 py-1.5 rounded-r-full text-white font-bold flex items-center gap-1.5 shadow-lg cursor-pointer hover:opacity-90 transition-opacity"
-              style={{ 
-                background: productSafety.level === "caution"
-                  ? "linear-gradient(135deg, rgba(245,158,11,0.85), rgba(217,119,6,0.65))"
-                  : "linear-gradient(135deg, rgba(255,59,92,0.85), rgba(255,59,92,0.65))",
-                backdropFilter: "blur(16px)",
-                fontSize: "15px"
-              }}
-            >
-              <ShoppingCart className="w-3.5 h-3.5" />
-              ₪{post.product_price}
-            </button>
-          )}
-          {/* Product Safety Warning */}
-          {isProductPost && (
-            <ProductSafetyBadge
-              productName={post.product_name || null}
-              productCaption={post.caption}
-              activePet={activePet || null}
-            />
-          )}
-          {isChallengePost && (
-            <div
-              className="pl-3 pr-4 py-1.5 rounded-r-full text-white font-semibold flex items-center gap-1.5 shadow-lg"
-              style={{ 
-                background: "linear-gradient(135deg, rgba(255,175,43,0.85), rgba(255,140,0,0.7))",
-                backdropFilter: "blur(16px)",
-                fontSize: "14px"
-              }}
-            >
-              <Trophy className="w-3.5 h-3.5" />
-              אתגר
-            </div>
-          )}
-          {isCtaPost && (
-            <div
-              className="pl-3 pr-4 py-1.5 rounded-r-full text-white font-semibold flex items-center gap-1.5 shadow-lg"
-              style={{ 
-                background: "linear-gradient(135deg, rgba(76,175,80,0.85), rgba(56,142,60,0.7))",
-                backdropFilter: "blur(16px)",
-                fontSize: "14px"
-              }}
-            >
-              <PawPrint className="w-3.5 h-3.5" />
-              {post.cta_text || "אימוץ"}
-            </div>
-          )}
-          {/* Weight + Sizes row */}
-          {isProductPost && (post.product_weight || post.product_sizes) && (
-            <div className="flex items-center gap-1 pl-1">
-              {post.product_weight && (
-                <span
-                  className="px-2.5 py-1 rounded-full text-white/90 text-[11px] font-medium"
-                  style={{ backgroundColor: "rgba(255,255,255,0.18)", backdropFilter: "blur(10px)" }}
+      {/* ═══ UNIFIED GLASSMORPHISM BOTTOM OVERLAY ═══ */}
+      {/* All metadata (price, safety, supplier, caption) in one floating panel */}
+      <motion.div
+        className="absolute inset-x-0 bottom-0 z-40"
+        initial={{ y: 30, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.25, type: "spring", stiffness: 300, damping: 30 }}
+      >
+        <div
+          className="mx-2 mb-2 rounded-2xl overflow-hidden"
+          style={{
+            background: "linear-gradient(135deg, rgba(0,0,0,0.45), rgba(0,0,0,0.3))",
+            backdropFilter: "blur(24px) saturate(180%)",
+            WebkitBackdropFilter: "blur(24px) saturate(180%)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+          }}
+          dir={isRtl ? "rtl" : "ltr"}
+        >
+          {/* Row 1: Product badges (price, safety, challenge) */}
+          {(isProductPost || isCtaPost || isChallengePost) && (
+            <div className="flex items-center gap-2 px-3 pt-3 pb-1 flex-wrap">
+              {isProductPost && post.product_price && productSafety.level !== "unsafe" && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowSmartCheckout(true); }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full cursor-pointer transition-opacity hover:opacity-80"
+                  style={{
+                    background: productSafety.level === "caution"
+                      ? "rgba(245,158,11,0.3)"
+                      : "rgba(255,59,92,0.3)",
+                    border: `1px solid ${productSafety.level === "caution" ? "rgba(245,158,11,0.4)" : "rgba(255,59,92,0.4)"}`,
+                  }}
                 >
-                  {post.product_weight}
+                  <ShoppingCart className="w-3.5 h-3.5 text-white" />
+                  <span className="text-white font-bold" style={{ fontSize: "14px" }}>₪{post.product_price}</span>
+                </button>
+              )}
+              {isProductPost && productSafety.level === "caution" && (
+                <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold"
+                  style={{ background: "rgba(245,158,11,0.25)", color: "#FCD34D", border: "1px solid rgba(245,158,11,0.3)" }}>
+                  ⚠ {productSafety.reason}
                 </span>
               )}
-              {post.product_sizes?.map((s) => (
-                <span
-                  key={s}
-                  className="px-2 py-1 rounded-full text-white/80 text-[11px] font-medium"
-                  style={{ backgroundColor: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)" }}
-                >
-                  {s}
+              {isProductPost && productSafety.level === "unsafe" && (
+                <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold"
+                  style={{ background: "rgba(239,68,68,0.25)", color: "#FCA5A5", border: "1px solid rgba(239,68,68,0.3)" }}>
+                  ⛔ {productSafety.reason}
                 </span>
-              ))}
+              )}
+              {isChallengePost && (
+                <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-semibold"
+                  style={{ background: "rgba(255,175,43,0.25)", color: "#FCD34D", border: "1px solid rgba(255,175,43,0.3)" }}>
+                  <Trophy className="w-3 h-3" /> אתגר
+                </span>
+              )}
+              {isCtaPost && (
+                <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-semibold"
+                  style={{ background: "rgba(76,175,80,0.25)", color: "#86EFAC", border: "1px solid rgba(76,175,80,0.3)" }}>
+                  <PawPrint className="w-3 h-3" /> {post.cta_text || "אימוץ"}
+                </span>
+              )}
+              {/* Weight + Sizes inline */}
+              {isProductPost && (post.product_weight || post.product_sizes) && (
+                <>
+                  {post.product_weight && (
+                    <span className="px-2 py-1 rounded-full text-white/70 text-[11px] font-medium"
+                      style={{ background: "rgba(255,255,255,0.1)" }}>
+                      {post.product_weight}
+                    </span>
+                  )}
+                  {post.product_sizes?.map((s) => (
+                    <span key={s} className="px-2 py-1 rounded-full text-white/60 text-[11px] font-medium"
+                      style={{ background: "rgba(255,255,255,0.08)" }}>
+                      {s}
+                    </span>
+                  ))}
+                </>
+              )}
             </div>
           )}
-        </div>
-      )}
 
-      {/* BOTTOM-LEFT info */}
-      <div className="absolute left-3 z-50 max-w-[72%] flex flex-col gap-0.5" style={{ bottom: '16px' }}>
-
-        {/* Username */}
-        <div className="flex items-center gap-1.5 mb-1">
-          <span
-            className="text-white font-bold cursor-pointer drop-shadow-lg"
-            style={{ fontSize: "16px" }}
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/user/${post.user_id}`);
-            }}
-          >
-            {post.user_profile?.full_name || "משתמש"}
-          </span>
-          {post.user_profile?.is_verified && (
-            <span className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-              <Check className="w-2.5 h-2.5 text-white" />
-            </span>
-          )}
-        </div>
-
-        {/* Caption */}
-        {post.caption && (
-          <p className="text-white drop-shadow-lg line-clamp-2" style={{ fontSize: "14px", lineHeight: 1.4 }}>
-            {post.caption}
-          </p>
-        )}
-
-        {/* Social proof */}
-        <SocialProofLabel postId={post.id} userId={userId} />
-
-        {/* Music / Sound bar */}
-        <div className="flex items-center gap-2 mt-2">
-          <Music className="w-4 h-4 text-white flex-shrink-0" />
-          <div className="overflow-hidden max-w-[200px]">
-            <p className="text-white whitespace-nowrap animate-marquee" style={{ fontSize: "14px" }}>
-              ♫ {post.music_title ? `${post.music_title} — ${post.music_artist || "PetID"}` : "PetID · Original Sound"} &nbsp;&nbsp;&nbsp; ♫ {post.music_title ? `${post.music_title} — ${post.music_artist || "PetID"}` : "PetID · Original Sound"}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Smart Action Bar ── */}
-      <motion.div
-        className="absolute inset-x-0 z-50 px-3"
-        style={{ bottom: hasMultipleImages ? "108px" : "86px" }}
-        dir={isRtl ? "rtl" : "ltr"}
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.35 }}
-      >
-        {isProductPost && post.product_price && productSafety.level !== "unsafe" ? (
-          <motion.button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowSmartCheckout(true);
-            }}
-            whileTap={{ scale: 0.96 }}
-            className="w-full flex items-center justify-between py-2.5 px-4 rounded-xl"
-            style={{
-              background: "linear-gradient(135deg, rgba(0,0,0,0.65), rgba(0,0,0,0.45))",
-              backdropFilter: "blur(16px)",
-              WebkitBackdropFilter: "blur(16px)",
-              border: "1px solid rgba(255,255,255,0.12)",
-            }}
-          >
-            <div className="flex items-center gap-2">
-              <ShoppingCart className="w-4 h-4 text-white" strokeWidth={1.5} />
-              <span className="text-white font-semibold" style={{ fontSize: "14px" }}>
-                {isRtl ? "קנייה ישירה" : "Direct Buy"}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
+          {/* Row 2: Username + Caption */}
+          <div className="px-3.5 py-2.5">
+            <div className="flex items-center gap-1.5 mb-1">
               <span
-                className="px-2 py-0.5 rounded-full text-[10px] font-bold"
-                style={{ background: "rgba(255,215,0,0.2)", color: "#FFD700" }}
+                className="text-white font-bold cursor-pointer"
+                style={{ fontSize: "14px" }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/user/${post.user_id}`);
+                }}
               >
-                <Crown className="w-3 h-3 inline mr-0.5" />
-                {isRtl ? "הנחת חבר" : "Member Price"}
+                {post.user_profile?.full_name || "משתמש"}
               </span>
-              <span className="text-white font-bold" style={{ fontSize: "16px" }}>
-                ₪{post.product_price}
+              {post.user_profile?.is_verified && (
+                <span className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                  <Check className="w-2.5 h-2.5 text-white" />
+                </span>
+              )}
+            </div>
+            {post.caption && (
+              <p className="text-white/90 line-clamp-2" style={{ fontSize: "13px", lineHeight: 1.5 }}>
+                {post.caption}
+              </p>
+            )}
+          </div>
+
+          {/* Row 3: Social proof + Music */}
+          <div className="px-3.5 pb-2.5 flex items-center justify-between">
+            <SocialProofLabel postId={post.id} userId={userId} />
+            <div className="flex items-center gap-1.5 max-w-[160px] overflow-hidden">
+              <Music className="w-3 h-3 text-white/50 flex-shrink-0" />
+              <span className="text-white/50 whitespace-nowrap text-[11px] truncate">
+                ♫ {post.music_title ? `${post.music_title}` : "Original Sound"}
               </span>
             </div>
-          </motion.button>
-        ) : isTipPost ? (
-          <div className="w-full flex flex-col gap-2">
-            {/* Smart shop link if tags match a category */}
-            {smartShopLink && (
+          </div>
+
+          {/* Row 4: Action bar */}
+          {isProductPost && post.product_price && productSafety.level !== "unsafe" ? (
+            <div className="px-3 pb-3">
               <motion.button
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate(smartShopLink.path);
+                  setShowSmartCheckout(true);
                 }}
                 whileTap={{ scale: 0.96 }}
                 className="w-full flex items-center justify-between py-2.5 px-4 rounded-xl"
                 style={{
-                  background: "linear-gradient(135deg, rgba(0,153,230,0.3), rgba(0,120,200,0.2))",
-                  backdropFilter: "blur(16px)",
-                  WebkitBackdropFilter: "blur(16px)",
-                  border: "1px solid rgba(0,153,230,0.3)",
+                  background: "rgba(255,255,255,0.1)",
+                  border: "1px solid rgba(255,255,255,0.15)",
                 }}
               >
                 <div className="flex items-center gap-2">
-                  <ShoppingCart className="w-4 h-4 text-blue-300" strokeWidth={1.5} />
-                  <span className="text-blue-200 font-semibold" style={{ fontSize: "13px" }}>
-                    {smartShopLink.label}
+                  <ShoppingCart className="w-4 h-4 text-white" strokeWidth={1.5} />
+                  <span className="text-white font-semibold" style={{ fontSize: "13px" }}>
+                    {isRtl ? "קנייה ישירה" : "Direct Buy"}
                   </span>
                 </div>
-                <span className="text-white/60 text-[11px]">
-                  {isRtl ? "צפה בחנות ←" : "View in shop →"}
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                    style={{ background: "rgba(255,215,0,0.2)", color: "#FFD700" }}>
+                    <Crown className="w-3 h-3 inline mr-0.5" />
+                    {isRtl ? "הנחת חבר" : "Member"}
+                  </span>
+                  <span className="text-white font-bold" style={{ fontSize: "15px" }}>₪{post.product_price}</span>
+                </div>
+              </motion.button>
+            </div>
+          ) : isTipPost ? (
+            <div className="px-3 pb-3 flex flex-col gap-2">
+              {smartShopLink && (
+                <motion.button
+                  onClick={(e) => { e.stopPropagation(); navigate(smartShopLink.path); }}
+                  whileTap={{ scale: 0.96 }}
+                  className="w-full flex items-center justify-between py-2 px-4 rounded-xl"
+                  style={{ background: "rgba(0,153,230,0.15)", border: "1px solid rgba(0,153,230,0.25)" }}
+                >
+                  <div className="flex items-center gap-2">
+                    <ShoppingCart className="w-3.5 h-3.5 text-blue-300" strokeWidth={1.5} />
+                    <span className="text-blue-200 font-semibold" style={{ fontSize: "12px" }}>{smartShopLink.label}</span>
+                  </div>
+                  <span className="text-white/50 text-[11px]">{isRtl ? "צפה ←" : "View →"}</span>
+                </motion.button>
+              )}
+              <motion.button
+                onClick={(e) => { e.stopPropagation(); handleAddToCarePlan(); }}
+                whileTap={{ scale: 0.96 }}
+                className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl"
+                style={{ background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.25)" }}
+              >
+                <CalendarPlus className="w-3.5 h-3.5 text-emerald-400" strokeWidth={1.5} />
+                <span className="text-emerald-300 font-semibold" style={{ fontSize: "12px" }}>
+                  {isRtl ? "הוסף לתוכנית הטיפול" : "Add to Care Plan"}
                 </span>
               </motion.button>
-            )}
-            <motion.button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleAddToCarePlan();
-              }}
-              whileTap={{ scale: 0.96 }}
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl"
-              style={{
-                background: "linear-gradient(135deg, rgba(34,197,94,0.25), rgba(22,163,74,0.2))",
-                backdropFilter: "blur(16px)",
-                WebkitBackdropFilter: "blur(16px)",
-                border: "1px solid rgba(34,197,94,0.3)",
-              }}
-            >
-              <CalendarPlus className="w-4 h-4 text-emerald-400" strokeWidth={1.5} />
-              <span className="text-emerald-300 font-semibold" style={{ fontSize: "13px" }}>
-                {isRtl ? "הוסף לתוכנית הטיפול" : "Add to Care Plan"}
-              </span>
-            </motion.button>
-          </div>
-        ) : null}
+            </div>
+          ) : null}
+        </div>
       </motion.div>
 
-      {/* ── Multi-Pet Match Indicator ── */}
-      {matchingPets.length > 0 && (
-        <motion.div
-          className="absolute inset-x-0 z-50 flex items-center justify-center"
-          style={{ bottom: hasMultipleImages ? "82px" : "60px" }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-        >
-          <div
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full"
-            style={{
-              background: "rgba(0,0,0,0.4)",
-              backdropFilter: "blur(12px)",
-              border: "1px solid rgba(255,255,255,0.1)",
-            }}
-            dir={isRtl ? "rtl" : "ltr"}
-          >
-            <PawPrint className="w-3 h-3 text-white/70" strokeWidth={1.5} />
-            <span className="text-white/80 font-medium" style={{ fontSize: "11px" }}>
-              {isRtl
-                ? `מתאים לפרופיל של ${matchingPets.map((p) => p.name).join(", ")}`
-                : `Matches ${matchingPets.map((p) => p.name).join(", ")}'s profile`}
-            </span>
-            <div className="flex -space-x-1.5">
-              {matchingPets.slice(0, 3).map((p) => (
-                <Avatar key={p.id} className="w-4 h-4 border border-white/30">
-                  {p.avatar_url ? (
-                    <AvatarImage src={p.avatar_url} className="object-cover" />
-                  ) : null}
-                  <AvatarFallback className="bg-white/20 text-[6px] text-white">
-                    {p.pet_type === "cat" ? "🐱" : "🐶"}
-                  </AvatarFallback>
-                </Avatar>
-              ))}
-            </div>
-          </div>
-        </motion.div>
-      )}
+      {/* Old standalone bars removed — now unified in glassmorphism overlay */}
 
       {hasMultipleImages && (
         <div className="absolute bottom-[100px] left-1/2 -translate-x-1/2 z-50 flex gap-1.5">

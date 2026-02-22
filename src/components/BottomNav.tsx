@@ -6,6 +6,11 @@ import {
   Dog,
   Cat,
   User,
+  Camera,
+  ScanLine,
+  MessageCircle,
+  X,
+  Home,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -15,74 +20,48 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { useAuth } from "@/hooks/useAuth";
-
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 
-// ── Translations ──────────────────────────────
 const navLabels = {
-  he: { home: "דף הבית", feed: "פיד", pets: "חיות", shop: "חנות", chat: "צ'אט", upload: "העלאה", story: "סטורי", post: "פוסט", document: "מסמך", switchPet: "החלף חיית מחמד", addPet: "הוסף חיית מחמד" },
-  en: { home: "Home", feed: "Feed", pets: "Pets", shop: "Shop", chat: "Chat", upload: "Upload", story: "Story", post: "Post", document: "Document", switchPet: "Switch Pet", addPet: "Add Pet" },
-  ar: { home: "الرئيسية", feed: "فيد", pets: "حيوانات", shop: "متجر", chat: "دردشة", upload: "رفع", story: "ستوري", post: "منشور", document: "مستند", switchPet: "تبديل الحيوان", addPet: "إضافة حيوان" },
+  he: { home: "בית", feed: "פיד", shop: "חנות", chat: "AI", addPet: "הוסף חיית מחמד" },
+  en: { home: "Home", feed: "Feed", shop: "Shop", chat: "AI", addPet: "Add Pet" },
+  ar: { home: "الرئيسية", feed: "فيد", shop: "متجر", chat: "AI", addPet: "إضافة حيوان" },
 };
 
-// ── NavItem ───────────────────────────────────
-interface NavItemProps {
-  icon: React.ReactNode;
-  isActive: boolean;
-  label: string;
-  onClick?: () => void;
-  accentColor?: string;
-}
+const quickActions = {
+  he: [
+    { key: "upload", icon: Camera, label: "העלאה", path: "/feed", color: "#FF6B8A" },
+    { key: "scan", icon: ScanLine, label: "סריקה", path: "/chat", color: "#4ECDC4" },
+    { key: "chat", icon: MessageCircle, label: "צ'אט", path: "/chat", color: "#7C5CFC" },
+  ],
+  en: [
+    { key: "upload", icon: Camera, label: "Upload", path: "/feed", color: "#FF6B8A" },
+    { key: "scan", icon: ScanLine, label: "Scan", path: "/chat", color: "#4ECDC4" },
+    { key: "chat", icon: MessageCircle, label: "Chat", path: "/chat", color: "#7C5CFC" },
+  ],
+  ar: [
+    { key: "upload", icon: Camera, label: "رفع", path: "/feed", color: "#FF6B8A" },
+    { key: "scan", icon: ScanLine, label: "مسح", path: "/chat", color: "#4ECDC4" },
+    { key: "chat", icon: MessageCircle, label: "دردشة", path: "/chat", color: "#7C5CFC" },
+  ],
+};
 
-const NavItem = ({ icon, isActive, label, onClick, accentColor }: NavItemProps) => (
-  <button
-    onClick={onClick}
-    className="flex flex-col items-center justify-center flex-1 py-1.5 active:opacity-60 transition-opacity"
-    aria-label={label}
-  >
-    <motion.div
-      whileTap={{ scale: 0.85 }}
-      transition={{ type: "spring", stiffness: 500, damping: 20 }}
-      className="relative flex flex-col items-center gap-0.5"
-    >
-      {isActive && (
-        <motion.div
-          layoutId="nav-active-pill"
-          className="absolute -inset-x-3 -inset-y-1 rounded-2xl"
-          style={{ backgroundColor: accentColor ? `${accentColor}15` : undefined }}
-          transition={{ type: "spring", stiffness: 400, damping: 30 }}
-        />
-      )}
-      <div className="relative z-10">{icon}</div>
-      <span
-        className={cn(
-          "text-[10px] font-medium relative z-10 transition-colors",
-          isActive ? "font-semibold" : "text-muted-foreground"
-        )}
-        style={isActive && accentColor ? { color: accentColor } : isActive ? { color: "hsl(var(--primary))" } : undefined}
-      >
-        {label}
-      </span>
-    </motion.div>
-  </button>
-);
-
-// ── Main Component ────────────────────────────
 const BottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { language, direction } = useLanguage();
   const isRtl = direction === "rtl";
   const labels = navLabels[language] || navLabels.he;
+  const actions = quickActions[language] || quickActions.he;
   const { activePet, pets, switchPet: contextSwitchPet } = usePetPreference();
 
   const [showPetSwitcher, setShowPetSwitcher] = useState(false);
+  const [showQuickActions, setShowQuickActions] = useState(false);
   const { unreadCount } = useRealtimeNotifications();
   const { user } = useAuth();
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
 
-  // Fetch user avatar
   useEffect(() => {
     if (!user) return;
     const fetchAvatar = async () => {
@@ -93,7 +72,6 @@ const BottomNav = () => {
     fetchAvatar();
   }, [user]);
 
-  // Listen for cross-pet safety events and show toast
   useEffect(() => {
     const handler = (e: Event) => {
       const { sickPets } = (e as CustomEvent).detail;
@@ -110,7 +88,7 @@ const BottomNav = () => {
     window.addEventListener("petid:fleet-safety", handler);
     return () => window.removeEventListener("petid:fleet-safety", handler);
   }, []);
-  // Long-press detection
+
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressTriggered = useRef(false);
 
@@ -118,16 +96,13 @@ const BottomNav = () => {
     longPressTriggered.current = false;
     longPressTimer.current = setTimeout(() => {
       longPressTriggered.current = true;
-      if (pets.length > 1) {
-        setShowPetSwitcher(true);
-      }
+      if (pets.length > 1) setShowPetSwitcher(true);
     }, 500);
   }, [pets.length]);
 
   const handlePetPointerUp = useCallback(() => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
     if (!longPressTriggered.current) {
-      // Short tap — open pet switcher if multiple pets, otherwise go home
       if (pets.length > 1) {
         setShowPetSwitcher(true);
       } else if (location.pathname === '/') {
@@ -147,16 +122,12 @@ const BottomNav = () => {
     setShowPetSwitcher(false);
   };
 
-  // Hidden routes
   const hiddenRoutes = ["/auth", "/signup", "/forgot-password", "/reset-password", "/splash", "/add-pet", "/onboarding", "/stories", "/story"];
   const isHiddenPage = hiddenRoutes.some((r) => location.pathname.startsWith(r));
-
   if (isHiddenPage) return null;
 
-  // Smart active detection
   const isActive = (path: string) => {
     const p = location.pathname;
-    if (path === "/profile-nav") return p === "/";
     if (path === "/") return p === "/";
     if (path === "/shop") return p === "/shop" || p.startsWith("/product/") || p === "/cart" || p === "/checkout" || p.startsWith("/shop/");
     if (path === "/feed") return p === "/feed" || p.startsWith("/post/") || p.startsWith("/story/") || p === "/explore";
@@ -172,148 +143,67 @@ const BottomNav = () => {
     }
   };
 
-  // Pet accent color for active states
   const petAccent = activePet?.theme_color || undefined;
-
-  // Species-specific fallback icon
   const PetFallbackIcon = activePet?.pet_type === "cat" ? Cat : Dog;
-
-  // ── Nav items ──
-  const navItems = [
-    {
-      key: "profile",
-      render: () => (
-        <NavItem
-          key="profile"
-          onClick={() => handleNavClick("/")}
-          isActive={isActive("/profile-nav")}
-          label={labels.home}
-          accentColor={petAccent}
-          icon={
-            <Avatar className="w-[24px] h-[24px]">
-              {userAvatarUrl ? (
-                <AvatarImage src={userAvatarUrl} className="object-cover" />
-              ) : null}
-              <AvatarFallback className="bg-muted text-muted-foreground">
-                <User className="w-3.5 h-3.5" strokeWidth={1.5} />
-              </AvatarFallback>
-            </Avatar>
-          }
-        />
-      ),
-    },
-    {
-      key: "feed",
-      render: () => (
-        <NavItem
-          key="feed"
-          onClick={() => handleNavClick("/feed")}
-          isActive={isActive("/feed")}
-          label={labels.feed}
-          accentColor={petAccent}
-          icon={
-            <Newspaper
-              className={cn("w-[22px] h-[22px] transition-colors", isActive("/feed") ? "" : "text-muted-foreground")}
-              style={isActive("/feed") && petAccent ? { color: petAccent } : isActive("/feed") ? { color: "hsl(var(--primary))" } : undefined}
-              strokeWidth={isActive("/feed") ? 2.2 : 1.5}
-            />
-          }
-        />
-      ),
-    },
-    {
-      key: "pets",
-      render: () => (
-        <div key="pets" className="flex flex-col items-center justify-center flex-1 relative">
-          <motion.div
-            whileTap={{ scale: 0.9 }}
-            onPointerDown={handlePetPointerDown}
-            onPointerUp={handlePetPointerUp}
-            onPointerLeave={handlePetPointerLeave}
-            className="relative -mt-7 flex flex-col items-center cursor-pointer select-none"
-          >
-            <div
-              className="w-[56px] h-[56px] rounded-full p-[3px] bg-background shadow-lg"
-              style={{
-                boxShadow: `0 0 0 3px ${petAccent || "hsl(209, 79%, 52%)"}, 0 2px 12px ${petAccent || "hsl(209, 79%, 52%)"}30`
-              }}
-            >
-              <Avatar className="w-full h-full border-[2.5px] border-background rounded-full">
-                {activePet?.avatar_url ? (
-                  <AvatarImage src={activePet.avatar_url} className="object-cover" />
-                ) : null}
-                <AvatarFallback className="bg-muted text-muted-foreground">
-                  <PetFallbackIcon className="w-6 h-6" strokeWidth={1.5} />
-                </AvatarFallback>
-              </Avatar>
-            </div>
-            {/* Multi-pet indicator */}
-            {pets.length > 1 && (
-              <span
-                className="absolute top-0 -right-0.5 w-3 h-3 rounded-full border-2 border-background z-20"
-                style={{ backgroundColor: petAccent || "hsl(var(--primary))" }}
-              />
-            )}
-          </motion.div>
-          <span
-            className={cn(
-              "text-[10px] font-semibold mt-1 transition-colors",
-              isActive("/") ? "" : "text-muted-foreground"
-            )}
-            style={{ color: isActive("/") ? (petAccent || "hsl(var(--primary))") : undefined }}
-          >
-            {activePet?.name || labels.pets}
-          </span>
-        </div>
-      ),
-    },
-    {
-      key: "shop",
-      render: () => (
-        <NavItem
-          key="shop"
-          onClick={() => handleNavClick("/shop")}
-          isActive={isActive("/shop")}
-          label={labels.shop}
-          accentColor={petAccent}
-          icon={
-            <ShoppingBag
-              className={cn("w-[22px] h-[22px] transition-colors", isActive("/shop") ? "" : "text-muted-foreground")}
-              style={isActive("/shop") && petAccent ? { color: petAccent } : isActive("/shop") ? { color: "hsl(var(--primary))" } : undefined}
-              strokeWidth={isActive("/shop") ? 2.2 : 1.5}
-            />
-          }
-        />
-      ),
-    },
-    {
-      key: "chat",
-      render: () => (
-        <NavItem
-          key="chat"
-          onClick={() => handleNavClick("/chat")}
-          isActive={isActive("/chat")}
-          label={labels.chat}
-          accentColor={petAccent}
-          icon={
-            <Sparkles
-              className={cn("w-[22px] h-[22px] transition-colors", isActive("/chat") ? "" : "text-muted-foreground")}
-              style={isActive("/chat") && petAccent ? { color: petAccent } : isActive("/chat") ? { color: "hsl(var(--primary))" } : undefined}
-              strokeWidth={isActive("/chat") ? 2.2 : 1.5}
-            />
-          }
-        />
-      ),
-    },
-  ];
-
-  const orderedItems = isRtl ? navItems : [...navItems].reverse();
 
   return (
     <>
-      
+      {/* ── Quick Actions Radial Menu ── */}
+      <AnimatePresence>
+        {showQuickActions && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[9997] bg-black/30 backdrop-blur-sm"
+              onClick={() => setShowQuickActions(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.5, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.5, y: 30 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              className="fixed bottom-[80px] inset-x-0 mx-auto w-fit z-[9999] flex items-end gap-4 px-6 py-4"
+            >
+              {actions.map((action, i) => {
+                const Icon = action.icon;
+                return (
+                  <motion.button
+                    key={action.key}
+                    initial={{ opacity: 0, y: 20, scale: 0.7 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 20, scale: 0.7 }}
+                    transition={{ delay: i * 0.06, type: "spring", stiffness: 500, damping: 25 }}
+                    whileTap={{ scale: 0.85 }}
+                    onClick={() => {
+                      setShowQuickActions(false);
+                      navigate(action.path);
+                    }}
+                    className="flex flex-col items-center gap-2"
+                  >
+                    <div
+                      className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg"
+                      style={{
+                        background: `linear-gradient(135deg, ${action.color}30, ${action.color}15)`,
+                        border: `1.5px solid ${action.color}40`,
+                        backdropFilter: "blur(12px)",
+                      }}
+                    >
+                      <Icon className="w-6 h-6" style={{ color: action.color }} strokeWidth={1.5} />
+                    </div>
+                    <span className="text-[11px] font-semibold text-white drop-shadow-md">
+                      {action.label}
+                    </span>
+                  </motion.button>
+                );
+              })}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
-      {/* ── Pet Switcher Mini-Menu ──────────── */}
+      {/* ── Pet Switcher ── */}
       <AnimatePresence>
         {showPetSwitcher && (
           <>
@@ -333,7 +223,6 @@ const BottomNav = () => {
               dir={direction}
             >
               <div className="flex items-center gap-4">
-                {/* Add Pet */}
                 <motion.button
                   whileTap={{ scale: 0.9 }}
                   onClick={() => { setShowPetSwitcher(false); navigate('/add-pet'); }}
@@ -342,12 +231,8 @@ const BottomNav = () => {
                   <div className="w-14 h-14 rounded-full border-2 border-dashed border-muted-foreground/40 flex items-center justify-center">
                     <Plus className="w-6 h-6 text-muted-foreground" strokeWidth={1.5} />
                   </div>
-                  <span className="text-[11px] font-medium text-muted-foreground">
-                    {labels.addPet}
-                  </span>
+                  <span className="text-[11px] font-medium text-muted-foreground">{labels.addPet}</span>
                 </motion.button>
-
-                {/* Pet list */}
                 {pets.map((pet) => (
                   <motion.button
                     key={pet.id}
@@ -360,8 +245,8 @@ const BottomNav = () => {
                         "w-14 h-14 rounded-full p-[2.5px] transition-all",
                         pet.id === activePet?.id ? "ring-[2.5px]" : "ring-1 ring-border"
                       )}
-                      style={pet.id === activePet?.id 
-                        ? { boxShadow: `0 0 0 2.5px ${pet.theme_color || "hsl(var(--primary))"}` } 
+                      style={pet.id === activePet?.id
+                        ? { boxShadow: `0 0 0 2.5px ${pet.theme_color || "hsl(var(--primary))"}` }
                         : undefined
                       }
                     >
@@ -386,28 +271,182 @@ const BottomNav = () => {
         )}
       </AnimatePresence>
 
-
-
-
-      {/* ── Bottom Navigation Bar ─────────────── */}
+      {/* ── Bottom Navigation Bar ── */}
       <nav
         className={cn(
           "fixed bottom-0 left-0 right-0 z-[9999]",
           "bg-background/80 dark:bg-[hsl(0,0%,7%)]/80",
           "backdrop-blur-xl backdrop-saturate-150",
-          "border-t border-border/40",
+          "border-t border-border/30",
           "pb-[env(safe-area-inset-bottom)]"
         )}
         role="navigation"
         aria-label={isRtl ? "ניווט ראשי" : "Main navigation"}
         dir={direction}
       >
-        <div className="flex justify-around items-end w-full max-w-lg mx-auto h-[60px]">
-          {orderedItems.map((item) => item.render())}
+        <div className="flex justify-around items-center w-full max-w-lg mx-auto h-[64px]">
+          {/* Home */}
+          <NavButton
+            onClick={() => handleNavClick("/")}
+            active={isActive("/")}
+            label={labels.home}
+            accent={petAccent}
+          >
+            <Home
+              className={cn("w-[22px] h-[22px] transition-colors", !isActive("/") && "text-muted-foreground")}
+              style={isActive("/") ? { color: petAccent || "hsl(var(--primary))" } : undefined}
+              strokeWidth={isActive("/") ? 2.2 : 1.5}
+            />
+          </NavButton>
+
+          {/* Feed */}
+          <NavButton
+            onClick={() => handleNavClick("/feed")}
+            active={isActive("/feed")}
+            label={labels.feed}
+            accent={petAccent}
+          >
+            <Newspaper
+              className={cn("w-[22px] h-[22px] transition-colors", !isActive("/feed") && "text-muted-foreground")}
+              style={isActive("/feed") ? { color: petAccent || "hsl(var(--primary))" } : undefined}
+              strokeWidth={isActive("/feed") ? 2.2 : 1.5}
+            />
+          </NavButton>
+
+          {/* Center: Pet Avatar + Quick Actions */}
+          <div className="flex flex-col items-center justify-center relative">
+            <motion.div
+              whileTap={{ scale: 0.9 }}
+              onPointerDown={handlePetPointerDown}
+              onPointerUp={handlePetPointerUp}
+              onPointerLeave={handlePetPointerLeave}
+              className="relative -mt-6 flex flex-col items-center cursor-pointer select-none"
+            >
+              <div
+                className="w-[52px] h-[52px] rounded-full p-[2.5px] bg-background shadow-lg"
+                style={{
+                  boxShadow: `0 0 0 2.5px ${petAccent || "hsl(209, 79%, 52%)"}, 0 2px 12px ${petAccent || "hsl(209, 79%, 52%)"}30`
+                }}
+              >
+                <Avatar className="w-full h-full border-[2px] border-background rounded-full">
+                  {activePet?.avatar_url ? (
+                    <AvatarImage src={activePet.avatar_url} className="object-cover" />
+                  ) : null}
+                  <AvatarFallback className="bg-muted text-muted-foreground">
+                    <PetFallbackIcon className="w-5 h-5" strokeWidth={1.5} />
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+              {pets.length > 1 && (
+                <span
+                  className="absolute top-0 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-background z-20"
+                  style={{ backgroundColor: petAccent || "hsl(var(--primary))" }}
+                />
+              )}
+            </motion.div>
+            <span
+              className="text-[10px] font-semibold mt-0.5 transition-colors truncate max-w-[56px]"
+              style={{ color: petAccent || "hsl(var(--primary))" }}
+            >
+              {activePet?.name || ""}
+            </span>
+          </div>
+
+          {/* Shop */}
+          <NavButton
+            onClick={() => handleNavClick("/shop")}
+            active={isActive("/shop")}
+            label={labels.shop}
+            accent={petAccent}
+          >
+            <ShoppingBag
+              className={cn("w-[22px] h-[22px] transition-colors", !isActive("/shop") && "text-muted-foreground")}
+              style={isActive("/shop") ? { color: petAccent || "hsl(var(--primary))" } : undefined}
+              strokeWidth={isActive("/shop") ? 2.2 : 1.5}
+            />
+          </NavButton>
+
+          {/* Quick Actions FAB */}
+          <NavButton
+            onClick={() => setShowQuickActions((v) => !v)}
+            active={showQuickActions}
+            label=""
+            accent={petAccent}
+            isFab
+          >
+            <motion.div
+              animate={{ rotate: showQuickActions ? 45 : 0 }}
+              transition={{ type: "spring", stiffness: 400, damping: 20 }}
+              className={cn(
+                "w-10 h-10 rounded-full flex items-center justify-center transition-colors",
+                showQuickActions
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-primary/10 text-primary"
+              )}
+            >
+              {showQuickActions ? (
+                <X className="w-5 h-5" strokeWidth={2} />
+              ) : (
+                <Plus className="w-5 h-5" strokeWidth={2} />
+              )}
+            </motion.div>
+          </NavButton>
         </div>
       </nav>
     </>
   );
 };
+
+/* ── NavButton ── */
+function NavButton({
+  children,
+  onClick,
+  active,
+  label,
+  accent,
+  isFab = false,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  active: boolean;
+  label: string;
+  accent?: string;
+  isFab?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex flex-col items-center justify-center flex-1 py-1.5 active:opacity-60 transition-opacity"
+      aria-label={label}
+    >
+      <motion.div
+        whileTap={{ scale: 0.85 }}
+        transition={{ type: "spring", stiffness: 500, damping: 20 }}
+        className="relative flex flex-col items-center gap-0.5"
+      >
+        {active && !isFab && (
+          <motion.div
+            layoutId="nav-active-pill"
+            className="absolute -inset-x-3 -inset-y-1 rounded-2xl"
+            style={{ backgroundColor: accent ? `${accent}15` : "hsl(var(--primary) / 0.06)" }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          />
+        )}
+        <div className="relative z-10">{children}</div>
+        {label && !isFab && (
+          <span
+            className={cn(
+              "text-[10px] font-medium relative z-10 transition-colors",
+              active ? "font-semibold" : "text-muted-foreground"
+            )}
+            style={active ? { color: accent || "hsl(var(--primary))" } : undefined}
+          >
+            {label}
+          </span>
+        )}
+      </motion.div>
+    </button>
+  );
+}
 
 export default BottomNav;
