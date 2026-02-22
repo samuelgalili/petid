@@ -2,19 +2,13 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Heart,
   MessageCircle,
-  User,
-  Check,
   ShoppingCart,
-  Plus,
   Music,
   Share2,
   Trophy,
   PawPrint,
   CalendarPlus,
-  Dog,
-  Cat,
   Crown,
   ShieldCheck,
   ShieldAlert,
@@ -34,7 +28,6 @@ import { SmartCheckoutSheet } from "@/components/feed/SmartCheckoutSheet";
 import { QuickTipOverlay } from "@/components/feed/QuickTipOverlay";
 import { ProductSafetyBadge, useProductSafety } from "@/components/feed/ProductSafetyBadge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { SocialProofLabel } from "@/components/feed";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import type { FeedPost } from "@/hooks/useSoundtrackFeed";
@@ -359,76 +352,7 @@ export const SoundtrackPostCard = ({
         }}
       />
 
-      {/* ── Pet-Aware Header — minimal, clean ── */}
-      <motion.div
-        className="absolute top-3 z-40 flex items-center gap-2 px-3"
-        style={{ [isRtl ? "right" : "left"]: "8px" }}
-        dir={isRtl ? "rtl" : "ltr"}
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.15 }}
-      >
-        <Avatar
-          className="w-9 h-9 cursor-pointer"
-          style={{
-            border: "2px solid white",
-            boxShadow: "0 2px 10px rgba(0,0,0,0.4)",
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(`/user/${post.user_id}`);
-          }}
-        >
-          <AvatarImage
-            src={post.user_profile?.avatar_url || ""}
-            className="object-cover"
-          />
-          <AvatarFallback className="bg-white/20">
-            <User className="w-4 h-4 text-white" />
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex flex-col">
-          <span
-            className="text-white font-bold drop-shadow-lg leading-tight cursor-pointer"
-            style={{ fontSize: "14px", textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/user/${post.user_id}`);
-            }}
-          >
-            {post.user_profile?.full_name || (isRtl ? "משתמש" : "User")}
-          </span>
-          {activePet && (
-            <span
-              className="flex items-center gap-1.5 text-white/90 drop-shadow-lg"
-              style={{ fontSize: "12px", textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}
-            >
-              <Avatar className="w-4 h-4" style={{ border: "1px solid rgba(255,255,255,0.5)" }}>
-                {activePet.avatar_url ? (
-                  <AvatarImage src={activePet.avatar_url} className="object-cover" />
-                ) : null}
-                <AvatarFallback className="bg-white/20 text-[7px]">
-                  {activePet.pet_type === "cat" ? "🐱" : "🐶"}
-                </AvatarFallback>
-              </Avatar>
-              {isRtl ? `עבור ${activePet.name}` : `For ${activePet.name}`}
-            </span>
-          )}
-        </div>
-      </motion.div>
-
-      {activePet && (
-        <div className="absolute top-[68px] right-3 z-40">
-          <RelevanceBadge
-            caption={post.caption}
-            petName={activePet.name}
-            petBreed={activePet.breed}
-            petType={activePet.pet_type}
-            petAgeWeeks={activePet.ageWeeks}
-            medicalConditions={activePet.medical_conditions}
-          />
-        </div>
-      )}
+      {/* Header removed — focus on pet content only */}
 
       {/* Quick Tip Overlay */}
       <QuickTipOverlay
@@ -488,66 +412,16 @@ export const SoundtrackPostCard = ({
         </motion.div>
       )}
 
-      {/* RIGHT SIDEBAR — clean, minimal */}
+      {/* RIGHT SIDEBAR — zen minimal: 3 icons only */}
       <motion.div
-        className="absolute right-3 z-50 flex flex-col items-center gap-4"
-        style={{ bottom: '16px' }}
+        className="absolute right-3 z-50 flex flex-col items-center gap-5"
+        style={{ bottom: '140px' }}
         initial={{ x: 40, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
+        animate={{ x: 0, opacity: 0.6 }}
+        whileHover={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
       >
-        {/* CTA — top of sidebar */}
-        {hasPromotion && (
-          <motion.button
-            onClick={(e) => {
-              e.stopPropagation();
-              isProductPost ? handleAddToCart() : handleCtaClick();
-            }}
-            whileTap={{ scale: 0.85 }}
-            animate={{ scale: [1, 1.15, 1] }}
-            transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
-            className="w-12 h-12 rounded-full flex items-center justify-center text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.6)]"
-          >
-            {isProductPost ? (
-              <ShoppingCart className="w-7 h-7" strokeWidth={1.5} />
-            ) : isChallengePost ? (
-              <Trophy className="w-7 h-7" strokeWidth={1.5} />
-            ) : (
-              <PawPrint className="w-7 h-7" strokeWidth={1.5} />
-            )}
-          </motion.button>
-        )}
-
-        {/* Avatar */}
-        <div className="relative mb-1">
-          <Avatar
-            className="w-12 h-12 cursor-pointer border-2 border-white"
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/user/${post.user_id}`);
-            }}
-          >
-            <AvatarImage src={post.user_profile?.avatar_url || ""} className="object-cover" />
-            <AvatarFallback className="bg-white/20">
-              <User className="w-5 h-5 text-white" />
-            </AvatarFallback>
-          </Avatar>
-          {!post.is_following && post.user_id !== userId && (
-            <motion.button
-              onClick={(e) => {
-                e.stopPropagation();
-                onFollow(post.user_id);
-              }}
-              className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: "#FF3B5C" }}
-              whileTap={{ scale: 0.85 }}
-            >
-              <Plus className="w-3 h-3 text-white" strokeWidth={3} />
-            </motion.button>
-          )}
-        </div>
-
-        {/* Like */}
+        {/* Like (Paw) */}
         <motion.button
           onClick={(e) => {
             e.stopPropagation();
@@ -557,19 +431,19 @@ export const SoundtrackPostCard = ({
           whileTap={{ scale: 0.85 }}
           className="flex flex-col items-center gap-1"
         >
-          <Heart
+          <PawPrint
             className={cn(
-              "w-8 h-8 drop-shadow-lg",
-              post.is_liked ? "fill-red-500 text-red-500" : "text-white"
+              "w-7 h-7 drop-shadow-lg transition-all",
+              post.is_liked ? "fill-white text-white opacity-100" : "text-white/80"
             )}
             strokeWidth={1.5}
           />
-          <span className="text-white font-semibold drop-shadow-lg" style={{ fontSize: "12px" }}>
+          <span className="text-white/80 font-medium drop-shadow-lg" style={{ fontSize: "11px" }}>
             {formatCount(post.likes_count)}
           </span>
         </motion.button>
 
-        {/* Comments */}
+        {/* Comment */}
         <motion.button
           onClick={(e) => {
             e.stopPropagation();
@@ -578,8 +452,8 @@ export const SoundtrackPostCard = ({
           whileTap={{ scale: 0.85 }}
           className="flex flex-col items-center gap-1"
         >
-          <MessageCircle className="w-8 h-8 text-white drop-shadow-lg" strokeWidth={1.5} />
-          <span className="text-white font-semibold drop-shadow-lg" style={{ fontSize: "12px" }}>
+          <MessageCircle className="w-7 h-7 text-white/80 drop-shadow-lg" strokeWidth={1.5} />
+          <span className="text-white/80 font-medium drop-shadow-lg" style={{ fontSize: "11px" }}>
             {formatCount(post.comments_count)}
           </span>
         </motion.button>
@@ -593,35 +467,8 @@ export const SoundtrackPostCard = ({
           whileTap={{ scale: 0.85 }}
           className="flex flex-col items-center gap-1"
         >
-          <Share2 className="w-8 h-8 text-white drop-shadow-lg" strokeWidth={1.5} />
-          <span className="text-white font-semibold drop-shadow-lg" style={{ fontSize: "12px" }}>
-            {formatCount(Math.max(Math.floor(post.likes_count * 0.3), 0))}
-          </span>
+          <Share2 className="w-7 h-7 text-white/80 drop-shadow-lg" strokeWidth={1.5} />
         </motion.button>
-
-        {/* Consult AI */}
-        <ConsultAIButton
-          postCaption={post.caption}
-          petName={activePet?.name}
-          petBreed={activePet?.breed}
-          petType={activePet?.pet_type || "dog"}
-        />
-
-        {/* Spinning disc */}
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-          className="rounded-full overflow-hidden bg-neutral-800"
-          style={{ width: "36px", height: "36px", border: "4px solid rgba(50,50,50,0.9)" }}
-        >
-          {post.user_profile?.avatar_url ? (
-            <img src={post.user_profile.avatar_url} alt="" className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Music className="w-3.5 h-3.5 text-white/60" />
-            </div>
-          )}
-        </motion.div>
       </motion.div>
 
       {/* ═══ UNIFIED GLASSMORPHISM BOTTOM OVERLAY ═══ */}
@@ -707,59 +554,34 @@ export const SoundtrackPostCard = ({
             </div>
           )}
 
-          {/* Row 2: Username + Caption */}
+          {/* Pet name + Caption — clean, small, bottom-left feel */}
           <div className="px-3.5 py-2.5">
-            <div className="flex items-center gap-1.5 mb-1">
-              <span
-                className="text-white font-bold cursor-pointer"
-                style={{ fontSize: "14px" }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/user/${post.user_id}`);
-                }}
-              >
-                {post.user_profile?.full_name || "משתמש"}
-              </span>
-              {post.user_profile?.is_verified && (
-                <span className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                  <Check className="w-2.5 h-2.5 text-white" />
+            <div className="flex items-center gap-2 mb-1">
+              {activePet && (
+                <span
+                  className="text-white/90 font-semibold drop-shadow-lg"
+                  style={{ fontSize: "13px" }}
+                >
+                  {activePet.name}
                 </span>
+              )}
+              {/* Scientist pill — small, near pet name */}
+              {activePet && (
+                <RelevanceBadge
+                  caption={post.caption}
+                  petName={activePet.name}
+                  petBreed={activePet.breed}
+                  petType={activePet.pet_type}
+                  petAgeWeeks={activePet.ageWeeks}
+                  medicalConditions={activePet.medical_conditions}
+                />
               )}
             </div>
             {post.caption && (
-              <div className="flex items-start gap-1.5">
-                <p className="text-white/90 line-clamp-2 flex-1" style={{ fontSize: "13px", lineHeight: 1.5 }}>
-                  {post.caption}
-                </p>
-                {/* Minimalist translation toggle */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // Future: toggle between original/translated caption
-                    import("sonner").then(({ toast }) => toast.info(isRtl ? "תרגום אוטומטי בקרוב" : "Auto-translate coming soon"));
-                  }}
-                  className="flex-shrink-0 mt-0.5 w-6 h-6 rounded-full flex items-center justify-center"
-                  style={{
-                    background: "rgba(255,255,255,0.1)",
-                    border: "1px solid rgba(255,255,255,0.15)",
-                  }}
-                  aria-label="Translate"
-                >
-                  <span className="text-[9px] font-bold text-white/70">A/א</span>
-                </button>
-              </div>
+              <p className="text-white/70 line-clamp-2" style={{ fontSize: "12px", lineHeight: 1.4 }}>
+                {post.caption}
+              </p>
             )}
-          </div>
-
-          {/* Row 3: Social proof + Music */}
-          <div className="px-3.5 pb-2.5 flex items-center justify-between">
-            <SocialProofLabel postId={post.id} userId={userId} />
-            <div className="flex items-center gap-1.5 max-w-[160px] overflow-hidden">
-              <Music className="w-3 h-3 text-white/50 flex-shrink-0" />
-              <span className="text-white/50 whitespace-nowrap text-[11px] truncate">
-                ♫ {post.music_title ? `${post.music_title}` : "Original Sound"}
-              </span>
-            </div>
           </div>
 
           {/* Row 4: Action bar */}
