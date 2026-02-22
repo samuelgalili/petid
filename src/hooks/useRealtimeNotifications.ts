@@ -17,6 +17,7 @@ export const useRealtimeNotifications = () => {
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [hasNewGlow, setHasNewGlow] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -46,6 +47,10 @@ export const useRealtimeNotifications = () => {
 
           // Update unread count
           setUnreadCount(prev => prev + 1);
+
+          // Trigger glow
+          setHasNewGlow(true);
+          setTimeout(() => setHasNewGlow(false), 3000);
           
           // Add to notifications list
           setNotifications(prev => [newNotification, ...prev]);
@@ -125,8 +130,10 @@ export const useRealtimeNotifications = () => {
   return {
     unreadCount,
     notifications,
+    hasNewGlow,
     markAsRead,
     markAllAsRead,
     refreshUnreadCount: fetchUnreadCount,
+    clearGlow: () => setHasNewGlow(false),
   };
 };
