@@ -16,6 +16,8 @@ import {
   Dog,
   Cat,
   Crown,
+  ShieldCheck,
+  ShieldAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -423,20 +425,56 @@ export const SoundtrackPostCard = ({
         isActive={isActive}
       />
 
-      {/* Double-tap heart burst */}
+      {/* Double-tap paw burst */}
       <AnimatePresence>
         {showHeartBurst && (
           <motion.div
             className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
-            initial={{ scale: 0, opacity: 1 }}
-            animate={{ scale: 1.2, opacity: 0 }}
+            initial={{ scale: 0, opacity: 1, rotate: -20 }}
+            animate={{ scale: [0, 1.3, 1.1], opacity: [1, 1, 0], rotate: [-20, 5, 0] }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <Heart className="w-24 h-24 text-red-500 fill-red-500 drop-shadow-2xl" />
+            <PawPrint className="w-24 h-24 text-white fill-white drop-shadow-2xl" strokeWidth={0.5} />
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* SafeScore floating overlay for product posts */}
+      {isProductPost && activePet && (
+        <motion.div
+          className="absolute top-14 z-40 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl"
+          style={{
+            [isRtl ? "left" : "right"]: "12px",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            background: productSafety.level === "safe" 
+              ? "rgba(34,197,94,0.2)" 
+              : productSafety.level === "caution"
+              ? "rgba(245,158,11,0.2)"
+              : "rgba(239,68,68,0.2)",
+            border: `1px solid ${
+              productSafety.level === "safe" 
+                ? "rgba(34,197,94,0.3)" 
+                : productSafety.level === "caution"
+                ? "rgba(245,158,11,0.3)"
+                : "rgba(239,68,68,0.3)"
+            }`,
+          }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.4, type: "spring", stiffness: 300 }}
+        >
+          {productSafety.level === "safe" ? (
+            <ShieldCheck className="w-3.5 h-3.5 text-green-400" strokeWidth={2} />
+          ) : (
+            <ShieldAlert className="w-3.5 h-3.5 text-amber-400" strokeWidth={2} />
+          )}
+          <span className="text-[10px] font-semibold text-white">
+            {productSafety.level === "safe" ? "בטוח" : productSafety.level === "caution" ? "זהירות" : "לא מתאים"}
+          </span>
+        </motion.div>
+      )}
 
       {/* RIGHT SIDEBAR — clean, minimal */}
       <motion.div
