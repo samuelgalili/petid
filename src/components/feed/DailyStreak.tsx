@@ -32,18 +32,18 @@ export const DailyStreak = () => {
 
   if (streak < 2) return null;
 
-  return (
-    <motion.div
-      initial={{ scale: 0, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ type: "spring", stiffness: 500, damping: 25, delay: 0.5 }}
-      className="flex items-center gap-1 px-2.5 py-1 rounded-full text-white text-xs font-bold shadow-lg"
-      style={{
-        background: "linear-gradient(135deg, #FF6B35, #FF8C42)",
-      }}
-    >
-      <span>🔥</span>
-      <span>{streak} ימים</span>
-    </motion.div>
-  );
+  return;
+
+
+
+
+
+
+
+
+
+
+
+
+
 };
