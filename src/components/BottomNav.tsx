@@ -1,11 +1,9 @@
 import {
   ShoppingBag,
-  Newspaper,
   Sparkles,
   Plus,
   Dog,
   Cat,
-  User,
   Camera,
   ScanLine,
   MessageCircle,
@@ -13,21 +11,19 @@ import {
   Home,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
-import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { usePetButtonAnimation, PetButtonOverlay } from "@/components/ui/PetButtonAnimations";
 
 const navLabels = {
-  he: { home: "בית", feed: "פיד", shop: "חנות", chat: "AI", addPet: "הוסף חיית מחמד" },
-  en: { home: "Home", feed: "Feed", shop: "Shop", chat: "AI", addPet: "Add Pet" },
-  ar: { home: "الرئيسية", feed: "فيد", shop: "متجر", chat: "AI", addPet: "إضافة حيوان" },
+  he: { feed: "פיד", shop: "חנות", chat: "AI", addPet: "הוסף חיית מחמד" },
+  en: { feed: "Feed", shop: "Shop", chat: "AI", addPet: "Add Pet" },
+  ar: { feed: "فيد", shop: "متجر", chat: "AI", addPet: "إضافة حيوان" },
 };
 
 const quickActions = {
@@ -59,63 +55,35 @@ const BottomNav = () => {
 
   const [showPetSwitcher, setShowPetSwitcher] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
-  const { unreadCount } = useRealtimeNotifications();
-  const { user } = useAuth();
-  const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
   const { activeAnim, triggerRandom } = usePetButtonAnimation();
-
-  useEffect(() => {
-    if (!user) return;
-    const fetchAvatar = async () => {
-      const { data } = await supabase.from('profiles').select('avatar_url').eq('id', user.id).maybeSingle();
-      const authAvatar = user.user_metadata?.avatar_url || user.user_metadata?.picture;
-      setUserAvatarUrl(data?.avatar_url || authAvatar || null);
-    };
-    fetchAvatar();
-  }, [user]);
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const { sickPets } = (e as CustomEvent).detail;
-      if (sickPets?.length > 0) {
-        import("sonner").then(({ toast }) => {
-          const names = sickPets.map((p: any) => p.name).join(", ");
-          toast.warning(`שימו לב: ל${names} יש מצב רפואי פעיל`, {
-            description: "מומלץ לבדוק את המוצרים המתאימים",
-            duration: 4000,
-          });
-        });
-      }
-    };
-    window.addEventListener("petid:fleet-safety", handler);
-    return () => window.removeEventListener("petid:fleet-safety", handler);
-  }, []);
 
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressTriggered = useRef(false);
 
+  // Single tap → navigate to dashboard; Long press → pet switcher
   const handlePetPointerDown = useCallback(() => {
     longPressTriggered.current = false;
     longPressTimer.current = setTimeout(() => {
       longPressTriggered.current = true;
-      if (pets.length > 1) setShowPetSwitcher(true);
+      if (navigator.vibrate) navigator.vibrate(20);
+      if (pets.length > 1) {
+        setShowPetSwitcher(true);
+      }
     }, 500);
   }, [pets.length]);
 
   const handlePetPointerUp = useCallback(() => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
     if (!longPressTriggered.current) {
-      // Trigger random micro-animation
       triggerRandom();
-      if (pets.length > 1) {
-        setShowPetSwitcher(true);
-      } else if (location.pathname === '/') {
+      // Single tap: always navigate to dashboard
+      if (location.pathname === '/') {
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
         navigate('/');
       }
     }
-  }, [location.pathname, navigate, pets.length, triggerRandom]);
+  }, [location.pathname, navigate, triggerRandom]);
 
   const handlePetPointerLeave = useCallback(() => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
@@ -132,9 +100,8 @@ const BottomNav = () => {
 
   const isActive = (path: string) => {
     const p = location.pathname;
-    if (path === "/") return p === "/";
-    if (path === "/shop") return p === "/shop" || p.startsWith("/product/") || p === "/cart" || p === "/checkout" || p.startsWith("/shop/");
     if (path === "/feed") return p === "/feed" || p.startsWith("/post/") || p.startsWith("/story/") || p === "/explore";
+    if (path === "/shop") return p === "/shop" || p.startsWith("/product/") || p === "/cart" || p === "/checkout" || p.startsWith("/shop/");
     if (path === "/chat") return p === "/chat";
     return p === path;
   };
@@ -207,7 +174,7 @@ const BottomNav = () => {
         )}
       </AnimatePresence>
 
-      {/* ── Pet Switcher ── */}
+      {/* ── Pet Switcher (Long Press only) ── */}
       <AnimatePresence>
         {showPetSwitcher && (
           <>
@@ -312,7 +279,7 @@ const BottomNav = () => {
         dir={direction}
       >
         <div className="flex justify-around items-center w-full max-w-lg mx-auto h-[64px]">
-          {/* Chat (AI) - Left */}
+          {/* Chat (AI) */}
           <NavButton
             onClick={() => handleNavClick("/chat")}
             active={isActive("/chat")}
@@ -323,6 +290,20 @@ const BottomNav = () => {
               className={cn("w-[22px] h-[22px] transition-colors", !isActive("/chat") && "text-muted-foreground")}
               style={isActive("/chat") ? { color: petAccent || "hsl(var(--primary))" } : undefined}
               strokeWidth={isActive("/chat") ? 2.2 : 1.5}
+            />
+          </NavButton>
+
+          {/* Feed (Home) */}
+          <NavButton
+            onClick={() => handleNavClick("/feed")}
+            active={isActive("/feed")}
+            label={labels.feed}
+            accent={petAccent}
+          >
+            <Home
+              className={cn("w-[22px] h-[22px] transition-colors", !isActive("/feed") && "text-muted-foreground")}
+              style={isActive("/feed") ? { color: petAccent || "hsl(var(--primary))" } : undefined}
+              strokeWidth={isActive("/feed") ? 2.2 : 1.5}
             />
           </NavButton>
 
@@ -366,7 +347,7 @@ const BottomNav = () => {
             </span>
           </div>
 
-          {/* Shop - Right */}
+          {/* Shop */}
           <NavButton
             onClick={() => handleNavClick("/shop")}
             active={isActive("/shop")}
@@ -392,14 +373,12 @@ function NavButton({
   active,
   label,
   accent,
-  isFab = false,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   active: boolean;
   label: string;
   accent?: string;
-  isFab?: boolean;
 }) {
   return (
     <button
@@ -412,7 +391,7 @@ function NavButton({
         transition={{ type: "spring", stiffness: 500, damping: 20 }}
         className="relative flex flex-col items-center gap-0.5"
       >
-        {active && !isFab && (
+        {active && (
           <motion.div
             layoutId="nav-active-pill"
             className="absolute -inset-x-3 -inset-y-1 rounded-2xl"
@@ -421,17 +400,15 @@ function NavButton({
           />
         )}
         <div className="relative z-10">{children}</div>
-        {label && !isFab && (
-          <span
-            className={cn(
-              "text-[10px] font-medium relative z-10 transition-colors",
-              active ? "font-semibold" : "text-muted-foreground"
-            )}
-            style={active ? { color: accent || "hsl(var(--primary))" } : undefined}
-          >
-            {label}
-          </span>
-        )}
+        <span
+          className={cn(
+            "text-[10px] font-medium relative z-10 transition-colors",
+            active ? "font-semibold" : "text-muted-foreground"
+          )}
+          style={active ? { color: accent || "hsl(var(--primary))" } : undefined}
+        >
+          {label}
+        </span>
       </motion.div>
     </button>
   );

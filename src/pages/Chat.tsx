@@ -46,9 +46,25 @@ const ChatContent = () => {
   } = useChatContext();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const [showExpertSpheres, setShowExpertSpheres] = useState(true);
+  const [headerHidden, setHeaderHidden] = useState(false);
+  const lastScrollTop = useRef(0);
+
+  // Auto-hide header on scroll down, show on scroll up
+  const handleMessagesScroll = useCallback(() => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    const st = el.scrollTop;
+    if (st > lastScrollTop.current && st > 40) {
+      setHeaderHidden(true);
+    } else {
+      setHeaderHidden(false);
+    }
+    lastScrollTop.current = st;
+  }, []);
 
   // V72 Data Intake
   const { triggerFilePicker } = useDataIntake({
@@ -325,43 +341,45 @@ const ChatContent = () => {
   return (
     <div className="min-h-screen bg-background pb-20" dir="rtl">
       <SEO title="צ'אט AI" description="שאלו את העוזר החכם שלנו כל שאלה על חיות מחמד - אילוף, תזונה, בריאות" url="/chat" />
-      {/* Premium Header */}
-      <div className="sticky top-0 z-50 border-b border-border/30">
-        <div className="bg-gradient-to-l from-primary/8 via-card to-accent/8 backdrop-blur-2xl">
-          <div className="flex items-center justify-between px-4 py-3">
+      {/* Compact Sticky Header — auto-hides on scroll */}
+      <motion.div
+        className="sticky top-0 z-50 border-b border-border/30"
+        initial={{ y: 0 }}
+        animate={{ y: headerHidden ? -60 : 0 }}
+        transition={{ type: "spring", stiffness: 400, damping: 35 }}
+        style={{ willChange: "transform" }}
+      >
+        <div className="bg-background/95 backdrop-blur-xl">
+          <div className="flex items-center justify-between px-4 py-2">
             <button 
-              onClick={() => navigate(-1)}
-              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
+              onClick={() => navigate("/feed")}
+              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
+              aria-label="חזרה לפיד"
             >
-              <ChevronRight className="w-6 h-6 text-foreground" />
+              <ChevronRight className="w-5 h-5 text-foreground" />
             </button>
             
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <div className="relative">
-                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-primary/60 p-[2px]">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/60 p-[1.5px]">
                   <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
-                    <img src={petidIcon} alt="PetAI" className="w-6 h-6 object-contain" />
+                    <img src={petidIcon} alt="PetAI" className="w-4.5 h-4.5 object-contain" />
                   </div>
                 </div>
-                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-card" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-[1.5px] border-card" />
               </div>
-              <div className="text-right">
-                <h1 className="text-base font-bold text-foreground">PetAI</h1>
-                <p className="text-xs text-green-500 flex items-center gap-1 font-medium">
-                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                  פעיל עכשיו
-                </p>
-              </div>
+              <span className="text-sm font-bold text-foreground">PetAI</span>
+              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
             </div>
             
-            <div className="w-10 h-10" />
+            <div className="w-9 h-9" />
           </div>
         </div>
-      </div>
+      </motion.div>
 
       <div className="flex flex-col h-[calc(100vh-140px)]">
         {/* Messages Container */}
-        <div className="flex-1 overflow-y-auto px-4 py-6">
+        <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="flex-1 overflow-y-auto px-4 py-6">
           <AnimatePresence>
             {messages.length === 0 && (
               <motion.div
