@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { Drawer } from "vaul";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle, Edit2, Sparkles, Zap, Scissors, Utensils, Wind, Heart, ShoppingBag, Package, Share2, CheckCircle2, Shield, TrendingUp, Lightbulb, CloudSun, BarChart3, Bone, Fish, Brain, Stethoscope, Droplets, AlertTriangle, Activity, Cpu, Eye, Download, BadgeCheck, Syringe, Smile } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -6,13 +7,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DateWheelPicker } from "@/components/ui/date-wheel-picker";
 import { SizeWheelPicker, WeightWheelPicker } from "@/components/ui/wheel-picker";
 import { useToast } from "@/hooks/use-toast";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
 import { PetQRCode } from "@/components/profile/PetQRCode";
+import { useCelebration } from "@/hooks/useCelebration";
 
 interface Pet {
   id: string;
@@ -64,7 +65,9 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { celebrate } = useCelebration();
   const [owner, setOwner] = useState<OwnerProfile | null>(null);
+  const [hasTriggeredCelebration, setHasTriggeredCelebration] = useState(false);
   const [breedInfo, setBreedInfo] = useState<BreedInfo | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editField, setEditField] = useState<'age' | 'size' | 'weight' | null>(null);
@@ -498,7 +501,8 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
 
       if (error) throw error;
 
-      toast({ title: 'הנתונים עודכנו בהצלחה' });
+      toast({ title: 'הנתונים עודכנו בהצלחה ✓' });
+      celebrate('photoUpload'); // Celebrate successful update
       setEditModalOpen(false);
       setEditField(null);
       // Refresh page to get updated data
@@ -638,6 +642,14 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
     if (pet.avatar_url) score++;
     return Math.round((score / total) * 100);
   }, [pet]);
+
+  // Celebrate when profile reaches 100%
+  useEffect(() => {
+    if (profileCompletion === 100 && !hasTriggeredCelebration) {
+      setHasTriggeredCelebration(true);
+      setTimeout(() => celebrate('profileComplete'), 800);
+    }
+  }, [profileCompletion, hasTriggeredCelebration]);
 
   // #17 Daily tip based on breed
   const dailyTip = useMemo(() => {
@@ -1160,7 +1172,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
             whileHover={{ scale: 1.03, y: -1 }}
             whileTap={{ scale: 0.97 }}
             onClick={onEnergyOpen}
-            className="relative flex flex-col items-center p-3 bg-gradient-to-b from-background to-muted/20 hover:from-primary/5 hover:to-primary/10 rounded-2xl border border-border/30 hover:border-primary/40 transition-all duration-300 shadow-sm hover:shadow-md group"
+            className="relative flex flex-col items-center p-3 bg-card/70 backdrop-blur-sm hover:bg-primary/8 rounded-2xl border border-border/20 hover:border-primary/30 transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-primary/5 group"
             aria-label={pet.type === 'cat' ? 'העשרה סביבתית' : `אנרגיה: ${activityMinutes || 0} דקות`}
           >
             <div className="flex gap-0.5 mb-2">
@@ -1196,7 +1208,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
             whileHover={{ scale: 1.03, y: -1 }}
             whileTap={{ scale: 0.97 }}
             onClick={onGroomingOpen}
-            className="relative flex flex-col items-center p-3 bg-gradient-to-b from-background to-muted/20 hover:from-primary/5 hover:to-primary/10 rounded-2xl border border-border/30 hover:border-primary/40 transition-all duration-300 shadow-sm hover:shadow-md group"
+            className="relative flex flex-col items-center p-3 bg-card/70 backdrop-blur-sm hover:bg-primary/8 rounded-2xl border border-border/20 hover:border-primary/30 transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-primary/5 group"
             aria-label={`טיפוח: ${getGroomingLevelHe()}`}
           >
             <div className="flex gap-0.5 mb-2">
@@ -1224,7 +1236,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
             whileHover={{ scale: 1.03, y: -1 }}
             whileTap={{ scale: 0.97 }}
             onClick={onFeedingOpen}
-            className="relative flex flex-col items-center p-3 bg-gradient-to-b from-background to-muted/20 hover:from-primary/5 hover:to-primary/10 rounded-2xl border border-border/30 hover:border-primary/40 transition-all duration-300 shadow-sm hover:shadow-md group"
+            className="relative flex flex-col items-center p-3 bg-card/70 backdrop-blur-sm hover:bg-primary/8 rounded-2xl border border-border/20 hover:border-primary/30 transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-primary/5 group"
             aria-label={`האכלה: ${recommendedGrams || 0} גרם`}
           >
             <div className="w-full h-1.5 bg-muted-foreground/10 rounded-full mb-2 overflow-hidden">
@@ -1255,7 +1267,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
             whileHover={{ scale: 1.03, y: -1 }}
             whileTap={{ scale: 0.97 }}
             onClick={onFurOpen}
-            className="relative flex flex-col items-center p-3 bg-gradient-to-b from-background to-muted/20 hover:from-primary/5 hover:to-primary/10 rounded-2xl border border-border/30 hover:border-primary/40 transition-all duration-300 shadow-sm hover:shadow-md group"
+            className="relative flex flex-col items-center p-3 bg-card/70 backdrop-blur-sm hover:bg-primary/8 rounded-2xl border border-border/20 hover:border-primary/30 transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-primary/5 group"
             aria-label={`נשירה: ${getSheddingLevelHe()}`}
           >
             <div className="flex gap-0.5 mb-2">
@@ -1434,7 +1446,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
             whileHover={{ scale: 1.03, y: -1 }}
             whileTap={{ scale: 0.97 }}
             onClick={onLifeExpectancyOpen}
-            className="relative flex flex-col items-center p-3 bg-gradient-to-b from-background to-muted/20 hover:from-primary/5 hover:to-primary/10 rounded-2xl border border-border/30 hover:border-primary/40 transition-all duration-300 shadow-sm hover:shadow-md group"
+            className="relative flex flex-col items-center p-3 bg-card/70 backdrop-blur-sm hover:bg-primary/8 rounded-2xl border border-border/20 hover:border-primary/30 transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-primary/5 group"
             aria-label={`תוחלת חיים: ${getLifeExpectancy() || ''}`}
           >
             <div className="relative w-8 h-4 mb-1.5">
@@ -1522,91 +1534,122 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
         </div>
       </motion.div>
 
-      {/* Edit Modal */}
-      <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
-        <DialogContent className="max-w-xs p-4" dir="rtl">
-          <DialogHeader>
-            <DialogTitle className="text-center text-lg">עדכון {getFieldLabel()}</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-3 py-2">
-            {editField === 'age' ? (
-              <div className="space-y-2">
-                <Label className="block text-center text-xs text-muted-foreground">
-                  בחר תאריך לידה
-                </Label>
-                <DateWheelPicker
-                  value={birthDate}
-                  onChange={setBirthDate}
-                  minYear={1990}
-                  maxYear={new Date().getFullYear()}
-                  locale="he-IL"
-                  size="sm"
-                />
-                {birthDate && (
-                  <div className="text-center text-xs text-muted-foreground pt-2 border-t">
-                    גיל: {(() => {
-                      const now = new Date();
-                      let years = now.getFullYear() - birthDate.getFullYear();
-                      let months = now.getMonth() - birthDate.getMonth();
-                      if (months < 0) { years--; months += 12; }
-                      if (now.getDate() < birthDate.getDate()) { months--; if (months < 0) { years--; months += 12; } }
-                      const yearsText = years === 1 ? 'שנה' : 'שנים';
-                      const monthsText = months === 1 ? 'חודש' : 'חודשים';
-                      if (years > 0 && months > 0) return `${years} ${yearsText} ו-${months} ${monthsText}`;
-                      if (years > 0) return `${years} ${yearsText}`;
-                      if (months > 0) return `${months} ${monthsText}`;
-                      return 'פחות מחודש';
-                    })()}
-                  </div>
-                )}
+      {/* Conversational Edit Drawer — "The Scientist" */}
+      <Drawer.Root open={editModalOpen} onOpenChange={setEditModalOpen}>
+        <Drawer.Portal>
+          <Drawer.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-50" />
+          <Drawer.Content 
+            className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl outline-none"
+            dir="rtl"
+          >
+            <div className="bg-background/95 backdrop-blur-xl rounded-t-3xl border-t border-border/30 shadow-[0_-8px_40px_rgba(0,0,0,0.12)] p-5">
+              {/* Handle */}
+              <div className="flex justify-center mb-4">
+                <div className="w-10 h-1 bg-muted-foreground/25 rounded-full" />
               </div>
-            ) : editField === 'size' ? (
-              <div className="space-y-2">
-                <Label className="block text-center text-xs text-muted-foreground">
-                  בחר גודל
-                </Label>
-                <SizeWheelPicker
-                  value={sizeValue}
-                  onChange={setSizeValue}
-                  defaultFromBreed={breedInfo?.size_category}
-                />
-              </div>
-            ) : editField === 'weight' ? (
-              <div className="space-y-2">
-                <Label className="block text-center text-xs text-muted-foreground">
-                  בחר משקל
-                </Label>
-                <WeightWheelPicker
-                  value={weightValue}
-                  onChange={setWeightValue}
-                  min={1}
-                  max={100}
-                  step={1}
-                />
-              </div>
-            ) : null}
 
-            <div className="flex gap-2 pt-1">
-              <Button
-                variant="outline"
-                onClick={() => setEditModalOpen(false)}
-                className="flex-1 h-9 text-sm"
-                disabled={saving}
+              {/* Scientist Header */}
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-3 mb-4"
               >
-                ביטול
-              </Button>
-              <Button
-                onClick={handleSave}
-                className="flex-1 h-9 text-sm"
-                disabled={saving}
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <span className="text-sm font-bold text-foreground">המדען</span>
+                  <p className="text-xs text-muted-foreground">
+                    {editField === 'age' 
+                      ? `מתי נולד/ה ${pet.name}? זה עוזר לי להתאים תזונה ובריאות.`
+                      : editField === 'size' 
+                      ? `מה הגודל של ${pet.name}? זה משפיע על המלצות מוצרים.`
+                      : `כמה שוקל/ת ${pet.name}? זה חיוני לחישוב כמות מזון.`
+                    }
+                  </p>
+                </div>
+              </motion.div>
+              
+              {/* Step Content */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1 }}
+                className="bg-muted/30 rounded-2xl p-4 mb-4 border border-border/20"
               >
-                {saving ? 'שומר...' : 'שמור'}
-              </Button>
+                {editField === 'age' ? (
+                  <div className="space-y-2">
+                    <DateWheelPicker
+                      value={birthDate}
+                      onChange={setBirthDate}
+                      minYear={1990}
+                      maxYear={new Date().getFullYear()}
+                      locale="he-IL"
+                      size="sm"
+                    />
+                    {birthDate && (
+                      <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="text-center text-xs text-primary font-medium pt-2 border-t border-border/20"
+                      >
+                        🎂 גיל: {(() => {
+                          const now = new Date();
+                          let years = now.getFullYear() - birthDate.getFullYear();
+                          let months = now.getMonth() - birthDate.getMonth();
+                          if (months < 0) { years--; months += 12; }
+                          if (now.getDate() < birthDate.getDate()) { months--; if (months < 0) { years--; months += 12; } }
+                          const yearsText = years === 1 ? 'שנה' : 'שנים';
+                          const monthsText = months === 1 ? 'חודש' : 'חודשים';
+                          if (years > 0 && months > 0) return `${years} ${yearsText} ו-${months} ${monthsText}`;
+                          if (years > 0) return `${years} ${yearsText}`;
+                          if (months > 0) return `${months} ${monthsText}`;
+                          return 'פחות מחודש';
+                        })()}
+                      </motion.div>
+                    )}
+                  </div>
+                ) : editField === 'size' ? (
+                  <SizeWheelPicker
+                    value={sizeValue}
+                    onChange={setSizeValue}
+                    defaultFromBreed={breedInfo?.size_category}
+                  />
+                ) : editField === 'weight' ? (
+                  <WeightWheelPicker
+                    value={weightValue}
+                    onChange={setWeightValue}
+                    min={1}
+                    max={100}
+                    step={1}
+                  />
+                ) : null}
+              </motion.div>
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setEditModalOpen(false)}
+                  className="flex-1 h-11 rounded-xl text-sm"
+                  disabled={saving}
+                >
+                  ביטול
+                </Button>
+                <motion.div className="flex-1" whileTap={{ scale: 0.97 }}>
+                  <Button
+                    onClick={handleSave}
+                    className="w-full h-11 rounded-xl text-sm"
+                    disabled={saving}
+                  >
+                    {saving ? 'שומר...' : '✓ שמור'}
+                  </Button>
+                </motion.div>
+              </div>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </Drawer.Content>
+        </Drawer.Portal>
+      </Drawer.Root>
     </>
   );
 };
