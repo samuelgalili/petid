@@ -18,6 +18,8 @@ import {
   TrendingUp,
   Users,
   Package,
+  AlertTriangle,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -108,7 +110,7 @@ const AdminSuppliers = () => {
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-
+  const [supplierProducts, setSupplierProducts] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     contact_name: "",
@@ -123,7 +125,20 @@ const AdminSuppliers = () => {
 
   useEffect(() => {
     fetchSuppliers();
+    fetchSupplierProducts();
   }, []);
+
+  const fetchSupplierProducts = async () => {
+    try {
+      const { data } = await supabase
+        .from("business_products")
+        .select("id, name, price, sale_price, cost_price, supplier_id, image_url, in_stock")
+        .not("supplier_id", "is", null);
+      if (data) setSupplierProducts(data);
+    } catch (err) {
+      console.error("Error fetching supplier products:", err);
+    }
+  };
 
   const fetchSuppliers = async () => {
     try {
@@ -590,6 +605,56 @@ const AdminSuppliers = () => {
             </ScrollArea>
           )}
         </AdminSectionCard>
+
+        {/* Product Margins by Supplier */}
+        {supplierProducts.length > 0 && (
+          <AdminSectionCard title="מרווחי מוצרים לפי ספק" icon={BarChart3}>
+            <div className="space-y-4">
+              {suppliers.filter(s => supplierProducts.some(p => p.supplier_id === s.id)).map(supplier => {
+                const products = supplierProducts.filter(p => p.supplier_id === supplier.id);
+                const productsWithCost = products.filter(p => p.cost_price);
+                const avgMargin = productsWithCost.length > 0
+                  ? productsWithCost.reduce((sum, p) => {
+                      const sellPrice = p.sale_price || p.price;
+                      return sum + ((sellPrice - p.cost_price) / sellPrice) * 100;
+                    }, 0) / productsWithCost.length
+                  : 0;
+                const totalRevenue = products.reduce((sum, p) => sum + (p.sale_price || p.price), 0);
+                const totalCost = productsWithCost.reduce((sum, p) => sum + p.cost_price, 0);
+
+                return (
+                  <div key={supplier.id} className="p-4 rounded-xl border border-border bg-card">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Building2 className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold">{supplier.name}</h4>
+                          <p className="text-xs text-muted-foreground">{products.length} מוצרים</p>
+                        </div>
+                      </div>
+                      <div className="text-left">
+                        <p className={cn("text-lg font-extrabold", avgMargin > 30 ? "text-emerald-600" : avgMargin > 15 ? "text-amber-600" : "text-destructive")}>
+                          {Math.round(avgMargin)}% מרווח
+                        </p>
+                        <p className="text-xs text-muted-foreground">₪{Math.round(totalRevenue - totalCost)} רווח פוטנציאלי</p>
+                      </div>
+                    </div>
+                    {productsWithCost.filter(p => ((p.sale_price || p.price) - p.cost_price) / (p.sale_price || p.price) < 0.15).length > 0 && (
+                      <div className="flex items-center gap-2 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 text-sm">
+                        <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+                        <span className="text-amber-700 dark:text-amber-400 font-medium">
+                          {productsWithCost.filter(p => ((p.sale_price || p.price) - p.cost_price) / (p.sale_price || p.price) < 0.15).length} מוצרים עם מרווח מתחת ל-15%
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </AdminSectionCard>
+        )}
 
         {/* Create Supplier Dialog */}
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>

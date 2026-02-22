@@ -8723,47 +8723,65 @@ export type Database = {
       suppliers: {
         Row: {
           address: string | null
+          api_endpoint: string | null
+          api_key_encrypted: string | null
           city: string | null
           contact_name: string | null
           created_at: string
           email: string | null
           id: string
           is_active: boolean | null
+          logo_url: string | null
           monthly_amount: number | null
           name: string
           notes: string | null
+          payment_terms: string | null
           phone: string | null
+          shipping_days: number | null
           supplier_type: string
+          tax_id: string | null
           updated_at: string
         }
         Insert: {
           address?: string | null
+          api_endpoint?: string | null
+          api_key_encrypted?: string | null
           city?: string | null
           contact_name?: string | null
           created_at?: string
           email?: string | null
           id?: string
           is_active?: boolean | null
+          logo_url?: string | null
           monthly_amount?: number | null
           name: string
           notes?: string | null
+          payment_terms?: string | null
           phone?: string | null
+          shipping_days?: number | null
           supplier_type?: string
+          tax_id?: string | null
           updated_at?: string
         }
         Update: {
           address?: string | null
+          api_endpoint?: string | null
+          api_key_encrypted?: string | null
           city?: string | null
           contact_name?: string | null
           created_at?: string
           email?: string | null
           id?: string
           is_active?: boolean | null
+          logo_url?: string | null
           monthly_amount?: number | null
           name?: string
           notes?: string | null
+          payment_terms?: string | null
           phone?: string | null
+          shipping_days?: number | null
           supplier_type?: string
+          tax_id?: string | null
           updated_at?: string
         }
         Relationships: []
