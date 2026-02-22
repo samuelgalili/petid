@@ -1,11 +1,11 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Link2, Download, CheckCircle2, AlertCircle, Loader2, ExternalLink,
   RotateCcw, Pencil, Save, Eye, Sparkles, Package, List, Utensils, Heart,
   Search, Shield, FlaskConical, Flame, Scale, TriangleAlert, Star, Zap,
   BadgeCheck, XCircle, Info, ChevronLeft, ChevronRight, ScanBarcode,
-  Plus, Trash2, AlertOctagon
+  Plus, Trash2, AlertOctagon, Building2, Truck, ToggleLeft, ToggleRight
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,9 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 const DEFAULT_BUSINESS_ID = "cf941cc4-e1d1-4d7c-8122-a5df81a1e53c";
 
@@ -93,7 +96,7 @@ const STEP_LABELS = [
   { num: 1, icon: Search, label: "הצייד", desc: "סריקה וזיהוי כפילויות" },
   { num: 2, icon: FlaskConical, label: "המדען", desc: "ניתוח רכיבים וסיכונים" },
   { num: 3, icon: Flame, label: "לוגיקת האכלה", desc: "חישוב Kcal וכמויות" },
-  { num: 4, icon: Package, label: "וריאנטים ופרסום", desc: "תצוגה מקדימה ושמירה" },
+  { num: 4, icon: Package, label: "ספק ופרסום", desc: "קישור ספק, וריאנטים ושמירה" },
 ];
 
 const AdminQuickImport = () => {
@@ -119,6 +122,19 @@ const AdminQuickImport = () => {
 
   // Step 4: Publish
   const [publishedProduct, setPublishedProduct] = useState<any>(null);
+
+  // Supplier linking
+  const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string>("");
+  const [costPrice, setCostPrice] = useState<string>("");
+  const [apiSyncEnabled, setApiSyncEnabled] = useState(false);
+
+  // Fetch suppliers on mount
+  useEffect(() => {
+    supabase.from("suppliers").select("id, name, shipping_days, payment_terms, api_endpoint").eq("is_active", true).order("name").then(({ data }) => {
+      if (data) setSuppliers(data);
+    });
+  }, []);
 
   const updateStatus = (s: WizardStep, status: StepStatus) => {
     setStepStatus(prev => ({ ...prev, [s]: status }));
@@ -264,6 +280,11 @@ const AdminQuickImport = () => {
         life_stage: editData.life_stage || null,
         dog_size: editData.dog_size || null,
         special_diet: editData.special_diet,
+        supplier_id: selectedSupplierId || null,
+        cost_price: costPrice ? parseFloat(costPrice) : null,
+        safety_score: analysis?.qualityScore || null,
+        kcal_per_kg: analysis?.estimatedKcalPerKg || null,
+        api_sync_enabled: apiSyncEnabled,
       };
 
       const { data: inserted, error: insertError } = await supabase
@@ -336,6 +357,9 @@ const AdminQuickImport = () => {
     setPossibleDuplicates([]);
     setAnalysis(null);
     setPublishedProduct(null);
+    setSelectedSupplierId("");
+    setCostPrice("");
+    setApiSyncEnabled(false);
   };
 
   const goToStep = (s: WizardStep) => {
@@ -1159,7 +1183,107 @@ const AdminQuickImport = () => {
                     </Button>
                   </div>
 
-                  {/* Edit Core Fields */}
+                  {/* ═══ SUPPLIER CARD ═══ */}
+                  <div className="p-6 bg-card rounded-2xl shadow-lg border border-border">
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="p-3 bg-sky-500 rounded-xl text-white">
+                        <Building2 size={24} strokeWidth={1.5} />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-extrabold">כרטיס ספק</h3>
+                        <p className="text-muted-foreground text-sm">קשר מוצר לספק, הגדר מחיר עלות וסנכרון מלאי</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      {/* Supplier Select */}
+                      <div>
+                        <Label className="text-sm font-bold mb-1.5 block">ספק</Label>
+                        <Select value={selectedSupplierId} onValueChange={setSelectedSupplierId}>
+                          <SelectTrigger className="h-11 text-base font-medium">
+                            <SelectValue placeholder="בחר ספק..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {suppliers.map((s) => (
+                              <SelectItem key={s.id} value={s.id}>
+                                <div className="flex items-center gap-2">
+                                  <Building2 size={14} />
+                                  <span>{s.name}</span>
+                                  {s.shipping_days && (
+                                    <span className="text-xs text-muted-foreground">({s.shipping_days} ימי משלוח)</span>
+                                  )}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Cost Price + Margin */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-sm font-bold mb-1.5 block">מחיר עלות (₪)</Label>
+                          <Input
+                            type="number"
+                            value={costPrice}
+                            onChange={(e) => setCostPrice(e.target.value)}
+                            placeholder="0.00"
+                            className="h-11 text-base font-medium"
+                            dir="ltr"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-sm font-bold mb-1.5 block">מרווח רווח</Label>
+                          <div className="h-11 flex items-center px-4 rounded-xl border border-border bg-muted/50">
+                            {costPrice && editData.price ? (
+                              <>
+                                <span className="text-lg font-extrabold text-emerald-600">
+                                  {Math.round(((editData.price - parseFloat(costPrice)) / editData.price) * 100)}%
+                                </span>
+                                <span className="text-sm text-muted-foreground mr-2">
+                                  (₪{(editData.price - parseFloat(costPrice)).toFixed(0)} רווח)
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">הזן מחיר עלות</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* API Sync Toggle */}
+                      {selectedSupplierId && suppliers.find(s => s.id === selectedSupplierId)?.api_endpoint && (
+                        <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-muted/30">
+                          <div className="flex items-center gap-3">
+                            <Truck size={20} className="text-muted-foreground" />
+                            <div>
+                              <p className="text-sm font-bold">סנכרון מלאי אוטומטי</p>
+                              <p className="text-xs text-muted-foreground">עדכון זמינות דרך API הספק</p>
+                            </div>
+                          </div>
+                          <Switch checked={apiSyncEnabled} onCheckedChange={setApiSyncEnabled} />
+                        </div>
+                      )}
+
+                      {/* Supplier Info Summary */}
+                      {selectedSupplierId && (() => {
+                        const sup = suppliers.find(s => s.id === selectedSupplierId);
+                        if (!sup) return null;
+                        return (
+                          <div className="flex items-center gap-4 p-3 rounded-xl bg-sky-50 dark:bg-sky-950/20 border border-sky-200 dark:border-sky-800 text-sm">
+                            <Building2 size={16} className="text-sky-600 shrink-0" />
+                            <div className="flex flex-wrap gap-x-4 gap-y-1">
+                              <span className="font-bold">{sup.name}</span>
+                              {sup.shipping_days && <span>🚚 {sup.shipping_days} ימים</span>}
+                              {sup.payment_terms && <span>💳 {sup.payment_terms}</span>}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+
+
                   <div className="p-6 bg-card rounded-2xl shadow-lg border border-border">
                     <h3 className="text-lg font-extrabold mb-4 flex items-center gap-2">
                       <Pencil size={18} /> עריכה מהירה
