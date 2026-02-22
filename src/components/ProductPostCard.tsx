@@ -52,7 +52,7 @@ export const ProductPostCard = ({ product }: ProductPostCardProps) => {
     haptic("light");
     const url = `${window.location.origin}/product/${product.id}`;
     if (navigator.share) {
-      try { await navigator.share({ title: product.title, url }); } catch { /* cancelled */ }
+      try { await navigator.share({ title: product.title, text: `${product.title} — ${product.price}`, url }); } catch { /* cancelled */ }
     } else { navigator.clipboard.writeText(url); toast.success("הקישור הועתק"); }
   };
 
