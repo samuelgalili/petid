@@ -5,7 +5,7 @@ import { SEO } from "@/components/SEO";
 import { PageTransition } from "@/components/PageTransition";
 import BottomNav from "@/components/BottomNav";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, Plus, Menu, Edit3, ChevronDown, ChevronLeft, Utensils, Building2, Scissors, Heart, Stethoscope, Info, GraduationCap, FileText, Camera, Video, MessageCircle, Calendar, Dog, Gift, Flame, BookOpen, ShoppingBag, Truck, Handshake, Footprints, Search, Star, Clock, MapPin, Bell, AlertTriangle } from "lucide-react";
+import { ChevronRight, Plus, Menu, Edit3, ChevronDown, ChevronLeft, Utensils, Building2, Scissors, Heart, Stethoscope, Info, GraduationCap, FileText, Camera, Video, MessageCircle, Calendar, Dog, Gift, Flame, BookOpen, ShoppingBag, Truck, Handshake, Footprints, Search, Star, Clock, MapPin, Bell, AlertTriangle, Shield } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
