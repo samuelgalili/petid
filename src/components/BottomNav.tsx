@@ -275,13 +275,36 @@ const BottomNav = () => {
         )}
       </AnimatePresence>
 
+      {/* ── Floating FAB (+) ── */}
+      <motion.button
+        whileTap={{ scale: 0.85 }}
+        onClick={() => setShowQuickActions((v) => !v)}
+        className={cn(
+          "fixed z-[10000] w-12 h-12 rounded-full shadow-lg flex items-center justify-center",
+          "bg-primary text-primary-foreground",
+          isRtl ? "left-4" : "right-4"
+        )}
+        style={{ bottom: `calc(72px + env(safe-area-inset-bottom))` }}
+        aria-label="Quick actions"
+      >
+        <motion.div
+          animate={{ rotate: showQuickActions ? 45 : 0 }}
+          transition={{ type: "spring", stiffness: 400, damping: 20 }}
+        >
+          {showQuickActions ? (
+            <X className="w-5 h-5" strokeWidth={2} />
+          ) : (
+            <Plus className="w-5 h-5" strokeWidth={2} />
+          )}
+        </motion.div>
+      </motion.button>
+
       {/* ── Bottom Navigation Bar ── */}
       <nav
         className={cn(
           "fixed bottom-0 left-0 right-0 z-[9999]",
-          "bg-background/80 dark:bg-[hsl(0,0%,7%)]/80",
-          "backdrop-blur-xl backdrop-saturate-150",
-          "border-t border-border/30",
+          "bg-background dark:bg-[hsl(0,0%,5%)]",
+          "shadow-[0_-1px_8px_rgba(0,0,0,0.06)]",
           "pb-[env(safe-area-inset-bottom)]"
         )}
         role="navigation"
@@ -289,47 +312,33 @@ const BottomNav = () => {
         dir={direction}
       >
         <div className="flex justify-around items-center w-full max-w-lg mx-auto h-[64px]">
-          {/* Home */}
+          {/* Chat (AI) - Left */}
           <NavButton
-            onClick={() => handleNavClick("/")}
-            active={isActive("/")}
-            label={labels.home}
+            onClick={() => handleNavClick("/chat")}
+            active={isActive("/chat")}
+            label={labels.chat}
             accent={petAccent}
           >
-            <Home
-              className={cn("w-[22px] h-[22px] transition-colors", !isActive("/") && "text-muted-foreground")}
-              style={isActive("/") ? { color: petAccent || "hsl(var(--primary))" } : undefined}
-              strokeWidth={isActive("/") ? 2.2 : 1.5}
+            <Sparkles
+              className={cn("w-[22px] h-[22px] transition-colors", !isActive("/chat") && "text-muted-foreground")}
+              style={isActive("/chat") ? { color: petAccent || "hsl(var(--primary))" } : undefined}
+              strokeWidth={isActive("/chat") ? 2.2 : 1.5}
             />
           </NavButton>
 
-          {/* Feed */}
-          <NavButton
-            onClick={() => handleNavClick("/feed")}
-            active={isActive("/feed")}
-            label={labels.feed}
-            accent={petAccent}
-          >
-            <Newspaper
-              className={cn("w-[22px] h-[22px] transition-colors", !isActive("/feed") && "text-muted-foreground")}
-              style={isActive("/feed") ? { color: petAccent || "hsl(var(--primary))" } : undefined}
-              strokeWidth={isActive("/feed") ? 2.2 : 1.5}
-            />
-          </NavButton>
-
-          {/* Center: Pet Avatar + Quick Actions */}
+          {/* Center: Pet Avatar */}
           <div className="flex flex-col items-center justify-center relative">
             <motion.div
               whileTap={{ scale: 0.9 }}
               onPointerDown={handlePetPointerDown}
               onPointerUp={handlePetPointerUp}
               onPointerLeave={handlePetPointerLeave}
-              className="relative -mt-6 flex flex-col items-center cursor-pointer select-none"
+              className="relative -mt-8 flex flex-col items-center cursor-pointer select-none"
             >
               <div
-                className="w-[52px] h-[52px] rounded-full p-[2.5px] bg-background shadow-lg"
+                className="w-[58px] h-[58px] rounded-full p-[2.5px] bg-background shadow-lg"
                 style={{
-                  boxShadow: `0 0 0 2.5px ${petAccent || "hsl(209, 79%, 52%)"}, 0 2px 12px ${petAccent || "hsl(209, 79%, 52%)"}30`
+                  boxShadow: `0 0 0 2.5px ${petAccent || "hsl(209, 79%, 52%)"}, 0 4px 16px ${petAccent || "hsl(209, 79%, 52%)"}25`
                 }}
               >
                 <Avatar className="w-full h-full border-[2px] border-background rounded-full">
@@ -337,7 +346,7 @@ const BottomNav = () => {
                     <AvatarImage src={activePet.avatar_url} className="object-cover" />
                   ) : null}
                   <AvatarFallback className="bg-muted text-muted-foreground">
-                    <PetFallbackIcon className="w-5 h-5" strokeWidth={1.5} />
+                    <PetFallbackIcon className="w-6 h-6" strokeWidth={1.5} />
                   </AvatarFallback>
                 </Avatar>
               </div>
@@ -347,7 +356,6 @@ const BottomNav = () => {
                   style={{ backgroundColor: petAccent || "hsl(var(--primary))" }}
                 />
               )}
-              {/* Randomized micro-animations */}
               <PetButtonOverlay activeAnim={activeAnim} />
             </motion.div>
             <span
@@ -358,7 +366,7 @@ const BottomNav = () => {
             </span>
           </div>
 
-          {/* Shop */}
+          {/* Shop - Right */}
           <NavButton
             onClick={() => handleNavClick("/shop")}
             active={isActive("/shop")}
@@ -370,32 +378,6 @@ const BottomNav = () => {
               style={isActive("/shop") ? { color: petAccent || "hsl(var(--primary))" } : undefined}
               strokeWidth={isActive("/shop") ? 2.2 : 1.5}
             />
-          </NavButton>
-
-          {/* Quick Actions FAB */}
-          <NavButton
-            onClick={() => setShowQuickActions((v) => !v)}
-            active={showQuickActions}
-            label=""
-            accent={petAccent}
-            isFab
-          >
-            <motion.div
-              animate={{ rotate: showQuickActions ? 45 : 0 }}
-              transition={{ type: "spring", stiffness: 400, damping: 20 }}
-              className={cn(
-                "w-10 h-10 rounded-full flex items-center justify-center transition-colors",
-                showQuickActions
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-primary/10 text-primary"
-              )}
-            >
-              {showQuickActions ? (
-                <X className="w-5 h-5" strokeWidth={2} />
-              ) : (
-                <Plus className="w-5 h-5" strokeWidth={2} />
-              )}
-            </motion.div>
           </NavButton>
         </div>
       </nav>
