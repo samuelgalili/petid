@@ -29,6 +29,8 @@ import { SubscribeAndSave } from "@/components/shop/SubscribeAndSave";
 import { checkProductSafety, SafetyBadge } from "@/components/shop/ShopSafetyFilter";
 import { useActivePet } from "@/hooks/useActivePet";
 import { FleetSafetyAlert } from "@/components/fleet/FleetSafetyAlert";
+import { SlideToConfirm } from "@/components/shop/SlideToConfirm";
+import { ProductInfoDrawer } from "@/components/shop/ProductInfoDrawer";
 
 const Shop = () => {
   const navigate = useNavigate();
@@ -51,6 +53,7 @@ const Shop = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [infoDrawerProduct, setInfoDrawerProduct] = useState<any>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchHistory, setSearchHistory] = useState<string[]>(() => {
     const saved = localStorage.getItem("petid-search-history");
@@ -230,6 +233,10 @@ const Shop = () => {
       isFlagged: p.is_flagged || false,
       flaggedReason: p.flagged_reason,
       flavors: p.flavors || [],
+      safetyScore: (p as any).safety_score ?? null,
+      brand: (p as any).brand || null,
+      ingredients: (p as any).ingredients || null,
+      weightUnit: (p as any).weight_unit || null,
     }));
   }, [dbProducts]);
 
@@ -773,8 +780,7 @@ const Shop = () => {
                   </button>
                   <button
                     onClick={() => {
-                      navigate(`/product/${selectedProduct.id}`, { state: { product: selectedProduct } });
-                      setSelectedProduct(null);
+                      setInfoDrawerProduct(selectedProduct);
                     }}
                     className="w-10 h-10 rounded-full bg-muted/50 hover:bg-muted flex items-center justify-center transition-colors"
                   >
@@ -824,41 +830,27 @@ const Shop = () => {
                 />
               </div>
 
-              {/* Action Bar - With extra padding for BottomNav */}
+              {/* Action Bar - Slide to Confirm */}
               <div className="px-5 pt-4 pb-24 bg-background border-t border-border/20 mt-auto">
                 {selectedProduct.isFlagged ? (
-                  <div className="flex items-center justify-center gap-2 py-3 rounded-2xl bg-red-50 text-red-600 border border-red-100">
+                  <div className="flex items-center justify-center gap-2 py-3 rounded-2xl bg-destructive/5 text-destructive border border-destructive/10">
                     <Flag className="w-4 h-4" />
                     <span className="text-sm font-medium">מוצר בבדיקה</span>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-4">
-                    {/* Quantity Selector - Modern */}
+                  <div className="flex items-center gap-3">
                     <div className="flex items-center bg-muted/80 rounded-2xl p-1">
-                      <button
-                        onClick={decreaseQuantity}
-                        className="w-11 h-11 rounded-xl bg-card shadow-sm flex items-center justify-center active:scale-95 transition-transform"
-                      >
+                      <button onClick={decreaseQuantity} className="w-11 h-11 rounded-xl bg-card shadow-sm flex items-center justify-center active:scale-95 transition-transform">
                         <Minus className="w-5 h-5 text-foreground" />
                       </button>
                       <span className="text-lg font-bold w-10 text-center">{quantity}</span>
-                      <button
-                        onClick={increaseQuantity}
-                        className="w-11 h-11 rounded-xl bg-card shadow-sm flex items-center justify-center active:scale-95 transition-transform"
-                      >
+                      <button onClick={increaseQuantity} className="w-11 h-11 rounded-xl bg-card shadow-sm flex items-center justify-center active:scale-95 transition-transform">
                         <Plus className="w-5 h-5 text-foreground" />
                       </button>
                     </div>
-                    
-                    {/* Add to Cart Button - Premium */}
-                    <button
-                      onClick={handleAddToCart}
-                      disabled={!selectedProduct.inStock}
-                      className="flex-1 h-[52px] text-base font-bold rounded-2xl bg-gradient-to-r from-primary to-primary/90 text-primary-foreground flex items-center justify-center gap-2.5 disabled:opacity-50 active:scale-[0.98] transition-all shadow-lg shadow-primary/25"
-                    >
-                      <ShoppingBag className="w-5 h-5" />
-                      <span>הוסף לסל • ₪{selectedProduct.price * quantity}</span>
-                    </button>
+                    <div className="flex-1">
+                      <SlideToConfirm onConfirm={handleAddToCart} label="החלק לרכישה" confirmLabel="נוסף לסל!" price={`₪${selectedProduct.price * quantity}`} disabled={!selectedProduct.inStock} />
+                    </div>
                   </div>
                 )}
               </div>
@@ -866,6 +858,13 @@ const Shop = () => {
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Product Info Drawer */}
+      <AnimatePresence>
+        {infoDrawerProduct && (
+          <ProductInfoDrawer product={infoDrawerProduct} petName={activePet?.name} onClose={() => setInfoDrawerProduct(null)} onAddToCart={() => { handleAddToCart(); setInfoDrawerProduct(null); }} />
+        )}
+      </AnimatePresence>
       </div>
 
       <BottomNav />
