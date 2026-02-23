@@ -224,7 +224,7 @@ const SoundtrackFeed = () => {
         </div>
       </motion.header>
 
-      {/* Feed */}
+      {/* Feed — Cross-fade between tabs */}
       <div
         ref={containerRef}
         className="h-full overflow-y-auto snap-y snap-mandatory scroll-smooth"
@@ -232,80 +232,92 @@ const SoundtrackFeed = () => {
         style={{ scrollSnapType: "y mandatory", scrollPaddingTop: "8px" }}
         {...pullHandlers}
       >
-        {error ? (
-          <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-3">
-            <p className="text-lg">{error}</p>
-            <button
-              onClick={fetchPosts}
-              className="px-4 py-2 rounded-xl text-sm font-medium"
-              style={{ backgroundColor: "#FF8C42", color: "white" }}
-            >
-              נסה שוב
-            </button>
-          </div>
-        ) : posts.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
-            <p className="text-lg">אין פוסטים להצגה</p>
-            <p className="text-sm mt-2">
-              {activeTab === "following"
-                ? "עקוב אחרי משתמשים כדי לראות את הפוסטים שלהם"
-                : "בקרוב יופיעו כאן פוסטים"}
-            </p>
-          </div>
-        ) : (
-          <>
-            {/* Daily Insight — First card */}
-            {activeTab === "discover" && (
-              <ComponentErrorBoundary fallbackMessage="שגיאה בטעינת תובנות יומיות">
-                <DailyInsightCard />
-              </ComponentErrorBoundary>
-            )}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            {error ? (
+              <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-3">
+                <p className="text-lg">{error}</p>
+                <button
+                  onClick={fetchPosts}
+                  className="px-4 py-2 rounded-xl text-sm font-medium bg-primary text-primary-foreground"
+                >
+                  נסה שוב
+                </button>
+              </div>
+            ) : posts.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
+                <p className="text-lg">אין פוסטים להצגה</p>
+                <p className="text-sm mt-2">
+                  {activeTab === "following"
+                    ? "עקוב אחרי משתמשים כדי לראות את הפוסטים שלהם"
+                    : "בקרוב יופיעו כאן פוסטים"}
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Daily Insight — First card (For You only) */}
+                {activeTab === "discover" && (
+                  <ComponentErrorBoundary fallbackMessage="שגיאה בטעינת תובנות יומיות">
+                    <DailyInsightCard />
+                  </ComponentErrorBoundary>
+                )}
 
-            {posts.map((post, index) => (
-              <React.Fragment key={post.id}>
-                <ComponentErrorBoundary fallbackMessage="שגיאה בטעינת פוסט">
-                  <SoundtrackPostCard
-                    post={post}
-                    index={index}
-                    currentIndex={currentIndex}
-                    muted={muted}
-                    setMuted={setMuted}
-                    onLike={handleLike}
-                    onSave={handleSave}
-                    onFollow={handleFollow}
-                    userId={userId}
-                    activePet={activePet}
-                  />
-                </ComponentErrorBoundary>
-                {/* Inject product cards after 3rd post */}
-                {index === 2 && activeTab === "discover" && (
-                  <ComponentErrorBoundary fallbackMessage="שגיאה בטעינת מוצרים">
-                    <FeedProductCards />
-                  </ComponentErrorBoundary>
-                )}
-                {/* Inject poll every 5th post */}
-                {index === 4 && activeTab === "discover" && (
-                  <ComponentErrorBoundary fallbackMessage="שגיאה בטעינת סקר">
-                    <FeedPollCard />
-                  </ComponentErrorBoundary>
-                )}
-                {/* Inject health score highlight after 7th post */}
-                {index === 6 && activeTab === "discover" && (
-                  <ComponentErrorBoundary fallbackMessage="שגיאה בטעינת ציון בריאות">
-                    <HealthScoreHighlight />
-                  </ComponentErrorBoundary>
-                )}
-              </React.Fragment>
-            ))}
+                {posts.map((post, index) => (
+                  <React.Fragment key={post.id}>
+                    <ComponentErrorBoundary fallbackMessage="שגיאה בטעינת פוסט">
+                      <SoundtrackPostCard
+                        post={post}
+                        index={index}
+                        currentIndex={currentIndex}
+                        muted={muted}
+                        setMuted={setMuted}
+                        onLike={handleLike}
+                        onSave={handleSave}
+                        onFollow={handleFollow}
+                        userId={userId}
+                        activePet={activePet}
+                      />
+                    </ComponentErrorBoundary>
 
-            {/* Local Events — After posts */}
-            {activeTab === "discover" && (
-              <ComponentErrorBoundary fallbackMessage="שגיאה בטעינת אירועים">
-                <LocalEventsCard />
-              </ComponentErrorBoundary>
+                    {/* Product Spotlight every 5th post (For You only) */}
+                    {activeTab === "discover" && (index + 1) % 5 === 0 && (
+                      <ComponentErrorBoundary fallbackMessage="שגיאה בטעינת מוצרים">
+                        <FeedProductCards />
+                      </ComponentErrorBoundary>
+                    )}
+
+                    {/* Poll after 4th post (For You only) */}
+                    {index === 4 && activeTab === "discover" && (
+                      <ComponentErrorBoundary fallbackMessage="שגיאה בטעינת סקר">
+                        <FeedPollCard />
+                      </ComponentErrorBoundary>
+                    )}
+
+                    {/* Health score highlight after 7th post (For You only) */}
+                    {index === 6 && activeTab === "discover" && (
+                      <ComponentErrorBoundary fallbackMessage="שגיאה בטעינת ציון בריאות">
+                        <HealthScoreHighlight />
+                      </ComponentErrorBoundary>
+                    )}
+                  </React.Fragment>
+                ))}
+
+                {/* Local Events — After posts (For You only) */}
+                {activeTab === "discover" && (
+                  <ComponentErrorBoundary fallbackMessage="שגיאה בטעינת אירועים">
+                    <LocalEventsCard />
+                  </ComponentErrorBoundary>
+                )}
+              </>
             )}
-          </>
-        )}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       {/* Upload FAB removed — handled by BottomNav FAB */}

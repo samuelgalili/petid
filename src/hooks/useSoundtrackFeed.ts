@@ -91,13 +91,13 @@ function scorePostForPet(
     }
   }
 
-  // V73: Engagement-based boost from liked topics
+  // Engagement-based boost from liked topics
   try {
     const likedTopics = JSON.parse(localStorage.getItem("petid_liked_topics") || "{}");
     for (const [topic, count] of Object.entries(likedTopics)) {
       const topicLower = topic.toLowerCase();
       if (lower.includes(topicLower)) {
-        score += Math.min(Number(count) * 2, 10); // cap at +10
+        score += Math.min(Number(count) * 2, 10);
       }
     }
   } catch { /* noop */ }
@@ -110,7 +110,8 @@ export function useSoundtrackFeed() {
   const { user, isAuthenticated } = useAuth();
   const { pet: activePet } = useActivePet();
   const [activeTab, setActiveTab] = useState<"discover" | "following">("discover");
-  const [posts, setPosts] = useState<FeedPost[]>([]);
+  const [discoverPosts, setDiscoverPosts] = useState<FeedPost[]>([]);
+  const [followingPosts, setFollowingPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -118,33 +119,61 @@ export function useSoundtrackFeed() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [newPostCount, setNewPostCount] = useState(0);
 
+  // Separate scroll positions per feed
+  const scrollPositions = useRef<{ discover: number; following: number }>({
+    discover: 0,
+    following: 0,
+  });
+
+  // Save scroll position before switching tabs
+  const handleSetActiveTab = useCallback((tab: "discover" | "following") => {
+    if (containerRef.current) {
+      scrollPositions.current[activeTab] = containerRef.current.scrollTop;
+    }
+    setActiveTab(tab);
+  }, [activeTab]);
+
+  // Restore scroll position after tab switch
+  useEffect(() => {
+    if (containerRef.current) {
+      requestAnimationFrame(() => {
+        containerRef.current?.scrollTo({
+          top: scrollPositions.current[activeTab],
+          behavior: "instant" as ScrollBehavior,
+        });
+      });
+    }
+  }, [activeTab]);
+
+  const posts = activeTab === "discover" ? discoverPosts : followingPosts;
+
   const fetchPostsInner = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
+      // ── Fetch base posts ──
       let postsQuery = supabase
         .from("posts")
         .select("id, user_id, image_url, media_urls, video_url, caption, created_at, music_url, music_title, music_artist")
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(30);
 
-      if (activeTab === "following" && user) {
+      // For "following" tab, filter by followed users
+      let followingUserIds: string[] = [];
+      if (user) {
         const { data: following } = await supabase
           .from("user_follows")
           .select("following_id")
           .eq("follower_id", user.id);
-
-        const followingIds = following?.map((f) => f.following_id) || [];
-        if (followingIds.length > 0) {
-          postsQuery = postsQuery.in("user_id", followingIds);
-        }
+        followingUserIds = following?.map((f) => f.following_id) || [];
       }
 
       const { data: postsData, error: fetchError } = await postsQuery;
       if (fetchError) throw fetchError;
 
       if (!postsData || postsData.length === 0) {
-        setPosts([]);
+        setDiscoverPosts([]);
+        setFollowingPosts([]);
         return;
       }
 
@@ -178,9 +207,9 @@ export function useSoundtrackFeed() {
 
       const likedPostIds = user ? userDataRes[0]?.data?.map((l: any) => l.post_id) || [] : [];
       const savedPostIds = user ? userDataRes[1]?.data?.map((s: any) => s.post_id) || [] : [];
-      const followingIds = user ? userDataRes[2]?.data?.map((f: any) => f.following_id) || [] : [];
+      const followingIdsFromData = user ? userDataRes[2]?.data?.map((f: any) => f.following_id) || [] : [];
 
-      const enrichedPosts: FeedPost[] = postsData.map((post) => {
+      const enrichPost = (post: any, reason?: string): FeedPost => {
         const mediaUrls = post.media_urls as string[] | null;
         const hasVideo = !!post.video_url;
         const hasMultipleImages = mediaUrls && mediaUrls.length > 1;
@@ -202,25 +231,45 @@ export function useSoundtrackFeed() {
           user_profile: profiles.find((p) => p.id === post.user_id) || undefined,
           is_liked: likedPostIds.includes(post.id),
           is_saved: savedPostIds.includes(post.id),
-          is_following: followingIds.includes(post.user_id),
-          recommendation_reason: activeTab === "discover" ? "בשבילך" : undefined,
+          is_following: followingIdsFromData.includes(post.user_id),
+          recommendation_reason: reason,
           media_type: mediaType,
         };
-      });
+      };
 
-      // Pet-aware feed ranking: always sort by relevance to active pet
+      // ── FOLLOWING FEED: Chronological, no commerce ──
+      const followingFiltered = postsData
+        .filter((p) => followingUserIds.includes(p.user_id))
+        .map((p) => enrichPost(p));
+      setFollowingPosts(followingFiltered);
+
+      // ── FOR YOU FEED: AI-ranked with product spotlights ──
+      const discoverEnriched = postsData.map((p) => enrichPost(p, "בשבילך"));
+
+      // Pet-aware ranking
       const petConditions = [...(activePet?.medical_conditions || [])];
-      if (activeTab === "discover" && activePet) {
-        enrichedPosts.sort((a, b) => {
+      if (activePet) {
+        discoverEnriched.sort((a, b) => {
           const scoreA = scorePostForPet(a.caption, activePet.pet_type, activePet.breed, activePet.ageWeeks ?? null, petConditions);
           const scoreB = scorePostForPet(b.caption, activePet.pet_type, activePet.breed, activePet.ageWeeks ?? null, petConditions);
           if (scoreA !== scoreB) return scoreB - scoreA;
           return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         });
+
+        // Add pet-match badge to posts that score well
+        const petName = activePet.name;
+        if (petName) {
+          discoverEnriched.forEach((post) => {
+            const score = scorePostForPet(post.caption, activePet.pet_type, activePet.breed, activePet.ageWeeks ?? null, petConditions);
+            if (score >= 10) {
+              post.recommendation_reason = `מתאים ל${petName} 🐾`;
+            }
+          });
+        }
       }
 
-      // Insert promo posts at configured positions
-      const allPosts = [...enrichedPosts];
+      // Insert promo posts at configured positions (For You only)
+      const allDiscover = [...discoverEnriched];
       const sortedPromos = [...PROMO_POSTS].sort((a, b) => a.insertAt - b.insertAt);
       for (const promo of sortedPromos) {
         const promoPost: FeedPost = {
@@ -230,21 +279,21 @@ export function useSoundtrackFeed() {
           is_saved: false,
           is_following: false,
         };
-        if (allPosts.length > promo.insertAt) {
-          allPosts.splice(promo.insertAt, 0, promoPost);
+        if (allDiscover.length > promo.insertAt) {
+          allDiscover.splice(promo.insertAt, 0, promoPost);
         } else {
-          allPosts.push(promoPost);
+          allDiscover.push(promoPost);
         }
       }
 
-      setPosts(allPosts);
+      setDiscoverPosts(allDiscover);
     } catch (err) {
       console.error("Error fetching posts:", err);
       setError("שגיאה בטעינת הפיד. נסו שוב.");
     } finally {
       setLoading(false);
     }
-  }, [activeTab, user]);
+  }, [user, activePet]);
 
   // Pull-to-refresh
   const {
@@ -287,13 +336,15 @@ export function useSoundtrackFeed() {
     if (!post) return;
     const wasLiked = post.is_liked;
 
-    setPosts((prev) =>
+    const updater = (prev: FeedPost[]) =>
       prev.map((p) =>
         p.id === postId
           ? { ...p, is_liked: !wasLiked, likes_count: p.likes_count + (wasLiked ? -1 : 1) }
           : p
-      )
-    );
+      );
+
+    setDiscoverPosts(updater);
+    setFollowingPosts(updater);
 
     try {
       if (wasLiked) {
@@ -302,13 +353,14 @@ export function useSoundtrackFeed() {
         await supabase.from("post_likes").insert({ post_id: postId, user_id: user.id });
       }
     } catch {
-      setPosts((prev) =>
+      const rollback = (prev: FeedPost[]) =>
         prev.map((p) =>
           p.id === postId
             ? { ...p, is_liked: wasLiked, likes_count: p.likes_count + (wasLiked ? 1 : -1) }
             : p
-        )
-      );
+        );
+      setDiscoverPosts(rollback);
+      setFollowingPosts(rollback);
     }
   };
 
@@ -321,7 +373,10 @@ export function useSoundtrackFeed() {
     if (!post) return;
     const wasSaved = post.is_saved;
 
-    setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, is_saved: !wasSaved } : p)));
+    const updater = (prev: FeedPost[]) =>
+      prev.map((p) => (p.id === postId ? { ...p, is_saved: !wasSaved } : p));
+    setDiscoverPosts(updater);
+    setFollowingPosts(updater);
 
     try {
       if (wasSaved) {
@@ -331,20 +386,24 @@ export function useSoundtrackFeed() {
       }
       toast.success(wasSaved ? "הוסר מהשמורים" : "נשמר!");
     } catch {
-      setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, is_saved: wasSaved } : p)));
+      const rollback = (prev: FeedPost[]) =>
+        prev.map((p) => (p.id === postId ? { ...p, is_saved: wasSaved } : p));
+      setDiscoverPosts(rollback);
+      setFollowingPosts(rollback);
     }
   };
 
-  const handleFollow = async (userId: string) => {
+  const handleFollow = async (targetUserId: string) => {
     if (!user) {
       navigate("/auth");
       return;
     }
-    const isFollowing = posts.find((p) => p.user_id === userId)?.is_following;
+    const isFollowing = posts.find((p) => p.user_id === targetUserId)?.is_following;
 
-    setPosts((prev) =>
-      prev.map((p) => (p.user_id === userId ? { ...p, is_following: !isFollowing } : p))
-    );
+    const updater = (prev: FeedPost[]) =>
+      prev.map((p) => (p.user_id === targetUserId ? { ...p, is_following: !isFollowing } : p));
+    setDiscoverPosts(updater);
+    setFollowingPosts(updater);
 
     try {
       if (isFollowing) {
@@ -352,16 +411,17 @@ export function useSoundtrackFeed() {
           .from("user_follows")
           .delete()
           .eq("follower_id", user.id)
-          .eq("following_id", userId);
+          .eq("following_id", targetUserId);
       } else {
         await supabase
           .from("user_follows")
-          .insert({ follower_id: user.id, following_id: userId });
+          .insert({ follower_id: user.id, following_id: targetUserId });
       }
     } catch {
-      setPosts((prev) =>
-        prev.map((p) => (p.user_id === userId ? { ...p, is_following: isFollowing } : p))
-      );
+      const rollback = (prev: FeedPost[]) =>
+        prev.map((p) => (p.user_id === targetUserId ? { ...p, is_following: isFollowing } : p));
+      setDiscoverPosts(rollback);
+      setFollowingPosts(rollback);
     }
   };
 
@@ -380,7 +440,7 @@ export function useSoundtrackFeed() {
     loading,
     error,
     activeTab,
-    setActiveTab,
+    setActiveTab: handleSetActiveTab,
     currentIndex,
     muted,
     setMuted,
