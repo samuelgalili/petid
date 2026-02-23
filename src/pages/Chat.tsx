@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronRight, Sparkles, Bot, Shield, Scissors, GraduationCap, TreePine, FolderOpen, Building2, Package, Dog, Home, Edit, MessageCircle } from "lucide-react";
+import { ChevronRight, Sparkles, MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import petidIcon from "@/assets/petid-icon.png";
 import BottomNav from "@/components/BottomNav";
@@ -12,7 +12,6 @@ import { ChatActionButton, extractActionTags, cleanActionTags } from "@/componen
 import { ChatProductCards } from "@/components/chat/ChatProductCards";
 import { InsurancePlanCards, InsuranceLoadingAnimation } from "@/components/chat/InsurancePlanCards";
 import { InsuranceCallbackForm } from "@/components/chat/InsuranceCallbackForm";
-import KineticDotsLoader from "@/components/ui/kinetic-dots-loader";
 import { GroomingServicePicker } from "@/components/chat/GroomingServicePicker";
 import { QuickReplySuggestions } from "@/components/chat/QuickReplySuggestions";
 import { MessageFeedback } from "@/components/chat/MessageFeedback";
@@ -26,7 +25,6 @@ import { StoreCategoryPicker } from "@/components/chat/StoreCategoryPicker";
 import { AdoptionTraitPicker } from "@/components/chat/AdoptionTraitPicker";
 import { AdoptionRequirementPicker } from "@/components/chat/AdoptionRequirementPicker";
 import { ChatProvider, useChatContext, type Message } from "@/contexts/ChatContext";
-import { ExpertSpheres, type ExpertSphere } from "@/components/chat/ExpertSpheres";
 import { useDataIntake, type IntakeType } from "@/hooks/useDataIntake";
 import { ChatHubMessages } from "@/components/chat/ChatHubMessages";
 
@@ -50,7 +48,6 @@ const ChatContent = () => {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [showExpertSpheres, setShowExpertSpheres] = useState(true);
   const [headerHidden, setHeaderHidden] = useState(false);
   const [activeHubTab, setActiveHubTab] = useState<"scientist" | "messages">("scientist");
   const lastScrollTop = useRef(0);
@@ -82,7 +79,7 @@ const ChatContent = () => {
     const userMsg: Message = { role: "user", content: result.userMessage };
     setMessages((prev) => [...prev, userMsg]);
     setIsLoading(true);
-    setShowExpertSpheres(false);
+    // Categories handled via NLP
 
     try {
       // Send the AI prompt (includes triage metadata) as user context
@@ -101,18 +98,7 @@ const ChatContent = () => {
     }
   }, [triggerFilePicker, messages, setMessages, setIsLoading, streamChat, toast]);
 
-  // Category buttons for quick selection
-  const categoryButtons = [
-    { id: "insurance", label: "ביטוח", icon: "🛡️", lucide: Shield, color: "from-blue-500 to-cyan-500" },
-    { id: "grooming", label: "טיפוח", icon: "✂️", lucide: Scissors, color: "from-pink-500 to-rose-500" },
-    { id: "training", label: "אילוף", icon: "🎓", lucide: GraduationCap, color: "from-amber-500 to-orange-500" },
-    { id: "dog_parks", label: "גינות כלבים", icon: "🌳", lucide: TreePine, color: "from-emerald-500 to-green-500" },
-    { id: "documents", label: "מסמכים", icon: "📂", lucide: FolderOpen, color: "from-violet-500 to-purple-500" },
-    { id: "boarding", label: "פנסיון", icon: "🏨", lucide: Building2, color: "from-sky-500 to-blue-500" },
-    { id: "delivery", label: "משלוחים", icon: "📦", lucide: Package, color: "from-orange-500 to-red-500" },
-    { id: "breed", label: "מידע על הגזע", icon: "🐕", lucide: Dog, color: "from-teal-500 to-cyan-500" },
-    { id: "rehoming", label: "למסירה", icon: "🏠", lucide: Home, color: "from-indigo-500 to-violet-500" },
-  ];
+  // Category buttons removed — NLP intent recognition handles categories via natural language
 
   const handlePetSelect = (petName: string) => {
     const pet = userPets.find(p => p.name === petName);
@@ -129,47 +115,9 @@ const ChatContent = () => {
     }
   };
 
-  const handleCategorySelect = async (category: { id: string; label: string; icon: string }) => {
-    setShowCategories(false);
-    setShowExpertSpheres(false);
-    const userMessage: Message = { role: "user", content: `${category.icon} ${category.label}` };
-    setMessages((prev) => [...prev, userMessage]);
-    setIsLoading(true);
+  // Category selection removed — handled via NLP intent recognition
 
-    try {
-      await streamChat([...messages, userMessage]);
-    } catch (error) {
-      console.error("Error:", error);
-      toast({
-        title: "שגיאה",
-        description: error instanceof Error ? error.message : "משהו השתבש",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleExpertSphereSelect = async (sphere: ExpertSphere) => {
-    setShowExpertSpheres(false);
-    setShowCategories(false);
-    const userMessage: Message = { role: "user", content: sphere.contextualPrompt };
-    setMessages((prev) => [...prev, userMessage]);
-    setIsLoading(true);
-
-    try {
-      await streamChat([...messages, userMessage]);
-    } catch (error) {
-      console.error("Error:", error);
-      toast({
-        title: "שגיאה",
-        description: error instanceof Error ? error.message : "משהו השתבש",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Expert sphere selection removed — handled via NLP
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -302,9 +250,8 @@ const ChatContent = () => {
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
-    // Hide categories and spheres when user types freely
+    // Hide categories when user types freely
     setShowCategories(false);
-    setShowExpertSpheres(false);
 
     const userMessage: Message = { role: "user", content: input.trim() };
     setMessages((prev) => [...prev, userMessage]);
@@ -333,12 +280,7 @@ const ChatContent = () => {
     }
   };
 
-  const exampleQuestions = [
-    { icon: "🐕", text: "איך לטפל בכלב?" },
-    { icon: "🐈", text: "מה לתת לחתול?" },
-    { icon: "🎓", text: "איך לאלף גור?" },
-    { icon: "🏥", text: "מתי לפנות לווטרינר?" },
-  ];
+  // Empty state is handled by the initial greeting in ChatProvider
 
   return (
     <div className="min-h-screen bg-background pb-20" dir="rtl">
@@ -401,57 +343,6 @@ const ChatContent = () => {
         {/* Messages Container */}
         <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="flex-1 overflow-y-auto px-4 py-6">
           <AnimatePresence>
-            {messages.length === 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="flex flex-col items-center justify-center h-full py-8"
-              >
-                <div className="relative mb-6">
-                  <motion.div 
-                    animate={{ rotate: [0, 5, -5, 0] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                    className="w-28 h-28 rounded-full bg-gradient-to-br from-primary/20 via-primary/10 to-accent/20 flex items-center justify-center shadow-lg shadow-primary/10"
-                  >
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
-                      <Bot className="w-10 h-10 text-primary-foreground" />
-                    </div>
-                  </motion.div>
-                  <motion.div
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-green-500 border-3 border-card flex items-center justify-center"
-                  >
-                    <Sparkles className="w-3 h-3 text-white" />
-                  </motion.div>
-                </div>
-                <h2 className="text-2xl font-bold text-foreground mb-1">PetAI</h2>
-                <p className="text-sm text-muted-foreground mb-2">העוזר החכם שלך לכל מה שקשור לחיות המחמד</p>
-                <div className="flex items-center gap-1.5 mb-8">
-                  <div className="w-2 h-2 rounded-full bg-green-500" />
-                  <span className="text-xs text-green-500 font-medium">זמין 24/7</span>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-3 w-full max-w-sm">
-                  {exampleQuestions.map((q, index) => (
-                    <motion.button
-                      key={index}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3 + index * 0.1 }}
-                      whileHover={{ scale: 1.03, y: -2 }}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => setInput(q.text)}
-                      className="flex items-center gap-3 px-4 py-3.5 bg-card hover:bg-primary/5 rounded-2xl transition-all text-right border border-border/40 shadow-sm hover:shadow-md hover:border-primary/30"
-                    >
-                      <span className="text-2xl">{q.icon}</span>
-                      <span className="text-sm text-foreground font-heebo font-medium">{q.text}</span>
-                    </motion.button>
-                  ))}
-                </div>
-              </motion.div>
-            )}
 
             {messages.map((message, index) => (
               <motion.div
@@ -653,39 +544,6 @@ const ChatContent = () => {
               </motion.div>
             ))}
 
-            {/* Legacy Category Quick Buttons - kept for programmatic use */}
-            {showCategories && !isLoading && !showExpertSpheres && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-4 px-2"
-              >
-                <p className="text-xs text-muted-foreground text-center mb-3 font-heebo">במה אוכל לעזור?</p>
-                <div className="grid grid-cols-3 gap-2.5">
-                  {categoryButtons.map((cat, index) => {
-                    const IconComp = cat.lucide;
-                    return (
-                      <motion.button
-                        key={cat.id}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: index * 0.04 }}
-                        whileHover={{ scale: 1.04, y: -2 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => handleCategorySelect(cat)}
-                        className="flex flex-col items-center gap-2 p-3 bg-card hover:bg-card/80 rounded-2xl transition-all border border-border/30 shadow-sm hover:shadow-md"
-                      >
-                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${cat.color} flex items-center justify-center shadow-sm`}>
-                          <IconComp className="w-5 h-5 text-white" />
-                        </div>
-                        <span className="text-[11px] text-foreground font-heebo font-medium leading-tight text-center">{cat.label}</span>
-                      </motion.button>
-                    );
-                  })}
-                </div>
-              </motion.div>
-            )}
-
             {/* Date Picker */}
             {showDatePicker && (
               <motion.div
@@ -716,7 +574,7 @@ const ChatContent = () => {
               </motion.div>
             )}
 
-            {/* Typing Indicator */}
+            {/* "Scientist is thinking..." Pulse Animation */}
             {isTyping && !showInsuranceLoading && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -725,10 +583,27 @@ const ChatContent = () => {
               >
                 <div className="flex items-end gap-2 flex-row-reverse">
                   <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Sparkles className="w-3 h-3 text-primary" />
+                    <motion.div
+                      animate={{ scale: [1, 1.2, 1], opacity: [0.7, 1, 0.7] }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      <Sparkles className="w-3 h-3 text-primary" />
+                    </motion.div>
                   </div>
-                  <div className="px-3 py-2 bg-card border border-border/40 rounded-3xl rounded-bl-lg">
-                    <KineticDotsLoader />
+                  <div className="px-4 py-2.5 bg-card/80 backdrop-blur-md border border-border/30 rounded-2xl rounded-bl-md shadow-[0_0_15px_hsla(260,60%,60%,0.08)]">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground font-medium">המדען חושב...</span>
+                      <div className="flex gap-0.5">
+                        {[0, 1, 2].map((i) => (
+                          <motion.div
+                            key={i}
+                            className="w-1.5 h-1.5 rounded-full bg-primary/50"
+                            animate={{ opacity: [0.3, 1, 0.3] }}
+                            transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -737,42 +612,6 @@ const ChatContent = () => {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Expert Spheres - scrollable category circles above input */}
-        <AnimatePresence>
-          {showExpertSpheres && !isLoading && messages.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className="border-t border-border/20"
-            >
-              <ExpertSpheres
-                onSelect={handleExpertSphereSelect}
-                disabled={isLoading}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Quick Fast Actions */}
-        {(!isLoading) && (
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide px-4 py-2 border-t border-border/10">
-            {[
-              { label: "האוכל הזה בטוח?", icon: "🔬" },
-              { label: "בדוק ציון בריאות", icon: "💯" },
-              { label: "דבר עם וטרינר", icon: "🩺" },
-            ].map((action) => (
-              <button
-                key={action.label}
-                onClick={() => setInput(action.label)}
-                className="flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-muted/60 border border-border/20 text-xs font-medium text-foreground hover:bg-muted transition-colors backdrop-blur-sm"
-              >
-                <span>{action.icon}</span>
-                <span>{action.label}</span>
-              </button>
-            ))}
-          </div>
-        )}
 
         {/* Input Area */}
         <ChatInputBar

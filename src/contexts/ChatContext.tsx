@@ -54,7 +54,7 @@ export interface Pet {
 }
 
 // Maximum messages to send as context to the AI (saves tokens)
-const MAX_CONTEXT_MESSAGES = 8;
+const MAX_CONTEXT_MESSAGES = 50;
 
 // ============= Context =============
 interface ChatContextType {
