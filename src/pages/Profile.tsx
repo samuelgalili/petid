@@ -375,9 +375,6 @@ const Profile = () => {
             <button onClick={() => navigate('/messages')} className="p-1.5 relative" aria-label="הודעות">
               <MessageCircle className="w-5 h-5 text-foreground" strokeWidth={1.5} />
             </button>
-            <button onClick={() => setIsMenuOpen(true)} className="p-1.5" aria-label="תפריט">
-              <Menu className="w-5 h-5 text-foreground" strokeWidth={1.5} />
-            </button>
           </div>
         </motion.div>
 
