@@ -17,3 +17,4 @@ export { GroomingProductsSheet } from './GroomingProductsSheet';
 export { FeedingSheet } from './FeedingSheet';
 export { FurProductsSheet } from './FurProductsSheet';
 export { MemorialSheet } from './MemorialSheet';
+export { ComingSoonSheet } from './ComingSoonSheet';
