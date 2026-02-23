@@ -3,8 +3,14 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, ChevronRight, Phone, Video, Info, Heart, Image, Mic, Smile, Sparkles, Bot, RotateCcw, ShoppingCart, Plus, ExternalLink, Users, EyeOff } from "lucide-react";
+import { Loader2, ChevronRight, Phone, Video, Sparkles, Bot, RotateCcw, Plus, ExternalLink, Users, EyeOff } from "lucide-react";
 import { SharedFeedPanel } from "@/components/chat/SharedFeedPanel";
+import { ChatBubble } from "@/components/chat/ChatBubble";
+import ChatInputBar from "@/components/chat/ChatInputBar";
+import { ChatHeaderMenu } from "@/components/chat/ChatHeaderMenu";
+import { TypingIndicator } from "@/components/chat/TypingIndicator";
+import { LocationInviteCard } from "@/components/chat/LocationInviteCard";
+import { ProductPreviewCard } from "@/components/chat/ProductPreviewCard";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { OptimizedImage } from "@/components/OptimizedImage";
@@ -611,6 +617,12 @@ ${petType} ראיתי שיש לך את ${petNames}${mainPet.breed ? ` (${mainPet
               <button className="p-2.5 rounded-full hover:bg-muted active:scale-90 transition-all">
                 <Video className="h-[22px] w-[22px] text-foreground" strokeWidth={1.5} />
               </button>
+              <ChatHeaderMenu
+                userName={otherUser?.full_name || "משתמש"}
+                onReport={() => {}}
+                onBlock={() => navigate("/messages")}
+                onDelete={() => navigate("/messages")}
+              />
             </div>
           )}
         </div>
@@ -808,152 +820,69 @@ ${petType} ראיתי שיש לך את ${petNames}${mainPet.breed ? ` (${mainPet
         )}
 
         {/* Regular Messages */}
-        {!isAIChat && messageGroups.map((group, groupIndex) => (
+        {!isAIChat && messageGroups.map((group) => (
           <div key={group.date}>
             {/* Date Separator */}
             <div className="flex justify-center my-4">
-              <span className="text-xs text-muted-foreground bg-background px-2">
+              <span className="text-xs text-muted-foreground bg-background/80 backdrop-blur-sm px-3 py-1 rounded-full">
                 {group.date}
               </span>
             </div>
 
-            <AnimatePresence>
-              {group.messages.map((message, index) => {
-                const isSender = message.sender_id === user?.id;
-                const showAvatar = !isSender && 
-                  (index === group.messages.length - 1 || 
-                   group.messages[index + 1]?.sender_id !== message.sender_id);
+            {group.messages.map((message, index) => {
+              const isSender = message.sender_id === user?.id;
+              const nextMsg = group.messages[index + 1];
+              const isLastInGroup = !nextMsg || nextMsg.sender_id !== message.sender_id;
+              const showAvatar = !isSender && isLastInGroup;
 
-                return (
-                  <motion.div
-                    key={message.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.02 }}
-                    className={`flex items-end gap-2 mb-1 ${isSender ? "flex-row-reverse" : ""}`}
-                  >
-                    {!isSender && (
-                      <div className="w-7 flex-shrink-0">
-                        {showAvatar && (
-                          <Avatar className="h-7 w-7">
-                            <AvatarImage src={otherUser?.avatar_url || undefined} />
-                            <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white text-xs">
-                              {otherUser?.full_name?.charAt(0) || "?"}
-                            </AvatarFallback>
-                          </Avatar>
-                        )}
-                      </div>
-                    )}
-
-                    <div
-                      className={`max-w-[70%] px-4 py-2 ${
-                        isSender
-                          ? "bg-primary text-primary-foreground rounded-[22px] rounded-br-md"
-                          : "bg-muted text-foreground rounded-[22px] rounded-bl-md"
-                      }`}
-                    >
-                      <p className="text-[15px] leading-[20px] whitespace-pre-wrap break-words">
-                        {message.message_text}
-                      </p>
-                    </div>
-
-                    {isSender && (
-                      <span className="text-[10px] text-muted-foreground self-end mb-1">
-                        {message.is_read ? "נקראה" : ""}
-                      </span>
-                    )}
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
+              return (
+                <ChatBubble
+                  key={message.id}
+                  content={message.message_text}
+                  isSender={isSender}
+                  showAvatar={showAvatar}
+                  avatarUrl={otherUser?.avatar_url}
+                  avatarFallback={otherUser?.full_name?.charAt(0) || "?"}
+                  isRead={message.is_read}
+                  timestamp={message.created_at}
+                  isLastInGroup={isLastInGroup}
+                  index={index}
+                />
+              );
+            })}
           </div>
         ))}
 
         {/* Typing indicator */}
-        {isTyping && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex items-end gap-2 mb-1"
-          >
-            {isAIChat ? (
-              <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary to-accent p-[1.5px]">
-                <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
-                  <Bot className="h-4 w-4 text-primary" />
-                </div>
-              </div>
-            ) : (
-              <Avatar className="h-7 w-7">
-                <AvatarImage src={otherUser?.avatar_url || undefined} />
-                <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white text-xs">
-                  {otherUser?.full_name?.charAt(0) || "?"}
-                </AvatarFallback>
-              </Avatar>
-            )}
-            <div className="bg-muted rounded-full px-4 py-3">
-              <div className="flex gap-1">
-                <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-              </div>
-            </div>
-          </motion.div>
-        )}
+        <AnimatePresence>
+          {isTyping && (
+            <TypingIndicator
+              isAI={isAIChat}
+              avatarUrl={otherUser?.avatar_url}
+              avatarFallback={otherUser?.full_name?.charAt(0) || "?"}
+            />
+          )}
+        </AnimatePresence>
 
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Instagram-style Input */}
-      <div className="bg-background border-t border-border px-3 py-2 safe-area-inset-bottom">
-        <div className="flex items-center gap-2">
-          {!isAIChat && (
-            <button className="p-2 rounded-full hover:bg-muted">
-              <Image className="h-6 w-6 text-foreground" />
-            </button>
-          )}
-          
-          <div className="flex-1 flex items-center bg-muted rounded-full px-4 py-2 gap-2">
-            <input
-              ref={inputRef}
-              type="text"
-              value={messageText}
-              onChange={(e) => setMessageText(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder={isAIChat ? "שאל אותי משהו..." : "הודעה..."}
-              className="flex-1 bg-transparent outline-none text-[15px] text-foreground placeholder:text-muted-foreground"
-              disabled={sending}
-            />
-            {!messageText.trim() && !isAIChat && (
-              <>
-                <button className="p-1">
-                  <Mic className="h-5 w-5 text-foreground" />
-                </button>
-                <button className="p-1">
-                  <Smile className="h-5 w-5 text-foreground" />
-                </button>
-              </>
-            )}
-          </div>
-
-          {messageText.trim() ? (
-            <button
-              onClick={sendMessage}
-              disabled={sending}
-              className="text-primary font-semibold text-sm px-2"
-            >
-              {sending ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                "שלח"
-              )}
-            </button>
-          ) : (
-            <button className="p-2">
-              <Heart className="h-6 w-6 text-foreground" />
-            </button>
-          )}
-        </div>
-      </div>
+      {/* Chat Input Bar */}
+      <ChatInputBar
+        value={messageText}
+        onChange={setMessageText}
+        onSend={sendMessage}
+        onKeyPress={handleKeyPress}
+        isLoading={sending}
+        placeholder={isAIChat ? "שאל אותי משהו..." : "הודעה..."}
+        onAttachment={(type) => {
+          if (type === "camera") {
+            toast("שיתוף תמונות יהיה זמין בקרוב 📸");
+          } else if (type === "location") {
+            toast("הזמנה לטיול נשלחה! 🐕", { icon: "📍" });
+          }
+        }}
+      />
 
       {/* Shared Feed Panel */}
       {!isAIChat && userId && (
