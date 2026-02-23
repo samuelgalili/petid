@@ -359,7 +359,7 @@ const Profile = () => {
         opacity: 1
       }}>
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate(-1)} className="p-2 -mr-2" aria-label="חזרה">
+            <button onClick={() => { if (window.history.length > 1) { navigate(-1); } else { navigate('/'); } }} className="p-2 -mr-2" aria-label="חזרה">
               <ChevronRight className="w-6 h-6 text-foreground" />
             </button>
             
