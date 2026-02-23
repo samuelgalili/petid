@@ -25,6 +25,15 @@ import {
   Star,
   Check,
   LayoutDashboard,
+  X,
+  UserCog,
+  ClipboardCheck,
+  ScrollText,
+  BarChart3,
+  Truck,
+  Boxes,
+  Lock,
+  UserPen,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,6 +44,7 @@ import { RoleBadge } from "@/components/RoleBadge";
 import { cn } from "@/lib/utils";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { useUserRole } from "@/hooks/useUserRole";
+
 interface HamburgerMenuProps {
   isOpen: boolean;
   onClose: () => void;
@@ -71,6 +81,18 @@ const menuStrings = {
     noPet: "לא נבחרה חיית מחמד",
     new: "חדש",
     version: "PetID v1.0",
+    notificationSettings: "הגדרות התראות",
+    privacy: "פרטיות",
+    // Admin section
+    controlCenter: "מרכז שליטה",
+    userManagement: "ניהול משתמשים",
+    productApprovals: "אישור מוצרים",
+    systemLogs: "יומני מערכת",
+    // Shop owner section
+    myStore: "החנות שלי",
+    inventory: "מלאי",
+    salesAnalytics: "אנליטיקת מכירות",
+    activeShipments: "משלוחים פעילים",
   },
   en: {
     viewProfile: "View Profile",
@@ -101,6 +123,18 @@ const menuStrings = {
     noPet: "No pet selected",
     new: "New",
     version: "PetID v1.0",
+    notificationSettings: "Notification Settings",
+    privacy: "Privacy",
+    // Admin section
+    controlCenter: "Control Center",
+    userManagement: "User Management",
+    productApprovals: "Product Approvals",
+    systemLogs: "System Logs",
+    // Shop owner section
+    myStore: "My Store",
+    inventory: "Inventory",
+    salesAnalytics: "Sales Analytics",
+    activeShipments: "Active Shipments",
   },
   ar: {
     viewProfile: "عرض الملف",
@@ -131,6 +165,16 @@ const menuStrings = {
     noPet: "لم يتم اختيار حيوان",
     new: "جديد",
     version: "PetID v1.0",
+    notificationSettings: "إعدادات الإشعارات",
+    privacy: "الخصوصية",
+    controlCenter: "مركز التحكم",
+    userManagement: "إدارة المستخدمين",
+    productApprovals: "موافقات المنتجات",
+    systemLogs: "سجلات النظام",
+    myStore: "متجري",
+    inventory: "المخزون",
+    salesAnalytics: "تحليلات المبيعات",
+    activeShipments: "الشحنات النشطة",
   },
 };
 
@@ -142,18 +186,25 @@ interface MenuItemProps {
   badge?: number;
   isNew?: boolean;
   isRtl: boolean;
+  accent?: boolean;
 }
 
-const MenuItem = ({ icon: Icon, label, onClick, badge, isNew, isRtl }: MenuItemProps) => (
+const MenuItem = ({ icon: Icon, label, onClick, badge, isNew, isRtl, accent }: MenuItemProps) => (
   <button
     onClick={onClick}
     className={cn(
-      "w-full flex items-center gap-3 px-5 py-3 hover:bg-muted/60 active:bg-muted transition-colors rounded-lg mx-1",
-      isRtl ? "flex-row" : "flex-row"
+      "w-full flex items-center gap-3.5 px-5 py-3 hover:bg-muted/60 active:bg-muted transition-colors rounded-xl mx-1",
+      accent && "bg-primary/5 hover:bg-primary/10"
     )}
   >
-    <Icon className="w-5 h-5 text-muted-foreground shrink-0" strokeWidth={1.5} />
-    <span className="flex-1 text-sm text-foreground" style={{ textAlign: isRtl ? "right" : "left" }}>
+    <Icon
+      className={cn("w-5 h-5 shrink-0", accent ? "text-primary" : "text-muted-foreground")}
+      strokeWidth={1.5}
+    />
+    <span
+      className={cn("flex-1 text-sm", accent ? "text-primary font-medium" : "text-foreground")}
+      style={{ textAlign: isRtl ? "right" : "left" }}
+    >
       {label}
     </span>
     {badge !== undefined && badge > 0 && (
@@ -169,12 +220,15 @@ const MenuItem = ({ icon: Icon, label, onClick, badge, isNew, isRtl }: MenuItemP
   </button>
 );
 
-const SectionDivider = () => <div className="h-px bg-border mx-5 my-2" />;
+const SectionDivider = () => <div className="h-px bg-border/60 mx-5 my-2" />;
 
-const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-  <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider px-5 pt-3 pb-1">
-    {children}
-  </p>
+const SectionLabel = ({ children, icon: Icon }: { children: React.ReactNode; icon?: React.ElementType }) => (
+  <div className="flex items-center gap-2 px-5 pt-4 pb-1.5">
+    {Icon && <Icon className="w-3.5 h-3.5 text-primary/60" strokeWidth={2} />}
+    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+      {children}
+    </p>
+  </div>
 );
 
 // ── Main Component ───────────────────────────────────
@@ -184,7 +238,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
   const { theme, setTheme } = useTheme();
   const { language, setLanguage, direction } = useLanguage();
   const { activePet, pets, switchPet: contextSwitchPet } = usePetPreference();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, isBusiness } = useUserRole();
   const isRtl = direction === "rtl";
   const s = menuStrings[language] || menuStrings.he;
 
@@ -239,13 +293,13 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Overlay */}
+          {/* Overlay – Heavy Blur */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[100]"
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 bg-black/30 backdrop-blur-[20px] z-[100]"
             onClick={onClose}
           />
 
@@ -256,41 +310,54 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
             exit={{ x: slideTo }}
             transition={{ type: "spring", damping: 28, stiffness: 320 }}
             className={cn(
-              "fixed top-0 h-full w-[82vw] max-w-[360px] bg-background z-[101] flex flex-col shadow-2xl",
-              positionClass
+              "fixed top-0 h-full w-[82vw] max-w-[360px] bg-background/95 backdrop-blur-sm z-[101] flex flex-col shadow-2xl border-border",
+              positionClass,
+              isRtl ? "border-l" : "border-r"
             )}
             dir={direction}
           >
             {/* ── Header / Profile ─────────────── */}
-            <div className="px-5 pt-5 pb-4 border-b border-border">
-              <div className="flex items-center justify-between mb-4">
-                <button onClick={onClose} className="p-1.5 hover:bg-muted rounded-full transition-colors">
-                  {isRtl ? (
-                    <ChevronRight className="w-5 h-5 text-foreground" strokeWidth={1.5} />
-                  ) : (
-                    <ChevronLeft className="w-5 h-5 text-foreground" strokeWidth={1.5} />
-                  )}
+            <div className="px-5 pt-5 pb-4 border-b border-border/60">
+              {/* Close button */}
+              <div className={cn("flex items-center mb-4", isRtl ? "justify-start" : "justify-end")}>
+                <button
+                  onClick={onClose}
+                  className="p-2 hover:bg-muted rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
                 </button>
               </div>
 
               {user ? (
-                <button onClick={() => go("/")} className="flex items-center gap-3 w-full">
-                  <Avatar className="w-14 h-14 ring-2 ring-primary/20">
-                    <AvatarImage src={profile?.avatar_url} />
-                    <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
-                      {profile?.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1" style={{ textAlign: isRtl ? "right" : "left" }}>
-                    <div className={cn("flex items-center gap-2", isRtl ? "flex-row-reverse justify-end" : "")}>
-                      <p className="text-base font-semibold text-foreground">
-                        {profile?.full_name || "User"}
-                      </p>
-                      <RoleBadge size="sm" />
+                <div className="space-y-3">
+                  {/* User info */}
+                  <button onClick={() => go("/")} className="flex items-center gap-3.5 w-full">
+                    <Avatar className="w-14 h-14 ring-2 ring-primary/20 shadow-md">
+                      <AvatarImage src={profile?.avatar_url} />
+                      <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
+                        {profile?.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1" style={{ textAlign: isRtl ? "right" : "left" }}>
+                      <div className={cn("flex items-center gap-2", isRtl ? "flex-row-reverse justify-end" : "")}>
+                        <p className="text-base font-bold text-foreground leading-tight">
+                          {profile?.full_name || "User"}
+                        </p>
+                        <RoleBadge size="sm" />
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">{s.viewProfile}</p>
                     </div>
-                    <p className="text-xs text-muted-foreground">{s.viewProfile}</p>
-                  </div>
-                </button>
+                  </button>
+
+                  {/* Edit Profile link */}
+                  <button
+                    onClick={() => go("/edit-profile")}
+                    className="w-full flex items-center justify-center gap-2 py-2 rounded-xl border border-border/80 text-xs font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+                  >
+                    <UserPen className="w-3.5 h-3.5" strokeWidth={1.5} />
+                    {s.editProfile}
+                  </button>
+                </div>
               ) : (
                 <button
                   onClick={() => go("/auth")}
@@ -303,11 +370,11 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
 
             {/* ── Active Pet Card ──────────────── */}
             {activePet && (
-              <div className="px-5 py-3 border-b border-border">
-                <SectionLabel>{s.activePet}</SectionLabel>
+              <div className="px-5 py-3 border-b border-border/60">
+                <SectionLabel icon={PawPrint}>{s.activePet}</SectionLabel>
                 <button
                   onClick={() => setShowPetPicker(!showPetPicker)}
-                  className="w-full flex items-center gap-3 p-2.5 bg-muted/50 rounded-xl hover:bg-muted transition-colors mt-1"
+                  className="w-full flex items-center gap-3 p-2.5 bg-muted/40 rounded-xl hover:bg-muted/60 transition-colors mt-1"
                 >
                   <Avatar className="w-10 h-10 ring-1 ring-primary/30">
                     <AvatarImage src={activePet.avatar_url} />
@@ -356,45 +423,64 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
 
             {/* ── Scrollable Menu ──────────────── */}
             <div className="flex-1 overflow-y-auto py-2 scrollbar-hide">
-              {/* Profile & Pets */}
-              <MenuItem icon={Settings} label={s.editProfile} onClick={() => go("/edit-profile")} isRtl={isRtl} />
+
+              {/* ══ ADMIN: Control Center ══ */}
+              {isAdmin && (
+                <>
+                  <SectionLabel icon={ShieldCheck}>{s.controlCenter}</SectionLabel>
+                  <MenuItem icon={UserCog} label={s.userManagement} onClick={() => go("/admin/growo")} isRtl={isRtl} accent />
+                  <MenuItem icon={ClipboardCheck} label={s.productApprovals} onClick={() => go("/admin/growo")} isRtl={isRtl} accent />
+                  <MenuItem icon={ScrollText} label={s.systemLogs} onClick={() => go("/admin/growo")} isRtl={isRtl} accent />
+                  <SectionDivider />
+                </>
+              )}
+
+              {/* ══ SHOP OWNER: My Store ══ */}
+              {isBusiness && !isAdmin && (
+                <>
+                  <SectionLabel icon={Store}>{s.myStore}</SectionLabel>
+                  <MenuItem icon={Boxes} label={s.inventory} onClick={() => go("/business/dashboard")} isRtl={isRtl} accent />
+                  <MenuItem icon={BarChart3} label={s.salesAnalytics} onClick={() => go("/business/dashboard")} isRtl={isRtl} accent />
+                  <MenuItem icon={Truck} label={s.activeShipments} onClick={() => go("/business/dashboard")} isRtl={isRtl} accent />
+                  <SectionDivider />
+                </>
+              )}
+
+              {/* ── Pets ── */}
               <MenuItem icon={PawPrint} label={s.myPets} onClick={() => go("/")} isRtl={isRtl} />
               <MenuItem icon={Plus} label={s.addPet} onClick={() => go("/add-pet")} isRtl={isRtl} />
 
               <SectionDivider />
 
-              {/* Activity */}
+              {/* ── Activity ── */}
               <MenuItem icon={Bell} label={s.notifications} onClick={() => go("/notifications")} badge={unreadNotifications} isRtl={isRtl} />
               <MenuItem icon={MessageCircle} label={s.messages} onClick={() => go("/messages")} isRtl={isRtl} />
               <MenuItem icon={Bookmark} label={s.favorites} onClick={() => go("/favorites")} isRtl={isRtl} />
 
               <SectionDivider />
 
-              {/* Shopping */}
+              {/* ── Shopping ── */}
               <MenuItem icon={Store} label={s.shop} onClick={() => go("/shop")} isRtl={isRtl} />
               <MenuItem icon={ShoppingCart} label={s.cart} onClick={() => go("/cart")} isRtl={isRtl} />
               <MenuItem icon={Package} label={s.orders} onClick={() => go("/order-history")} isRtl={isRtl} />
 
               <SectionDivider />
 
-              {/* Services */}
+              {/* ── Services ── */}
               <MenuItem icon={Heart} label={s.adoption} onClick={() => go("/adoption")} isNew isRtl={isRtl} />
               <MenuItem icon={ShieldCheck} label={s.insurance} onClick={() => go("/insurance")} isRtl={isRtl} />
 
               <SectionDivider />
 
-              {/* Content */}
+              {/* ── Content ── */}
               <MenuItem icon={Camera} label={s.photos} onClick={() => go("/photos")} isRtl={isRtl} />
               <MenuItem icon={FileText} label={s.documents} onClick={() => go("/documents")} isRtl={isRtl} />
 
-              {/* Admin Panel */}
-              {isAdmin && (
-                <>
-                  <SectionDivider />
-                  <SectionLabel>{language === 'he' ? 'ניהול' : 'Admin'}</SectionLabel>
-                  <MenuItem icon={LayoutDashboard} label={language === 'he' ? 'לוח בקרה' : 'Admin Dashboard'} onClick={() => go("/admin/growo")} isRtl={isRtl} />
-                </>
-              )}
+              <SectionDivider />
+
+              {/* ── General Settings ── */}
+              <MenuItem icon={Bell} label={s.notificationSettings} onClick={() => go("/settings")} isRtl={isRtl} />
+              <MenuItem icon={Lock} label={s.privacy} onClick={() => go("/settings")} isRtl={isRtl} />
 
               <SectionDivider />
 
@@ -419,7 +505,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
               </div>
 
               {/* ── Language Switcher ──────────── */}
-              <SectionLabel>{s.language}</SectionLabel>
+              <SectionLabel icon={Globe}>{s.language}</SectionLabel>
               <div className="flex gap-1.5 px-5 py-1.5">
                 {langOptions.map(opt => (
                   <button
@@ -441,13 +527,13 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
 
               <SectionDivider />
 
-              {/* Settings & Logout */}
+              {/* ── Settings & Logout ── */}
               <MenuItem icon={Settings} label={s.settings} onClick={() => go("/settings")} isRtl={isRtl} />
 
               {user && (
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-5 py-3 hover:bg-destructive/10 active:bg-destructive/20 transition-colors rounded-lg mx-1"
+                  className="w-full flex items-center gap-3.5 px-5 py-3 hover:bg-destructive/10 active:bg-destructive/20 transition-colors rounded-xl mx-1"
                 >
                   <LogOut className="w-5 h-5 text-destructive" strokeWidth={1.5} />
                   <span className="flex-1 text-sm text-destructive font-medium" style={{ textAlign: isRtl ? "right" : "left" }}>
@@ -458,7 +544,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
             </div>
 
             {/* ── Footer ───────────────────────── */}
-            <div className="px-5 py-3 border-t border-border">
+            <div className="px-5 py-3 border-t border-border/60">
               <p className="text-[11px] text-muted-foreground text-center">
                 {s.version}
               </p>
