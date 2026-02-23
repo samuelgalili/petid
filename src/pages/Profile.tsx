@@ -206,19 +206,26 @@ const Profile = () => {
     setShowPetShop(false);
   };
 
+  // Listen for DiscoveryCards sheet requests
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.sheet) {
+        setActiveSheet(detail.sheet);
+      }
+    };
+    window.addEventListener("open-pet-sheet", handler);
+    return () => window.removeEventListener("open-pet-sheet", handler);
+  }, []);
+
   // Handle category click - opens bottom sheet or navigates
   const handleCategoryClick = (categoryId: string) => {
-    // Navigation handlers for categories that should navigate to pages
+    // Navigation handlers for categories that have real routes
     const navigationMap: Record<string, string> = {
-      adoption: '/adoption',
-      stories: '/create-story',
+      stories: '/reels',
       videos: '/reels',
       chat: '/chat',
-      calendar: '/tracker',
-      health: '/tracker',
-      memorial: '/feed',
-      life_story: '/feed',
-      delivery: '/shop'
+      delivery: '/shop',
     };
 
     if (navigationMap[categoryId]) {
@@ -226,7 +233,7 @@ const Profile = () => {
       return;
     }
 
-    // Open bottom sheet for service categories
+    // Everything else opens as a bottom sheet / drawer
     setActiveSheet(categoryId);
   };
 
@@ -599,7 +606,7 @@ const Profile = () => {
                 breed={selectedPet.breed}
                 petType={selectedPet.type} />
 
-                    
+
                     {/* Dangerous Breed Banner */}
                     {(selectedPet as any).is_dangerous_breed &&
               <DangerousBreedBanner
