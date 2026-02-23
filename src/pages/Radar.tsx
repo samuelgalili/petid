@@ -1,14 +1,14 @@
 /**
- * Radar — Live Map View
- * Premium dark-themed map with business pins, social pet avatars,
- * delivery tracking, and a scanning radar animation.
+ * Radar — Interactive Neighborhood Map
+ * Filter chips, custom markers, walk tracking, scientist insights
  */
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { APIProvider, Map, AdvancedMarker } from "@vis.gl/react-google-maps";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft, MapPin, Store, PawPrint, Navigation, Clock, Star,
-  Truck, Shield, Locate,
+  Truck, Shield, Locate, TreePine, Stethoscope, ShoppingBag, Users,
+  Play, Square, Footprints, Sparkles, X,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -16,11 +16,10 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useOverlayNav } from "@/contexts/OverlayNavContext";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { haptic } from "@/lib/haptics";
-import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
 
-// Premium dark map style
 const DARK_MAP_STYLE = [
   { elementType: "geometry", stylers: [{ color: "#1a1a2e" }] },
   { elementType: "labels.text.stroke", stylers: [{ color: "#1a1a2e" }] },
@@ -34,8 +33,17 @@ const DARK_MAP_STYLE = [
   { featureType: "transit", elementType: "geometry", stylers: [{ color: "#22223a" }] },
 ];
 
-// Default center (Tel Aviv)
 const DEFAULT_CENTER = { lat: 32.0853, lng: 34.7818 };
+
+type FilterType = "all" | "parks" | "vets" | "shops" | "friends";
+
+const FILTERS: { id: FilterType; label: string; labelHe: string; icon: typeof MapPin }[] = [
+  { id: "all", label: "All", labelHe: "הכל", icon: MapPin },
+  { id: "parks", label: "Parks", labelHe: "פארקים", icon: TreePine },
+  { id: "vets", label: "Vets", labelHe: "וטרינרים", icon: Stethoscope },
+  { id: "shops", label: "Shops", labelHe: "חנויות", icon: ShoppingBag },
+  { id: "friends", label: "Friends", labelHe: "חברים", icon: Users },
+];
 
 interface BusinessPin {
   id: string;
@@ -46,15 +54,24 @@ interface BusinessPin {
   logo_url: string | null;
   rating: number | null;
   city: string | null;
+  pinType: "vet" | "shop";
 }
 
-interface SocialPet {
+interface ParkPin {
   id: string;
   name: string;
+  lat: number;
+  lng: number;
+  friendsCount: number;
+}
+
+interface FriendPin {
+  id: string;
+  name: string;
+  petName: string;
   avatar_url: string | null;
   lat: number;
   lng: number;
-  pet_type: string;
 }
 
 const Radar = () => {
@@ -62,13 +79,22 @@ const Radar = () => {
   const { direction } = useLanguage();
   const isRtl = direction === "rtl";
   const { openPublicPet } = useOverlayNav();
+  const { toast } = useToast();
 
   const [userLocation, setUserLocation] = useState(DEFAULT_CENTER);
   const [locationLoaded, setLocationLoaded] = useState(false);
   const [businesses, setBusinesses] = useState<BusinessPin[]>([]);
-  const [nearbyPets, setNearbyPets] = useState<SocialPet[]>([]);
+  const [parks, setParks] = useState<ParkPin[]>([]);
+  const [friends, setFriends] = useState<FriendPin[]>([]);
+  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [selectedBiz, setSelectedBiz] = useState<BusinessPin | null>(null);
-  const [showRadarPulse, setShowRadarPulse] = useState(true);
+  const [selectedPark, setSelectedPark] = useState<ParkPin | null>(null);
+  const [isWalking, setIsWalking] = useState(false);
+  const [walkDuration, setWalkDuration] = useState(0);
+  const [walkDistance, setWalkDistance] = useState(0);
+  const walkIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const walkSessionIdRef = useRef<string | null>(null);
+  const [activePetName, setActivePetName] = useState<string>("חיית המחמד");
 
   // Get user location
   useEffect(() => {
@@ -86,18 +112,34 @@ const Radar = () => {
     }
   }, []);
 
-  // Fetch businesses with locations
+  // Get active pet name
+  useEffect(() => {
+    const loadPet = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("pets" as any)
+        .select("name")
+        .eq("owner_id", user.id)
+        .eq("archived", false)
+        .limit(1)
+        .single();
+      if (data) setActivePetName((data as any).name);
+    };
+    loadPet();
+  }, []);
+
+  // Fetch businesses (vets + shops)
   useEffect(() => {
     const load = async () => {
       const { data } = await supabase
         .from("business_profiles")
-        .select("id, business_name, business_type, city, logo_url, rating, address")
+        .select("id, business_name, business_type, city, logo_url, rating")
         .eq("is_verified", true)
         .limit(30);
 
       if (data) {
-        // Simulate coordinates near user for businesses (in production, use geocoding)
-        const pins: BusinessPin[] = (data as any[]).map((b, i) => ({
+        const pins: BusinessPin[] = (data as any[]).map((b) => ({
           id: b.id,
           name: b.business_name,
           type: b.business_type,
@@ -106,6 +148,7 @@ const Radar = () => {
           logo_url: b.logo_url,
           rating: b.rating,
           city: b.city,
+          pinType: ["vet", "veterinarian", "clinic"].some(v => b.business_type?.toLowerCase().includes(v)) ? "vet" as const : "shop" as const,
         }));
         setBusinesses(pins);
       }
@@ -113,35 +156,117 @@ const Radar = () => {
     load();
   }, [userLocation]);
 
-  // Fetch nearby pets (simulated — using recent active profiles)
+  // Simulated parks near user
+  useEffect(() => {
+    const parkNames = isRtl
+      ? ["פארק הירקון", "גן מאיר", "פארק הכלבים", "גינת לוינסקי", "פארק צ׳ארלס קלור"]
+      : ["Yarkon Park", "Meir Garden", "Dog Park", "Levinsky Garden", "Charles Clore Park"];
+    const simParks: ParkPin[] = parkNames.map((name, i) => ({
+      id: `park-${i}`,
+      name,
+      lat: userLocation.lat + (Math.random() - 0.5) * 0.03,
+      lng: userLocation.lng + (Math.random() - 0.5) * 0.03,
+      friendsCount: Math.floor(Math.random() * 5),
+    }));
+    setParks(simParks);
+  }, [userLocation, isRtl]);
+
+  // Fetch friends on active walks
   useEffect(() => {
     const load = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
       const { data } = await supabase
-        .from("pets" as any)
-        .select("id, name, avatar_url, type")
-        .eq("archived", false)
-        .limit(8);
+        .from("walk_sessions" as any)
+        .select("id, user_id, lat, lng, pet_id")
+        .eq("is_active", true)
+        .neq("user_id", user.id);
 
-      if (data) {
-        const pets: SocialPet[] = (data as any[]).map((p) => ({
-          id: p.id,
-          name: p.name,
-          avatar_url: p.avatar_url,
-          pet_type: p.type || "dog",
-          lat: userLocation.lat + (Math.random() - 0.5) * 0.025,
-          lng: userLocation.lng + (Math.random() - 0.5) * 0.025,
+      if (data && (data as any[]).length > 0) {
+        const friendPins: FriendPin[] = (data as any[]).map((w, i) => ({
+          id: w.id,
+          name: `Friend ${i + 1}`,
+          petName: `Pet`,
+          avatar_url: null,
+          lat: w.lat || userLocation.lat + (Math.random() - 0.5) * 0.02,
+          lng: w.lng || userLocation.lng + (Math.random() - 0.5) * 0.02,
         }));
-        setNearbyPets(pets);
+        setFriends(friendPins);
+      } else {
+        // Simulated friends for demo
+        setFriends([
+          { id: "f1", name: isRtl ? "דנה" : "Dana", petName: isRtl ? "לולו" : "Lulu", avatar_url: null, lat: userLocation.lat + 0.005, lng: userLocation.lng + 0.003 },
+          { id: "f2", name: isRtl ? "יוסי" : "Yossi", petName: isRtl ? "רקס" : "Rex", avatar_url: null, lat: userLocation.lat - 0.004, lng: userLocation.lng + 0.006 },
+        ]);
       }
     };
     load();
-  }, [userLocation]);
+  }, [userLocation, isRtl]);
 
-  const handlePetClick = useCallback((petId: string) => {
-    haptic("light");
-    openPublicPet(petId);
-    navigate("/", { replace: true });
-  }, [openPublicPet, navigate]);
+  // Walk tracking
+  const startWalk = useCallback(async () => {
+    haptic("medium");
+    setIsWalking(true);
+    setWalkDuration(0);
+    setWalkDistance(0);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data } = await supabase
+        .from("walk_sessions" as any)
+        .insert({
+          user_id: user.id,
+          lat: userLocation.lat,
+          lng: userLocation.lng,
+          is_active: true,
+        } as any)
+        .select()
+        .single();
+      if (data) walkSessionIdRef.current = (data as any).id;
+    }
+
+    walkIntervalRef.current = setInterval(() => {
+      setWalkDuration(d => d + 1);
+      setWalkDistance(d => d + Math.random() * 5);
+    }, 1000);
+
+    toast({
+      title: isRtl ? `🐾 ${activePetName} יצא לטיול!` : `🐾 ${activePetName} is on a walk!`,
+      description: isRtl ? "החברים שלך יכולים לראות אותך במפה" : "Your friends can see you on the map",
+    });
+  }, [userLocation, activePetName, isRtl, toast]);
+
+  const stopWalk = useCallback(async () => {
+    haptic("medium");
+    setIsWalking(false);
+    if (walkIntervalRef.current) clearInterval(walkIntervalRef.current);
+
+    const pointsEarned = Math.floor(walkDistance / 10);
+
+    if (walkSessionIdRef.current) {
+      await supabase
+        .from("walk_sessions" as any)
+        .update({
+          is_active: false,
+          ended_at: new Date().toISOString(),
+          distance_meters: Math.round(walkDistance),
+          points_earned: pointsEarned,
+        } as any)
+        .eq("id", walkSessionIdRef.current);
+      walkSessionIdRef.current = null;
+    }
+
+    toast({
+      title: isRtl ? "🏆 הטיול הסתיים!" : "🏆 Walk complete!",
+      description: isRtl
+        ? `${Math.round(walkDistance)}מ׳ · ${pointsEarned} נקודות!`
+        : `${Math.round(walkDistance)}m · ${pointsEarned} points earned!`,
+    });
+  }, [walkDistance, isRtl, toast]);
+
+  useEffect(() => {
+    return () => { if (walkIntervalRef.current) clearInterval(walkIntervalRef.current); };
+  }, []);
 
   const recenter = useCallback(() => {
     if ("geolocation" in navigator) {
@@ -152,95 +277,88 @@ const Radar = () => {
     haptic("light");
   }, []);
 
+  const formatDuration = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
+  };
+
+  // Visibility
+  const showParks = activeFilter === "all" || activeFilter === "parks";
+  const showVets = activeFilter === "all" || activeFilter === "vets";
+  const showShops = activeFilter === "all" || activeFilter === "shops";
+  const showFriends = activeFilter === "all" || activeFilter === "friends";
+
   if (!GOOGLE_MAPS_KEY) {
     return (
-      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-8 text-center" style={{ background: "hsl(240,20%,8%)" }}>
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={() => navigate(-1)}
-          className="absolute top-4 w-9 h-9 rounded-full flex items-center justify-center"
-          style={{
-            [isRtl ? "right" : "left"]: "16px",
-            background: "rgba(255,255,255,0.08)",
-            top: "calc(12px + env(safe-area-inset-top))",
-          }}
+      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-8 text-center bg-background">
+        <motion.button whileTap={{ scale: 0.9 }} onClick={() => navigate(-1)}
+          className="absolute top-4 w-9 h-9 rounded-full flex items-center justify-center bg-muted/60"
+          style={{ [isRtl ? "right" : "left"]: "16px", top: "calc(12px + env(safe-area-inset-top))" }}
         >
-          <ChevronLeft className={`w-5 h-5 text-white ${isRtl ? "rotate-180" : ""}`} />
+          <ChevronLeft className={`w-5 h-5 text-foreground ${isRtl ? "rotate-180" : ""}`} />
         </motion.button>
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="flex flex-col items-center"
+        <Navigation className="w-16 h-16 text-primary mb-4" />
+        <h2 className="text-lg font-bold text-foreground mb-2">{isRtl ? "מפת השכונה" : "Neighborhood Map"}</h2>
+        <p className="text-sm text-muted-foreground max-w-[260px]">
+          {isRtl ? "המפה תהיה זמינה בקרוב." : "Map coming soon."}
+        </p>
+        <motion.button whileTap={{ scale: 0.95 }} onClick={() => navigate("/explore")}
+          className="mt-6 px-6 py-2.5 rounded-xl text-sm font-bold text-primary-foreground bg-primary"
         >
-          <div className="relative mb-6">
-            <Navigation className="w-16 h-16 text-primary" />
-            <motion.div
-              className="absolute inset-0 rounded-full"
-              style={{ width: 100, height: 100, top: -18, left: -18, border: "2px solid hsl(var(--primary) / 0.3)" }}
-              animate={{ scale: [1, 1.5], opacity: [0.6, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
-          </div>
-          <h2 className="text-lg font-bold text-white mb-2">{isRtl ? "רדאר חי" : "Live Radar"}</h2>
-          <p className="text-sm text-white/40 max-w-[260px]">
-            {isRtl ? "מפת הרדאר תהיה זמינה בקרוב. בינתיים, גלה עסקים ובעלי חיים בעמוד הגילוי." : "Radar map coming soon. Discover businesses and pets on the Explore page."}
-          </p>
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={() => navigate("/explore")}
-            className="mt-6 px-6 py-2.5 rounded-xl text-sm font-bold text-white"
-            style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.7))" }}
-          >
-            {isRtl ? "גלה עכשיו" : "Explore Now"}
-          </motion.button>
-        </motion.div>
+          {isRtl ? "גלה עכשיו" : "Explore Now"}
+        </motion.button>
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-[100] bg-[hsl(240,20%,8%)]">
+    <div className="fixed inset-0 z-[100] bg-background">
       {/* Header */}
-      <div className="absolute top-0 inset-x-0 z-20 flex items-center gap-3 px-4 pt-[calc(12px+env(safe-area-inset-top))] pb-3"
-        style={{
-          background: "linear-gradient(to bottom, hsla(240,20%,8%,0.95) 0%, transparent 100%)",
-        }}
+      <div className="absolute top-0 inset-x-0 z-20 px-4 pt-[calc(12px+env(safe-area-inset-top))] pb-2"
+        style={{ background: "linear-gradient(to bottom, hsla(var(--background) / 0.95) 0%, transparent 100%)" }}
       >
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={() => navigate(-1)}
-          className="w-9 h-9 rounded-full flex items-center justify-center"
-          style={{
-            background: "rgba(255,255,255,0.08)",
-            backdropFilter: "blur(12px)",
-            border: "1px solid rgba(255,255,255,0.1)",
-          }}
-        >
-          <ChevronLeft className={`w-5 h-5 text-white ${isRtl ? "rotate-180" : ""}`} />
-        </motion.button>
-        <div className="flex-1">
-          <h1 className="text-lg font-bold text-white flex items-center gap-2">
-            <Navigation className="w-4 h-4 text-primary" />
-            {isRtl ? "רדאר חי" : "Live Radar"}
-          </h1>
-          <p className="text-xs text-white/40">
-            {isRtl ? `${businesses.length} עסקים · ${nearbyPets.length} חיות קרובות` : `${businesses.length} businesses · ${nearbyPets.length} pets nearby`}
-          </p>
+        <div className="flex items-center gap-3 mb-3">
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => navigate(-1)}
+            className="w-9 h-9 rounded-full flex items-center justify-center bg-muted/60 backdrop-blur-xl border border-border/30"
+          >
+            <ChevronLeft className={`w-5 h-5 text-foreground ${isRtl ? "rotate-180" : ""}`} />
+          </motion.button>
+          <div className="flex-1">
+            <h1 className="text-base font-bold text-foreground flex items-center gap-2">
+              <Navigation className="w-4 h-4 text-primary" />
+              {isRtl ? "מפת השכונה" : "Neighborhood Map"}
+            </h1>
+          </div>
+          <motion.button whileTap={{ scale: 0.9 }} onClick={recenter}
+            className="w-9 h-9 rounded-full flex items-center justify-center bg-muted/60 backdrop-blur-xl border border-border/30"
+          >
+            <Locate className="w-4 h-4 text-foreground" />
+          </motion.button>
         </div>
 
-        {/* Recenter button */}
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={recenter}
-          className="w-9 h-9 rounded-full flex items-center justify-center"
-          style={{
-            background: "rgba(255,255,255,0.08)",
-            backdropFilter: "blur(12px)",
-            border: "1px solid rgba(255,255,255,0.1)",
-          }}
-        >
-          <Locate className="w-4 h-4 text-white" />
-        </motion.button>
+        {/* Filter Chips */}
+        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1" dir={direction}>
+          {FILTERS.map((f) => {
+            const Icon = f.icon;
+            const isActive = activeFilter === f.id;
+            return (
+              <motion.button
+                key={f.id}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => { haptic("light"); setActiveFilter(f.id); }}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold whitespace-nowrap border transition-all ${
+                  isActive
+                    ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20"
+                    : "bg-card/80 text-muted-foreground border-border/30 backdrop-blur-sm"
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {isRtl ? f.labelHe : f.label}
+              </motion.button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Map */}
@@ -254,101 +372,125 @@ const Radar = () => {
           className="w-full h-full"
           styles={DARK_MAP_STYLE}
         >
-          {/* ── User Location + Radar Pulse ── */}
+          {/* User Location */}
           <AdvancedMarker position={userLocation}>
             <div className="relative">
-              {/* Radar scanning animation */}
-              {showRadarPulse && (
-                <>
-                  <motion.div
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
-                    style={{
-                      width: 120, height: 120,
-                      background: "radial-gradient(circle, hsla(var(--primary), 0.15) 0%, transparent 70%)",
-                      border: "1px solid hsla(var(--primary), 0.2)",
-                    }}
-                    animate={{ scale: [0.3, 1.8], opacity: [0.8, 0] }}
-                    transition={{ duration: 2.5, repeat: Infinity, ease: "easeOut" }}
-                  />
-                  <motion.div
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
-                    style={{
-                      width: 80, height: 80,
-                      background: "radial-gradient(circle, hsla(var(--primary), 0.2) 0%, transparent 70%)",
-                      border: "1px solid hsla(var(--primary), 0.25)",
-                    }}
-                    animate={{ scale: [0.5, 2], opacity: [0.6, 0] }}
-                    transition={{ duration: 2.5, repeat: Infinity, ease: "easeOut", delay: 0.8 }}
-                  />
-                </>
-              )}
-              {/* User dot */}
-              <div className="w-5 h-5 rounded-full bg-primary border-[3px] border-white shadow-lg shadow-primary/40 relative z-10" />
+              <motion.div
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                style={{ width: 80, height: 80, background: "radial-gradient(circle, hsl(var(--primary) / 0.15) 0%, transparent 70%)", border: "1px solid hsl(var(--primary) / 0.2)" }}
+                animate={{ scale: [0.3, 1.8], opacity: [0.8, 0] }}
+                transition={{ duration: 2.5, repeat: Infinity, ease: "easeOut" }}
+              />
+              <div className={`w-5 h-5 rounded-full bg-primary border-[3px] border-primary-foreground shadow-lg relative z-10 ${isWalking ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""}`} />
             </div>
           </AdvancedMarker>
 
-          {/* ── Business Pins ── */}
-          {businesses.map((biz) => (
+          {/* Parks */}
+          {showParks && parks.map((park) => (
+            <AdvancedMarker key={park.id} position={{ lat: park.lat, lng: park.lng }}>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => { haptic("light"); setSelectedPark(park); setSelectedBiz(null); }}
+                className="flex flex-col items-center"
+              >
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg bg-emerald-500 border-2 border-emerald-300/50">
+                  <TreePine className="w-5 h-5 text-white" strokeWidth={1.5} />
+                </div>
+                <div className="mt-1 px-2 py-0.5 rounded-full text-[9px] font-semibold text-foreground bg-card/90 backdrop-blur-sm max-w-[80px] truncate border border-border/20">
+                  {park.name}
+                </div>
+              </motion.button>
+            </AdvancedMarker>
+          ))}
+
+          {/* Vets */}
+          {showVets && businesses.filter(b => b.pinType === "vet").map((biz) => (
             <AdvancedMarker key={biz.id} position={{ lat: biz.lat, lng: biz.lng }}>
               <motion.button
                 whileTap={{ scale: 0.9 }}
-                onClick={() => { haptic("light"); setSelectedBiz(biz); }}
+                onClick={() => { haptic("light"); setSelectedBiz(biz); setSelectedPark(null); }}
                 className="flex flex-col items-center"
               >
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"
-                  style={{
-                    background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.7))",
-                    border: "2px solid rgba(255,255,255,0.3)",
-                  }}
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg border-2 border-blue-300/50"
+                  style={{ background: "linear-gradient(135deg, hsl(210 80% 55%), hsl(210 80% 40%))" }}
                 >
                   {biz.logo_url ? (
                     <img src={biz.logo_url} alt="" className="w-6 h-6 rounded object-cover" />
                   ) : (
-                    <Store className="w-5 h-5 text-white" strokeWidth={1.5} />
+                    <Stethoscope className="w-5 h-5 text-white" strokeWidth={1.5} />
                   )}
                 </div>
-                <div className="mt-1 px-2 py-0.5 rounded-full text-[9px] font-semibold text-white bg-black/70 backdrop-blur-sm max-w-[80px] truncate">
+                {biz.rating != null && biz.rating > 0 && (
+                  <div className="mt-0.5 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-500/90 text-[8px] font-bold text-white">
+                    <Star className="w-2.5 h-2.5 fill-white" /> {biz.rating.toFixed(1)}
+                  </div>
+                )}
+                <div className="mt-0.5 px-2 py-0.5 rounded-full text-[9px] font-semibold text-foreground bg-card/90 backdrop-blur-sm max-w-[80px] truncate border border-border/20">
                   {biz.name}
                 </div>
               </motion.button>
             </AdvancedMarker>
           ))}
 
-          {/* ── Social Pet Pins ── */}
-          {nearbyPets.map((pet) => (
-            <AdvancedMarker key={pet.id} position={{ lat: pet.lat, lng: pet.lng }}>
+          {/* Shops */}
+          {showShops && businesses.filter(b => b.pinType === "shop").map((biz) => (
+            <AdvancedMarker key={biz.id} position={{ lat: biz.lat, lng: biz.lng }}>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => { haptic("light"); setSelectedBiz(biz); setSelectedPark(null); }}
+                className="flex flex-col items-center"
+              >
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg border-2 border-primary/30"
+                  style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.7))" }}
+                >
+                  {biz.logo_url ? (
+                    <img src={biz.logo_url} alt="" className="w-6 h-6 rounded object-cover" />
+                  ) : (
+                    <ShoppingBag className="w-5 h-5 text-white" strokeWidth={1.5} />
+                  )}
+                </div>
+                {biz.rating != null && biz.rating > 0 && (
+                  <div className="mt-0.5 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-500/90 text-[8px] font-bold text-white">
+                    <Star className="w-2.5 h-2.5 fill-white" /> {biz.rating.toFixed(1)}
+                  </div>
+                )}
+                <div className="mt-0.5 px-2 py-0.5 rounded-full text-[9px] font-semibold text-foreground bg-card/90 backdrop-blur-sm max-w-[80px] truncate border border-border/20">
+                  {biz.name}
+                </div>
+              </motion.button>
+            </AdvancedMarker>
+          ))}
+
+          {/* Friends on walks */}
+          {showFriends && friends.map((f) => (
+            <AdvancedMarker key={f.id} position={{ lat: f.lat, lng: f.lng }}>
               <motion.button
                 whileTap={{ scale: 0.85 }}
-                onClick={() => handlePetClick(pet.id)}
                 className="relative"
               >
-                {/* Pulse ring */}
                 <motion.div
-                  className="absolute inset-0 rounded-full"
-                  style={{
-                    width: 44, height: 44,
-                    top: -4, left: -4,
-                    border: "2px solid hsl(var(--primary) / 0.4)",
-                  }}
+                  className="absolute inset-0 rounded-full border-2 border-primary/40"
+                  style={{ width: 44, height: 44, top: -4, left: -4 }}
                   animate={{ scale: [1, 1.3, 1], opacity: [0.6, 0.2, 0.6] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 />
                 <Avatar className="w-9 h-9 border-2 border-primary shadow-lg shadow-primary/30">
-                  {pet.avatar_url ? (
-                    <AvatarImage src={pet.avatar_url} className="object-cover" />
-                  ) : null}
+                  {f.avatar_url ? <AvatarImage src={f.avatar_url} className="object-cover" /> : null}
                   <AvatarFallback className="bg-card text-foreground text-[10px] font-bold">
-                    <PawPrint className="w-3.5 h-3.5" />
+                    {f.name[0]}
                   </AvatarFallback>
                 </Avatar>
+                <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-card/90 backdrop-blur-sm text-[8px] font-semibold text-foreground border border-border/20 whitespace-nowrap flex items-center gap-1">
+                  <Footprints className="w-2.5 h-2.5 text-primary" />
+                  {f.petName}
+                </div>
               </motion.button>
             </AdvancedMarker>
           ))}
         </Map>
       </APIProvider>
 
-      {/* ── Business Detail Card ── */}
+      {/* Business Detail Card */}
       <AnimatePresence>
         {selectedBiz && (
           <motion.div
@@ -356,79 +498,153 @@ const Radar = () => {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="absolute bottom-[90px] inset-x-4 z-30 rounded-2xl overflow-hidden"
-            style={{
-              background: "rgba(30,30,50,0.95)",
-              backdropFilter: "blur(20px)",
-              border: "1px solid rgba(255,255,255,0.1)",
-            }}
+            className="absolute bottom-28 inset-x-4 z-30 rounded-2xl overflow-hidden bg-card/95 backdrop-blur-xl border border-border/30"
           >
             <div className="p-4 flex items-start gap-3" dir={direction}>
-              <div
-                className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0"
-                style={{
-                  background: "linear-gradient(135deg, hsl(var(--primary) / 0.2), hsl(var(--primary) / 0.05))",
-                  border: "1px solid hsl(var(--primary) / 0.2)",
-                }}
-              >
+              <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 bg-primary/10 border border-primary/20">
                 {selectedBiz.logo_url ? (
                   <img src={selectedBiz.logo_url} alt="" className="w-10 h-10 rounded-lg object-cover" />
+                ) : selectedBiz.pinType === "vet" ? (
+                  <Stethoscope className="w-7 h-7 text-primary" />
                 ) : (
                   <Store className="w-7 h-7 text-primary" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-bold text-white truncate">{selectedBiz.name}</h3>
-                <p className="text-xs text-white/50 mt-0.5 capitalize">{selectedBiz.type}</p>
+                <h3 className="text-sm font-bold text-foreground truncate">{selectedBiz.name}</h3>
+                <p className="text-xs text-muted-foreground mt-0.5 capitalize">{selectedBiz.type}</p>
                 <div className="flex items-center gap-3 mt-2">
                   {selectedBiz.rating != null && selectedBiz.rating > 0 && (
-                    <span className="flex items-center gap-1 text-xs text-amber-400">
-                      <Star className="w-3 h-3 fill-amber-400" /> {selectedBiz.rating.toFixed(1)}
+                    <span className="flex items-center gap-1 text-xs text-amber-500">
+                      <Star className="w-3 h-3 fill-amber-500" /> {selectedBiz.rating.toFixed(1)}
                     </span>
                   )}
-                  <span className="flex items-center gap-1 text-xs text-white/40">
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Clock className="w-3 h-3" /> {isRtl ? "15-25 דקות" : "15-25 min"}
-                  </span>
-                  <span className="flex items-center gap-1 text-xs text-emerald-400">
-                    <Truck className="w-3 h-3" /> {isRtl ? "משלוח זמין" : "Delivery"}
                   </span>
                 </div>
               </div>
               <motion.button
                 whileTap={{ scale: 0.9 }}
-                onClick={() => {
-                  haptic("light");
-                  navigate(`/business/${selectedBiz.id}`);
-                }}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-white shrink-0"
-                style={{
-                  background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.7))",
-                }}
+                onClick={() => { haptic("light"); navigate(`/business/${selectedBiz.id}`); }}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-primary-foreground bg-primary shrink-0"
               >
                 {isRtl ? "צפה" : "View"}
               </motion.button>
             </div>
-            {/* Close */}
-            <button
-              onClick={() => setSelectedBiz(null)}
-              className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white/60 text-xs"
-            >
-              ✕
+            <button onClick={() => setSelectedBiz(null)} className="absolute top-2 right-2 w-6 h-6 rounded-full bg-muted/60 flex items-center justify-center">
+              <X className="w-3 h-3 text-muted-foreground" />
             </button>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── Legend bar ── */}
-      <div
-        className="absolute bottom-[72px] inset-x-0 z-20 flex items-center justify-center gap-4 py-2 px-4"
-        style={{
-          background: "linear-gradient(to top, hsla(240,20%,8%,0.95) 0%, transparent 100%)",
-        }}
+      {/* Park Scientist Insight Card */}
+      <AnimatePresence>
+        {selectedPark && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="absolute bottom-28 inset-x-4 z-30 rounded-2xl overflow-hidden bg-card/95 backdrop-blur-xl border border-border/30"
+          >
+            <div className="p-4" dir={direction}>
+              <div className="flex items-start gap-3">
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-emerald-500/15 border border-emerald-500/20">
+                  <TreePine className="w-5 h-5 text-emerald-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-bold text-foreground">{selectedPark.name}</h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Users className="w-3 h-3" /> {selectedPark.friendsCount} {isRtl ? "חברים" : "friends"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              {/* Scientist Insight */}
+              <motion.div
+                className="mt-3 p-3 rounded-xl bg-primary/5 border border-primary/10 flex items-start gap-2.5"
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+                  <Sparkles className="w-3.5 h-3.5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-primary mb-0.5">{isRtl ? "תובנת המדען" : "Scientist Insight"}</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {isRtl
+                      ? `${selectedPark.friendsCount > 0 ? `${selectedPark.friendsCount} מחברי ${activePetName} כאן עכשיו!` : `אף אחד מחברי ${activePetName} לא כאן כרגע. תהיה הראשון!`}`
+                      : `${selectedPark.friendsCount > 0 ? `${selectedPark.friendsCount} of ${activePetName}'s friends are here right now!` : `None of ${activePetName}'s friends are here yet. Be the first!`}`
+                    }
+                  </p>
+                </div>
+              </motion.div>
+            </div>
+            <button onClick={() => setSelectedPark(null)} className="absolute top-2 right-2 w-6 h-6 rounded-full bg-muted/60 flex items-center justify-center">
+              <X className="w-3 h-3 text-muted-foreground" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Walk Status Banner */}
+      <AnimatePresence>
+        {isWalking && (
+          <motion.div
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -20, opacity: 0 }}
+            className="absolute top-[calc(110px+env(safe-area-inset-top))] inset-x-4 z-20 rounded-2xl bg-primary/90 backdrop-blur-xl p-3 flex items-center gap-3"
+          >
+            <motion.div
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 1, repeat: Infinity }}
+            >
+              <Footprints className="w-5 h-5 text-primary-foreground" />
+            </motion.div>
+            <div className="flex-1">
+              <p className="text-xs font-bold text-primary-foreground">{isRtl ? "בטיול עם" : "Walking with"} {activePetName}</p>
+              <p className="text-[10px] text-primary-foreground/70">
+                {formatDuration(walkDuration)} · {Math.round(walkDistance)}{isRtl ? "מ׳" : "m"}
+              </p>
+            </div>
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={stopWalk}
+              className="w-9 h-9 rounded-full bg-primary-foreground/20 flex items-center justify-center"
+            >
+              <Square className="w-4 h-4 text-primary-foreground" />
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Start Walk FAB */}
+      {!isWalking && (
+        <motion.button
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={startWalk}
+          className="absolute bottom-24 right-4 z-20 flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-primary text-primary-foreground shadow-xl shadow-primary/30 font-bold text-sm"
+        >
+          <Play className="w-4 h-4" />
+          {isRtl ? "התחל טיול" : "Start Walk"}
+        </motion.button>
+      )}
+
+      {/* Legend */}
+      <div className="absolute bottom-[72px] inset-x-0 z-20 flex items-center justify-center gap-4 py-2 px-4"
+        style={{ background: "linear-gradient(to top, hsl(var(--background) / 0.95) 0%, transparent 100%)" }}
       >
-        <LegendItem icon={<Store className="w-3 h-3" />} label={isRtl ? "עסקים" : "Businesses"} color="hsl(var(--primary))" />
-        <LegendItem icon={<PawPrint className="w-3 h-3" />} label={isRtl ? "חיות קרובות" : "Nearby Pets"} color="hsl(var(--primary))" />
-        <LegendItem icon={<div className="w-2.5 h-2.5 rounded-full bg-primary" />} label={isRtl ? "אתה כאן" : "You"} color="hsl(var(--primary))" />
+        <LegendItem icon={<TreePine className="w-3 h-3" />} label={isRtl ? "פארקים" : "Parks"} color="text-emerald-500" />
+        <LegendItem icon={<Stethoscope className="w-3 h-3" />} label={isRtl ? "וטרינרים" : "Vets"} color="text-blue-500" />
+        <LegendItem icon={<ShoppingBag className="w-3 h-3" />} label={isRtl ? "חנויות" : "Shops"} color="text-primary" />
+        <LegendItem icon={<PawPrint className="w-3 h-3" />} label={isRtl ? "חברים" : "Friends"} color="text-primary" />
       </div>
     </div>
   );
@@ -436,8 +652,8 @@ const Radar = () => {
 
 function LegendItem({ icon, label, color }: { icon: React.ReactNode; label: string; color: string }) {
   return (
-    <div className="flex items-center gap-1.5 text-[10px] text-white/50">
-      <span style={{ color }}>{icon}</span>
+    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+      <span className={color}>{icon}</span>
       {label}
     </div>
   );

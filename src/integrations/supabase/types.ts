@@ -10115,6 +10115,56 @@ export type Database = {
           },
         ]
       }
+      walk_sessions: {
+        Row: {
+          created_at: string
+          distance_meters: number | null
+          ended_at: string | null
+          id: string
+          is_active: boolean
+          lat: number | null
+          lng: number | null
+          pet_id: string | null
+          points_earned: number | null
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          distance_meters?: number | null
+          ended_at?: string | null
+          id?: string
+          is_active?: boolean
+          lat?: number | null
+          lng?: number | null
+          pet_id?: string | null
+          points_earned?: number | null
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          distance_meters?: number | null
+          ended_at?: string | null
+          id?: string
+          is_active?: boolean
+          lat?: number | null
+          lng?: number | null
+          pet_id?: string | null
+          points_earned?: number | null
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "walk_sessions_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       warranties: {
         Row: {
           created_at: string
