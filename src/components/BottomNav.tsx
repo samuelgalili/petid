@@ -275,7 +275,7 @@ const BottomNav = () => {
       <nav
         className={cn(
           "fixed bottom-0 left-0 right-0 z-[9999]",
-          "bg-background dark:bg-[hsl(0,0%,5%)]",
+          "bg-background/80 dark:bg-[hsl(0,0%,5%)]/80 backdrop-blur-xl backdrop-saturate-150",
           "shadow-[0_-1px_8px_rgba(0,0,0,0.06)]",
           "pb-[env(safe-area-inset-bottom)]"
         )}
