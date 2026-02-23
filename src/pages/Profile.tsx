@@ -561,14 +561,17 @@ const Profile = () => {
               }} transition={{
                 duration: 0.3
               }}>
-                      {/* Tappable pet name for heart rain */}
-                      <motion.button
-                  onClick={triggerHeartRain}
-                  whileTap={{ scale: 0.95 }}
-                  className="inline-block">
-
-                        <h3 className="font-bold text-foreground text-lg">{selectedPet.name} 🐾</h3>
-                      </motion.button>
+                      {/* Tappable pet name for heart rain + inline weather */}
+                      <div className="flex items-center justify-center gap-2">
+                        <motion.button
+                          onClick={triggerHeartRain}
+                          whileTap={{ scale: 0.95 }}
+                          className="inline-block"
+                        >
+                          <h3 className="font-bold text-foreground text-lg">{selectedPet.name} 🐾</h3>
+                        </motion.button>
+                        <PetWeatherAlert petType={selectedPet.type} petName={selectedPet.name} />
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         {selectedPet.breed || (selectedPet.type === 'dog' ? 'כלב' : 'חתול')}
                         {selectedPet.age_years ? ` • ${selectedPet.age_years} שנים` : ''}
@@ -582,8 +585,7 @@ const Profile = () => {
             }} animate={{
               opacity: 1
             }} className="mb-4">
-                    {/* Weather Alert */}
-                    <PetWeatherAlert petType={selectedPet.type} petName={selectedPet.name} />
+                    {/* Weather moved inline next to pet name */}
                     
                     {/* Health Score */}
                     <PetHealthScore pet={selectedPet} onViewDetails={() => setHealthBreakdownOpen(true)} refreshKey={healthRefreshKey} />

@@ -1,11 +1,10 @@
 /**
- * DiscoveryBubbles — Gamified "Treasure Tasks" that feel like mini-games.
- * Each bubble rewards the user with a celebration animation on completion.
- * Glassmorphism, floating animation, non-stressful.
+ * DiscoveryCards — Gamified "Treasure Tasks" with Glassmorphism 2.0
+ * Horizontal scroll-snap carousel with pulse animations for missing tasks
  */
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Cpu, Shield, Utensils, Syringe, Camera, Heart,
+  Cpu, Shield, Utensils, Syringe, Camera,
   Sparkles, Check
 } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -26,7 +25,7 @@ interface DiscoveryItem {
   titleKey: string;
   emoji: string;
   gradient: string;
-  iconBg: string;
+  glowColor: string;
   action: string;
   checkField?: string;
   rewardPoints: number;
@@ -38,8 +37,8 @@ const ALL_DISCOVERIES: DiscoveryItem[] = [
     icon: Cpu,
     titleKey: "discovery.addMicrochip",
     emoji: "🔒",
-    gradient: "from-[hsla(180,50%,45%,0.12)] to-[hsla(180,50%,45%,0.03)]",
-    iconBg: "bg-[hsla(180,50%,45%,0.15)]",
+    gradient: "from-[hsla(180,60%,40%,0.15)] via-[hsla(180,50%,50%,0.08)] to-[hsla(200,40%,30%,0.04)]",
+    glowColor: "hsla(180,60%,50%,0.25)",
     action: "documents",
     checkField: "health_notes",
     rewardPoints: 10,
@@ -49,8 +48,8 @@ const ALL_DISCOVERIES: DiscoveryItem[] = [
     icon: Shield,
     titleKey: "discovery.healthInsurance",
     emoji: "🛡️",
-    gradient: "from-primary/10 to-primary/3",
-    iconBg: "bg-primary/15",
+    gradient: "from-primary/15 via-primary/8 to-primary/3",
+    glowColor: "hsla(var(--primary),0.3)",
     action: "insurance",
     checkField: "has_insurance",
     rewardPoints: 15,
@@ -60,8 +59,8 @@ const ALL_DISCOVERIES: DiscoveryItem[] = [
     icon: Utensils,
     titleKey: "discovery.foodType",
     emoji: "🥗",
-    gradient: "from-[hsla(25,90%,55%,0.12)] to-[hsla(25,90%,55%,0.03)]",
-    iconBg: "bg-[hsla(25,90%,55%,0.15)]",
+    gradient: "from-[hsla(25,90%,55%,0.15)] via-[hsla(30,80%,50%,0.08)] to-[hsla(25,70%,45%,0.04)]",
+    glowColor: "hsla(25,90%,55%,0.25)",
     action: "food",
     checkField: "current_food",
     rewardPoints: 8,
@@ -71,8 +70,8 @@ const ALL_DISCOVERIES: DiscoveryItem[] = [
     icon: Syringe,
     titleKey: "discovery.vaccines",
     emoji: "💉",
-    gradient: "from-[hsla(142,60%,45%,0.12)] to-[hsla(142,60%,45%,0.03)]",
-    iconBg: "bg-[hsla(142,60%,45%,0.15)]",
+    gradient: "from-[hsla(142,60%,45%,0.15)] via-[hsla(142,50%,40%,0.08)] to-[hsla(142,40%,35%,0.04)]",
+    glowColor: "hsla(142,60%,45%,0.25)",
     action: "documents",
     checkField: "last_vet_visit",
     rewardPoints: 12,
@@ -82,8 +81,8 @@ const ALL_DISCOVERIES: DiscoveryItem[] = [
     icon: Camera,
     titleKey: "discovery.newPhoto",
     emoji: "📸",
-    gradient: "from-[hsla(330,60%,55%,0.12)] to-[hsla(330,60%,55%,0.03)]",
-    iconBg: "bg-[hsla(330,60%,55%,0.15)]",
+    gradient: "from-[hsla(330,60%,55%,0.15)] via-[hsla(330,50%,50%,0.08)] to-[hsla(330,40%,45%,0.04)]",
+    glowColor: "hsla(330,60%,55%,0.25)",
     action: "photo",
     checkField: "avatar_url",
     rewardPoints: 5,
@@ -136,7 +135,7 @@ export const DiscoveryCards = ({ petId, petName, petType }: DiscoveryCardsProps)
 
   const visibleCards = ALL_DISCOVERIES
     .filter((d) => d.checkField && !completedFields.has(d.checkField))
-    .slice(0, 4);
+    .slice(0, 5);
 
   const completedCount = ALL_DISCOVERIES.filter(d => d.checkField && completedFields.has(d.checkField)).length;
   const totalCount = ALL_DISCOVERIES.length;
@@ -144,9 +143,9 @@ export const DiscoveryCards = ({ petId, petName, petType }: DiscoveryCardsProps)
   if (visibleCards.length === 0) return null;
 
   return (
-    <div className="mx-4 mb-4" dir={direction}>
+    <div className="mb-4" dir={direction}>
       {/* Header with progress */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-3 px-4">
         <div className="flex items-center gap-2">
           <motion.div
             animate={{ rotate: [0, 10, -10, 0] }}
@@ -177,8 +176,16 @@ export const DiscoveryCards = ({ petId, petName, petType }: DiscoveryCardsProps)
         </div>
       </div>
 
-      {/* Bubbles grid */}
-      <div className="grid grid-cols-2 gap-2.5">
+      {/* Horizontal scroll-snap carousel */}
+      <div 
+        className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2"
+        style={{ 
+          paddingLeft: '16px', 
+          paddingRight: '16px',
+          scrollPaddingLeft: '16px',
+          scrollPaddingRight: '16px',
+        }}
+      >
         {visibleCards.map((card, i) => {
           const Icon = card.icon;
           const isJustDone = justCompleted === card.id;
@@ -186,55 +193,80 @@ export const DiscoveryCards = ({ petId, petName, petType }: DiscoveryCardsProps)
           return (
             <motion.button
               key={card.id}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ 
-                opacity: 1, 
-                scale: 1,
-                y: [0, -3, 0],
-              }}
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{ 
-                opacity: { delay: i * 0.06 },
-                scale: { delay: i * 0.06, type: "spring" },
-                y: { delay: i * 0.5, duration: 3, repeat: Infinity, ease: "easeInOut" },
+                delay: i * 0.08,
+                type: "spring",
+                stiffness: 300,
+                damping: 20,
               }}
-              whileTap={{ scale: 0.95 }}
+              whileTap={{ scale: 0.93 }}
               onClick={() => handleBubbleClick(card)}
-              className={`relative p-3.5 rounded-2xl border border-border/20 bg-gradient-to-br ${card.gradient} backdrop-blur-xl overflow-hidden group`}
-              style={{ textAlign: direction === "rtl" ? "right" : "left" }}
+              className="relative flex-shrink-0 snap-start w-[160px] p-3.5 rounded-2xl border border-border/30 overflow-hidden group"
+              style={{ 
+                textAlign: direction === "rtl" ? "right" : "left",
+                background: `linear-gradient(135deg, var(--tw-gradient-stops))`,
+              }}
             >
-              {/* Floating glow */}
+              {/* Glassmorphism backdrop */}
+              <div className={`absolute inset-0 bg-gradient-to-br ${card.gradient} backdrop-blur-xl`} />
+              
+              {/* Glass border highlight */}
+              <div className="absolute inset-0 rounded-2xl border border-white/10 dark:border-white/5 pointer-events-none" />
+
+              {/* Subtle pulse animation for incomplete tasks */}
               <motion.div
-                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none rounded-2xl"
+                className="absolute inset-0 rounded-2xl pointer-events-none"
                 style={{
-                  background: "radial-gradient(circle at 50% 50%, hsla(var(--primary), 0.06) 0%, transparent 70%)",
+                  boxShadow: `inset 0 0 20px ${card.glowColor}, 0 0 15px ${card.glowColor}`,
                 }}
+                animate={{ opacity: [0.3, 0.6, 0.3] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: i * 0.5 }}
               />
 
-              <div className="flex items-center gap-2.5 relative z-10">
+              {/* Content */}
+              <div className="relative z-10 flex flex-col gap-3">
+                {/* Icon */}
                 <motion.div 
-                  className={`w-10 h-10 rounded-xl ${card.iconBg} flex items-center justify-center flex-shrink-0`}
-                  animate={{ rotate: [0, 5, -5, 0] }}
+                  className="w-11 h-11 rounded-xl bg-background/40 dark:bg-background/20 backdrop-blur-md flex items-center justify-center border border-white/15 shadow-sm"
+                  animate={{ rotate: [0, 4, -4, 0] }}
                   transition={{ duration: 4, repeat: Infinity, delay: i * 0.3 }}
                 >
                   {isJustDone ? (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring" }}
-                    >
+                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring" }}>
                       <Check className="w-5 h-5 text-primary" strokeWidth={2.5} />
                     </motion.div>
                   ) : (
-                    <span className="text-lg">{card.emoji}</span>
+                    <span className="text-xl drop-shadow-sm">{card.emoji}</span>
                   )}
                 </motion.div>
+
+                {/* Text */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground leading-tight">
+                  <p className="text-[13px] font-semibold text-foreground leading-tight">
                     {t(card.titleKey)}
                   </p>
-                  <p className="text-[10px] text-primary/70 font-medium mt-0.5">
+                  {/* Gold glow reward points */}
+                  <motion.p 
+                    className="text-[11px] font-bold mt-1"
+                    style={{
+                      background: "linear-gradient(135deg, hsl(45,93%,58%), hsl(38,90%,50%), hsl(45,93%,65%))",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      filter: "drop-shadow(0 0 4px hsla(45,93%,58%,0.4))",
+                    }}
+                    animate={{ 
+                      filter: [
+                        "drop-shadow(0 0 4px hsla(45,93%,58%,0.3))",
+                        "drop-shadow(0 0 8px hsla(45,93%,58%,0.6))",
+                        "drop-shadow(0 0 4px hsla(45,93%,58%,0.3))",
+                      ],
+                    }}
+                    transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                  >
                     +{card.rewardPoints} {t("discovery.points")}
-                  </p>
+                  </motion.p>
                 </div>
               </div>
 
@@ -252,6 +284,9 @@ export const DiscoveryCards = ({ petId, petName, petType }: DiscoveryCardsProps)
             </motion.button>
           );
         })}
+        
+        {/* Peek spacer — encourages swiping */}
+        <div className="flex-shrink-0 w-4" aria-hidden />
       </div>
     </div>
   );
