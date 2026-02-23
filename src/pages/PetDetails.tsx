@@ -1,6 +1,7 @@
 import { Camera, Calendar, FileText, CheckSquare, GraduationCap, Image, Shield, Scissors, Upload, Plus, Trash2, Package, Heart, Sparkles, Activity, Star, MapPin, Clock, Info, TrendingUp, Award, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useParams } from "react-router-dom";
+import { useChatIntent } from "@/hooks/useChatIntent";
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -740,7 +741,7 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
             transition={{ delay: 0.75 }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/chat', { state: { petId: pet.id, petName: pet.name, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type, category: 'grooming' } })}
+            onClick={() => { const { navigateWithIntent } = { navigateWithIntent: (msg: string) => { localStorage.setItem("chat_pending_intent", msg); navigate("/chat"); } }; navigateWithIntent(`אני מחפש שירותי טיפוח עבור ${pet.name}`); }}
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-card border border-border text-muted-foreground hover:border-primary/30 hover:text-foreground transition-all whitespace-nowrap text-xs font-semibold shadow-sm"
           >
             <Scissors className="w-4 h-4" />
@@ -753,7 +754,7 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
             transition={{ delay: 0.8 }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/chat', { state: { petId: pet.id, petName: pet.name, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type, category: 'pension' } })}
+            onClick={() => { localStorage.setItem("chat_pending_intent", `אני מחפש פנסיון עבור ${pet.name}`); navigate("/chat"); }}
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-card border border-border text-muted-foreground hover:border-primary/30 hover:text-foreground transition-all whitespace-nowrap text-xs font-semibold shadow-sm"
           >
             <MapPin className="w-4 h-4" />
@@ -766,7 +767,7 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
             transition={{ delay: 0.85 }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/chat', { state: { petId: pet.id, petName: pet.name, petBreed: pet.breed, petAge: calculateAge(pet.birth_date), petType: pet.type, category: 'insurance' } })}
+            onClick={() => { localStorage.setItem("chat_pending_intent", `אני מחפש אפשרויות ביטוח עבור ${pet.name}`); navigate("/chat"); }}
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-card border border-border text-muted-foreground hover:border-primary/30 hover:text-foreground transition-all whitespace-nowrap text-xs font-semibold shadow-sm"
           >
             <Shield className="w-4 h-4" />

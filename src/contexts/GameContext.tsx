@@ -250,6 +250,19 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Listen for care-plan-game-trigger events from useCarePlan
+  useEffect(() => {
+    const handleCarePlanTrigger = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.conditionType && detail?.currentValue != null) {
+        checkAndAwardBadges(detail.conditionType, detail.currentValue);
+        updateStreak();
+      }
+    };
+    window.addEventListener("care-plan-game-trigger", handleCarePlanTrigger);
+    return () => window.removeEventListener("care-plan-game-trigger", handleCarePlanTrigger);
+  }, [badges, achievements, streak]);
+
   return (
     <GameContext.Provider value={{
       achievements,

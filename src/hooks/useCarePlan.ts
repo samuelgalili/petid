@@ -138,6 +138,13 @@ export function useCarePlan(petId: string | undefined) {
           detail: { petId, productName: product.name, points, isApproved },
         })
       );
+
+      // Trigger gamification: update streak and check for care plan badges
+      window.dispatchEvent(
+        new CustomEvent("care-plan-game-trigger", {
+          detail: { points, conditionType: "care_plan_items", currentValue: items.length + 1 },
+        })
+      );
     },
     [user?.id, petId]
   );

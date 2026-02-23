@@ -88,8 +88,8 @@ export const SmartRecommendationSheet = ({
 
   const handleAddToCart = async (product: SmartProduct) => {
     if (product.id === 'insurance-offer') {
-      navigate('/chat', { state: { petName, category: 'insurance' } });
-      onClose();
+      localStorage.setItem("chat_pending_intent", `אני מחפש אפשרויות ביטוח עבור ${petName}`);
+      navigate('/chat');
       return;
     }
 
