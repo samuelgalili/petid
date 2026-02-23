@@ -25,16 +25,23 @@
   html {
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
-    font-size: 100%; /* 16px default — respects user's browser/phone settings */
+    font-size: 100%;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+    /* Disable pull-to-refresh in standalone PWA */
+    overscroll-behavior-y: contain;
   }
 
   body {
-    font-size: 1rem; /* 16px base */
+    font-size: 1rem;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Safe area insets for notch/home indicator */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
 
   /* Smooth theme transition for premium feel */

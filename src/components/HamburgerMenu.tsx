@@ -34,6 +34,7 @@ import {
   Boxes,
   Lock,
   UserPen,
+  Download,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,6 +45,7 @@ import { RoleBadge } from "@/components/RoleBadge";
 import { cn } from "@/lib/utils";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { useUserRole } from "@/hooks/useUserRole";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
 
 interface HamburgerMenuProps {
   isOpen: boolean;
@@ -239,6 +241,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
   const { language, setLanguage, direction } = useLanguage();
   const { activePet, pets, switchPet: contextSwitchPet } = usePetPreference();
   const { isAdmin, isBusiness } = useUserRole();
+  const { isInstallable, isInstalled, installPWA } = usePWAInstall();
   const isRtl = direction === "rtl";
   const s = menuStrings[language] || menuStrings.he;
 
@@ -246,6 +249,9 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
   const [profile, setProfile] = useState<any>(null);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [showPetPicker, setShowPetPicker] = useState(false);
+  const [installDismissed, setInstallDismissed] = useState(() =>
+    localStorage.getItem("pwa_menu_install_dismissed") === "true"
+  );
 
   useEffect(() => {
     if (!isOpen) return;
@@ -542,6 +548,39 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                 </button>
               )}
             </div>
+
+            {/* ── PWA Install Banner (shows once) ── */}
+            {isInstallable && !isInstalled && !installDismissed && (
+              <div className="px-4 py-3 border-t border-border/60">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/20">
+                  <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Download className="w-4.5 h-4.5 text-primary" strokeWidth={1.5} />
+                  </div>
+                  <div className="flex-1 min-w-0" style={{ textAlign: isRtl ? "right" : "left" }}>
+                    <p className="text-xs font-semibold text-foreground">
+                      {language === "he" ? "התקן את PetID" : "Install PetID"}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">
+                      {language === "he" ? "גישה מהירה ממסך הבית" : "Quick access from home screen"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      onClick={async () => { await installPWA(); }}
+                      className="px-3 py-1.5 bg-primary text-primary-foreground text-[11px] font-semibold rounded-lg hover:bg-primary/90 transition-colors"
+                    >
+                      {language === "he" ? "התקן" : "Install"}
+                    </button>
+                    <button
+                      onClick={() => { setInstallDismissed(true); localStorage.setItem("pwa_menu_install_dismissed", "true"); }}
+                      className="p-1 hover:bg-muted rounded-full transition-colors"
+                    >
+                      <X className="w-3.5 h-3.5 text-muted-foreground" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* ── Footer ───────────────────────── */}
             <div className="px-5 py-3 border-t border-border/60">
