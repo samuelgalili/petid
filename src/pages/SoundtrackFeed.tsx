@@ -180,7 +180,7 @@ const SoundtrackFeed = () => {
             {!isAdmin && isBusiness && (
               <motion.button
                 whileTap={{ scale: 0.85 }}
-                onClick={() => navigate("/business-dashboard")}
+                onClick={() => navigate("/convert-to-business")}
                 className="w-8 h-8 rounded-full flex items-center justify-center"
                 style={{
                   background: "rgba(0,0,0,0.2)",

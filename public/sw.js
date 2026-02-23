@@ -82,7 +82,7 @@ self.addEventListener('push', (event) => {
     body: 'יש לך התראה חדשה',
     icon: '/pwa-192x192.png',
     badge: '/pwa-192x192.png',
-    url: '/home',
+    url: '/',
   };
 
   try {
@@ -141,7 +141,7 @@ self.addEventListener('notificationclick', (event) => {
 
   event.notification.close();
 
-  const urlToOpen = event.notification.data?.url || '/home';
+  const urlToOpen = event.notification.data?.url || '/';
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
