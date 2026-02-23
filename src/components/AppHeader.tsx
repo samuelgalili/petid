@@ -76,7 +76,7 @@ export const AppHeader = ({
       return {
         icon: Store,
         label: "חנות",
-        onClick: () => navigate("/business-dashboard"),
+        onClick: () => navigate("/convert-to-business"),
         badge: null,
       };
     }

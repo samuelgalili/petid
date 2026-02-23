@@ -445,9 +445,9 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
               {isBusiness && !isAdmin && (
                 <>
                   <SectionLabel icon={Store}>{s.myStore}</SectionLabel>
-                  <MenuItem icon={Boxes} label={s.inventory} onClick={() => go("/business/dashboard")} isRtl={isRtl} accent />
-                  <MenuItem icon={BarChart3} label={s.salesAnalytics} onClick={() => go("/business/dashboard")} isRtl={isRtl} accent />
-                  <MenuItem icon={Truck} label={s.activeShipments} onClick={() => go("/business/dashboard")} isRtl={isRtl} accent />
+                  <MenuItem icon={Boxes} label={s.inventory} onClick={() => go("/convert-to-business")} isRtl={isRtl} accent />
+                  <MenuItem icon={BarChart3} label={s.salesAnalytics} onClick={() => go("/convert-to-business")} isRtl={isRtl} accent />
+                  <MenuItem icon={Truck} label={s.activeShipments} onClick={() => go("/convert-to-business")} isRtl={isRtl} accent />
                   <SectionDivider />
                 </>
               )}
