@@ -93,11 +93,19 @@ export const DailyInsightCard = () => {
       if (!pets?.length) { setLoading(false); return; }
       const pet = pets[0];
 
-      const [visitsRes] = await Promise.all([
+      const [visitsRes, carePlanRes] = await Promise.all([
         supabase.from("pet_vet_visits").select("id, vaccines").eq("pet_id", pet.id).limit(5),
+        (supabase as any).from("pet_care_plans").select("points_awarded, is_scientist_approved").eq("pet_id", pet.id).limit(20),
       ]);
       pet._hasVetVisits = (visitsRes.data?.length || 0) > 0;
       pet._hasVaccines = visitsRes.data?.some((v: any) => v.vaccines?.length > 0) || false;
+      
+      // Care plan bonus
+      const carePlanPoints = (carePlanRes.data || []).reduce((sum: number, i: any) => sum + (i.points_awarded || 0), 0);
+      const carePlanBonus = Math.min(carePlanPoints, 15); // Cap at 15 extra points
+      if (carePlanRes.data?.some((i: any) => i.is_scientist_approved)) {
+        pet.current_food = pet.current_food || "care-plan-food";
+      }
 
       const { score, missing } = calculateHealthScore(pet);
 
@@ -120,7 +128,7 @@ export const DailyInsightCard = () => {
         petName: pet.name,
         ageWeeks,
         ageText,
-        healthScore: score,
+        healthScore: Math.min(score + carePlanBonus, 100),
         missingItems: missing.slice(0, 3),
         breed: pet.breed,
         gender: pet.gender,
@@ -128,6 +136,11 @@ export const DailyInsightCard = () => {
       setLoading(false);
     };
     fetch();
+
+    // Listen for care plan updates to refresh score
+    const handleUpdate = () => fetch();
+    window.addEventListener("care-plan-updated", handleUpdate);
+    return () => window.removeEventListener("care-plan-updated", handleUpdate);
   }, []);
 
   if (loading || !insight) return null;
