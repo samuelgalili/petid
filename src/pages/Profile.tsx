@@ -26,7 +26,8 @@ import { BreedStatsCard } from "@/components/profile/BreedStatsCard";
 import { PetWeatherAlert } from "@/components/profile/PetWeatherAlert";
 import { PetPhotoGallery } from "@/components/profile/PetPhotoGallery";
 import { PetMiniCalendar } from "@/components/profile/PetMiniCalendar";
-import { InsuranceSheet, TrainingSheet, GroomingSheet, BoardingSheet, BreedInfoSheet, FoodSheet, ToysSheet, DocumentsSheet, DogWalkerSheet, ProductsSheet, EnergySheet, GroomingProductsSheet, FeedingSheet, MemorialSheet, ComingSoonSheet } from "@/components/pet-services";
+import { InsuranceSheet, TrainingSheet, GroomingSheet, BoardingSheet, BreedInfoSheet, FoodSheet, ToysSheet, DogWalkerSheet, ProductsSheet, EnergySheet, GroomingProductsSheet, FeedingSheet, MemorialSheet, ComingSoonSheet } from "@/components/pet-services";
+import { PetVaultDrawer } from "@/components/pet-services/PetVaultDrawer";
 import { SmartRecommendationSheet } from "@/components/pet-services/SmartRecommendationSheet";
 import { HealthScoreBreakdown } from "@/components/profile/HealthScoreBreakdown";
 import { MedicalTimeline } from "@/components/profile/MedicalTimeline";
@@ -760,7 +761,7 @@ const Profile = () => {
         <ToysSheet isOpen={activeSheet === 'toys'} onClose={handleCloseSheet} pet={selectedPet} />
         <BreedInfoSheet isOpen={activeSheet === 'breed_info'} onClose={handleCloseSheet} pet={selectedPet} />
         <BoardingSheet isOpen={activeSheet === 'boarding'} onClose={handleCloseSheet} pet={selectedPet} />
-        <DocumentsSheet isOpen={activeSheet === 'documents'} onClose={handleCloseSheet} pet={selectedPet} />
+        <PetVaultDrawer isOpen={activeSheet === 'documents'} onClose={handleCloseSheet} pet={selectedPet} />
         <DogWalkerSheet isOpen={activeSheet === 'dog_walker'} onClose={handleCloseSheet} pet={selectedPet} />
         <ProductsSheet isOpen={activeSheet === 'products'} onClose={handleCloseSheet} pet={selectedPet} />
         <MemorialSheet isOpen={activeSheet === 'memorial'} onClose={handleCloseSheet} pet={selectedPet} />
