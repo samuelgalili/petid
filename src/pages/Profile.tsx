@@ -109,10 +109,12 @@ const Profile = () => {
   };
 
   // Sync selectedPetId when global active pet changes (e.g. from BottomNav)
+  // Auto-expand to pet dashboard when there's an active pet
   useEffect(() => {
-    if (globalActivePet?.id && pets.length > 0 && globalActivePet.id !== selectedPetId) {
+    if (globalActivePet?.id && pets.length > 0) {
       setSelectedPetId(globalActivePet.id);
       setIsExpanded(true);
+      setIsProfileCollapsed(true);
       setActiveHub(null);
     }
   }, [globalActivePet?.id, pets.length]);
