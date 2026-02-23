@@ -88,6 +88,8 @@ interface ChatContextType {
   sendMessage: (content: string) => Promise<void>;
   /** Stream chat with AI */
   streamChat: (messagesToSend: Message[]) => Promise<void>;
+  /** Set an intent that triggers the Scientist to open with a context-aware message */
+  setIntent: (intent: string | null) => void;
 }
 
 const ChatContext = createContext<ChatContextType | null>(null);
@@ -120,6 +122,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [pendingDateContext, setPendingDateContext] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
+  const [pendingIntent, setPendingIntent] = useState<string | null>(null);
 
   // Keep a ref so streamChat always sees latest messages
   const messagesRef = useRef(messages);
@@ -190,6 +193,36 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     };
     loadPets();
   }, []);
+
+  // ===== Intent Processing =====
+  // Check for a pending intent stored in localStorage (set before navigating to /chat)
+  const setIntent = useCallback((intent: string | null) => {
+    if (intent) {
+      localStorage.setItem("chat_pending_intent", intent);
+    } else {
+      localStorage.removeItem("chat_pending_intent");
+    }
+    setPendingIntent(intent);
+  }, []);
+
+  // On mount, check localStorage for a pending intent
+  useEffect(() => {
+    const stored = localStorage.getItem("chat_pending_intent");
+    if (stored) {
+      setPendingIntent(stored);
+      localStorage.removeItem("chat_pending_intent");
+    }
+  }, []);
+
+  // Process intent once pets are loaded
+  useEffect(() => {
+    if (!pendingIntent || isLoading || userPets.length === 0) return;
+    const timer = setTimeout(() => {
+      sendMessage(pendingIntent);
+      setPendingIntent(null);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [pendingIntent, isLoading, userPets]);
 
   /** Return only the last MAX_CONTEXT_MESSAGES for AI calls */
   const getContextMessages = useCallback((): Message[] => {
@@ -384,6 +417,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         getContextMessages,
         sendMessage,
         streamChat,
+        setIntent,
       }}
     >
       {children}
