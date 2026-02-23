@@ -8,7 +8,6 @@ import {
   Cpu, Shield, Utensils, Syringe, Camera, Heart,
   Sparkles, Check
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { haptic } from "@/lib/haptics";
@@ -40,7 +39,7 @@ const ALL_DISCOVERIES: DiscoveryItem[] = [
     emoji: "🔒",
     gradient: "from-[hsla(180,50%,45%,0.12)] to-[hsla(180,50%,45%,0.03)]",
     iconBg: "bg-[hsla(180,50%,45%,0.15)]",
-    action: "/pet-id-card",
+    action: "documents",
     checkField: "health_notes",
     reward: "+10 נקודות",
   },
@@ -73,7 +72,7 @@ const ALL_DISCOVERIES: DiscoveryItem[] = [
     emoji: "💉",
     gradient: "from-[hsla(142,60%,45%,0.12)] to-[hsla(142,60%,45%,0.03)]",
     iconBg: "bg-[hsla(142,60%,45%,0.15)]",
-    action: "/vet-log",
+    action: "documents",
     checkField: "last_vet_visit",
     reward: "+12 נקודות",
   },
@@ -91,7 +90,6 @@ const ALL_DISCOVERIES: DiscoveryItem[] = [
 ];
 
 export const DiscoveryCards = ({ petId, petName, petType }: DiscoveryCardsProps) => {
-  const navigate = useNavigate();
   const [completedFields, setCompletedFields] = useState<Set<string>>(new Set());
   const [justCompleted, setJustCompleted] = useState<string | null>(null);
 
@@ -118,10 +116,9 @@ export const DiscoveryCards = ({ petId, petName, petType }: DiscoveryCardsProps)
 
   const handleBubbleClick = (card: DiscoveryItem) => {
     haptic("medium");
-    if (card.action.startsWith("/")) {
-      navigate(card.action);
-    }
-    // Non-route actions handled by parent
+    // All actions are now sheet-based (no route navigation)
+    // Dispatch custom event for parent Profile to open appropriate sheet
+    window.dispatchEvent(new CustomEvent("open-pet-sheet", { detail: { sheet: card.action } }));
   };
 
   // Simulate completion celebration (would be triggered by actual data change)
