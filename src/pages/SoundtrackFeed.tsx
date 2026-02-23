@@ -8,13 +8,11 @@ import { ComponentErrorBoundary } from "@/components/common/ComponentErrorBounda
 import { motion, AnimatePresence } from "framer-motion";
 import { useActivePet } from "@/hooks/useActivePet";
 import { cn } from "@/lib/utils";
-import { LayoutGrid } from "lucide-react";
 import { Camera, ImagePlus, FileText, Menu, Shield, Store, Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useNotificationsBadge } from "@/hooks/useNotificationsBadge";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
-// BottomNav is rendered by MainShell — not needed here
 import { CreatePostDialog } from "@/components/CreatePostDialog";
 import { CreateStoryDialog } from "@/components/CreateStoryDialog";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -39,7 +37,7 @@ const SoundtrackFeed = () => {
   const { isAdmin, isBusiness } = useUserRole();
   const { unreadCount } = useNotificationsBadge();
   const { pet: activePet } = useActivePet();
-  const { language, direction } = useLanguage();
+  const { t, direction } = useLanguage();
   const [showUploadMenu, setShowUploadMenu] = useState(false);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [showCreateStory, setShowCreateStory] = useState(false);
@@ -71,7 +69,7 @@ const SoundtrackFeed = () => {
 
   if (loading) {
     return (
-      <div className="h-screen bg-background overflow-hidden" dir="rtl">
+      <div className="h-screen bg-background overflow-hidden" dir={direction}>
         <div className="h-full overflow-hidden">
           <FeedSkeletonList />
         </div>
@@ -80,7 +78,7 @@ const SoundtrackFeed = () => {
   }
 
   return (
-    <div className="h-screen bg-background overflow-hidden" dir="rtl">
+    <div className="h-screen bg-background overflow-hidden" dir={direction}>
       <FeedProgressBar current={currentIndex} total={posts.length} />
 
       <FeedPullToRefresh
@@ -103,7 +101,7 @@ const SoundtrackFeed = () => {
         animate={{ y: 0, opacity: 1 }}
       >
         <div className="flex items-center justify-between h-11 pointer-events-auto px-4">
-          {/* Right (RTL): Menu */}
+          {/* Menu button */}
           <motion.button
             whileTap={{ scale: 0.85 }}
             onClick={() => setIsMenuOpen(true)}
@@ -112,7 +110,7 @@ const SoundtrackFeed = () => {
               background: "rgba(0,0,0,0.2)",
               backdropFilter: "blur(12px)",
             }}
-            aria-label="תפריט"
+            aria-label={t("feedPage.menu")}
           >
             <Menu className="w-[18px] h-[18px] text-white" strokeWidth={1.5} />
           </motion.button>
@@ -130,7 +128,7 @@ const SoundtrackFeed = () => {
                 )}
                 style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}
               >
-                עבורי
+                {t("feedPage.forYou")}
               </span>
               {activeTab === "discover" && (
                 <motion.div
@@ -151,7 +149,7 @@ const SoundtrackFeed = () => {
                 )}
                 style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}
               >
-                עוקבים
+                {t("feedPage.following")}
               </span>
               {activeTab === "following" && (
                 <motion.div
@@ -163,9 +161,8 @@ const SoundtrackFeed = () => {
             </button>
           </div>
 
-          {/* Left (RTL): Bell + Role Icon */}
+          {/* Bell + Role Icon */}
           <div className="flex items-center gap-1.5">
-            {/* Admin/Business management icon */}
             {isAdmin && (
               <motion.button
                 whileTap={{ scale: 0.85 }}
@@ -175,7 +172,7 @@ const SoundtrackFeed = () => {
                   background: "rgba(0,0,0,0.2)",
                   backdropFilter: "blur(12px)",
                 }}
-                aria-label="ניהול"
+                aria-label={t("feedPage.admin")}
               >
                 <Shield className="w-[16px] h-[16px] text-white" strokeWidth={1.5} />
               </motion.button>
@@ -189,13 +186,12 @@ const SoundtrackFeed = () => {
                   background: "rgba(0,0,0,0.2)",
                   backdropFilter: "blur(12px)",
                 }}
-                aria-label="חנות"
+                aria-label={t("feedPage.store")}
               >
                 <Store className="w-[16px] h-[16px] text-white" strokeWidth={1.5} />
               </motion.button>
             )}
 
-            {/* Notification Bell — always visible */}
             <motion.button
               whileTap={{ scale: 0.85 }}
               onClick={() => navigate("/notifications")}
@@ -204,7 +200,7 @@ const SoundtrackFeed = () => {
                 background: "rgba(0,0,0,0.2)",
                 backdropFilter: "blur(12px)",
               }}
-              aria-label="התראות"
+              aria-label={t("feedPage.notifications")}
             >
               <Bell className="w-[18px] h-[18px] text-white" strokeWidth={1.5} />
               {unreadCount > 0 && (
@@ -224,7 +220,7 @@ const SoundtrackFeed = () => {
         </div>
       </motion.header>
 
-      {/* Feed — Cross-fade between tabs */}
+      {/* Feed */}
       <div
         ref={containerRef}
         className="h-full overflow-y-auto snap-y snap-mandatory scroll-smooth"
@@ -247,30 +243,29 @@ const SoundtrackFeed = () => {
                   onClick={fetchPosts}
                   className="px-4 py-2 rounded-xl text-sm font-medium bg-primary text-primary-foreground"
                 >
-                  נסה שוב
+                  {t("common.retry")}
                 </button>
               </div>
             ) : posts.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
-                <p className="text-lg">אין פוסטים להצגה</p>
+                <p className="text-lg">{t("empty.noPosts")}</p>
                 <p className="text-sm mt-2">
                   {activeTab === "following"
-                    ? "עקוב אחרי משתמשים כדי לראות את הפוסטים שלהם"
-                    : "בקרוב יופיעו כאן פוסטים"}
+                    ? t("empty.noPostsFollowing")
+                    : t("empty.postsComingSoon")}
                 </p>
               </div>
             ) : (
               <>
-                {/* Daily Insight — First card (For You only) */}
                 {activeTab === "discover" && (
-                  <ComponentErrorBoundary fallbackMessage="שגיאה בטעינת תובנות יומיות">
+                  <ComponentErrorBoundary fallbackMessage={t("feedPage.errorLoadingInsight")}>
                     <DailyInsightCard />
                   </ComponentErrorBoundary>
                 )}
 
                 {posts.map((post, index) => (
                   <React.Fragment key={post.id}>
-                    <ComponentErrorBoundary fallbackMessage="שגיאה בטעינת פוסט">
+                    <ComponentErrorBoundary fallbackMessage={t("feedPage.errorLoadingPost")}>
                       <SoundtrackPostCard
                         post={post}
                         index={index}
@@ -285,32 +280,28 @@ const SoundtrackFeed = () => {
                       />
                     </ComponentErrorBoundary>
 
-                    {/* Product Spotlight every 5th post (For You only) */}
                     {activeTab === "discover" && (index + 1) % 5 === 0 && (
-                      <ComponentErrorBoundary fallbackMessage="שגיאה בטעינת מוצרים">
+                      <ComponentErrorBoundary fallbackMessage={t("feedPage.errorLoadingProducts")}>
                         <FeedProductCards />
                       </ComponentErrorBoundary>
                     )}
 
-                    {/* Poll after 4th post (For You only) */}
                     {index === 4 && activeTab === "discover" && (
-                      <ComponentErrorBoundary fallbackMessage="שגיאה בטעינת סקר">
+                      <ComponentErrorBoundary fallbackMessage={t("feedPage.errorLoadingPoll")}>
                         <FeedPollCard />
                       </ComponentErrorBoundary>
                     )}
 
-                    {/* Health score highlight after 7th post (For You only) */}
                     {index === 6 && activeTab === "discover" && (
-                      <ComponentErrorBoundary fallbackMessage="שגיאה בטעינת ציון בריאות">
+                      <ComponentErrorBoundary fallbackMessage={t("feedPage.errorLoadingHealth")}>
                         <HealthScoreHighlight />
                       </ComponentErrorBoundary>
                     )}
                   </React.Fragment>
                 ))}
 
-                {/* Local Events — After posts (For You only) */}
                 {activeTab === "discover" && (
-                  <ComponentErrorBoundary fallbackMessage="שגיאה בטעינת אירועים">
+                  <ComponentErrorBoundary fallbackMessage={t("feedPage.errorLoadingEvents")}>
                     <LocalEventsCard />
                   </ComponentErrorBoundary>
                 )}
@@ -319,8 +310,6 @@ const SoundtrackFeed = () => {
           </motion.div>
         </AnimatePresence>
       </div>
-
-      {/* Upload FAB removed — handled by BottomNav FAB */}
 
       {/* Upload Menu */}
       <AnimatePresence>
@@ -342,9 +331,9 @@ const SoundtrackFeed = () => {
               dir={direction}
             >
               {[
-                { icon: Camera, label: language === 'he' ? 'סטורי' : 'Story', action: "story" as const, color: "text-pink-500", bg: "bg-pink-500/10" },
-                { icon: ImagePlus, label: language === 'he' ? 'פוסט' : 'Post', action: "post" as const, color: "text-blue-500", bg: "bg-blue-500/10" },
-                { icon: FileText, label: language === 'he' ? 'מסמך' : 'Document', action: "document" as const, color: "text-amber-500", bg: "bg-amber-500/10" },
+                { icon: Camera, label: t("stories.addStory"), action: "story" as const, color: "text-pink-500", bg: "bg-pink-500/10" },
+                { icon: ImagePlus, label: t("feed.newPost"), action: "post" as const, color: "text-blue-500", bg: "bg-blue-500/10" },
+                { icon: FileText, label: t("documents.documents"), action: "document" as const, color: "text-amber-500", bg: "bg-amber-500/10" },
               ].map((item) => (
                 <motion.button
                   key={item.action}
@@ -370,8 +359,6 @@ const SoundtrackFeed = () => {
 
       <CreatePostDialog open={showCreatePost} onOpenChange={setShowCreatePost} onPostCreated={() => setShowCreatePost(false)} />
       <CreateStoryDialog open={showCreateStory} onOpenChange={setShowCreateStory} onStoryCreated={() => setShowCreateStory(false)} />
-
-      
     </div>
   );
 };
