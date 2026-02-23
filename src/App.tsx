@@ -31,6 +31,7 @@ import { FlyingCartProvider } from "@/components/FlyingCartAnimation";
 // Global Components
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import { OfflineBadge } from "@/components/OfflineBadge";
 import { LoginPromptDialog } from "@/components/LoginPromptDialog";
 import { SplashScreen } from "@/components/SplashScreen";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -76,6 +77,7 @@ const AnimatedRoutes = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <ScrollToTop />
+      <OfflineBadge />
       <LoginPromptDialog />
       <PWAInstallPrompt />
       <CompleteProfilePrompt />
