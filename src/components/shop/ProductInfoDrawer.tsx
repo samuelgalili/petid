@@ -30,9 +30,10 @@ interface ProductInfoDrawerProps {
   petName?: string;
   onClose: () => void;
   onAddToCart?: () => void;
+  onAddToCarePlan?: () => void;
 }
 
-export const ProductInfoDrawer = ({ product, petName, onClose, onAddToCart }: ProductInfoDrawerProps) => {
+export const ProductInfoDrawer = ({ product, petName, onClose, onAddToCart, onAddToCarePlan }: ProductInfoDrawerProps) => {
   const { toast } = useToast();
 
   if (!product) return null;
@@ -250,8 +251,8 @@ export const ProductInfoDrawer = ({ product, petName, onClose, onAddToCart }: Pr
               whileTap={{ scale: 0.97 }}
               onClick={() => {
                 haptic("medium");
+                onAddToCarePlan?.();
                 onAddToCart?.();
-                toast({ title: "נוסף לתוכנית הטיפול 🐾", duration: 1500 });
                 onClose();
               }}
               disabled={product.inStock === false}

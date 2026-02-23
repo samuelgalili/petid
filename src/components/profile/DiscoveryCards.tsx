@@ -111,8 +111,30 @@ export const DiscoveryCards = ({ petId, petName, petType }: DiscoveryCardsProps)
         if ((data as any).avatar_url) completed.add("avatar_url");
         setCompletedFields(completed);
       }
+
+      // Also check care plan for food
+      const { data: carePlanData } = await (supabase as any)
+        .from("pet_care_plans")
+        .select("category, is_scientist_approved")
+        .eq("pet_id", petId)
+        .limit(10);
+      
+      if (carePlanData?.some((i: any) => i.category === "food" || i.is_scientist_approved)) {
+        setCompletedFields((prev) => new Set([...prev, "current_food"]));
+      }
     };
     fetchCompletion();
+
+    // Listen for care plan updates
+    const handleCarePlanUpdate = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.petId === petId && detail?.isApproved) {
+        setCompletedFields((prev) => new Set([...prev, "current_food"]));
+        triggerCelebration("food");
+      }
+    };
+    window.addEventListener("care-plan-updated", handleCarePlanUpdate);
+    return () => window.removeEventListener("care-plan-updated", handleCarePlanUpdate);
   }, [petId]);
 
   const handleBubbleClick = (card: DiscoveryItem) => {

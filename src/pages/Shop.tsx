@@ -31,6 +31,7 @@ import { useActivePet } from "@/hooks/useActivePet";
 import { FleetSafetyAlert } from "@/components/fleet/FleetSafetyAlert";
 import { SlideToConfirm } from "@/components/shop/SlideToConfirm";
 import { ProductInfoDrawer } from "@/components/shop/ProductInfoDrawer";
+import { useCarePlan } from "@/hooks/useCarePlan";
 
 const Shop = () => {
   const navigate = useNavigate();
@@ -39,6 +40,7 @@ const Shop = () => {
   const { triggerFly, setCartIconPosition } = useFlyingCart();
   const { pet: activePet } = useActivePet();
   const { toast } = useToast();
+  const { addToCarePlan } = useCarePlan(activePet?.id);
   const cartIconRef = useRef<HTMLButtonElement>(null);
   const productImageRef = useRef<HTMLDivElement>(null);
   const [selectedCategory, setSelectedCategory] = useState("הכל");
@@ -862,7 +864,7 @@ const Shop = () => {
       {/* Product Info Drawer */}
       <AnimatePresence>
         {infoDrawerProduct && (
-          <ProductInfoDrawer product={infoDrawerProduct} petName={activePet?.name} onClose={() => setInfoDrawerProduct(null)} onAddToCart={() => { handleAddToCart(); setInfoDrawerProduct(null); }} />
+          <ProductInfoDrawer product={infoDrawerProduct} petName={activePet?.name} onClose={() => setInfoDrawerProduct(null)} onAddToCart={() => { handleAddToCart(); setInfoDrawerProduct(null); }} onAddToCarePlan={() => { if (infoDrawerProduct) addToCarePlan({ id: infoDrawerProduct.id, name: infoDrawerProduct.name, image: infoDrawerProduct.image, price: infoDrawerProduct.price, safetyScore: infoDrawerProduct.safetyScore, category: infoDrawerProduct.category }); }} />
         )}
       </AnimatePresence>
       </div>

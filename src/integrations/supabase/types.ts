@@ -5513,6 +5513,59 @@ export type Database = {
         }
         Relationships: []
       }
+      pet_care_plans: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          is_scientist_approved: boolean | null
+          pet_id: string
+          points_awarded: number | null
+          product_id: string
+          product_image: string | null
+          product_name: string
+          product_price: number | null
+          safety_score: number | null
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_scientist_approved?: boolean | null
+          pet_id: string
+          points_awarded?: number | null
+          product_id: string
+          product_image?: string | null
+          product_name: string
+          product_price?: number | null
+          safety_score?: number | null
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_scientist_approved?: boolean | null
+          pet_id?: string
+          points_awarded?: number | null
+          product_id?: string
+          product_image?: string | null
+          product_name?: string
+          product_price?: number | null
+          safety_score?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_care_plans_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pet_document_extracted_data: {
         Row: {
           chip_number: string | null
