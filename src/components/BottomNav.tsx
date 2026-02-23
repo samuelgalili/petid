@@ -249,25 +249,27 @@ const BottomNav = () => {
         )}
       </AnimatePresence>
 
-      {/* Floating FAB (+) — always bottom-right */}
-      <motion.button
-        whileTap={{ scale: 0.85 }}
-        onClick={() => setShowQuickActions((v) => !v)}
-        className="fixed z-[10000] w-12 h-12 rounded-full shadow-lg flex items-center justify-center bg-primary text-primary-foreground right-4"
-        style={{ bottom: `calc(72px + env(safe-area-inset-bottom))` }}
-        aria-label="Quick actions"
-      >
-        <motion.div
-          animate={{ rotate: showQuickActions ? 45 : 0 }}
-          transition={{ type: "spring", stiffness: 400, damping: 20 }}
+      {/* Floating FAB (+) — always bottom-right, hidden when dashboard is open */}
+      {!dashboardOpen && (
+        <motion.button
+          whileTap={{ scale: 0.85 }}
+          onClick={() => setShowQuickActions((v) => !v)}
+          className="fixed z-[10000] w-12 h-12 rounded-full shadow-lg flex items-center justify-center bg-primary text-primary-foreground right-4"
+          style={{ bottom: `calc(72px + env(safe-area-inset-bottom))` }}
+          aria-label="Quick actions"
         >
-          {showQuickActions ? (
-            <X className="w-5 h-5" strokeWidth={2} />
-          ) : (
-            <Plus className="w-5 h-5" strokeWidth={2} />
-          )}
-        </motion.div>
-      </motion.button>
+          <motion.div
+            animate={{ rotate: showQuickActions ? 45 : 0 }}
+            transition={{ type: "spring", stiffness: 400, damping: 20 }}
+          >
+            {showQuickActions ? (
+              <X className="w-5 h-5" strokeWidth={2} />
+            ) : (
+              <Plus className="w-5 h-5" strokeWidth={2} />
+            )}
+          </motion.div>
+        </motion.button>
+      )}
 
       {/* ── Bottom Navigation Bar ── */}
       <nav
