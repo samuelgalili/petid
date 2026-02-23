@@ -11,6 +11,7 @@ import { ChatHeaderMenu } from "@/components/chat/ChatHeaderMenu";
 import { TypingIndicator } from "@/components/chat/TypingIndicator";
 import { LocationInviteCard } from "@/components/chat/LocationInviteCard";
 import { ProductPreviewCard } from "@/components/chat/ProductPreviewCard";
+import { VirtualTreatAnimation } from "@/components/chat/VirtualTreatAnimation";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { OptimizedImage } from "@/components/OptimizedImage";
@@ -81,6 +82,7 @@ export default function MessageThread() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [showSharedFeed, setShowSharedFeed] = useState(false);
   const [vanishMode, setVanishMode] = useState(false);
+  const [showTreatAnimation, setShowTreatAnimation] = useState(false);
   
   // Check if this is an AI chat
   const isAIChat = userId === AI_SUPPORT_ID;
@@ -527,7 +529,7 @@ ${petType} ראיתי שיש לך את ${petNames}${mainPet.breed ? ` (${mainPet
   const messageGroups = groupMessagesByDate(messages);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col" dir="rtl">
+    <div className="h-[100dvh] bg-background flex flex-col" dir="rtl">
       {/* Instagram-style Header */}
       <div className="bg-background border-b border-border sticky top-0 z-10">
         <div className="px-2 py-2 flex items-center gap-2">
@@ -882,7 +884,30 @@ ${petType} ראיתי שיש לך את ${petNames}${mainPet.breed ? ` (${mainPet
             toast("הזמנה לטיול נשלחה! 🐕", { icon: "📍" });
           }
         }}
+        onVirtualTreat={async () => {
+          setShowTreatAnimation(true);
+          if (user && userId && !isAIChat) {
+            try {
+              const { data } = await supabase.from("messages").insert({
+                sender_id: user.id,
+                receiver_id: userId,
+                message_text: "🦴 שלח/ה צ׳ופר וירטואלי!",
+              }).select().single();
+              if (data) {
+                setMessages((prev) => [...prev, data]);
+                scrollToBottom();
+              }
+            } catch (e) {
+              console.error("Error sending treat:", e);
+            }
+          }
+        }}
       />
+
+      {/* Virtual Treat Animation */}
+      {showTreatAnimation && (
+        <VirtualTreatAnimation onComplete={() => setShowTreatAnimation(false)} />
+      )}
 
       {/* Shared Feed Panel */}
       {!isAIChat && userId && (
