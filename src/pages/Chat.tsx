@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronRight, Sparkles, Bot, Shield, Scissors, GraduationCap, TreePine, FolderOpen, Building2, Package, Dog, Home } from "lucide-react";
+import { ChevronRight, Sparkles, Bot, Shield, Scissors, GraduationCap, TreePine, FolderOpen, Building2, Package, Dog, Home, Edit, MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import petidIcon from "@/assets/petid-icon.png";
 import BottomNav from "@/components/BottomNav";
@@ -28,6 +28,7 @@ import { AdoptionRequirementPicker } from "@/components/chat/AdoptionRequirement
 import { ChatProvider, useChatContext, type Message } from "@/contexts/ChatContext";
 import { ExpertSpheres, type ExpertSphere } from "@/components/chat/ExpertSpheres";
 import { useDataIntake, type IntakeType } from "@/hooks/useDataIntake";
+import { ChatHubMessages } from "@/components/chat/ChatHubMessages";
 
 const ChatContent = () => {
   const {
@@ -51,6 +52,7 @@ const ChatContent = () => {
   const navigate = useNavigate();
   const [showExpertSpheres, setShowExpertSpheres] = useState(true);
   const [headerHidden, setHeaderHidden] = useState(false);
+  const [activeHubTab, setActiveHubTab] = useState<"scientist" | "messages">("scientist");
   const lastScrollTop = useRef(0);
 
   // Auto-hide header on scroll down, show on scroll up
@@ -341,17 +343,60 @@ const ChatContent = () => {
   return (
     <div className="min-h-screen bg-background pb-20" dir="rtl">
       <SEO title="צ'אט AI" description="שאלו את העוזר החכם שלנו כל שאלה על חיות מחמד - אילוף, תזונה, בריאות" url="/chat" />
-      {/* Minimal back arrow header */}
-      <div className="sticky top-0 z-50 bg-background/90 backdrop-blur-md px-3 py-2">
-        <button 
-          onClick={() => navigate("/feed")}
-          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
-          aria-label="חזרה לפיד"
-        >
-          <ChevronRight className="w-5 h-5 text-foreground" />
-        </button>
+      {/* Glassmorphism Hub Header with Tabs */}
+      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/20">
+        <div className="flex items-center justify-between px-3 py-2">
+          <button 
+            onClick={() => navigate("/feed")}
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
+            aria-label="חזרה לפיד"
+          >
+            <ChevronRight className="w-5 h-5 text-foreground" />
+          </button>
+          <div className="flex items-center gap-1">
+            <img src={petidIcon} alt="PetID" className="w-5 h-5 object-contain" />
+            <span className="text-sm font-bold text-foreground">Chat Hub</span>
+          </div>
+          <div className="w-8" />
+        </div>
+        {/* Tab Switcher */}
+        <div className="flex px-4 gap-1">
+          <button
+            onClick={() => setActiveHubTab("scientist")}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold transition-colors relative ${
+              activeHubTab === "scientist" ? "text-foreground" : "text-muted-foreground"
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            המדען
+            {activeHubTab === "scientist" && (
+              <motion.div layoutId="hub-tab-indicator" className="absolute bottom-0 inset-x-4 h-[2px] bg-primary rounded-full" />
+            )}
+          </button>
+          <button
+            onClick={() => setActiveHubTab("messages")}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold transition-colors relative ${
+              activeHubTab === "messages" ? "text-foreground" : "text-muted-foreground"
+            }`}
+          >
+            <MessageCircle className="w-3.5 h-3.5" />
+            הודעות
+            {activeHubTab === "messages" && (
+              <motion.div layoutId="hub-tab-indicator" className="absolute bottom-0 inset-x-4 h-[2px] bg-primary rounded-full" />
+            )}
+          </button>
+        </div>
       </div>
 
+      {/* Messages Tab */}
+      {activeHubTab === "messages" && (
+        <div className="flex-1 overflow-hidden">
+          <ChatHubMessages />
+        </div>
+      )}
+
+      {/* Scientist Tab */}
+      {activeHubTab === "scientist" && (
       <div className="flex flex-col h-[calc(100vh-140px)]">
         {/* Messages Container */}
         <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="flex-1 overflow-y-auto px-4 py-6">
@@ -428,7 +473,7 @@ const ChatContent = () => {
                       className={`px-4 py-3 ${
                         message.role === "user"
                           ? "bg-gradient-to-l from-primary to-primary/90 text-primary-foreground rounded-2xl rounded-br-md shadow-md shadow-primary/20"
-                          : "bg-card border border-border/30 text-foreground rounded-2xl rounded-bl-md shadow-sm"
+                          : "bg-card/80 backdrop-blur-md border border-border/30 text-foreground rounded-2xl rounded-bl-md shadow-[0_0_15px_hsla(260,60%,60%,0.12),0_0_30px_hsla(220,70%,50%,0.06)]"
                       }`}
                     >
                       <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
@@ -709,6 +754,26 @@ const ChatContent = () => {
           )}
         </AnimatePresence>
 
+        {/* Quick Fast Actions */}
+        {(!isLoading) && (
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide px-4 py-2 border-t border-border/10">
+            {[
+              { label: "האוכל הזה בטוח?", icon: "🔬" },
+              { label: "בדוק ציון בריאות", icon: "💯" },
+              { label: "דבר עם וטרינר", icon: "🩺" },
+            ].map((action) => (
+              <button
+                key={action.label}
+                onClick={() => setInput(action.label)}
+                className="flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-muted/60 border border-border/20 text-xs font-medium text-foreground hover:bg-muted transition-colors backdrop-blur-sm"
+              >
+                <span>{action.icon}</span>
+                <span>{action.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Input Area */}
         <ChatInputBar
           value={input}
@@ -725,6 +790,7 @@ const ChatContent = () => {
           }}
         />
       </div>
+      )}
 
       <BottomNav />
     </div>
