@@ -26,7 +26,7 @@ import { BreedStatsCard } from "@/components/profile/BreedStatsCard";
 import { PetWeatherAlert } from "@/components/profile/PetWeatherAlert";
 import { PetPhotoGallery } from "@/components/profile/PetPhotoGallery";
 import { PetMiniCalendar } from "@/components/profile/PetMiniCalendar";
-import { InsuranceSheet, TrainingSheet, GroomingSheet, BoardingSheet, BreedInfoSheet, FoodSheet, ToysSheet, DocumentsSheet, DogWalkerSheet, ProductsSheet, EnergySheet, GroomingProductsSheet, FeedingSheet } from "@/components/pet-services";
+import { InsuranceSheet, TrainingSheet, GroomingSheet, BoardingSheet, BreedInfoSheet, FoodSheet, ToysSheet, DocumentsSheet, DogWalkerSheet, ProductsSheet, EnergySheet, GroomingProductsSheet, FeedingSheet, MemorialSheet, ComingSoonSheet } from "@/components/pet-services";
 import { SmartRecommendationSheet } from "@/components/pet-services/SmartRecommendationSheet";
 import { HealthScoreBreakdown } from "@/components/profile/HealthScoreBreakdown";
 import { MedicalTimeline } from "@/components/profile/MedicalTimeline";
@@ -211,7 +211,7 @@ const Profile = () => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (detail?.sheet) {
-        setActiveSheet(detail.sheet);
+        handleCategoryClick(detail.sheet);
       }
     };
     window.addEventListener("open-pet-sheet", handler);
@@ -230,6 +230,18 @@ const Profile = () => {
 
     if (navigationMap[categoryId]) {
       navigate(navigationMap[categoryId]);
+      return;
+    }
+
+    // Health opens the health breakdown
+    if (categoryId === 'health') {
+      setHealthBreakdownOpen(true);
+      return;
+    }
+
+    // Photo opens image editor
+    if (categoryId === 'photo') {
+      setIsImageEditorOpen(true);
       return;
     }
 
@@ -749,6 +761,12 @@ const Profile = () => {
         <DocumentsSheet isOpen={activeSheet === 'documents'} onClose={handleCloseSheet} pet={selectedPet} />
         <DogWalkerSheet isOpen={activeSheet === 'dog_walker'} onClose={handleCloseSheet} pet={selectedPet} />
         <ProductsSheet isOpen={activeSheet === 'products'} onClose={handleCloseSheet} pet={selectedPet} />
+        <MemorialSheet isOpen={activeSheet === 'memorial'} onClose={handleCloseSheet} pet={selectedPet} />
+        
+        {/* Coming Soon Sheets */}
+        <ComingSoonSheet isOpen={activeSheet === 'calendar'} onClose={handleCloseSheet} title="יומן" />
+        <ComingSoonSheet isOpen={activeSheet === 'adoption'} onClose={handleCloseSheet} title="למסירה" />
+        <ComingSoonSheet isOpen={activeSheet === 'life_story'} onClose={handleCloseSheet} title="סיפור חיים" />
         
         {/* Breed Trait Sheets */}
         <EnergySheet isOpen={energySheetOpen} onClose={() => setEnergySheetOpen(false)} pet={selectedPet} />
