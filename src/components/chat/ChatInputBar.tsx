@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Image as ImageIcon, Mic, Sparkles, X, Plus, Camera, MapPin, Calendar, Check } from "lucide-react";
+import { Send, Image as ImageIcon, Mic, Sparkles, X, Plus, Camera, MapPin, Calendar, Check, PawPrint } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -13,6 +13,7 @@ interface ChatInputBarProps {
   placeholder?: string;
   onQuickAction?: (actionId: string) => void;
   onAttachment?: (type: "scan" | "camera" | "gallery" | "location") => void;
+  onVirtualTreat?: () => void;
 }
 
 const ChatInputBar = ({
@@ -24,21 +25,23 @@ const ChatInputBar = ({
   placeholder = "כתוב הודעה...",
   onQuickAction,
   onAttachment,
+  onVirtualTreat,
 }: ChatInputBarProps) => {
   const [isFocused, setIsFocused] = useState(false);
-  const [showQuickActions, setShowQuickActions] = useState(false);
+  const [showPills, setShowPills] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
-  const [clickedAction, setClickedAction] = useState<string | null>(null);
+  const [clickedPill, setClickedPill] = useState<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recordingInterval = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
-  const quickActions = [
-    { id: "camera", icon: Camera, label: "צלם תמונה", color: "from-petid-coral to-petid-pink" },
-    { id: "location", icon: MapPin, label: "שתף מיקום", color: "from-success to-petid-teal" },
-    { id: "calendar", icon: Calendar, label: "קבע תור", color: "from-petid-blue to-petid-sky" },
+  // Dog-first quick action pills
+  const dogPills = [
+    { id: "park", emoji: "📍", label: "בוא לגינה", action: () => onAttachment?.("location") },
+    { id: "treat", emoji: "🦴", label: "שלח צ׳ופר", action: () => onVirtualTreat?.() },
+    { id: "photo", emoji: "📸", label: "תמונה של שיבס", action: () => onAttachment?.("camera") },
   ];
 
   // Auto-resize textarea
@@ -76,17 +79,14 @@ const ChatInputBar = ({
 
   const handleMicPress = () => {
     if (isRecording) {
-      // Stop recording
       setIsRecording(false);
       toast({
         title: "ההקלטה נשמרה",
         description: `משך ההקלטה: ${formatTime(recordingTime)}`,
       });
-      // Send voice message indication
       onChange("🎤 הודעה קולית נשלחה");
       setTimeout(() => onSend(), 100);
     } else {
-      // Start recording
       setIsRecording(true);
       toast({
         title: "מקליט...",
@@ -107,62 +107,20 @@ const ChatInputBar = ({
         description: file.name,
       });
       onChange(`📷 תמונה: ${file.name}`);
-      // Reset file input
       e.target.value = "";
     }
   };
 
-  const handleQuickActionClick = (actionId: string) => {
-    setClickedAction(actionId);
-    
-    // Visual feedback
+  const handlePillClick = (pill: typeof dogPills[0]) => {
+    setClickedPill(pill.id);
     setTimeout(() => {
-      setClickedAction(null);
-      setShowQuickActions(false);
-    }, 300);
-
-    // Handle each action
-    switch (actionId) {
-      case "camera":
-        if (onAttachment) {
-          onAttachment("camera");
-        } else {
-          toast({ title: "📸 מצלמה", description: "פותח מצלמה לצילום..." });
-          onChange("📸 רוצה לשלוח תמונה של חיית המחמד שלי");
-        }
-        break;
-      case "location":
-        if (onAttachment) {
-          onAttachment("location");
-        } else {
-          toast({ title: "📍 מיקום", description: "משתף מיקום נוכחי..." });
-          if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-              (position) => {
-                onChange(`📍 המיקום שלי: ${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`);
-              },
-              () => {
-                onChange("📍 רוצה לשתף את המיקום שלי");
-              }
-            );
-          } else {
-            onChange("📍 רוצה לשתף את המיקום שלי");
-          }
-        }
-        break;
-      case "calendar":
-        toast({ title: "📅 קביעת תור", description: "פותח יומן..." });
-        if (onQuickAction) {
-          onQuickAction("calendar");
-        } else {
-          onChange("📅 רוצה לקבוע תור");
-        }
-        break;
-    }
+      setClickedPill(null);
+      setShowPills(false);
+    }, 400);
+    pill.action();
   };
 
   const handleSparkleClick = () => {
-    // AI suggestions
     const suggestions = [
       "מה הטיפולים הנדרשים לכלב שלי?",
       "מתי החיסון הבא?",
@@ -190,51 +148,38 @@ const ChatInputBar = ({
         onChange={handleFileChange}
       />
 
-      {/* Quick Actions Overlay */}
+      {/* Dog-First Quick Action Pills */}
       <AnimatePresence>
-        {showQuickActions && (
+        {showPills && !isFocused && (
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
             className="absolute bottom-full left-0 right-0 mb-2 px-4"
           >
-            <div className="bg-card/95 backdrop-blur-xl rounded-2xl border border-border/50 p-3 shadow-xl">
-              <div className="flex items-center justify-around gap-2">
-                {quickActions.map((action, index) => {
-                  const IconComponent = action.icon;
-                  const isClicked = clickedAction === action.id;
-                  
-                  return (
-                    <motion.button
-                      key={action.id}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: index * 0.05 }}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleQuickActionClick(action.id)}
-                      className="flex flex-col items-center gap-1.5 p-3"
-                    >
-                      <motion.div 
-                        animate={isClicked ? { scale: [1, 1.2, 1] } : {}}
-                        className={cn(
-                          "w-12 h-12 rounded-full bg-gradient-to-br flex items-center justify-center shadow-lg transition-all",
-                          action.color,
-                          isClicked && "ring-2 ring-white ring-offset-2"
-                        )}
-                      >
-                        {isClicked ? (
-                          <Check className="w-5 h-5 text-white" />
-                        ) : (
-                          <IconComponent className="w-5 h-5 text-white" />
-                        )}
-                      </motion.div>
-                      <span className="text-[10px] text-muted-foreground font-heebo">{action.label}</span>
-                    </motion.button>
-                  );
-                })}
-              </div>
+            <div className="flex items-center justify-center gap-2">
+              {dogPills.map((pill, i) => (
+                <motion.button
+                  key={pill.id}
+                  initial={{ opacity: 0, scale: 0.8, y: 8 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.8, y: 8 }}
+                  transition={{ delay: i * 0.06, type: "spring", stiffness: 400, damping: 18 }}
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.92 }}
+                  onClick={() => handlePillClick(pill)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3.5 py-2 rounded-full",
+                    "bg-card/90 backdrop-blur-xl border border-border/40 shadow-lg",
+                    "text-sm font-medium text-foreground",
+                    "active:shadow-md transition-shadow",
+                    clickedPill === pill.id && "ring-2 ring-primary/40 bg-primary/10"
+                  )}
+                >
+                  <span className="text-base">{pill.emoji}</span>
+                  <span className="text-[13px]">{pill.label}</span>
+                </motion.button>
+              ))}
             </div>
           </motion.div>
         )}
@@ -249,16 +194,16 @@ const ChatInputBar = ({
             exit={{ opacity: 0, height: 0 }}
             className="absolute bottom-full left-0 right-0 mb-2 px-4"
           >
-            <div className="bg-gradient-to-r from-error/10 to-warning/10 backdrop-blur-xl rounded-2xl border border-error/30 p-4 shadow-xl">
+            <div className="bg-gradient-to-r from-destructive/10 to-orange-500/10 backdrop-blur-xl rounded-2xl border border-destructive/30 p-4 shadow-xl">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <motion.div
                     animate={{ scale: [1, 1.2, 1] }}
                     transition={{ duration: 1, repeat: Infinity }}
-                    className="w-3 h-3 bg-error rounded-full"
+                    className="w-3 h-3 bg-destructive rounded-full"
                   />
-                  <span className="text-sm font-heebo text-foreground">מקליט...</span>
-                  <span className="text-sm font-mono text-error">{formatTime(recordingTime)}</span>
+                  <span className="text-sm text-foreground">מקליט...</span>
+                  <span className="text-sm font-mono text-destructive">{formatTime(recordingTime)}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <motion.button
@@ -267,14 +212,14 @@ const ChatInputBar = ({
                       setIsRecording(false);
                       toast({ title: "ההקלטה בוטלה" });
                     }}
-                    className="w-8 h-8 rounded-full bg-error/20 flex items-center justify-center text-error hover:bg-error/30 transition-colors"
+                    className="w-8 h-8 rounded-full bg-destructive/20 flex items-center justify-center text-destructive"
                   >
                     <X className="w-4 h-4" />
                   </motion.button>
                   <motion.button
                     whileTap={{ scale: 0.9 }}
                     onClick={handleMicPress}
-                    className="w-8 h-8 rounded-full bg-success flex items-center justify-center text-white hover:bg-success/90 transition-colors"
+                    className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white"
                   >
                     <Check className="w-4 h-4" />
                   </motion.button>
@@ -286,7 +231,7 @@ const ChatInputBar = ({
                 {[...Array(20)].map((_, i) => (
                   <motion.div
                     key={i}
-                    className="w-1 bg-gradient-to-t from-error to-warning rounded-full"
+                    className="w-1 bg-gradient-to-t from-destructive to-orange-400 rounded-full"
                     animate={{
                       height: [8, Math.random() * 24 + 8, 8],
                     }}
@@ -308,30 +253,30 @@ const ChatInputBar = ({
         <motion.div
           animate={{
             boxShadow: isFocused 
-              ? "0 0 20px rgba(30, 87, 153, 0.15)" 
-              : "0 0 0px rgba(0, 0, 0, 0)",
+              ? "0 0 20px hsl(var(--primary) / 0.12)" 
+              : "0 0 0px transparent",
           }}
           className={cn(
             "flex items-end gap-2 bg-muted/40 rounded-3xl border transition-all duration-300 p-1.5",
-            isFocused ? "border-petid-blue/40 bg-background" : "border-border/50"
+            isFocused ? "border-primary/30 bg-background" : "border-border/50"
           )}
         >
-          {/* Plus/Close Button */}
+          {/* Paw Icon / Toggle Pills */}
           <motion.button
             whileTap={{ scale: 0.9 }}
-            onClick={() => setShowQuickActions(!showQuickActions)}
+            onClick={() => setShowPills(!showPills)}
             className={cn(
               "w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full transition-all",
-              showQuickActions 
-                ? "bg-petid-blue text-white" 
-                : "text-muted-foreground hover:text-petid-blue hover:bg-muted/50"
+              showPills 
+                ? "bg-primary text-primary-foreground" 
+                : "text-muted-foreground hover:text-primary hover:bg-muted/50"
             )}
           >
             <motion.div
-              animate={{ rotate: showQuickActions ? 45 : 0 }}
-              transition={{ duration: 0.2 }}
+              animate={{ rotate: showPills ? 15 : 0, scale: showPills ? 1.1 : 1 }}
+              transition={{ type: "spring", stiffness: 300 }}
             >
-              <Plus className="w-5 h-5" />
+              <PawPrint className="w-5 h-5" strokeWidth={1.8} />
             </motion.div>
           </motion.button>
 
@@ -349,12 +294,12 @@ const ChatInputBar = ({
               }}
               onFocus={() => {
                 setIsFocused(true);
-                setShowQuickActions(false);
+                setShowPills(false);
               }}
               onBlur={() => setIsFocused(false)}
               placeholder={placeholder}
               rows={1}
-              className="flex-1 bg-transparent border-0 focus:outline-none focus:ring-0 text-[15px] placeholder:text-muted-foreground resize-none py-2 px-2 font-heebo max-h-[120px] leading-relaxed"
+              className="flex-1 bg-transparent border-0 focus:outline-none focus:ring-0 text-[15px] placeholder:text-muted-foreground resize-none py-2 px-2 max-h-[120px] leading-relaxed"
               disabled={isLoading || isRecording}
               dir="rtl"
             />
@@ -365,7 +310,6 @@ const ChatInputBar = ({
             <AnimatePresence mode="popLayout">
               {!hasContent && !isRecording && (
                 <>
-                  {/* Image Button */}
                   <motion.button
                     key="image"
                     initial={{ opacity: 0, scale: 0 }}
@@ -374,12 +318,11 @@ const ChatInputBar = ({
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                     onClick={handleImageClick}
-                    className="w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-petid-blue hover:bg-muted/50 rounded-full transition-colors"
+                    className="w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted/50 rounded-full transition-colors"
                   >
                     <ImageIcon className="w-5 h-5" />
                   </motion.button>
 
-                  {/* Mic Button */}
                   <motion.button
                     key="mic"
                     initial={{ opacity: 0, scale: 0 }}
@@ -388,7 +331,7 @@ const ChatInputBar = ({
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                     onClick={handleMicPress}
-                    className="w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-petid-blue hover:bg-muted/50 rounded-full transition-colors"
+                    className="w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted/50 rounded-full transition-colors"
                   >
                     <Mic className="w-5 h-5" />
                   </motion.button>
@@ -430,7 +373,7 @@ const ChatInputBar = ({
           </div>
         </motion.div>
 
-        {/* Typing Indicator / Suggestions */}
+        {/* Focused Suggestions */}
         <AnimatePresence>
           {isFocused && !hasContent && !isRecording && (
             <motion.div
@@ -446,13 +389,12 @@ const ChatInputBar = ({
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.1 }}
-                    whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => {
                       onChange(suggestion);
                       inputRef.current?.focus();
                     }}
-                    className="flex-shrink-0 px-3 py-1.5 bg-muted/50 hover:bg-muted rounded-full text-xs text-muted-foreground hover:text-foreground font-heebo transition-colors border border-border/50"
+                    className="flex-shrink-0 px-3 py-1.5 bg-muted/50 hover:bg-muted rounded-full text-xs text-muted-foreground hover:text-foreground transition-colors border border-border/50"
                   >
                     {suggestion}
                   </motion.button>

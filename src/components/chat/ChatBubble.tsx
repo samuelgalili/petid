@@ -1,8 +1,7 @@
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Bot, Check } from "lucide-react";
-import { format, isToday, isYesterday } from "date-fns";
-import { he } from "date-fns/locale";
+import { Bot } from "lucide-react";
+import { format } from "date-fns";
 
 interface ChatBubbleProps {
   content: string;
@@ -29,16 +28,18 @@ export const ChatBubble = ({
   isLastInGroup,
   index = 0,
 }: ChatBubbleProps) => {
-  const formatTime = (ts: string) => {
-    const date = new Date(ts);
-    return format(date, "HH:mm");
-  };
+  const formatTime = (ts: string) => format(new Date(ts), "HH:mm");
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.015 }}
+      initial={{ opacity: 0, y: 16, scale: 0.92 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{
+        type: "spring",
+        stiffness: 380,
+        damping: 22,
+        delay: index * 0.012,
+      }}
       className={`flex items-end gap-2 ${isLastInGroup ? "mb-3" : "mb-0.5"} ${isSender ? "flex-row-reverse" : ""}`}
     >
       {/* Avatar slot */}
@@ -54,7 +55,7 @@ export const ChatBubble = ({
             ) : (
               <Avatar className="h-7 w-7">
                 <AvatarImage src={avatarUrl || undefined} />
-                <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white text-xs">
+                <AvatarFallback className="bg-gradient-to-br from-primary/60 to-accent/60 text-primary-foreground text-xs">
                   {avatarFallback}
                 </AvatarFallback>
               </Avatar>
@@ -66,10 +67,10 @@ export const ChatBubble = ({
       <div className="flex flex-col max-w-[75%]">
         {/* Glassmorphism bubble */}
         <div
-          className={`px-4 py-2.5 backdrop-blur-md ${
+          className={`px-4 py-2.5 backdrop-blur-xl ${
             isSender
-              ? "bg-primary/90 text-primary-foreground rounded-[20px] rounded-br-[6px] shadow-lg shadow-primary/10"
-              : "bg-card/70 border border-border/40 text-foreground rounded-[20px] rounded-bl-[6px] shadow-sm"
+              ? "bg-gradient-to-br from-primary/95 to-primary/80 text-primary-foreground rounded-[20px] rounded-br-[6px] shadow-lg shadow-primary/15 border border-primary/20"
+              : "bg-card/60 border border-border/30 text-foreground rounded-[20px] rounded-bl-[6px] shadow-sm backdrop-saturate-150"
           }`}
         >
           <p className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">
@@ -77,23 +78,20 @@ export const ChatBubble = ({
           </p>
         </div>
 
-        {/* Timestamp + Read receipt */}
+        {/* Timestamp + Read receipt (two paws) */}
         {isLastInGroup && timestamp && (
-          <div className={`flex items-center gap-1 mt-1 ${isSender ? "justify-end pr-1" : "justify-start pl-1"}`}>
+          <div className={`flex items-center gap-1.5 mt-1 ${isSender ? "justify-end pr-1" : "justify-start pl-1"}`}>
             <span className="text-[10px] text-muted-foreground">
               {formatTime(timestamp)}
             </span>
             {isSender && (
-              <div className="flex items-center -space-x-1">
-                {/* Double paw read receipt */}
-                <span className={`text-[10px] ${isRead ? "text-primary" : "text-muted-foreground/50"}`}>
+              <div className="flex items-center gap-[1px]">
+                <span className={`text-[9px] transition-colors duration-300 ${isRead ? "text-green-500" : "text-muted-foreground/40"}`}>
                   🐾
                 </span>
-                {isRead && (
-                  <span className="text-[10px] text-primary">
-                    🐾
-                  </span>
-                )}
+                <span className={`text-[9px] transition-colors duration-300 ${isRead ? "text-green-500" : "text-muted-foreground/40"}`}>
+                  🐾
+                </span>
               </div>
             )}
           </div>
