@@ -12,6 +12,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { haptic } from "@/lib/haptics";
 import confetti from "canvas-confetti";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface DiscoveryCardsProps {
   petId: string;
@@ -22,74 +23,75 @@ interface DiscoveryCardsProps {
 interface DiscoveryItem {
   id: string;
   icon: React.ElementType;
-  title: string;
+  titleKey: string;
   emoji: string;
   gradient: string;
   iconBg: string;
   action: string;
   checkField?: string;
-  reward: string;
+  rewardPoints: number;
 }
 
 const ALL_DISCOVERIES: DiscoveryItem[] = [
   {
     id: "microchip",
     icon: Cpu,
-    title: "הוסיפו שבב",
+    titleKey: "discovery.addMicrochip",
     emoji: "🔒",
     gradient: "from-[hsla(180,50%,45%,0.12)] to-[hsla(180,50%,45%,0.03)]",
     iconBg: "bg-[hsla(180,50%,45%,0.15)]",
     action: "documents",
     checkField: "health_notes",
-    reward: "+10 נקודות",
+    rewardPoints: 10,
   },
   {
     id: "insurance",
     icon: Shield,
-    title: "ביטוח בריאות",
+    titleKey: "discovery.healthInsurance",
     emoji: "🛡️",
     gradient: "from-primary/10 to-primary/3",
     iconBg: "bg-primary/15",
     action: "insurance",
     checkField: "has_insurance",
-    reward: "+15 נקודות",
+    rewardPoints: 15,
   },
   {
     id: "food",
     icon: Utensils,
-    title: "סוג מזון",
+    titleKey: "discovery.foodType",
     emoji: "🥗",
     gradient: "from-[hsla(25,90%,55%,0.12)] to-[hsla(25,90%,55%,0.03)]",
     iconBg: "bg-[hsla(25,90%,55%,0.15)]",
     action: "food",
     checkField: "current_food",
-    reward: "+8 נקודות",
+    rewardPoints: 8,
   },
   {
     id: "vaccine",
     icon: Syringe,
-    title: "חיסונים",
+    titleKey: "discovery.vaccines",
     emoji: "💉",
     gradient: "from-[hsla(142,60%,45%,0.12)] to-[hsla(142,60%,45%,0.03)]",
     iconBg: "bg-[hsla(142,60%,45%,0.15)]",
     action: "documents",
     checkField: "last_vet_visit",
-    reward: "+12 נקודות",
+    rewardPoints: 12,
   },
   {
     id: "photo",
     icon: Camera,
-    title: "תמונה חדשה",
+    titleKey: "discovery.newPhoto",
     emoji: "📸",
     gradient: "from-[hsla(330,60%,55%,0.12)] to-[hsla(330,60%,55%,0.03)]",
     iconBg: "bg-[hsla(330,60%,55%,0.15)]",
     action: "photo",
     checkField: "avatar_url",
-    reward: "+5 נקודות",
+    rewardPoints: 5,
   },
 ];
 
 export const DiscoveryCards = ({ petId, petName, petType }: DiscoveryCardsProps) => {
+  const { t, direction } = useLanguage();
   const [completedFields, setCompletedFields] = useState<Set<string>>(new Set());
   const [justCompleted, setJustCompleted] = useState<string | null>(null);
 
@@ -116,12 +118,9 @@ export const DiscoveryCards = ({ petId, petName, petType }: DiscoveryCardsProps)
 
   const handleBubbleClick = (card: DiscoveryItem) => {
     haptic("medium");
-    // All actions are now sheet-based (no route navigation)
-    // Dispatch custom event for parent Profile to open appropriate sheet
     window.dispatchEvent(new CustomEvent("open-pet-sheet", { detail: { sheet: card.action } }));
   };
 
-  // Simulate completion celebration (would be triggered by actual data change)
   const triggerCelebration = (id: string) => {
     setJustCompleted(id);
     haptic("success");
@@ -135,7 +134,6 @@ export const DiscoveryCards = ({ petId, petName, petType }: DiscoveryCardsProps)
     setTimeout(() => setJustCompleted(null), 2000);
   };
 
-  // Filter to only show incomplete items, max 4
   const visibleCards = ALL_DISCOVERIES
     .filter((d) => d.checkField && !completedFields.has(d.checkField))
     .slice(0, 4);
@@ -146,7 +144,7 @@ export const DiscoveryCards = ({ petId, petName, petType }: DiscoveryCardsProps)
   if (visibleCards.length === 0) return null;
 
   return (
-    <div className="mx-4 mb-4" dir="rtl">
+    <div className="mx-4 mb-4" dir={direction}>
       {/* Header with progress */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
@@ -156,7 +154,9 @@ export const DiscoveryCards = ({ petId, petName, petType }: DiscoveryCardsProps)
           >
             <Sparkles className="w-4 h-4 text-primary" />
           </motion.div>
-          <span className="text-xs font-bold text-foreground">גלו עוד על {petName}</span>
+          <span className="text-xs font-bold text-foreground">
+            {t("discovery.discoverMore").replace("{petName}", petName)}
+          </span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="flex gap-0.5">
@@ -199,7 +199,8 @@ export const DiscoveryCards = ({ petId, petName, petType }: DiscoveryCardsProps)
               }}
               whileTap={{ scale: 0.95 }}
               onClick={() => handleBubbleClick(card)}
-              className={`relative p-3.5 rounded-2xl border border-border/20 bg-gradient-to-br ${card.gradient} backdrop-blur-xl text-right overflow-hidden group`}
+              className={`relative p-3.5 rounded-2xl border border-border/20 bg-gradient-to-br ${card.gradient} backdrop-blur-xl overflow-hidden group`}
+              style={{ textAlign: direction === "rtl" ? "right" : "left" }}
             >
               {/* Floating glow */}
               <motion.div
@@ -229,10 +230,10 @@ export const DiscoveryCards = ({ petId, petName, petType }: DiscoveryCardsProps)
                 </motion.div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-foreground leading-tight">
-                    {card.title}
+                    {t(card.titleKey)}
                   </p>
                   <p className="text-[10px] text-primary/70 font-medium mt-0.5">
-                    {card.reward}
+                    +{card.rewardPoints} {t("discovery.points")}
                   </p>
                 </div>
               </div>

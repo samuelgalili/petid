@@ -4,9 +4,10 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, ChevronLeft, TrendingUp } from "lucide-react";
+import { Sparkles, ChevronLeft, ChevronRight, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface PetInsight {
   petName: string;
@@ -18,55 +19,57 @@ interface PetInsight {
   gender: string | null;
 }
 
-function getGreeting(): string {
-  const h = new Date().getHours();
-  if (h < 12) return "בוקר טוב";
-  if (h < 17) return "צהריים טובים";
-  if (h < 21) return "ערב טוב";
-  return "לילה טוב";
-}
-
-function calculateHealthScore(pet: any): { score: number; missing: string[] } {
-  let score = 0;
-  const missing: string[] = [];
-  const checks = [
-    { field: "breed", label: "גזע", weight: 10 },
-    { field: "birth_date", label: "תאריך לידה", weight: 10 },
-    { field: "weight", label: "משקל", weight: 10 },
-    { field: "gender", label: "מין", weight: 5 },
-    { field: "microchip_number", label: "שבב", weight: 10 },
-    { field: "is_neutered", label: "עיקור/סירוס", weight: 5 },
-    { field: "current_food", label: "מזון נוכחי", weight: 10 },
-    { field: "vet_name", label: "וטרינר מטפל", weight: 10 },
-    { field: "has_insurance", label: "ביטוח", weight: 10 },
-    { field: "avatar_url", label: "תמונת פרופיל", weight: 5 },
-  ];
-
-  for (const c of checks) {
-    const val = pet[c.field];
-    if (val !== null && val !== undefined && val !== "" && val !== false) {
-      score += c.weight;
-    } else {
-      missing.push(c.label);
-    }
-  }
-
-  // Vet visits bonus
-  if (pet._hasVetVisits) score += 10;
-  else missing.push("ביקור וטרינר");
-
-  // Vaccines bonus
-  if (pet._hasVaccines) score += 5;
-  else missing.push("חיסונים");
-
-  return { score: Math.min(score, 100), missing };
-}
-
 export const DailyInsightCard = () => {
   const navigate = useNavigate();
+  const { t, direction } = useLanguage();
+  const isRtl = direction === "rtl";
   const [insight, setInsight] = useState<PetInsight | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const getGreeting = (): string => {
+    const h = new Date().getHours();
+    if (h < 12) return t("dailyInsight.goodMorning");
+    if (h < 17) return t("dailyInsight.goodAfternoon");
+    if (h < 21) return t("dailyInsight.goodEvening");
+    return t("dailyInsight.goodNight");
+  };
+
+  const getCheckLabels = () => [
+    { field: "breed", label: t("dailyInsight.breed"), weight: 10 },
+    { field: "birth_date", label: t("dailyInsight.birthDate"), weight: 10 },
+    { field: "weight", label: t("dailyInsight.weight"), weight: 10 },
+    { field: "gender", label: t("dailyInsight.gender"), weight: 5 },
+    { field: "microchip_number", label: t("dailyInsight.microchip"), weight: 10 },
+    { field: "is_neutered", label: t("dailyInsight.neutered"), weight: 5 },
+    { field: "current_food", label: t("dailyInsight.currentFood"), weight: 10 },
+    { field: "vet_name", label: t("dailyInsight.vetName"), weight: 10 },
+    { field: "has_insurance", label: t("dailyInsight.insurance"), weight: 10 },
+    { field: "avatar_url", label: t("dailyInsight.profilePhoto"), weight: 5 },
+  ];
+
+  const calculateHealthScore = (pet: any): { score: number; missing: string[] } => {
+    let score = 0;
+    const missing: string[] = [];
+    const checks = getCheckLabels();
+
+    for (const c of checks) {
+      const val = pet[c.field];
+      if (val !== null && val !== undefined && val !== "" && val !== false) {
+        score += c.weight;
+      } else {
+        missing.push(c.label);
+      }
+    }
+
+    if (pet._hasVetVisits) score += 10;
+    else missing.push(t("dailyInsight.vetVisit"));
+
+    if (pet._hasVaccines) score += 5;
+    else missing.push(t("dailyInsight.vaccines"));
+
+    return { score: Math.min(score, 100), missing };
+  };
 
   useEffect(() => {
     const fetch = async () => {
@@ -90,7 +93,6 @@ export const DailyInsightCard = () => {
       if (!pets?.length) { setLoading(false); return; }
       const pet = pets[0];
 
-      // Check vet visits & vaccines
       const [visitsRes] = await Promise.all([
         supabase.from("pet_vet_visits").select("id, vaccines").eq("pet_id", pet.id).limit(5),
       ]);
@@ -107,10 +109,10 @@ export const DailyInsightCard = () => {
         const totalWeeks = Math.floor(diffMs / (7 * 24 * 60 * 60 * 1000));
         ageWeeks = totalWeeks;
         if (totalWeeks < 52) {
-          ageText = `${totalWeeks} שבועות`;
+          ageText = `${totalWeeks} ${t("dailyInsight.weeks")}`;
         } else {
           const years = Math.floor(totalWeeks / 52);
-          ageText = `${years} ${years === 1 ? "שנה" : "שנים"}`;
+          ageText = `${years} ${years === 1 ? t("dailyInsight.year") : t("dailyInsight.years")}`;
         }
       }
 
@@ -131,6 +133,11 @@ export const DailyInsightCard = () => {
   if (loading || !insight) return null;
 
   const gapPercent = 100 - insight.healthScore;
+  const agePrefix = insight.gender === 'female' ? t("dailyInsight.daughter") : t("dailyInsight.son");
+  const ageDisplay = insight.ageText
+    ? `${agePrefix ? agePrefix + ' ' : ''}${insight.ageText}`
+    : t("dailyInsight.waitingForYou");
+  const ArrowIcon = isRtl ? ChevronLeft : ChevronRight;
 
   return (
     <motion.div
@@ -140,7 +147,7 @@ export const DailyInsightCard = () => {
       className="snap-start flex-shrink-0 w-full px-4 pt-16 pb-4"
       style={{ minHeight: "100dvh" }}
     >
-      <div className="h-full flex flex-col items-center justify-center gap-6 text-center" dir="rtl">
+      <div className="h-full flex flex-col items-center justify-center gap-6 text-center" dir={direction}>
         {/* Greeting */}
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
@@ -149,7 +156,7 @@ export const DailyInsightCard = () => {
         >
           <p className="text-lg text-muted-foreground">{getGreeting()}{userName ? ` ${userName}` : ""} 👋</p>
           <h1 className="text-2xl font-bold text-foreground mt-1">
-            {insight.petName} היום {insight.ageText ? `${insight.gender === 'female' ? 'בת' : 'בן'} ${insight.ageText}` : "מחכה לך"}!
+            {insight.petName} {ageDisplay}!
           </h1>
           {insight.breed && (
             <p className="text-sm text-muted-foreground mt-1">{insight.breed}</p>
@@ -179,7 +186,7 @@ export const DailyInsightCard = () => {
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-3xl font-black text-foreground">{insight.healthScore}%</span>
-            <span className="text-[10px] text-muted-foreground">ציון בריאות</span>
+            <span className="text-[10px] text-muted-foreground">{t("dailyInsight.healthScore")}</span>
           </div>
         </motion.div>
 
@@ -194,12 +201,12 @@ export const DailyInsightCard = () => {
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="w-4 h-4 text-primary" strokeWidth={1.5} />
               <p className="text-sm font-semibold text-foreground">
-                השלם {gapPercent}% לפרופיל מלא
+                {t("dailyInsight.completeProfile").replace("{gap}", String(gapPercent))}
               </p>
             </div>
             <div className="space-y-1">
               {insight.missingItems.map((item) => (
-                <p key={item} className="text-xs text-muted-foreground">• חסר: {item}</p>
+                <p key={item} className="text-xs text-muted-foreground">• {t("dailyInsight.missing")} {item}</p>
               ))}
             </div>
             <button
@@ -207,8 +214,8 @@ export const DailyInsightCard = () => {
               className="mt-3 w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              השלם עכשיו ← הטבה בחנות
-              <ChevronLeft className="w-3 h-3" />
+              {t("dailyInsight.completeNow")}
+              <ArrowIcon className="w-3 h-3" />
             </button>
           </motion.div>
         )}
@@ -220,7 +227,7 @@ export const DailyInsightCard = () => {
           transition={{ delay: 1.8 }}
           className="text-xs text-muted-foreground mt-4"
         >
-          ⬇️ גלול למטה לתוכן
+          {t("feedPage.scrollDown")}
         </motion.p>
       </div>
     </motion.div>
