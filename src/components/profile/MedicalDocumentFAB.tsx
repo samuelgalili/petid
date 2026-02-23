@@ -373,10 +373,10 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
             exit={{ scale: 0 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => setStep('choose')}
-            className="fixed bottom-24 left-5 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center"
-            style={{ boxShadow: '0 4px 20px hsl(var(--primary) / 0.4)' }}
+            className="fixed z-[10000] w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center right-4"
+            style={{ bottom: `calc(72px + env(safe-area-inset-bottom))`, boxShadow: '0 4px 16px hsl(var(--primary) / 0.25)' }}
           >
-            <Plus className="w-6 h-6" strokeWidth={2} />
+            <Plus className="w-5 h-5" strokeWidth={2} />
           </motion.button>
         )}
       </AnimatePresence>
@@ -389,7 +389,8 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0 }}
             transition={{ delay: 0.2 }}
-            className="fixed bottom-[6.5rem] left-[4.75rem] z-50 bg-card border border-border/40 rounded-xl px-3 py-1.5 shadow-md pointer-events-none"
+            className="fixed z-[10000] right-[4.25rem] bg-card border border-border/40 rounded-xl px-3 py-1.5 shadow-md pointer-events-none"
+            style={{ bottom: `calc(80px + env(safe-area-inset-bottom))` }}
           >
             <span className="text-[10px] font-medium text-foreground whitespace-nowrap">הוסף ביקור/חיסון</span>
           </motion.div>
