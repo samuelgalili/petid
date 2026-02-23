@@ -582,10 +582,46 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
               </div>
             )}
 
-            {/* ── Footer ───────────────────────── */}
-            <div className="px-5 py-3 border-t border-border/60">
-              <p className="text-[11px] text-muted-foreground text-center">
-                {s.version}
+            {/* ── Legal Links + Social ──────────── */}
+            <div className="px-5 py-3 border-t border-border/60 space-y-3">
+              <div className="flex justify-center items-center gap-2 flex-wrap">
+                {[
+                  { label: language === "he" ? "הצהרת נגישות" : "Accessibility", key: "accessibility" },
+                  { label: language === "he" ? "תנאי המועדון" : "Club Terms", key: "club-terms" },
+                  { label: language === "he" ? "מדיניות פרטיות" : "Privacy Policy", key: "privacy-policy" },
+                  { label: language === "he" ? "תנאי שימוש" : "Terms of Use", key: "terms" },
+                ].map((link, i, arr) => (
+                  <span key={link.key} className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        onClose();
+                        // Dispatch custom event to open legal drawer
+                        window.dispatchEvent(new CustomEvent("open-legal-drawer", { detail: { key: link.key } }));
+                      }}
+                      className="text-[12px] text-muted-foreground/70 hover:text-primary hover:underline transition-colors"
+                    >
+                      {link.label}
+                    </button>
+                    {i < arr.length - 1 && <span className="text-border/50 text-[10px]">|</span>}
+                  </span>
+                ))}
+              </div>
+
+              {/* Social Icons */}
+              <div className="flex justify-center items-center gap-4">
+                <a href="https://instagram.com/petid" target="_blank" rel="noopener noreferrer" className="text-muted-foreground/50 hover:text-primary transition-colors">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/></svg>
+                </a>
+                <a href="https://facebook.com/petid" target="_blank" rel="noopener noreferrer" className="text-muted-foreground/50 hover:text-primary transition-colors">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+                </a>
+                <a href="https://tiktok.com/@petid" target="_blank" rel="noopener noreferrer" className="text-muted-foreground/50 hover:text-primary transition-colors">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>
+                </a>
+              </div>
+
+              <p className="text-[10px] text-muted-foreground/40 text-center">
+                © {new Date().getFullYear()} PetID. {language === "he" ? "כל הזכויות שמורות." : "All rights reserved."}
               </p>
             </div>
           </motion.div>

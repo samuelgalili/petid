@@ -35,7 +35,7 @@ import { OfflineBadge } from "@/components/OfflineBadge";
 import { LoginPromptDialog } from "@/components/LoginPromptDialog";
 import { SplashScreen } from "@/components/SplashScreen";
 import ScrollToTop from "@/components/ScrollToTop";
-import Footer from "@/components/Footer";
+import { LegalDrawer } from "@/components/LegalDrawer";
 import CompleteProfilePrompt from "@/components/CompleteProfilePrompt";
 
 // Route configuration - modular lazy-loaded routes
@@ -54,8 +54,6 @@ const queryClient = new QueryClient({
   },
 });
 
-// Pages that should not show footer
-const AUTH_PAGES = ['/auth', '/signup', '/forgot-password', '/reset-password', '/install'];
 
 /**
  * AnimatedRoutes Component
@@ -69,8 +67,6 @@ const AnimatedRoutes = () => {
   // Initialize admin notifications listener
   useAdminNotifications();
   
-  const showFooter = !AUTH_PAGES.includes(location.pathname);
-
   // Stable key for main shell routes so Feed never unmounts
   const routeKey = MAIN_SHELL_ROUTES.includes(location.pathname) ? 'main-shell' : location.pathname;
   
@@ -95,8 +91,7 @@ const AnimatedRoutes = () => {
           </Routes>
         </AnimatePresence>
       </div>
-      
-      {showFooter && <Footer />}
+      <LegalDrawer />
     </div>
   );
 };
