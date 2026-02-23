@@ -36,6 +36,24 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
+  /* Smooth theme transition for premium feel */
+  *,
+  *::before,
+  *::after {
+    transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+    transition-duration: 0.3s;
+    transition-timing-function: ease;
+  }
+
+  /* Disable theme transition on elements that animate independently */
+  [data-no-theme-transition],
+  [data-no-theme-transition] *,
+  .animate-spin,
+  .animate-pulse,
+  [class*="animate-"] {
+    transition-property: none !important;
+  }
   
   :root {
     /* ===========================
