@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FileText, Upload, Trash2, Download, Calendar, ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { autoSaveToDocuments } from '@/lib/autoSaveUpload';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -120,6 +121,18 @@ export const DocumentsSection = ({ petId, category, title }: DocumentsSectionPro
         }
 
         queryClient.invalidateQueries({ queryKey: ['pet-documents', petId, category] });
+        
+        // Also save to main pet_documents for central document library
+        await autoSaveToDocuments({
+          userId: user.id,
+          petId,
+          fileUrl: dataUrl,
+          fileName: file.name,
+          fileSize: file.size,
+          documentType: category,
+          title: file.name,
+        });
+        
         toast({ title: 'המסמך הועלה בהצלחה' });
         setIsUploading(false);
       };

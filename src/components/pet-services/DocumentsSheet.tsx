@@ -7,6 +7,7 @@ import { ServiceBottomSheet } from './ServiceBottomSheet';
 import { FileText, Upload, Trash2, Eye, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { autoSaveToDocuments } from '@/lib/autoSaveUpload';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -86,6 +87,18 @@ export const DocumentsSheet = ({ isOpen, onClose, pet }: DocumentsSheetProps) =>
         if (error) throw error;
 
         queryClient.invalidateQueries({ queryKey: ['all-pet-documents', pet?.id] });
+        
+        // Also save to main pet_documents for central document library
+        await autoSaveToDocuments({
+          userId: user.id,
+          petId: pet.id,
+          fileUrl: dataUrl,
+          fileName: file.name,
+          fileSize: file.size,
+          documentType: 'general',
+          title: file.name,
+        });
+        
         toast({ title: 'המסמך הועלה בהצלחה' });
         setIsUploading(false);
       };
