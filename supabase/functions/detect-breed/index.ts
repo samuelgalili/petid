@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
 
     // Call Gemini for breed detection
     const geminiResponse = await fetch(
-      `https://llm.lovable.dev/v1/chat/completions`,
+      `https://ai.gateway.lovable.dev/v1/chat/completions`,
       {
         method: "POST",
         headers: {
