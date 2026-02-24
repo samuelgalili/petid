@@ -436,7 +436,7 @@ const AddPet = () => {
         birth_date: formData.birthDate ? formData.birthDate.toISOString().split('T')[0] : null,
         gender: formData.gender || null,
         breed: breedValue,
-        breed_confidence: breedConfidence,
+        breed_confidence: breedConfidence !== null ? Math.round(breedConfidence * 100) : null,
         is_neutered: formData.is_neutered === "true",
         avatar_url: avatarUrl,
         personality_tags: personalityTags.length > 0 ? personalityTags : null,
