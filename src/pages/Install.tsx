@@ -8,6 +8,7 @@ import { motion, useInView, useScroll, useTransform } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import heroImage from "@/assets/landing-hero.jpg";
+import { PetidLogo } from "@/components/PetidLogo";
 
 // Fade-in on scroll wrapper
 const ScrollReveal = ({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) => {
@@ -93,9 +94,9 @@ const Install = () => {
             initial={{ scale: 0, rotate: -20 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: "spring", delay: 0.3, stiffness: 200 }}
-            className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary to-accent mx-auto mb-8 flex items-center justify-center shadow-2xl"
+            className="mb-8"
           >
-            <span className="text-3xl font-black text-white tracking-tight">P</span>
+            <PetidLogo showAnimals={false} size="lg" />
           </motion.div>
 
           <motion.h1
