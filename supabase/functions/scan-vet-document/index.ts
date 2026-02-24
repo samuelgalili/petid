@@ -445,6 +445,32 @@ License keywords: תנאי רישיון, רישיון, license.`
             console.error("Failed to create deworming reminder:", notifErr);
           }
         }
+
+        // Create reminder for detected future treatment date
+        if (scanResult.nextTreatmentDate) {
+          try {
+            const treatmentDate = new Date(scanResult.nextTreatmentDate);
+            const reminderDate = new Date(treatmentDate.getTime() - 3 * 24 * 60 * 60 * 1000); // 3 days before
+            
+            await supabase.from("notifications").insert({
+              user_id: userId,
+              title: `📋 טיפול קרוב: ${scanResult.nextTreatmentDescription || 'ביקור וטרינר'}`,
+              body: `תזכורת לטיפול שזוהה מהמסמך הסרוק ב-${scanResult.nextTreatmentDate}.`,
+              type: 'treatment_reminder',
+              scheduled_for: reminderDate.toISOString(),
+              metadata: {
+                pet_id: petId,
+                due_date: scanResult.nextTreatmentDate,
+                treatment_description: scanResult.nextTreatmentDescription,
+                source: 'ocr_smart_sync',
+                document_id: savedDocumentId,
+                deep_link: savedDocumentId ? `/documents?highlight=${savedDocumentId}` : null,
+              },
+            });
+          } catch (treatErr) {
+            console.error("Failed to create treatment reminder:", treatErr);
+          }
+        }
       }
     }
 
