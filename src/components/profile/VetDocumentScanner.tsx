@@ -141,7 +141,7 @@ export const VetDocumentScanner = ({ petId, petName, onScanComplete }: VetDocume
       // Fetch current profile and pet data in parallel
       const [profileRes, petRes] = await Promise.all([
         supabase.from("profiles").select("first_name, last_name, phone, street, city").eq("id", user.id).single(),
-        supabase.from("pets").select("name, breed, birth_date, microchip_number, age, weight, color, gender, is_neutered").eq("id", petId).single(),
+        supabase.from("pets").select("name, breed, birth_date, microchip_number, age, weight, color, gender, is_neutered, is_dangerous_breed, license_number, license_expiry_date, license_renewal_date, license_conditions").eq("id", petId).single(),
       ]);
 
       const profile = profileRes.data;
@@ -155,6 +155,11 @@ export const VetDocumentScanner = ({ petId, petName, onScanComplete }: VetDocume
         return g === "male" ? "זכר" : g === "female" ? "נקבה" : g;
       };
 
+      const formatBool = (v: boolean | null | undefined) => {
+        if (v === null || v === undefined) return null;
+        return v ? "כן" : "לא";
+      };
+
       const fields: FieldComparison[] = [
         // Profile fields
         { key: "ownerName", label: "שם בעלים", icon: User, currentValue: currentFullName, detectedValue: scanResult.ownerName, table: "profiles", dbField: "full_name" },
@@ -163,11 +168,18 @@ export const VetDocumentScanner = ({ petId, petName, onScanComplete }: VetDocume
         // Pet fields
         { key: "petName", label: "שם חיית מחמד", icon: Dog, currentValue: pet?.name || null, detectedValue: scanResult.petName, table: "pets", dbField: "name" },
         { key: "petBreed", label: "גזע", icon: Dog, currentValue: pet?.breed || null, detectedValue: scanResult.petBreed, table: "pets", dbField: "breed" },
+        { key: "petAge", label: "גיל", icon: Calendar, currentValue: pet?.age ? `${pet.age}` : null, detectedValue: scanResult.petAge ? `${scanResult.petAge}` : null, table: "pets", dbField: "age" },
         { key: "petBirthDate", label: "תאריך לידה", icon: Calendar, currentValue: pet?.birth_date || null, detectedValue: scanResult.petBirthDate, table: "pets", dbField: "birth_date" },
-        { key: "microchipNumber", label: "מספר שבב", icon: Cpu, currentValue: pet?.microchip_number || null, detectedValue: scanResult.microchipNumber, table: "pets", dbField: "microchip_number" },
-        { key: "petWeight", label: "משקל", icon: Weight, currentValue: pet?.weight ? `${pet.weight}` : null, detectedValue: scanResult.weight ? `${scanResult.weight}` : null, table: "pets", dbField: "weight" },
-        { key: "petColor", label: "צבע", icon: Palette, currentValue: pet?.color || null, detectedValue: scanResult.petColor, table: "pets", dbField: "color" },
         { key: "petGender", label: "מין", icon: Heart, currentValue: formatGender(pet?.gender), detectedValue: formatGender(scanResult.petGender), table: "pets", dbField: "gender" },
+        { key: "petColor", label: "צבע", icon: Palette, currentValue: pet?.color || null, detectedValue: scanResult.petColor, table: "pets", dbField: "color" },
+        { key: "petWeight", label: "משקל", icon: Weight, currentValue: pet?.weight ? `${pet.weight}` : null, detectedValue: scanResult.weight ? `${scanResult.weight}` : null, table: "pets", dbField: "weight" },
+        { key: "microchipNumber", label: "מספר שבב", icon: Cpu, currentValue: pet?.microchip_number || null, detectedValue: scanResult.microchipNumber, table: "pets", dbField: "microchip_number" },
+        { key: "isNeutered", label: "מעוקר/מסורס", icon: Scissors, currentValue: formatBool(pet?.is_neutered), detectedValue: scanResult.isNeutered !== null ? (scanResult.isNeutered ? "כן" : "לא") : null, table: "pets", dbField: "is_neutered" },
+        { key: "licenseNumber", label: "מספר רישיון", icon: IdCard, currentValue: (pet as any)?.license_number || null, detectedValue: scanResult.licenseNumber, table: "pets", dbField: "license_number" },
+        { key: "licenseExpiryDate", label: "תוקף רישיון", icon: CalendarPlus, currentValue: (pet as any)?.license_expiry_date || null, detectedValue: scanResult.licenseExpiryDate, table: "pets", dbField: "license_expiry_date" },
+        { key: "licenseRenewalDate", label: "תאריך חידוש", icon: CalendarPlus, currentValue: (pet as any)?.license_renewal_date || null, detectedValue: scanResult.licenseRenewalDate, table: "pets", dbField: "license_renewal_date" },
+        { key: "isDangerousDog", label: "כלב מסוכן", icon: Shield, currentValue: formatBool(pet?.is_dangerous_breed), detectedValue: scanResult.isDangerousDog !== null && scanResult.isDangerousDog !== undefined ? (scanResult.isDangerousDog ? "כן" : "לא") : null, table: "pets", dbField: "is_dangerous_breed" },
+        { key: "clinicName", label: "מרפאה/וטרינר", icon: Stethoscope, currentValue: pet?.vet_clinic_name || null, detectedValue: scanResult.clinicName, table: "pets", dbField: "vet_clinic_name" },
       ];
 
       setComparisonFields(fields);
