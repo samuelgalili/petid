@@ -452,7 +452,7 @@ const AddPet = () => {
         await supabase.from("breed_detection_history").insert({
           pet_id: petData.id,
           breed: formData.breed,
-          confidence: breedConfidence,
+          confidence: breedConfidence !== null ? Math.round(breedConfidence * 100) : null,
           avatar_url: avatarUrl
         });
       }
