@@ -36,9 +36,9 @@ serve(async (req) => {
   const corsHeaders = getCorsHeaders(origin);
 
   try {
-    const { petId, userId, imageBase64, fileName, saveToDb } = await req.json();
+    const { petId, userId, imageBase64, fileName, saveToDb, cachedResult } = await req.json();
 
-    if (!petId || !userId || !imageBase64) {
+    if (!petId || !userId) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
