@@ -216,7 +216,7 @@ export default function Documents() {
           document_type: uploadDocType,
           title: uploadTitle,
           description: uploadDescription || null,
-          file_url: publicUrl,
+          file_url: fileUrl,
           file_name: selectedFile.name,
           file_size: selectedFile.size,
         });
