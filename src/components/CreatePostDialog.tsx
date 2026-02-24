@@ -268,6 +268,18 @@ export const CreatePostDialog = ({ open, onOpenChange, onPostCreated }: CreatePo
         }
       }
 
+      // Auto-save to album
+      if (mediaUrl) {
+        const { autoSaveToAlbum } = await import("@/lib/autoSaveUpload");
+        await autoSaveToAlbum({
+          userId: user.id,
+          petId: postData.pet_id || null,
+          mediaUrl,
+          caption: fullCaption || null,
+          mediaType,
+        });
+      }
+
       toast.success("🎉 הפוסט פורסם בהצלחה!");
       resetForm();
       onOpenChange(false);

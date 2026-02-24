@@ -293,6 +293,15 @@ export const CreateStoryDialog = ({ open, onOpenChange, onStoryCreated }: Create
         await supabase.from("story_product_tags").insert(productTags);
       }
 
+      // Auto-save to album
+      const { autoSaveToAlbum } = await import("@/lib/autoSaveUpload");
+      await autoSaveToAlbum({
+        userId: user.id,
+        mediaUrl: publicUrl,
+        caption: "סטורי",
+        mediaType,
+      });
+
       toast.success("הסטורי פורסם בהצלחה!");
       
       // Reset form

@@ -112,6 +112,17 @@ export const ParkReviewDialog = ({
 
       if (insertError) throw insertError;
 
+      // Auto-save park photos to album
+      const { autoSaveToAlbum } = await import("@/lib/autoSaveUpload");
+      for (const url of photoUrls) {
+        await autoSaveToAlbum({
+          userId: user.id,
+          mediaUrl: url,
+          caption: `ביקורת גינה`,
+          mediaType: "image",
+        });
+      }
+
       // Trigger confetti celebration
       triggerPetidConfetti();
 

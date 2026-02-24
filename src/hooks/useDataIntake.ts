@@ -89,6 +89,21 @@ export function useDataIntake({ petId, petName, isSOSActive = false }: UseDataIn
       return { type: "scan", userMessage: "", aiPrompt: "" };
     }
 
+    // Auto-save to documents
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { autoSaveToDocuments } = await import("@/lib/autoSaveUpload");
+      await autoSaveToDocuments({
+        userId: user.id,
+        petId,
+        fileUrl,
+        fileName: file.name,
+        fileSize: file.size,
+        documentType: "vet_report",
+        title: `סריקת מסמך - ${file.name}`,
+      });
+    }
+
     toast({
       title: "🔒 המסמך נשמר בצורה מאובטחת",
       description: `נשמר בכספת של ${petName}`,
@@ -119,6 +134,32 @@ export function useDataIntake({ petId, petName, isSOSActive = false }: UseDataIn
     if (!fileUrl) {
       toast({ title: "שגיאה בהעלאה", description: "נסה שוב", variant: "destructive" });
       return { type: source, userMessage: "", aiPrompt: "" };
+    }
+
+    // Auto-save to album or documents
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      if (fileType === "document") {
+        const { autoSaveToDocuments } = await import("@/lib/autoSaveUpload");
+        await autoSaveToDocuments({
+          userId: user.id,
+          petId,
+          fileUrl,
+          fileName: file.name,
+          fileSize: file.size,
+          documentType: "general",
+          title: file.name,
+        });
+      } else {
+        const { autoSaveToAlbum } = await import("@/lib/autoSaveUpload");
+        await autoSaveToAlbum({
+          userId: user.id,
+          petId,
+          mediaUrl: fileUrl,
+          caption: null,
+          mediaType: fileType === "video" ? "video" : "image",
+        });
+      }
     }
 
     toast({
