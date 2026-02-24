@@ -518,9 +518,9 @@ export default function Documents() {
           >
             <Button
               onClick={() => setIsDialogOpen(true)}
-              className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-sm shadow-md transition-all gap-2"
+              className="w-full h-12 rounded-2xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-semibold text-sm shadow-lg shadow-primary/20 transition-all duration-300 gap-2 hover:scale-[1.01] active:scale-[0.99]"
             >
-              <Plus className="w-4 h-4" />
+              <Sparkles className="w-4 h-4" strokeWidth={1.5} />
               העלאת מסמך חדש
             </Button>
           </motion.div>
@@ -686,14 +686,12 @@ export default function Documents() {
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex flex-col items-center justify-center py-16"
+              className="flex flex-col items-center justify-center py-20"
             >
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-accent p-[3px] animate-spin">
-                <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
-                  <FileText className="w-7 h-7 text-primary" />
-                </div>
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 animate-pulse">
+                <FileText className="w-7 h-7 text-primary" strokeWidth={1.5} />
               </div>
-              <p className="mt-4 text-muted-foreground text-sm">טוען מסמכים...</p>
+              <p className="text-muted-foreground text-sm font-medium">טוען מסמכים...</p>
             </motion.div>
           ) : filteredDocuments.length === 0 ? (
             <motion.div 
