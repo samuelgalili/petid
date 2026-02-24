@@ -166,6 +166,8 @@ Age keywords: גיל, age, שנים, years, חודשים, months.`
       }
 
       scanResult.isDangerousBreed = isDangerousBreed(scanResult.petBreed);
+      // If AI detected "dangerous dog" status or breed-based detection
+      if (scanResult.isDangerousDog === true) scanResult.isDangerousBreed = true;
     } else {
       return new Response(JSON.stringify({ error: "No image or cached result provided" }), {
         status: 400,
