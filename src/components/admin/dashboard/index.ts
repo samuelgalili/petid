@@ -5,3 +5,7 @@ export * from './DashboardStats';
 export * from './DashboardSidebar';
 export * from './DashboardSalesAnalytics';
 export * from './DashboardInventoryIntel';
+export * from './DashboardShopInsights';
+export * from './DashboardCRMInsights';
+export * from './DashboardContentInsights';
+export * from './DashboardSystemInsights';
