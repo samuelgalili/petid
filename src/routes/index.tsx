@@ -328,6 +328,8 @@ const AdminWebhooks = lazy(() => import("@/pages/admin/AdminWebhooks"));
 const AdminBlog = lazy(() => import("@/pages/admin/AdminBlog"));
 const AdminStories = lazy(() => import("@/pages/admin/AdminStories"));
 const AdminFeedManager = lazy(() => import("@/pages/admin/AdminFeedManager"));
+const AdminNotifications = lazy(() => import("@/pages/admin/AdminNotifications"));
+const AdminPetServices = lazy(() => import("@/pages/admin/AdminPetServices"));
 
 const AdminNotificationRules = lazy(() => import("@/pages/admin/AdminNotificationRules"));
 const AdminAutomations = lazy(() => import("@/pages/admin/AdminAutomations"));
@@ -391,6 +393,8 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/blog", element: <AdminPage component={AdminBlog} pageName="בלוג" /> },
   { path: "/admin/stories", element: <AdminPage component={AdminStories} pageName="סטוריז" /> },
   { path: "/admin/feed-manager", element: <AdminPage component={AdminFeedManager} pageName="ניהול פיד" /> },
+  { path: "/admin/notifications", element: <AdminPage component={AdminNotifications} pageName="מרכז התראות" /> },
+  { path: "/admin/pet-services", element: <AdminPage component={AdminPetServices} pageName="שירותי חיות מחמד" /> },
   
   { path: "/admin/notification-rules", element: <AdminPage component={AdminNotificationRules} pageName="כללי התראות" /> },
   { path: "/admin/automations", element: <AdminPage component={AdminAutomations} pageName="אוטומציות" /> },
