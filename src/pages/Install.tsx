@@ -97,6 +97,7 @@ const Install = () => {
             className="mb-8"
           >
             <PetidLogo showAnimals={false} size="lg" />
+            <h2 className="text-2xl font-black text-white mt-3 tracking-tight">PetID</h2>
           </motion.div>
 
           <motion.h1
