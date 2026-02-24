@@ -88,6 +88,8 @@ const AddPet = () => {
     birthDate: null as Date | null,
     gender: "",
     breed: "",
+    secondary_breed: "",
+    is_mixed: false,
     is_neutered: "false"
   });
   const [personalityTags, setPersonalityTags] = useState<string[]>([]);
@@ -95,6 +97,9 @@ const AddPet = () => {
   const [healthNotes, setHealthNotes] = useState("");
   const [medicalConditions, setMedicalConditions] = useState<string[]>([]);
   const [otherConditionText, setOtherConditionText] = useState("");
+  const [breedSearchResults, setBreedSearchResults] = useState<Array<{ breed_name: string; breed_name_he: string }>>([]);
+  const [showBreedSearch, setShowBreedSearch] = useState(false);
+  const [breedSearchField, setBreedSearchField] = useState<'primary' | 'secondary'>('primary');
   
   const [breedDetecting, setBreedDetecting] = useState(false);
   const [breedConfidence, setBreedConfidence] = useState<number | null>(null);
