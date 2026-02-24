@@ -35,23 +35,27 @@ export const DailyInsightCard = () => {
     return t("dailyInsight.goodNight");
   };
 
-  const getCheckLabels = () => [
-    { field: "breed", label: t("dailyInsight.breed"), weight: 10 },
-    { field: "birth_date", label: t("dailyInsight.birthDate"), weight: 10 },
-    { field: "weight", label: t("dailyInsight.weight"), weight: 10 },
-    { field: "gender", label: t("dailyInsight.gender"), weight: 5 },
-    { field: "microchip_number", label: t("dailyInsight.microchip"), weight: 10 },
-    { field: "is_neutered", label: t("dailyInsight.neutered"), weight: 5 },
-    { field: "current_food", label: t("dailyInsight.currentFood"), weight: 10 },
-    { field: "vet_name", label: t("dailyInsight.vetName"), weight: 10 },
-    { field: "has_insurance", label: t("dailyInsight.insurance"), weight: 10 },
-    { field: "avatar_url", label: t("dailyInsight.profilePhoto"), weight: 5 },
-  ];
+  const getCheckLabels = (pet?: any) => {
+    // For mixed breeds, breed field weight is reduced; weight/age/activity matter more
+    const isMixed = pet?.breed?.includes('+') || pet?.breed?.includes('מעורב');
+    return [
+      { field: "breed", label: t("dailyInsight.breed"), weight: isMixed ? 3 : 10 },
+      { field: "birth_date", label: t("dailyInsight.birthDate"), weight: isMixed ? 15 : 10 },
+      { field: "weight", label: t("dailyInsight.weight"), weight: isMixed ? 18 : 10 },
+      { field: "gender", label: t("dailyInsight.gender"), weight: 5 },
+      { field: "microchip_number", label: t("dailyInsight.microchip"), weight: 10 },
+      { field: "is_neutered", label: t("dailyInsight.neutered"), weight: 5 },
+      { field: "current_food", label: t("dailyInsight.currentFood"), weight: isMixed ? 12 : 10 },
+      { field: "vet_name", label: t("dailyInsight.vetName"), weight: 10 },
+      { field: "has_insurance", label: t("dailyInsight.insurance"), weight: 10 },
+      { field: "avatar_url", label: t("dailyInsight.profilePhoto"), weight: isMixed ? 2 : 5 },
+    ];
+  };
 
   const calculateHealthScore = (pet: any): { score: number; missing: string[] } => {
     let score = 0;
     const missing: string[] = [];
-    const checks = getCheckLabels();
+    const checks = getCheckLabels(pet);
 
     for (const c of checks) {
       const val = pet[c.field];

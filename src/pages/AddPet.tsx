@@ -88,6 +88,8 @@ const AddPet = () => {
     birthDate: null as Date | null,
     gender: "",
     breed: "",
+    secondary_breed: "",
+    is_mixed: false,
     is_neutered: "false"
   });
   const [personalityTags, setPersonalityTags] = useState<string[]>([]);
@@ -95,6 +97,9 @@ const AddPet = () => {
   const [healthNotes, setHealthNotes] = useState("");
   const [medicalConditions, setMedicalConditions] = useState<string[]>([]);
   const [otherConditionText, setOtherConditionText] = useState("");
+  const [breedSearchResults, setBreedSearchResults] = useState<Array<{ breed_name: string; breed_name_he: string }>>([]);
+  const [showBreedSearch, setShowBreedSearch] = useState(false);
+  const [breedSearchField, setBreedSearchField] = useState<'primary' | 'secondary'>('primary');
   
   const [breedDetecting, setBreedDetecting] = useState(false);
   const [breedConfidence, setBreedConfidence] = useState<number | null>(null);
@@ -224,6 +229,24 @@ const AddPet = () => {
     }
   };
 
+  const searchBreeds = async (query: string) => {
+    if (!petType || query.length < 1) {
+      setBreedSearchResults([]);
+      return;
+    }
+    try {
+      const { data } = await supabase
+        .from("breed_information")
+        .select("breed_name, breed_name_he")
+        .eq("pet_type", petType)
+        .or(`breed_name.ilike.%${query}%,breed_name_he.ilike.%${query}%`)
+        .limit(8);
+      setBreedSearchResults(data || []);
+    } catch {
+      setBreedSearchResults([]);
+    }
+  };
+
   const [breedDetectionFailed, setBreedDetectionFailed] = useState(false);
   const [photoQualityFeedback, setPhotoQualityFeedback] = useState<string | null>(null);
   const [detectedHealthRisks, setDetectedHealthRisks] = useState<Array<{ risk: string; risk_he: string; severity: string; note: string }>>([]);
@@ -286,13 +309,24 @@ const AddPet = () => {
         const confidence = data.confidence || 0;
         const matchedBreed = await matchBreedInDB(data.breed_he || data.breed, petType);
         
-        setFormData(prev => ({ ...prev, breed: matchedBreed }));
+        // Handle mixed breeds from AI
+        if (data.mixed_breeds && Array.isArray(data.mixed_breeds) && data.mixed_breeds.length > 1) {
+          const secondaryBreed = await matchBreedInDB(data.mixed_breeds[1], petType);
+          setFormData(prev => ({ 
+            ...prev, 
+            breed: matchedBreed, 
+            secondary_breed: secondaryBreed,
+            is_mixed: true 
+          }));
+          toast({ title: "🧬 זוהה מעורב!", description: `${matchedBreed} + ${secondaryBreed}` });
+        } else {
+          setFormData(prev => ({ ...prev, breed: matchedBreed }));
+          if (confidence > 0.8) {
+            toast({ title: "✨ גזע זוהה!", description: `${matchedBreed} (${Math.round(confidence * 100)}% וודאות)` });
+          }
+        }
         setBreedSource('ai');
         setBreedConfidence(confidence);
-
-        if (confidence > 0.8) {
-          toast({ title: "✨ גזע זוהה!", description: `${matchedBreed} (${Math.round(confidence * 100)}% וודאות)` });
-        }
       } else {
         setBreedDetectionFailed(true);
       }
@@ -391,13 +425,17 @@ const AddPet = () => {
       
       let avatarUrl = imagePreview || "";
 
+      const breedValue = formData.is_mixed && formData.secondary_breed 
+        ? `${formData.breed} + ${formData.secondary_breed}` 
+        : formData.breed || null;
+
       const { data: petData, error: insertError } = await supabase.from("pets").insert({
         user_id: user.id,
         name: formData.name,
         type: petType,
         birth_date: formData.birthDate ? formData.birthDate.toISOString().split('T')[0] : null,
         gender: formData.gender || null,
-        breed: formData.breed || null,
+        breed: breedValue,
         breed_confidence: breedConfidence,
         is_neutered: formData.is_neutered === "true",
         avatar_url: avatarUrl,
@@ -951,8 +989,8 @@ const AddPet = () => {
                   />
                 </div>
 
-                {/* Breed */}
-                <div className="space-y-2">
+                {/* Breed Section */}
+                <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="breed">גזע</Label>
                     {breedSource === 'ai' && (
@@ -962,17 +1000,139 @@ const AddPet = () => {
                       </span>
                     )}
                   </div>
-                  <Input
-                    id="breed"
-                    value={formData.breed}
-                    onChange={(e) => {
-                      setFormData(prev => ({ ...prev, breed: e.target.value }));
+
+                  {/* Mixed breed toggle */}
+                  <motion.button
+                    type="button"
+                    onClick={() => {
+                      const newMixed = !formData.is_mixed;
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        is_mixed: newMixed,
+                        breed: newMixed && !prev.breed ? 'מעורב' : prev.breed,
+                        secondary_breed: newMixed ? prev.secondary_breed : ''
+                      }));
                       setBreedSource('user');
                     }}
-                    placeholder={breedDetecting ? "מזהה גזע..." : "מה הגזע?"}
-                    disabled={breedDetecting}
-                    className="h-12 rounded-xl"
-                  />
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 rounded-xl border text-sm transition-all w-full",
+                      formData.is_mixed 
+                        ? "border-primary bg-primary/10 text-primary font-medium" 
+                        : "border-border bg-muted/50 text-muted-foreground"
+                    )}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <span className="text-base">🧬</span>
+                    <span>{formData.is_mixed ? 'גזע מעורב ✓' : 'מעורב? לחץ כאן'}</span>
+                  </motion.button>
+
+                  {/* Primary breed input with search */}
+                  <div className="relative">
+                    <Input
+                      id="breed"
+                      value={formData.breed}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFormData(prev => ({ ...prev, breed: val }));
+                        setBreedSource('user');
+                        setBreedSearchField('primary');
+                        searchBreeds(val);
+                        setShowBreedSearch(val.length >= 1);
+                      }}
+                      onFocus={() => {
+                        if (formData.breed.length >= 1) {
+                          setBreedSearchField('primary');
+                          searchBreeds(formData.breed);
+                          setShowBreedSearch(true);
+                        }
+                      }}
+                      onBlur={() => setTimeout(() => setShowBreedSearch(false), 200)}
+                      placeholder={breedDetecting ? "מזהה גזע..." : formData.is_mixed ? "גזע ראשי" : "חפש גזע..."}
+                      disabled={breedDetecting}
+                      className="h-12 rounded-xl"
+                    />
+                    {/* Search results dropdown */}
+                    {showBreedSearch && breedSearchField === 'primary' && breedSearchResults.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="absolute z-20 top-full mt-1 w-full bg-card rounded-xl border border-border shadow-lg max-h-48 overflow-y-auto"
+                      >
+                        {breedSearchResults.map((b, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            className="w-full text-right px-4 py-2.5 text-sm hover:bg-muted transition-colors border-b border-border/30 last:border-0"
+                            onMouseDown={() => {
+                              setFormData(prev => ({ ...prev, breed: b.breed_name_he || b.breed_name }));
+                              setBreedSource('user');
+                              setShowBreedSearch(false);
+                            }}
+                          >
+                            <span className="font-medium">{b.breed_name_he || b.breed_name}</span>
+                            {b.breed_name_he && (
+                              <span className="text-muted-foreground mr-2 text-xs">({b.breed_name})</span>
+                            )}
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </div>
+
+                  {/* Secondary breed (visible when mixed) */}
+                  {formData.is_mixed && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="relative"
+                    >
+                      <Input
+                        value={formData.secondary_breed}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setFormData(prev => ({ ...prev, secondary_breed: val }));
+                          setBreedSearchField('secondary');
+                          searchBreeds(val);
+                          setShowBreedSearch(val.length >= 1);
+                        }}
+                        onFocus={() => {
+                          if (formData.secondary_breed.length >= 1) {
+                            setBreedSearchField('secondary');
+                            searchBreeds(formData.secondary_breed);
+                            setShowBreedSearch(true);
+                          }
+                        }}
+                        onBlur={() => setTimeout(() => setShowBreedSearch(false), 200)}
+                        placeholder="גזע משני (אופציונלי)"
+                        className="h-12 rounded-xl"
+                      />
+                      {showBreedSearch && breedSearchField === 'secondary' && breedSearchResults.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="absolute z-20 top-full mt-1 w-full bg-card rounded-xl border border-border shadow-lg max-h-48 overflow-y-auto"
+                        >
+                          {breedSearchResults.map((b, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              className="w-full text-right px-4 py-2.5 text-sm hover:bg-muted transition-colors border-b border-border/30 last:border-0"
+                              onMouseDown={() => {
+                                setFormData(prev => ({ ...prev, secondary_breed: b.breed_name_he || b.breed_name }));
+                                setShowBreedSearch(false);
+                              }}
+                            >
+                              <span className="font-medium">{b.breed_name_he || b.breed_name}</span>
+                              {b.breed_name_he && (
+                                <span className="text-muted-foreground mr-2 text-xs">({b.breed_name})</span>
+                              )}
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </motion.div>
+                  )}
                 </div>
 
                 <div className="flex gap-3 pt-4">
