@@ -207,6 +207,12 @@ Age keywords: גיל, age, שנים, years, חודשים, months.`
               petUpdate.weight = parseFloat(field.detectedValue) || null;
             } else if (field.key === "petGender") {
               petUpdate.gender = field.detectedValue === "זכר" ? "male" : field.detectedValue === "נקבה" ? "female" : field.detectedValue;
+            } else if (field.key === "petAge") {
+              petUpdate.age = parseInt(field.detectedValue) || null;
+            } else if (field.key === "isNeutered") {
+              petUpdate.is_neutered = field.detectedValue === "כן" || field.detectedValue === "true";
+            } else if (field.key === "isDangerousDog") {
+              petUpdate.is_dangerous_breed = field.detectedValue === "כן" || field.detectedValue === "true";
             } else {
               petUpdate[field.dbField] = field.detectedValue;
             }
