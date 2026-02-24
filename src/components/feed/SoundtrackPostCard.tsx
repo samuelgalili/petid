@@ -577,6 +577,10 @@ export const SoundtrackPostCard = ({
           </>
         )}
       </AnimatePresence>
+
+      {/* ═══ UNIFIED GLASSMORPHISM BOTTOM OVERLAY ═══ */}
+      <motion.div
+        className="absolute inset-x-0 bottom-0 z-40"
         initial={{ y: 30, opacity: 0 }}
         animate={{ y: 0, opacity: overlayDimmed ? 0.3 : 1 }}
         transition={overlayDimmed ? { duration: 1, ease: "easeOut" } : { delay: 0.25, type: "spring", stiffness: 300, damping: 30 }}
