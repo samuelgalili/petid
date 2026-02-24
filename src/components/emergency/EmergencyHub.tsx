@@ -104,36 +104,17 @@ export const EmergencyHub = ({ open, onOpenChange }: EmergencyHubProps) => {
     if (!activePet) return;
     setLostLoading(true);
     try {
-      // Mark pet as lost
-      await (supabase as any)
-        .from("pets")
-        .update({ is_lost: true })
-        .eq("id", activePet.id);
+      const { data, error } = await supabase.functions.invoke("lost-pet-alert", {
+        body: { pet_id: activePet.id },
+      });
 
-      // Get owner profile for location
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No user");
+      if (error) throw error;
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name, city")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      // Create a lost pet post
-      const city = (profile as any)?.city;
-      const postContent = `🚨 אבד/ה! ${activePet.name} (${activePet.breed || (activePet.type === 'dog' ? 'כלב' : 'חתול')}) נעלמ/ה מהאזור${city ? ` של ${city}` : ''}. אם ראיתם — אנא צרו קשר! 🙏`;
-      
-      await (supabase as any)
-        .from("posts")
-        .insert({
-          user_id: user.id,
-          content: postContent,
-          pet_id: activePet.id,
-          post_type: "lost_pet",
-        });
-
-      toast.success(`פורסם פוסט אבדה עבור ${activePet.name} ונשלח פינג לאזור`);
+      const result = data as any;
+      const cityText = result?.city ? ` ב${result.city}` : '';
+      toast.success(
+        `🚨 פורסם פוסט אבדה עבור ${activePet.name}${cityText}. נשלחו ${result?.push_sent || 0} התראות למשתמשים באזור.`
+      );
       onOpenChange(false);
     } catch (error) {
       console.error("Lost pet error:", error);
