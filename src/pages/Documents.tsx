@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload, FileText, Search, X, ArrowUpDown, Syringe, Stethoscope, File, Calendar, FolderOpen, Plus, Filter } from "lucide-react";
+import { Loader2, Upload, FileText, Search, X, ArrowUpDown, Syringe, Stethoscope, File, Calendar, FolderOpen, Plus, Filter, Sparkles } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { SwipeableDocumentCard } from "@/components/SwipeableDocumentCard";
 import { Card } from "@/components/ui/card";
