@@ -31,12 +31,10 @@ import { PetVaultDrawer } from "@/components/pet-services/PetVaultDrawer";
 import { SmartRecommendationSheet } from "@/components/pet-services/SmartRecommendationSheet";
 import { HealthScoreBreakdown } from "@/components/profile/HealthScoreBreakdown";
 import { MedicalTimeline } from "@/components/profile/MedicalTimeline";
-import { VetVisitInput } from "@/components/profile/VetVisitInput";
 import { RecoveryBanner } from "@/components/profile/RecoveryBanner";
 import { VaccineCountdown } from "@/components/profile/VaccineCountdown";
 import { VetHistoryPDF } from "@/components/profile/VetHistoryPDF";
 import { BreedHealthTips } from "@/components/profile/BreedHealthTips";
-import { VetDocumentScanner } from "@/components/profile/VetDocumentScanner";
 import { MyClinicCard } from "@/components/profile/MyClinicCard";
 import { DangerousBreedBanner } from "@/components/profile/DangerousBreedBanner";
 import { ClaimsHistory } from "@/components/profile/ClaimsHistory";
@@ -591,95 +589,72 @@ const Profile = () => {
             }} className="mb-4">
                     {/* Weather moved inline next to pet name */}
                     
-                    {/* Health Score */}
+                    {/* ── Section 1: Health Overview ── */}
                     <PetHealthScore pet={selectedPet} onViewDetails={() => setHealthBreakdownOpen(true)} refreshKey={healthRefreshKey} />
                     
-                    {/* Discovery Bubbles — gamified treasure tasks */}
-                    <DiscoveryCards petId={selectedPet.id} petName={selectedPet.name} petType={selectedPet.type} />
-                    
-                    {/* Memory Card — lifestyle scrapbook */}
-                    <MemoryCard petId={selectedPet.id} petName={selectedPet.name} />
-                    
-                    {/* Recovery Banner */}
+                    {/* Recovery Banner (conditional) */}
                     <RecoveryBanner petId={selectedPet.id} petName={selectedPet.name} onOpenRecoveryProducts={() => setSmartRecCategory('health')} />
 
-                    {/* Insurance Claims History */}
-                    <ClaimsHistory petId={selectedPet.id} />
-                    
-                    {/* Breed Health Tips (Shih Tzu specific, puppy tips, etc.) */}
-                    <BreedHealthTips
-                petName={selectedPet.name}
-                breed={selectedPet.breed}
-                ageMonths={selectedPet.age_months}
-                ageYears={selectedPet.age_years}
-                petType={selectedPet.type} />
-
-                    {/* Vaccine Countdown */}
-                    <VaccineCountdown petId={selectedPet.id} petName={selectedPet.name} />
-                    
-                    {/* Puppy Vaccine Scheduler */}
-                    <PuppyVaccineScheduler
-                petName={selectedPet.name}
-                birthDate={(selectedPet as any).birth_date}
-                breed={selectedPet.breed}
-                petType={selectedPet.type} />
-
-
-                    {/* Dangerous Breed Banner */}
+                    {/* Dangerous Breed Banner (conditional) */}
                     {(selectedPet as any).is_dangerous_breed &&
-              <DangerousBreedBanner
-                breedName={selectedPet.breed}
-                licenseConditions={(selectedPet as any).license_conditions} />
+                      <DangerousBreedBanner
+                        breedName={selectedPet.breed}
+                        licenseConditions={(selectedPet as any).license_conditions} />
+                    }
 
-              }
+                    {/* ── Section 2: Gamification & Engagement ── */}
+                    <DiscoveryCards petId={selectedPet.id} petName={selectedPet.name} petType={selectedPet.type} />
+                    <MemoryCard petId={selectedPet.id} petName={selectedPet.name} />
 
-                    {/* My Clinic Card */}
-                    {(selectedPet as any).vet_clinic_name &&
-              <MyClinicCard
-                clinicName={(selectedPet as any).vet_clinic_name}
-                clinicPhone={(selectedPet as any).vet_clinic_phone}
-                clinicAddress={(selectedPet as any).vet_clinic_address} />
-
-              }
-
-                    {/* Vet Document Scanner (OCR) - legacy inline */}
-                    <VetDocumentScanner petId={selectedPet.id} petName={selectedPet.name} onScanComplete={triggerHealthRefresh} />
-                    
-                    {/* Vet Visit Input */}
-                    <VetVisitInput petId={selectedPet.id} petName={selectedPet.name} onVisitLogged={triggerHealthRefresh} />
-                    
-                    {/* Medical Document FAB (unified entry point) */}
-                    <MedicalDocumentFAB petId={selectedPet.id} petName={selectedPet.name} petBirthDate={(selectedPet as any).birth_date} petBreed={selectedPet.breed} onComplete={triggerHealthRefresh} />
-                    
-                    {/* Preventive Care Engine (Weight, Dental, Deworming, Emergency, Next Steps) */}
-                    <PreventiveCareEngine
-                petId={selectedPet.id}
-                petName={selectedPet.name}
-                breed={selectedPet.breed}
-                birthDate={(selectedPet as any).birth_date}
-                petType={selectedPet.type} />
-
-                    
-                    {/* Medical Timeline */}
+                    {/* ── Section 3: Medical & Vaccines (consolidated) ── */}
+                    <VaccineCountdown petId={selectedPet.id} petName={selectedPet.name} />
+                    <PuppyVaccineScheduler
+                      petName={selectedPet.name}
+                      birthDate={(selectedPet as any).birth_date}
+                      breed={selectedPet.breed}
+                      petType={selectedPet.type} />
                     <MedicalTimeline petId={selectedPet.id} petName={selectedPet.name} />
-                    
-                    {/* Vet History PDF Export */}
-                    <VetHistoryPDF petId={selectedPet.id} petName={selectedPet.name} petBreed={selectedPet.breed} petType={selectedPet.type} />
-                    
-                    {/* Top Recommendation */}
-                    <TopRecommendation pet={selectedPet} onViewPolicy={() => setActiveSheet('insurance')} onEnergyOpen={() => setSmartRecCategory('energy')} onGroomingOpen={() => setSmartRecCategory('coat')} onFeedingOpen={() => setSmartRecCategory('feeding')} onMobilityOpen={() => setSmartRecCategory('mobility')} onDigestionOpen={() => setSmartRecCategory('digestion')} />
-                    
-                    {/* Photo Gallery */}
-                    <PetPhotoGallery petId={selectedPet.id} petAvatar={selectedPet.avatar_url} petName={selectedPet.name} />
-                    
-                    {/* Mini Calendar */}
-                    <PetMiniCalendar petId={selectedPet.id} petName={selectedPet.name} isOwner={true} />
-                    
-                    {/* Breed Stats Card - Shows detailed breed information */}
+
+                    {/* Medical Document FAB (unified OCR + manual entry) */}
+                    <MedicalDocumentFAB petId={selectedPet.id} petName={selectedPet.name} petBirthDate={(selectedPet as any).birth_date} petBreed={selectedPet.breed} onComplete={triggerHealthRefresh} />
+
+                    {/* ── Section 4: Preventive Care ── */}
+                    <PreventiveCareEngine
+                      petId={selectedPet.id}
+                      petName={selectedPet.name}
+                      breed={selectedPet.breed}
+                      birthDate={(selectedPet as any).birth_date}
+                      petType={selectedPet.type} />
+
+                    {/* ── Section 5: Breed & Clinic Info ── */}
+                    <BreedHealthTips
+                      petName={selectedPet.name}
+                      breed={selectedPet.breed}
+                      ageMonths={selectedPet.age_months}
+                      ageYears={selectedPet.age_years}
+                      petType={selectedPet.type} />
                     <BreedStatsCard pet={selectedPet} />
-                    
-                    {/* Essentials */}
+
+                    {(selectedPet as any).vet_clinic_name &&
+                      <MyClinicCard
+                        clinicName={(selectedPet as any).vet_clinic_name}
+                        clinicPhone={(selectedPet as any).vet_clinic_phone}
+                        clinicAddress={(selectedPet as any).vet_clinic_address} />
+                    }
+
+                    {/* ── Section 6: Insurance & Claims ── */}
+                    <ClaimsHistory petId={selectedPet.id} />
+
+                    {/* ── Section 7: Recommendations & Shop ── */}
+                    <TopRecommendation pet={selectedPet} onViewPolicy={() => setActiveSheet('insurance')} onEnergyOpen={() => setSmartRecCategory('energy')} onGroomingOpen={() => setSmartRecCategory('coat')} onFeedingOpen={() => setSmartRecCategory('feeding')} onMobilityOpen={() => setSmartRecCategory('mobility')} onDigestionOpen={() => setSmartRecCategory('digestion')} />
                     <PetEssentials pet={selectedPet} onOpenShop={handleOpenPetShop} />
+
+                    {/* ── Section 8: Gallery & Calendar ── */}
+                    <PetPhotoGallery petId={selectedPet.id} petAvatar={selectedPet.avatar_url} petName={selectedPet.name} />
+                    <PetMiniCalendar petId={selectedPet.id} petName={selectedPet.name} isOwner={true} />
+
+                    {/* ── Section 9: Export ── */}
+                    <VetHistoryPDF petId={selectedPet.id} petName={selectedPet.name} petBreed={selectedPet.breed} petType={selectedPet.type} />
                   </motion.div>}
 
                 {/* Search Bar - Quick Search */}
