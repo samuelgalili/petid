@@ -240,14 +240,18 @@ Age keywords: גיל, age, שנים, years, חודשים, months.`
         if (scanResult.petColor) petUpdate.color = scanResult.petColor;
         if (scanResult.petGender) petUpdate.gender = scanResult.petGender;
         if (scanResult.petBirthDate) petUpdate.birth_date = scanResult.petBirthDate;
+        if (scanResult.petAge) petUpdate.age = scanResult.petAge;
         if (scanResult.microchipNumber) petUpdate.microchip_number = scanResult.microchipNumber;
         if (scanResult.isNeutered !== null && scanResult.isNeutered !== undefined) petUpdate.is_neutered = scanResult.isNeutered;
         if (scanResult.weight) petUpdate.weight = scanResult.weight;
         if (scanResult.clinicName) petUpdate.vet_clinic_name = scanResult.clinicName;
         if (scanResult.clinicPhone) petUpdate.vet_clinic_phone = scanResult.clinicPhone;
         if (scanResult.clinicAddress) petUpdate.vet_clinic_address = scanResult.clinicAddress;
-        if (scanResult.isDangerousBreed) petUpdate.is_dangerous_breed = true;
+        if (scanResult.isDangerousBreed || scanResult.isDangerousDog) petUpdate.is_dangerous_breed = true;
         if (scanResult.licenseConditions) petUpdate.license_conditions = scanResult.licenseConditions;
+        if (scanResult.licenseNumber) petUpdate.license_number = scanResult.licenseNumber;
+        if (scanResult.licenseExpiryDate) petUpdate.license_expiry_date = scanResult.licenseExpiryDate;
+        if (scanResult.licenseRenewalDate) petUpdate.license_renewal_date = scanResult.licenseRenewalDate;
 
         if (Object.keys(petUpdate).length > 0) {
           await supabase.from("pets").update(petUpdate).eq("id", petId);

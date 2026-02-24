@@ -43,11 +43,19 @@ interface ScanResult {
   petBreed: string | null;
   petColor: string | null;
   petGender: string | null;
+  petAge: number | null;
   petBirthDate: string | null;
   microchipNumber: string | null;
   isNeutered: boolean | null;
   isDangerousBreed: boolean;
+  isDangerousDog: boolean | null;
+  licenseNumber: string | null;
+  licenseExpiryDate: string | null;
+  licenseRenewalDate: string | null;
   licenseConditions: string | null;
+  documentCategory: string | null;
+  nextTreatmentDate: string | null;
+  nextTreatmentDescription: string | null;
 }
 
 // Section component for grouped display
