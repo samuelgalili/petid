@@ -126,6 +126,7 @@ export const PhoneOtpVerification = ({ phone, onVerified, onCancel, mode }: Phon
       resetOtp();
     } finally {
       setLoading(false);
+      verifyingRef.current = false;
     }
   };
 
