@@ -27,6 +27,7 @@ export function SwipeableDocumentCard({
   documentTypeLabel,
   onDelete,
   onDownload,
+  onView,
   index,
 }: SwipeableDocumentCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
