@@ -199,7 +199,7 @@ export const FelineUrinarySupport = ({ petName, isNeutered, isMale, weight }: Fe
                 <span className="text-[10px] font-mono text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded">5–12 שבועות</span>
               </div>
               <p className="text-[10px] text-muted-foreground leading-relaxed">
-                מזון רפואי ייעודי (כגון Vet Life Struvite) ממיס את הגבישים הקיימים. 
+                מזון רפואי ייעודי (כגון Health & Care Struvite) ממיס את הגבישים הקיימים. 
                 יש להקפיד על מזון זה בלבד — ללא חטיפים או תוספות.
               </p>
             </div>
@@ -258,7 +258,7 @@ export const FelineUrinarySupport = ({ petName, isNeutered, isMale, weight }: Fe
               <Utensils className="w-4 h-4 text-green-500" strokeWidth={1.5} />
             </div>
             <div className="text-right">
-              <h4 className="text-xs font-bold text-foreground">טבלת מינון — Vet Life Struvite</h4>
+              <h4 className="text-xs font-bold text-foreground">טבלת מינון — Health & Care Struvite</h4>
               <p className="text-[10px] text-muted-foreground">גרם ליום לפי משקל</p>
             </div>
           </div>
