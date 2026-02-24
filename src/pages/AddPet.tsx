@@ -856,12 +856,28 @@ const AddPet = () => {
                     </label>
                   </div>
 
+                  {/* Photo quality warning */}
+                  {photoQualityFeedback && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex items-start gap-2 px-4 py-3 rounded-xl bg-warning/10 border border-warning/30 text-sm"
+                    >
+                      <Camera className="w-4 h-4 text-warning mt-0.5 shrink-0" />
+                      <span className="text-foreground">
+                        {photoQualityFeedback.includes('dark') || photoQualityFeedback.includes('blur') 
+                          ? 'צלם תמונה ברורה יותר באור טוב יותר לזיהוי מדויק.'
+                          : photoQualityFeedback}
+                      </span>
+                    </motion.div>
+                  )}
+
                   {/* AI breed detection badge */}
                   {breedConfidence !== null && formData.breed && breedSource === 'ai' && (
                     <motion.div 
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="space-y-2"
+                      className="space-y-3"
                     >
                       <div
                         className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm"
@@ -877,6 +893,35 @@ const AddPet = () => {
                           רמת הוודאות נמוכה — אנא אשר או ערוך את הגזע למטה
                         </p>
                       )}
+
+                      {/* Breed-specific health risks */}
+                      {detectedHealthRisks.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          className="bg-muted/50 rounded-xl p-3 space-y-2"
+                        >
+                          <p className="text-xs font-semibold text-foreground flex items-center gap-1">
+                            <Heart className="w-3.5 h-3.5 text-destructive" />
+                            סיכונים בריאותיים לגזע
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {detectedHealthRisks.slice(0, 5).map((risk, i) => (
+                              <span
+                                key={i}
+                                className={cn(
+                                  "text-[11px] px-2 py-1 rounded-full font-medium",
+                                  risk.severity === 'high' ? "bg-destructive/15 text-destructive" :
+                                  risk.severity === 'medium' ? "bg-warning/15 text-warning" :
+                                  "bg-muted text-muted-foreground"
+                                )}
+                              >
+                                {risk.risk_he || risk.risk}
+                              </span>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
                     </motion.div>
                   )}
 
@@ -885,7 +930,7 @@ const AddPet = () => {
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-destructive/10 text-sm"
+                      className="flex items-start gap-2 px-4 py-3 rounded-xl bg-destructive/10 text-sm"
                     >
                       <span className="text-destructive font-medium">
                         לא הצלחנו לזהות את הגזע. בחר ידנית לדיוק בריאותי טוב יותר.
