@@ -123,6 +123,7 @@ export function SwipeableDocumentCard({
             }
           }}
         >
+          <div className="flex items-start gap-3.5">
             {/* Document Icon */}
             <div className="relative flex-shrink-0">
               <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${config.gradient} p-[2px] shadow-md`}>
