@@ -48,6 +48,8 @@ export const PhoneOtpVerification = ({ phone, onVerified, onCancel, mode }: Phon
   }, [otp, codeSent, loading]);
 
   const sendCode = async () => {
+    if (sendingRef.current) return;
+    sendingRef.current = true;
     setSending(true);
     setError("");
     try {
@@ -58,14 +60,15 @@ export const PhoneOtpVerification = ({ phone, onVerified, onCancel, mode }: Phon
             ? "שירות SMS לא מוגדר. נסה להירשם באימייל או וואטסאפ." 
             : error.message);
           setSending(false);
+          sendingRef.current = false;
           return;
         }
       } else {
-        // For phone update, use updateUser to trigger phone change OTP
         const { error } = await supabase.auth.updateUser({ phone: e164Phone });
         if (error) {
           setError(error.message);
           setSending(false);
+          sendingRef.current = false;
           return;
         }
       }
@@ -75,6 +78,7 @@ export const PhoneOtpVerification = ({ phone, onVerified, onCancel, mode }: Phon
       setError("שגיאה בשליחת הקוד. נסה שוב.");
     } finally {
       setSending(false);
+      sendingRef.current = false;
     }
   };
 
