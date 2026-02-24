@@ -94,8 +94,20 @@ Return ONLY valid JSON with this exact structure:
   "petBirthDate": "YYYY-MM-DD or null",
   "microchipNumber": "string or null",
   "isNeutered": true/false/null,
-  "licenseConditions": "string or null"
+  "licenseConditions": "string or null",
+  "documentCategory": "one of: medical_record, vaccination, insurance, legal_contract, prescription, lab_results, vet_report, other",
+  "nextTreatmentDate": "YYYY-MM-DD or null - any future appointment or treatment date mentioned",
+  "nextTreatmentDescription": "string or null - description of the future treatment"
 }
+Document category rules:
+- vaccination: contains vaccine records or immunization certificates
+- medical_record: general medical records, checkup reports, visit summaries
+- insurance: insurance policies, claims, coverage documents
+- legal_contract: contracts, agreements, adoption papers, license documents
+- prescription: medication prescriptions
+- lab_results: blood tests, urine tests, lab work
+- vet_report: vet examination reports, surgery reports
+- other: anything that doesn't fit the above
 Look for Hebrew and English text.
 Vaccine keywords: DHPP, DHLPP, כלבת (Rabies), לפטוספירוזיס (Lepto), לישמניה (Leishmania), משושה, מחומש, מרובע.
 Deworming keywords: תילוע, milbemax, drontal, deworm.
