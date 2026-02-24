@@ -27,7 +27,8 @@ export interface FeedPost {
   is_following?: boolean;
   recommendation_reason?: string;
   media_type?: "image" | "gallery" | "video";
-  post_type?: "regular" | "product" | "challenge" | "cta";
+  post_type?: "regular" | "product" | "challenge" | "cta" | "lost_pet";
+  is_pinned?: boolean;
   product_id?: string;
   product_name?: string;
   product_price?: number;
