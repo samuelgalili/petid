@@ -4,15 +4,15 @@ import { useToast } from "@/hooks/use-toast";
 import { useAdmin } from "./useAdmin";
 import { useNavigate } from "react-router-dom";
 
-export interface AdminNotification {
+export interface AdminAlert {
   id: string;
-  type: 'insurance' | 'report' | 'adoption' | 'order';
   title: string;
-  message: string;
-  timestamp: Date;
-  read: boolean;
-  link: string;
-  data?: any;
+  description: string | null;
+  category: string;
+  alert_type: string;
+  is_read: boolean;
+  created_at: string;
+  metadata: any;
 }
 
 export const useAdminNotifications = () => {
@@ -20,101 +20,63 @@ export const useAdminNotifications = () => {
   const navigate = useNavigate();
   const { isAdmin, loading: isLoading } = useAdmin();
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-  const [notifications, setNotifications] = useState<AdminNotification[]>([]);
+  const [notifications, setNotifications] = useState<AdminAlert[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const addNotification = (notification: AdminNotification) => {
-    setNotifications(prev => [notification, ...prev]);
-    setUnreadCount(prev => prev + 1);
-    
-    // Play sound
-    const audio = new Audio('/notification.mp3'); // We might need to add this file or use a browser sound
-    audio.play().catch(e => console.log('Audio play failed', e));
+  // Fetch initial state
+  useEffect(() => {
+    if (isLoading || isAdmin !== true) return;
 
-    toast({
-      title: notification.title,
-      description: notification.message,
-      duration: 5000,
-      onClick: () => navigate(notification.link),
-    });
-  };
+    const fetchAlerts = async () => {
+      const { data } = await supabase
+        .from("admin_data_alerts")
+        .select("*")
+        .eq("is_read", false)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      
+      if (data) {
+        setNotifications(data as AdminAlert[]);
+        setUnreadCount(data.length);
+      }
+    };
 
+    fetchAlerts();
+  }, [isAdmin, isLoading]);
+
+  // Realtime subscription
   useEffect(() => {
     if (isLoading || isAdmin !== true) return;
     if (channelRef.current) return;
 
     const channel = supabase
-      .channel("admin-global-notifications")
-      // Insurance Leads
+      .channel("admin-alerts-subscription")
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "insurance_leads" },
+        { event: "INSERT", schema: "public", table: "admin_data_alerts" },
         (payload) => {
-          const lead = payload.new as any;
-          addNotification({
-            id: `ins-${lead.id}`,
-            type: 'insurance',
-            title: "🛡️ פניית ביטוח חדשה",
-            message: `${lead.pet_name} (${lead.pet_type === 'dog' ? 'כלב' : 'חתול'}) - ${lead.phone}`,
-            timestamp: new Date(),
-            read: false,
-            link: "/admin/pet-services",
-            data: lead
+          const newAlert = payload.new as AdminAlert;
+          
+          setNotifications(prev => [newAlert, ...prev]);
+          setUnreadCount(prev => prev + 1);
+
+          // Determine link based on category
+          let link = "/admin/notifications";
+          if (newAlert.category === 'insurance') link = "/admin/pet-services";
+          if (newAlert.category === 'moderation') link = "/admin/reports";
+          if (newAlert.category === 'adoption') link = "/admin/adoption";
+          if (newAlert.category === 'sales') link = "/admin/orders";
+
+          toast({
+            title: newAlert.title,
+            description: newAlert.description,
+            duration: 5000,
+            onClick: () => navigate(link),
           });
-        }
-      )
-      // Content Reports
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "content_reports" },
-        (payload) => {
-          const report = payload.new as any;
-          addNotification({
-            id: `rep-${report.id}`,
-            type: 'report',
-            title: "🚩 דיווח תוכן חדש",
-            message: `סיבה: ${report.reason}`,
-            timestamp: new Date(),
-            read: false,
-            link: "/admin/reports",
-            data: report
-          });
-        }
-      )
-      // Adoption Requests
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "adoption_requests" },
-        (payload) => {
-          const request = payload.new as any;
-          addNotification({
-            id: `adopt-${request.id}`,
-            type: 'adoption',
-            title: "🐾 בקשת אימוץ חדשה",
-            message: `${request.full_name} מתעניין/ת באימוץ`,
-            timestamp: new Date(),
-            read: false,
-            link: "/admin/adoption",
-            data: request
-          });
-        }
-      )
-      // Orders
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "orders" },
-        (payload) => {
-          const order = payload.new as any;
-          addNotification({
-            id: `ord-${order.id}`,
-            type: 'order',
-            title: "🛍️ הזמנה חדשה",
-            message: `הזמנה #${order.id.slice(0, 8)} על סך ₪${order.total}`,
-            timestamp: new Date(),
-            read: false,
-            link: "/admin/orders",
-            data: order
-          });
+          
+          // Play notification sound
+          const audio = new Audio('/notification.mp3');
+          audio.play().catch(() => {});
         }
       )
       .subscribe();
@@ -129,25 +91,32 @@ export const useAdminNotifications = () => {
     };
   }, [isAdmin, isLoading, toast, navigate]);
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-    setUnreadCount(prev => Math.max(0, prev - 1));
-  };
-
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-    setUnreadCount(0);
-  };
-
-  const clearNotification = (id: string) => {
+  const markAsRead = async (id: string) => {
+    // Optimistic update
     setNotifications(prev => prev.filter(n => n.id !== id));
+    setUnreadCount(prev => Math.max(0, prev - 1));
+
+    await supabase
+      .from("admin_data_alerts")
+      .update({ is_read: true })
+      .eq("id", id);
+  };
+
+  const markAllAsRead = async () => {
+    // Optimistic update
+    setNotifications([]);
+    setUnreadCount(0);
+
+    await supabase
+      .from("admin_data_alerts")
+      .update({ is_read: true })
+      .eq("is_read", false);
   };
 
   return {
     notifications,
     unreadCount,
     markAsRead,
-    markAllAsRead,
-    clearNotification
+    markAllAsRead
   };
 };

@@ -1,4 +1,5 @@
 import { ReactNode, useState, useEffect, useRef } from "react";
+import { AdminNotificationsBell } from "./AdminNotificationsBell";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { LucideIcon } from "lucide-react";
 import { 
@@ -109,7 +110,7 @@ const navGroups: NavGroup[] = [
       { icon: Shield, label: "תפקידים", href: "/admin/roles" },
       { icon: Zap, label: "אוטומציות", href: "/admin/automations" },
       { icon: Clock, label: "מעקב שעות", href: "/admin/time-tracking" },
-      { icon: Bell, label: "התראות", href: "/admin/notification-rules" },
+      { icon: Bell, label: "מרכז התראות", href: "/admin/notifications" },
       { icon: Plug, label: "אינטגרציות", href: "/admin/integrations" },
       { icon: Webhook, label: "Webhooks", href: "/admin/webhooks" },
       { icon: History, label: "לוג פעילות", href: "/admin/audit" },
@@ -499,6 +500,7 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
                 </Button>
               ))}
               <div className="w-px h-5 bg-border/30 mx-1" />
+              <AdminNotificationsBell />
               <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => navigate("/")}>
                 <Home className="w-3.5 h-3.5" />
               </Button>
