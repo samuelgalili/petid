@@ -63,6 +63,7 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
   const [hasRecentWeight, setHasRecentWeight] = useState(false);
   const [hasParasitePrevention, setHasParasitePrevention] = useState(false);
   const [hasRegisteredClinic, setHasRegisteredClinic] = useState(false);
+  const [clinicName, setClinicName] = useState<string | null>(null);
   const [ownerProfileComplete, setOwnerProfileComplete] = useState(false);
   const [totalVetSpend, setTotalVetSpend] = useState(0);
   const [pendingClaimsCount, setPendingClaimsCount] = useState(0);
@@ -99,8 +100,25 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
         // Weight tracking: has weight been logged
         setHasRecentWeight(!!petResult.data?.weight);
         
-        // Registered clinic check
-        setHasRegisteredClinic(!!(petResult.data as any)?.vet_clinic_name);
+        // Registered clinic check — also fallback to extracted document data
+        const petClinic = (petResult.data as any)?.vet_clinic_name;
+        if (petClinic) {
+          setHasRegisteredClinic(true);
+          setClinicName(petClinic);
+        } else {
+          // Try to find clinic from scanned documents
+          const { data: extractedClinic } = await supabase
+            .from("pet_document_extracted_data")
+            .select("vet_clinic, vet_name")
+            .eq("pet_id", pet.id)
+            .or("vet_clinic.neq.,vet_name.neq.")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          const foundClinic = extractedClinic?.vet_clinic || extractedClinic?.vet_name || null;
+          setHasRegisteredClinic(!!foundClinic);
+          setClinicName(foundClinic);
+        }
         
         // Owner profile completeness
         const profile = profileResult.data;
@@ -310,6 +328,8 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
     // Clinic registration alert
     if (!hasRegisteredClinic) {
       result.push({ icon: Activity, text: 'אין מרפאה רשומה', type: 'info' });
+    } else if (clinicName) {
+      result.push({ icon: Activity, text: `מרפאה: ${clinicName}`, type: 'success' });
     }
 
     const conditions = petData?.medical_conditions || [];
