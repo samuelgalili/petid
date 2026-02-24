@@ -216,7 +216,24 @@ Age keywords: גיל, age, שנים, years, חודשים, months.`
             } else if (field.key === "isDangerousDog") {
               petUpdate.is_dangerous_breed = field.detectedValue === "כן" || field.detectedValue === "true";
             } else {
+              // Direct mapping for all other fields (dbField matches column name)
               petUpdate[field.dbField] = field.detectedValue;
+            }
+          } else if (field.table === "profiles") {
+            if (field.key === "ownerName") {
+              const parts = (field.detectedValue as string).split(' ');
+              profileUpdate.first_name = parts[0] || null;
+              profileUpdate.last_name = parts.slice(1).join(' ') || null;
+            } else if (field.key === "ownerPhone") {
+              profileUpdate.phone = field.detectedValue;
+            } else if (field.key === "ownerAddress") {
+              const addrParts = (field.detectedValue as string).split(',').map((s: string) => s.trim());
+              if (addrParts[0]) profileUpdate.street = addrParts[0];
+              if (addrParts[1]) profileUpdate.city = addrParts[1];
+            } else if (field.key === "ownerIdNumber") {
+              profileUpdate.id_number_last4 = field.detectedValue;
+            } else {
+              profileUpdate[field.dbField] = field.detectedValue;
             }
           }
         }

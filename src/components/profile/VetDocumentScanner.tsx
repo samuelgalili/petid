@@ -180,6 +180,10 @@ export const VetDocumentScanner = ({ petId, petName, onScanComplete }: VetDocume
         { key: "licenseRenewalDate", label: "תאריך חידוש", icon: CalendarPlus, currentValue: (pet as any)?.license_renewal_date || null, detectedValue: scanResult.licenseRenewalDate, table: "pets", dbField: "license_renewal_date" },
         { key: "isDangerousDog", label: "כלב מסוכן", icon: Shield, currentValue: formatBool(pet?.is_dangerous_breed), detectedValue: scanResult.isDangerousDog !== null && scanResult.isDangerousDog !== undefined ? (scanResult.isDangerousDog ? "כן" : "לא") : null, table: "pets", dbField: "is_dangerous_breed" },
         { key: "clinicName", label: "מרפאה/וטרינר", icon: Stethoscope, currentValue: pet?.vet_clinic_name || null, detectedValue: scanResult.clinicName, table: "pets", dbField: "vet_clinic_name" },
+        { key: "clinicPhone", label: "טלפון מרפאה", icon: Phone, currentValue: (pet as any)?.vet_clinic_phone || null, detectedValue: scanResult.clinicPhone, table: "pets", dbField: "vet_clinic_phone" },
+        { key: "clinicAddress", label: "כתובת מרפאה", icon: MapPin, currentValue: (pet as any)?.vet_clinic_address || null, detectedValue: scanResult.clinicAddress, table: "pets", dbField: "vet_clinic_address" },
+        { key: "licenseConditions", label: "תנאי רישיון", icon: FileText, currentValue: (pet as any)?.license_conditions || null, detectedValue: scanResult.licenseConditions, table: "pets", dbField: "license_conditions" },
+        { key: "ownerIdNumber", label: "ת.ז. בעלים", icon: IdCard, currentValue: (profile as any)?.id_number_last4 || null, detectedValue: scanResult.ownerIdNumber, table: "profiles", dbField: "id_number_last4" },
       ];
 
       setComparisonFields(fields);
@@ -265,7 +269,9 @@ export const VetDocumentScanner = ({ petId, petName, onScanComplete }: VetDocume
   const hasClinicData = scanResult && (scanResult.clinicName || scanResult.clinicPhone || scanResult.clinicAddress);
   const hasMedicalData = scanResult && (scanResult.vaccines.length > 0 || scanResult.diagnoses.length > 0 || scanResult.medications.length > 0);
   const hasOwnerData = scanResult && (scanResult.ownerName || scanResult.ownerPhone || scanResult.ownerAddress || scanResult.ownerIdNumber);
-  const hasPetIdentity = scanResult && (scanResult.petName || scanResult.petBreed || scanResult.petColor || scanResult.petGender || scanResult.petBirthDate || scanResult.microchipNumber || scanResult.isNeutered !== null);
+  const hasPetIdentity = scanResult && (scanResult.petName || scanResult.petBreed || scanResult.petColor || scanResult.petGender || scanResult.petBirthDate || scanResult.microchipNumber || scanResult.isNeutered !== null || scanResult.petAge !== null);
+  const hasLicenseData = scanResult && (scanResult.licenseNumber || scanResult.licenseExpiryDate || scanResult.licenseRenewalDate || scanResult.licenseConditions);
+  const hasNextTreatment = scanResult && (scanResult.nextTreatmentDate || scanResult.nextTreatmentDescription);
 
   return (
     <>
@@ -407,13 +413,50 @@ export const VetDocumentScanner = ({ petId, petName, onScanComplete }: VetDocume
                     {scanResult.isNeutered !== null && (
                       <DataRow icon={Scissors} label="עיקור/סירוס" value={scanResult.isNeutered ? "כן" : "לא"} />
                     )}
+                    {scanResult.petAge !== null && <DataRow icon={Calendar} label="גיל" value={`${scanResult.petAge}`} />}
                     {scanResult.isDangerousBreed && (
                       <div className="flex items-center gap-1.5 p-1.5 bg-red-500/10 rounded-lg mt-1">
                         <Shield className="w-3 h-3 text-red-500" />
                         <span className="text-[10px] font-medium text-red-600">⚠️ גזע מוגבל — נדרש רישיון</span>
                       </div>
                     )}
-                    {scanResult.licenseConditions && <DataRow icon={FileText} label="תנאי רישיון" value={scanResult.licenseConditions} />}
+                  </div>
+                )}
+
+                {/* License */}
+                {hasLicenseData && (
+                  <div className="p-2.5 rounded-xl border border-teal-500/20 bg-teal-500/5 space-y-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <IdCard className="w-3.5 h-3.5 text-teal-600" strokeWidth={1.5} />
+                      <span className="text-[11px] font-semibold text-teal-700">רישיון</span>
+                    </div>
+                    {scanResult.licenseNumber && <DataRow icon={IdCard} label="מספר רישיון" value={scanResult.licenseNumber} />}
+                    {scanResult.licenseExpiryDate && <DataRow icon={CalendarPlus} label="תוקף" value={formatDate(scanResult.licenseExpiryDate)!} />}
+                    {scanResult.licenseRenewalDate && <DataRow icon={CalendarPlus} label="חידוש" value={formatDate(scanResult.licenseRenewalDate)!} />}
+                    {scanResult.licenseConditions && <DataRow icon={FileText} label="תנאים" value={scanResult.licenseConditions} />}
+                  </div>
+                )}
+
+                {/* Next Treatment */}
+                {hasNextTreatment && (
+                  <div className="p-2.5 rounded-xl border border-rose-500/20 bg-rose-500/5 space-y-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <CalendarPlus className="w-3.5 h-3.5 text-rose-600" strokeWidth={1.5} />
+                      <span className="text-[11px] font-semibold text-rose-700">טיפול הבא</span>
+                    </div>
+                    {scanResult.nextTreatmentDate && <DataRow icon={Calendar} label="תאריך" value={formatDate(scanResult.nextTreatmentDate)!} />}
+                    {scanResult.nextTreatmentDescription && <DataRow icon={Stethoscope} label="תיאור" value={scanResult.nextTreatmentDescription} />}
+                  </div>
+                )}
+
+                {/* Document Category Badge */}
+                {scanResult.documentCategory && scanResult.documentCategory !== 'other' && (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/30 rounded-lg">
+                    <FileText className="w-3 h-3 text-muted-foreground" strokeWidth={1.5} />
+                    <span className="text-[10px] text-muted-foreground">סוג מסמך:</span>
+                    <span className="text-[10px] font-medium text-foreground">
+                      {{ medical_record: 'רשומה רפואית', vaccination: 'חיסון', insurance: 'ביטוח', legal_contract: 'חוזה', prescription: 'מרשם', lab_results: 'בדיקות מעבדה', vet_report: 'דוח וטרינר', license: 'רישיון' }[scanResult.documentCategory] || scanResult.documentCategory}
+                    </span>
                   </div>
                 )}
 
