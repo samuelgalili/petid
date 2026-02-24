@@ -87,6 +87,18 @@ export const DocumentsSheet = ({ isOpen, onClose, pet }: DocumentsSheetProps) =>
         if (error) throw error;
 
         queryClient.invalidateQueries({ queryKey: ['all-pet-documents', pet?.id] });
+        
+        // Also save to main pet_documents for central document library
+        await autoSaveToDocuments({
+          userId: user.id,
+          petId: pet.id,
+          fileUrl: dataUrl,
+          fileName: file.name,
+          fileSize: file.size,
+          documentType: 'general',
+          title: file.name,
+        });
+        
         toast({ title: 'המסמך הועלה בהצלחה' });
         setIsUploading(false);
       };
