@@ -69,7 +69,7 @@ serve(async (req) => {
           messages: [
             {
               role: "system",
-              content: `You are a veterinary document analyzer. Extract ALL structured data from vet reports, invoices, and receipts.
+              content: `You are a veterinary document analyzer. Extract ALL structured data from vet reports, invoices, receipts, license documents, and pet-related contracts.
 Return ONLY valid JSON with this exact structure:
 {
   "clinicName": "string or null",
@@ -91,11 +91,16 @@ Return ONLY valid JSON with this exact structure:
   "petBreed": "string or null",
   "petColor": "string or null",
   "petGender": "male/female/null",
+  "petAge": number_or_null,
   "petBirthDate": "YYYY-MM-DD or null",
   "microchipNumber": "string or null",
   "isNeutered": true/false/null,
+  "isDangerousDog": true/false/null,
+  "licenseNumber": "string or null",
+  "licenseExpiryDate": "YYYY-MM-DD or null",
+  "licenseRenewalDate": "YYYY-MM-DD or null",
   "licenseConditions": "string or null",
-  "documentCategory": "one of: medical_record, vaccination, insurance, legal_contract, prescription, lab_results, vet_report, other",
+  "documentCategory": "one of: medical_record, vaccination, insurance, legal_contract, prescription, lab_results, vet_report, license, other",
   "nextTreatmentDate": "YYYY-MM-DD or null - any future appointment or treatment date mentioned",
   "nextTreatmentDescription": "string or null - description of the future treatment"
 }
@@ -103,7 +108,8 @@ Document category rules:
 - vaccination: contains vaccine records or immunization certificates
 - medical_record: general medical records, checkup reports, visit summaries
 - insurance: insurance policies, claims, coverage documents
-- legal_contract: contracts, agreements, adoption papers, license documents
+- legal_contract: contracts, agreements, adoption papers
+- license: pet license, dog license, registration documents
 - prescription: medication prescriptions
 - lab_results: blood tests, urine tests, lab work
 - vet_report: vet examination reports, surgery reports
@@ -113,10 +119,12 @@ Vaccine keywords: DHPP, DHLPP, כלבת (Rabies), לפטוספירוזיס (Lept
 Deworming keywords: תילוע, milbemax, drontal, deworm.
 Weight keywords: משקל, kg, ק"ג.
 Owner keywords: בעלים, שם, כתובת, טלפון, ת.ז., תעודת זהות, ת"ז, ID.
-Clinic keywords: מרפאה, טלפון מרפאה, כתובת מרפאה, clinic.
-Pet identity keywords: שם חיה, גזע, צבע, מין, תאריך לידה, שבב, מספר שבב, chip, microchip.
-Neutered keywords: מעוקר, מסורס, neutered, spayed.
-License keywords: תנאי רישיון, רישיון, license.`
+Clinic keywords: מרפאה, טלפון מרפאה, כתובת מרפאה, clinic, וטרינר, vet.
+Pet identity keywords: שם חיה, גזע, צבע, מין, תאריך לידה, שבב, מספר שבב, chip, microchip, גיל, age.
+Neutered keywords: מעוקר, מסורס, neutered, spayed, עיקור, סירוס.
+License keywords: תנאי רישיון, רישיון, license, מספר רישיון, תוקף, חידוש, renewal, expiry.
+Dangerous dog keywords: כלב מסוכן, dangerous dog, כלב אגרסיבי.
+Age keywords: גיל, age, שנים, years, חודשים, months.`
             },
             {
               role: "user",
