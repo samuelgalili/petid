@@ -24,6 +24,7 @@ const AuthCallback = () => {
           const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
             if (newSession?.user) {
               subscription.unsubscribe();
+              await syncUserMetadataToProfile(newSession.user);
               await redirectBasedOnProfile(newSession.user.id);
             }
           });
@@ -35,10 +36,37 @@ const AuthCallback = () => {
           return;
         }
 
+        await syncUserMetadataToProfile(session.user);
         await redirectBasedOnProfile(session.user.id);
       } catch (err) {
         setError("שגיאה בתהליך ההתחברות");
         setTimeout(() => navigate("/auth"), 3000);
+      }
+    };
+
+    const syncUserMetadataToProfile = async (user: any) => {
+      try {
+        const meta = user.user_metadata || {};
+        const fullName = meta.full_name || meta.name || "";
+        if (!fullName) return;
+
+        const nameParts = fullName.trim().split(/\s+/);
+        const firstName = nameParts[0] || "";
+        const lastName = nameParts.slice(1).join(" ") || "";
+
+        const updates: Record<string, string> = {};
+        if (firstName) updates.first_name = firstName;
+        if (lastName) updates.last_name = lastName;
+        if (meta.avatar_url) updates.avatar_url = meta.avatar_url;
+
+        if (Object.keys(updates).length > 0) {
+          await supabase
+            .from("profiles")
+            .update(updates)
+            .eq("id", user.id);
+        }
+      } catch {
+        // Non-critical — don't block redirect
       }
     };
 
