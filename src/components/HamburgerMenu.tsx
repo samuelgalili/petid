@@ -434,9 +434,9 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
               {isAdmin && (
                 <>
                   <SectionLabel icon={ShieldCheck}>{s.controlCenter}</SectionLabel>
-                  <MenuItem icon={UserCog} label={s.userManagement} onClick={() => go("/admin/growo")} isRtl={isRtl} accent />
-                  <MenuItem icon={ClipboardCheck} label={s.productApprovals} onClick={() => go("/admin/growo")} isRtl={isRtl} accent />
-                  <MenuItem icon={ScrollText} label={s.systemLogs} onClick={() => go("/admin/growo")} isRtl={isRtl} accent />
+                  <MenuItem icon={UserCog} label={s.userManagement} onClick={() => go("/admin/users")} isRtl={isRtl} accent />
+                  <MenuItem icon={ClipboardCheck} label={s.productApprovals} onClick={() => go("/admin/products")} isRtl={isRtl} accent />
+                  <MenuItem icon={ScrollText} label={s.systemLogs} onClick={() => go("/admin/audit")} isRtl={isRtl} accent />
                   <SectionDivider />
                 </>
               )}
