@@ -309,13 +309,24 @@ const AddPet = () => {
         const confidence = data.confidence || 0;
         const matchedBreed = await matchBreedInDB(data.breed_he || data.breed, petType);
         
-        setFormData(prev => ({ ...prev, breed: matchedBreed }));
+        // Handle mixed breeds from AI
+        if (data.mixed_breeds && Array.isArray(data.mixed_breeds) && data.mixed_breeds.length > 1) {
+          const secondaryBreed = await matchBreedInDB(data.mixed_breeds[1], petType);
+          setFormData(prev => ({ 
+            ...prev, 
+            breed: matchedBreed, 
+            secondary_breed: secondaryBreed,
+            is_mixed: true 
+          }));
+          toast({ title: "🧬 זוהה מעורב!", description: `${matchedBreed} + ${secondaryBreed}` });
+        } else {
+          setFormData(prev => ({ ...prev, breed: matchedBreed }));
+          if (confidence > 0.8) {
+            toast({ title: "✨ גזע זוהה!", description: `${matchedBreed} (${Math.round(confidence * 100)}% וודאות)` });
+          }
+        }
         setBreedSource('ai');
         setBreedConfidence(confidence);
-
-        if (confidence > 0.8) {
-          toast({ title: "✨ גזע זוהה!", description: `${matchedBreed} (${Math.round(confidence * 100)}% וודאות)` });
-        }
       } else {
         setBreedDetectionFailed(true);
       }
