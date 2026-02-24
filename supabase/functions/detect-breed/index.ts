@@ -6,6 +6,74 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const EXPERT_PROMPT = (animalType: string, animalTypeHe: string) => `You are the Lead Veterinary Image Analyst for PetID — target 99% breed accuracy.
+
+## STEP 1 — Image Quality Check
+Before analyzing the breed, evaluate the photo quality:
+- Is the animal clearly visible?
+- Is lighting sufficient?
+- Is the image blurry or obstructed?
+If the photo is too dark, blurry, or the animal is not clearly visible, set "photo_quality" to "poor" and provide guidance in "photo_feedback".
+
+## STEP 2 — Feature Detection Protocol
+Systematically analyze these morphological features:
+1. **Snout**: Length, width, shape (brachycephalic/mesocephalic/dolichocephalic)
+2. **Ears**: Shape (erect/floppy/semi-erect), size, set position
+3. **Coat**: Texture (smooth/wire/curly/double), length, color pattern, markings
+4. **Body**: Size estimate (toy/small/medium/large/giant), proportions, build type
+5. **Eyes**: Shape, color, set
+6. **Tail**: Length, curl, carriage
+7. **Distinctive features**: Any breed-specific markers (e.g., wrinkles, spots, mask)
+
+## STEP 3 — Breed Determination
+Cross-reference all detected features against known breed standards. If mixed breed, identify the dominant breeds.
+
+## STEP 4 — Health Risk Assessment (NRC 2006 + Breed-Specific)
+Once breed is identified, provide the top 3-5 breed-specific health risks based on veterinary literature and NRC 2006 nutritional guidelines.
+
+The user says this is a ${animalType} (${animalTypeHe}).
+
+Response MUST be valid JSON only, no markdown wrapping:
+{
+  "breed": "English breed name (e.g., Golden Retriever)",
+  "breed_he": "Hebrew breed name (e.g., גולדן רטריבר)",
+  "confidence": 0.92,
+  "detectedType": "${animalType}",
+  "is_${animalType}": true,
+  "mixed_breeds": ["breed1", "breed2"] or null,
+  "photo_quality": "good" | "fair" | "poor",
+  "photo_feedback": "string or null — guidance if photo quality is poor/fair",
+  "features_detected": {
+    "snout": "short description",
+    "ears": "short description",
+    "coat": "short description",
+    "body_size": "toy/small/medium/large/giant",
+    "distinctive": "any notable features"
+  },
+  "health_risks": [
+    {"risk": "English name", "risk_he": "Hebrew name", "severity": "high/medium/low", "note": "brief explanation"},
+    ...
+  ],
+  "notes": "any additional observations"
+}
+
+If the animal in the photo is NOT a ${animalType}, set detectedType to the actual animal type and still identify the breed.
+
+If no animal is detected:
+{
+  "breed": null,
+  "breed_he": null,
+  "confidence": 0,
+  "is_${animalType}": false,
+  "detectedType": null,
+  "photo_quality": "good/fair/poor",
+  "photo_feedback": "reason",
+  "features_detected": null,
+  "health_risks": [],
+  "mixed_breeds": null,
+  "notes": "reason why no animal detected"
+}`;
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -50,37 +118,13 @@ Deno.serve(async (req) => {
                 },
                 {
                   type: "text",
-                  text: `Analyze this image. The user says this is a ${animalType} (${animalTypeHe}).
-
-Identify the breed. Response MUST be valid JSON only, no markdown:
-{
-  "breed": "English breed name (e.g., Golden Retriever)",
-  "breed_he": "Hebrew breed name (e.g., גולדן רטריבר)",
-  "confidence": 0.85,
-  "is_${animalType}": true,
-  "detectedType": "${animalType}",
-  "mixed_breeds": ["breed1", "breed2"] or null,
-  "notes": "any additional observations"
-}
-
-If the animal in the photo is NOT a ${animalType}, set detectedType to the actual animal type ("dog" or "cat") and still try to identify the breed.
-
-If no animal is detected:
-{
-  "breed": null,
-  "breed_he": null,
-  "confidence": 0,
-  "is_${animalType}": false,
-  "detectedType": null,
-  "mixed_breeds": null,
-  "notes": "reason why no animal detected"
-}`
+                  text: EXPERT_PROMPT(animalType, animalTypeHe)
                 }
               ]
             }
           ],
-          max_tokens: 500,
-          temperature: 0.3
+          max_tokens: 1000,
+          temperature: 0.2
         }),
       }
     );
@@ -119,7 +163,7 @@ If no animal is detected:
       );
     }
 
-    // Fetch additional breed info from database if breed detected
+    // Enrich with database info if breed detected
     if (detectionResult.breed) {
       try {
         const supabase = createClient(
@@ -131,7 +175,7 @@ If no animal is detected:
 
         const { data: breedInfo } = await supabase
           .from("breed_information")
-          .select("breed_name, breed_name_he, description_he, energy_level, trainability, grooming_freq, kids_friendly, life_expectancy_years, affection_family, size_category")
+          .select("breed_name, breed_name_he, description_he, energy_level, trainability, grooming_freq, kids_friendly, life_expectancy_years, affection_family, size_category, health_issues, health_issues_he")
           .eq("pet_type", detectedAnimalType)
           .or(`breed_name.ilike.%${detectionResult.breed}%,breed_name_he.ilike.%${detectionResult.breed}%`)
           .maybeSingle();
@@ -148,6 +192,10 @@ If no animal is detected:
             affection_family: breedInfo.affection_family,
             size_category: breedInfo.size_category
           };
+          // Merge DB health issues with AI-detected risks
+          if (breedInfo.health_issues_he || breedInfo.health_issues) {
+            detectionResult.db_health_issues = breedInfo.health_issues_he || breedInfo.health_issues;
+          }
           detectionResult.found_in_database = true;
         } else {
           detectionResult.found_in_database = false;
