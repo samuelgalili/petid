@@ -29,7 +29,8 @@ import {
   DashboardPriceDistribution,
   DashboardCategoryChart,
   DashboardStats,
-  DashboardSalesAnalytics
+  DashboardSalesAnalytics,
+  DashboardInventoryIntel
 } from "@/components/admin/dashboard";
 
 interface OrderStats {
