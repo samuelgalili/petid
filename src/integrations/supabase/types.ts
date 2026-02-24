@@ -700,6 +700,39 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_health_checks: {
+        Row: {
+          bot_slug: string
+          check_type: string
+          checked_at: string
+          id: string
+          message: string | null
+          metadata: Json | null
+          response_time_ms: number | null
+          status: string
+        }
+        Insert: {
+          bot_slug: string
+          check_type: string
+          checked_at?: string
+          id?: string
+          message?: string | null
+          metadata?: Json | null
+          response_time_ms?: number | null
+          status?: string
+        }
+        Update: {
+          bot_slug?: string
+          check_type?: string
+          checked_at?: string
+          id?: string
+          message?: string | null
+          metadata?: Json | null
+          response_time_ms?: number | null
+          status?: string
+        }
+        Relationships: []
+      }
       agent_messages: {
         Row: {
           bot_id: string | null
@@ -819,6 +852,39 @@ export type Database = {
           },
         ]
       }
+      agent_test_runs: {
+        Row: {
+          completed_at: string | null
+          id: string
+          scenario: string
+          started_at: string
+          status: string
+          steps: Json
+          test_name: string
+          triggered_by: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          id?: string
+          scenario: string
+          started_at?: string
+          status?: string
+          steps?: Json
+          test_name: string
+          triggered_by?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          id?: string
+          scenario?: string
+          started_at?: string
+          status?: string
+          steps?: Json
+          test_name?: string
+          triggered_by?: string | null
+        }
+        Relationships: []
+      }
       api_keys: {
         Row: {
           created_at: string
@@ -904,9 +970,12 @@ export type Database = {
           config: Json | null
           created_at: string | null
           description: string | null
+          health_status: string | null
           icon: string | null
           id: string
           is_active: boolean | null
+          last_error: string | null
+          last_health_check: string | null
           last_run_at: string | null
           name: string
           run_count: number | null
@@ -919,9 +988,12 @@ export type Database = {
           config?: Json | null
           created_at?: string | null
           description?: string | null
+          health_status?: string | null
           icon?: string | null
           id?: string
           is_active?: boolean | null
+          last_error?: string | null
+          last_health_check?: string | null
           last_run_at?: string | null
           name: string
           run_count?: number | null
@@ -934,9 +1006,12 @@ export type Database = {
           config?: Json | null
           created_at?: string | null
           description?: string | null
+          health_status?: string | null
           icon?: string | null
           id?: string
           is_active?: boolean | null
+          last_error?: string | null
+          last_health_check?: string | null
           last_run_at?: string | null
           name?: string
           run_count?: number | null
@@ -3022,6 +3097,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      data_validation_rules: {
+        Row: {
+          created_at: string
+          description: string | null
+          field_name: string
+          id: string
+          is_active: boolean
+          rule_config: Json
+          rule_type: string
+          table_name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          field_name: string
+          id?: string
+          is_active?: boolean
+          rule_config: Json
+          rule_type: string
+          table_name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          field_name?: string
+          id?: string
+          is_active?: boolean
+          rule_config?: Json
+          rule_type?: string
+          table_name?: string
+        }
+        Relationships: []
       }
       dietary_categories: {
         Row: {
