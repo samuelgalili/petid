@@ -581,7 +581,12 @@ export default function Documents() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="vaccination">💉 אישור חיסון</SelectItem>
-                      <SelectItem value="medical">🏥 מסמך רפואי</SelectItem>
+                      <SelectItem value="medical_record">🏥 רשומה רפואית</SelectItem>
+                      <SelectItem value="vet_report">🩺 דוח וטרינר</SelectItem>
+                      <SelectItem value="prescription">💊 מרשם</SelectItem>
+                      <SelectItem value="lab_results">🔬 בדיקות מעבדה</SelectItem>
+                      <SelectItem value="insurance">🛡️ ביטוח</SelectItem>
+                      <SelectItem value="legal_contract">📋 חוזה/הסכם</SelectItem>
                       <SelectItem value="other">📎 אחר</SelectItem>
                     </SelectContent>
                   </Select>
