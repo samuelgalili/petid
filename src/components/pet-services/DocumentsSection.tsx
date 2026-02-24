@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FileText, Upload, Trash2, Download, Calendar, ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { autoSaveToDocuments } from '@/lib/autoSaveUpload';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';

@@ -7,6 +7,7 @@ import { ServiceBottomSheet } from './ServiceBottomSheet';
 import { FileText, Upload, Trash2, Eye, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { autoSaveToDocuments } from '@/lib/autoSaveUpload';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
