@@ -524,7 +524,7 @@ export const CommentsSheet = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[99] bg-black/60"
+        className="fixed inset-0 z-[10001] bg-black/60"
         onClick={onClose}
       />
 
@@ -534,7 +534,7 @@ export const CommentsSheet = ({
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 30, stiffness: 300 }}
-        className="fixed inset-x-0 bottom-0 z-[100] flex flex-col bg-card rounded-t-[28px]"
+        className="fixed inset-x-0 bottom-0 z-[10002] flex flex-col bg-card rounded-t-[28px]"
         style={{ height: "70vh" }}
       >
         {/* Handle */}
@@ -618,7 +618,7 @@ export const CommentsSheet = ({
         </div>
 
         {/* ─── Input Area ─── */}
-        <div className="flex-shrink-0 border-t border-border/50 bg-card px-3 pt-2 pb-20">
+        <div className="flex-shrink-0 border-t border-border/50 bg-card px-3 pt-2 pb-4">
           {/* Reply indicator */}
           <AnimatePresence>
             {replyingTo && (
