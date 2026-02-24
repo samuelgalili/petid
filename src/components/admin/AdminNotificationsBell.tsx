@@ -31,7 +31,7 @@ export const AdminNotificationsBell = () => {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80 p-0" dir="rtl">
+      <DropdownMenuContent align="end" className="w-80 p-0" style={{ direction: 'rtl' }}>
         <div className="flex items-center justify-between p-4 border-b">
           <DropdownMenuLabel className="p-0">התראות ({unreadCount})</DropdownMenuLabel>
           {unreadCount > 0 && (
