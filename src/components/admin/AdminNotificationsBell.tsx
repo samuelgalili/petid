@@ -8,12 +8,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAdminNotifications } from "@/hooks/useAdminNotifications";
+import { useAdminNotifications, AdminAlert } from "@/hooks/useAdminNotifications";
 import { useNavigate } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
 import { he } from "date-fns/locale";
+
+const getLinkByCategory = (category: string) => {
+  switch (category) {
+    case 'insurance': return '/admin/pet-services';
+    case 'moderation': return '/admin/reports';
+    case 'adoption': return '/admin/adoption';
+    case 'sales': return '/admin/orders';
+    default: return '/admin/notifications';
+  }
+};
 
 export const AdminNotificationsBell = () => {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useAdminNotifications();
@@ -59,20 +68,20 @@ export const AdminNotificationsBell = () => {
                 <DropdownMenuItem
                   key={notification.id}
                   className={`flex flex-col items-start gap-1 p-3 mx-1 my-0.5 rounded-lg cursor-pointer ${
-                    !notification.read ? 'bg-primary/5' : ''
+                    !notification.is_read ? 'bg-primary/5' : ''
                   }`}
                   onClick={() => {
                     markAsRead(notification.id);
-                    navigate(notification.link);
+                    navigate(getLinkByCategory(notification.category));
                   }}
                 >
                   <div className="flex w-full justify-between items-start gap-2">
                     <span className="font-medium text-sm">{notification.title}</span>
-                    {!notification.read && <span className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1.5" />}
+                    {!notification.is_read && <span className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1.5" />}
                   </div>
-                  <p className="text-xs text-muted-foreground line-clamp-2">{notification.message}</p>
+                  <p className="text-xs text-muted-foreground line-clamp-2">{notification.description}</p>
                   <span className="text-[10px] text-muted-foreground/60 mt-1">
-                    {formatDistanceToNow(notification.timestamp, { addSuffix: true, locale: he })}
+                    {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true, locale: he })}
                   </span>
                 </DropdownMenuItem>
               ))}
