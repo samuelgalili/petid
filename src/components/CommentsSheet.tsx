@@ -569,7 +569,7 @@ export const CommentsSheet = ({
           </AnimatePresence>
 
           {/* Comments List */}
-          <div className="flex-1 overflow-y-auto px-3">
+          <div className="flex-1 min-h-0 overflow-y-auto px-3">
             <AnimatePresence mode="wait">
               {loading ? (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center justify-center py-10">
