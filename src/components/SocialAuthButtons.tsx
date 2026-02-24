@@ -11,13 +11,15 @@ export const SocialAuthButtons = ({ redirectTo = "/" }: SocialAuthButtonsProps) 
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  const callbackUrl = `${window.location.origin}/auth/callback`;
+
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}${redirectTo}`,
+          redirectTo: callbackUrl,
         },
       });
 
@@ -45,7 +47,7 @@ export const SocialAuthButtons = ({ redirectTo = "/" }: SocialAuthButtonsProps) 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "facebook",
         options: {
-          redirectTo: `${window.location.origin}${redirectTo}`,
+          redirectTo: callbackUrl,
         },
       });
 
@@ -73,7 +75,7 @@ export const SocialAuthButtons = ({ redirectTo = "/" }: SocialAuthButtonsProps) 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "apple",
         options: {
-          redirectTo: `${window.location.origin}${redirectTo}`,
+          redirectTo: callbackUrl,
         },
       });
       if (error) {
