@@ -224,10 +224,13 @@ const AddPet = () => {
     }
   };
 
+  const [breedDetectionFailed, setBreedDetectionFailed] = useState(false);
+
   const detectBreed = async (base64Image: string) => {
     if (!petType) return;
     
     setBreedDetecting(true);
+    setBreedDetectionFailed(false);
     try {
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/detect-breed`, {
         method: 'POST',
@@ -241,8 +244,20 @@ const AddPet = () => {
         })
       });
 
+      if (response.status === 429) {
+        toast({ title: "נסה שוב מאוחר יותר", description: "יותר מדי בקשות, אנא המתן.", variant: "destructive" });
+        setBreedDetectionFailed(true);
+        return;
+      }
+
       const data = await response.json();
       
+      if (data.error) {
+        console.error('Breed detection error:', data.error);
+        setBreedDetectionFailed(true);
+        return;
+      }
+
       if (data.breed && data.breed !== "Unknown Breed") {
         // Check if detected animal type mismatches user selection
         if (data.detectedType && data.detectedType !== petType) {
@@ -251,16 +266,29 @@ const AddPet = () => {
             breed: data.breed,
             confidence: data.confidence || 0
           });
-          return; // Wait for user decision
+          return;
         }
         
-        const matchedBreed = await matchBreedInDB(data.breed, petType);
-        setFormData(prev => ({ ...prev, breed: matchedBreed }));
-        setBreedConfidence(data.confidence || null);
-        setBreedSource('ai');
+        const confidence = data.confidence || 0;
+        const matchedBreed = await matchBreedInDB(data.breed_he || data.breed, petType);
+        
+        // Only auto-fill if confidence > 80%
+        if (confidence > 0.8) {
+          setFormData(prev => ({ ...prev, breed: matchedBreed }));
+          setBreedSource('ai');
+        } else {
+          // Still show detection but let user confirm
+          setFormData(prev => ({ ...prev, breed: matchedBreed }));
+          setBreedSource('ai');
+        }
+        setBreedConfidence(confidence);
+      } else {
+        // No breed detected
+        setBreedDetectionFailed(true);
       }
     } catch (error) {
       console.error('Error detecting breed:', error);
+      setBreedDetectionFailed(true);
     } finally {
       setBreedDetecting(false);
     }
