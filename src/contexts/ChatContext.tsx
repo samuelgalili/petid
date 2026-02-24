@@ -43,6 +43,14 @@ export interface Message {
   showAdoptionTraits?: boolean;
   showAdoptionRequirements?: boolean;
   suggestions?: string[];
+  // Omni-Bot Action Cards
+  ocrApproval?: { petName: string; changes: Record<string, string> };
+  quickCheckout?: { productName: string; price: number; imageUrl?: string; productId?: string };
+  insuranceLead?: { petName: string; breed?: string };
+  addressUpdate?: { newAddress: string; petName: string };
+  nrcPlan?: { petName: string; weight?: number; dailyKcal?: number; recommendations: string[] };
+  pendingApproval?: { title: string; queueId: string };
+  botSource?: string; // which bot generated this message
 }
 
 export interface Pet {
