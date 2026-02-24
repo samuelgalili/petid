@@ -28,7 +28,8 @@ import {
   DashboardProductTable,
   DashboardPriceDistribution,
   DashboardCategoryChart,
-  DashboardStats
+  DashboardStats,
+  DashboardSalesAnalytics
 } from "@/components/admin/dashboard";
 
 interface OrderStats {
@@ -242,6 +243,9 @@ const AdminDashboard = () => {
                   totalRevenue={stats.totalRevenue || 3901}
                   revenueChange={revenueChange || 19}
                 />
+
+                {/* Sales Analytics */}
+                <DashboardSalesAnalytics />
 
                 {/* Charts Row */}
                 <div className="grid md:grid-cols-2 gap-4">

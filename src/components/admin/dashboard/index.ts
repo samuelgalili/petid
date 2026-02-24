@@ -3,3 +3,4 @@ export * from './DashboardProductTable';
 export * from './DashboardCharts';
 export * from './DashboardStats';
 export * from './DashboardSidebar';
+export * from './DashboardSalesAnalytics';
