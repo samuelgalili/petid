@@ -152,6 +152,7 @@ License keywords: תנאי רישיון, רישיון, license.`
           ownerName: null, ownerAddress: null, ownerCity: null, ownerPhone: null, ownerIdNumber: null,
           petName: null, petBreed: null, petColor: null, petGender: null,
           petBirthDate: null, microchipNumber: null, isNeutered: null, licenseConditions: null,
+          documentCategory: 'other', nextTreatmentDate: null, nextTreatmentDescription: null,
         };
       }
 
