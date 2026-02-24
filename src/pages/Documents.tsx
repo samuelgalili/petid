@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload, FileText, Search, X, ArrowUpDown, Syringe, Stethoscope, File, Calendar, FolderOpen, Plus, Filter } from "lucide-react";
+import { Loader2, Upload, FileText, Search, X, ArrowUpDown, Syringe, Stethoscope, File, Calendar, FolderOpen, Plus, Filter, Sparkles } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { SwipeableDocumentCard } from "@/components/SwipeableDocumentCard";
 import { Card } from "@/components/ui/card";
@@ -414,38 +414,24 @@ export default function Documents() {
             animate={{ opacity: 1, y: 0 }}
             className="grid grid-cols-4 gap-2 mb-5"
           >
-            <Card 
-              className={`p-3 text-center cursor-pointer transition-all ${selectedDocType === 'all' ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-muted/50'}`}
-              onClick={() => setSelectedDocType('all')}
-            >
-              <FolderOpen className="w-5 h-5 mx-auto mb-1 text-primary" />
-              <p className="text-lg font-bold">{documentStats.total}</p>
-              <p className="text-[10px] text-muted-foreground">הכל</p>
-            </Card>
-            <Card 
-              className={`p-3 text-center cursor-pointer transition-all ${selectedDocType === 'vaccination' ? 'ring-2 ring-success bg-success/5' : 'hover:bg-muted/50'}`}
-              onClick={() => setSelectedDocType(selectedDocType === 'vaccination' ? 'all' : 'vaccination')}
-            >
-              <Syringe className="w-5 h-5 mx-auto mb-1 text-success" />
-              <p className="text-lg font-bold text-success">{documentStats.vaccination}</p>
-              <p className="text-[10px] text-muted-foreground">חיסונים</p>
-            </Card>
-            <Card 
-              className={`p-3 text-center cursor-pointer transition-all ${selectedDocType === 'medical' ? 'ring-2 ring-info bg-info/5' : 'hover:bg-muted/50'}`}
-              onClick={() => setSelectedDocType(selectedDocType === 'medical' ? 'all' : 'medical')}
-            >
-              <Stethoscope className="w-5 h-5 mx-auto mb-1 text-info" />
-              <p className="text-lg font-bold text-info">{documentStats.medical}</p>
-              <p className="text-[10px] text-muted-foreground">רפואי</p>
-            </Card>
-            <Card 
-              className={`p-3 text-center cursor-pointer transition-all ${selectedDocType === 'other' ? 'ring-2 ring-muted-foreground bg-muted' : 'hover:bg-muted/50'}`}
-              onClick={() => setSelectedDocType(selectedDocType === 'other' ? 'all' : 'other')}
-            >
-              <File className="w-5 h-5 mx-auto mb-1 text-muted-foreground" />
-              <p className="text-lg font-bold">{documentStats.other}</p>
-              <p className="text-[10px] text-muted-foreground">אחר</p>
-            </Card>
+            {[
+              { type: 'all', icon: FolderOpen, count: documentStats.total, label: 'הכל', activeClass: 'ring-primary bg-primary/10' },
+              { type: 'vaccination', icon: Syringe, count: documentStats.vaccination, label: 'חיסונים', activeClass: 'ring-emerald-500 bg-emerald-500/10' },
+              { type: 'medical', icon: Stethoscope, count: documentStats.medical, label: 'רפואי', activeClass: 'ring-blue-500 bg-blue-500/10' },
+              { type: 'other', icon: File, count: documentStats.other, label: 'אחר', activeClass: 'ring-muted-foreground bg-muted' },
+            ].map(({ type, icon: Icon, count, label, activeClass }) => (
+              <Card
+                key={type}
+                className={`p-3 text-center cursor-pointer transition-all duration-200 border-border/30 hover:scale-[1.03] active:scale-95 ${
+                  selectedDocType === type ? `ring-2 ${activeClass}` : 'bg-card hover:bg-muted/40'
+                }`}
+                onClick={() => setSelectedDocType(selectedDocType === type && type !== 'all' ? 'all' : type)}
+              >
+                <Icon className="w-5 h-5 mx-auto mb-1.5 text-muted-foreground" strokeWidth={1.5} />
+                <p className="text-lg font-bold text-foreground">{count}</p>
+                <p className="text-[10px] text-muted-foreground font-medium">{label}</p>
+              </Card>
+            ))}
           </motion.div>
 
           {/* Search & Filter Row */}
@@ -532,9 +518,9 @@ export default function Documents() {
           >
             <Button
               onClick={() => setIsDialogOpen(true)}
-              className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-sm shadow-md transition-all gap-2"
+              className="w-full h-12 rounded-2xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-semibold text-sm shadow-lg shadow-primary/20 transition-all duration-300 gap-2 hover:scale-[1.01] active:scale-[0.99]"
             >
-              <Plus className="w-4 h-4" />
+              <Sparkles className="w-4 h-4" strokeWidth={1.5} />
               העלאת מסמך חדש
             </Button>
           </motion.div>
@@ -700,43 +686,35 @@ export default function Documents() {
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex flex-col items-center justify-center py-16"
+              className="flex flex-col items-center justify-center py-20"
             >
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-accent p-[3px] animate-spin">
-                <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
-                  <FileText className="w-7 h-7 text-primary" />
-                </div>
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 animate-pulse">
+                <FileText className="w-7 h-7 text-primary" strokeWidth={1.5} />
               </div>
-              <p className="mt-4 text-muted-foreground text-sm">טוען מסמכים...</p>
+              <p className="text-muted-foreground text-sm font-medium">טוען מסמכים...</p>
             </motion.div>
           ) : filteredDocuments.length === 0 ? (
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="flex flex-col items-center justify-center py-16 px-4"
+              className="flex flex-col items-center justify-center py-20 px-4"
             >
-              <div className="w-28 h-28 rounded-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center mb-5">
-                <FileText className="w-12 h-12 text-muted-foreground/50" />
+              <div className="w-20 h-20 rounded-3xl bg-muted/50 flex items-center justify-center mb-5">
+                <FileText className="w-10 h-10 text-muted-foreground/40" strokeWidth={1.5} />
               </div>
-              <h3 className="text-xl font-bold text-foreground mb-2">אין מסמכים</h3>
-              <p className="text-muted-foreground text-sm text-center max-w-[260px] mb-6">
+              <h3 className="text-lg font-bold text-foreground mb-1.5">אין מסמכים</h3>
+              <p className="text-muted-foreground text-sm text-center max-w-[240px] mb-6">
                 {documents.length === 0
-                  ? "שמור את המסמכים החשובים של חיית המחמד שלך במקום אחד"
+                  ? "שמור את המסמכים החשובים של חיית המחמד שלך"
                   : "לא נמצאו מסמכים התואמים לחיפוש"}
               </p>
               {documents.length === 0 && (
                 <Button 
                   onClick={() => setIsDialogOpen(true)}
-                  variant="outline"
-                  className="group relative rounded-full px-8 h-12 text-base font-bold bg-transparent border-2 border-transparent overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-lg"
-                  style={{
-                    background: 'linear-gradient(var(--background), var(--background)) padding-box, linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--primary))) border-box',
-                  }}
+                  className="rounded-2xl px-8 h-11 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md gap-2"
                 >
-                  <span className="relative z-10 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent bg-[length:200%_auto] animate-[shimmer_3s_ease-in-out_infinite] flex items-center gap-2">
-                    <Upload className="w-5 h-5 text-primary group-hover:text-accent transition-colors" />
-                    העלה מסמך ראשון
-                  </span>
+                  <Upload className="w-4 h-4" strokeWidth={1.5} />
+                  העלה מסמך ראשון
                 </Button>
               )}
             </motion.div>
