@@ -114,13 +114,27 @@ const EditProfile = () => {
     if (!validateForm()) return;
 
     setLoading(true);
+    // Check if phone was changed and not verified
+    const phoneChanged = whatsappNumber !== originalPhone && whatsappNumber !== "";
+    if (phoneChanged && !phoneVerified) {
+      if (!isValidIsraeliPhone(whatsappNumber)) {
+        setPhoneError("מספר טלפון לא תקין");
+        setLoading(false);
+        return;
+      }
+      setShowPhoneOtp(true);
+      setLoading(false);
+      return;
+    }
+
     try {
+      const phoneToSave = phoneVerified ? toE164(whatsappNumber) : (whatsappNumber || null);
       const { error } = await supabase
         .from("profiles")
         .update({
           full_name: fullName.trim(),
           bio: bio,
-          whatsapp_number: whatsappNumber || null,
+          whatsapp_number: phoneToSave,
         } as any)
         .eq("id", user.id);
 
