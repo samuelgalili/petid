@@ -521,7 +521,7 @@ export const CommentsSheet = ({
       <Sheet open={isOpen} onOpenChange={onClose}>
         <SheetContent
           side="bottom"
-          className="h-[70vh] rounded-t-[28px] bg-card border-none p-0 flex flex-col z-[100]"
+          className="h-[70vh] max-h-[70vh] rounded-t-[28px] bg-card border-none p-0 flex flex-col z-[100] overflow-hidden"
         >
           {/* Handle + Title */}
           <div className="flex flex-col items-center pt-2.5 pb-1">
@@ -604,7 +604,7 @@ export const CommentsSheet = ({
           </div>
 
           {/* ─── Sticky Bottom Input ─── */}
-          <div className="sticky bottom-0 border-t border-border/50 bg-card px-3 pt-2 pb-5">
+          <div className="flex-shrink-0 border-t border-border/50 bg-card px-3 pt-2 pb-3">
             {/* Reply indicator */}
             <AnimatePresence>
               {replyingTo && (
