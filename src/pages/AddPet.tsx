@@ -229,7 +229,7 @@ const AddPet = () => {
     
     setBreedDetecting(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/detect-pet-breed`, {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/detect-breed`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
