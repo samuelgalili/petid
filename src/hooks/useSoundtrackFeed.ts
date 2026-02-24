@@ -177,8 +177,8 @@ export function useSoundtrackFeed() {
         return;
       }
 
-      const userIds = [...new Set(postsData.map((p) => p.user_id))];
-      const postIds = postsData.map((p) => p.id);
+      const userIds = [...new Set((postsData as any[]).map((p: any) => p.user_id))] as string[];
+      const postIds = (postsData as any[]).map((p: any) => p.id) as string[];
 
       // Parallel fetches
       const [profilesRes, likesCountRes, commentsCountRes, ...userDataRes] = await Promise.all([
