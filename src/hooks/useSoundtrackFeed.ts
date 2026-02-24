@@ -237,19 +237,31 @@ export function useSoundtrackFeed() {
         };
       };
 
-      // ── FOLLOWING FEED: Chronological, no commerce ──
-      const followingFiltered = postsData
-        .filter((p) => followingUserIds.includes(p.user_id))
-        .map((p) => enrichPost(p));
+      // ── FOLLOWING FEED: Chronological, lost pets pinned to top ──
+      const followingFiltered = (postsData as any[])
+        .filter((p: any) => followingUserIds.includes(p.user_id))
+        .map((p: any) => enrichPost(p))
+        .sort((a: any, b: any) => {
+          // Pin lost pet posts to top
+          const aLost = a.post_type === 'lost_pet' && a.is_pinned ? 1 : 0;
+          const bLost = b.post_type === 'lost_pet' && b.is_pinned ? 1 : 0;
+          if (aLost !== bLost) return bLost - aLost;
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
       setFollowingPosts(followingFiltered);
 
-      // ── FOR YOU FEED: AI-ranked with product spotlights ──
-      const discoverEnriched = postsData.map((p) => enrichPost(p, "בשבילך"));
+      // ── FOR YOU FEED: AI-ranked with product spotlights, lost pets pinned ──
+      const discoverEnriched = (postsData as any[]).map((p: any) => enrichPost(p, "בשבילך"));
 
-      // Pet-aware ranking
+      // Pet-aware ranking with lost pet priority
       const petConditions = [...(activePet?.medical_conditions || [])];
       if (activePet) {
-        discoverEnriched.sort((a, b) => {
+        discoverEnriched.sort((a: any, b: any) => {
+          // Lost pet posts always float to top
+          const aLost = a.post_type === 'lost_pet' && a.is_pinned ? 1 : 0;
+          const bLost = b.post_type === 'lost_pet' && b.is_pinned ? 1 : 0;
+          if (aLost !== bLost) return bLost - aLost;
+
           const scoreA = scorePostForPet(a.caption, activePet.pet_type, activePet.breed, activePet.ageWeeks ?? null, petConditions);
           const scoreB = scorePostForPet(b.caption, activePet.pet_type, activePet.breed, activePet.ageWeeks ?? null, petConditions);
           if (scoreA !== scoreB) return scoreB - scoreA;
