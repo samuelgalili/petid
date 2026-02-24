@@ -364,38 +364,27 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
       <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleCameraCapture} />
       <input ref={fileInputRef} type="file" accept="image/*,.pdf" className="hidden" onChange={handleFileUpload} />
 
-      {/* FAB */}
-      <AnimatePresence>
-        {step === 'closed' && (
-          <motion.button
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            exit={{ scale: 0 }}
-            whileTap={{ scale: 0.9 }}
+      {/* Inline trigger card (no floating FAB — global FAB is in BottomNav) */}
+      {step === 'closed' && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mx-4 mb-3"
+        >
+          <button
             onClick={() => setStep('choose')}
-            className="fixed z-[10000] w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center right-4"
-            style={{ bottom: `calc(72px + env(safe-area-inset-bottom))`, boxShadow: '0 4px 16px hsl(var(--primary) / 0.25)' }}
+            className="w-full p-3.5 rounded-2xl border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors flex items-center gap-3"
           >
-            <Plus className="w-5 h-5" strokeWidth={2} />
-          </motion.button>
-        )}
-      </AnimatePresence>
-
-      {/* FAB Label */}
-      <AnimatePresence>
-        {step === 'closed' && (
-          <motion.div
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ delay: 0.2 }}
-            className="fixed z-[10000] right-[4.25rem] bg-card border border-border/40 rounded-xl px-3 py-1.5 shadow-md pointer-events-none"
-            style={{ bottom: `calc(80px + env(safe-area-inset-bottom))` }}
-          >
-            <span className="text-[10px] font-medium text-foreground whitespace-nowrap">הוסף ביקור/חיסון</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <Plus className="w-5 h-5 text-primary" strokeWidth={1.5} />
+            </div>
+            <div className="text-right flex-1">
+              <p className="text-sm font-semibold text-foreground">הוסף ביקור / חיסון</p>
+              <p className="text-[10px] text-muted-foreground">סריקה, העלאה או הזנה ידנית</p>
+            </div>
+          </button>
+        </motion.div>
+      )}
 
       {/* Modal */}
       <AnimatePresence>
