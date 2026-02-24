@@ -209,7 +209,7 @@ const CommentItem = ({
             {isOwner && !comment.is_ai && (
               <button
                 onClick={() => onDelete(comment.id)}
-                className="text-muted-foreground text-[10px] font-semibold hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
+                className="text-muted-foreground text-[10px] font-semibold hover:text-destructive transition-colors"
               >
                 <Trash2 className="w-3 h-3" />
               </button>
