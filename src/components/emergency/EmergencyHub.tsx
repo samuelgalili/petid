@@ -1,16 +1,18 @@
 /**
  * EmergencyHub - Full emergency sheet with vet contacts, 
- * first-aid categories, and medical ID sharing
+ * first-aid categories, lost pet alert, and memorial support
  */
 
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Phone, MapPin, Loader2, Stethoscope, AlertTriangle } from "lucide-react";
+import { Phone, Loader2, Stethoscope, AlertTriangle, Search, HeartOff, Megaphone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { EmergencyCategory } from "./EmergencyCategory";
 import { MedicalIDShare } from "./MedicalIDShare";
+import { toast } from "sonner";
 
 interface EmergencyHubProps {
   open: boolean;
@@ -24,6 +26,8 @@ interface ActivePet {
   breed: string | null;
   vet_name: string | null;
   vet_clinic: string | null;
+  vet_phone: string | null;
+  vet_clinic_phone: string | null;
 }
 
 const EMERGENCY_CATEGORIES = [
@@ -68,6 +72,8 @@ const EMERGENCY_CATEGORIES = [
 export const EmergencyHub = ({ open, onOpenChange }: EmergencyHubProps) => {
   const [activePet, setActivePet] = useState<ActivePet | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lostLoading, setLostLoading] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!open) return;
@@ -78,7 +84,7 @@ export const EmergencyHub = ({ open, onOpenChange }: EmergencyHubProps) => {
 
       const { data: pets } = await (supabase as any)
         .from("pets")
-        .select("id, name, type, breed, vet_name, vet_clinic")
+        .select("id, name, type, breed, vet_name, vet_clinic, vet_phone, vet_clinic_phone")
         .eq("owner_id", user.id)
         .eq("archived", false)
         .order("created_at", { ascending: false })
@@ -91,6 +97,62 @@ export const EmergencyHub = ({ open, onOpenChange }: EmergencyHubProps) => {
     };
     fetchActivePet();
   }, [open]);
+
+  const vetPhone = activePet?.vet_clinic_phone || activePet?.vet_phone;
+
+  const handleLostPet = async () => {
+    if (!activePet) return;
+    setLostLoading(true);
+    try {
+      // Mark pet as lost
+      await (supabase as any)
+        .from("pets")
+        .update({ is_lost: true })
+        .eq("id", activePet.id);
+
+      // Get owner profile for location
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user");
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, city, address")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      // Create a lost pet post
+      const postContent = `🚨 אבד/ה! ${activePet.name} (${activePet.breed || activePet.type === 'dog' ? 'כלב' : 'חתול'}) נעלמ/ה מהאזור${profile?.city ? ` של ${profile.city}` : ''}. אם ראיתם — אנא צרו קשר! 🙏`;
+      
+      await (supabase as any)
+        .from("posts")
+        .insert({
+          user_id: user.id,
+          content: postContent,
+          pet_id: activePet.id,
+          post_type: "lost_pet",
+        });
+
+      toast.success(`פורסם פוסט אבדה עבור ${activePet.name} ונשלח פינג לאזור`);
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Lost pet error:", error);
+      toast.error("שגיאה בפרסום, נסה שוב");
+    } finally {
+      setLostLoading(false);
+    }
+  };
+
+  const handleDeceased = () => {
+    onOpenChange(false);
+    navigate("/chat");
+    // Small delay to ensure navigation completes
+    setTimeout(() => {
+      // The chat will handle the message
+      window.dispatchEvent(new CustomEvent("petid:chat-inject", {
+        detail: { message: `${activePet?.name || 'חיית המחמד שלי'} נפטר/ה. אני צריך/ה עזרה בתיאום קבורה.` }
+      }));
+    }, 500);
+  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -123,18 +185,70 @@ export const EmergencyHub = ({ open, onOpenChange }: EmergencyHubProps) => {
               </div>
             ) : (
               <>
-                {/* Primary: Emergency Call */}
+                {/* === TOP 3 CRITICAL ACTIONS === */}
+                <div className="space-y-2">
+                  {/* Lost Pet */}
+                  <Button
+                    size="lg"
+                    variant="destructive"
+                    className="w-full h-14 text-base font-bold gap-3 rounded-2xl shadow-lg shadow-destructive/30"
+                    onClick={handleLostPet}
+                    disabled={lostLoading}
+                  >
+                    {lostLoading ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Search className="w-5 h-5" strokeWidth={2.5} />
+                    )}
+                    🚨 אבד/ה — פרסם והתריע באזור
+                  </Button>
+
+                  {/* Quick Vet Dial */}
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="w-full h-14 text-base font-bold gap-3 rounded-2xl border-primary/30 text-primary"
+                    onClick={() => {
+                      if (vetPhone) {
+                        window.location.href = `tel:${vetPhone}`;
+                      } else {
+                        toast.info("לא נמצא טלפון וטרינר. סרוק מסמך וטרינרי כדי לשמור את המספר.");
+                      }
+                    }}
+                  >
+                    <Stethoscope className="w-5 h-5" strokeWidth={2} />
+                    📞 חיוג מהיר לווטרינר
+                    {vetPhone && (
+                      <span className="text-xs font-normal text-muted-foreground mr-1">
+                        ({activePet?.vet_clinic || activePet?.vet_name || vetPhone})
+                      </span>
+                    )}
+                  </Button>
+
+                  {/* Deceased */}
+                  <Button
+                    size="lg"
+                    variant="ghost"
+                    className="w-full h-14 text-base font-semibold gap-3 rounded-2xl text-muted-foreground hover:text-foreground border border-border/50"
+                    onClick={handleDeceased}
+                  >
+                    <HeartOff className="w-5 h-5" strokeWidth={1.5} />
+                    🕊️ נפטר/ה — תיאום קבורה
+                  </Button>
+                </div>
+
+                {/* National Emergency */}
                 <Button
                   size="lg"
                   variant="destructive"
-                  className="w-full h-14 text-base font-bold gap-3 rounded-2xl shadow-lg shadow-destructive/30"
+                  className="w-full h-12 text-sm font-bold gap-3 rounded-2xl opacity-80"
                   onClick={() => (window.location.href = "tel:*3939")}
                 >
-                  <Phone className="w-5 h-5" strokeWidth={2.5} />
+                  <Phone className="w-4 h-4" strokeWidth={2.5} />
                   חירום ארצי — *3939
                 </Button>
 
-                {/* Active Vet Quick-Dial */}
+                {/* Vet Info Card */}
                 {activePet?.vet_clinic && (
                   <div className="bg-card border border-border/30 rounded-2xl p-4">
                     <div className="flex items-center gap-3">
@@ -150,18 +264,17 @@ export const EmergencyHub = ({ open, onOpenChange }: EmergencyHubProps) => {
                           {activePet.vet_name ? ` · ד"ר ${activePet.vet_name}` : ""}
                         </p>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="gap-1.5 border-primary/30 text-primary flex-shrink-0"
-                        onClick={() => {
-                          // Try to call — in production this would use the stored phone
-                          window.location.href = "tel:*3939";
-                        }}
-                      >
-                        <Phone className="w-3.5 h-3.5" />
-                        התקשר
-                      </Button>
+                      {vetPhone && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-1.5 border-primary/30 text-primary flex-shrink-0"
+                          onClick={() => (window.location.href = `tel:${vetPhone}`)}
+                        >
+                          <Phone className="w-3.5 h-3.5" />
+                          התקשר
+                        </Button>
+                      )}
                     </div>
                   </div>
                 )}
