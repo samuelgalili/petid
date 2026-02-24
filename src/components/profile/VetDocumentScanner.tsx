@@ -141,7 +141,7 @@ export const VetDocumentScanner = ({ petId, petName, onScanComplete }: VetDocume
       // Fetch current profile and pet data in parallel
       const [profileRes, petRes] = await Promise.all([
         supabase.from("profiles").select("first_name, last_name, phone, street, city").eq("id", user.id).single(),
-        supabase.from("pets").select("name, breed, birth_date, microchip_number, age, weight, color, gender, is_neutered, is_dangerous_breed, license_number, license_expiry_date, license_renewal_date, license_conditions").eq("id", petId).single(),
+        supabase.from("pets").select("name, breed, birth_date, microchip_number, age, weight, color, gender, is_neutered, is_dangerous_breed, license_number, license_expiry_date, license_renewal_date, license_conditions, vet_clinic_name").eq("id", petId).single(),
       ]);
 
       const profile = profileRes.data;
