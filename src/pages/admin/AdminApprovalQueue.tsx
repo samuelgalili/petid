@@ -18,7 +18,7 @@ import {
   ShieldAlert, CheckCircle2, XCircle, Clock, AlertTriangle,
   MessageCircle, DollarSign, Send, Edit3, Bot, Brain,
   Megaphone, Target, Headphones, Stethoscope, Scale, FlaskConical,
-  Store, Truck
+  Store, Truck, Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -26,7 +26,7 @@ const iconMap: Record<string, React.ComponentType<any>> = {
   brain: Brain, megaphone: Megaphone, target: Target,
   "message-circle": MessageCircle, store: Store, truck: Truck,
   headphones: Headphones, stethoscope: Stethoscope, scale: Scale,
-  bot: FlaskConical,
+  bot: FlaskConical, sparkles: Sparkles,
 };
 
 const colorMap: Record<string, string> = {
@@ -35,6 +35,7 @@ const colorMap: Record<string, string> = {
   green: "from-green-500 to-green-600", blue: "from-blue-500 to-blue-600",
   amber: "from-amber-500 to-amber-600", emerald: "from-emerald-500 to-emerald-600",
   indigo: "from-indigo-500 to-indigo-600", violet: "from-violet-500 to-violet-600",
+  rose: "from-rose-500 to-rose-600",
 };
 
 type CriticalCategory = "communication" | "pricing" | "leads" | "all";
