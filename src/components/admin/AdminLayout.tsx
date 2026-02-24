@@ -110,7 +110,7 @@ const navGroups: NavGroup[] = [
       { icon: Shield, label: "תפקידים", href: "/admin/roles" },
       { icon: Zap, label: "אוטומציות", href: "/admin/automations" },
       { icon: Clock, label: "מעקב שעות", href: "/admin/time-tracking" },
-      { icon: Bell, label: "התראות", href: "/admin/notification-rules" },
+      { icon: Bell, label: "מרכז התראות", href: "/admin/notifications" },
       { icon: Plug, label: "אינטגרציות", href: "/admin/integrations" },
       { icon: Webhook, label: "Webhooks", href: "/admin/webhooks" },
       { icon: History, label: "לוג פעילות", href: "/admin/audit" },
