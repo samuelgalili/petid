@@ -244,6 +244,9 @@ const AdminDashboard = () => {
                   revenueChange={revenueChange || 19}
                 />
 
+                {/* Sales Analytics */}
+                <DashboardSalesAnalytics />
+
                 {/* Charts Row */}
                 <div className="grid md:grid-cols-2 gap-4">
                   <DashboardPriceDistribution />
