@@ -148,7 +148,7 @@ export const SmartRecommendations = () => {
       setLoading(true);
       const { data } = await supabase
         .from("business_products")
-        .select("id, name, price, image_url, category, pet_type, description")
+        .select("id, name, price, image_url, category, pet_type, description, dog_size, ingredients")
         .eq("in_stock", true)
         .limit(50);
 
@@ -159,7 +159,8 @@ export const SmartRecommendations = () => {
 
       const scored = data
         .map(p => {
-          const { score, reason } = scoreProduct(p, pet.pet_type, pet.ageWeeks, pet.breed, pet.medical_conditions);
+          const enriched = { ...p, _petWeight: pet.weight };
+          const { score, reason } = scoreProduct(enriched, pet.pet_type, pet.ageWeeks, pet.breed, pet.medical_conditions);
           return { ...p, relevanceScore: score, relevanceReason: reason };
         })
         .filter(p => p.relevanceScore > 0)
