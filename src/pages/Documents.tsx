@@ -199,20 +199,13 @@ export default function Documents() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Upload file to storage
-      const fileExt = selectedFile.name.split(".").pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from("pet-documents")
-        .upload(fileName, selectedFile);
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from("pet-documents")
-        .getPublicUrl(fileName);
+      // Convert file to base64 data URL
+      const fileUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(selectedFile);
+      });
 
       // Save document metadata to database
       const { error: dbError } = await supabase
@@ -223,7 +216,7 @@ export default function Documents() {
           document_type: uploadDocType,
           title: uploadTitle,
           description: uploadDescription || null,
-          file_url: publicUrl,
+          file_url: fileUrl,
           file_name: selectedFile.name,
           file_size: selectedFile.size,
         });
