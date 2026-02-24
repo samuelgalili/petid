@@ -83,6 +83,7 @@ export const VetDocumentScanner = ({ petId, petName, onScanComplete }: VetDocume
   const [saving, setSaving] = useState(false);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [imageBase64, setImageBase64] = useState<string | null>(null);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
