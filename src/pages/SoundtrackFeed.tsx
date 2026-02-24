@@ -247,13 +247,29 @@ const SoundtrackFeed = () => {
                 </button>
               </div>
             ) : posts.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
-                <p className="text-lg">{t("empty.noPosts")}</p>
-                <p className="text-sm mt-2">
-                  {activeTab === "following"
-                    ? t("empty.noPostsFollowing")
-                    : t("empty.postsComingSoon")}
-                </p>
+              <div className="flex flex-col items-center justify-center text-muted-foreground px-8 text-center" style={{ minHeight: "calc(100vh - 126px)" }}>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="flex flex-col items-center gap-3"
+                >
+                  <PawPrint className="w-12 h-12 text-muted-foreground/30" strokeWidth={1} />
+                  <p className="text-lg font-semibold text-foreground">{t("empty.noPosts")}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {activeTab === "following"
+                      ? t("empty.noPostsFollowing")
+                      : t("empty.postsComingSoon")}
+                  </p>
+                  {activeTab === "following" && (
+                    <button
+                      onClick={() => setActiveTab("discover")}
+                      className="mt-4 px-5 py-2 rounded-xl text-sm font-medium bg-primary text-primary-foreground"
+                    >
+                      {t("feedPage.forYou")}
+                    </button>
+                  )}
+                </motion.div>
               </div>
             ) : (
               <>
