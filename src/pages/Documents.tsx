@@ -752,10 +752,12 @@ export default function Documents() {
                 {filteredDocuments.map((doc, index) => (
                   <motion.div
                     key={doc.id}
+                    id={`doc-${doc.id}`}
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -100 }}
                     transition={{ delay: index * 0.05 }}
+                    className={highlightDocId === doc.id ? 'ring-2 ring-primary rounded-2xl animate-pulse' : ''}
                   >
                     <SwipeableDocumentCard
                       doc={doc}
