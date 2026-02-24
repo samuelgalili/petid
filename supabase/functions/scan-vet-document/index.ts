@@ -3,12 +3,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 /**
- * scan-vet-document - V24 AI-powered OCR for vet reports/invoices
- * Extracts: clinic, date, vaccines, diagnoses, weight, deworming,
- *           owner profile, pet identity (name, breed, color, gender, DOB, chip, neutered, dangerous breed)
+ * scan-vet-document - V25 AI-powered OCR with Smart Sync
+ * Supports selective field updates and care plan triggers
  */
 
-// Israeli dangerous breed list (per Israeli law)
 const DANGEROUS_BREEDS = [
   'פיטבול', 'pit bull', 'pitbull',
   'סטפורדשייר', 'staffordshire', 'amstaff', 'am staff',
@@ -36,7 +34,11 @@ serve(async (req) => {
   const corsHeaders = getCorsHeaders(origin);
 
   try {
-    const { petId, userId, imageBase64, fileName, saveToDb, cachedResult, imageBase64ForSave } = await req.json();
+    const {
+      petId, userId, imageBase64, fileName,
+      saveToDb, cachedResult, imageBase64ForSave,
+      selectedFields, triggerCarePlans,
+    } = await req.json();
 
     if (!petId || !userId) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -50,15 +52,11 @@ serve(async (req) => {
 
     let scanResult;
 
-    // If cachedResult is provided (confirm-save flow), skip AI call
     if (cachedResult && shouldSave) {
       scanResult = cachedResult;
     } else if (imageBase64) {
-      // Run AI analysis
       const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
-      if (!lovableApiKey) {
-        throw new Error("LOVABLE_API_KEY not configured");
-      }
+      if (!lovableApiKey) throw new Error("LOVABLE_API_KEY not configured");
 
       const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
@@ -111,14 +109,8 @@ License keywords: תנאי רישיון, רישיון, license.`
             {
               role: "user",
               content: [
-                {
-                  type: "image_url",
-                  image_url: { url: `data:image/jpeg;base64,${imageBase64}` },
-                },
-                {
-                  type: "text",
-                  text: "Extract ALL veterinary and pet identity data from this document image. Return JSON only.",
-                },
+                { type: "image_url", image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },
+                { type: "text", text: "Extract ALL veterinary and pet identity data from this document image. Return JSON only." },
               ],
             },
           ],
@@ -151,7 +143,6 @@ License keywords: תנאי רישיון, רישיון, license.`
         };
       }
 
-      // Determine dangerous breed status
       scanResult.isDangerousBreed = isDangerousBreed(scanResult.petBreed);
     } else {
       return new Response(JSON.stringify({ error: "No image or cached result provided" }), {
@@ -166,23 +157,91 @@ License keywords: תנאי רישיון, רישיון, license.`
       const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const supabase = createClient(supabaseUrl, supabaseKey);
 
-      // Build pet update with all extracted fields
-      const petUpdate: Record<string, unknown> = {};
+      const isSmartSync = Array.isArray(selectedFields) && selectedFields.length >= 0;
 
-      if (scanResult.petName) petUpdate.name = scanResult.petName;
-      if (scanResult.petBreed) petUpdate.breed = scanResult.petBreed;
-      if (scanResult.petColor) petUpdate.color = scanResult.petColor;
-      if (scanResult.petGender) petUpdate.gender = scanResult.petGender;
-      if (scanResult.petBirthDate) petUpdate.birth_date = scanResult.petBirthDate;
-      if (scanResult.microchipNumber) petUpdate.microchip_number = scanResult.microchipNumber;
-      if (scanResult.isNeutered !== null && scanResult.isNeutered !== undefined) petUpdate.is_neutered = scanResult.isNeutered;
-      if (scanResult.weight) petUpdate.weight = scanResult.weight;
-      if (scanResult.clinicName) petUpdate.vet_clinic_name = scanResult.clinicName;
-      if (scanResult.clinicPhone) petUpdate.vet_clinic_phone = scanResult.clinicPhone;
-      if (scanResult.clinicAddress) petUpdate.vet_clinic_address = scanResult.clinicAddress;
-      if (scanResult.isDangerousBreed) petUpdate.is_dangerous_breed = true;
-      if (scanResult.licenseConditions) petUpdate.license_conditions = scanResult.licenseConditions;
+      if (isSmartSync) {
+        // === SMART SYNC MODE: Only update selected fields ===
+        const profileUpdate: Record<string, unknown> = {};
+        const petUpdate: Record<string, unknown> = {};
 
+        for (const field of selectedFields) {
+          if (!field.detectedValue) continue;
+
+          if (field.table === "profiles") {
+            if (field.key === "ownerName") {
+              const parts = (field.detectedValue as string).split(' ');
+              profileUpdate.first_name = parts[0] || null;
+              profileUpdate.last_name = parts.slice(1).join(' ') || null;
+            } else if (field.key === "ownerPhone") {
+              profileUpdate.phone = field.detectedValue;
+            } else if (field.key === "ownerAddress") {
+              // Split "street, city"
+              const addrParts = (field.detectedValue as string).split(',').map((s: string) => s.trim());
+              if (addrParts[0]) profileUpdate.street = addrParts[0];
+              if (addrParts[1]) profileUpdate.city = addrParts[1];
+            }
+          } else if (field.table === "pets") {
+            if (field.key === "petWeight") {
+              petUpdate.weight = parseFloat(field.detectedValue) || null;
+            } else if (field.key === "petGender") {
+              petUpdate.gender = field.detectedValue === "זכר" ? "male" : field.detectedValue === "נקבה" ? "female" : field.detectedValue;
+            } else {
+              petUpdate[field.dbField] = field.detectedValue;
+            }
+          }
+        }
+
+        if (Object.keys(profileUpdate).length > 0) {
+          await supabase.from("profiles").update(profileUpdate).eq("id", userId);
+        }
+        if (Object.keys(petUpdate).length > 0) {
+          // Also add clinic info and dangerous breed detection
+          if (scanResult.clinicName) petUpdate.vet_clinic_name = scanResult.clinicName;
+          if (scanResult.clinicPhone) petUpdate.vet_clinic_phone = scanResult.clinicPhone;
+          if (scanResult.clinicAddress) petUpdate.vet_clinic_address = scanResult.clinicAddress;
+          if (scanResult.isDangerousBreed) petUpdate.is_dangerous_breed = true;
+          if (scanResult.licenseConditions) petUpdate.license_conditions = scanResult.licenseConditions;
+
+          await supabase.from("pets").update(petUpdate).eq("id", petId);
+        }
+      } else {
+        // === LEGACY MODE: Update all fields (backward compatible) ===
+        const petUpdate: Record<string, unknown> = {};
+        if (scanResult.petName) petUpdate.name = scanResult.petName;
+        if (scanResult.petBreed) petUpdate.breed = scanResult.petBreed;
+        if (scanResult.petColor) petUpdate.color = scanResult.petColor;
+        if (scanResult.petGender) petUpdate.gender = scanResult.petGender;
+        if (scanResult.petBirthDate) petUpdate.birth_date = scanResult.petBirthDate;
+        if (scanResult.microchipNumber) petUpdate.microchip_number = scanResult.microchipNumber;
+        if (scanResult.isNeutered !== null && scanResult.isNeutered !== undefined) petUpdate.is_neutered = scanResult.isNeutered;
+        if (scanResult.weight) petUpdate.weight = scanResult.weight;
+        if (scanResult.clinicName) petUpdate.vet_clinic_name = scanResult.clinicName;
+        if (scanResult.clinicPhone) petUpdate.vet_clinic_phone = scanResult.clinicPhone;
+        if (scanResult.clinicAddress) petUpdate.vet_clinic_address = scanResult.clinicAddress;
+        if (scanResult.isDangerousBreed) petUpdate.is_dangerous_breed = true;
+        if (scanResult.licenseConditions) petUpdate.license_conditions = scanResult.licenseConditions;
+
+        if (Object.keys(petUpdate).length > 0) {
+          await supabase.from("pets").update(petUpdate).eq("id", petId);
+        }
+
+        const ownerUpdate: Record<string, unknown> = {};
+        if (scanResult.ownerName) {
+          const parts = scanResult.ownerName.split(' ');
+          ownerUpdate.first_name = parts[0] || null;
+          ownerUpdate.last_name = parts.slice(1).join(' ') || null;
+        }
+        if (scanResult.ownerPhone) ownerUpdate.phone = scanResult.ownerPhone;
+        if (scanResult.ownerAddress) ownerUpdate.street = scanResult.ownerAddress;
+        if (scanResult.ownerCity) ownerUpdate.city = scanResult.ownerCity;
+        if (scanResult.ownerIdNumber) ownerUpdate.id_number_last4 = scanResult.ownerIdNumber;
+
+        if (Object.keys(ownerUpdate).length > 0) {
+          await supabase.from("profiles").update(ownerUpdate).eq("id", userId);
+        }
+      }
+
+      // === Common: Save vet visit, vaccines, document (both modes) ===
       const visitDate = scanResult.visitDate || new Date().toISOString().split('T')[0];
 
       if (scanResult.vaccines?.length > 0 || scanResult.diagnoses?.length > 0) {
@@ -215,11 +274,13 @@ License keywords: תנאי רישיון, רישיון, license.`
           cost: scanResult.cost || null,
         });
 
-        petUpdate.last_vet_visit = visitDate;
-        if (nextVisitDate) petUpdate.next_vet_visit = nextVisitDate;
+        // Update pet's last/next vet visit
+        const visitUpdate: Record<string, unknown> = { last_vet_visit: visitDate };
+        if (nextVisitDate) visitUpdate.next_vet_visit = nextVisitDate;
+        await supabase.from("pets").update(visitUpdate).eq("id", petId);
       }
 
-      // Save each vaccine individually to pet_vaccinations for CRM visibility
+      // Save individual vaccines to pet_vaccinations
       if (scanResult.vaccines?.length > 0) {
         const vaccineRows = scanResult.vaccines.map((v: string) => {
           const nextYear = new Date(visitDate);
@@ -267,11 +328,6 @@ License keywords: תנאי רישיון, רישיון, license.`
         }
       }
 
-      // Apply all pet updates
-      if (Object.keys(petUpdate).length > 0) {
-        await supabase.from("pets").update(petUpdate).eq("id", petId);
-      }
-
       // Deworming tracking
       if (scanResult.deworming) {
         const dewormDate = scanResult.visitDate || new Date().toISOString().split('T')[0];
@@ -290,20 +346,58 @@ License keywords: תנאי רישיון, רישיון, license.`
         });
       }
 
-      // Save owner data to profiles table
-      const ownerUpdate: Record<string, unknown> = {};
-      if (scanResult.ownerName) {
-        const parts = scanResult.ownerName.split(' ');
-        ownerUpdate.first_name = parts[0] || null;
-        ownerUpdate.last_name = parts.slice(1).join(' ') || null;
-      }
-      if (scanResult.ownerPhone) ownerUpdate.phone = scanResult.ownerPhone;
-      if (scanResult.ownerAddress) ownerUpdate.address = scanResult.ownerAddress;
-      if (scanResult.ownerCity) ownerUpdate.city = scanResult.ownerCity;
-      if (scanResult.ownerIdNumber) ownerUpdate.id_number = scanResult.ownerIdNumber;
+      // === CARE PLAN TRIGGERS ===
+      if (triggerCarePlans) {
+        // Create care reminders for each vaccine (annual renewal)
+        if (scanResult.vaccines?.length > 0) {
+          for (const vaccine of scanResult.vaccines) {
+            const nextDate = new Date(visitDate);
+            nextDate.setFullYear(nextDate.getFullYear() + 1);
 
-      if (Object.keys(ownerUpdate).length > 0) {
-        await supabase.from("profiles").update(ownerUpdate).eq("id", userId);
+            // Insert into pet_reminders if table exists, otherwise use notifications
+            try {
+              await supabase.from("notifications").insert({
+                user_id: userId,
+                title: `💉 תזכורת חיסון: ${vaccine}`,
+                body: `מועד חידוש חיסון ${vaccine} מתקרב. יש לתאם ביקור וטרינר.`,
+                type: 'vaccination_reminder',
+                scheduled_for: new Date(nextDate.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString(), // 2 weeks before
+                metadata: {
+                  pet_id: petId,
+                  vaccine_name: vaccine,
+                  due_date: nextDate.toISOString().split('T')[0],
+                  source: 'ocr_smart_sync',
+                },
+              });
+            } catch (notifErr) {
+              console.error("Failed to create vaccine reminder notification:", notifErr);
+            }
+          }
+        }
+
+        // Create deworming reminder
+        if (scanResult.deworming) {
+          const dewormDate = scanResult.visitDate || new Date().toISOString().split('T')[0];
+          const nextDeworming = new Date(dewormDate);
+          nextDeworming.setMonth(nextDeworming.getMonth() + 6);
+
+          try {
+            await supabase.from("notifications").insert({
+              user_id: userId,
+              title: '🐛 תזכורת תילוע',
+              body: `הגיע זמן לתילוע חוזר. התילוע האחרון בוצע ב-${dewormDate}.`,
+              type: 'deworming_reminder',
+              scheduled_for: new Date(nextDeworming.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week before
+              metadata: {
+                pet_id: petId,
+                due_date: nextDeworming.toISOString().split('T')[0],
+                source: 'ocr_smart_sync',
+              },
+            });
+          } catch (notifErr) {
+            console.error("Failed to create deworming reminder:", notifErr);
+          }
+        }
       }
     }
 
