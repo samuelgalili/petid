@@ -419,6 +419,50 @@ const ChatContent = () => {
                       <ChatProductCards products={message.products} />
                     )}
 
+                    {/* Omni-Bot Action Cards */}
+                    {message.role === "assistant" && message.ocrApproval && (
+                      <OcrApprovalCard
+                        {...message.ocrApproval}
+                        onApprove={() => {
+                          sendMessage(`אשרתי את עדכון הנתונים של ${message.ocrApproval!.petName}`);
+                          setMessages(prev => prev.map((m, i) => i === messages.indexOf(message) ? { ...m, ocrApproval: undefined } : m));
+                        }}
+                        onReject={() => {
+                          sendMessage("דחיתי את עדכון הנתונים");
+                          setMessages(prev => prev.map((m, i) => i === messages.indexOf(message) ? { ...m, ocrApproval: undefined } : m));
+                        }}
+                      />
+                    )}
+
+                    {message.role === "assistant" && message.quickCheckout && (
+                      <QuickCheckoutCard
+                        {...message.quickCheckout}
+                        onCheckout={() => navigate(message.quickCheckout!.productId ? `/product/${message.quickCheckout!.productId}` : "/shop")}
+                      />
+                    )}
+
+                    {message.role === "assistant" && message.insuranceLead && (
+                      <InsuranceLeadCard
+                        {...message.insuranceLead}
+                        onSubmit={() => sendMessage(`אני מעוניין בביטוח Libra עבור ${message.insuranceLead!.petName}`)}
+                      />
+                    )}
+
+                    {message.role === "assistant" && message.addressUpdate && (
+                      <AddressUpdateCard
+                        {...message.addressUpdate}
+                        onConfirm={() => sendMessage(`אישרתי עדכון כתובת ל-${message.addressUpdate!.newAddress}`)}
+                      />
+                    )}
+
+                    {message.role === "assistant" && message.nrcPlan && (
+                      <NrcPlanCard {...message.nrcPlan} />
+                    )}
+
+                    {message.role === "assistant" && message.pendingApproval && (
+                      <PendingApprovalCard title={message.pendingApproval.title} />
+                    )}
+
                     {/* Insurance Plan Cards */}
                     {message.role === "assistant" && message.insuranceData && (
                       <InsurancePlanCards {...message.insuranceData} />
