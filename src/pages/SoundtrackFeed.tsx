@@ -8,7 +8,7 @@ import { ComponentErrorBoundary } from "@/components/common/ComponentErrorBounda
 import { motion, AnimatePresence } from "framer-motion";
 import { useActivePet } from "@/hooks/useActivePet";
 import { cn } from "@/lib/utils";
-import { Camera, ImagePlus, FileText, Menu, Shield, Store, Bell } from "lucide-react";
+import { Camera, ImagePlus, FileText, Menu, Shield, Store, Bell, PawPrint } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useNotificationsBadge } from "@/hooks/useNotificationsBadge";
