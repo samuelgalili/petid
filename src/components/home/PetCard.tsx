@@ -145,9 +145,9 @@ export const PetCard = memo(({
           <span>{petTypeLabel}</span>
         </div>
 
-        {/* Health Indicator - top right */}
-        <div className="absolute top-2 right-2">
-          <div className="w-3 h-3 rounded-full bg-emerald-400 border-2 border-white shadow-sm" title="בריאות תקינה" />
+        {/* Health Indicator */}
+        <div className="absolute top-12 right-2">
+          <div className="w-3 h-3 rounded-full bg-emerald-400 border-2 border-background shadow-sm" title="בריאות תקינה" />
         </div>
 
         {/* New Badge */}
