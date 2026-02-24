@@ -24,6 +24,7 @@ import { BoardingTypePicker } from "@/components/chat/BoardingTypePicker";
 import { StoreCategoryPicker } from "@/components/chat/StoreCategoryPicker";
 import { AdoptionTraitPicker } from "@/components/chat/AdoptionTraitPicker";
 import { AdoptionRequirementPicker } from "@/components/chat/AdoptionRequirementPicker";
+import { OcrApprovalCard, QuickCheckoutCard, InsuranceLeadCard, AddressUpdateCard, NrcPlanCard, PendingApprovalCard } from "@/components/chat/ChatActionCards";
 import { ChatProvider, useChatContext, type Message } from "@/contexts/ChatContext";
 import { useDataIntake, type IntakeType } from "@/hooks/useDataIntake";
 import { ChatHubMessages } from "@/components/chat/ChatHubMessages";
