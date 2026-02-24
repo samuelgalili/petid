@@ -432,11 +432,13 @@ License keywords: תנאי רישיון, רישיון, license.`
               title: '🐛 תזכורת תילוע',
               body: `הגיע זמן לתילוע חוזר. התילוע האחרון בוצע ב-${dewormDate}.`,
               type: 'deworming_reminder',
-              scheduled_for: new Date(nextDeworming.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week before
+              scheduled_for: new Date(nextDeworming.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(),
               metadata: {
                 pet_id: petId,
                 due_date: nextDeworming.toISOString().split('T')[0],
                 source: 'ocr_smart_sync',
+                document_id: savedDocumentId,
+                deep_link: savedDocumentId ? `/documents?highlight=${savedDocumentId}` : null,
               },
             });
           } catch (notifErr) {
