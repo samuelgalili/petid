@@ -206,6 +206,38 @@ const ChatContent = () => {
         return updated;
       });
     }
+
+    // ===== Parse CARD tags for Omni-Bot Action Cards =====
+    const cardPatterns = content.matchAll(/\[CARD:(\w+):(.*?)\]/g);
+    for (const match of cardPatterns) {
+      const [, cardType, jsonStr] = match;
+      try {
+        const data = JSON.parse(jsonStr);
+        setMessages(prev => {
+          const updated = [...prev];
+          const lastMsg = updated[updated.length - 1];
+          if (lastMsg?.role === "assistant") {
+            const cardMap: Record<string, Partial<Message>> = {
+              OCR_APPROVAL: { ocrApproval: data },
+              QUICK_CHECKOUT: { quickCheckout: data },
+              INSURANCE_LEAD: { insuranceLead: data },
+              ADDRESS_UPDATE: { addressUpdate: data },
+              NRC_PLAN: { nrcPlan: data },
+              PENDING_APPROVAL: { pendingApproval: { ...data, queueId: "" } },
+            };
+            if (cardMap[cardType]) {
+              updated[updated.length - 1] = { ...lastMsg, ...cardMap[cardType] };
+            }
+          }
+          return updated;
+        });
+      } catch { /* ignore malformed JSON */ }
+    }
+  };
+
+  // Also clean CARD tags from displayed content
+  const cleanAllTags = (content: string) => {
+    return cleanActionTags(content).replace(/\[CARD:\w+:.*?\]/g, "").trim();
   };
 
   // Watch for new assistant messages and process action tags
