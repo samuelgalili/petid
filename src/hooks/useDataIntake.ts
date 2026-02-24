@@ -89,6 +89,21 @@ export function useDataIntake({ petId, petName, isSOSActive = false }: UseDataIn
       return { type: "scan", userMessage: "", aiPrompt: "" };
     }
 
+    // Auto-save to documents
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { autoSaveToDocuments } = await import("@/lib/autoSaveUpload");
+      await autoSaveToDocuments({
+        userId: user.id,
+        petId,
+        fileUrl,
+        fileName: file.name,
+        fileSize: file.size,
+        documentType: "vet_report",
+        title: `סריקת מסמך - ${file.name}`,
+      });
+    }
+
     toast({
       title: "🔒 המסמך נשמר בצורה מאובטחת",
       description: `נשמר בכספת של ${petName}`,

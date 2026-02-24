@@ -66,8 +66,16 @@ const CreateReelDialog: React.FC<CreateReelDialogProps> = ({ open, onOpenChange 
 
       if (insertError) throw insertError;
 
+      // Auto-save to album
+      const { autoSaveToAlbum } = await import("@/lib/autoSaveUpload");
+      await autoSaveToAlbum({
+        userId: user.id,
+        mediaUrl: publicUrl,
+        caption: caption.trim() || "רילס",
+        mediaType: "video",
+      });
+
       // If there are tagged products, we would save them here
-      // For now, just log them - they would be saved to reel_product_tags table
       if (taggedProducts.length > 0) {
         console.log('Tagged products for reel:', taggedProducts);
       }
