@@ -8,6 +8,8 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 import { format, differenceInYears, parse, isValid } from "date-fns";
+import { toE164, isValidIsraeliPhone } from "@/utils/phoneFormat";
+import { PhoneOtpVerification } from "@/components/PhoneOtpVerification";
 import { he } from "date-fns/locale";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -49,8 +51,8 @@ interface FieldError {
 }
 
 export const SignupForm = () => {
-  // Only WhatsApp and Email are supported - SMS requires Twilio configuration
-  const [signupMethod, setSignupMethod] = useState<"whatsapp" | "email">("whatsapp");
+  const [signupMethod, setSignupMethod] = useState<"whatsapp" | "sms" | "email">("whatsapp");
+  const [showSmsOtp, setShowSmsOtp] = useState(false);
   const [formData, setFormData] = useState({ fullName: "", email: "", phone: "" });
   const [birthdate, setBirthdate] = useState<Date | undefined>(undefined);
   const [showOTPInput, setShowOTPInput] = useState(false);
@@ -305,7 +307,29 @@ export const SignupForm = () => {
     e.preventDefault();
     setGeneralError("");
     if (!showOTPInput && !validateForm()) return;
+    if (signupMethod === "sms") {
+      // For SMS, use the dedicated PhoneOtpVerification component
+      setShowSmsOtp(true);
+      return;
+    }
     if (!showOTPInput) await sendOTP();
+  };
+
+  const handleSmsVerified = async (e164Phone: string) => {
+    // After SMS OTP verification, update profile with additional data
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    if (currentUser) {
+      const profileUpdate: Record<string, any> = {};
+      if (birthdate) profileUpdate.birthdate = birthdate.toISOString().split('T')[0];
+      profileUpdate.phone = e164Phone;
+      const nameParts = formData.fullName.trim().split(' ');
+      profileUpdate.first_name = nameParts[0] || null;
+      profileUpdate.last_name = nameParts.slice(1).join(' ') || null;
+
+      await supabase.from('profiles').update(profileUpdate).eq('id', currentUser.id);
+    }
+    toast({ title: "החשבון נוצר!", description: "ברוכים הבאים ל-Petid!" });
+    navigate("/onboarding");
   };
 
   const isFormValid = formData.fullName && birthdate && (signupMethod === "email" ? formData.email : formData.phone);
@@ -313,6 +337,7 @@ export const SignupForm = () => {
   const getMethodLabel = () => {
     switch (signupMethod) {
       case "whatsapp": return "וואטסאפ";
+      case "sms": return "SMS";
       case "email": return "אימייל";
     }
   };
