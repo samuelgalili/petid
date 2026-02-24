@@ -39,6 +39,10 @@ const EditProfile = () => {
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [isImageEditorOpen, setIsImageEditorOpen] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [showPhoneOtp, setShowPhoneOtp] = useState(false);
+  const [originalPhone, setOriginalPhone] = useState("");
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [phoneError, setPhoneError] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -68,7 +72,10 @@ const EditProfile = () => {
         setProfile(data);
         setFullName(data.full_name || "");
         setBio(data.bio || "");
-        setWhatsappNumber((data as any).whatsapp_number || "");
+        const phone = (data as any).whatsapp_number || "";
+        setWhatsappNumber(phone);
+        setOriginalPhone(phone);
+        setPhoneVerified(false);
       }
     } catch (error: any) {
       toast({
