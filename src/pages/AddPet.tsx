@@ -225,12 +225,16 @@ const AddPet = () => {
   };
 
   const [breedDetectionFailed, setBreedDetectionFailed] = useState(false);
+  const [photoQualityFeedback, setPhotoQualityFeedback] = useState<string | null>(null);
+  const [detectedHealthRisks, setDetectedHealthRisks] = useState<Array<{ risk: string; risk_he: string; severity: string; note: string }>>([]);
 
   const detectBreed = async (base64Image: string) => {
     if (!petType) return;
     
     setBreedDetecting(true);
     setBreedDetectionFailed(false);
+    setPhotoQualityFeedback(null);
+    setDetectedHealthRisks([]);
     try {
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/detect-breed`, {
         method: 'POST',
@@ -258,6 +262,16 @@ const AddPet = () => {
         return;
       }
 
+      // Handle photo quality feedback
+      if (data.photo_quality === 'poor' && data.photo_feedback) {
+        setPhotoQualityFeedback(data.photo_feedback);
+      }
+
+      // Store health risks
+      if (data.health_risks && Array.isArray(data.health_risks) && data.health_risks.length > 0) {
+        setDetectedHealthRisks(data.health_risks);
+      }
+
       if (data.breed && data.breed !== "Unknown Breed") {
         // Check if detected animal type mismatches user selection
         if (data.detectedType && data.detectedType !== petType) {
@@ -272,18 +286,14 @@ const AddPet = () => {
         const confidence = data.confidence || 0;
         const matchedBreed = await matchBreedInDB(data.breed_he || data.breed, petType);
         
-        // Only auto-fill if confidence > 80%
-        if (confidence > 0.8) {
-          setFormData(prev => ({ ...prev, breed: matchedBreed }));
-          setBreedSource('ai');
-        } else {
-          // Still show detection but let user confirm
-          setFormData(prev => ({ ...prev, breed: matchedBreed }));
-          setBreedSource('ai');
-        }
+        setFormData(prev => ({ ...prev, breed: matchedBreed }));
+        setBreedSource('ai');
         setBreedConfidence(confidence);
+
+        if (confidence > 0.8) {
+          toast({ title: "✨ גזע זוהה!", description: `${matchedBreed} (${Math.round(confidence * 100)}% וודאות)` });
+        }
       } else {
-        // No breed detected
         setBreedDetectionFailed(true);
       }
     } catch (error) {
