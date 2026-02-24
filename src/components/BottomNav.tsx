@@ -254,7 +254,7 @@ const BottomNav = () => {
         <motion.button
           whileTap={{ scale: 0.85 }}
           onClick={() => setShowQuickActions((v) => !v)}
-          className="fixed z-[10000] w-11 h-11 rounded-full flex items-center justify-center bg-transparent border-[1.5px] border-primary/60 text-primary backdrop-blur-sm right-4"
+          className="fixed z-[10000] w-11 h-11 rounded-full flex items-center justify-center bg-transparent border-[1.5px] border-primary/60 text-primary backdrop-blur-sm left-4"
           style={{ bottom: `calc(72px + env(safe-area-inset-bottom))` }}
           aria-label="Quick actions"
         >
