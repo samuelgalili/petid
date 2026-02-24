@@ -36,7 +36,7 @@ serve(async (req) => {
   const corsHeaders = getCorsHeaders(origin);
 
   try {
-    const { petId, userId, imageBase64, fileName, saveToDb, cachedResult } = await req.json();
+    const { petId, userId, imageBase64, fileName, saveToDb, cachedResult, imageBase64ForSave } = await req.json();
 
     if (!petId || !userId) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -46,6 +46,7 @@ serve(async (req) => {
     }
 
     const shouldSave = saveToDb === true;
+    const imageBase64ForStorage = imageBase64ForSave || imageBase64 || null;
 
     let scanResult;
 
@@ -182,9 +183,9 @@ License keywords: תנאי רישיון, רישיון, license.`
       if (scanResult.isDangerousBreed) petUpdate.is_dangerous_breed = true;
       if (scanResult.licenseConditions) petUpdate.license_conditions = scanResult.licenseConditions;
 
-      if (scanResult.vaccines?.length > 0 || scanResult.diagnoses?.length > 0) {
-        const visitDate = scanResult.visitDate || new Date().toISOString().split('T')[0];
+      const visitDate = scanResult.visitDate || new Date().toISOString().split('T')[0];
 
+      if (scanResult.vaccines?.length > 0 || scanResult.diagnoses?.length > 0) {
         let visitType = 'checkup';
         if (scanResult.vaccines?.length > 0) visitType = 'vaccination';
         if (scanResult.diagnoses?.length > 0 && visitType === 'checkup') visitType = 'treatment';
@@ -211,10 +212,59 @@ License keywords: תנאי רישיון, רישיון, license.`
           next_visit_date: nextVisitDate,
           ai_extracted: true,
           raw_summary: `OCR scan from ${fileName}`,
+          cost: scanResult.cost || null,
         });
 
         petUpdate.last_vet_visit = visitDate;
         if (nextVisitDate) petUpdate.next_vet_visit = nextVisitDate;
+      }
+
+      // Save each vaccine individually to pet_vaccinations for CRM visibility
+      if (scanResult.vaccines?.length > 0) {
+        const vaccineRows = scanResult.vaccines.map((v: string) => {
+          const nextYear = new Date(visitDate);
+          nextYear.setFullYear(nextYear.getFullYear() + 1);
+          return {
+            pet_id: petId,
+            user_id: userId,
+            vaccine_name: v,
+            vaccination_date: visitDate,
+            expiry_date: nextYear.toISOString().split('T')[0],
+            administered_by: scanResult.clinicName || null,
+            notes: 'זוהה אוטומטית מסריקת מסמך',
+          };
+        });
+        await supabase.from("pet_vaccinations").insert(vaccineRows);
+      }
+
+      // Save scanned image as pet_document
+      if (imageBase64ForStorage) {
+        try {
+          const docFileName = `${petId}/${Date.now()}-scan.jpg`;
+          const binaryData = Uint8Array.from(atob(imageBase64ForStorage), c => c.charCodeAt(0));
+          const { data: uploadData } = await supabase.storage
+            .from('pet-documents')
+            .upload(docFileName, binaryData, { contentType: 'image/jpeg', upsert: false });
+
+          if (uploadData?.path) {
+            const { data: urlData } = supabase.storage
+              .from('pet-documents')
+              .getPublicUrl(uploadData.path);
+
+            await supabase.from("pet_documents").insert({
+              pet_id: petId,
+              user_id: userId,
+              document_type: 'vet_report',
+              title: `סריקת מסמך וטרינר - ${visitDate}`,
+              description: scanResult.clinicName ? `מרפאה: ${scanResult.clinicName}` : 'סריקת מסמך וטרינר',
+              file_url: urlData.publicUrl,
+              file_name: docFileName.split('/').pop()!,
+              file_size: binaryData.length,
+            });
+          }
+        } catch (docErr) {
+          console.error("Failed to save document:", docErr);
+        }
       }
 
       // Apply all pet updates

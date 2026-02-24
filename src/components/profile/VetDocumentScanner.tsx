@@ -83,6 +83,7 @@ export const VetDocumentScanner = ({ petId, petName, onScanComplete }: VetDocume
   const [saving, setSaving] = useState(false);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [imageBase64, setImageBase64] = useState<string | null>(null);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -92,6 +93,7 @@ export const VetDocumentScanner = ({ petId, petName, onScanComplete }: VetDocume
     const reader = new FileReader();
     reader.onload = async () => {
       const base64 = (reader.result as string).split(",")[1];
+      setImageBase64(base64);
       await scanDocument(base64, file.name);
     };
     reader.readAsDataURL(file);
@@ -125,7 +127,7 @@ export const VetDocumentScanner = ({ petId, petName, onScanComplete }: VetDocume
       if (!user) throw new Error("Not authenticated");
 
       const { error } = await supabase.functions.invoke("scan-vet-document", {
-        body: { petId, userId: user.id, imageBase64: "", fileName: "confirm-save", saveToDb: true, cachedResult: scanResult },
+        body: { petId, userId: user.id, imageBase64: "", fileName: "confirm-save", saveToDb: true, cachedResult: scanResult, imageBase64ForSave: imageBase64 },
       });
       if (error) throw error;
       toast({ title: "הנתונים נשמרו בהצלחה ✅" });
@@ -142,6 +144,7 @@ export const VetDocumentScanner = ({ petId, petName, onScanComplete }: VetDocume
   const handleReset = () => {
     setScanResult(null);
     setPreviewUrl(null);
+    setImageBase64(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
