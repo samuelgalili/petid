@@ -311,30 +311,60 @@ License keywords: תנאי רישיון, רישיון, license.`
         await supabase.from("pet_vaccinations").insert(vaccineRows);
       }
 
-      // Save scanned image as pet_document
+      // Save scanned image as pet_document with smart naming & auto-categorization
+      let savedDocumentId: string | null = null;
       if (imageBase64ForStorage) {
         try {
-          const docFileName = `${petId}/${Date.now()}-scan.jpg`;
+          // Fetch pet name for smart naming
+          const { data: petData } = await supabase.from("pets").select("name").eq("id", petId).single();
+          const safePetName = (petData?.name || 'pet').replace(/[^a-zA-Z0-9\u0590-\u05FF]/g, '_');
+          
+          // Auto-categorize based on OCR results
+          const docCategory = scanResult.documentCategory || (
+            scanResult.vaccines?.length > 0 ? 'vaccination' :
+            scanResult.diagnoses?.length > 0 ? 'medical_record' :
+            scanResult.medications?.length > 0 ? 'prescription' :
+            'vet_report'
+          );
+          
+          const categoryLabels: Record<string, string> = {
+            medical_record: 'רשומה_רפואית',
+            vaccination: 'חיסון',
+            insurance: 'ביטוח',
+            legal_contract: 'חוזה',
+            prescription: 'מרשם',
+            lab_results: 'בדיקות_מעבדה',
+            vet_report: 'דוח_וטרינר',
+            other: 'מסמך',
+          };
+          const categoryLabel = categoryLabels[docCategory] || 'מסמך';
+          
+          // Smart naming: [Date]_[Category]_[PetName].jpg
+          const smartFileName = `${visitDate}_${categoryLabel}_${safePetName}.jpg`;
+          const storagePath = `${petId}/${Date.now()}-${smartFileName}`;
+          
           const binaryData = Uint8Array.from(atob(imageBase64ForStorage), c => c.charCodeAt(0));
           const { data: uploadData } = await supabase.storage
             .from('pet-documents')
-            .upload(docFileName, binaryData, { contentType: 'image/jpeg', upsert: false });
+            .upload(storagePath, binaryData, { contentType: 'image/jpeg', upsert: false });
 
           if (uploadData?.path) {
             const { data: urlData } = supabase.storage
               .from('pet-documents')
               .getPublicUrl(uploadData.path);
 
-            await supabase.from("pet_documents").insert({
+            const { data: insertedDoc } = await supabase.from("pet_documents").insert({
               pet_id: petId,
               user_id: userId,
-              document_type: 'vet_report',
-              title: `סריקת מסמך וטרינר - ${visitDate}`,
-              description: scanResult.clinicName ? `מרפאה: ${scanResult.clinicName}` : 'סריקת מסמך וטרינר',
+              document_type: docCategory,
+              title: `${categoryLabel} - ${safePetName} - ${visitDate}`,
+              description: scanResult.clinicName ? `מרפאה: ${scanResult.clinicName}` : `סריקת ${categoryLabel}`,
               file_url: urlData.publicUrl,
-              file_name: docFileName.split('/').pop()!,
+              file_name: smartFileName,
               file_size: binaryData.length,
-            });
+            }).select('id').single();
+            
+            savedDocumentId = insertedDoc?.id || null;
           }
         } catch (docErr) {
           console.error("Failed to save document:", docErr);
@@ -374,12 +404,14 @@ License keywords: תנאי רישיון, רישיון, license.`
                 title: `💉 תזכורת חיסון: ${vaccine}`,
                 body: `מועד חידוש חיסון ${vaccine} מתקרב. יש לתאם ביקור וטרינר.`,
                 type: 'vaccination_reminder',
-                scheduled_for: new Date(nextDate.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString(), // 2 weeks before
+                scheduled_for: new Date(nextDate.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString(),
                 metadata: {
                   pet_id: petId,
                   vaccine_name: vaccine,
                   due_date: nextDate.toISOString().split('T')[0],
                   source: 'ocr_smart_sync',
+                  document_id: savedDocumentId,
+                  deep_link: savedDocumentId ? `/documents?highlight=${savedDocumentId}` : null,
                 },
               });
             } catch (notifErr) {
