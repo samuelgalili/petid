@@ -225,12 +225,16 @@ const AddPet = () => {
   };
 
   const [breedDetectionFailed, setBreedDetectionFailed] = useState(false);
+  const [photoQualityFeedback, setPhotoQualityFeedback] = useState<string | null>(null);
+  const [detectedHealthRisks, setDetectedHealthRisks] = useState<Array<{ risk: string; risk_he: string; severity: string; note: string }>>([]);
 
   const detectBreed = async (base64Image: string) => {
     if (!petType) return;
     
     setBreedDetecting(true);
     setBreedDetectionFailed(false);
+    setPhotoQualityFeedback(null);
+    setDetectedHealthRisks([]);
     try {
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/detect-breed`, {
         method: 'POST',
@@ -258,6 +262,16 @@ const AddPet = () => {
         return;
       }
 
+      // Handle photo quality feedback
+      if (data.photo_quality === 'poor' && data.photo_feedback) {
+        setPhotoQualityFeedback(data.photo_feedback);
+      }
+
+      // Store health risks
+      if (data.health_risks && Array.isArray(data.health_risks) && data.health_risks.length > 0) {
+        setDetectedHealthRisks(data.health_risks);
+      }
+
       if (data.breed && data.breed !== "Unknown Breed") {
         // Check if detected animal type mismatches user selection
         if (data.detectedType && data.detectedType !== petType) {
@@ -272,18 +286,14 @@ const AddPet = () => {
         const confidence = data.confidence || 0;
         const matchedBreed = await matchBreedInDB(data.breed_he || data.breed, petType);
         
-        // Only auto-fill if confidence > 80%
-        if (confidence > 0.8) {
-          setFormData(prev => ({ ...prev, breed: matchedBreed }));
-          setBreedSource('ai');
-        } else {
-          // Still show detection but let user confirm
-          setFormData(prev => ({ ...prev, breed: matchedBreed }));
-          setBreedSource('ai');
-        }
+        setFormData(prev => ({ ...prev, breed: matchedBreed }));
+        setBreedSource('ai');
         setBreedConfidence(confidence);
+
+        if (confidence > 0.8) {
+          toast({ title: "✨ גזע זוהה!", description: `${matchedBreed} (${Math.round(confidence * 100)}% וודאות)` });
+        }
       } else {
-        // No breed detected
         setBreedDetectionFailed(true);
       }
     } catch (error) {
@@ -846,12 +856,28 @@ const AddPet = () => {
                     </label>
                   </div>
 
+                  {/* Photo quality warning */}
+                  {photoQualityFeedback && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex items-start gap-2 px-4 py-3 rounded-xl bg-warning/10 border border-warning/30 text-sm"
+                    >
+                      <Camera className="w-4 h-4 text-warning mt-0.5 shrink-0" />
+                      <span className="text-foreground">
+                        {photoQualityFeedback.includes('dark') || photoQualityFeedback.includes('blur') 
+                          ? 'צלם תמונה ברורה יותר באור טוב יותר לזיהוי מדויק.'
+                          : photoQualityFeedback}
+                      </span>
+                    </motion.div>
+                  )}
+
                   {/* AI breed detection badge */}
                   {breedConfidence !== null && formData.breed && breedSource === 'ai' && (
                     <motion.div 
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="space-y-2"
+                      className="space-y-3"
                     >
                       <div
                         className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm"
@@ -867,6 +893,35 @@ const AddPet = () => {
                           רמת הוודאות נמוכה — אנא אשר או ערוך את הגזע למטה
                         </p>
                       )}
+
+                      {/* Breed-specific health risks */}
+                      {detectedHealthRisks.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          className="bg-muted/50 rounded-xl p-3 space-y-2"
+                        >
+                          <p className="text-xs font-semibold text-foreground flex items-center gap-1">
+                            <Heart className="w-3.5 h-3.5 text-destructive" />
+                            סיכונים בריאותיים לגזע
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {detectedHealthRisks.slice(0, 5).map((risk, i) => (
+                              <span
+                                key={i}
+                                className={cn(
+                                  "text-[11px] px-2 py-1 rounded-full font-medium",
+                                  risk.severity === 'high' ? "bg-destructive/15 text-destructive" :
+                                  risk.severity === 'medium' ? "bg-warning/15 text-warning" :
+                                  "bg-muted text-muted-foreground"
+                                )}
+                              >
+                                {risk.risk_he || risk.risk}
+                              </span>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
                     </motion.div>
                   )}
 
@@ -875,7 +930,7 @@ const AddPet = () => {
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-destructive/10 text-sm"
+                      className="flex items-start gap-2 px-4 py-3 rounded-xl bg-destructive/10 text-sm"
                     >
                       <span className="text-destructive font-medium">
                         לא הצלחנו לזהות את הגזע. בחר ידנית לדיוק בריאותי טוב יותר.
