@@ -21,6 +21,8 @@ export const PhoneOtpVerification = ({ phone, onVerified, onCancel, mode }: Phon
   const [resendCountdown, setResendCountdown] = useState(0);
   const [codeSent, setCodeSent] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const sendingRef = useRef(false);
+  const verifyingRef = useRef(false);
   const e164Phone = toE164(phone);
 
   // Countdown timer
@@ -40,12 +42,14 @@ export const PhoneOtpVerification = ({ phone, onVerified, onCancel, mode }: Phon
 
   // Auto-verify when all 6 digits entered
   useEffect(() => {
-    if (otp.every(d => d) && codeSent && !loading) {
+    if (otp.every(d => d) && codeSent && !loading && !verifyingRef.current) {
       verifyCode();
     }
-  }, [otp, codeSent]);
+  }, [otp, codeSent, loading]);
 
   const sendCode = async () => {
+    if (sendingRef.current) return;
+    sendingRef.current = true;
     setSending(true);
     setError("");
     try {
@@ -56,14 +60,15 @@ export const PhoneOtpVerification = ({ phone, onVerified, onCancel, mode }: Phon
             ? "שירות SMS לא מוגדר. נסה להירשם באימייל או וואטסאפ." 
             : error.message);
           setSending(false);
+          sendingRef.current = false;
           return;
         }
       } else {
-        // For phone update, use updateUser to trigger phone change OTP
         const { error } = await supabase.auth.updateUser({ phone: e164Phone });
         if (error) {
           setError(error.message);
           setSending(false);
+          sendingRef.current = false;
           return;
         }
       }
@@ -73,10 +78,13 @@ export const PhoneOtpVerification = ({ phone, onVerified, onCancel, mode }: Phon
       setError("שגיאה בשליחת הקוד. נסה שוב.");
     } finally {
       setSending(false);
+      sendingRef.current = false;
     }
   };
 
   const verifyCode = async () => {
+    if (verifyingRef.current) return;
+    verifyingRef.current = true;
     setLoading(true);
     setError("");
     try {
@@ -118,6 +126,7 @@ export const PhoneOtpVerification = ({ phone, onVerified, onCancel, mode }: Phon
       resetOtp();
     } finally {
       setLoading(false);
+      verifyingRef.current = false;
     }
   };
 
