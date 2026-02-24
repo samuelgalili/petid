@@ -12,6 +12,9 @@ import {
   Crown,
   ShieldCheck,
   ShieldAlert,
+  MoreVertical,
+  Trash2,
+  Flag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -148,6 +151,8 @@ export const SoundtrackPostCard = ({
   const [showShareSheet, setShowShareSheet] = useState(false);
   const [showSmartCheckout, setShowSmartCheckout] = useState(false);
   const [overlayDimmed, setOverlayDimmed] = useState(false);
+  const [showPostMenu, setShowPostMenu] = useState(false);
+  const [deletingPost, setDeletingPost] = useState(false);
   const lastTapRef = useRef(0);
   const dimTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { addToCart } = useCart();
@@ -278,6 +283,26 @@ export const SoundtrackPostCard = ({
 
   const handleShare = () => {
     setShowShareSheet(true);
+  };
+
+  const isPostOwner = userId === post.user_id;
+
+  const handleDeletePost = async () => {
+    if (!userId || !isPostOwner) return;
+    setDeletingPost(true);
+    try {
+      await supabase.from("post_likes").delete().eq("post_id", post.id);
+      await supabase.from("post_comments").delete().eq("post_id", post.id);
+      const { error } = await supabase.from("posts").delete().eq("id", post.id).eq("user_id", userId);
+      if (error) throw error;
+      toast.success("הפוסט נמחק בהצלחה");
+      window.location.reload();
+    } catch {
+      toast.error("שגיאה במחיקת הפוסט");
+    } finally {
+      setDeletingPost(false);
+      setShowPostMenu(false);
+    }
   };
 
   const handleAddToCart = () => {
