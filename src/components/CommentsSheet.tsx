@@ -518,11 +518,9 @@ export const CommentsSheet = ({
 
   return (
     <>
-      <Sheet open={isOpen} onOpenChange={onClose}>
-        <SheetContent
-          side="bottom"
-          className="!h-[70vh] !max-h-[70vh] rounded-t-[28px] bg-card border-none !p-0 !gap-0 flex flex-col z-[100]"
-        >
+      <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DrawerContent className="h-[70vh] max-h-[70vh] rounded-t-[28px] bg-card border-none p-0 flex flex-col z-[100]">
+
           {/* Handle + Title */}
           <div className="flex flex-col items-center pt-2.5 pb-1">
             <div className="w-8 h-1 bg-muted rounded-full" />
