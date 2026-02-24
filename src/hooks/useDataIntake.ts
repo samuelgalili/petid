@@ -136,6 +136,32 @@ export function useDataIntake({ petId, petName, isSOSActive = false }: UseDataIn
       return { type: source, userMessage: "", aiPrompt: "" };
     }
 
+    // Auto-save to album or documents
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      if (fileType === "document") {
+        const { autoSaveToDocuments } = await import("@/lib/autoSaveUpload");
+        await autoSaveToDocuments({
+          userId: user.id,
+          petId,
+          fileUrl,
+          fileName: file.name,
+          fileSize: file.size,
+          documentType: "general",
+          title: file.name,
+        });
+      } else {
+        const { autoSaveToAlbum } = await import("@/lib/autoSaveUpload");
+        await autoSaveToAlbum({
+          userId: user.id,
+          petId,
+          mediaUrl: fileUrl,
+          caption: null,
+          mediaType: fileType === "video" ? "video" : "image",
+        });
+      }
+    }
+
     toast({
       title: "🔒 הקובץ נשמר בצורה מאובטחת",
       description: `נשמר בכספת של ${petName}`,
