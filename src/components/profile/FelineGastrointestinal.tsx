@@ -189,7 +189,7 @@ export const FelineGastrointestinal = ({ petName, weight }: FelineGastrointestin
               <Utensils className="w-4 h-4 text-green-500" strokeWidth={1.5} />
             </div>
             <div className="text-right">
-              <h4 className="text-xs font-bold text-foreground">טבלת מינון — Vet Life GI</h4>
+              <h4 className="text-xs font-bold text-foreground">טבלת מינון — Health & Care GI</h4>
               <p className="text-[10px] text-muted-foreground">גרם ליום לפי משקל</p>
             </div>
           </div>

@@ -106,6 +106,24 @@ function scoreProduct(
     }
   }
 
+  // Weight-based relevance
+  if (product.dog_size) {
+    const sizeMap: Record<string, [number, number]> = {
+      small: [0, 10], medium: [10, 25], large: [25, 45], giant: [45, 200],
+    };
+    const range = sizeMap[product.dog_size.toLowerCase()];
+    if (range && product._petWeight && product._petWeight >= range[0] && product._petWeight < range[1]) {
+      score += 25;
+      reason = "מותאם למשקל חיית המחמד";
+    }
+  }
+
+  // NRC 2006 compliance signal
+  if (text.includes("nrc") || text.includes("aafco") || text.includes("fediaf")) {
+    score += 15;
+    reason = "עומד בתקני NRC 2006 ✅";
+  }
+
   // General quality signals
   if (text.includes("premium") || text.includes("פרימיום")) score += 5;
   if (text.includes("organic") || text.includes("אורגני")) score += 5;

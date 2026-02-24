@@ -18,7 +18,7 @@ const RECOVERY_PRODUCTS = [
   {
     icon: Utensils,
     name: 'מזון החלמה רפואי',
-    description: 'Vet Life Intestinal — מזון ייעודי לתמיכה במערכת העיכול בזמן החלמה',
+    description: 'Health & Care Intestinal — מזון ייעודי לתמיכה במערכת העיכול בזמן החלמה',
     color: 'text-red-500',
     bg: 'bg-red-500/10',
   },

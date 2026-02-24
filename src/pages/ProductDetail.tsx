@@ -532,7 +532,7 @@ const isVetDietProduct = (product: any): boolean => {
   return cat === 'veterinary' || cat === 'vet-diet' || cat === 'metabolic' ||
     text.includes('obesity') || text.includes('השמנה') ||
     text.includes('diabetic') || text.includes('סוכרת') ||
-    text.includes('vet life') || text.includes('veterinary diet') || text.includes('מזון רפואי') ||
+    text.includes('petid pharmacy') || text.includes('health & care') || text.includes('veterinary diet') || text.includes('מזון רפואי') ||
     (text.includes('metabolic') && (text.includes('dog') || text.includes('כלב'))) ||
     (text.includes('weight management') && text.includes('prescription')) ||
     text.includes('l-carnitine') || text.includes('ל-קרניטין');
@@ -572,7 +572,7 @@ const extractVetDietFeatures = (product: any): {
     'LickiMat – להאטת אכילה והגברת תחושת שובע',
   ];
 
-  // Feeding matrix (Vet Life style)
+  // Feeding matrix (Health & Care style)
   const feedingMatrix: { weight: string; diabetic: string; light: string; severe: string }[] = [
     { weight: '2 ק"ג', diabetic: '45 גרם', light: '40 גרם', severe: '30 גרם' },
     { weight: '5 ק"ג', diabetic: '85 גרם', light: '75 גרם', severe: '55 גרם' },
