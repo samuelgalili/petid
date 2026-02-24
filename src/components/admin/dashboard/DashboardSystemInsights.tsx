@@ -93,9 +93,9 @@ export const DashboardSystemInsights = () => {
     }
   };
 
-  const handleExportCSV = async (table: string) => {
+  const handleExportCSV = async (tableName: string) => {
     try {
-      const { data } = await supabase.from(table).select("*").limit(1000);
+      const { data } = await (supabase as any).from(tableName).select("*").limit(1000);
       if (!data || data.length === 0) return;
 
       const headers = Object.keys(data[0]);

@@ -84,7 +84,7 @@ export const DashboardContentInsights = () => {
         .slice(0, 5);
 
       setBreedStats({ total: breeds.length, topBreeds });
-      setAiPosts((aiPostsRes.data || []).length);
+      setAiPosts(0);
     } catch (err) {
       console.error("Content insights error:", err);
     } finally {
