@@ -518,8 +518,8 @@ export const CommentsSheet = ({
 
   return (
     <>
-      <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DrawerContent className="!h-[70vh] !max-h-[70vh] rounded-t-[28px] bg-card border-none p-0 flex flex-col z-[100] overflow-hidden">
+      <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()} snapPoints={[0.7]} activeSnapPoint={0.7} setActiveSnapPoint={() => {}}>
+        <DrawerContent className="rounded-t-[28px] bg-card border-none p-0 z-[100]" style={{ height: '70vh' }}>
 
           {/* Title (handle is provided by DrawerContent) */}
           <div className="flex-shrink-0 flex flex-col items-center pb-1">
