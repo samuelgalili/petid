@@ -255,11 +255,23 @@ const AdminDashboard = () => {
                 {/* Inventory Intelligence */}
                 <DashboardInventoryIntel />
 
+                {/* Shop Insights: Funnel + Flagged + Margins */}
+                <DashboardShopInsights />
+
                 {/* Charts Row */}
                 <div className="grid md:grid-cols-2 gap-4">
                   <DashboardPriceDistribution />
                   <DashboardCategoryChart />
                 </div>
+
+                {/* CRM & Customer Insights */}
+                <DashboardCRMInsights />
+
+                {/* Content & Data Insights */}
+                <DashboardContentInsights />
+
+                {/* System & Operations */}
+                <DashboardSystemInsights />
 
                 {/* Product Table */}
                 <DashboardProductTable />
