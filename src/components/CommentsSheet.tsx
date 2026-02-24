@@ -704,8 +704,8 @@ export const CommentsSheet = ({
               </motion.button>
             </div>
           </div>
-        </SheetContent>
-      </Sheet>
+        </DrawerContent>
+      </Drawer>
 
       <EmergencyHub open={showSOS} onOpenChange={setShowSOS} />
     </>
