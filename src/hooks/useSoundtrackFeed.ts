@@ -27,7 +27,8 @@ export interface FeedPost {
   is_following?: boolean;
   recommendation_reason?: string;
   media_type?: "image" | "gallery" | "video";
-  post_type?: "regular" | "product" | "challenge" | "cta";
+  post_type?: "regular" | "product" | "challenge" | "cta" | "lost_pet";
+  is_pinned?: boolean;
   product_id?: string;
   product_name?: string;
   product_price?: number;
@@ -152,9 +153,9 @@ export function useSoundtrackFeed() {
     setError(null);
     try {
       // ── Fetch base posts ──
-      let postsQuery = supabase
+      let postsQuery = (supabase as any)
         .from("posts")
-        .select("id, user_id, image_url, media_urls, video_url, caption, created_at, music_url, music_title, music_artist")
+        .select("id, user_id, image_url, media_urls, video_url, caption, created_at, music_url, music_title, music_artist, post_type, is_pinned")
         .order("created_at", { ascending: false })
         .limit(30);
 
@@ -177,8 +178,8 @@ export function useSoundtrackFeed() {
         return;
       }
 
-      const userIds = [...new Set(postsData.map((p) => p.user_id))];
-      const postIds = postsData.map((p) => p.id);
+      const userIds = [...new Set((postsData as any[]).map((p: any) => p.user_id))] as string[];
+      const postIds = (postsData as any[]).map((p: any) => p.id) as string[];
 
       // Parallel fetches
       const [profilesRes, likesCountRes, commentsCountRes, ...userDataRes] = await Promise.all([
@@ -234,22 +235,36 @@ export function useSoundtrackFeed() {
           is_following: followingIdsFromData.includes(post.user_id),
           recommendation_reason: reason,
           media_type: mediaType,
+          post_type: post.post_type || "regular",
+          is_pinned: post.is_pinned || false,
         };
       };
 
-      // ── FOLLOWING FEED: Chronological, no commerce ──
-      const followingFiltered = postsData
-        .filter((p) => followingUserIds.includes(p.user_id))
-        .map((p) => enrichPost(p));
+      // ── FOLLOWING FEED: Chronological, lost pets pinned to top ──
+      const followingFiltered = (postsData as any[])
+        .filter((p: any) => followingUserIds.includes(p.user_id))
+        .map((p: any) => enrichPost(p))
+        .sort((a: any, b: any) => {
+          // Pin lost pet posts to top
+          const aLost = a.post_type === 'lost_pet' && a.is_pinned ? 1 : 0;
+          const bLost = b.post_type === 'lost_pet' && b.is_pinned ? 1 : 0;
+          if (aLost !== bLost) return bLost - aLost;
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
       setFollowingPosts(followingFiltered);
 
-      // ── FOR YOU FEED: AI-ranked with product spotlights ──
-      const discoverEnriched = postsData.map((p) => enrichPost(p, "בשבילך"));
+      // ── FOR YOU FEED: AI-ranked with product spotlights, lost pets pinned ──
+      const discoverEnriched = (postsData as any[]).map((p: any) => enrichPost(p, "בשבילך"));
 
-      // Pet-aware ranking
+      // Pet-aware ranking with lost pet priority
       const petConditions = [...(activePet?.medical_conditions || [])];
       if (activePet) {
-        discoverEnriched.sort((a, b) => {
+        discoverEnriched.sort((a: any, b: any) => {
+          // Lost pet posts always float to top
+          const aLost = a.post_type === 'lost_pet' && a.is_pinned ? 1 : 0;
+          const bLost = b.post_type === 'lost_pet' && b.is_pinned ? 1 : 0;
+          if (aLost !== bLost) return bLost - aLost;
+
           const scoreA = scorePostForPet(a.caption, activePet.pet_type, activePet.breed, activePet.ageWeeks ?? null, petConditions);
           const scoreB = scorePostForPet(b.caption, activePet.pet_type, activePet.breed, activePet.ageWeeks ?? null, petConditions);
           if (scoreA !== scoreB) return scoreB - scoreA;

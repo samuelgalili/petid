@@ -204,13 +204,30 @@ PetID - שומרים על חיות המחמד שלנו
   };
 
   const shareToFeed = async () => {
-    toast.info("הפוסט יפורסם בפיד הקהילתי של PetID");
-    // Future: create a community post automatically
+    try {
+      const { data, error } = await supabase.functions.invoke("lost-pet-alert", {
+        body: { pet_id: pet.id },
+      });
+      if (error) throw error;
+      const result = data as any;
+      toast.success(`פורסם בפיד ונשלחו ${result?.push_sent || 0} התראות באזור`);
+      onUpdate();
+    } catch {
+      toast.error("שגיאה בפרסום");
+    }
   };
 
-  const sendRadiusAlert = () => {
-    toast.info("התראת רדיוס תישלח לכל משתמשי PetID באזורך");
-    // Future: edge function for push notification blast
+  const sendRadiusAlert = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke("lost-pet-alert", {
+        body: { pet_id: pet.id },
+      });
+      if (error) throw error;
+      const result = data as any;
+      toast.success(`🚨 נשלחו ${result?.push_sent || 0} התראות ל-${result?.nearby_users || 0} משתמשים באזור ${result?.city || ''}`);
+    } catch {
+      toast.error("שגיאה בשליחת התראות");
+    }
   };
 
   // ─── LOST MODE ACTIVE BANNER ───
