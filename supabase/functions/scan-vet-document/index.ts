@@ -46,6 +46,7 @@ serve(async (req) => {
     }
 
     const shouldSave = saveToDb === true;
+    const imageBase64ForStorage = imageBase64ForSave || imageBase64 || null;
 
     let scanResult;
 
