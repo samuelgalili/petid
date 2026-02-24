@@ -5,7 +5,7 @@ import {
   ShoppingCart, ExternalLink, Reply, Trash2,
 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Switch } from "@/components/ui/switch";
+import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useActivePet } from "@/hooks/useActivePet";
@@ -716,7 +716,11 @@ export const CommentsSheet = ({
                   : "bg-secondary text-muted-foreground"
               )}
             >
-              <Send className="w-3.5 h-3.5" />
+              {submitting ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Send className="w-3.5 h-3.5" />
+              )}
             </motion.button>
           </div>
         </div>
