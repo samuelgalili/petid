@@ -5,7 +5,7 @@ import {
   ShoppingCart, ExternalLink, Reply, Trash2,
 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-// Using custom overlay instead of Sheet/Drawer for reliable height control
+import { Switch } from "@/components/ui/switch";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
