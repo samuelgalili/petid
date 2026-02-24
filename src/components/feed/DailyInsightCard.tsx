@@ -55,7 +55,7 @@ export const DailyInsightCard = () => {
   const calculateHealthScore = (pet: any): { score: number; missing: string[] } => {
     let score = 0;
     const missing: string[] = [];
-    const checks = getCheckLabels();
+    const checks = getCheckLabels(pet);
 
     for (const c of checks) {
       const val = pet[c.field];
