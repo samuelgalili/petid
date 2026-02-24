@@ -44,7 +44,10 @@ export const AppleSignInButton = ({
       className={`w-full h-11 relative font-semibold ${className}`}
     >
       {loading ? (
-        <Loader2 className="h-4 w-4 animate-spin" />
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>מתחבר...</span>
+        </div>
       ) : (
         <>
           <svg 
