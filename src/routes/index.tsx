@@ -345,6 +345,7 @@ const AdminReviewQueue = lazy(() => import("@/pages/admin/AdminReviewQueue"));
 const AdminApprovalQueue = lazy(() => import("@/pages/admin/AdminApprovalQueue"));
 const AdminBotActivityLog = lazy(() => import("@/pages/admin/AdminBotActivityLog"));
 const AdminInventoryPredictions = lazy(() => import("@/pages/admin/AdminInventoryPredictions"));
+const AdminContentBot = lazy(() => import("@/pages/admin/AdminContentBot"));
 
 // Helper for admin routes
 const AdminPage = ({ component: Component, pageName }: { component: ComponentType; pageName: string }) => (
@@ -413,6 +414,7 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/approval-queue", element: <AdminPage component={AdminApprovalQueue} pageName="תור אישורים" /> },
   { path: "/admin/bot-activity", element: <AdminPage component={AdminBotActivityLog} pageName="לוג בוטים" /> },
   { path: "/admin/inventory-predictions", element: <AdminPage component={AdminInventoryPredictions} pageName="חיזוי מלאי NRC" /> },
+  { path: "/admin/content-bot", element: <AdminPage component={AdminContentBot} pageName="Content Creation Bot" /> },
 ];
 
 // ==========================================
