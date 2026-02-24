@@ -354,25 +354,42 @@ export const SignupForm = () => {
         </motion.div>
       )}
 
-      {!showOTPInput ? (
+      {showSmsOtp ? (
+        <PhoneOtpVerification
+          phone={formData.phone}
+          mode="signup"
+          onVerified={handleSmsVerified}
+          onCancel={() => setShowSmsOtp(false)}
+        />
+      ) : !showOTPInput ? (
         <>
-          {/* Method Toggle - Only WhatsApp and Email (SMS requires Twilio) */}
-          <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+          {/* Method Toggle */}
+          <div className="flex border border-border rounded-lg overflow-hidden">
             <button
               type="button"
-              onClick={() => { setSignupMethod("whatsapp"); setFieldErrors({}); }}
-              className={`flex-1 py-2.5 text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 ${
-                signupMethod === "whatsapp" ? "bg-[#25D366] text-white" : "bg-gray-50 text-gray-500"
+              onClick={() => { setSignupMethod("whatsapp"); setFieldErrors({}); setShowSmsOtp(false); }}
+              className={`flex-1 py-2.5 text-xs font-semibold transition-colors flex items-center justify-center gap-1 ${
+                signupMethod === "whatsapp" ? "bg-[#25D366] text-white" : "bg-muted text-muted-foreground"
               }`}
             >
-              <MessageCircle className="w-4 h-4" />
+              <MessageCircle className="w-3.5 h-3.5" />
               וואטסאפ
             </button>
             <button
               type="button"
-              onClick={() => { setSignupMethod("email"); setFieldErrors({}); }}
-              className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${
-                signupMethod === "email" ? "bg-white text-gray-900" : "bg-gray-50 text-gray-500"
+              onClick={() => { setSignupMethod("sms"); setFieldErrors({}); setShowSmsOtp(false); }}
+              className={`flex-1 py-2.5 text-xs font-semibold transition-colors flex items-center justify-center gap-1 ${
+                signupMethod === "sms" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              <Phone className="w-3.5 h-3.5" />
+              SMS
+            </button>
+            <button
+              type="button"
+              onClick={() => { setSignupMethod("email"); setFieldErrors({}); setShowSmsOtp(false); }}
+              className={`flex-1 py-2.5 text-xs font-semibold transition-colors ${
+                signupMethod === "email" ? "bg-card text-foreground" : "bg-muted text-muted-foreground"
               }`}
             >
               אימייל
