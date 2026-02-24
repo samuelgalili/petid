@@ -748,6 +748,10 @@ export default function Documents() {
                       documentTypeLabel={getDocumentTypeLabel(doc.document_type)}
                       onDelete={handleDelete}
                       onDownload={handleDownload}
+                      onView={(fileUrl, fileName) => {
+                        // For base64 data URLs, open in new tab; for regular URLs too
+                        window.open(fileUrl, '_blank');
+                      }}
                       index={index}
                     />
                   </motion.div>
