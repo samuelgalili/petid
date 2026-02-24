@@ -544,7 +544,6 @@ Age keywords: גיל, age, שנים, years, חודשים, months.`
             console.error("Failed to create license renewal reminder:", renErr);
           }
         }
-        }
       }
     }
 
