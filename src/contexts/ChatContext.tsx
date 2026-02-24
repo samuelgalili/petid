@@ -43,6 +43,14 @@ export interface Message {
   showAdoptionTraits?: boolean;
   showAdoptionRequirements?: boolean;
   suggestions?: string[];
+  // Omni-Bot Action Cards
+  ocrApproval?: { petName: string; changes: Record<string, string> };
+  quickCheckout?: { productName: string; price: number; imageUrl?: string; productId?: string };
+  insuranceLead?: { petName: string; breed?: string };
+  addressUpdate?: { newAddress: string; petName: string };
+  nrcPlan?: { petName: string; weight?: number; dailyKcal?: number; recommendations: string[] };
+  pendingApproval?: { title: string; queueId: string };
+  botSource?: string; // which bot generated this message
 }
 
 export interface Pet {
@@ -152,18 +160,43 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         if (pets.length === 1) {
           setSelectedPet(pets[0]);
           
-          // Fetch medical context for personalized greeting
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { data: petData } = await (supabase as any)
-            .from("pets")
-            .select("medical_conditions, health_notes")
-            .eq("id", pets[0].id)
-            .maybeSingle();
+          // Fetch medical context + recent events for proactive greeting
+          const [petDataResult, recentEventsResult, recentDocsResult] = await Promise.all([
+            (supabase as any).from("pets").select("medical_conditions, health_notes, weight, breed, city").eq("id", pets[0].id).maybeSingle(),
+            (supabase as any).from("system_events").select("title, description, created_at").order("created_at", { ascending: false }).limit(3),
+            (supabase as any).from("admin_data_sources").select("title, extracted_data, created_at").eq("is_processed", true).order("created_at", { ascending: false }).limit(1),
+          ]);
+
+          const petData = petDataResult.data;
+          const recentEvents = recentEventsResult.data || [];
+          const recentDoc = recentDocsResult.data?.[0];
           
           const conditions = petData?.medical_conditions as string[] | null;
-          let greeting = `היי ${firstName}! מה שלום ${pets[0].name}? 🐾\n\nאיך אוכל לעזור היום?`;
+          const petWeight = petData?.weight;
+          const petBreed = petData?.breed;
           
-          // Proactive medical follow-up if conditions exist
+          let greeting = `היי ${firstName}! מה שלום ${pets[0].name}? 🐾\n\nאני ה-Hub החכם של PetID — כל 9 הבוטים שלנו עובדים בשבילך.\nאיך אוכל לעזור היום?`;
+          
+          // Proactive updates
+          const updates: string[] = [];
+          
+          // Recent document processed
+          if (recentDoc?.extracted_data) {
+            const extracted = recentDoc.extracted_data as Record<string, any>;
+            if (extracted.address) {
+              updates.push(`📄 ניתחתי מסמך חדש ועדכנתי את הכתובת ל-${extracted.address}`);
+            } else {
+              updates.push(`📄 עיבדתי מסמך חדש: "${recentDoc.title}"`);
+            }
+          }
+          
+          // NRC plan based on weight
+          if (petWeight && petWeight > 0) {
+            const mer = Math.round(110 * Math.pow(petWeight, 0.75));
+            updates.push(`🧬 תוכנית תזונה NRC 2006: ${mer} kcal/יום (${petWeight} ק"ג)`);
+          }
+          
+          // Medical follow-up
           if (conditions && conditions.length > 0) {
             const conditionLabels: Record<string, string> = {
               diabetes: "הסוכרת", allergies: "האלרגיות", skin_issues: "בעיות העור",
@@ -173,21 +206,30 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             };
             const firstCondition = conditions[0];
             const label = conditionLabels[firstCondition] || firstCondition;
-            greeting = `היי ${firstName}! מה שלום ${pets[0].name}? 🐾\n\nאיך ${pets[0].name} מרגיש/ה עם ${label}? אשמח לעזור בכל שאלה.`;
+            updates.push(`💊 איך ${pets[0].name} מרגיש/ה עם ${label}?`);
+          }
+          
+          // Recent bot events
+          if (recentEvents.length > 0) {
+            updates.push(`🤖 ${recentEvents[0].title}`);
+          }
+          
+          if (updates.length > 0) {
+            greeting = `היי ${firstName}! 🐾\n\n${updates.join("\n")}\n\nכל 9 הבוטים עובדים ברקע. במה נתמקד?`;
           }
           
           setMessages([{ role: "assistant", content: greeting }]);
         } else {
           setMessages([{
             role: "assistant",
-            content: `היי ${firstName}! מה שלום? 🐾\n\nאני רואה שיש לך כמה חיות מחמד.\nעל מי נדבר היום?`,
+            content: `היי ${firstName}! מה שלום? 🐾\n\nאני ה-Hub של PetID — כל הבוטים שלנו לשירותך.\nעל מי נדבר היום?`,
             suggestions: pets.map(p => p.name),
           }]);
         }
       } else {
         setMessages([{
           role: "assistant",
-          content: `היי ${firstName}! 🐾\n\nאני העוזר החכם של PetID.\nבמה אוכל לעזור היום?`,
+          content: `היי ${firstName}! 🐾\n\nאני ה-Hub החכם של PetID.\nבמה אוכל לעזור היום?`,
         }]);
       }
     };
