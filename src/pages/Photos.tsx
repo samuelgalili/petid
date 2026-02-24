@@ -9,18 +9,20 @@ import {
   Heart, 
   MessageCircle, 
   Plus, 
-  Image as ImageIcon, 
   Trash2, 
   Check,
   Camera,
   Bookmark,
-  Copy
+  Copy,
+  Sparkles,
+  ImagePlus
 } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { HighlightsSection } from "@/components/HighlightsSection";
 import { motion, AnimatePresence } from "framer-motion";
 import { CreatePostDialog } from "@/components/CreatePostDialog";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -113,7 +115,6 @@ export default function Photos() {
       if (!selectionMode) {
         setSelectionMode(true);
         setSelectedPosts(new Set([postId]));
-        // Haptic feedback
         if (navigator.vibrate) {
           navigator.vibrate(50);
         }
@@ -142,7 +143,6 @@ export default function Photos() {
       const newSet = new Set(prev);
       if (newSet.has(postId)) {
         newSet.delete(postId);
-        // Exit selection mode if no posts selected
         if (newSet.size === 0) {
           setSelectionMode(false);
         }
@@ -221,6 +221,13 @@ export default function Photos() {
   };
 
   const totalLikes = posts.reduce((sum, post) => sum + post.likes_count, 0);
+  const totalComments = posts.reduce((sum, post) => sum + post.comments_count, 0);
+
+  const tabs = [
+    { key: "posts" as const, icon: Grid3X3, label: "פוסטים" },
+    { key: "saved" as const, icon: Bookmark, label: "שמורים" },
+    { key: "tagged" as const, icon: Copy, label: "תיוגים" },
+  ];
 
   return (
     <>
@@ -238,47 +245,42 @@ export default function Photos() {
       />
       
       <div className="min-h-screen bg-background pb-20" dir="rtl">
-        {/* Header Section with Gradient */}
+        {/* Hero Header */}
         <div className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--gradient-start))] via-[hsl(var(--gradient-mid))] to-[hsl(var(--gradient-end))] opacity-90" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.15),transparent_50%)]" />
+          {/* Background gradient */}
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-primary/5 to-transparent" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-primary/8 rounded-full blur-3xl" />
           
-          <div className="relative px-4 pt-6 pb-8">
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
-                <Camera className="w-7 h-7 text-white" />
-              </div>
-              <div className="text-center">
-                <h1 className="text-2xl font-bold text-white">האלבום שלי</h1>
-                <p className="text-white/80 text-sm">כל הרגעים שלי במקום אחד</p>
+          <div className="relative px-5 pt-4 pb-6">
+            {/* Title Row */}
+            <div className="flex items-center gap-3 mb-5">
+              <motion.div 
+                className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center"
+                whileTap={{ scale: 0.95 }}
+              >
+                <Camera className="w-6 h-6 text-primary" strokeWidth={1.5} />
+              </motion.div>
+              <div className="flex-1">
+                <h1 className="text-xl font-bold text-foreground">האלבום שלי</h1>
+                <p className="text-sm text-muted-foreground">הרגעים המיוחדים שלי</p>
               </div>
             </div>
             
-            {/* Stats Cards */}
-            <div className="flex justify-center gap-4">
-              <motion.div 
-                className="bg-white/20 backdrop-blur-sm rounded-2xl px-6 py-3 text-center"
-                whileTap={{ scale: 0.95 }}
-              >
-                <span className="text-2xl font-bold text-white block">{posts.length}</span>
-                <span className="text-xs text-white/80">פוסטים</span>
-              </motion.div>
-              <motion.div 
-                className="bg-white/20 backdrop-blur-sm rounded-2xl px-6 py-3 text-center"
-                whileTap={{ scale: 0.95 }}
-              >
-                <span className="text-2xl font-bold text-white block">{totalLikes}</span>
-                <span className="text-xs text-white/80">לייקים</span>
-              </motion.div>
-              <motion.div 
-                className="bg-white rounded-2xl px-6 py-3 text-center cursor-pointer shadow-lg"
-                whileTap={{ scale: 0.95 }}
-                whileHover={{ scale: 1.05 }}
+            {/* Stats Row */}
+            <div className="flex items-stretch gap-2">
+              <StatCard value={posts.length} label="פוסטים" />
+              <StatCard value={totalLikes} label="לייקים" icon={<Heart className="w-3.5 h-3.5 text-[hsl(var(--petid-coral))]" />} />
+              <StatCard value={totalComments} label="תגובות" icon={<MessageCircle className="w-3.5 h-3.5 text-primary" />} />
+              
+              {/* Upload Button */}
+              <motion.button
                 onClick={() => setShowCreateDialog(true)}
+                className="flex-1 flex flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors min-h-[72px]"
+                whileTap={{ scale: 0.95 }}
               >
-                <span className="text-2xl font-bold text-[hsl(var(--gradient-start))] block">+</span>
-                <span className="text-xs text-[hsl(var(--gradient-mid))] font-medium">העלאה</span>
-              </motion.div>
+                <ImagePlus className="w-5 h-5 text-primary" strokeWidth={1.5} />
+                <span className="text-[11px] font-medium text-primary">העלאה</span>
+              </motion.button>
             </div>
           </div>
         </div>
@@ -288,126 +290,59 @@ export default function Photos() {
           <HighlightsSection userId={user.id} isOwnProfile={true} />
         )}
 
-        {/* Instagram Style Tabs */}
-        <div className="flex border-b border-border/50 sticky top-16 z-10 bg-background">
-          <button
-            onClick={() => setFilter("posts")}
-            className={`flex-1 py-3 flex justify-center transition-all relative ${
-              filter === "posts" ? "text-foreground" : "text-muted-foreground"
-            }`}
-          >
-            <Grid3X3 className="w-6 h-6" strokeWidth={filter === "posts" ? 2 : 1.5} />
-            {filter === "posts" && (
-              <motion.div
-                layoutId="tab-indicator"
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground"
-              />
-            )}
-          </button>
-          <button
-            onClick={() => setFilter("saved")}
-            className={`flex-1 py-3 flex justify-center transition-all relative ${
-              filter === "saved" ? "text-foreground" : "text-muted-foreground"
-            }`}
-          >
-            <Bookmark className="w-6 h-6" strokeWidth={filter === "saved" ? 2 : 1.5} />
-            {filter === "saved" && (
-              <motion.div
-                layoutId="tab-indicator"
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground"
-              />
-            )}
-          </button>
-          <button
-            onClick={() => setFilter("tagged")}
-            className={`flex-1 py-3 flex justify-center transition-all relative ${
-              filter === "tagged" ? "text-foreground" : "text-muted-foreground"
-            }`}
-          >
-            <Copy className="w-6 h-6" strokeWidth={filter === "tagged" ? 2 : 1.5} />
-            {filter === "tagged" && (
-              <motion.div
-                layoutId="tab-indicator"
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground"
-              />
-            )}
-          </button>
+        {/* Tabs */}
+        <div className="flex border-b border-border sticky top-16 z-10 bg-background/80 backdrop-blur-md">
+          {tabs.map(tab => {
+            const isActive = filter === tab.key;
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setFilter(tab.key)}
+                className={`flex-1 py-3 flex flex-col items-center gap-0.5 transition-all relative ${
+                  isActive ? "text-foreground" : "text-muted-foreground"
+                }`}
+              >
+                <Icon className="w-5 h-5" strokeWidth={isActive ? 2 : 1.5} />
+                <span className="text-[10px] font-medium">{tab.label}</span>
+                {isActive && (
+                  <motion.div
+                    layoutId="photos-tab-indicator"
+                    className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-primary"
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
+                )}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Gallery Grid */}
+        {/* Gallery Content */}
         <div className="w-full">
           {loading ? (
-            <div className="grid grid-cols-3 gap-px bg-border/30">
+            <div className="grid grid-cols-3 gap-0.5 p-0.5">
               {[...Array(12)].map((_, i) => (
-                <motion.div 
-                  key={i} 
-                  className="aspect-square bg-muted"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: i * 0.05 }}
-                >
-                  <div className="w-full h-full animate-pulse bg-gradient-to-br from-muted to-muted-foreground/10" />
-                </motion.div>
+                <Skeleton key={i} className="aspect-square rounded-none" />
               ))}
             </div>
           ) : posts.length === 0 ? (
-            <motion.div 
-              className="flex flex-col items-center justify-center py-20 px-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-[hsl(var(--gradient-start))] to-[hsl(var(--gradient-end))] flex items-center justify-center mb-4 shadow-lg">
-                <Camera className="w-12 h-12 text-white" strokeWidth={1.5} />
-              </div>
-              <h3 className="text-2xl font-bold text-foreground mb-2">שתף תמונות</h3>
-              <p className="text-muted-foreground text-center text-sm mb-6 max-w-xs">
-                כשתשתף תמונות, הן יופיעו באלבום שלך
-              </p>
-              <Button
-                onClick={() => setShowCreateDialog(true)}
-                className="bg-gradient-to-r from-[hsl(var(--gradient-start))] to-[hsl(var(--gradient-end))] text-white hover:opacity-90 rounded-xl px-6"
-              >
-                <Plus className="w-4 h-4 ml-2" />
-                שתף את התמונה הראשונה שלך
-              </Button>
-            </motion.div>
+            <EmptyAlbumState filter={filter} onUpload={() => setShowCreateDialog(true)} />
           ) : filter !== "posts" ? (
-            <motion.div 
-              className="flex flex-col items-center justify-center py-20 px-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[hsl(var(--gradient-start))] to-[hsl(var(--gradient-end))] flex items-center justify-center mb-4 shadow-lg">
-                {filter === "saved" ? (
-                  <Bookmark className="w-10 h-10 text-white" strokeWidth={1.5} />
-                ) : (
-                  <Copy className="w-10 h-10 text-white" strokeWidth={1.5} />
-                )}
-              </div>
-              <h3 className="text-xl font-bold text-foreground">
-                {filter === "saved" ? "אין פוסטים שמורים" : "אין תיוגים"}
-              </h3>
-              <p className="text-muted-foreground text-sm mt-2">
-                {filter === "saved" ? "פוסטים ששמרת יופיעו כאן" : "פוסטים שתויגת בהם יופיעו כאן"}
-              </p>
-            </motion.div>
+            <EmptyAlbumState filter={filter} onUpload={() => setShowCreateDialog(true)} />
           ) : (
-            <div className="grid grid-cols-3 gap-px bg-border/30">
+            <div className="grid grid-cols-3 gap-0.5 p-0.5">
               <AnimatePresence>
                 {posts.map((post, index) => (
                   <motion.div
                     key={post.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
+                    initial={{ opacity: 0 }}
                     animate={{ 
                       opacity: 1, 
-                      scale: pressedPostId === post.id ? 0.95 : 1 
+                      scale: pressedPostId === post.id ? 0.96 : 1 
                     }}
                     exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ 
-                      delay: index * 0.02,
-                      duration: 0.2
-                    }}
-                    className="relative aspect-square bg-muted cursor-pointer overflow-hidden"
+                    transition={{ delay: index * 0.015, duration: 0.2 }}
+                    className="relative aspect-square bg-muted cursor-pointer overflow-hidden group"
                     onClick={() => handlePostClick(post.id)}
                     onTouchStart={() => handleTouchStart(post.id)}
                     onTouchEnd={handleTouchEnd}
@@ -421,7 +356,7 @@ export default function Photos() {
                       alt={post.caption || "Post"}
                       className={`w-full h-full object-cover transition-all duration-200 ${
                         selectionMode && selectedPosts.has(post.id) 
-                          ? "scale-90 rounded-lg opacity-70" 
+                          ? "scale-[0.88] rounded-xl brightness-75" 
                           : ""
                       }`}
                       loading="lazy"
@@ -434,7 +369,7 @@ export default function Photos() {
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
-                          className="absolute inset-0 bg-black/20"
+                          className="absolute inset-0 bg-background/20"
                         />
                       )}
                     </AnimatePresence>
@@ -449,11 +384,11 @@ export default function Photos() {
                           className={`absolute top-2 right-2 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
                             selectedPosts.has(post.id)
                               ? "bg-primary border-primary"
-                              : "bg-black/40 border-white"
+                              : "bg-background/40 border-white backdrop-blur-sm"
                           }`}
                         >
                           {selectedPosts.has(post.id) && (
-                            <Check className="w-4 h-4 text-white" strokeWidth={3} />
+                            <Check className="w-3.5 h-3.5 text-primary-foreground" strokeWidth={3} />
                           )}
                         </motion.div>
                       )}
@@ -461,21 +396,21 @@ export default function Photos() {
                     
                     {/* Video Indicator */}
                     {(post.media_type === "video" || post.video_url) && !selectionMode && (
-                      <div className="absolute top-2 right-2">
-                        <Play className="w-5 h-5 text-white drop-shadow-lg" fill="white" />
+                      <div className="absolute top-2 right-2 bg-background/30 backdrop-blur-sm rounded-full p-1">
+                        <Play className="w-3.5 h-3.5 text-white" fill="white" />
                       </div>
                     )}
                     
-                    {/* Hover Overlay - Desktop only */}
+                    {/* Hover Overlay - Desktop */}
                     {!selectionMode && (
-                      <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-6 max-sm:hidden">
+                      <div className="absolute inset-0 bg-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-5 max-sm:hidden">
                         <div className="flex items-center gap-1.5 text-white">
-                          <Heart className="w-5 h-5" fill="white" />
-                          <span className="font-bold">{post.likes_count}</span>
+                          <Heart className="w-5 h-5" fill="white" strokeWidth={1.5} />
+                          <span className="font-bold text-sm">{post.likes_count}</span>
                         </div>
                         <div className="flex items-center gap-1.5 text-white">
-                          <MessageCircle className="w-5 h-5" fill="white" />
-                          <span className="font-bold">{post.comments_count}</span>
+                          <MessageCircle className="w-5 h-5" fill="white" strokeWidth={1.5} />
+                          <span className="font-bold text-sm">{post.comments_count}</span>
                         </div>
                       </div>
                     )}
@@ -494,25 +429,25 @@ export default function Photos() {
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className="fixed bottom-20 left-4 right-4 bg-gradient-to-r from-[hsl(var(--gradient-start))] to-[hsl(var(--gradient-end))] rounded-2xl shadow-2xl p-4 z-50"
+            className="fixed bottom-20 left-4 right-4 bg-card border border-border rounded-2xl shadow-xl p-3 z-50"
             dir="rtl"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={exitSelectionMode}
-                  className="text-white/80 hover:text-white hover:bg-white/20"
+                  className="text-muted-foreground hover:text-foreground rounded-xl text-xs"
                 >
                   ביטול
                 </Button>
-                <div className="h-4 w-px bg-white/30" />
+                <div className="h-4 w-px bg-border" />
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={selectAll}
-                  className="text-white hover:bg-white/20"
+                  className="text-primary hover:bg-primary/10 rounded-xl text-xs"
                   disabled={selectedPosts.size === posts.length}
                 >
                   בחר הכל
@@ -521,9 +456,9 @@ export default function Photos() {
               <Button
                 size="sm"
                 onClick={() => setShowMultiDeleteDialog(true)}
-                className="bg-white text-red-500 hover:bg-white/90 rounded-full px-4"
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl px-4 text-xs"
               >
-                <Trash2 className="w-4 h-4 ml-1" />
+                <Trash2 className="w-3.5 h-3.5 ml-1" />
                 מחק {selectedPosts.size}
               </Button>
             </div>
@@ -538,7 +473,7 @@ export default function Photos() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed bottom-24 left-0 right-0 text-center text-xs text-muted-foreground"
+            className="fixed bottom-24 left-0 right-0 text-center text-[11px] text-muted-foreground"
           >
             לחץ ארוך לבחירה מרובה
           </motion.p>
@@ -566,7 +501,7 @@ export default function Photos() {
             <AlertDialogAction
               onClick={handleDeletePost}
               disabled={deleting}
-              className="bg-red-500 hover:bg-red-600 rounded-xl"
+              className="bg-destructive hover:bg-destructive/90 rounded-xl"
             >
               {deleting ? "מוחק..." : "מחק"}
             </AlertDialogAction>
@@ -588,7 +523,7 @@ export default function Photos() {
             <AlertDialogAction
               onClick={handleMultiDelete}
               disabled={deleting}
-              className="bg-red-500 hover:bg-red-600 rounded-xl"
+              className="bg-destructive hover:bg-destructive/90 rounded-xl"
             >
               {deleting ? "מוחק..." : `מחק ${selectedPosts.size} פוסטים`}
             </AlertDialogAction>
@@ -596,5 +531,88 @@ export default function Photos() {
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+}
+
+/* ── Sub-components ── */
+
+function StatCard({ value, label, icon }: { value: number; label: string; icon?: React.ReactNode }) {
+  return (
+    <motion.div 
+      className="flex-1 bg-card border border-border rounded-2xl px-3 py-3 text-center min-h-[72px] flex flex-col items-center justify-center"
+      whileTap={{ scale: 0.95 }}
+    >
+      <div className="flex items-center gap-1 justify-center">
+        {icon}
+        <span className="text-xl font-bold text-foreground">{value}</span>
+      </div>
+      <span className="text-[11px] text-muted-foreground mt-0.5">{label}</span>
+    </motion.div>
+  );
+}
+
+function EmptyAlbumState({ filter, onUpload }: { filter: string; onUpload: () => void }) {
+  if (filter === "saved") {
+    return (
+      <motion.div 
+        className="flex flex-col items-center justify-center py-20 px-6"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center mb-4">
+          <Bookmark className="w-9 h-9 text-primary" strokeWidth={1.5} />
+        </div>
+        <h3 className="text-lg font-bold text-foreground mb-1">אין פוסטים שמורים</h3>
+        <p className="text-muted-foreground text-sm text-center max-w-[260px]">
+          פוסטים ששמרת יופיעו כאן
+        </p>
+      </motion.div>
+    );
+  }
+  
+  if (filter === "tagged") {
+    return (
+      <motion.div 
+        className="flex flex-col items-center justify-center py-20 px-6"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center mb-4">
+          <Copy className="w-9 h-9 text-primary" strokeWidth={1.5} />
+        </div>
+        <h3 className="text-lg font-bold text-foreground mb-1">אין תיוגים</h3>
+        <p className="text-muted-foreground text-sm text-center max-w-[260px]">
+          פוסטים שתויגת בהם יופיעו כאן
+        </p>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div 
+      className="flex flex-col items-center justify-center py-20 px-6"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+    >
+      <div className="relative mb-5">
+        <div className="w-24 h-24 rounded-3xl bg-primary/10 flex items-center justify-center">
+          <Camera className="w-11 h-11 text-primary" strokeWidth={1.5} />
+        </div>
+        <div className="absolute -top-1 -right-1 w-8 h-8 rounded-xl bg-accent flex items-center justify-center">
+          <Sparkles className="w-4 h-4 text-accent-foreground" strokeWidth={1.5} />
+        </div>
+      </div>
+      <h3 className="text-xl font-bold text-foreground mb-1">שתף תמונות</h3>
+      <p className="text-muted-foreground text-sm text-center mb-6 max-w-[260px]">
+        כשתשתף תמונות, הן יופיעו באלבום שלך
+      </p>
+      <Button
+        onClick={onUpload}
+        className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl px-6 shadow-md"
+      >
+        <Plus className="w-4 h-4 ml-2" />
+        שתף את התמונה הראשונה
+      </Button>
+    </motion.div>
   );
 }
