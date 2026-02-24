@@ -219,16 +219,6 @@ export const EmergencyHub = ({ open, onOpenChange }: EmergencyHubProps) => {
                   </Button>
                 </div>
 
-                {/* National Emergency */}
-                <Button
-                  size="lg"
-                  variant="destructive"
-                  className="w-full h-12 text-sm font-bold gap-3 rounded-2xl opacity-80"
-                  onClick={() => (window.location.href = "tel:*3939")}
-                >
-                  <Phone className="w-4 h-4" strokeWidth={2.5} />
-                  חירום ארצי — *3939
-                </Button>
 
                 {/* Vet Info Card */}
                 {activePet?.vet_clinic && (
