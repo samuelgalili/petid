@@ -521,7 +521,7 @@ export const CommentsSheet = ({
       <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DrawerContent className="rounded-t-[28px] bg-card border-none p-0 z-[100]">
 
-          {/* Title (handle is provided by DrawerContent) */}
+          <div className="flex flex-col" style={{ height: '65vh' }}>
           <div className="flex-shrink-0 flex flex-col items-center pb-1">
             <h3 className="text-foreground font-bold text-[14px]">
               תגובות ({totalCount})
