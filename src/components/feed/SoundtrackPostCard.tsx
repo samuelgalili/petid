@@ -522,12 +522,61 @@ export const SoundtrackPostCard = ({
         >
           <Share2 className="w-7 h-7 text-white/80 drop-shadow-lg" strokeWidth={1.5} />
         </motion.button>
+
+        {/* More (3-dot menu) */}
+        <motion.button
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowPostMenu(true);
+          }}
+          whileTap={{ scale: 0.85 }}
+          className="flex flex-col items-center gap-1"
+        >
+          <MoreVertical className="w-6 h-6 text-white/60 drop-shadow-lg" strokeWidth={1.5} />
+        </motion.button>
       </motion.div>
 
-      {/* ═══ UNIFIED GLASSMORPHISM BOTTOM OVERLAY ═══ */}
-      {/* All metadata (price, safety, supplier, caption) in one floating panel */}
-      <motion.div
-        className="absolute inset-x-0 bottom-0 z-40"
+      {/* Post menu overlay */}
+      <AnimatePresence>
+        {showPostMenu && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[9998] bg-black/40"
+              onClick={(e) => { e.stopPropagation(); setShowPostMenu(false); }}
+            />
+            <motion.div
+              initial={{ y: 40, opacity: 0, scale: 0.9 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: 40, opacity: 0, scale: 0.9 }}
+              transition={{ type: "spring", damping: 22, stiffness: 350 }}
+              className="fixed bottom-24 inset-x-0 mx-auto w-fit z-[9999] flex flex-col gap-1 px-2 py-2 bg-card/95 backdrop-blur-xl rounded-2xl border border-border/50 shadow-2xl min-w-[200px]"
+              dir="rtl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {isPostOwner && (
+                <button
+                  onClick={handleDeletePost}
+                  disabled={deletingPost}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-destructive hover:bg-destructive/10 transition-colors w-full text-right"
+                >
+                  <Trash2 className="w-5 h-5" />
+                  <span className="text-sm font-semibold">{deletingPost ? "מוחק..." : "מחק פוסט"}</span>
+                </button>
+              )}
+              <button
+                onClick={() => { toast.success("הפוסט דווח"); setShowPostMenu(false); }}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-foreground hover:bg-secondary transition-colors w-full text-right"
+              >
+                <Flag className="w-5 h-5 text-muted-foreground" />
+                <span className="text-sm font-medium">דווח על פוסט</span>
+              </button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
         initial={{ y: 30, opacity: 0 }}
         animate={{ y: 0, opacity: overlayDimmed ? 0.3 : 1 }}
         transition={overlayDimmed ? { duration: 1, ease: "easeOut" } : { delay: 0.25, type: "spring", stiffness: 300, damping: 30 }}
