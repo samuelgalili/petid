@@ -248,6 +248,9 @@ const AdminDashboard = () => {
                 {/* Sales Analytics */}
                 <DashboardSalesAnalytics />
 
+                {/* Inventory Intelligence */}
+                <DashboardInventoryIntel />
+
                 {/* Charts Row */}
                 <div className="grid md:grid-cols-2 gap-4">
                   <DashboardPriceDistribution />
