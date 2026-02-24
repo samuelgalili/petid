@@ -490,6 +490,59 @@ Age keywords: גיל, age, שנים, years, חודשים, months.`
             console.error("Failed to create treatment reminder:", treatErr);
           }
         }
+
+        // Create license expiry reminder
+        if (scanResult.licenseExpiryDate) {
+          try {
+            const expiryDate = new Date(scanResult.licenseExpiryDate);
+            const reminderDate = new Date(expiryDate.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days before
+
+            await supabase.from("notifications").insert({
+              user_id: userId,
+              title: '📄 תזכורת חידוש רישיון',
+              body: `רישיון חיית המחמד פג תוקף ב-${scanResult.licenseExpiryDate}. יש לחדש בהקדם.`,
+              type: 'license_reminder',
+              scheduled_for: reminderDate.toISOString(),
+              metadata: {
+                pet_id: petId,
+                due_date: scanResult.licenseExpiryDate,
+                license_number: scanResult.licenseNumber,
+                source: 'ocr_smart_sync',
+                document_id: savedDocumentId,
+                deep_link: savedDocumentId ? `/documents?highlight=${savedDocumentId}` : null,
+              },
+            });
+          } catch (licErr) {
+            console.error("Failed to create license expiry reminder:", licErr);
+          }
+        }
+
+        // Create license renewal reminder
+        if (scanResult.licenseRenewalDate) {
+          try {
+            const renewalDate = new Date(scanResult.licenseRenewalDate);
+            const reminderDate = new Date(renewalDate.getTime() - 7 * 24 * 60 * 60 * 1000); // 7 days before
+
+            await supabase.from("notifications").insert({
+              user_id: userId,
+              title: '🔄 תזכורת חידוש רישיון',
+              body: `מועד חידוש רישיון חיית המחמד ב-${scanResult.licenseRenewalDate}.`,
+              type: 'license_renewal_reminder',
+              scheduled_for: reminderDate.toISOString(),
+              metadata: {
+                pet_id: petId,
+                due_date: scanResult.licenseRenewalDate,
+                license_number: scanResult.licenseNumber,
+                source: 'ocr_smart_sync',
+                document_id: savedDocumentId,
+                deep_link: savedDocumentId ? `/documents?highlight=${savedDocumentId}` : null,
+              },
+            });
+          } catch (renErr) {
+            console.error("Failed to create license renewal reminder:", renErr);
+          }
+        }
+        }
       }
     }
 
