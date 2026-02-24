@@ -57,12 +57,11 @@ export const DashboardSystemInsights = () => {
     try {
       setLoading(true);
 
-      const [auditRes, apiKeysRes, automationsRes, cardcomRes, whatsappRes] = await Promise.all([
+      const [auditRes, apiKeysRes, automationsRes, cardcomRes] = await Promise.all([
         supabase.from("admin_audit_log").select("id, action_type, entity_type, created_at").order("created_at", { ascending: false }).limit(8),
         supabase.from("api_keys").select("id").eq("is_active", true),
         supabase.from("automations").select("id").eq("is_active", true),
         supabase.from("cardcom_events").select("id, received_at").order("received_at", { ascending: false }).limit(1),
-        supabase.from("whatsapp_messages" as any).select("id, created_at").order("created_at", { ascending: false }).limit(1),
       ]);
 
       setAuditLogs((auditRes.data || []) as AuditEntry[]);
@@ -79,8 +78,8 @@ export const DashboardSystemInsights = () => {
         },
         {
           name: "WhatsApp",
-          lastEvent: whatsappRes.data?.[0]?.created_at || null,
-          status: whatsappRes.data?.[0] ? "active" : "inactive",
+          lastEvent: null,
+          status: "inactive",
         },
       ];
       setWebhooks(webhookList);

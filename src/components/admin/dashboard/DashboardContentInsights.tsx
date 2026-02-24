@@ -37,12 +37,11 @@ export const DashboardContentInsights = () => {
     try {
       setLoading(true);
 
-      const [blogRes, productsRes, breedsRes, petsRes, aiPostsRes] = await Promise.all([
+      const [blogRes, productsRes, breedsRes, petsRes] = await Promise.all([
         supabase.from("blog_posts").select("id, status, view_count, meta_description, featured_image, slug"),
         supabase.from("business_products").select("id, ingredients, feeding_guide, description"),
         supabase.from("breed_information").select("id, breed_name, breed_name_he"),
         supabase.from("pets").select("breed").not("breed", "is", null),
-        supabase.from("posts").select("id").eq("is_ai_generated" as any, true),
       ]);
 
       const blogs = blogRes.data || [];
