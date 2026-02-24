@@ -57,7 +57,7 @@ export const FelineDashboard = ({ petName, weight, breed, currentFood, isIndoor 
   // === 2. Urinary Status ===
   const urinaryScore = useMemo(() => {
     let score = 50;
-    if (['urinary', 'struvite', 'ph', 'vet life'].some(k => foodLower.includes(k))) score = 95;
+    if (['urinary', 'struvite', 'ph', 'petid pharmacy', 'health & care'].some(k => foodLower.includes(k))) score = 95;
     else if (['wet', 'רטוב'].some(k => foodLower.includes(k))) score = 70;
     if (isMale) score = Math.max(20, score - 10); // males at higher risk
     return score;
@@ -84,10 +84,10 @@ export const FelineDashboard = ({ petName, weight, breed, currentFood, isIndoor 
   const shopRecommendations = useMemo(() => {
     const recs: Array<{ name: string; reason: string; icon: React.ElementType }> = [];
     if (weightStatus.status === 'overweight') {
-      recs.push({ name: 'Vet Life Obesity', reason: 'לירידה במשקל עם L-Carnitine', icon: Weight });
+      recs.push({ name: 'PetID Pharmacy — Obesity', reason: 'לירידה במשקל עם L-Carnitine', icon: Weight });
     }
     if (ageYears && ageYears >= 7) {
-      recs.push({ name: 'Vet Life Renal', reason: 'הגנה כלייתית לחתול מבוגר', icon: Droplets });
+      recs.push({ name: 'PetID Pharmacy — Renal', reason: 'הגנה כלייתית לחתול מבוגר', icon: Droplets });
     }
     if (hairballRisk.level === 'high') {
       recs.push({ name: 'Malt Paste', reason: 'משחת מאלט לכדורי שיער', icon: Wind });
