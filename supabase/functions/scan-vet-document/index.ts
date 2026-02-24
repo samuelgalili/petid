@@ -36,9 +36,9 @@ serve(async (req) => {
   const corsHeaders = getCorsHeaders(origin);
 
   try {
-    const { petId, userId, imageBase64, fileName, saveToDb } = await req.json();
+    const { petId, userId, imageBase64, fileName, saveToDb, cachedResult } = await req.json();
 
-    if (!petId || !userId || !imageBase64) {
+    if (!petId || !userId) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -47,23 +47,30 @@ serve(async (req) => {
 
     const shouldSave = saveToDb === true;
 
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
-    if (!lovableApiKey) {
-      throw new Error("LOVABLE_API_KEY not configured");
-    }
+    let scanResult;
 
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${lovableApiKey}`,
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          {
-            role: "system",
-            content: `You are a veterinary document analyzer. Extract ALL structured data from vet reports, invoices, and receipts.
+    // If cachedResult is provided (confirm-save flow), skip AI call
+    if (cachedResult && shouldSave) {
+      scanResult = cachedResult;
+    } else if (imageBase64) {
+      // Run AI analysis
+      const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+      if (!lovableApiKey) {
+        throw new Error("LOVABLE_API_KEY not configured");
+      }
+
+      const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${lovableApiKey}`,
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            {
+              role: "system",
+              content: `You are a veterinary document analyzer. Extract ALL structured data from vet reports, invoices, and receipts.
 Return ONLY valid JSON with this exact structure:
 {
   "clinicName": "string or null",
@@ -99,53 +106,58 @@ Clinic keywords: מרפאה, טלפון מרפאה, כתובת מרפאה, clini
 Pet identity keywords: שם חיה, גזע, צבע, מין, תאריך לידה, שבב, מספר שבב, chip, microchip.
 Neutered keywords: מעוקר, מסורס, neutered, spayed.
 License keywords: תנאי רישיון, רישיון, license.`
-          },
-          {
-            role: "user",
-            content: [
-              {
-                type: "image_url",
-                image_url: { url: `data:image/jpeg;base64,${imageBase64}` },
-              },
-              {
-                type: "text",
-                text: "Extract ALL veterinary and pet identity data from this document image. Return JSON only.",
-              },
-            ],
-          },
-        ],
-        max_tokens: 1500,
-        temperature: 0.1,
-      }),
-    });
+            },
+            {
+              role: "user",
+              content: [
+                {
+                  type: "image_url",
+                  image_url: { url: `data:image/jpeg;base64,${imageBase64}` },
+                },
+                {
+                  type: "text",
+                  text: "Extract ALL veterinary and pet identity data from this document image. Return JSON only.",
+                },
+              ],
+            },
+          ],
+          max_tokens: 1500,
+          temperature: 0.1,
+        }),
+      });
 
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error("AI API error:", errorText);
-      throw new Error("AI analysis failed");
+      if (!aiResponse.ok) {
+        const errorText = await aiResponse.text();
+        console.error("AI API error:", errorText);
+        throw new Error("AI analysis failed");
+      }
+
+      const aiData = await aiResponse.json();
+      const content = aiData.choices?.[0]?.message?.content || "{}";
+
+      try {
+        const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        scanResult = JSON.parse(cleaned);
+      } catch {
+        console.error("Failed to parse AI response:", content);
+        scanResult = {
+          clinicName: null, clinicPhone: null, clinicAddress: null,
+          visitDate: null, vaccines: [], diagnoses: [], medications: [],
+          weight: null, deworming: false, cost: null,
+          ownerName: null, ownerAddress: null, ownerCity: null, ownerPhone: null, ownerIdNumber: null,
+          petName: null, petBreed: null, petColor: null, petGender: null,
+          petBirthDate: null, microchipNumber: null, isNeutered: null, licenseConditions: null,
+        };
+      }
+
+      // Determine dangerous breed status
+      scanResult.isDangerousBreed = isDangerousBreed(scanResult.petBreed);
+    } else {
+      return new Response(JSON.stringify({ error: "No image or cached result provided" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
-
-    const aiData = await aiResponse.json();
-    const content = aiData.choices?.[0]?.message?.content || "{}";
-
-    let scanResult;
-    try {
-      const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      scanResult = JSON.parse(cleaned);
-    } catch {
-      console.error("Failed to parse AI response:", content);
-      scanResult = {
-        clinicName: null, clinicPhone: null, clinicAddress: null,
-        visitDate: null, vaccines: [], diagnoses: [], medications: [],
-        weight: null, deworming: false, cost: null,
-        ownerName: null, ownerAddress: null, ownerCity: null, ownerPhone: null, ownerIdNumber: null,
-        petName: null, petBreed: null, petColor: null, petGender: null,
-        petBirthDate: null, microchipNumber: null, isNeutered: null, licenseConditions: null,
-      };
-    }
-
-    // Determine dangerous breed status
-    scanResult.isDangerousBreed = isDangerousBreed(scanResult.petBreed);
 
     // Save to database if confirmed
     if (shouldSave) {
@@ -226,6 +238,22 @@ License keywords: תנאי רישיון, רישיון, license.`
           ai_extracted: true,
           raw_summary: 'Deworming detected via OCR',
         });
+      }
+
+      // Save owner data to profiles table
+      const ownerUpdate: Record<string, unknown> = {};
+      if (scanResult.ownerName) {
+        const parts = scanResult.ownerName.split(' ');
+        ownerUpdate.first_name = parts[0] || null;
+        ownerUpdate.last_name = parts.slice(1).join(' ') || null;
+      }
+      if (scanResult.ownerPhone) ownerUpdate.phone = scanResult.ownerPhone;
+      if (scanResult.ownerAddress) ownerUpdate.address = scanResult.ownerAddress;
+      if (scanResult.ownerCity) ownerUpdate.city = scanResult.ownerCity;
+      if (scanResult.ownerIdNumber) ownerUpdate.id_number = scanResult.ownerIdNumber;
+
+      if (Object.keys(ownerUpdate).length > 0) {
+        await supabase.from("profiles").update(ownerUpdate).eq("id", userId);
       }
     }
 
