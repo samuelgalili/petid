@@ -5,7 +5,7 @@ import {
   ShoppingCart, ExternalLink, Reply, Trash2,
 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Switch } from "@/components/ui/switch";
+import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useActivePet } from "@/hooks/useActivePet";
@@ -524,7 +524,7 @@ export const CommentsSheet = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[99] bg-black/60"
+        className="fixed inset-0 z-[10001] bg-black/60"
         onClick={onClose}
       />
 
@@ -534,7 +534,7 @@ export const CommentsSheet = ({
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 30, stiffness: 300 }}
-        className="fixed inset-x-0 bottom-0 z-[100] flex flex-col bg-card rounded-t-[28px]"
+        className="fixed inset-x-0 bottom-0 z-[10002] flex flex-col bg-card rounded-t-[28px]"
         style={{ height: "70vh" }}
       >
         {/* Handle */}
@@ -716,7 +716,11 @@ export const CommentsSheet = ({
                   : "bg-secondary text-muted-foreground"
               )}
             >
-              <Send className="w-3.5 h-3.5" />
+              {submitting ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Send className="w-3.5 h-3.5" />
+              )}
             </motion.button>
           </div>
         </div>
