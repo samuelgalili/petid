@@ -410,6 +410,9 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/ocr-verification", element: <AdminPage component={AdminOCRVerification} pageName="אימות OCR" /> },
   { path: "/admin/smart-editor", element: <AdminPage component={AdminSmartProductEditor} pageName="עורך מוצר חכם" /> },
   { path: "/admin/review-queue", element: <AdminPage component={AdminReviewQueue} pageName="תור ביקורת" /> },
+  { path: "/admin/approval-queue", element: <AdminPage component={AdminApprovalQueue} pageName="תור אישורים" /> },
+  { path: "/admin/bot-activity", element: <AdminPage component={AdminBotActivityLog} pageName="לוג בוטים" /> },
+  { path: "/admin/inventory-predictions", element: <AdminPage component={AdminInventoryPredictions} pageName="חיזוי מלאי NRC" /> },
 ];
 
 // ==========================================
