@@ -85,6 +85,68 @@ export type Database = {
           },
         ]
       }
+      admin_approval_queue: {
+        Row: {
+          bot_id: string | null
+          category: string | null
+          created_at: string | null
+          description: string | null
+          draft_content: string | null
+          id: string
+          pet_name: string | null
+          proposed_changes: Json | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string | null
+          target_entity: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          bot_id?: string | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          draft_content?: string | null
+          id?: string
+          pet_name?: string | null
+          proposed_changes?: Json | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          target_entity?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          bot_id?: string | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          draft_content?: string | null
+          id?: string
+          pet_name?: string | null
+          proposed_changes?: Json | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          target_entity?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_approval_queue_bot_id_fkey"
+            columns: ["bot_id"]
+            isOneToOne: false
+            referencedRelation: "automation_bots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_audit_log: {
         Row: {
           action_type: string
@@ -832,6 +894,54 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      automation_bots: {
+        Row: {
+          capabilities: Json | null
+          color: string | null
+          config: Json | null
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          last_run_at: string | null
+          name: string
+          run_count: number | null
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          capabilities?: Json | null
+          color?: string | null
+          config?: Json | null
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_run_at?: string | null
+          name: string
+          run_count?: number | null
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          capabilities?: Json | null
+          color?: string | null
+          config?: Json | null
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_run_at?: string | null
+          name?: string
+          run_count?: number | null
+          slug?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -2115,6 +2225,65 @@ export type Database = {
           },
         ]
       }
+      content_calendar: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          bot_id: string | null
+          channel: string | null
+          content: string | null
+          created_at: string | null
+          id: string
+          nrc_verified: boolean | null
+          pet_context: Json | null
+          published_at: string | null
+          scheduled_for: string
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          bot_id?: string | null
+          channel?: string | null
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          nrc_verified?: boolean | null
+          pet_context?: Json | null
+          published_at?: string | null
+          scheduled_for: string
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          bot_id?: string | null
+          channel?: string | null
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          nrc_verified?: boolean | null
+          pet_context?: Json | null
+          published_at?: string | null
+          scheduled_for?: string
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_calendar_bot_id_fkey"
+            columns: ["bot_id"]
+            isOneToOne: false
+            referencedRelation: "automation_bots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_guides: {
         Row: {
           cover_image_url: string | null
@@ -3079,6 +3248,42 @@ export type Database = {
           submitted_by?: string | null
           updated_at?: string
           vendor?: string | null
+        }
+        Relationships: []
+      }
+      external_integrations: {
+        Row: {
+          config: Json | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          last_sync_at: string | null
+          service_name: string
+          service_type: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          service_name: string
+          service_type?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          service_name?: string
+          service_type?: string | null
+          status?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -9069,6 +9274,47 @@ export type Database = {
           title?: string
         }
         Relationships: []
+      }
+      system_events: {
+        Row: {
+          bot_id: string | null
+          created_at: string | null
+          description: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          severity: string | null
+          title: string
+        }
+        Insert: {
+          bot_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          severity?: string | null
+          title: string
+        }
+        Update: {
+          bot_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          severity?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_events_bot_id_fkey"
+            columns: ["bot_id"]
+            isOneToOne: false
+            referencedRelation: "automation_bots"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       system_settings: {
         Row: {
