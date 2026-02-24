@@ -1,7 +1,9 @@
 import { motion } from "framer-motion";
-import { Plus, Heart, Calendar, MapPin, Siren } from "lucide-react";
-import { memo, useMemo } from "react";
+import { Plus, Heart, Calendar, MapPin, Siren, Trash2 } from "lucide-react";
+import { memo, useMemo, useState } from "react";
 import { OptimizedImage } from "@/components/OptimizedImage";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface PetCardProps {
   pet: any;
@@ -11,6 +13,7 @@ interface PetCardProps {
   onLongPressStart: () => void;
   onLongPressEnd: () => void;
   onSelect?: () => void;
+  onDeleted?: () => void;
 }
 
 const getAge = (birthDate: string | null): string | null => {
@@ -43,13 +46,36 @@ export const PetCard = memo(({
   isSelected = false,
   onLongPressStart, 
   onLongPressEnd,
-  onSelect 
+  onSelect,
+  onDeleted
 }: PetCardProps) => {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const age = useMemo(() => getAge(pet.birth_date), [pet.birth_date]);
   const genderIcon = useMemo(() => getGenderIcon(pet.gender), [pet.gender]);
   const genderColor = useMemo(() => getGenderColor(pet.gender), [pet.gender]);
   const petEmoji = pet.type === 'dog' ? '🐕' : '🐈';
   const petTypeLabel = pet.type === 'dog' ? 'כלב' : 'חתול';
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!showDeleteConfirm) {
+      setShowDeleteConfirm(true);
+      return;
+    }
+    setDeleting(true);
+    try {
+      const { error } = await supabase.from("pets").update({ archived: true } as any).eq("id", pet.id);
+      if (error) throw error;
+      toast.success(`${pet.name} הוסר/ה בהצלחה`);
+      onDeleted?.();
+    } catch {
+      toast.error("שגיאה במחיקה");
+    } finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
 
   return (
     <motion.div
@@ -99,15 +125,29 @@ export const PetCard = memo(({
           </div>
         )}
 
-        {/* Pet Type Badge - top left */}
-        <div className="absolute top-2 left-2 bg-background/80 backdrop-blur-sm text-foreground text-xs font-bold px-2.5 py-1 rounded-full border border-border/50 flex items-center gap-1">
+        {/* Delete Button - top left */}
+        <button
+          onClick={handleDelete}
+          className={`absolute top-2 left-2 w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-sm border transition-colors z-10 ${
+            showDeleteConfirm 
+              ? 'bg-destructive/90 border-destructive text-destructive-foreground' 
+              : 'bg-background/80 border-border/50 text-muted-foreground hover:text-destructive'
+          }`}
+          aria-label={showDeleteConfirm ? "אישור מחיקה" : "מחיקת חיית מחמד"}
+          disabled={deleting}
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+
+        {/* Pet Type Badge */}
+        <div className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm text-foreground text-xs font-bold px-2.5 py-1 rounded-full border border-border/50 flex items-center gap-1">
           <span>{petEmoji}</span>
           <span>{petTypeLabel}</span>
         </div>
 
-        {/* Health Indicator - top right */}
-        <div className="absolute top-2 right-2">
-          <div className="w-3 h-3 rounded-full bg-emerald-400 border-2 border-white shadow-sm" title="בריאות תקינה" />
+        {/* Health Indicator */}
+        <div className="absolute top-12 right-2">
+          <div className="w-3 h-3 rounded-full bg-emerald-400 border-2 border-background shadow-sm" title="בריאות תקינה" />
         </div>
 
         {/* New Badge */}

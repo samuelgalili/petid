@@ -136,6 +136,7 @@ export const MyPetsSection = ({
                   onLongPressStart={() => onPetLongPressStart(pet)}
                   onLongPressEnd={onPetLongPressEnd}
                   onSelect={() => { setSelectedPetId(pet.id); switchPet(pet.id); }}
+                  onDeleted={onPetsRefresh}
                 />
               );
             })}
