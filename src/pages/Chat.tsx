@@ -316,7 +316,7 @@ const ChatContent = () => {
   // Empty state is handled by the initial greeting in ChatProvider
 
   return (
-    <div className="min-h-screen bg-background pb-20" dir="rtl">
+    <div className="min-h-screen bg-background pb-[calc(5rem+env(safe-area-inset-bottom,0px))]" dir="rtl" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
       <SEO title="צ'אט AI" description="שאלו את העוזר החכם שלנו כל שאלה על חיות מחמד - אילוף, תזונה, בריאות" url="/chat" />
       {/* Glassmorphism Hub Header with Tabs */}
       <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/20">
@@ -372,9 +372,9 @@ const ChatContent = () => {
 
       {/* Scientist Tab */}
       {activeHubTab === "scientist" && (
-      <div className="flex flex-col h-[calc(100vh-140px)]">
+      <div className="flex flex-col h-[calc(100dvh-140px-env(safe-area-inset-bottom,0px))]">
         {/* Messages Container */}
-        <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="flex-1 overflow-y-auto px-4 py-6">
+        <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="flex-1 overflow-y-auto px-3 py-4 overflow-x-hidden">
           <AnimatePresence>
 
             {messages.map((message, index) => (
@@ -385,14 +385,14 @@ const ChatContent = () => {
                 transition={{ duration: 0.2 }}
                 className={`flex mb-4 ${message.role === "user" ? "justify-start" : "justify-end"}`}
               >
-                <div className={`flex items-end gap-2.5 ${message.insuranceData || message.insuranceCallback || message.showGroomingPicker || message.showAppointmentPicker || message.showTrainingPicker || message.trainingSubOptions || message.showDogParkPicker || message.showDocumentPicker || message.showBoardingPicker || message.showStorePicker || message.showAdoptionTraits || message.showAdoptionRequirements ? 'max-w-[95%]' : 'max-w-[85%]'} ${message.role === "user" ? "flex-row" : "flex-row-reverse"}`}>
+                <div className={`flex items-end gap-2 ${message.insuranceData || message.insuranceCallback || message.showGroomingPicker || message.showAppointmentPicker || message.showTrainingPicker || message.trainingSubOptions || message.showDogParkPicker || message.showDocumentPicker || message.showBoardingPicker || message.showStorePicker || message.showAdoptionTraits || message.showAdoptionRequirements ? 'max-w-full w-full' : 'max-w-[85%]'} ${message.role === "user" ? "flex-row" : "flex-row-reverse"}`}>
                   {message.role === "assistant" && (
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                       <Sparkles className="w-3.5 h-3.5 text-primary" />
                     </div>
                   )}
                   
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2 min-w-0 overflow-hidden">
                     <div
                       className={`px-4 py-3 ${
                         message.role === "user"
