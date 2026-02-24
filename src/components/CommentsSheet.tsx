@@ -534,8 +534,8 @@ export const CommentsSheet = ({
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 30, stiffness: 300 }}
-        className="fixed inset-x-0 bottom-0 z-[100] flex flex-col bg-card rounded-t-[28px]"
-        style={{ height: "70vh" }}
+        className="fixed inset-x-0 z-[100] flex flex-col bg-card rounded-t-[28px]"
+        style={{ bottom: "60px", height: "calc(70vh - 60px)" }}
       >
         {/* Handle */}
         <div className="flex-shrink-0 flex flex-col items-center pt-3 pb-1">
