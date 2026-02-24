@@ -36,7 +36,7 @@ interface Pet {
 export default function Documents() {
   const [searchParams] = useSearchParams();
   const preselectedPetId = searchParams.get('petId');
-  
+  const highlightDocId = searchParams.get('highlight');
   const [pets, setPets] = useState<any[]>([]);
   const [documents, setDocuments] = useState<any[]>([]);
   const [filteredDocuments, setFilteredDocuments] = useState<any[]>([]);
@@ -365,7 +365,18 @@ export default function Documents() {
       case "vaccination":
         return "אישור חיסון";
       case "medical":
-        return "מסמך רפואי";
+      case "medical_record":
+        return "רשומה רפואית";
+      case "insurance":
+        return "ביטוח";
+      case "legal_contract":
+        return "חוזה/הסכם";
+      case "prescription":
+        return "מרשם";
+      case "lab_results":
+        return "בדיקות מעבדה";
+      case "vet_report":
+        return "דוח וטרינר";
       case "other":
         return "אחר";
       default:
