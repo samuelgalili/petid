@@ -97,10 +97,10 @@ const Install = () => {
             className="mb-8 flex flex-col items-center">
 
             <PetidLogo showAnimals={false} size="lg" />
-            <h2 className="text-4xl md:text-5xl font-black text-white mt-4 tracking-tight flex items-center gap-2" style={{ fontFamily: "'Poppins', 'Heebo', sans-serif" }}>
-              Pet<span className="bg-gradient-to-l from-primary to-accent bg-clip-text text-transparent">ID</span>
-              
-            </h2>
+            
+
+
+
           </motion.div>
 
           <motion.h1
