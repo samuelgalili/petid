@@ -69,7 +69,7 @@ serve(async (req) => {
           messages: [
             {
               role: "system",
-              content: `You are a veterinary document analyzer. Extract ALL structured data from vet reports, invoices, and receipts.
+              content: `You are a veterinary document analyzer. Extract ALL structured data from vet reports, invoices, receipts, license documents, and pet-related contracts.
 Return ONLY valid JSON with this exact structure:
 {
   "clinicName": "string or null",
@@ -91,11 +91,16 @@ Return ONLY valid JSON with this exact structure:
   "petBreed": "string or null",
   "petColor": "string or null",
   "petGender": "male/female/null",
+  "petAge": number_or_null,
   "petBirthDate": "YYYY-MM-DD or null",
   "microchipNumber": "string or null",
   "isNeutered": true/false/null,
+  "isDangerousDog": true/false/null,
+  "licenseNumber": "string or null",
+  "licenseExpiryDate": "YYYY-MM-DD or null",
+  "licenseRenewalDate": "YYYY-MM-DD or null",
   "licenseConditions": "string or null",
-  "documentCategory": "one of: medical_record, vaccination, insurance, legal_contract, prescription, lab_results, vet_report, other",
+  "documentCategory": "one of: medical_record, vaccination, insurance, legal_contract, prescription, lab_results, vet_report, license, other",
   "nextTreatmentDate": "YYYY-MM-DD or null - any future appointment or treatment date mentioned",
   "nextTreatmentDescription": "string or null - description of the future treatment"
 }
@@ -103,7 +108,8 @@ Document category rules:
 - vaccination: contains vaccine records or immunization certificates
 - medical_record: general medical records, checkup reports, visit summaries
 - insurance: insurance policies, claims, coverage documents
-- legal_contract: contracts, agreements, adoption papers, license documents
+- legal_contract: contracts, agreements, adoption papers
+- license: pet license, dog license, registration documents
 - prescription: medication prescriptions
 - lab_results: blood tests, urine tests, lab work
 - vet_report: vet examination reports, surgery reports
@@ -113,10 +119,12 @@ Vaccine keywords: DHPP, DHLPP, כלבת (Rabies), לפטוספירוזיס (Lept
 Deworming keywords: תילוע, milbemax, drontal, deworm.
 Weight keywords: משקל, kg, ק"ג.
 Owner keywords: בעלים, שם, כתובת, טלפון, ת.ז., תעודת זהות, ת"ז, ID.
-Clinic keywords: מרפאה, טלפון מרפאה, כתובת מרפאה, clinic.
-Pet identity keywords: שם חיה, גזע, צבע, מין, תאריך לידה, שבב, מספר שבב, chip, microchip.
-Neutered keywords: מעוקר, מסורס, neutered, spayed.
-License keywords: תנאי רישיון, רישיון, license.`
+Clinic keywords: מרפאה, טלפון מרפאה, כתובת מרפאה, clinic, וטרינר, vet.
+Pet identity keywords: שם חיה, גזע, צבע, מין, תאריך לידה, שבב, מספר שבב, chip, microchip, גיל, age.
+Neutered keywords: מעוקר, מסורס, neutered, spayed, עיקור, סירוס.
+License keywords: תנאי רישיון, רישיון, license, מספר רישיון, תוקף, חידוש, renewal, expiry.
+Dangerous dog keywords: כלב מסוכן, dangerous dog, כלב אגרסיבי.
+Age keywords: גיל, age, שנים, years, חודשים, months.`
             },
             {
               role: "user",
@@ -150,13 +158,16 @@ License keywords: תנאי רישיון, רישיון, license.`
           visitDate: null, vaccines: [], diagnoses: [], medications: [],
           weight: null, deworming: false, cost: null,
           ownerName: null, ownerAddress: null, ownerCity: null, ownerPhone: null, ownerIdNumber: null,
-          petName: null, petBreed: null, petColor: null, petGender: null,
-          petBirthDate: null, microchipNumber: null, isNeutered: null, licenseConditions: null,
+          petName: null, petBreed: null, petColor: null, petGender: null, petAge: null,
+          petBirthDate: null, microchipNumber: null, isNeutered: null, isDangerousDog: null,
+          licenseNumber: null, licenseExpiryDate: null, licenseRenewalDate: null, licenseConditions: null,
           documentCategory: 'other', nextTreatmentDate: null, nextTreatmentDescription: null,
         };
       }
 
       scanResult.isDangerousBreed = isDangerousBreed(scanResult.petBreed);
+      // If AI detected "dangerous dog" status or breed-based detection
+      if (scanResult.isDangerousDog === true) scanResult.isDangerousBreed = true;
     } else {
       return new Response(JSON.stringify({ error: "No image or cached result provided" }), {
         status: 400,
@@ -198,6 +209,12 @@ License keywords: תנאי רישיון, רישיון, license.`
               petUpdate.weight = parseFloat(field.detectedValue) || null;
             } else if (field.key === "petGender") {
               petUpdate.gender = field.detectedValue === "זכר" ? "male" : field.detectedValue === "נקבה" ? "female" : field.detectedValue;
+            } else if (field.key === "petAge") {
+              petUpdate.age = parseInt(field.detectedValue) || null;
+            } else if (field.key === "isNeutered") {
+              petUpdate.is_neutered = field.detectedValue === "כן" || field.detectedValue === "true";
+            } else if (field.key === "isDangerousDog") {
+              petUpdate.is_dangerous_breed = field.detectedValue === "כן" || field.detectedValue === "true";
             } else {
               petUpdate[field.dbField] = field.detectedValue;
             }
@@ -225,14 +242,18 @@ License keywords: תנאי רישיון, רישיון, license.`
         if (scanResult.petColor) petUpdate.color = scanResult.petColor;
         if (scanResult.petGender) petUpdate.gender = scanResult.petGender;
         if (scanResult.petBirthDate) petUpdate.birth_date = scanResult.petBirthDate;
+        if (scanResult.petAge) petUpdate.age = scanResult.petAge;
         if (scanResult.microchipNumber) petUpdate.microchip_number = scanResult.microchipNumber;
         if (scanResult.isNeutered !== null && scanResult.isNeutered !== undefined) petUpdate.is_neutered = scanResult.isNeutered;
         if (scanResult.weight) petUpdate.weight = scanResult.weight;
         if (scanResult.clinicName) petUpdate.vet_clinic_name = scanResult.clinicName;
         if (scanResult.clinicPhone) petUpdate.vet_clinic_phone = scanResult.clinicPhone;
         if (scanResult.clinicAddress) petUpdate.vet_clinic_address = scanResult.clinicAddress;
-        if (scanResult.isDangerousBreed) petUpdate.is_dangerous_breed = true;
+        if (scanResult.isDangerousBreed || scanResult.isDangerousDog) petUpdate.is_dangerous_breed = true;
         if (scanResult.licenseConditions) petUpdate.license_conditions = scanResult.licenseConditions;
+        if (scanResult.licenseNumber) petUpdate.license_number = scanResult.licenseNumber;
+        if (scanResult.licenseExpiryDate) petUpdate.license_expiry_date = scanResult.licenseExpiryDate;
+        if (scanResult.licenseRenewalDate) petUpdate.license_renewal_date = scanResult.licenseRenewalDate;
 
         if (Object.keys(petUpdate).length > 0) {
           await supabase.from("pets").update(petUpdate).eq("id", petId);
@@ -469,6 +490,58 @@ License keywords: תנאי רישיון, רישיון, license.`
             });
           } catch (treatErr) {
             console.error("Failed to create treatment reminder:", treatErr);
+          }
+        }
+
+        // Create license expiry reminder
+        if (scanResult.licenseExpiryDate) {
+          try {
+            const expiryDate = new Date(scanResult.licenseExpiryDate);
+            const reminderDate = new Date(expiryDate.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days before
+
+            await supabase.from("notifications").insert({
+              user_id: userId,
+              title: '📄 תזכורת חידוש רישיון',
+              body: `רישיון חיית המחמד פג תוקף ב-${scanResult.licenseExpiryDate}. יש לחדש בהקדם.`,
+              type: 'license_reminder',
+              scheduled_for: reminderDate.toISOString(),
+              metadata: {
+                pet_id: petId,
+                due_date: scanResult.licenseExpiryDate,
+                license_number: scanResult.licenseNumber,
+                source: 'ocr_smart_sync',
+                document_id: savedDocumentId,
+                deep_link: savedDocumentId ? `/documents?highlight=${savedDocumentId}` : null,
+              },
+            });
+          } catch (licErr) {
+            console.error("Failed to create license expiry reminder:", licErr);
+          }
+        }
+
+        // Create license renewal reminder
+        if (scanResult.licenseRenewalDate) {
+          try {
+            const renewalDate = new Date(scanResult.licenseRenewalDate);
+            const reminderDate = new Date(renewalDate.getTime() - 7 * 24 * 60 * 60 * 1000); // 7 days before
+
+            await supabase.from("notifications").insert({
+              user_id: userId,
+              title: '🔄 תזכורת חידוש רישיון',
+              body: `מועד חידוש רישיון חיית המחמד ב-${scanResult.licenseRenewalDate}.`,
+              type: 'license_renewal_reminder',
+              scheduled_for: reminderDate.toISOString(),
+              metadata: {
+                pet_id: petId,
+                due_date: scanResult.licenseRenewalDate,
+                license_number: scanResult.licenseNumber,
+                source: 'ocr_smart_sync',
+                document_id: savedDocumentId,
+                deep_link: savedDocumentId ? `/documents?highlight=${savedDocumentId}` : null,
+              },
+            });
+          } catch (renErr) {
+            console.error("Failed to create license renewal reminder:", renErr);
           }
         }
       }

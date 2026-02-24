@@ -6395,6 +6395,9 @@ export type Database = {
           is_neutered: boolean | null
           last_vet_visit: string | null
           license_conditions: string | null
+          license_expiry_date: string | null
+          license_number: string | null
+          license_renewal_date: string | null
           lost_allergy_note: string | null
           lost_contact_phone: string | null
           lost_medication_note: string | null
@@ -6447,6 +6450,9 @@ export type Database = {
           is_neutered?: boolean | null
           last_vet_visit?: string | null
           license_conditions?: string | null
+          license_expiry_date?: string | null
+          license_number?: string | null
+          license_renewal_date?: string | null
           lost_allergy_note?: string | null
           lost_contact_phone?: string | null
           lost_medication_note?: string | null
@@ -6499,6 +6505,9 @@ export type Database = {
           is_neutered?: boolean | null
           last_vet_visit?: string | null
           license_conditions?: string | null
+          license_expiry_date?: string | null
+          license_number?: string | null
+          license_renewal_date?: string | null
           lost_allergy_note?: string | null
           lost_contact_phone?: string | null
           lost_medication_note?: string | null
