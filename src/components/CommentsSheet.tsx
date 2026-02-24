@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronDown, Heart, Send, Smile, MessageCircle, Bot, Sparkles,
-  ShoppingCart, ExternalLink, Reply,
+  ShoppingCart, ExternalLink, Reply, Trash2,
 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader } from "@/components/ui/sheet";
@@ -52,34 +52,30 @@ interface CommentsSheetProps {
 
 const PET_EMOJIS = ["🐾", "🦴", "❤️", "🐕", "🐈", "🐶", "😻", "🎾"];
 
-const quickReplies = [
-  { text: "❤️" },
-  { text: "🔥" },
-  { text: "👏" },
-  { text: "😍" },
-  { text: "😮" },
-  { text: "😢" },
-];
-
-/* ─── Single Comment Component ─── */
+/* ─── Single Comment ─── */
 
 const CommentItem = ({
   comment,
   depth = 0,
+  currentUserId,
   likedComments,
   onLike,
   onReply,
+  onDelete,
   navigate,
 }: {
   comment: Comment;
   depth?: number;
+  currentUserId?: string;
   likedComments: Set<string>;
   onLike: (id: string) => void;
   onReply: (comment: Comment) => void;
+  onDelete: (id: string) => void;
   navigate: (path: string) => void;
 }) => {
   const isLiked = likedComments.has(comment.id) || comment.is_liked;
   const likesCount = (comment.likes_count || 0) + (likedComments.has(comment.id) && !comment.is_liked ? 1 : 0);
+  const isOwner = currentUserId === comment.user.id;
 
   const formatTime = (dateString: string) => {
     try {
@@ -92,28 +88,27 @@ const CommentItem = ({
   return (
     <>
       <motion.div
-        initial={{ opacity: 0, y: 12 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25 }}
-        className={cn("flex gap-3 py-3 relative", comment.is_ai && "relative")}
-        style={{ paddingRight: depth > 0 ? `${depth * 40}px` : undefined }}
+        transition={{ duration: 0.2 }}
+        className={cn("flex gap-2.5 py-2.5 relative group")}
+        style={{ paddingRight: depth > 0 ? `${depth * 36}px` : undefined }}
       >
         {/* Thread guide line */}
         {depth > 0 && (
           <div
-            className="absolute top-0 bottom-0 w-[2px] bg-border/40 rounded-full"
-            style={{ right: `${(depth * 40) - 16}px` }}
+            className="absolute top-0 bottom-0 w-[1.5px] bg-border/30 rounded-full"
+            style={{ right: `${(depth * 36) - 14}px` }}
           />
         )}
 
-        {/* AI Glow Border */}
+        {/* AI Glow */}
         {comment.is_ai && (
           <div
-            className="absolute inset-0 -m-2 rounded-2xl pointer-events-none"
+            className="absolute inset-0 -mx-1 -my-0.5 rounded-xl pointer-events-none"
             style={{
-              background: "linear-gradient(135deg, hsl(var(--primary) / 0.08), hsl(var(--accent) / 0.06))",
-              border: "1px solid hsl(var(--primary) / 0.2)",
-              boxShadow: "0 0 20px hsl(var(--primary) / 0.08)",
+              background: "linear-gradient(135deg, hsl(var(--primary) / 0.06), hsl(var(--accent) / 0.04))",
+              border: "1px solid hsl(var(--primary) / 0.15)",
             }}
           />
         )}
@@ -121,19 +116,19 @@ const CommentItem = ({
         {/* Avatar */}
         <Avatar
           className={cn(
-            "w-8 h-8 flex-shrink-0 ring-1 cursor-pointer",
-            comment.is_ai ? "ring-primary/40" : "ring-border/50"
+            "w-7 h-7 flex-shrink-0 cursor-pointer",
+            comment.is_ai ? "ring-1 ring-primary/30" : "ring-1 ring-border/40"
           )}
           onClick={() => !comment.is_ai && navigate(`/user/${comment.user.id}`)}
         >
           {comment.is_ai ? (
             <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground">
-              <Bot className="w-4 h-4" />
+              <Bot className="w-3.5 h-3.5" />
             </AvatarFallback>
           ) : (
             <>
               <AvatarImage src={comment.user.avatar_url} />
-              <AvatarFallback className="bg-gradient-to-br from-primary/60 to-accent/60 text-primary-foreground text-xs font-medium">
+              <AvatarFallback className="bg-gradient-to-br from-primary/60 to-accent/60 text-primary-foreground text-[10px] font-medium">
                 {comment.user.full_name?.[0] || "U"}
               </AvatarFallback>
             </>
@@ -141,116 +136,106 @@ const CommentItem = ({
         </Avatar>
 
         <div className="flex-1 min-w-0 relative z-10">
-          {/* Name row */}
-          <div className="flex items-center gap-2 flex-wrap">
+          {/* Name + time inline */}
+          <div className="flex items-center gap-1.5 flex-wrap">
             <span
-              className="text-foreground font-semibold text-[13px] cursor-pointer hover:underline"
+              className="text-foreground font-semibold text-[12px] cursor-pointer hover:underline"
               onClick={() => !comment.is_ai && navigate(`/user/${comment.user.id}`)}
             >
               {comment.user.full_name}
             </span>
 
             {comment.is_ai && (
-              <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
-                style={{
-                  background: "hsl(var(--primary) / 0.12)",
-                  color: "hsl(var(--primary))",
-                  border: "1px solid hsl(var(--primary) / 0.2)",
-                }}
-              >
-                <Sparkles className="w-2.5 h-2.5" />
-                PetID Expert
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-primary/10 text-primary border border-primary/15">
+                <Sparkles className="w-2 h-2" />
+                Expert
               </span>
             )}
 
             {!comment.is_ai && comment.user.breed_badge && (
-              <span
-                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium"
-                style={{
-                  background: "hsl(var(--accent) / 0.1)",
-                  color: "hsl(var(--accent))",
-                }}
-              >
+              <span className="text-[9px] font-medium text-accent bg-accent/10 px-1 py-0.5 rounded-full">
                 🐾 {comment.user.breed_badge}
               </span>
             )}
 
-            <span className="text-muted-foreground text-[11px]">•</span>
-            <span className="text-muted-foreground text-[11px]">
+            <span className="text-muted-foreground text-[10px]">
               {formatTime(comment.created_at)}
             </span>
           </div>
 
           {/* Comment text */}
-          <p className="text-foreground/90 text-[13px] mt-1 leading-[1.5] break-words">
+          <p className="text-foreground/90 text-[12px] mt-0.5 leading-[1.45] break-words">
             {comment.comment_text}
           </p>
 
           {/* AI Product Cards */}
           {comment.is_ai && comment.ai_products && comment.ai_products.length > 0 && (
-            <div className="mt-2 space-y-1.5">
+            <div className="mt-1.5 space-y-1">
               {comment.ai_products.map((product) => (
                 <motion.button
                   key={product.id}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => navigate(`/product/${product.id}`)}
-                  className="w-full flex items-center gap-2.5 p-2 rounded-xl transition-colors"
-                  style={{
-                    background: "hsl(var(--secondary))",
-                    border: "1px solid hsl(var(--border))",
-                  }}
+                  className="w-full flex items-center gap-2 p-1.5 rounded-lg bg-secondary border border-border"
                 >
                   {product.image_url ? (
-                    <img src={product.image_url} alt={product.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                    <img src={product.image_url} alt={product.name} className="w-8 h-8 rounded object-cover flex-shrink-0" />
                   ) : (
-                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                      <ShoppingCart className="w-4 h-4 text-muted-foreground" />
+                    <div className="w-8 h-8 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                      <ShoppingCart className="w-3.5 h-3.5 text-muted-foreground" />
                     </div>
                   )}
                   <div className="flex-1 min-w-0 text-right">
-                    <p className="text-foreground text-xs font-semibold truncate">{product.name}</p>
-                    <p className="text-primary text-xs font-bold">₪{product.price}</p>
+                    <p className="text-foreground text-[11px] font-semibold truncate">{product.name}</p>
+                    <p className="text-primary text-[11px] font-bold">₪{product.price}</p>
                   </div>
-                  <ExternalLink className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                  <ExternalLink className="w-3 h-3 text-muted-foreground flex-shrink-0" />
                 </motion.button>
               ))}
             </div>
           )}
 
-          {/* Action row */}
-          <div className="flex items-center gap-4 mt-2">
+          {/* Actions row — compact */}
+          <div className="flex items-center gap-3 mt-1">
             <button
               onClick={() => onReply(comment)}
-              className="flex items-center gap-1 text-muted-foreground text-[11px] font-semibold hover:text-foreground transition-colors active:scale-95"
+              className="flex items-center gap-0.5 text-muted-foreground text-[10px] font-semibold hover:text-foreground transition-colors"
             >
               <Reply className="w-3 h-3" />
               הגב
             </button>
-            <button className="text-muted-foreground text-[11px] font-semibold hover:text-foreground transition-colors active:scale-95">
+            <button className="text-muted-foreground text-[10px] font-semibold hover:text-foreground transition-colors">
               תרגם
             </button>
+            {isOwner && !comment.is_ai && (
+              <button
+                onClick={() => onDelete(comment.id)}
+                className="text-muted-foreground text-[10px] font-semibold hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Like button */}
+        {/* Like */}
         {!comment.is_ai && (
           <button
             onClick={() => onLike(comment.id)}
-            className="flex-shrink-0 flex flex-col items-center gap-0.5 pt-1"
+            className="flex-shrink-0 flex flex-col items-center gap-0 pt-1"
           >
             <motion.div whileTap={{ scale: 1.3 }} transition={{ type: "spring", stiffness: 400 }}>
               <Heart
                 className={cn(
-                  "w-4 h-4 transition-colors",
+                  "w-3.5 h-3.5 transition-colors",
                   isLiked
                     ? "fill-destructive text-destructive"
-                    : "text-muted-foreground/40 hover:text-muted-foreground/60"
+                    : "text-muted-foreground/30 hover:text-muted-foreground/50"
                 )}
               />
             </motion.div>
             {likesCount > 0 && (
-              <span className="text-muted-foreground text-[10px]">{likesCount}</span>
+              <span className="text-muted-foreground text-[9px]">{likesCount}</span>
             )}
           </button>
         )}
@@ -264,9 +249,11 @@ const CommentItem = ({
               key={reply.id}
               comment={reply}
               depth={depth + 1}
+              currentUserId={currentUserId}
               likedComments={likedComments}
               onLike={onLike}
               onReply={onReply}
+              onDelete={onDelete}
               navigate={navigate}
             />
           ))}
@@ -309,39 +296,22 @@ export const CommentsSheet = ({
       fetchComments();
       fetchUserAvatar();
     }
-    return () => {
-      setReplyingTo(null);
-      setNewComment("");
-    };
+    return () => { setReplyingTo(null); setNewComment(""); };
   }, [isOpen, postId]);
 
-  /* Realtime subscription */
+  /* Realtime */
   useEffect(() => {
     if (!isOpen || !postId) return;
-
     const channel = supabase
       .channel(`comments-${postId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "post_comments", filter: `post_id=eq.${postId}` },
-        () => {
-          fetchComments();
-        }
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "post_comments", filter: `post_id=eq.${postId}` }, () => fetchComments())
       .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [isOpen, postId]);
 
   const fetchUserAvatar = async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from("profiles")
-      .select("avatar_url")
-      .eq("id", user.id)
-      .maybeSingle();
+    const { data } = await supabase.from("profiles").select("avatar_url").eq("id", user.id).maybeSingle();
     if (data) setUserAvatar(data.avatar_url || "");
   };
 
@@ -361,8 +331,8 @@ export const CommentsSheet = ({
         const [profilesRes, petRes, likesRes, myLikesRes] = await Promise.all([
           supabase.from("profiles").select("id, full_name, avatar_url").in("id", userIds),
           supabase.from("pets" as any).select("user_id, breed, type").in("user_id", userIds).eq("archived", false),
-          supabase.from("comment_likes" as any).select("comment_id").in("comment_id", commentIds),
-          user
+          commentIds.length > 0 ? supabase.from("comment_likes" as any).select("comment_id").in("comment_id", commentIds) : Promise.resolve({ data: [] }),
+          user && commentIds.length > 0
             ? supabase.from("comment_likes" as any).select("comment_id").in("comment_id", commentIds).eq("user_id", user.id)
             : Promise.resolve({ data: [] }),
         ]);
@@ -373,7 +343,6 @@ export const CommentsSheet = ({
           if (p.breed && !breedMap.has(p.user_id)) breedMap.set(p.user_id, p.breed);
         });
 
-        // Count likes per comment
         const likesCountMap = new Map<string, number>();
         ((likesRes.data || []) as any[]).forEach((l: any) => {
           likesCountMap.set(l.comment_id, (likesCountMap.get(l.comment_id) || 0) + 1);
@@ -398,10 +367,8 @@ export const CommentsSheet = ({
           };
         });
 
-        // Build tree
         const rootComments: Comment[] = [];
         const childrenMap = new Map<string, Comment[]>();
-
         allComments.forEach((c) => {
           if (c.parent_id) {
             const arr = childrenMap.get(c.parent_id) || [];
@@ -411,13 +378,8 @@ export const CommentsSheet = ({
             rootComments.push(c);
           }
         });
-
-        // Attach replies (max 1 level deep in display)
-        rootComments.forEach((c) => {
-          c.replies = childrenMap.get(c.id) || [];
-        });
-
-        setComments(rootComments.reverse()); // newest first
+        rootComments.forEach((c) => { c.replies = childrenMap.get(c.id) || []; });
+        setComments(rootComments.reverse());
         setTotalCount(allComments.length);
       }
     } catch (error) {
@@ -433,9 +395,25 @@ export const CommentsSheet = ({
     setTimeout(() => inputRef.current?.focus(), 100);
   };
 
-  const cancelReply = () => {
-    setReplyingTo(null);
-    setNewComment("");
+  const cancelReply = () => { setReplyingTo(null); setNewComment(""); };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!user) return;
+    try {
+      // Delete child replies first (cascade should handle, but be safe)
+      await supabase.from("comment_likes" as any).delete().eq("comment_id", commentId);
+      const { error } = await supabase
+        .from("post_comments")
+        .delete()
+        .eq("id", commentId)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+      toast.success("התגובה נמחקה");
+      await fetchComments();
+    } catch {
+      toast.error("שגיאה במחיקת התגובה");
+    }
   };
 
   const handleSubmitComment = async (text?: string) => {
@@ -450,21 +428,18 @@ export const CommentsSheet = ({
         comment_text: commentText.trim(),
       };
       if (replyingTo) {
-        // Always reply to root-level comment (flatten to 1 level)
         insertData.parent_id = replyingTo.parent_id || replyingTo.id;
       }
-
       await supabase.from("post_comments").insert(insertData);
       setNewComment("");
       setReplyingTo(null);
-      // Realtime will trigger fetchComments, but also fetch immediately for responsiveness
       await fetchComments();
       toast.success("התגובה נוספה!");
 
       if (aiMode && commentText.length > 3) {
         await fetchAiReply(commentText);
       }
-    } catch (error) {
+    } catch {
       toast.error("שגיאה בהוספת התגובה");
     } finally {
       setSubmitting(false);
@@ -480,25 +455,16 @@ export const CommentsSheet = ({
             comment_text: commentText,
             post_id: postId,
             pet_context: activePet
-              ? {
-                  name: activePet.name,
-                  breed: activePet.breed,
-                  pet_type: activePet.pet_type,
-                  age_weeks: activePet.ageWeeks,
-                  medical_conditions: activePet.medical_conditions,
-                }
+              ? { name: activePet.name, breed: activePet.breed, pet_type: activePet.pet_type, age_weeks: activePet.ageWeeks, medical_conditions: activePet.medical_conditions }
               : null,
           },
         });
-
         if (error) {
-          if ((error as any).status === 429) { toast.warning("יותר מדי בקשות, נסה שוב בעוד רגע"); return; }
+          if ((error as any).status === 429) { toast.warning("יותר מדי בקשות"); return; }
           if ((error as any).status === 402) { toast.error("נדרש חידוש קרדיטים"); return; }
           throw error;
         }
-
         if (data?.is_sos) setShowSOS(true);
-
         if (data?.reply) {
           const aiComment: Comment = {
             id: `ai-${Date.now()}`,
@@ -524,16 +490,12 @@ export const CommentsSheet = ({
 
   const handleLikeComment = async (commentId: string) => {
     if (!user || commentId.startsWith("ai-")) return;
-
     const wasLiked = likedComments.has(commentId);
-    // Optimistic update
     setLikedComments((prev) => {
-      const newSet = new Set(prev);
-      if (wasLiked) newSet.delete(commentId);
-      else newSet.add(commentId);
-      return newSet;
+      const s = new Set(prev);
+      wasLiked ? s.delete(commentId) : s.add(commentId);
+      return s;
     });
-
     try {
       if (wasLiked) {
         await supabase.from("comment_likes" as any).delete().eq("comment_id", commentId).eq("user_id", user.id);
@@ -541,12 +503,10 @@ export const CommentsSheet = ({
         await supabase.from("comment_likes" as any).insert({ comment_id: commentId, user_id: user.id });
       }
     } catch {
-      // Revert on error
       setLikedComments((prev) => {
-        const newSet = new Set(prev);
-        if (wasLiked) newSet.add(commentId);
-        else newSet.delete(commentId);
-        return newSet;
+        const s = new Set(prev);
+        wasLiked ? s.add(commentId) : s.delete(commentId);
+        return s;
       });
     }
   };
@@ -563,50 +523,31 @@ export const CommentsSheet = ({
           side="bottom"
           className="h-[70vh] rounded-t-[28px] bg-card border-none p-0 flex flex-col z-[100]"
         >
-          {/* Drag Handle + Title */}
-          <div className="flex flex-col items-center pt-3 pb-1">
-            <div className="w-9 h-1 bg-muted rounded-full" />
-            <h3 className="text-foreground font-bold text-[15px] mt-2">
+          {/* Handle + Title */}
+          <div className="flex flex-col items-center pt-2.5 pb-1">
+            <div className="w-8 h-1 bg-muted rounded-full" />
+            <h3 className="text-foreground font-bold text-[14px] mt-1.5">
               תגובות ({totalCount})
             </h3>
           </div>
 
-          {/* Header */}
-          <SheetHeader className="px-4 py-3 border-b border-border">
-            <div className="flex items-center justify-between">
+          {/* Compact Header */}
+          <div className="flex items-center justify-between px-4 py-2 border-b border-border/50">
+            {postAuthor && (
               <div className="flex items-center gap-2">
-                {postAuthor && (
-                  <Avatar className="w-8 h-8 ring-2 ring-card shadow-sm">
-                    <AvatarImage src={postAuthor.avatar_url} />
-                    <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground text-xs font-medium">
-                      {postAuthor.name?.[0] || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                )}
-                <div>
-                  <h2 className="text-foreground font-bold text-[14px]">
-                    {postAuthor?.name || "תגובות"}
-                  </h2>
-                  <p className="text-muted-foreground text-[11px]">{totalCount} תגובות</p>
-                </div>
+                <Avatar className="w-7 h-7 ring-1 ring-card">
+                  <AvatarImage src={postAuthor.avatar_url} />
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground text-[10px]">
+                    {postAuthor.name?.[0] || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-foreground font-semibold text-[12px]">{postAuthor.name}</span>
               </div>
-
-              <div className="flex items-center gap-3">
-                {reactionsCount > 0 && (
-                  <div className="flex items-center gap-1.5 bg-secondary px-2.5 py-1 rounded-full">
-                    <div className="flex -space-x-1">
-                      <span className="text-sm">❤️</span>
-                      <span className="text-sm">🔥</span>
-                    </div>
-                    <span className="text-muted-foreground text-xs font-medium">{reactionsCount}</span>
-                  </div>
-                )}
-                <button onClick={onClose} className="p-1.5 hover:bg-secondary rounded-full transition-colors">
-                  <ChevronDown className="w-5 h-5 text-muted-foreground" />
-                </button>
-              </div>
-            </div>
-          </SheetHeader>
+            )}
+            <button onClick={onClose} className="p-1 hover:bg-secondary rounded-full transition-colors">
+              <ChevronDown className="w-4.5 h-4.5 text-muted-foreground" />
+            </button>
+          </div>
 
           {/* AI Loading */}
           <AnimatePresence>
@@ -615,43 +556,45 @@ export const CommentsSheet = ({
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                className="px-4 py-2.5 border-b border-border"
+                className="px-4 py-2 border-b border-border/50"
               >
                 <div className="flex items-center gap-2">
                   <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}>
-                    <Sparkles className="w-4 h-4 text-primary" />
+                    <Sparkles className="w-3.5 h-3.5 text-primary" />
                   </motion.div>
-                  <span className="text-muted-foreground text-xs font-medium">PetID Expert מנתח את השאלה שלך...</span>
+                  <span className="text-muted-foreground text-[11px] font-medium">PetID Expert מנתח...</span>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
 
           {/* Comments List */}
-          <div className="flex-1 overflow-y-auto px-4">
+          <div className="flex-1 overflow-y-auto px-3">
             <AnimatePresence mode="wait">
               {loading ? (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center justify-center py-12">
-                  <div className="w-8 h-8 border-2 border-muted border-t-primary rounded-full animate-spin" />
-                  <p className="text-muted-foreground text-sm mt-3">טוען תגובות...</p>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center justify-center py-10">
+                  <div className="w-7 h-7 border-2 border-muted border-t-primary rounded-full animate-spin" />
+                  <p className="text-muted-foreground text-xs mt-2">טוען תגובות...</p>
                 </motion.div>
               ) : comments.length === 0 ? (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center justify-center py-12">
-                  <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mb-3">
-                    <MessageCircle className="w-8 h-8 text-muted-foreground" />
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center justify-center py-10">
+                  <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center mb-2">
+                    <MessageCircle className="w-6 h-6 text-muted-foreground" />
                   </div>
-                  <p className="text-foreground font-semibold text-base">אין תגובות עדיין</p>
-                  <p className="text-muted-foreground text-sm mt-1">היה הראשון להגיב!</p>
+                  <p className="text-foreground font-semibold text-sm">אין תגובות עדיין</p>
+                  <p className="text-muted-foreground text-xs mt-0.5">היה הראשון להגיב!</p>
                 </motion.div>
               ) : (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="divide-y divide-border/30">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   {comments.map((comment) => (
                     <CommentItem
                       key={comment.id}
                       comment={comment}
+                      currentUserId={user?.id}
                       likedComments={likedComments}
                       onLike={handleLikeComment}
                       onReply={handleReply}
+                      onDelete={handleDeleteComment}
                       navigate={navigate}
                     />
                   ))}
@@ -661,7 +604,7 @@ export const CommentsSheet = ({
           </div>
 
           {/* ─── Sticky Bottom Input ─── */}
-          <div className="sticky bottom-0 border-t border-border bg-card px-4 pt-3 pb-6">
+          <div className="sticky bottom-0 border-t border-border/50 bg-card px-3 pt-2 pb-5">
             {/* Reply indicator */}
             <AnimatePresence>
               {replyingTo && (
@@ -669,14 +612,12 @@ export const CommentsSheet = ({
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="flex items-center justify-between mb-2 px-2 py-1.5 rounded-lg bg-secondary"
+                  className="flex items-center justify-between mb-1.5 px-2 py-1 rounded-lg bg-secondary/70"
                 >
-                  <span className="text-muted-foreground text-xs">
-                    מגיב/ה ל-<span className="text-foreground font-semibold">{replyingTo.user.full_name}</span>
+                  <span className="text-muted-foreground text-[11px]">
+                    ↩ <span className="text-foreground font-semibold">{replyingTo.user.full_name}</span>
                   </span>
-                  <button onClick={cancelReply} className="text-muted-foreground text-xs font-bold hover:text-foreground">
-                    ✕
-                  </button>
+                  <button onClick={cancelReply} className="text-muted-foreground text-[10px] font-bold hover:text-foreground px-1">✕</button>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -688,14 +629,14 @@ export const CommentsSheet = ({
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="flex gap-1 mb-2 overflow-x-auto"
+                  className="flex gap-1 mb-1.5 overflow-x-auto"
                 >
                   {PET_EMOJIS.map((emoji, i) => (
                     <motion.button
                       key={i}
                       whileTap={{ scale: 0.85 }}
                       onClick={() => insertEmoji(emoji)}
-                      className="w-9 h-9 flex items-center justify-center rounded-full bg-secondary hover:bg-secondary/80 text-lg flex-shrink-0"
+                      className="w-8 h-8 flex items-center justify-center rounded-full bg-secondary hover:bg-secondary/80 text-base flex-shrink-0"
                     >
                       {emoji}
                     </motion.button>
@@ -704,42 +645,11 @@ export const CommentsSheet = ({
               )}
             </AnimatePresence>
 
-            {/* Quick reactions + AI toggle */}
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex justify-around flex-1 gap-1">
-                {quickReplies.map((reply, index) => (
-                  <motion.button
-                    key={index}
-                    whileTap={{ scale: 0.85 }}
-                    onClick={() => handleSubmitComment(reply.text)}
-                    disabled={submitting || !user}
-                    className="w-9 h-9 flex items-center justify-center rounded-full bg-secondary hover:bg-secondary/80 active:bg-muted transition-colors text-lg disabled:opacity-50"
-                  >
-                    {reply.text}
-                  </motion.button>
-                ))}
-              </div>
-
-              <div
-                className={cn(
-                  "flex items-center gap-1.5 px-2.5 py-1.5 rounded-full mr-2 transition-all cursor-pointer select-none",
-                  aiMode ? "bg-primary/10 border border-primary/25" : "bg-secondary border border-transparent"
-                )}
-                onClick={() => setAiMode(!aiMode)}
-              >
-                <Bot className={cn("w-3.5 h-3.5 transition-colors", aiMode ? "text-primary" : "text-muted-foreground")} />
-                <span className={cn("text-[10px] font-bold whitespace-nowrap transition-colors", aiMode ? "text-primary" : "text-muted-foreground")}>
-                  AI
-                </span>
-                <Switch checked={aiMode} onCheckedChange={setAiMode} className="h-4 w-7 data-[state=checked]:bg-primary" />
-              </div>
-            </div>
-
-            {/* Input */}
+            {/* Input row */}
             <div className="flex items-center gap-2">
-              <Avatar className="w-8 h-8 flex-shrink-0 ring-1 ring-border/50">
+              <Avatar className="w-7 h-7 flex-shrink-0 ring-1 ring-border/40">
                 <AvatarImage src={userAvatar} />
-                <AvatarFallback className="bg-gradient-to-br from-primary/60 to-accent/60 text-primary-foreground text-xs font-medium">
+                <AvatarFallback className="bg-gradient-to-br from-primary/60 to-accent/60 text-primary-foreground text-[10px] font-medium">
                   {user?.email?.[0]?.toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
@@ -752,26 +662,33 @@ export const CommentsSheet = ({
                   onChange={(e) => setNewComment(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSubmitComment()}
                   placeholder={
-                    replyingTo
-                      ? `הגב ל-${replyingTo.user.full_name}...`
-                      : aiMode
-                      ? "שאל את המוח של PetID..."
+                    replyingTo ? `הגב ל-${replyingTo.user.full_name}...`
+                      : aiMode ? "שאל את PetID..."
                       : "הוסף תגובה..."
                   }
                   disabled={!user || submitting}
                   className={cn(
-                    "w-full bg-secondary text-foreground placeholder-muted-foreground rounded-full pl-10 pr-4 py-2.5 text-[13px] focus:outline-none focus:ring-2 transition-all disabled:opacity-50",
-                    aiMode
-                      ? "focus:ring-primary/30 border border-primary/20"
-                      : "focus:ring-primary/20 border border-transparent"
+                    "w-full bg-secondary text-foreground placeholder-muted-foreground rounded-full pl-9 pr-3 py-2 text-[12px] focus:outline-none focus:ring-1.5 transition-all disabled:opacity-50",
+                    aiMode ? "focus:ring-primary/30 border border-primary/20" : "focus:ring-primary/20 border border-transparent"
                   )}
                 />
                 <button
                   onClick={() => setShowEmojiBar((v) => !v)}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
-                  <Smile className="w-5 h-5" />
+                  <Smile className="w-4 h-4" />
                 </button>
+              </div>
+
+              {/* AI toggle — minimal pill */}
+              <div
+                className={cn(
+                  "flex items-center gap-1 px-2 py-1.5 rounded-full cursor-pointer select-none transition-all",
+                  aiMode ? "bg-primary/10 border border-primary/20" : "bg-secondary border border-transparent"
+                )}
+                onClick={() => setAiMode(!aiMode)}
+              >
+                <Bot className={cn("w-3 h-3", aiMode ? "text-primary" : "text-muted-foreground")} />
               </div>
 
               <motion.button
@@ -779,13 +696,13 @@ export const CommentsSheet = ({
                 onClick={() => handleSubmitComment()}
                 disabled={!newComment.trim() || submitting || !user}
                 className={cn(
-                  "w-9 h-9 rounded-full flex items-center justify-center transition-all disabled:opacity-50",
+                  "w-8 h-8 rounded-full flex items-center justify-center transition-all disabled:opacity-40",
                   newComment.trim()
-                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+                    ? "bg-primary text-primary-foreground shadow-md shadow-primary/25"
                     : "bg-secondary text-muted-foreground"
                 )}
               >
-                <Send className="w-4 h-4" />
+                <Send className="w-3.5 h-3.5" />
               </motion.button>
             </div>
           </div>
