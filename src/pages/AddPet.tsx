@@ -229,6 +229,24 @@ const AddPet = () => {
     }
   };
 
+  const searchBreeds = async (query: string) => {
+    if (!petType || query.length < 1) {
+      setBreedSearchResults([]);
+      return;
+    }
+    try {
+      const { data } = await supabase
+        .from("breed_information")
+        .select("breed_name, breed_name_he")
+        .eq("pet_type", petType)
+        .or(`breed_name.ilike.%${query}%,breed_name_he.ilike.%${query}%`)
+        .limit(8);
+      setBreedSearchResults(data || []);
+    } catch {
+      setBreedSearchResults([]);
+    }
+  };
+
   const [breedDetectionFailed, setBreedDetectionFailed] = useState(false);
   const [photoQualityFeedback, setPhotoQualityFeedback] = useState<string | null>(null);
   const [detectedHealthRisks, setDetectedHealthRisks] = useState<Array<{ risk: string; risk_he: string; severity: string; note: string }>>([]);
