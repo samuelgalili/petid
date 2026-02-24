@@ -851,12 +851,34 @@ const AddPet = () => {
                     <motion.div 
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm"
-                      style={{ background: 'var(--gradient-primary)' }}
+                      className="space-y-2"
                     >
-                      <Sparkles className="w-4 h-4 text-white" />
-                      <span className="text-white font-medium">
-                        זוהה: {formData.breed} ({Math.round(breedConfidence * 100)}%)
+                      <div
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm"
+                        style={{ background: breedConfidence > 0.8 ? 'var(--gradient-primary)' : 'hsl(var(--muted))' }}
+                      >
+                        <Sparkles className={cn("w-4 h-4", breedConfidence > 0.8 ? "text-white" : "text-warning")} />
+                        <span className={cn("font-medium", breedConfidence > 0.8 ? "text-white" : "text-foreground")}>
+                          זוהה: {formData.breed} ({Math.round(breedConfidence * 100)}%)
+                        </span>
+                      </div>
+                      {breedConfidence <= 0.8 && (
+                        <p className="text-xs text-muted-foreground">
+                          רמת הוודאות נמוכה — אנא אשר או ערוך את הגזע למטה
+                        </p>
+                      )}
+                    </motion.div>
+                  )}
+
+                  {/* Breed detection failed message */}
+                  {breedDetectionFailed && !breedDetecting && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-destructive/10 text-sm"
+                    >
+                      <span className="text-destructive font-medium">
+                        לא הצלחנו לזהות את הגזע. בחר ידנית לדיוק בריאותי טוב יותר.
                       </span>
                     </motion.div>
                   )}
