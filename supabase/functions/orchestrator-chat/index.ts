@@ -4,10 +4,9 @@ import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Input validation schema
 const MessageSchema = z.object({
   role: z.enum(["user", "assistant", "system"]),
   content: z.string().max(10000, "Message content too long (max 10000 chars)")
@@ -17,7 +16,6 @@ const OrchestratorInputSchema = z.object({
   messages: z.array(MessageSchema).min(1).max(50, "Too many messages (max 50)")
 });
 
-// Task JSON validation schema
 const TaskSchema = z.object({
   bot: z.string().max(50),
   title: z.string().max(200),
@@ -28,32 +26,39 @@ const TaskSchema = z.object({
   expected_outcome: z.string().max(500).optional()
 });
 
-// Max payload size: 1MB
 const MAX_PAYLOAD_SIZE = 1024 * 1024;
 
-// Bot capabilities for the orchestrator to understand
+// The 9 PetID Fleet Bots
 const BOT_CAPABILITIES = `
-You are PetID Ops Commander, the orchestrator of a multi-agent system for PetID.
+You are the PetID Brain Bot — the central orchestrator of 9 autonomous robots (The Fleet).
+Your mission: protect pets by ensuring accurate data, safe products, and proactive care.
 
-Available Bots and their capabilities:
-1. Marketing Manager (marketing) - Campaign management, promotions, audience targeting
-2. Content Creator (content) - Social posts, blog writing, email copy
-3. Ads Manager (ads) - Google/Facebook/Instagram ads, budget management
-4. WhatsApp Sales (whatsapp-sales) - Lead qualification, sales followup
-5. Store Operations (store-ops) - Inventory, pricing, catalog updates
-6. Fulfillment (fulfillment) - Orders, shipping, returns
-7. Finance (finance) - Financial reports, expense tracking
-8. Support (support) - Ticket management, FAQ responses
-9. Analytics (analytics) - Data analysis, reporting, insights
+## The Fleet — 9 Autonomous Robots:
 
-CORE RULES:
-1. Each bot has a single responsibility
-2. All actions are DRAFTS first - high-impact actions require user approval
-3. High-impact actions include: ad spend changes, price changes, refunds, supplier orders
-4. Every action must be logged with: timestamp, bot name, reason, expected outcome
-5. Prioritize tasks using business KPIs
+1. **Brain Bot** (brain) — YOU. Orchestrate, prioritize, and delegate tasks to other bots based on KPIs.
+2. **CRM Bot** (crm) — Maintains 100% data integrity in user/pet profiles. Detects duplicates, syncs OCR data, validates owner info.
+3. **Inventory Bot** (inventory) — Predicts stock depletion based on pet weight and NRC 2006 standards. Triggers reorder alerts.
+4. **Marketing Bot** (marketing) — Segments users (e.g., "Doberman owners in Tel Aviv") for targeted campaigns. Creates push notifications.
+5. **Sales Bot** (sales) — Generates leads for Libra Insurance and store products post-scan. Manages upsell logic.
+6. **Support Bot** (support) — 24/7 AI assistance based on pet history, medical records, and vaccination schedules.
+7. **Medical Bot** (medical) — Locates nearby clinics, schedules vaccinations, sends health alerts based on scanned documents.
+8. **Compliance Bot** (compliance) — Tracks licenses, expiry dates, dangerous dog status, and municipal rules.
+9. **NRC Science Bot** (nrc-science) — Verifies food ingredients against NRC 2006 guidelines. Analyzes product images for safety.
 
-When creating tasks, respond with structured JSON in this format:
+## CORE RULES:
+1. Each bot has a single responsibility — never overlap.
+2. **CRITICAL ACTIONS require approval**: price changes, refunds, notifications to users, deletions, ad spend, insurance lead forwarding.
+3. Non-critical actions (data analysis, report generation, stock checks) execute automatically.
+4. Every action is logged with: timestamp, bot name, reason, expected outcome.
+5. Prioritize by: (a) Pet safety, (b) Data integrity, (c) Revenue.
+6. PetID Core: If doubt — do not recommend. If data missing — ask. Default = inaction.
+
+## SAFETY PROTOCOLS:
+- Kill Switch: Admin can deactivate any bot instantly via is_active flag.
+- Human-in-the-loop: All user-facing messages and financial actions require approval.
+- Never hallucinate data. Only use verified information from the database.
+
+## Task Creation Format:
 <task>
 {
   "bot": "slug",
@@ -66,7 +71,7 @@ When creating tasks, respond with structured JSON in this format:
 }
 </task>
 
-Be helpful, proactive, and always think about what's best for the PetID business.
+## Naming: Always use "PetID" — never "Vet Life".
 Respond in Hebrew.
 `;
 
@@ -76,10 +81,8 @@ serve(async (req) => {
   }
 
   try {
-    // CRITICAL: Authentication check
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      console.log("Orchestrator: Missing authorization header");
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -90,24 +93,19 @@ serve(async (req) => {
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    // Create auth client to verify user
     const supabaseAuth = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!);
-    
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(token);
     
     if (authError || !user) {
-      console.log("Orchestrator: Invalid token", authError?.message);
       return new Response(
         JSON.stringify({ error: "Invalid token" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Create admin client for database operations
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
-    // Check if user has admin role
     const { data: adminRole, error: roleError } = await supabase
       .from("user_roles")
       .select("role")
@@ -116,23 +114,19 @@ serve(async (req) => {
       .maybeSingle();
     
     if (roleError || !adminRole) {
-      console.log("Orchestrator: Access denied for user", user.id);
       return new Response(
         JSON.stringify({ error: "Admin access required" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Check content length before parsing
     const contentLength = req.headers.get("content-length");
     if (contentLength && parseInt(contentLength) > MAX_PAYLOAD_SIZE) {
       return new Response(JSON.stringify({ error: "Payload too large (max 1MB)" }), {
-        status: 413,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Parse and validate input
     const rawBody = await req.json();
     const parseResult = OrchestratorInputSchema.safeParse(rawBody);
     
@@ -141,39 +135,34 @@ serve(async (req) => {
         error: "Invalid input", 
         details: parseResult.error.errors.map(e => e.message).join(", ")
       }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const { messages } = parseResult.data;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
+    // Fetch context
+    const [{ data: recentTasks }, { data: bots }, { data: recentLogs }] = await Promise.all([
+      supabase.from('agent_tasks').select('title, status, priority, bot_id, created_at').order('created_at', { ascending: false }).limit(15),
+      supabase.from('agent_bots').select('id, name, slug, is_active').order('created_at'),
+      supabase.from('agent_action_logs').select('action_type, description, created_at').order('created_at', { ascending: false }).limit(10),
+    ]);
 
-    // Fetch current business context (recent tasks, KPIs, etc.)
-    const { data: recentTasks } = await supabase
-      .from('agent_tasks')
-      .select('title, status, priority, created_at')
-      .order('created_at', { ascending: false })
-      .limit(10);
-
-    const { data: bots } = await supabase
-      .from('agent_bots')
-      .select('id, name, slug')
-      .eq('is_active', true);
+    const activeBots = bots?.filter(b => b.is_active) || [];
+    const inactiveBots = bots?.filter(b => !b.is_active) || [];
 
     const contextInfo = `
-Current Context:
-- Recent Tasks: ${recentTasks?.length || 0} tasks in queue
-- Active Bots: ${bots?.map(b => b.name).join(', ') || 'None'}
-- Current Date: ${new Date().toLocaleDateString('he-IL')}
-- Authenticated User: ${user.email}
+## Current System State:
+- Active Bots: ${activeBots.map(b => b.name).join(', ') || 'None'}
+- Deactivated Bots (Kill Switch): ${inactiveBots.map(b => b.name).join(', ') || 'None'}
+- Tasks in Queue: ${recentTasks?.length || 0}
+- Pending Approval: ${recentTasks?.filter(t => t.status === 'pending_approval').length || 0}
+- Recent Actions: ${recentLogs?.map(l => l.description).slice(0, 5).join('; ') || 'None'}
+- Date: ${new Date().toLocaleDateString('he-IL')}
+- Admin: ${user.email}
 `;
-
-    console.log(`Orchestrator: Processing request from admin ${user.id}`);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -193,27 +182,19 @@ Current Context:
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ error: "Rate limit exceeded" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Payment required. Please add credits." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ error: "Payment required" }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       throw new Error(`AI gateway error: ${response.status}`);
     }
 
-    // Create a TransformStream to process the response
     const { readable, writable } = new TransformStream();
     const writer = writable.getWriter();
     const encoder = new TextEncoder();
     let fullResponse = '';
 
-    // Process the stream
     const processStream = async () => {
       const reader = response.body!.getReader();
       const decoder = new TextDecoder();
@@ -222,13 +203,12 @@ Current Context:
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-
           const chunk = decoder.decode(value, { stream: true });
           fullResponse += chunk;
           await writer.write(encoder.encode(chunk));
         }
 
-        // After stream completes, check for task creation
+        // Parse tasks from response
         if (fullResponse.includes('<task>')) {
           const taskMatches = fullResponse.match(/<task>([\s\S]*?)<\/task>/g);
           if (taskMatches) {
@@ -236,19 +216,13 @@ Current Context:
               try {
                 const jsonStr = match.replace(/<\/?task>/g, '').trim();
                 const rawTaskData = JSON.parse(jsonStr);
-                
-                // Validate task data using zod schema
                 const taskParseResult = TaskSchema.safeParse(rawTaskData);
-                if (!taskParseResult.success) {
-                  console.error('Invalid task data:', taskParseResult.error.errors);
-                  continue;
-                }
+                if (!taskParseResult.success) continue;
                 
                 const taskData = taskParseResult.data;
-                
-                // Find bot ID
                 const bot = bots?.find(b => b.slug === taskData.bot);
-                if (bot) {
+                
+                if (bot && bot.is_active) {
                   await supabase.from('agent_tasks').insert({
                     bot_id: bot.id,
                     title: taskData.title,
@@ -261,7 +235,6 @@ Current Context:
                     status: taskData.requires_approval ? 'pending_approval' : 'draft'
                   });
 
-                  // Log the action
                   await supabase.from('agent_action_logs').insert({
                     bot_id: bot.id,
                     action_type: 'task_created',
