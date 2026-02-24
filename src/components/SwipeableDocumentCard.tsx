@@ -17,6 +17,7 @@ interface SwipeableDocumentCardProps {
   documentTypeLabel: string;
   onDelete: (id: string, fileUrl: string) => void;
   onDownload: (fileUrl: string, fileName: string) => void;
+  onView?: (fileUrl: string, fileName: string) => void;
   index: number;
 }
 
@@ -26,6 +27,7 @@ export function SwipeableDocumentCard({
   documentTypeLabel,
   onDelete,
   onDownload,
+  onView,
   index,
 }: SwipeableDocumentCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
@@ -111,7 +113,16 @@ export function SwipeableDocumentCard({
         style={{ x }}
         className="group relative bg-card rounded-2xl overflow-hidden border border-border/40 hover:border-primary/30 hover:shadow-lg transition-all duration-300 cursor-grab active:cursor-grabbing"
       >
-        <div className="relative p-4">
+        <div 
+          className="relative p-4 cursor-pointer"
+          onClick={() => {
+            if (onView) {
+              onView(doc.file_url, doc.file_name);
+            } else {
+              window.open(doc.file_url, '_blank');
+            }
+          }}
+        >
           <div className="flex items-start gap-3.5">
             {/* Document Icon */}
             <div className="relative flex-shrink-0">
