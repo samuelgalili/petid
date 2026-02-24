@@ -73,6 +73,18 @@ export default function Documents() {
     fetchDocuments();
   }, []);
 
+  // Auto-scroll to highlighted document from deep-link
+  useEffect(() => {
+    if (highlightDocId && !loading && filteredDocuments.length > 0) {
+      setTimeout(() => {
+        const el = document.getElementById(`doc-${highlightDocId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 500);
+    }
+  }, [highlightDocId, loading, filteredDocuments]);
+
   useEffect(() => {
     let filtered = [...documents];
 
