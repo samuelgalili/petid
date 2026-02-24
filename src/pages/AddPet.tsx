@@ -425,13 +425,17 @@ const AddPet = () => {
       
       let avatarUrl = imagePreview || "";
 
+      const breedValue = formData.is_mixed && formData.secondary_breed 
+        ? `${formData.breed} + ${formData.secondary_breed}` 
+        : formData.breed || null;
+
       const { data: petData, error: insertError } = await supabase.from("pets").insert({
         user_id: user.id,
         name: formData.name,
         type: petType,
         birth_date: formData.birthDate ? formData.birthDate.toISOString().split('T')[0] : null,
         gender: formData.gender || null,
-        breed: formData.breed || null,
+        breed: breedValue,
         breed_confidence: breedConfidence,
         is_neutered: formData.is_neutered === "true",
         avatar_url: avatarUrl,
