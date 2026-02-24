@@ -224,10 +224,13 @@ const AddPet = () => {
     }
   };
 
+  const [breedDetectionFailed, setBreedDetectionFailed] = useState(false);
+
   const detectBreed = async (base64Image: string) => {
     if (!petType) return;
     
     setBreedDetecting(true);
+    setBreedDetectionFailed(false);
     try {
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/detect-breed`, {
         method: 'POST',
@@ -241,8 +244,20 @@ const AddPet = () => {
         })
       });
 
+      if (response.status === 429) {
+        toast({ title: "נסה שוב מאוחר יותר", description: "יותר מדי בקשות, אנא המתן.", variant: "destructive" });
+        setBreedDetectionFailed(true);
+        return;
+      }
+
       const data = await response.json();
       
+      if (data.error) {
+        console.error('Breed detection error:', data.error);
+        setBreedDetectionFailed(true);
+        return;
+      }
+
       if (data.breed && data.breed !== "Unknown Breed") {
         // Check if detected animal type mismatches user selection
         if (data.detectedType && data.detectedType !== petType) {
@@ -251,16 +266,29 @@ const AddPet = () => {
             breed: data.breed,
             confidence: data.confidence || 0
           });
-          return; // Wait for user decision
+          return;
         }
         
-        const matchedBreed = await matchBreedInDB(data.breed, petType);
-        setFormData(prev => ({ ...prev, breed: matchedBreed }));
-        setBreedConfidence(data.confidence || null);
-        setBreedSource('ai');
+        const confidence = data.confidence || 0;
+        const matchedBreed = await matchBreedInDB(data.breed_he || data.breed, petType);
+        
+        // Only auto-fill if confidence > 80%
+        if (confidence > 0.8) {
+          setFormData(prev => ({ ...prev, breed: matchedBreed }));
+          setBreedSource('ai');
+        } else {
+          // Still show detection but let user confirm
+          setFormData(prev => ({ ...prev, breed: matchedBreed }));
+          setBreedSource('ai');
+        }
+        setBreedConfidence(confidence);
+      } else {
+        // No breed detected
+        setBreedDetectionFailed(true);
       }
     } catch (error) {
       console.error('Error detecting breed:', error);
+      setBreedDetectionFailed(true);
     } finally {
       setBreedDetecting(false);
     }
@@ -823,12 +851,34 @@ const AddPet = () => {
                     <motion.div 
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm"
-                      style={{ background: 'var(--gradient-primary)' }}
+                      className="space-y-2"
                     >
-                      <Sparkles className="w-4 h-4 text-white" />
-                      <span className="text-white font-medium">
-                        זוהה: {formData.breed} ({Math.round(breedConfidence * 100)}%)
+                      <div
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm"
+                        style={{ background: breedConfidence > 0.8 ? 'var(--gradient-primary)' : 'hsl(var(--muted))' }}
+                      >
+                        <Sparkles className={cn("w-4 h-4", breedConfidence > 0.8 ? "text-white" : "text-warning")} />
+                        <span className={cn("font-medium", breedConfidence > 0.8 ? "text-white" : "text-foreground")}>
+                          זוהה: {formData.breed} ({Math.round(breedConfidence * 100)}%)
+                        </span>
+                      </div>
+                      {breedConfidence <= 0.8 && (
+                        <p className="text-xs text-muted-foreground">
+                          רמת הוודאות נמוכה — אנא אשר או ערוך את הגזע למטה
+                        </p>
+                      )}
+                    </motion.div>
+                  )}
+
+                  {/* Breed detection failed message */}
+                  {breedDetectionFailed && !breedDetecting && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-destructive/10 text-sm"
+                    >
+                      <span className="text-destructive font-medium">
+                        לא הצלחנו לזהות את הגזע. בחר ידנית לדיוק בריאותי טוב יותר.
                       </span>
                     </motion.div>
                   )}

@@ -3,31 +3,16 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-interface BreedDetectionResult {
-  breed: string;
-  breed_he: string | null;
-  confidence: number;
-  description: string | null;
-  traits: {
-    energy_level: number | null;
-    trainability: number | null;
-    grooming_freq: number | null;
-    kids_friendly: number | null;
-    life_expectancy: string | null;
-  } | null;
-}
-
 Deno.serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { imageUrl, imageBase64 } = await req.json();
+    const { imageUrl, imageBase64, petType } = await req.json();
 
     if (!imageUrl && !imageBase64) {
       return new Response(
@@ -36,37 +21,22 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Prepare image for Gemini
-    let imageData: { inlineData?: { data: string; mimeType: string }; fileUri?: string } = {};
-    
-    if (imageBase64) {
-      imageData = {
-        inlineData: {
-          data: imageBase64.replace(/^data:image\/\w+;base64,/, ""),
-          mimeType: "image/jpeg"
-        }
-      };
-    } else if (imageUrl) {
-      // Fetch the image and convert to base64
-      const imageResponse = await fetch(imageUrl);
-      const imageBuffer = await imageResponse.arrayBuffer();
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)));
-      imageData = {
-        inlineData: {
-          data: base64,
-          mimeType: imageResponse.headers.get("content-type") || "image/jpeg"
-        }
-      };
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Call Gemini for breed detection
+    const imageSource = imageBase64 || imageUrl;
+    const animalType = petType === "cat" ? "cat" : "dog";
+    const animalTypeHe = petType === "cat" ? "חתול" : "כלב";
+
     const geminiResponse = await fetch(
-      `https://ai.gateway.lovable.dev/v1/chat/completions`,
+      "https://ai.gateway.lovable.dev/v1/chat/completions",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${Deno.env.get("LOVABLE_API_KEY")}`,
+          "Authorization": `Bearer ${LOVABLE_API_KEY}`,
         },
         body: JSON.stringify({
           model: "google/gemini-2.5-flash",
@@ -76,32 +46,34 @@ Deno.serve(async (req) => {
               content: [
                 {
                   type: "image_url",
-                  image_url: {
-                    url: imageBase64 || imageUrl
-                  }
+                  image_url: { url: imageSource }
                 },
                 {
                   type: "text",
-                  text: `Analyze this image and identify the dog breed. 
-                  
-Response MUST be valid JSON only, no markdown:
+                  text: `Analyze this image. The user says this is a ${animalType} (${animalTypeHe}).
+
+Identify the breed. Response MUST be valid JSON only, no markdown:
 {
   "breed": "English breed name (e.g., Golden Retriever)",
   "breed_he": "Hebrew breed name (e.g., גולדן רטריבר)",
   "confidence": 0.85,
-  "is_dog": true,
-  "mixed_breeds": ["breed1", "breed2"] (if mixed, otherwise null),
+  "is_${animalType}": true,
+  "detectedType": "${animalType}",
+  "mixed_breeds": ["breed1", "breed2"] or null,
   "notes": "any additional observations"
 }
 
-If no dog is detected, return:
+If the animal in the photo is NOT a ${animalType}, set detectedType to the actual animal type ("dog" or "cat") and still try to identify the breed.
+
+If no animal is detected:
 {
   "breed": null,
   "breed_he": null,
   "confidence": 0,
-  "is_dog": false,
+  "is_${animalType}": false,
+  "detectedType": null,
   "mixed_breeds": null,
-  "notes": "reason why no dog detected"
+  "notes": "reason why no animal detected"
 }`
                 }
               ]
@@ -114,62 +86,74 @@ If no dog is detected, return:
     );
 
     if (!geminiResponse.ok) {
-      const error = await geminiResponse.text();
-      console.error("Gemini API error:", error);
-      throw new Error(`Gemini API error: ${error}`);
+      const errorText = await geminiResponse.text();
+      console.error("AI gateway error:", geminiResponse.status, errorText);
+      
+      if (geminiResponse.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "Rate limit exceeded, please try again later." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (geminiResponse.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "Payment required." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      throw new Error(`AI gateway error: ${errorText}`);
     }
 
     const geminiData = await geminiResponse.json();
     const content = geminiData.choices?.[0]?.message?.content || "";
     
-    // Parse the JSON response
     let detectionResult;
     try {
-      // Remove any markdown code blocks if present
       const jsonStr = content.replace(/```json\n?|\n?```/g, "").trim();
       detectionResult = JSON.parse(jsonStr);
-    } catch (parseError) {
-      console.error("Failed to parse Gemini response:", content);
+    } catch {
+      console.error("Failed to parse AI response:", content);
       return new Response(
-        JSON.stringify({ 
-          error: "Failed to parse breed detection", 
-          raw: content 
-        }),
+        JSON.stringify({ error: "Failed to parse breed detection", raw: content }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // If a breed was detected, fetch additional info from database
-    if (detectionResult.breed && detectionResult.is_dog) {
-      const supabase = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-      );
+    // Fetch additional breed info from database if breed detected
+    if (detectionResult.breed) {
+      try {
+        const supabase = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+        );
 
-      const { data: breedInfo } = await supabase
-        .from("breed_information")
-        .select(`
-          breed_name, breed_name_he, description_he,
-          energy_level, trainability, grooming_freq, kids_friendly,
-          life_expectancy_years, affection_family, size_category
-        `)
-        .or(`breed_name.ilike.%${detectionResult.breed}%,breed_name_he.ilike.%${detectionResult.breed}%`)
-        .maybeSingle();
+        const detectedAnimalType = detectionResult.detectedType || animalType;
 
-      if (breedInfo) {
-        detectionResult.breed_he = breedInfo.breed_name_he || detectionResult.breed_he;
-        detectionResult.description = breedInfo.description_he;
-        detectionResult.traits = {
-          energy_level: breedInfo.energy_level,
-          trainability: breedInfo.trainability,
-          grooming_freq: breedInfo.grooming_freq,
-          kids_friendly: breedInfo.kids_friendly,
-          life_expectancy: breedInfo.life_expectancy_years,
-          affection_family: breedInfo.affection_family,
-          size_category: breedInfo.size_category
-        };
-        detectionResult.found_in_database = true;
-      } else {
+        const { data: breedInfo } = await supabase
+          .from("breed_information")
+          .select("breed_name, breed_name_he, description_he, energy_level, trainability, grooming_freq, kids_friendly, life_expectancy_years, affection_family, size_category")
+          .eq("pet_type", detectedAnimalType)
+          .or(`breed_name.ilike.%${detectionResult.breed}%,breed_name_he.ilike.%${detectionResult.breed}%`)
+          .maybeSingle();
+
+        if (breedInfo) {
+          detectionResult.breed_he = breedInfo.breed_name_he || detectionResult.breed_he;
+          detectionResult.description = breedInfo.description_he;
+          detectionResult.traits = {
+            energy_level: breedInfo.energy_level,
+            trainability: breedInfo.trainability,
+            grooming_freq: breedInfo.grooming_freq,
+            kids_friendly: breedInfo.kids_friendly,
+            life_expectancy: breedInfo.life_expectancy_years,
+            affection_family: breedInfo.affection_family,
+            size_category: breedInfo.size_category
+          };
+          detectionResult.found_in_database = true;
+        } else {
+          detectionResult.found_in_database = false;
+        }
+      } catch (dbError) {
+        console.error("DB lookup error:", dbError);
         detectionResult.found_in_database = false;
       }
     }
