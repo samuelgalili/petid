@@ -59,9 +59,11 @@ import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import Install from "@/pages/Install";
 const Onboarding = lazy(() => import("@/pages/Onboarding"));
+const AuthCallback = lazy(() => import("@/pages/AuthCallback"));
 
 export const authRoutes: RouteObject[] = [
   { path: "/auth", element: <PageTransition><Auth /></PageTransition> },
+  { path: "/auth/callback", element: <Suspense fallback={<LoadingSpinner />}><AuthCallback /></Suspense> },
   { path: "/signup", element: <PageTransition><Signup /></PageTransition> },
   { path: "/forgot-password", element: <PageTransition><ForgotPassword /></PageTransition> },
   { path: "/reset-password", element: <PageTransition><ResetPassword /></PageTransition> },
