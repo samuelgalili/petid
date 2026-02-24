@@ -154,7 +154,7 @@ export function useSoundtrackFeed() {
       // ── Fetch base posts ──
       let postsQuery = supabase
         .from("posts")
-        .select("id, user_id, image_url, media_urls, video_url, caption, created_at, music_url, music_title, music_artist")
+        .select("id, user_id, image_url, media_urls, video_url, caption, created_at, music_url, music_title, music_artist, post_type, is_pinned")
         .order("created_at", { ascending: false })
         .limit(30);
 
