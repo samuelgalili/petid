@@ -113,7 +113,7 @@ export const DashboardSystemInsights = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${table}_export_${new Date().toISOString().split("T")[0]}.csv`;
+      a.download = `${tableName}_export_${new Date().toISOString().split("T")[0]}.csv`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
