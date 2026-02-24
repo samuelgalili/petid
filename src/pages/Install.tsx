@@ -94,10 +94,13 @@ const Install = () => {
             initial={{ scale: 0, rotate: -20 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: "spring", delay: 0.3, stiffness: 200 }}
-            className="mb-8"
+            className="mb-8 flex flex-col items-center"
           >
             <PetidLogo showAnimals={false} size="lg" />
-            <h2 className="text-2xl font-black text-white mt-3 tracking-tight">PetID</h2>
+            <h2 className="text-4xl md:text-5xl font-black text-white mt-4 tracking-tight flex items-center gap-2" style={{ fontFamily: "'Poppins', 'Heebo', sans-serif" }}>
+              Pet<span className="bg-gradient-to-l from-primary to-accent bg-clip-text text-transparent">ID</span>
+              <span className="text-3xl md:text-4xl">🐾</span>
+            </h2>
           </motion.div>
 
           <motion.h1
