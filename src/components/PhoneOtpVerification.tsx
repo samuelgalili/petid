@@ -42,10 +42,10 @@ export const PhoneOtpVerification = ({ phone, onVerified, onCancel, mode }: Phon
 
   // Auto-verify when all 6 digits entered
   useEffect(() => {
-    if (otp.every(d => d) && codeSent && !loading) {
+    if (otp.every(d => d) && codeSent && !loading && !verifyingRef.current) {
       verifyCode();
     }
-  }, [otp, codeSent]);
+  }, [otp, codeSent, loading]);
 
   const sendCode = async () => {
     setSending(true);
