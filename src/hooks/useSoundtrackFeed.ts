@@ -235,6 +235,8 @@ export function useSoundtrackFeed() {
           is_following: followingIdsFromData.includes(post.user_id),
           recommendation_reason: reason,
           media_type: mediaType,
+          post_type: post.post_type || "regular",
+          is_pinned: post.is_pinned || false,
         };
       };
 
