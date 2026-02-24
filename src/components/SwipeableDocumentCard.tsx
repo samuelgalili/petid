@@ -17,6 +17,7 @@ interface SwipeableDocumentCardProps {
   documentTypeLabel: string;
   onDelete: (id: string, fileUrl: string) => void;
   onDownload: (fileUrl: string, fileName: string) => void;
+  onView?: (fileUrl: string, fileName: string) => void;
   index: number;
 }
 
