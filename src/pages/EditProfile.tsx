@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, User, Mail, Camera, Phone, Loader2 } from "lucide-react";
+import { ArrowRight, User, Mail, Camera, Phone, Loader2, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,7 +11,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { ProfileImageEditor } from "@/components/ProfileImageEditor";
+import { PhoneOtpVerification } from "@/components/PhoneOtpVerification";
 import { z } from "zod";
+import { toE164, isValidIsraeliPhone, toDisplayFormat } from "@/utils/phoneFormat";
 
 const profileSchema = z.object({
   fullName: z.string().trim().min(2, "השם חייב להכיל לפחות 2 תווים").max(100, "השם ארוך מדי"),
