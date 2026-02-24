@@ -1,7 +1,9 @@
 import { motion } from "framer-motion";
-import { Plus, Heart, Calendar, MapPin, Siren } from "lucide-react";
-import { memo, useMemo } from "react";
+import { Plus, Heart, Calendar, MapPin, Siren, Trash2 } from "lucide-react";
+import { memo, useMemo, useState } from "react";
 import { OptimizedImage } from "@/components/OptimizedImage";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface PetCardProps {
   pet: any;
@@ -11,6 +13,7 @@ interface PetCardProps {
   onLongPressStart: () => void;
   onLongPressEnd: () => void;
   onSelect?: () => void;
+  onDeleted?: () => void;
 }
 
 const getAge = (birthDate: string | null): string | null => {
@@ -43,13 +46,36 @@ export const PetCard = memo(({
   isSelected = false,
   onLongPressStart, 
   onLongPressEnd,
-  onSelect 
+  onSelect,
+  onDeleted
 }: PetCardProps) => {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const age = useMemo(() => getAge(pet.birth_date), [pet.birth_date]);
   const genderIcon = useMemo(() => getGenderIcon(pet.gender), [pet.gender]);
   const genderColor = useMemo(() => getGenderColor(pet.gender), [pet.gender]);
   const petEmoji = pet.type === 'dog' ? '🐕' : '🐈';
   const petTypeLabel = pet.type === 'dog' ? 'כלב' : 'חתול';
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!showDeleteConfirm) {
+      setShowDeleteConfirm(true);
+      return;
+    }
+    setDeleting(true);
+    try {
+      const { error } = await supabase.from("pets").update({ archived: true } as any).eq("id", pet.id);
+      if (error) throw error;
+      toast.success(`${pet.name} הוסר/ה בהצלחה`);
+      onDeleted?.();
+    } catch {
+      toast.error("שגיאה במחיקה");
+    } finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
 
   return (
     <motion.div
