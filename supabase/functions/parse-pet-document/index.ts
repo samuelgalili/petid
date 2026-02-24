@@ -63,7 +63,20 @@ async function extractDataFromDocument(
   "provider_name": "שם הגוף המספק השירות",
   "provider_type": "סוג הגוף - vet/municipality/groomer/trainer/insurance וכו",
   "provider_phone": "מספר טלפון",
-  "provider_address": "כתובת"
+  "provider_address": "כתובת",
+  "license_number": "מספר רישיון חיה",
+  "license_expiry_date": "תאריך תפוגת רישיון (YYYY-MM-DD)",
+  "license_renewal_date": "תאריך חידוש רישיון (YYYY-MM-DD)",
+  "is_dangerous_dog": "true/false — האם מסווג ככלב מסוכן / dangerous dog",
+  "dangerous_dog_category": "קטגוריית כלב מסוכן אם רלוונטי",
+  "owner_name": "שם בעל החיה",
+  "owner_phone": "מספר טלפון הבעלים",
+  "owner_address": "כתובת הבעלים (לדוגמה: רחוב צרת 12)",
+  "owner_id_number": "מספר תעודת זהות הבעלים",
+  "pet_color": "צבע החיה",
+  "pet_gender": "זכר/נקבה",
+  "pet_dob": "תאריך לידה (YYYY-MM-DD)",
+  "pet_age_years": "גיל בשנים"
 }
 
 הנחיות חשובות לחתולים:
