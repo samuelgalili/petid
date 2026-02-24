@@ -116,12 +116,13 @@ export const EmergencyHub = ({ open, onOpenChange }: EmergencyHubProps) => {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name, city, address")
+        .select("full_name, city")
         .eq("id", user.id)
         .maybeSingle();
 
       // Create a lost pet post
-      const postContent = `🚨 אבד/ה! ${activePet.name} (${activePet.breed || activePet.type === 'dog' ? 'כלב' : 'חתול'}) נעלמ/ה מהאזור${profile?.city ? ` של ${profile.city}` : ''}. אם ראיתם — אנא צרו קשר! 🙏`;
+      const city = (profile as any)?.city;
+      const postContent = `🚨 אבד/ה! ${activePet.name} (${activePet.breed || (activePet.type === 'dog' ? 'כלב' : 'חתול')}) נעלמ/ה מהאזור${city ? ` של ${city}` : ''}. אם ראיתם — אנא צרו קשר! 🙏`;
       
       await (supabase as any)
         .from("posts")
