@@ -8,7 +8,7 @@ import {
   Share2,
   Trophy,
   PawPrint,
-  CalendarPlus,
+  
   Crown,
   ShieldCheck,
   ShieldAlert,
@@ -256,12 +256,6 @@ export const SoundtrackPostCard = ({
     });
   }, [pets, post.caption]);
 
-  const handleAddToCarePlan = () => {
-    toast.success(isRtl ? "נוסף לתוכנית הטיפול 📋" : "Added to Care Plan 📋", {
-      description: isRtl ? "תזכורת נשמרה בלוח הבקרה" : "Reminder saved to dashboard",
-      duration: 3000,
-    });
-  };
 
   const handleDoubleTap = () => {
     const now = Date.now();
@@ -739,17 +733,6 @@ export const SoundtrackPostCard = ({
                   <span className="text-white/50 text-[11px]">{isRtl ? "צפה ←" : "View →"}</span>
                 </motion.button>
               )}
-              <motion.button
-                onClick={(e) => { e.stopPropagation(); handleAddToCarePlan(); }}
-                whileTap={{ scale: 0.96 }}
-                className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl"
-                style={{ background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.25)" }}
-              >
-                <CalendarPlus className="w-3.5 h-3.5 text-emerald-400" strokeWidth={1.5} />
-                <span className="text-emerald-300 font-semibold" style={{ fontSize: "12px" }}>
-                  {isRtl ? "הוסף לתוכנית הטיפול" : "Add to Care Plan"}
-                </span>
-              </motion.button>
             </div>
           ) : null}
         </div>
