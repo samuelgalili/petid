@@ -98,7 +98,10 @@ const Profile = () => {
   const [healthRefreshKey, setHealthRefreshKey] = useState(0);
   const [healthBreakdownOpen, setHealthBreakdownOpen] = useState(false);
   const [showEmergencyHub, setShowEmergencyHub] = useState(false);
-  const triggerHealthRefresh = () => setHealthRefreshKey((k) => k + 1);
+  const triggerHealthRefresh = () => {
+    setHealthRefreshKey((k) => k + 1);
+    fetchAllData();
+  };
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const collapseTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [heartRainActive, setHeartRainActive] = useState(false);
