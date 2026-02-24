@@ -94,8 +94,20 @@ Return ONLY valid JSON with this exact structure:
   "petBirthDate": "YYYY-MM-DD or null",
   "microchipNumber": "string or null",
   "isNeutered": true/false/null,
-  "licenseConditions": "string or null"
+  "licenseConditions": "string or null",
+  "documentCategory": "one of: medical_record, vaccination, insurance, legal_contract, prescription, lab_results, vet_report, other",
+  "nextTreatmentDate": "YYYY-MM-DD or null - any future appointment or treatment date mentioned",
+  "nextTreatmentDescription": "string or null - description of the future treatment"
 }
+Document category rules:
+- vaccination: contains vaccine records or immunization certificates
+- medical_record: general medical records, checkup reports, visit summaries
+- insurance: insurance policies, claims, coverage documents
+- legal_contract: contracts, agreements, adoption papers, license documents
+- prescription: medication prescriptions
+- lab_results: blood tests, urine tests, lab work
+- vet_report: vet examination reports, surgery reports
+- other: anything that doesn't fit the above
 Look for Hebrew and English text.
 Vaccine keywords: DHPP, DHLPP, כלבת (Rabies), לפטוספירוזיס (Lepto), לישמניה (Leishmania), משושה, מחומש, מרובע.
 Deworming keywords: תילוע, milbemax, drontal, deworm.
@@ -140,6 +152,7 @@ License keywords: תנאי רישיון, רישיון, license.`
           ownerName: null, ownerAddress: null, ownerCity: null, ownerPhone: null, ownerIdNumber: null,
           petName: null, petBreed: null, petColor: null, petGender: null,
           petBirthDate: null, microchipNumber: null, isNeutered: null, licenseConditions: null,
+          documentCategory: 'other', nextTreatmentDate: null, nextTreatmentDescription: null,
         };
       }
 
@@ -298,30 +311,60 @@ License keywords: תנאי רישיון, רישיון, license.`
         await supabase.from("pet_vaccinations").insert(vaccineRows);
       }
 
-      // Save scanned image as pet_document
+      // Save scanned image as pet_document with smart naming & auto-categorization
+      let savedDocumentId: string | null = null;
       if (imageBase64ForStorage) {
         try {
-          const docFileName = `${petId}/${Date.now()}-scan.jpg`;
+          // Fetch pet name for smart naming
+          const { data: petData } = await supabase.from("pets").select("name").eq("id", petId).single();
+          const safePetName = (petData?.name || 'pet').replace(/[^a-zA-Z0-9\u0590-\u05FF]/g, '_');
+          
+          // Auto-categorize based on OCR results
+          const docCategory = scanResult.documentCategory || (
+            scanResult.vaccines?.length > 0 ? 'vaccination' :
+            scanResult.diagnoses?.length > 0 ? 'medical_record' :
+            scanResult.medications?.length > 0 ? 'prescription' :
+            'vet_report'
+          );
+          
+          const categoryLabels: Record<string, string> = {
+            medical_record: 'רשומה_רפואית',
+            vaccination: 'חיסון',
+            insurance: 'ביטוח',
+            legal_contract: 'חוזה',
+            prescription: 'מרשם',
+            lab_results: 'בדיקות_מעבדה',
+            vet_report: 'דוח_וטרינר',
+            other: 'מסמך',
+          };
+          const categoryLabel = categoryLabels[docCategory] || 'מסמך';
+          
+          // Smart naming: [Date]_[Category]_[PetName].jpg
+          const smartFileName = `${visitDate}_${categoryLabel}_${safePetName}.jpg`;
+          const storagePath = `${petId}/${Date.now()}-${smartFileName}`;
+          
           const binaryData = Uint8Array.from(atob(imageBase64ForStorage), c => c.charCodeAt(0));
           const { data: uploadData } = await supabase.storage
             .from('pet-documents')
-            .upload(docFileName, binaryData, { contentType: 'image/jpeg', upsert: false });
+            .upload(storagePath, binaryData, { contentType: 'image/jpeg', upsert: false });
 
           if (uploadData?.path) {
             const { data: urlData } = supabase.storage
               .from('pet-documents')
               .getPublicUrl(uploadData.path);
 
-            await supabase.from("pet_documents").insert({
+            const { data: insertedDoc } = await supabase.from("pet_documents").insert({
               pet_id: petId,
               user_id: userId,
-              document_type: 'vet_report',
-              title: `סריקת מסמך וטרינר - ${visitDate}`,
-              description: scanResult.clinicName ? `מרפאה: ${scanResult.clinicName}` : 'סריקת מסמך וטרינר',
+              document_type: docCategory,
+              title: `${categoryLabel} - ${safePetName} - ${visitDate}`,
+              description: scanResult.clinicName ? `מרפאה: ${scanResult.clinicName}` : `סריקת ${categoryLabel}`,
               file_url: urlData.publicUrl,
-              file_name: docFileName.split('/').pop()!,
+              file_name: smartFileName,
               file_size: binaryData.length,
-            });
+            }).select('id').single();
+            
+            savedDocumentId = insertedDoc?.id || null;
           }
         } catch (docErr) {
           console.error("Failed to save document:", docErr);
@@ -361,12 +404,14 @@ License keywords: תנאי רישיון, רישיון, license.`
                 title: `💉 תזכורת חיסון: ${vaccine}`,
                 body: `מועד חידוש חיסון ${vaccine} מתקרב. יש לתאם ביקור וטרינר.`,
                 type: 'vaccination_reminder',
-                scheduled_for: new Date(nextDate.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString(), // 2 weeks before
+                scheduled_for: new Date(nextDate.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString(),
                 metadata: {
                   pet_id: petId,
                   vaccine_name: vaccine,
                   due_date: nextDate.toISOString().split('T')[0],
                   source: 'ocr_smart_sync',
+                  document_id: savedDocumentId,
+                  deep_link: savedDocumentId ? `/documents?highlight=${savedDocumentId}` : null,
                 },
               });
             } catch (notifErr) {
@@ -387,15 +432,43 @@ License keywords: תנאי רישיון, רישיון, license.`
               title: '🐛 תזכורת תילוע',
               body: `הגיע זמן לתילוע חוזר. התילוע האחרון בוצע ב-${dewormDate}.`,
               type: 'deworming_reminder',
-              scheduled_for: new Date(nextDeworming.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week before
+              scheduled_for: new Date(nextDeworming.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(),
               metadata: {
                 pet_id: petId,
                 due_date: nextDeworming.toISOString().split('T')[0],
                 source: 'ocr_smart_sync',
+                document_id: savedDocumentId,
+                deep_link: savedDocumentId ? `/documents?highlight=${savedDocumentId}` : null,
               },
             });
           } catch (notifErr) {
             console.error("Failed to create deworming reminder:", notifErr);
+          }
+        }
+
+        // Create reminder for detected future treatment date
+        if (scanResult.nextTreatmentDate) {
+          try {
+            const treatmentDate = new Date(scanResult.nextTreatmentDate);
+            const reminderDate = new Date(treatmentDate.getTime() - 3 * 24 * 60 * 60 * 1000); // 3 days before
+            
+            await supabase.from("notifications").insert({
+              user_id: userId,
+              title: `📋 טיפול קרוב: ${scanResult.nextTreatmentDescription || 'ביקור וטרינר'}`,
+              body: `תזכורת לטיפול שזוהה מהמסמך הסרוק ב-${scanResult.nextTreatmentDate}.`,
+              type: 'treatment_reminder',
+              scheduled_for: reminderDate.toISOString(),
+              metadata: {
+                pet_id: petId,
+                due_date: scanResult.nextTreatmentDate,
+                treatment_description: scanResult.nextTreatmentDescription,
+                source: 'ocr_smart_sync',
+                document_id: savedDocumentId,
+                deep_link: savedDocumentId ? `/documents?highlight=${savedDocumentId}` : null,
+              },
+            });
+          } catch (treatErr) {
+            console.error("Failed to create treatment reminder:", treatErr);
           }
         }
       }

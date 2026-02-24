@@ -36,7 +36,7 @@ interface Pet {
 export default function Documents() {
   const [searchParams] = useSearchParams();
   const preselectedPetId = searchParams.get('petId');
-  
+  const highlightDocId = searchParams.get('highlight');
   const [pets, setPets] = useState<any[]>([]);
   const [documents, setDocuments] = useState<any[]>([]);
   const [filteredDocuments, setFilteredDocuments] = useState<any[]>([]);
@@ -72,6 +72,18 @@ export default function Documents() {
     fetchPets();
     fetchDocuments();
   }, []);
+
+  // Auto-scroll to highlighted document from deep-link
+  useEffect(() => {
+    if (highlightDocId && !loading && filteredDocuments.length > 0) {
+      setTimeout(() => {
+        const el = document.getElementById(`doc-${highlightDocId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 500);
+    }
+  }, [highlightDocId, loading, filteredDocuments]);
 
   useEffect(() => {
     let filtered = [...documents];
@@ -365,7 +377,18 @@ export default function Documents() {
       case "vaccination":
         return "אישור חיסון";
       case "medical":
-        return "מסמך רפואי";
+      case "medical_record":
+        return "רשומה רפואית";
+      case "insurance":
+        return "ביטוח";
+      case "legal_contract":
+        return "חוזה/הסכם";
+      case "prescription":
+        return "מרשם";
+      case "lab_results":
+        return "בדיקות מעבדה";
+      case "vet_report":
+        return "דוח וטרינר";
       case "other":
         return "אחר";
       default:
@@ -570,7 +593,12 @@ export default function Documents() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="vaccination">💉 אישור חיסון</SelectItem>
-                      <SelectItem value="medical">🏥 מסמך רפואי</SelectItem>
+                      <SelectItem value="medical_record">🏥 רשומה רפואית</SelectItem>
+                      <SelectItem value="vet_report">🩺 דוח וטרינר</SelectItem>
+                      <SelectItem value="prescription">💊 מרשם</SelectItem>
+                      <SelectItem value="lab_results">🔬 בדיקות מעבדה</SelectItem>
+                      <SelectItem value="insurance">🛡️ ביטוח</SelectItem>
+                      <SelectItem value="legal_contract">📋 חוזה/הסכם</SelectItem>
                       <SelectItem value="other">📎 אחר</SelectItem>
                     </SelectContent>
                   </Select>
@@ -736,10 +764,12 @@ export default function Documents() {
                 {filteredDocuments.map((doc, index) => (
                   <motion.div
                     key={doc.id}
+                    id={`doc-${doc.id}`}
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -100 }}
                     transition={{ delay: index * 0.05 }}
+                    className={highlightDocId === doc.id ? 'ring-2 ring-primary rounded-2xl animate-pulse' : ''}
                   >
                     <SwipeableDocumentCard
                       doc={doc}
