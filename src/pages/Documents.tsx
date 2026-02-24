@@ -414,38 +414,24 @@ export default function Documents() {
             animate={{ opacity: 1, y: 0 }}
             className="grid grid-cols-4 gap-2 mb-5"
           >
-            <Card 
-              className={`p-3 text-center cursor-pointer transition-all ${selectedDocType === 'all' ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-muted/50'}`}
-              onClick={() => setSelectedDocType('all')}
-            >
-              <FolderOpen className="w-5 h-5 mx-auto mb-1 text-primary" />
-              <p className="text-lg font-bold">{documentStats.total}</p>
-              <p className="text-[10px] text-muted-foreground">הכל</p>
-            </Card>
-            <Card 
-              className={`p-3 text-center cursor-pointer transition-all ${selectedDocType === 'vaccination' ? 'ring-2 ring-success bg-success/5' : 'hover:bg-muted/50'}`}
-              onClick={() => setSelectedDocType(selectedDocType === 'vaccination' ? 'all' : 'vaccination')}
-            >
-              <Syringe className="w-5 h-5 mx-auto mb-1 text-success" />
-              <p className="text-lg font-bold text-success">{documentStats.vaccination}</p>
-              <p className="text-[10px] text-muted-foreground">חיסונים</p>
-            </Card>
-            <Card 
-              className={`p-3 text-center cursor-pointer transition-all ${selectedDocType === 'medical' ? 'ring-2 ring-info bg-info/5' : 'hover:bg-muted/50'}`}
-              onClick={() => setSelectedDocType(selectedDocType === 'medical' ? 'all' : 'medical')}
-            >
-              <Stethoscope className="w-5 h-5 mx-auto mb-1 text-info" />
-              <p className="text-lg font-bold text-info">{documentStats.medical}</p>
-              <p className="text-[10px] text-muted-foreground">רפואי</p>
-            </Card>
-            <Card 
-              className={`p-3 text-center cursor-pointer transition-all ${selectedDocType === 'other' ? 'ring-2 ring-muted-foreground bg-muted' : 'hover:bg-muted/50'}`}
-              onClick={() => setSelectedDocType(selectedDocType === 'other' ? 'all' : 'other')}
-            >
-              <File className="w-5 h-5 mx-auto mb-1 text-muted-foreground" />
-              <p className="text-lg font-bold">{documentStats.other}</p>
-              <p className="text-[10px] text-muted-foreground">אחר</p>
-            </Card>
+            {[
+              { type: 'all', icon: FolderOpen, count: documentStats.total, label: 'הכל', activeClass: 'ring-primary bg-primary/10' },
+              { type: 'vaccination', icon: Syringe, count: documentStats.vaccination, label: 'חיסונים', activeClass: 'ring-emerald-500 bg-emerald-500/10' },
+              { type: 'medical', icon: Stethoscope, count: documentStats.medical, label: 'רפואי', activeClass: 'ring-blue-500 bg-blue-500/10' },
+              { type: 'other', icon: File, count: documentStats.other, label: 'אחר', activeClass: 'ring-muted-foreground bg-muted' },
+            ].map(({ type, icon: Icon, count, label, activeClass }) => (
+              <Card
+                key={type}
+                className={`p-3 text-center cursor-pointer transition-all duration-200 border-border/30 hover:scale-[1.03] active:scale-95 ${
+                  selectedDocType === type ? `ring-2 ${activeClass}` : 'bg-card hover:bg-muted/40'
+                }`}
+                onClick={() => setSelectedDocType(selectedDocType === type && type !== 'all' ? 'all' : type)}
+              >
+                <Icon className="w-5 h-5 mx-auto mb-1.5 text-muted-foreground" strokeWidth={1.5} />
+                <p className="text-lg font-bold text-foreground">{count}</p>
+                <p className="text-[10px] text-muted-foreground font-medium">{label}</p>
+              </Card>
+            ))}
           </motion.div>
 
           {/* Search & Filter Row */}
