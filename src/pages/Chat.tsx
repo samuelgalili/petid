@@ -401,7 +401,7 @@ const ChatContent = () => {
                       }`}
                     >
                       <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
-                        {cleanActionTags(message.content)}
+                        {cleanAllTags(message.content)}
                       </p>
                     </div>
                     
