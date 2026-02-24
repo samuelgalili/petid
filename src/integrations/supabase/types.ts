@@ -3610,9 +3610,14 @@ export type Database = {
       }
       insurance_leads: {
         Row: {
+          admin_approved_at: string | null
+          admin_approved_by: string | null
+          admin_notes: string | null
           age_years: number | null
           breed: string | null
           created_at: string
+          forwarded_at: string | null
+          forwarded_to_email: string | null
           health_answer_1: string | null
           health_answer_2: string | null
           id: string
@@ -3627,9 +3632,14 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          admin_approved_at?: string | null
+          admin_approved_by?: string | null
+          admin_notes?: string | null
           age_years?: number | null
           breed?: string | null
           created_at?: string
+          forwarded_at?: string | null
+          forwarded_to_email?: string | null
           health_answer_1?: string | null
           health_answer_2?: string | null
           id?: string
@@ -3644,9 +3654,14 @@ export type Database = {
           user_id: string
         }
         Update: {
+          admin_approved_at?: string | null
+          admin_approved_by?: string | null
+          admin_notes?: string | null
           age_years?: number | null
           breed?: string | null
           created_at?: string
+          forwarded_at?: string | null
+          forwarded_to_email?: string | null
           health_answer_1?: string | null
           health_answer_2?: string | null
           id?: string

@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { InsuranceLeadsPanel } from '@/components/admin/InsuranceLeadsPanel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -267,18 +268,7 @@ const AdminPetServices = () => {
 
           {/* Placeholder for other tabs - Add forms for managing services */}
           <TabsContent value="insurance">
-            <Card>
-              <CardHeader>
-                <CardTitle>ניהול פוליסות ביטוח</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">כאן תוכל להוסיף ולערוך פוליסות ביטוח לחיות מחמד</p>
-                <Button className="mt-4">
-                  <Plus className="w-4 h-4 ml-2" />
-                  הוסף פוליסה
-                </Button>
-              </CardContent>
-            </Card>
+            <InsuranceLeadsPanel />
           </TabsContent>
 
           <TabsContent value="training">
