@@ -500,6 +500,7 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
                 </Button>
               ))}
               <div className="w-px h-5 bg-border/30 mx-1" />
+              <AdminNotificationsBell />
               <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => navigate("/")}>
                 <Home className="w-3.5 h-3.5" />
               </Button>
