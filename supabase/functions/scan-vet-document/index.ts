@@ -158,8 +158,9 @@ Age keywords: גיל, age, שנים, years, חודשים, months.`
           visitDate: null, vaccines: [], diagnoses: [], medications: [],
           weight: null, deworming: false, cost: null,
           ownerName: null, ownerAddress: null, ownerCity: null, ownerPhone: null, ownerIdNumber: null,
-          petName: null, petBreed: null, petColor: null, petGender: null,
-          petBirthDate: null, microchipNumber: null, isNeutered: null, licenseConditions: null,
+          petName: null, petBreed: null, petColor: null, petGender: null, petAge: null,
+          petBirthDate: null, microchipNumber: null, isNeutered: null, isDangerousDog: null,
+          licenseNumber: null, licenseExpiryDate: null, licenseRenewalDate: null, licenseConditions: null,
           documentCategory: 'other', nextTreatmentDate: null, nextTreatmentDescription: null,
         };
       }
