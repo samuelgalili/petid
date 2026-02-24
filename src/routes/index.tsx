@@ -342,6 +342,9 @@ const AdminQuickImport = lazy(() => import("@/pages/admin/AdminQuickImport"));
 const AdminOCRVerification = lazy(() => import("@/pages/admin/AdminOCRVerification"));
 const AdminSmartProductEditor = lazy(() => import("@/pages/admin/AdminSmartProductEditor"));
 const AdminReviewQueue = lazy(() => import("@/pages/admin/AdminReviewQueue"));
+const AdminApprovalQueue = lazy(() => import("@/pages/admin/AdminApprovalQueue"));
+const AdminBotActivityLog = lazy(() => import("@/pages/admin/AdminBotActivityLog"));
+const AdminInventoryPredictions = lazy(() => import("@/pages/admin/AdminInventoryPredictions"));
 
 // Helper for admin routes
 const AdminPage = ({ component: Component, pageName }: { component: ComponentType; pageName: string }) => (
