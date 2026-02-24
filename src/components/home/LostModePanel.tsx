@@ -112,19 +112,18 @@ export const LostModePanel = ({ pet, ownerPhone, onUpdate }: LostModePanelProps)
   const deactivateLostMode = async () => {
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from("pets")
-        .update({
-          is_lost: false,
-          lost_since: null,
-        })
-        .eq("id", pet.id);
+      const { data, error } = await supabase.functions.invoke("found-pet-resolve", {
+        body: { pet_id: pet.id },
+      });
 
       if (error) throw error;
-      toast.success(`${pet.name} חזר/ה הביתה! 🎉`);
+      const result = data as any;
+      const pushText = result?.push_sent ? ` נשלחו ${result.push_sent} התראות.` : '';
+      toast.success(`🎉 ${pet.name} חזר/ה הביתה!${pushText}`);
       setShowDeactivateDialog(false);
       onUpdate();
     } catch (err) {
+      console.error("Found pet error:", err);
       toast.error("שגיאה בביטול מצב איבוד");
     } finally {
       setSaving(false);
