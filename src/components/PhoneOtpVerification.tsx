@@ -21,6 +21,8 @@ export const PhoneOtpVerification = ({ phone, onVerified, onCancel, mode }: Phon
   const [resendCountdown, setResendCountdown] = useState(0);
   const [codeSent, setCodeSent] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const sendingRef = useRef(false);
+  const verifyingRef = useRef(false);
   const e164Phone = toE164(phone);
 
   // Countdown timer
