@@ -30,7 +30,11 @@ import {
   DashboardCategoryChart,
   DashboardStats,
   DashboardSalesAnalytics,
-  DashboardInventoryIntel
+  DashboardInventoryIntel,
+  DashboardShopInsights,
+  DashboardCRMInsights,
+  DashboardContentInsights,
+  DashboardSystemInsights,
 } from "@/components/admin/dashboard";
 
 interface OrderStats {
