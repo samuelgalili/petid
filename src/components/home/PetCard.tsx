@@ -125,8 +125,22 @@ export const PetCard = memo(({
           </div>
         )}
 
-        {/* Pet Type Badge - top left */}
-        <div className="absolute top-2 left-2 bg-background/80 backdrop-blur-sm text-foreground text-xs font-bold px-2.5 py-1 rounded-full border border-border/50 flex items-center gap-1">
+        {/* Delete Button - top left */}
+        <button
+          onClick={handleDelete}
+          className={`absolute top-2 left-2 w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-sm border transition-colors z-10 ${
+            showDeleteConfirm 
+              ? 'bg-destructive/90 border-destructive text-destructive-foreground' 
+              : 'bg-background/80 border-border/50 text-muted-foreground hover:text-destructive'
+          }`}
+          aria-label={showDeleteConfirm ? "אישור מחיקה" : "מחיקת חיית מחמד"}
+          disabled={deleting}
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+
+        {/* Pet Type Badge */}
+        <div className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm text-foreground text-xs font-bold px-2.5 py-1 rounded-full border border-border/50 flex items-center gap-1">
           <span>{petEmoji}</span>
           <span>{petTypeLabel}</span>
         </div>
