@@ -703,6 +703,7 @@ export const CommentsSheet = ({
               </motion.button>
             </div>
           </div>
+          </div>
         </DrawerContent>
       </Drawer>
 
