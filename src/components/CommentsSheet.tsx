@@ -604,7 +604,7 @@ export const CommentsSheet = ({
           </div>
 
           {/* ─── Sticky Bottom Input ─── */}
-          <div className="sticky bottom-0 border-t border-border/50 bg-card px-3 pt-2 pb-5">
+          <div className="flex-shrink-0 border-t border-border/50 bg-card px-3 pt-2 pb-3">
             {/* Reply indicator */}
             <AnimatePresence>
               {replyingTo && (
