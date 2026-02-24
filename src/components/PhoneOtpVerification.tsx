@@ -83,6 +83,8 @@ export const PhoneOtpVerification = ({ phone, onVerified, onCancel, mode }: Phon
   };
 
   const verifyCode = async () => {
+    if (verifyingRef.current) return;
+    verifyingRef.current = true;
     setLoading(true);
     setError("");
     try {
