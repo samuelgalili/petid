@@ -5,7 +5,6 @@ import {
   ShoppingCart, ExternalLink, Reply, Trash2,
 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Sheet, SheetContent, SheetHeader } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -516,198 +515,212 @@ export const CommentsSheet = ({
     inputRef.current?.focus();
   };
 
+  if (!isOpen) return <EmergencyHub open={showSOS} onOpenChange={setShowSOS} />;
+
   return (
     <>
-      <Sheet open={isOpen} onOpenChange={onClose}>
-        <SheetContent
-          side="bottom"
-          className="h-[70vh] max-h-[70vh] rounded-t-[28px] bg-card border-none p-0 flex flex-col z-[100] overflow-hidden"
-        >
-          {/* Handle + Title */}
-          <div className="flex flex-col items-center pt-2.5 pb-1">
-            <div className="w-8 h-1 bg-muted rounded-full" />
-            <h3 className="text-foreground font-bold text-[14px] mt-1.5">
-              תגובות ({totalCount})
-            </h3>
-          </div>
+      {/* Backdrop */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[99] bg-black/60"
+        onClick={onClose}
+      />
 
-          {/* Compact Header */}
-          <div className="flex items-center justify-between px-4 py-2 border-b border-border/50">
-            {postAuthor && (
+      {/* Drawer */}
+      <motion.div
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", damping: 30, stiffness: 300 }}
+        className="fixed inset-x-0 bottom-0 z-[100] flex flex-col bg-card rounded-t-[28px]"
+        style={{ height: "70vh" }}
+      >
+        {/* Handle */}
+        <div className="flex-shrink-0 flex flex-col items-center pt-3 pb-1">
+          <div className="w-10 h-1 bg-muted rounded-full" />
+          <h3 className="text-foreground font-bold text-[14px] mt-1.5">
+            תגובות ({totalCount})
+          </h3>
+        </div>
+
+        {/* Compact Header */}
+        <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 border-b border-border/50">
+          {postAuthor && (
+            <div className="flex items-center gap-2">
+              <Avatar className="w-7 h-7 ring-1 ring-card">
+                <AvatarImage src={postAuthor.avatar_url} />
+                <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground text-[10px]">
+                  {postAuthor.name?.[0] || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-foreground font-semibold text-[12px]">{postAuthor.name}</span>
+            </div>
+          )}
+          <button onClick={onClose} className="p-1 hover:bg-secondary rounded-full transition-colors">
+            <ChevronDown className="w-5 h-5 text-muted-foreground" />
+          </button>
+        </div>
+
+        {/* AI Loading */}
+        <AnimatePresence>
+          {aiLoading && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="flex-shrink-0 px-4 py-2 border-b border-border/50"
+            >
               <div className="flex items-center gap-2">
-                <Avatar className="w-7 h-7 ring-1 ring-card">
-                  <AvatarImage src={postAuthor.avatar_url} />
-                  <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground text-[10px]">
-                    {postAuthor.name?.[0] || "U"}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-foreground font-semibold text-[12px]">{postAuthor.name}</span>
+                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}>
+                  <Sparkles className="w-3.5 h-3.5 text-primary" />
+                </motion.div>
+                <span className="text-muted-foreground text-[11px] font-medium">PetID Expert מנתח...</span>
               </div>
-            )}
-            <button onClick={onClose} className="p-1 hover:bg-secondary rounded-full transition-colors">
-              <ChevronDown className="w-4.5 h-4.5 text-muted-foreground" />
-            </button>
-          </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-          {/* AI Loading */}
+        {/* Comments List */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-3">
+          <AnimatePresence mode="wait">
+            {loading ? (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center justify-center py-10">
+                <div className="w-7 h-7 border-2 border-muted border-t-primary rounded-full animate-spin" />
+                <p className="text-muted-foreground text-xs mt-2">טוען תגובות...</p>
+              </motion.div>
+            ) : comments.length === 0 ? (
+              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center justify-center py-10">
+                <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center mb-2">
+                  <MessageCircle className="w-6 h-6 text-muted-foreground" />
+                </div>
+                <p className="text-foreground font-semibold text-sm">אין תגובות עדיין</p>
+                <p className="text-muted-foreground text-xs mt-0.5">היה הראשון להגיב!</p>
+              </motion.div>
+            ) : (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                {comments.map((comment) => (
+                  <CommentItem
+                    key={comment.id}
+                    comment={comment}
+                    currentUserId={user?.id}
+                    likedComments={likedComments}
+                    onLike={handleLikeComment}
+                    onReply={handleReply}
+                    onDelete={handleDeleteComment}
+                    navigate={navigate}
+                  />
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* ─── Input Area ─── */}
+        <div className="flex-shrink-0 border-t border-border/50 bg-card px-3 pt-2 pb-4">
+          {/* Reply indicator */}
           <AnimatePresence>
-            {aiLoading && (
+            {replyingTo && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                className="px-4 py-2 border-b border-border/50"
+                className="flex items-center justify-between mb-1.5 px-2 py-1 rounded-lg bg-secondary/70"
               >
-                <div className="flex items-center gap-2">
-                  <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}>
-                    <Sparkles className="w-3.5 h-3.5 text-primary" />
-                  </motion.div>
-                  <span className="text-muted-foreground text-[11px] font-medium">PetID Expert מנתח...</span>
-                </div>
+                <span className="text-muted-foreground text-[11px]">
+                  ↩ <span className="text-foreground font-semibold">{replyingTo.user.full_name}</span>
+                </span>
+                <button onClick={cancelReply} className="text-muted-foreground text-[10px] font-bold hover:text-foreground px-1">✕</button>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Comments List */}
-          <div className="flex-1 overflow-y-auto px-3">
-            <AnimatePresence mode="wait">
-              {loading ? (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center justify-center py-10">
-                  <div className="w-7 h-7 border-2 border-muted border-t-primary rounded-full animate-spin" />
-                  <p className="text-muted-foreground text-xs mt-2">טוען תגובות...</p>
-                </motion.div>
-              ) : comments.length === 0 ? (
-                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center justify-center py-10">
-                  <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center mb-2">
-                    <MessageCircle className="w-6 h-6 text-muted-foreground" />
-                  </div>
-                  <p className="text-foreground font-semibold text-sm">אין תגובות עדיין</p>
-                  <p className="text-muted-foreground text-xs mt-0.5">היה הראשון להגיב!</p>
-                </motion.div>
-              ) : (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                  {comments.map((comment) => (
-                    <CommentItem
-                      key={comment.id}
-                      comment={comment}
-                      currentUserId={user?.id}
-                      likedComments={likedComments}
-                      onLike={handleLikeComment}
-                      onReply={handleReply}
-                      onDelete={handleDeleteComment}
-                      navigate={navigate}
-                    />
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* ─── Sticky Bottom Input ─── */}
-          <div className="flex-shrink-0 border-t border-border/50 bg-card px-3 pt-2 pb-3">
-            {/* Reply indicator */}
-            <AnimatePresence>
-              {replyingTo && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="flex items-center justify-between mb-1.5 px-2 py-1 rounded-lg bg-secondary/70"
-                >
-                  <span className="text-muted-foreground text-[11px]">
-                    ↩ <span className="text-foreground font-semibold">{replyingTo.user.full_name}</span>
-                  </span>
-                  <button onClick={cancelReply} className="text-muted-foreground text-[10px] font-bold hover:text-foreground px-1">✕</button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Pet emoji bar */}
-            <AnimatePresence>
-              {showEmojiBar && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="flex gap-1 mb-1.5 overflow-x-auto"
-                >
-                  {PET_EMOJIS.map((emoji, i) => (
-                    <motion.button
-                      key={i}
-                      whileTap={{ scale: 0.85 }}
-                      onClick={() => insertEmoji(emoji)}
-                      className="w-8 h-8 flex items-center justify-center rounded-full bg-secondary hover:bg-secondary/80 text-base flex-shrink-0"
-                    >
-                      {emoji}
-                    </motion.button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Input row */}
-            <div className="flex items-center gap-2">
-              <Avatar className="w-7 h-7 flex-shrink-0 ring-1 ring-border/40">
-                <AvatarImage src={userAvatar} />
-                <AvatarFallback className="bg-gradient-to-br from-primary/60 to-accent/60 text-primary-foreground text-[10px] font-medium">
-                  {user?.email?.[0]?.toUpperCase() || "U"}
-                </AvatarFallback>
-              </Avatar>
-
-              <div className="flex-1 relative">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSubmitComment()}
-                  placeholder={
-                    replyingTo ? `הגב ל-${replyingTo.user.full_name}...`
-                      : aiMode ? "שאל את PetID..."
-                      : "הוסף תגובה..."
-                  }
-                  disabled={!user || submitting}
-                  className={cn(
-                    "w-full bg-secondary text-foreground placeholder-muted-foreground rounded-full pl-9 pr-3 py-2 text-[12px] focus:outline-none focus:ring-1.5 transition-all disabled:opacity-50",
-                    aiMode ? "focus:ring-primary/30 border border-primary/20" : "focus:ring-primary/20 border border-transparent"
-                  )}
-                />
-                <button
-                  onClick={() => setShowEmojiBar((v) => !v)}
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <Smile className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* AI toggle — minimal pill */}
-              <div
-                className={cn(
-                  "flex items-center gap-1 px-2 py-1.5 rounded-full cursor-pointer select-none transition-all",
-                  aiMode ? "bg-primary/10 border border-primary/20" : "bg-secondary border border-transparent"
-                )}
-                onClick={() => setAiMode(!aiMode)}
+          {/* Pet emoji bar */}
+          <AnimatePresence>
+            {showEmojiBar && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="flex gap-1 mb-1.5 overflow-x-auto"
               >
-                <Bot className={cn("w-3 h-3", aiMode ? "text-primary" : "text-muted-foreground")} />
-              </div>
+                {PET_EMOJIS.map((emoji, i) => (
+                  <motion.button
+                    key={i}
+                    whileTap={{ scale: 0.85 }}
+                    onClick={() => insertEmoji(emoji)}
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-secondary hover:bg-secondary/80 text-base flex-shrink-0"
+                  >
+                    {emoji}
+                  </motion.button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={() => handleSubmitComment()}
-                disabled={!newComment.trim() || submitting || !user}
+          {/* Input row */}
+          <div className="flex items-center gap-2">
+            <Avatar className="w-7 h-7 flex-shrink-0 ring-1 ring-border/40">
+              <AvatarImage src={userAvatar} />
+              <AvatarFallback className="bg-gradient-to-br from-primary/60 to-accent/60 text-primary-foreground text-[10px] font-medium">
+                {user?.email?.[0]?.toUpperCase() || "U"}
+              </AvatarFallback>
+            </Avatar>
+
+            <div className="flex-1 relative">
+              <input
+                ref={inputRef}
+                type="text"
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSubmitComment()}
+                placeholder={
+                  replyingTo ? `הגב ל-${replyingTo.user.full_name}...`
+                    : aiMode ? "שאל את PetID..."
+                    : "הוסף תגובה..."
+                }
+                disabled={!user || submitting}
                 className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center transition-all disabled:opacity-40",
-                  newComment.trim()
-                    ? "bg-primary text-primary-foreground shadow-md shadow-primary/25"
-                    : "bg-secondary text-muted-foreground"
+                  "w-full bg-secondary text-foreground placeholder-muted-foreground rounded-full pl-9 pr-3 py-2 text-[12px] focus:outline-none focus:ring-1 transition-all disabled:opacity-50",
+                  aiMode ? "focus:ring-primary/30 border border-primary/20" : "focus:ring-primary/20 border border-transparent"
                 )}
+              />
+              <button
+                onClick={() => setShowEmojiBar((v) => !v)}
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
-                <Send className="w-3.5 h-3.5" />
-              </motion.button>
+                <Smile className="w-4 h-4" />
+              </button>
             </div>
+
+            {/* AI toggle */}
+            <div
+              className={cn(
+                "flex items-center gap-1 px-2 py-1.5 rounded-full cursor-pointer select-none transition-all",
+                aiMode ? "bg-primary/10 border border-primary/20" : "bg-secondary border border-transparent"
+              )}
+              onClick={() => setAiMode(!aiMode)}
+            >
+              <Bot className={cn("w-3 h-3", aiMode ? "text-primary" : "text-muted-foreground")} />
+            </div>
+
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => handleSubmitComment()}
+              disabled={!newComment.trim() || submitting || !user}
+              className={cn(
+                "w-8 h-8 rounded-full flex items-center justify-center transition-all disabled:opacity-40",
+                newComment.trim()
+                  ? "bg-primary text-primary-foreground shadow-md shadow-primary/25"
+                  : "bg-secondary text-muted-foreground"
+              )}
+            >
+              <Send className="w-3.5 h-3.5" />
+            </motion.button>
           </div>
-        </SheetContent>
-      </Sheet>
+        </div>
+      </motion.div>
 
       <EmergencyHub open={showSOS} onOpenChange={setShowSOS} />
     </>
