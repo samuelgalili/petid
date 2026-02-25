@@ -146,6 +146,7 @@ export const feedRoutes: RouteObject[] = [
 // SHOP MODULE - Lazy loaded
 // ==========================================
 const Shop = lazy(() => import("@/pages/Shop"));
+const ShopFeed = lazy(() => import("@/pages/ShopFeed"));
 const ShopExplore = lazy(() => import("@/pages/ShopExplore"));
 const ProductDetail = lazy(() => import("@/pages/ProductDetail"));
 const Cart = lazy(() => import("@/pages/Cart"));
@@ -162,6 +163,7 @@ export const shopRoutes: RouteObject[] = [
   // /shop is handled by MainShell overlay — this route points to MainShell
   { path: "/shop", element: <LazyPage component={MainShell} pageName="החנות" /> },
   { path: "/shop/explore", element: <LazyPage component={ShopExplore} pageName="גילוי מוצרים" /> },
+  { path: "/shop/feed", element: <LazyPage component={ShopFeed} pageName="Shop Feed" dark /> },
   
   { path: "/product/:id", element: <LazyPage component={ProductDetail} pageName="פרטי מוצר" /> },
   { path: "/cart", element: <Protected><LazyPage component={Cart} pageName="עגלת קניות" /></Protected> },

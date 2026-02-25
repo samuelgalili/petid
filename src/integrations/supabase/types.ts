@@ -10533,6 +10533,62 @@ export type Database = {
           },
         ]
       }
+      video_posts: {
+        Row: {
+          business_id: string | null
+          caption: string | null
+          created_at: string
+          id: string
+          is_published: boolean | null
+          like_count: number | null
+          product_ids: string[] | null
+          share_count: number | null
+          thumbnail_url: string | null
+          updated_at: string
+          user_id: string
+          video_url: string
+          view_count: number | null
+        }
+        Insert: {
+          business_id?: string | null
+          caption?: string | null
+          created_at?: string
+          id?: string
+          is_published?: boolean | null
+          like_count?: number | null
+          product_ids?: string[] | null
+          share_count?: number | null
+          thumbnail_url?: string | null
+          updated_at?: string
+          user_id: string
+          video_url: string
+          view_count?: number | null
+        }
+        Update: {
+          business_id?: string | null
+          caption?: string | null
+          created_at?: string
+          id?: string
+          is_published?: boolean | null
+          like_count?: number | null
+          product_ids?: string[] | null
+          share_count?: number | null
+          thumbnail_url?: string | null
+          updated_at?: string
+          user_id?: string
+          video_url?: string
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_posts_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       walk_sessions: {
         Row: {
           created_at: string
