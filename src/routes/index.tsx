@@ -257,12 +257,14 @@ const Experiences = lazy(() => import("@/pages/Experiences"));
 const Guides = lazy(() => import("@/pages/Guides"));
 const Radar = lazy(() => import("@/pages/Radar"));
 const CreatorDashboard = lazy(() => import("@/pages/CreatorDashboard"));
+const ProductSourcing = lazy(() => import("@/pages/ProductSourcing"));
 
 export const businessRoutes: RouteObject[] = [
   { path: "/businesses", element: <LazyPage component={BusinessDirectory} pageName="ספריית עסקים" /> },
   { path: "/business/:id", element: <LazyPage component={BusinessProfile} pageName="פרופיל עסק" /> },
   { path: "/convert-to-business", element: <Protected><LazyPage component={ConvertToBusiness} pageName="המרה לעסק" /></Protected> },
   { path: "/creator-dashboard", element: <Protected><LazyPage component={CreatorDashboard} pageName="Creator Studio" /></Protected> },
+  { path: "/product-sourcing", element: <Protected><LazyPage component={ProductSourcing} pageName="קטלוג מוצרים" /></Protected> },
   { path: "/ad-campaigns", element: <LazyPage component={AdCampaigns} pageName="קמפיינים" /> },
   { path: "/parks", element: <Navigate to="/chat" replace /> },
   { path: "/experiences", element: <LazyPage component={Experiences} pageName="חוויות" /> },
