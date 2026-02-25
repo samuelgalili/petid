@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { 
   ArrowRight, Star, MapPin, Phone, Mail, Globe, BadgeCheck, 
   Stethoscope, Scissors, Store, GraduationCap, Dog, Share2, Heart,
-  Grid3X3, ShoppingBag, MessageCircle, Settings, Radio, Folder
+  Grid3X3, ShoppingBag, MessageCircle, Settings, Radio, Folder, Video
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +18,7 @@ import { BusinessInsights } from '@/components/business/BusinessInsights';
 import { ProductCollectionsManager } from '@/components/shop/ProductCollectionsManager';
 import { ProductCollectionsDisplay } from '@/components/shop/ProductCollectionsDisplay';
 import { LiveShoppingManager } from '@/components/shop/LiveShoppingManager';
+import { CreatorStudio } from '@/components/business/CreatorStudio';
 
 const businessTypeLabels: Record<string, { label: string; icon: React.ReactNode }> = {
   vet: { label: 'וטרינר', icon: <Stethoscope className="w-4 h-4" /> },
@@ -231,7 +232,7 @@ const BusinessProfile = () => {
 
       {/* Tabs - Instagram Style */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
-        <TabsList className="w-full grid grid-cols-3 bg-transparent border-y rounded-none h-11 p-0">
+        <TabsList className={`w-full grid ${isOwner ? 'grid-cols-4' : 'grid-cols-3'} bg-transparent border-y rounded-none h-11 p-0`}>
           <TabsTrigger 
             value="shop"
             className="data-[state=active]:border-b-2 data-[state=active]:border-foreground rounded-none h-full"
@@ -250,6 +251,14 @@ const BusinessProfile = () => {
           >
             <MessageCircle className="w-5 h-5" />
           </TabsTrigger>
+          {isOwner && (
+            <TabsTrigger 
+              value="studio"
+              className="data-[state=active]:border-b-2 data-[state=active]:border-foreground rounded-none h-full"
+            >
+              <Video className="w-5 h-5" />
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="shop" className="mt-0">
@@ -354,6 +363,12 @@ const BusinessProfile = () => {
             <Button size="sm" className="rounded-xl">כתוב ביקורת</Button>
           </div>
         </TabsContent>
+
+        {isOwner && (
+          <TabsContent value="studio" className="mt-0">
+            <CreatorStudio businessId={id!} />
+          </TabsContent>
+        )}
       </Tabs>
 
       <BottomNav />
