@@ -81,5 +81,11 @@ verify_jwt = false
 [functions.smart-scrape-product]
 verify_jwt = false
 
+[functions.shipping-service]
+verify_jwt = false
+
+[functions.shipping-webhook]
+verify_jwt = false
+
 [functions.generate-ai-post]
 verify_jwt = false
