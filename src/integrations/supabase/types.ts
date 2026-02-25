@@ -8979,6 +8979,7 @@ export type Database = {
           supported_countries: string[] | null
           tracking_url_template: string | null
           updated_at: string
+          webhook_secret: string | null
         }
         Insert: {
           api_base_url?: string | null
@@ -8994,6 +8995,7 @@ export type Database = {
           supported_countries?: string[] | null
           tracking_url_template?: string | null
           updated_at?: string
+          webhook_secret?: string | null
         }
         Update: {
           api_base_url?: string | null
@@ -9009,6 +9011,7 @@ export type Database = {
           supported_countries?: string[] | null
           tracking_url_template?: string | null
           updated_at?: string
+          webhook_secret?: string | null
         }
         Relationships: []
       }
