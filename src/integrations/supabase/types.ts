@@ -1588,6 +1588,7 @@ export type Database = {
           breed_tags: string[] | null
           business_id: string
           category: string | null
+          commission_rate: number | null
           cost_price: number | null
           created_at: string
           description: string | null
@@ -1624,6 +1625,7 @@ export type Database = {
           special_diet: string[] | null
           suggested_price: number | null
           supplier_id: string | null
+          supplier_link: string | null
           updated_at: string
           weight_unit: string | null
         }
@@ -1636,6 +1638,7 @@ export type Database = {
           breed_tags?: string[] | null
           business_id: string
           category?: string | null
+          commission_rate?: number | null
           cost_price?: number | null
           created_at?: string
           description?: string | null
@@ -1672,6 +1675,7 @@ export type Database = {
           special_diet?: string[] | null
           suggested_price?: number | null
           supplier_id?: string | null
+          supplier_link?: string | null
           updated_at?: string
           weight_unit?: string | null
         }
@@ -1684,6 +1688,7 @@ export type Database = {
           breed_tags?: string[] | null
           business_id?: string
           category?: string | null
+          commission_rate?: number | null
           cost_price?: number | null
           created_at?: string
           description?: string | null
@@ -1720,6 +1725,7 @@ export type Database = {
           special_diet?: string[] | null
           suggested_price?: number | null
           supplier_id?: string | null
+          supplier_link?: string | null
           updated_at?: string
           weight_unit?: string | null
         }
@@ -2584,6 +2590,42 @@ export type Database = {
           used_count?: number | null
           valid_from?: string | null
           valid_until?: string | null
+        }
+        Relationships: []
+      }
+      creator_wallets: {
+        Row: {
+          available_amount: number | null
+          created_at: string
+          currency: string | null
+          id: string
+          pending_amount: number | null
+          total_balance: number | null
+          total_withdrawn: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          available_amount?: number | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          pending_amount?: number | null
+          total_balance?: number | null
+          total_withdrawn?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          available_amount?: number | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          pending_amount?: number | null
+          total_balance?: number | null
+          total_withdrawn?: number | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -10410,6 +10452,53 @@ export type Database = {
         }
         Relationships: []
       }
+      user_products: {
+        Row: {
+          created_at: string
+          custom_commission_rate: number | null
+          id: string
+          is_active: boolean | null
+          product_id: string
+          total_clicks: number | null
+          total_earnings: number | null
+          total_sales: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          custom_commission_rate?: number | null
+          id?: string
+          is_active?: boolean | null
+          product_id: string
+          total_clicks?: number | null
+          total_earnings?: number | null
+          total_sales?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          custom_commission_rate?: number | null
+          id?: string
+          is_active?: boolean | null
+          product_id?: string
+          total_clicks?: number | null
+          total_earnings?: number | null
+          total_sales?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "business_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -10635,6 +10724,50 @@ export type Database = {
             columns: ["pet_id"]
             isOneToOne: false
             referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wallet_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          order_id: string | null
+          status: string | null
+          type: string
+          user_id: string
+          wallet_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          status?: string | null
+          type: string
+          user_id: string
+          wallet_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          status?: string | null
+          type?: string
+          user_id?: string
+          wallet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_transactions_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "creator_wallets"
             referencedColumns: ["id"]
           },
         ]
