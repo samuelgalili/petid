@@ -5530,6 +5530,7 @@ export type Database = {
           coupon_id: string | null
           created_at: string
           customer_name: string | null
+          destination_country: string | null
           discount_amount: number | null
           id: string
           medical_urgency: string | null
@@ -5543,11 +5544,14 @@ export type Database = {
           pet_name: string | null
           shipping: number
           shipping_address: Json
+          shipping_provider_id: string | null
+          shipping_status: string | null
           special_instructions: string | null
           status: Database["public"]["Enums"]["order_status"]
           subtotal: number
           tax: number
           total: number
+          tracking_number: string | null
           updated_at: string
           user_id: string
         }
@@ -5555,6 +5559,7 @@ export type Database = {
           coupon_id?: string | null
           created_at?: string
           customer_name?: string | null
+          destination_country?: string | null
           discount_amount?: number | null
           id?: string
           medical_urgency?: string | null
@@ -5568,11 +5573,14 @@ export type Database = {
           pet_name?: string | null
           shipping: number
           shipping_address: Json
+          shipping_provider_id?: string | null
+          shipping_status?: string | null
           special_instructions?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal: number
           tax: number
           total: number
+          tracking_number?: string | null
           updated_at?: string
           user_id: string
         }
@@ -5580,6 +5588,7 @@ export type Database = {
           coupon_id?: string | null
           created_at?: string
           customer_name?: string | null
+          destination_country?: string | null
           discount_amount?: number | null
           id?: string
           medical_urgency?: string | null
@@ -5593,11 +5602,14 @@ export type Database = {
           pet_name?: string | null
           shipping?: number
           shipping_address?: Json
+          shipping_provider_id?: string | null
+          shipping_status?: string | null
           special_instructions?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal?: number
           tax?: number
           total?: number
+          tracking_number?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -5607,6 +5619,13 @@ export type Database = {
             columns: ["coupon_id"]
             isOneToOne: false
             referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_shipping_provider_id_fkey"
+            columns: ["shipping_provider_id"]
+            isOneToOne: false
+            referencedRelation: "shipping_providers"
             referencedColumns: ["id"]
           },
         ]
@@ -8836,6 +8855,160 @@ export type Database = {
           updated_at?: string
           user1_id?: string
           user2_id?: string
+        }
+        Relationships: []
+      }
+      shipment_tracking: {
+        Row: {
+          actual_delivery: string | null
+          carrier_name: string | null
+          created_at: string
+          current_status: string | null
+          destination_country: string | null
+          estimated_delivery: string | null
+          id: string
+          label_url: string | null
+          last_synced_at: string | null
+          milestones: Json | null
+          order_id: string
+          origin_country: string | null
+          provider_id: string | null
+          tracking_number: string | null
+          updated_at: string
+          warehouse_label_url: string | null
+        }
+        Insert: {
+          actual_delivery?: string | null
+          carrier_name?: string | null
+          created_at?: string
+          current_status?: string | null
+          destination_country?: string | null
+          estimated_delivery?: string | null
+          id?: string
+          label_url?: string | null
+          last_synced_at?: string | null
+          milestones?: Json | null
+          order_id: string
+          origin_country?: string | null
+          provider_id?: string | null
+          tracking_number?: string | null
+          updated_at?: string
+          warehouse_label_url?: string | null
+        }
+        Update: {
+          actual_delivery?: string | null
+          carrier_name?: string | null
+          created_at?: string
+          current_status?: string | null
+          destination_country?: string | null
+          estimated_delivery?: string | null
+          id?: string
+          label_url?: string | null
+          last_synced_at?: string | null
+          milestones?: Json | null
+          order_id?: string
+          origin_country?: string | null
+          provider_id?: string | null
+          tracking_number?: string | null
+          updated_at?: string
+          warehouse_label_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipment_tracking_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "shipping_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shipping_labels: {
+        Row: {
+          created_at: string
+          file_data: Json | null
+          file_url: string | null
+          generated_at: string
+          id: string
+          label_type: string
+          order_id: string
+          tracking_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          file_data?: Json | null
+          file_url?: string | null
+          generated_at?: string
+          id?: string
+          label_type: string
+          order_id: string
+          tracking_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          file_data?: Json | null
+          file_url?: string | null
+          generated_at?: string
+          id?: string
+          label_type?: string
+          order_id?: string
+          tracking_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipping_labels_tracking_id_fkey"
+            columns: ["tracking_id"]
+            isOneToOne: false
+            referencedRelation: "shipment_tracking"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shipping_providers: {
+        Row: {
+          api_base_url: string | null
+          config: Json | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          label_format: string | null
+          name: string
+          provider_type: string
+          slug: string
+          supported_countries: string[] | null
+          tracking_url_template: string | null
+          updated_at: string
+        }
+        Insert: {
+          api_base_url?: string | null
+          config?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          label_format?: string | null
+          name: string
+          provider_type: string
+          slug: string
+          supported_countries?: string[] | null
+          tracking_url_template?: string | null
+          updated_at?: string
+        }
+        Update: {
+          api_base_url?: string | null
+          config?: Json | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          label_format?: string | null
+          name?: string
+          provider_type?: string
+          slug?: string
+          supported_countries?: string[] | null
+          tracking_url_template?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
