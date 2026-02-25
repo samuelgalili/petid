@@ -154,6 +154,7 @@ const Checkout = lazy(() => import("@/pages/Checkout"));
 const OrderConfirmation = lazy(() => import("@/pages/OrderConfirmation"));
 const ReorderConfirmation = lazy(() => import("@/pages/ReorderConfirmation"));
 const OrderHistory = lazy(() => import("@/pages/OrderHistory"));
+const OrderTrackingPage = lazy(() => import("@/pages/OrderTrackingPage"));
 const Favorites = lazy(() => import("@/pages/Favorites"));
 const PaymentSuccess = lazy(() => import("@/pages/PaymentSuccess"));
 const PaymentFailed = lazy(() => import("@/pages/PaymentFailed"));
@@ -172,6 +173,7 @@ export const shopRoutes: RouteObject[] = [
   { path: "/order-confirmation", element: <Protected><LazyPage component={OrderConfirmation} pageName="אישור הזמנה" /></Protected> },
   { path: "/reorder-confirmation", element: <Protected><LazyPage component={ReorderConfirmation} pageName="אישור הזמנה מחדש" /></Protected> },
   { path: "/order-history", element: <Protected><LazyPage component={OrderHistory} pageName="היסטוריית הזמנות" /></Protected> },
+  { path: "/order-tracking/:orderId", element: <Protected><LazyPage component={OrderTrackingPage} pageName="מעקב הזמנה" /></Protected> },
   
   { path: "/payment-success", element: <LazyPage component={PaymentSuccess} pageName="תשלום הצליח" /> },
   { path: "/payment-failed", element: <LazyPage component={PaymentFailed} pageName="תשלום נכשל" /> },
