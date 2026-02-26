@@ -93,6 +93,8 @@ const isShihTzu = (breed?: string) => {
 // Quick product sheet for a tip
 const TipProductSheet = ({ tip, petName, onClose }: { tip: BreedTip; petName: string; onClose: () => void }) => {
   const navigate = useNavigate();
+  const { addToCart } = useCart();
+  const { toast } = useToast();
 
   const { data: product, isLoading } = useQuery({
     queryKey: ["tip-product", tip.title],
