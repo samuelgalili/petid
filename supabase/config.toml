@@ -92,3 +92,9 @@ verify_jwt = false
 
 [functions.daily-brief]
 verify_jwt = false
+
+[functions.architect-analyze]
+verify_jwt = false
+
+[functions.architect-deploy]
+verify_jwt = false
