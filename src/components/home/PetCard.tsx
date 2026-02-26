@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Plus, Heart, Calendar, Siren, Trash2, FlaskConical } from "lucide-react";
+import { Plus, Heart, Brain, Siren, Trash2, Weight, Hash, Sparkles } from "lucide-react";
 import { memo, useMemo, useState } from "react";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,13 +46,28 @@ const approx = (value: number | null | undefined, unit: string) => {
   return `כ-${value} ${unit}`;
 };
 
-export const PetCard = memo(({ 
-  pet, 
-  index, 
+/* ── Stat Cell — reusable mini component ── */
+const StatCell = ({ label, value, placeholder }: { label: string; value: string | null; placeholder: string }) => (
+  <motion.div
+    whileHover={{ scale: 1.03 }}
+    className="flex flex-col items-center text-center px-1 py-1.5 rounded-xl transition-colors hover:bg-muted/40 cursor-default min-w-0"
+  >
+    <span className="text-[10px] text-muted-foreground/70 font-medium mb-0.5 truncate w-full">{label}</span>
+    {value ? (
+      <span className="text-xs font-bold text-foreground truncate w-full" dir="auto" style={{ unicodeBidi: 'plaintext' as any }}>{value}</span>
+    ) : (
+      <span className="text-[9px] text-muted-foreground/50 italic leading-tight truncate w-full">{placeholder}</span>
+    )}
+  </motion.div>
+);
+
+export const PetCard = memo(({
+  pet,
+  index,
   isNewPet,
   isSelected = false,
   hasNewInsight = false,
-  onLongPressStart, 
+  onLongPressStart,
   onLongPressEnd,
   onSelect,
   onDeleted
@@ -63,14 +78,8 @@ export const PetCard = memo(({
   const genderIcon = useMemo(() => getGenderIcon(pet.gender), [pet.gender]);
   const genderColor = useMemo(() => getGenderColor(pet.gender), [pet.gender]);
   const petEmoji = pet.type === 'dog' ? '🐕' : '🐈';
-  const petTypeLabel = pet.type === 'dog' ? 'כלב' : 'חתול';
 
   const weightLabel = useMemo(() => approx(pet.weight, 'ק"ג'), [pet.weight]);
-  const dailyKcal = useMemo(() => {
-    if (!pet.weight) return null;
-    return Math.round(70 * Math.pow(pet.weight, 0.75));
-  }, [pet.weight]);
-  const kcalLabel = useMemo(() => approx(dailyKcal, 'kcal'), [dailyKcal]);
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -100,152 +109,160 @@ export const PetCard = memo(({
         opacity: 1,
         y: 0,
         scale: isNewPet ? [1, 1.03, 1] : 1,
-        ...(hasNewInsight ? { boxShadow: ['0 0 0 0px hsl(var(--primary)/0)', '0 0 0 4px hsl(var(--primary)/0.2)', '0 0 0 0px hsl(var(--primary)/0)'] } : {}),
       }}
       transition={{
         delay: 0.05 + index * 0.08,
         scale: isNewPet ? { duration: 0.6, repeat: 3, repeatType: "reverse" } : {},
-        boxShadow: hasNewInsight ? { duration: 2, repeat: Infinity, ease: "easeInOut" } : {},
         type: "spring",
         stiffness: 260,
         damping: 20
       }}
-      whileHover={{ y: -4, boxShadow: "0 12px 28px -8px rgba(0,0,0,0.15)" }}
+      whileHover={{ y: -3 }}
       whileTap={{ scale: 0.97 }}
       onTouchStart={onLongPressStart}
       onTouchEnd={onLongPressEnd}
       onMouseDown={onLongPressStart}
       onMouseUp={onLongPressEnd}
       onMouseLeave={onLongPressEnd}
-      onClick={() => {
-        if (onSelect) onSelect();
-      }}
-      className={`cursor-pointer rounded-2xl border bg-card/70 backdrop-blur-[10px] shadow-card transition-all duration-200 overflow-hidden ${
-        isSelected 
-          ? 'border-primary/40 ring-2 ring-primary/30 shadow-elevated' 
-          : 'border-border/30 hover:shadow-elevated'
+      onClick={() => onSelect?.()}
+      className={`cursor-pointer rounded-3xl bg-card shadow-[0_2px_16px_-4px_rgba(0,0,0,0.08)] transition-shadow duration-300 overflow-hidden ${
+        isSelected
+          ? 'ring-2 ring-primary/25 shadow-[0_4px_24px_-6px_rgba(0,0,0,0.12)]'
+          : 'hover:shadow-[0_6px_24px_-6px_rgba(0,0,0,0.12)]'
       }`}
     >
-      {/* Image Section */}
-      <div className="relative w-full aspect-square bg-muted overflow-hidden">
+      {/* ═══ TOP: Image + Overlays ═══ */}
+      <div className="relative w-full aspect-[4/3] bg-muted overflow-hidden">
         {pet.avatar_url ? (
-          <OptimizedImage 
-            src={pet.avatar_url} 
+          <OptimizedImage
+            src={pet.avatar_url}
             alt={pet.name}
             className="w-full h-full"
             objectFit="cover"
             sizes="(max-width: 640px) 45vw, 200px"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-5xl bg-gradient-to-br from-accent/10 to-accent/30">
+          <div className="w-full h-full flex items-center justify-center text-5xl bg-gradient-to-br from-muted to-muted/60">
             {petEmoji}
           </div>
         )}
 
-        {/* Delete Button - top left */}
+        {/* Soft gradient overlay at bottom for text legibility */}
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
+
+        {/* Delete — top-left */}
         <button
           onClick={handleDelete}
-          className={`absolute top-2 left-2 w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-sm border transition-colors z-10 ${
-            showDeleteConfirm 
-              ? 'bg-destructive/90 border-destructive text-destructive-foreground' 
-              : 'bg-background/80 border-border/50 text-muted-foreground hover:text-destructive'
+          className={`absolute top-2.5 left-2.5 w-7 h-7 rounded-full flex items-center justify-center backdrop-blur-md transition-colors z-10 ${
+            showDeleteConfirm
+              ? 'bg-destructive/90 text-destructive-foreground'
+              : 'bg-background/60 text-muted-foreground/70 hover:text-destructive'
           }`}
           aria-label={showDeleteConfirm ? "אישור מחיקה" : "מחיקת חיית מחמד"}
           disabled={deleting}
         >
-          <Trash2 className="w-3.5 h-3.5" />
+          <Trash2 className="w-3 h-3" strokeWidth={1.5} />
         </button>
 
-        {/* Pet Type Badge */}
-        <div className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm text-foreground text-xs font-bold px-2.5 py-1 rounded-full border border-border/50 flex items-center gap-1">
-          <span>{petEmoji}</span>
-          <span>{petTypeLabel}</span>
-        </div>
+        {/* Intelligence Pulse — top-right */}
+        <motion.div
+          className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-background/60 backdrop-blur-md flex items-center justify-center"
+          animate={hasNewInsight ? {
+            boxShadow: ['0 0 0 0px hsl(var(--primary)/0)', '0 0 0 6px hsl(var(--primary)/0.15)', '0 0 0 0px hsl(var(--primary)/0)'],
+          } : {}}
+          transition={hasNewInsight ? { duration: 2.5, repeat: Infinity, ease: "easeInOut" } : {}}
+          title={hasNewInsight ? "תובנה חדשה זמינה" : "מסונכרן"}
+        >
+          <Brain className={`w-3.5 h-3.5 ${hasNewInsight ? 'text-primary' : 'text-muted-foreground/50'}`} strokeWidth={1.5} />
+        </motion.div>
 
-        {/* Health Indicator */}
-        <div className="absolute top-12 right-2">
-          <div className="w-3 h-3 rounded-full bg-emerald-400 border-2 border-background shadow-sm" title="בריאות תקינה" />
-        </div>
-
-        {/* New Badge */}
+        {/* Status Badges — bottom-left */}
         {isNewPet && (
           <motion.div
-            className="absolute bottom-2 left-2 bg-gradient-to-r from-primary to-accent text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md flex items-center gap-1"
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ duration: 0.8, repeat: Infinity }}
+            className="absolute bottom-2 left-2 bg-background/80 backdrop-blur-md text-foreground text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1"
+            animate={{ opacity: [0.7, 1, 0.7] }}
+            transition={{ duration: 2, repeat: Infinity }}
           >
-            ✨ חדש
+            <Sparkles className="w-2.5 h-2.5 text-primary" strokeWidth={1.5} /> חדש
           </motion.div>
         )}
-
-        {/* Lost Badge */}
         {pet.is_lost && (
           <motion.div
-            className="absolute bottom-2 left-2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md flex items-center gap-1"
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ duration: 1, repeat: Infinity }}
+            className="absolute bottom-2 left-2 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1"
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
           >
-            <Siren className="w-3 h-3" />
-            נעדר/ת
+            <Siren className="w-3 h-3" strokeWidth={1.5} /> נעדר/ת
           </motion.div>
         )}
 
-        {/* Selected Indicator */}
+        {/* Selected heart — bottom-right */}
         {isSelected && (
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-primary flex items-center justify-center shadow-md"
+            className="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-primary flex items-center justify-center"
           >
-            <Heart className="w-3.5 h-3.5 text-primary-foreground fill-current" />
+            <Heart className="w-3 h-3 text-primary-foreground fill-current" />
           </motion.div>
         )}
       </div>
 
-      {/* Info Section — Glassmorphism panel */}
-      <div className="p-3.5 space-y-2" dir="rtl">
-        {/* Name + Science Badge + Gender */}
-        <div className="flex items-center gap-1.5">
-          <h3 className="text-base font-extrabold text-foreground font-jakarta truncate flex-1" style={{ wordBreak: 'break-word' }}>
+      {/* ═══ MIDDLE: Name + Breed + Stats ═══ */}
+      <div className="px-3.5 pt-3.5 pb-2" dir="rtl">
+        {/* Name row */}
+        <div className="flex items-center gap-1.5 mb-0.5">
+          <h3 className="text-[15px] font-extrabold text-foreground truncate flex-1 leading-tight" style={{ wordBreak: 'break-word' }}>
             {pet.name}
           </h3>
-          {/* PetID Science Score badge */}
-          <div className="flex-shrink-0 flex items-center gap-0.5 bg-primary/10 rounded-full px-1.5 py-0.5 border border-primary/20">
-            <FlaskConical className="w-2.5 h-2.5 text-primary" strokeWidth={1.5} />
-            <span className="text-[8px] font-bold text-primary leading-none">NRC</span>
-          </div>
           {genderIcon && (
-            <span className={`text-lg font-extrabold ${genderColor} flex-shrink-0`}>
+            <span className={`text-base font-bold ${genderColor} flex-shrink-0 leading-none`}>
               {genderIcon}
             </span>
           )}
         </div>
 
         {/* Breed */}
-        {pet.breed && (
-          <p className="text-sm font-medium text-muted-foreground truncate font-jakarta" style={{ wordBreak: 'break-word', unicodeBidi: 'plaintext' }} dir="auto">
-            {pet.breed}
-          </p>
-        )}
+        <p
+          className="text-[11px] text-muted-foreground/70 font-medium truncate mb-3"
+          dir="auto"
+          style={{ wordBreak: 'break-word', unicodeBidi: 'plaintext' as any }}
+        >
+          {pet.breed || (pet.type === 'dog' ? 'גזע לא ידוע' : 'חתול')}
+        </p>
 
-        {/* Stats row: Age, Weight, Kcal */}
-        <div className="flex items-center flex-wrap gap-x-3 gap-y-1 pt-1">
+        {/* 3-column stats grid */}
+        <div className="grid grid-cols-3 gap-0.5">
+          <StatCell
+            label="משקל"
+            value={weightLabel}
+            placeholder="הוסף משקל"
+          />
+          <StatCell
+            label="גזע"
+            value={pet.breed || null}
+            placeholder="זהה גזע"
+          />
+          <StatCell
+            label="שבב"
+            value={pet.chip_number || null}
+            placeholder="הוסף שבב"
+          />
+        </div>
+      </div>
+
+      {/* ═══ BOTTOM: Quick Actions bar ═══ */}
+      <div className="px-3.5 pb-3 pt-1">
+        <div className="flex items-center justify-between">
           {age && (
-            <div className="flex items-center gap-1 text-xs font-semibold text-muted-foreground">
-              <Calendar className="w-3 h-3 flex-shrink-0" strokeWidth={1.5} />
-              <span>{age}</span>
-            </div>
-          )}
-          {weightLabel && (
-            <span className="text-xs text-muted-foreground" dir="auto" style={{ unicodeBidi: 'plaintext' }}>
-              {weightLabel}
+            <span className="text-[10px] text-muted-foreground/60 font-medium">
+              {age}
             </span>
           )}
-          {kcalLabel && (
-            <span className="text-xs text-muted-foreground" dir="auto" style={{ unicodeBidi: 'plaintext' }}>
-              {kcalLabel}
-            </span>
-          )}
+          <div className="flex items-center gap-0.5 mr-auto">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            <span className="text-[9px] text-muted-foreground/50 font-medium">מסונכרן</span>
+          </div>
         </div>
       </div>
     </motion.div>
@@ -262,6 +279,7 @@ export const PetCard = memo(({
     prevProps.pet.birth_date === nextProps.pet.birth_date &&
     prevProps.pet.gender === nextProps.pet.gender &&
     prevProps.pet.weight === nextProps.pet.weight &&
+    prevProps.pet.chip_number === nextProps.pet.chip_number &&
     prevProps.pet.is_lost === nextProps.pet.is_lost
   );
 });
@@ -277,22 +295,22 @@ export const AddPetCard = memo(({ index, onAddPet }: AddPetCardProps) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.05 + index * 0.08 }}
-      whileHover={{ y: -4, boxShadow: "0 12px 28px -8px rgba(0,0,0,0.15)" }}
+      whileHover={{ y: -3 }}
       whileTap={{ scale: 0.97 }}
       onClick={onAddPet}
-      className="cursor-pointer rounded-2xl border-2 border-dashed border-accent/40 bg-card/50 hover:border-accent hover:bg-accent/5 transition-all duration-200 overflow-hidden flex flex-col items-center justify-center min-h-[200px]"
+      className="cursor-pointer rounded-3xl bg-card shadow-[0_2px_16px_-4px_rgba(0,0,0,0.06)] hover:shadow-[0_6px_24px_-6px_rgba(0,0,0,0.1)] transition-shadow duration-300 overflow-hidden flex flex-col items-center justify-center min-h-[240px]"
     >
       <motion.div
-        className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/10 to-accent/20 flex items-center justify-center mb-3"
+        className="w-14 h-14 rounded-2xl bg-muted/60 flex items-center justify-center mb-3"
         whileHover={{ rotate: 90 }}
         transition={{ duration: 0.3 }}
       >
-        <Plus className="w-8 h-8 text-accent" strokeWidth={2} />
+        <Plus className="w-7 h-7 text-muted-foreground/50" strokeWidth={1.5} />
       </motion.div>
-      <span className="text-sm font-bold text-accent font-jakarta">
+      <span className="text-sm font-bold text-foreground/80">
         הוסף חיית מחמד
       </span>
-      <span className="text-xs text-muted-foreground mt-1">
+      <span className="text-[11px] text-muted-foreground/50 mt-1">
         🐾 כלב, חתול ועוד
       </span>
     </motion.div>
