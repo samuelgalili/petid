@@ -1,54 +1,50 @@
 import { useState } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { 
-  Plug, 
-  CreditCard,
-  Mail,
-  MessageSquare,
-  Truck,
-  BarChart3,
-  Shield,
-  Settings,
-  ExternalLink,
-  CheckCircle,
-  AlertTriangle
+  Plug, CreditCard, Mail, Truck, BarChart3, Shield, Settings,
+  CheckCircle, AlertTriangle, Loader2
 } from "lucide-react";
 
-interface Integration {
-  id: string;
-  name: string;
-  description: string;
-  category: "payment" | "shipping" | "marketing" | "analytics" | "security";
-  icon: string;
-  isConnected: boolean;
-  isActive: boolean;
-  configRequired: boolean;
-}
-
-const mockIntegrations: Integration[] = [
-  { id: "1", name: "CardCom", description: "סליקת כרטיסי אשראי", category: "payment", icon: "💳", isConnected: true, isActive: true, configRequired: false },
-  { id: "2", name: "PayPal", description: "תשלומים בינלאומיים", category: "payment", icon: "🅿️", isConnected: false, isActive: false, configRequired: true },
-  { id: "3", name: "דואר ישראל", description: "משלוחים ומעקב", category: "shipping", icon: "📮", isConnected: true, isActive: true, configRequired: false },
-  { id: "4", name: "Box-It", description: "נקודות איסוף", category: "shipping", icon: "📦", isConnected: false, isActive: false, configRequired: true },
-  { id: "5", name: "Mailchimp", description: "שיווק באימייל", category: "marketing", icon: "📧", isConnected: true, isActive: false, configRequired: false },
-  { id: "6", name: "SMS4Free", description: "שליחת SMS", category: "marketing", icon: "📱", isConnected: true, isActive: true, configRequired: false },
-  { id: "7", name: "Google Analytics", description: "מעקב וניתוח", category: "analytics", icon: "📊", isConnected: true, isActive: true, configRequired: false },
-  { id: "8", name: "Facebook Pixel", description: "מעקב המרות", category: "analytics", icon: "📈", isConnected: false, isActive: false, configRequired: true },
-  { id: "9", name: "reCAPTCHA", description: "הגנה מבוטים", category: "security", icon: "🛡️", isConnected: true, isActive: true, configRequired: false },
-  { id: "10", name: "Cloudflare", description: "אבטחה וביצועים", category: "security", icon: "☁️", isConnected: false, isActive: false, configRequired: true },
-];
+const categoryIcons: Record<string, any> = {
+  payment: CreditCard, shipping: Truck, marketing: Mail, analytics: BarChart3, security: Shield,
+};
 
 const AdminIntegrations = () => {
-  const [integrations, setIntegrations] = useState<Integration[]>(mockIntegrations);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [configDialog, setConfigDialog] = useState<Integration | null>(null);
+  const queryClient = useQueryClient();
+
+  const { data: integrations = [], isLoading } = useQuery({
+    queryKey: ["system-integrations"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("system_integrations")
+        .select("*")
+        .order("created_at");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const toggleActive = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase
+        .from("system_integrations")
+        .update({ is_active, updated_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["system-integrations"] });
+      toast.success("סטטוס עודכן");
+    },
+  });
 
   const categories = [
     { id: "all", label: "הכל", icon: Plug },
@@ -59,191 +55,85 @@ const AdminIntegrations = () => {
     { id: "security", label: "אבטחה", icon: Shield },
   ];
 
-  const toggleActive = (id: string) => {
-    setIntegrations(integrations.map(i => 
-      i.id === id ? { ...i, isActive: !i.isActive } : i
-    ));
-  };
+  const filtered = integrations.filter((i: any) => selectedCategory === "all" || i.category === selectedCategory);
+  const connectedCount = integrations.filter((i: any) => i.is_connected).length;
+  const activeCount = integrations.filter((i: any) => i.is_active).length;
 
-  const connectIntegration = (id: string) => {
-    setIntegrations(integrations.map(i => 
-      i.id === id ? { ...i, isConnected: true, isActive: true } : i
-    ));
-    setConfigDialog(null);
-  };
-
-  const filteredIntegrations = integrations.filter(i => 
-    selectedCategory === "all" || i.category === selectedCategory
-  );
-
-  const connectedCount = integrations.filter(i => i.isConnected).length;
-  const activeCount = integrations.filter(i => i.isActive).length;
+  const stats = [
+    { title: "סה״כ", value: integrations.length, icon: Plug, gradient: "from-violet-500 to-purple-600" },
+    { title: "מחוברות", value: connectedCount, icon: CheckCircle, gradient: "from-emerald-500 to-green-600" },
+    { title: "פעילות", value: activeCount, icon: Settings, gradient: "from-blue-500 to-cyan-600" },
+    { title: "דורשות הגדרה", value: integrations.filter((i: any) => !i.is_connected).length, icon: AlertTriangle, gradient: "from-amber-500 to-orange-600" },
+  ];
 
   return (
     <AdminLayout title="אינטגרציות" icon={Plug}>
       <div className="space-y-6">
-        {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-purple-600 opacity-10" />
-            <CardContent className="p-4 relative">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">סה״כ אינטגרציות</p>
-                  <p className="text-2xl font-bold">{integrations.length}</p>
+          {stats.map((stat, i) => (
+            <Card key={i} className="relative overflow-hidden">
+              <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-[0.07]`} />
+              <CardContent className="p-4 relative">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">{stat.title}</p>
+                    <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+                  </div>
+                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center`}>
+                    <stat.icon className="w-5 h-5 text-white" />
+                  </div>
                 </div>
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                  <Plug className="w-5 h-5 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-green-600 opacity-10" />
-            <CardContent className="p-4 relative">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">מחוברות</p>
-                  <p className="text-2xl font-bold">{connectedCount}</p>
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-600 opacity-10" />
-            <CardContent className="p-4 relative">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">פעילות</p>
-                  <p className="text-2xl font-bold">{activeCount}</p>
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center">
-                  <Settings className="w-5 h-5 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-600 opacity-10" />
-            <CardContent className="p-4 relative">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">דורשות הגדרה</p>
-                  <p className="text-2xl font-bold">{integrations.filter(i => !i.isConnected).length}</p>
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-                  <AlertTriangle className="w-5 h-5 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
-        {/* Category Filter */}
         <Card>
           <CardContent className="p-4">
             <div className="flex flex-wrap gap-2">
               {categories.map((cat) => (
-                <Button
-                  key={cat.id}
-                  variant={selectedCategory === cat.id ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedCategory(cat.id)}
-                >
-                  <cat.icon className="w-4 h-4 ml-2" />
-                  {cat.label}
+                <Button key={cat.id} variant={selectedCategory === cat.id ? "default" : "outline"} size="sm" onClick={() => setSelectedCategory(cat.id)}>
+                  <cat.icon className="w-4 h-4 ml-2" />{cat.label}
                 </Button>
               ))}
             </div>
           </CardContent>
         </Card>
 
-        {/* Integrations Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredIntegrations.map((integration) => (
-            <Card key={integration.id}>
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="text-3xl">{integration.icon}</div>
-                    <div>
-                      <h3 className="font-bold">{integration.name}</h3>
-                      <p className="text-sm text-muted-foreground">{integration.description}</p>
+        {isLoading ? (
+          <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+        ) : filtered.length === 0 ? (
+          <Card><CardContent className="p-8 text-center text-muted-foreground">אין אינטגרציות. הוסף אינטגרציות דרך מסד הנתונים.</CardContent></Card>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filtered.map((integration: any) => (
+              <Card key={integration.id}>
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="text-3xl">{integration.icon}</div>
+                      <div>
+                        <h3 className="font-bold text-foreground">{integration.name}</h3>
+                        <p className="text-sm text-muted-foreground">{integration.description}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {integration.isConnected ? (
-                      <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
-                        מחובר
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary">
-                        לא מחובר
-                      </Badge>
-                    )}
-                    {integration.isActive && (
-                      <Badge className="bg-blue-100 text-blue-700 border-blue-200">
-                        פעיל
-                      </Badge>
-                    )}
-                  </div>
-                  {integration.isConnected ? (
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Switch
-                        checked={integration.isActive}
-                        onCheckedChange={() => toggleActive(integration.id)}
-                      />
-                      <Button size="icon" variant="ghost">
-                        <Settings className="w-4 h-4" />
-                      </Button>
+                      <Badge className={integration.is_connected ? "bg-emerald-500/10 text-emerald-600" : "bg-muted text-muted-foreground"}>
+                        {integration.is_connected ? "מחובר" : "לא מחובר"}
+                      </Badge>
+                      {integration.is_active && <Badge className="bg-blue-500/10 text-blue-600">פעיל</Badge>}
                     </div>
-                  ) : (
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button size="sm">
-                          חבר
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent dir="rtl">
-                        <DialogHeader>
-                          <DialogTitle className="flex items-center gap-2">
-                            <span className="text-2xl">{integration.icon}</span>
-                            חיבור {integration.name}
-                          </DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4 mt-4">
-                          <div>
-                            <Label>API Key</Label>
-                            <Input placeholder="הזן API Key..." />
-                          </div>
-                          <div>
-                            <Label>Secret Key</Label>
-                            <Input type="password" placeholder="הזן Secret Key..." />
-                          </div>
-                          <Button 
-                            className="w-full"
-                            onClick={() => connectIntegration(integration.id)}
-                          >
-                            חבר ואמת
-                          </Button>
-                          <Button variant="link" className="w-full">
-                            <ExternalLink className="w-4 h-4 ml-2" />
-                            למדריך ההתקנה
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                    {integration.is_connected && (
+                      <Switch checked={integration.is_active} onCheckedChange={(checked) => toggleActive.mutate({ id: integration.id, is_active: checked })} />
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </AdminLayout>
   );

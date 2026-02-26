@@ -4,12 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight, ShoppingCart, Package, Brain, Sparkles,
   TrendingUp, AlertTriangle, Wallet, Eye, RotateCcw,
-  ChevronLeft, Check, Clock, Bell
+  ChevronLeft, Check, Clock, Bell, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScienceBadge } from '@/components/ui/ScienceBadge';
 import { cn } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 // ─── Types ───
 type NotifCategory = 'sales' | 'inventory' | 'ai';
@@ -26,49 +28,12 @@ interface Notification {
 
 interface AiInsight {
   id: string;
-  assistant: 'Danny' | 'Sarah';
+  assistant: string;
   title: string;
   body: string;
   badge?: boolean;
   action: { label: string; route: string };
 }
-
-// ─── Mock Data ───
-const aiInsights: AiInsight[] = [
-  {
-    id: 'ai1',
-    assistant: 'Danny',
-    title: 'מוצר NRC מוביל במכירות',
-    body: 'המוצר "Premium Joint Chews" עלה ב-34% בשבוע האחרון. מומלץ להגדיל מלאי ולהוסיף אותו לעמוד הראשי.',
-    badge: true,
-    action: { label: 'צפה במוצר', route: '/product-sourcing' },
-  },
-  {
-    id: 'ai2',
-    assistant: 'Sarah',
-    title: 'הזדמנות עמלות חדשה',
-    body: 'זיהינו ביקוש גבוה למוצרי Omega-3 בקרב בעלי גולדן רטריבר. הוספת המוצר לחנות שלך עשויה להניב ₪850+ בעמלות.',
-    badge: true,
-    action: { label: 'הוסף לחנות', route: '/product-sourcing' },
-  },
-  {
-    id: 'ai3',
-    assistant: 'Danny',
-    title: 'שיעור החזרות ירד',
-    body: 'מוצרים מאומתים מדעית מציגים שיעור החזרות של 2.1% לעומת 8.4% בגנריים. המשך להתמקד בקו זה.',
-    action: { label: 'צפה בנתונים', route: '/creator-analytics' },
-  },
-];
-
-const notifications: Notification[] = [
-  { id: 'n1', category: 'sales', title: 'הזמנה חדשה #4821', body: 'Premium Dog Food NRC × 2 — ₪378', time: 'לפני 12 דק׳', read: false, action: { label: 'צפה בהזמנה', route: '/admin/vendor-dashboard' } },
-  { id: 'n2', category: 'sales', title: 'עמלה אושרה', body: '₪42.50 התקבלו מהזמנה #4819', time: 'לפני 28 דק׳', read: false, action: { label: 'משוך כספים', route: '/creator-dashboard' } },
-  { id: 'n3', category: 'inventory', title: 'מלאי נמוך', body: 'Joint Health Chews — נותרו 3 יחידות', time: 'לפני שעה', read: false, action: { label: 'השלם מלאי', route: '/product-sourcing' } },
-  { id: 'n4', category: 'ai', title: 'תובנה חדשה מ-Danny', body: 'מגמת עלייה בחיפושי "אוכל היפואלרגני" — שקול להוסיף מוצרים רלוונטיים.', time: 'לפני 2 שע׳', read: true, action: { label: 'צפה בתובנות', route: '/creator-analytics' } },
-  { id: 'n5', category: 'sales', title: 'הזמנה נשלחה', body: 'הזמנה #4815 עודכנה לסטטוס "נשלח"', time: 'לפני 3 שע׳', read: true, action: { label: 'מעקב', route: '/admin/vendor-dashboard' } },
-  { id: 'n6', category: 'inventory', title: 'מוצר אזל מהמלאי', body: 'Dental Care Sticks — 0 יחידות', time: 'לפני 5 שע׳', read: true, action: { label: 'השלם מלאי', route: '/product-sourcing' } },
-  { id: 'n7', category: 'ai', title: 'המלצה מ-Sarah', body: 'לקוחות שרכשו Omega-3 קנו גם Joint Chews ב-68% מהמקרים. שקול חבילה משולבת.', time: 'לפני 6 שע׳', read: true, action: { label: 'צור חבילה', route: '/product-sourcing' } },
-];
 
 const categoryConfig: Record<NotifCategory, { icon: typeof ShoppingCart; color: string; bg: string; label: string }> = {
   sales: { icon: ShoppingCart, color: 'text-emerald-600', bg: 'bg-emerald-500/10', label: 'מכירות' },
@@ -79,10 +44,54 @@ const categoryConfig: Record<NotifCategory, { icon: typeof ShoppingCart; color: 
 const SmartNotifications = () => {
   const navigate = useNavigate();
   const [filter, setFilter] = useState<'all' | NotifCategory>('all');
-  const [readIds, setReadIds] = useState<Set<string>>(new Set(notifications.filter(n => n.read).map(n => n.id)));
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+
+  // Fetch AI insights from agent action logs
+  const { data: aiInsights = [] } = useQuery({
+    queryKey: ["smart-notifications-insights"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("agent_action_logs")
+        .select("*")
+        .eq("action_type", "bot_scheduled_report")
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return (data || []).map((log: any) => ({
+        id: log.id,
+        assistant: log.description?.match(/\[([^\]]+)\]/)?.[1] || "AI",
+        title: log.description?.replace(/\[[^\]]+\]\s*/, "").substring(0, 60) || "תובנה",
+        body: log.description?.replace(/\[[^\]]+\]\s*/, "").substring(0, 200) || "",
+        badge: false,
+        action: { label: 'צפה בפרטים', route: '/admin/robot-fleet' },
+      }));
+    },
+  });
+
+  // Fetch recent notifications from admin_data_alerts
+  const { data: notifications = [] } = useQuery({
+    queryKey: ["smart-notifications-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("admin_data_alerts")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return (data || []).map((alert: any): Notification => ({
+        id: alert.id,
+        category: alert.category === 'inventory' ? 'inventory' : alert.category === 'sales' ? 'sales' : 'ai' as NotifCategory,
+        title: alert.title,
+        body: alert.description || "",
+        time: new Date(alert.created_at).toLocaleString("he-IL", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }),
+        read: alert.is_read || false,
+        action: { label: 'צפה', route: '/admin/notifications' },
+      }));
+    },
+  });
 
   const filtered = filter === 'all' ? notifications : notifications.filter(n => n.category === filter);
-  const unreadCount = notifications.filter(n => !readIds.has(n.id)).length;
+  const unreadCount = notifications.filter(n => !n.read && !readIds.has(n.id)).length;
 
   const markRead = (id: string) => setReadIds(prev => new Set(prev).add(id));
   const markAllRead = () => setReadIds(new Set(notifications.map(n => n.id)));
@@ -96,7 +105,6 @@ const SmartNotifications = () => {
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
-      {/* Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/40">
         <div className="flex items-center justify-between px-5 h-14 max-w-3xl mx-auto">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
@@ -121,6 +129,7 @@ const SmartNotifications = () => {
       <div className="max-w-3xl mx-auto px-5 py-6 space-y-8">
 
         {/* ─── AI Insights Section ─── */}
+        {aiInsights.length > 0 && (
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -129,11 +138,10 @@ const SmartNotifications = () => {
           <div className="flex items-center gap-2 mb-1">
             <Sparkles className="w-4 h-4 text-primary" strokeWidth={1.5} />
             <h2 className="text-sm font-semibold">המלצות חכמות</h2>
-            <span className="text-[10px] text-muted-foreground">מ-Danny & Sarah</span>
           </div>
 
           <div className="space-y-3">
-            {aiInsights.map((insight, i) => (
+            {aiInsights.map((insight: AiInsight, i: number) => (
               <motion.div
                 key={insight.id}
                 initial={{ opacity: 0, y: 10 }}
@@ -172,6 +180,7 @@ const SmartNotifications = () => {
             ))}
           </div>
         </motion.section>
+        )}
 
         {/* ─── Filter Chips ─── */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1">

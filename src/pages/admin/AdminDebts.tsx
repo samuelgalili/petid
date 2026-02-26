@@ -165,24 +165,7 @@ const AdminDebts = () => {
       });
     } catch (error) {
       console.error("Error creating debt:", error);
-      // Create locally for demo
-      const amount = parseFloat(newDebt.amount) || 0;
-      const mockDebt: CustomerDebt = {
-        id: Date.now().toString(),
-        customer_id: Date.now().toString(),
-        customer_name: newDebt.customer_name,
-        customer_email: newDebt.customer_email || null,
-        customer_phone: newDebt.customer_phone || null,
-        amount: amount,
-        original_amount: amount,
-        due_date: newDebt.due_date || null,
-        status: "pending",
-        notes: newDebt.notes || null,
-        created_at: new Date().toISOString(),
-      };
-      setDebts([mockDebt, ...debts]);
-      setIsCreateDialogOpen(false);
-      resetForm();
+      toast({ title: "שגיאה", description: "לא ניתן ליצור חוב", variant: "destructive" });
     }
   };
 
@@ -210,13 +193,7 @@ const AdminDebts = () => {
       });
     } catch (error) {
       console.error("Error updating debt:", error);
-      const updates: any = { status: newStatus };
-      if (newStatus === "paid") {
-        updates.amount = 0;
-      }
-      setDebts(debts.map(debt => 
-        debt.id === debtId ? { ...debt, ...updates } : debt
-      ));
+      toast({ title: "שגיאה", description: "לא ניתן לעדכן סטטוס", variant: "destructive" });
     }
   };
 
