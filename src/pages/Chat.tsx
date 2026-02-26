@@ -343,7 +343,7 @@ const ChatContent = () => {
             }`}
           >
             <Sparkles className="w-3.5 h-3.5" />
-            המדען
+            המומחה
             {activeHubTab === "scientist" && (
               <motion.div layoutId="hub-tab-indicator" className="absolute bottom-0 inset-x-4 h-[2px] bg-primary rounded-full" />
             )}
