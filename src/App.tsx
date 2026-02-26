@@ -40,6 +40,8 @@ import ScrollToTop from "@/components/ScrollToTop";
 import { LegalDrawer } from "@/components/LegalDrawer";
 import CompleteProfilePrompt from "@/components/CompleteProfilePrompt";
 import SarahDataGapAlert from "@/components/SarahDataGapAlert";
+import { UXGuardian } from "@/components/UXGuardian";
+import { SarahCrashPopup } from "@/components/SarahCrashPopup";
 
 // Route configuration - modular lazy-loaded routes
 import { allRoutes } from "@/routes";
@@ -100,6 +102,8 @@ const AnimatedRoutes = () => {
         </AnimatePresence>
       </div>
       <LegalDrawer />
+      <UXGuardian />
+      <SarahCrashPopup />
     </div>
   );
 };
