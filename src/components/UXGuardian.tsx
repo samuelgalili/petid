@@ -175,7 +175,7 @@ export const UXGuardian = () => {
             transition={{ delay: 3, type: "spring" }}
             onClick={() => setIsOpen(true)}
             className={cn(
-              "fixed bottom-6 right-6 z-[9999] w-11 h-11 rounded-full",
+              "fixed bottom-10 right-3 z-[9999] w-9 h-9 rounded-full",
               "flex items-center justify-center",
               "bg-background/60 backdrop-blur-xl border border-border/50",
               "shadow-lg hover:shadow-xl transition-all",
@@ -183,7 +183,7 @@ export const UXGuardian = () => {
             )}
             aria-label="Send feedback"
           >
-            <MessageSquare className="w-4.5 h-4.5 text-muted-foreground" />
+            <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
           </motion.button>
         )}
       </AnimatePresence>
@@ -197,7 +197,7 @@ export const UXGuardian = () => {
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ type: "spring", damping: 25 }}
             className={cn(
-              "fixed bottom-20 right-6 z-[9999] w-72",
+              "fixed bottom-20 right-3 z-[9999] w-72",
               "rounded-2xl overflow-hidden",
               "bg-background/70 backdrop-blur-2xl",
               "border border-border/40",
