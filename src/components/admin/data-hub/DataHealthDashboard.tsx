@@ -241,6 +241,14 @@ export const DataHealthDashboard = () => {
                 </div>
               )}
 
+              {cat.ragChunks > 0 && (
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-accent/50">
+                  <TrendingUp className="w-3.5 h-3.5 text-primary" />
+                  <span className="text-xs text-muted-foreground">חתיכות AI (RAG)</span>
+                  <span className="mr-auto text-sm font-bold text-foreground">{cat.ragChunks}</span>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
                   <span className="text-muted-foreground">מקורות</span>
