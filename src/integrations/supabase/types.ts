@@ -10795,6 +10795,74 @@ export type Database = {
         }
         Relationships: []
       }
+      ui_visual_audit_logs: {
+        Row: {
+          audit_run_id: string
+          created_at: string
+          description: string | null
+          element_label: string | null
+          element_type: string
+          fix_applied: boolean
+          fix_card_id: string | null
+          id: string
+          is_critical_path: boolean
+          issue_type: string
+          metadata: Json | null
+          resolved_at: string | null
+          route: string
+          screenshot_url: string | null
+          severity: string
+          status: string
+          suggested_fix: string | null
+        }
+        Insert: {
+          audit_run_id?: string
+          created_at?: string
+          description?: string | null
+          element_label?: string | null
+          element_type?: string
+          fix_applied?: boolean
+          fix_card_id?: string | null
+          id?: string
+          is_critical_path?: boolean
+          issue_type?: string
+          metadata?: Json | null
+          resolved_at?: string | null
+          route: string
+          screenshot_url?: string | null
+          severity?: string
+          status?: string
+          suggested_fix?: string | null
+        }
+        Update: {
+          audit_run_id?: string
+          created_at?: string
+          description?: string | null
+          element_label?: string | null
+          element_type?: string
+          fix_applied?: boolean
+          fix_card_id?: string | null
+          id?: string
+          is_critical_path?: boolean
+          issue_type?: string
+          metadata?: Json | null
+          resolved_at?: string | null
+          route?: string
+          screenshot_url?: string | null
+          severity?: string
+          status?: string
+          suggested_fix?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ui_visual_audit_logs_fix_card_id_fkey"
+            columns: ["fix_card_id"]
+            isOneToOne: false
+            referencedRelation: "architect_evolution_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_activity_logs: {
         Row: {
           created_at: string
