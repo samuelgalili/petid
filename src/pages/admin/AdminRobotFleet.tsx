@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Bot, Brain, Megaphone, Target, MessageCircle, Store,
   Headphones, Stethoscope, Scale, Sparkles, FlaskConical,
-  Cpu, ShieldAlert, Clock, ChevronDown, ChevronUp,
+  Cpu, ShieldAlert, Clock, ChevronDown, ChevronUp, Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SystemArchitectPanel } from "@/components/admin/SystemArchitectPanel";
@@ -22,7 +22,7 @@ const iconMap: Record<string, React.ComponentType<any>> = {
   brain: Brain, megaphone: Megaphone, target: Target,
   "message-circle": MessageCircle, store: Store,
   headphones: Headphones, stethoscope: Stethoscope, scale: Scale,
-  bot: FlaskConical, sparkles: Sparkles, cpu: Cpu,
+  bot: FlaskConical, sparkles: Sparkles, cpu: Cpu, eye: Eye,
 };
 
 const colorMap: Record<string, string> = {
@@ -31,7 +31,7 @@ const colorMap: Record<string, string> = {
   green: "from-green-500 to-green-600", blue: "from-blue-500 to-blue-600",
   amber: "from-amber-500 to-amber-600", emerald: "from-emerald-500 to-emerald-600",
   indigo: "from-indigo-500 to-indigo-600", violet: "from-violet-500 to-violet-600",
-  slate: "from-slate-600 to-slate-800",
+  slate: "from-slate-600 to-slate-800", red: "from-red-500 to-red-600",
 };
 
 const AdminRobotFleet = () => {
