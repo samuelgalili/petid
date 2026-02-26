@@ -8361,6 +8361,54 @@ export type Database = {
         }
         Relationships: []
       }
+      readiness_drill_results: {
+        Row: {
+          agent_results: Json
+          created_at: string
+          details: string | null
+          drill_date: string
+          failed_tests: number
+          id: string
+          integrity_results: Json
+          overall_status: string
+          passed_tests: number
+          self_healed: number
+          stability_score: number
+          summary: string | null
+          total_tests: number
+        }
+        Insert: {
+          agent_results?: Json
+          created_at?: string
+          details?: string | null
+          drill_date?: string
+          failed_tests?: number
+          id?: string
+          integrity_results?: Json
+          overall_status?: string
+          passed_tests?: number
+          self_healed?: number
+          stability_score?: number
+          summary?: string | null
+          total_tests?: number
+        }
+        Update: {
+          agent_results?: Json
+          created_at?: string
+          details?: string | null
+          drill_date?: string
+          failed_tests?: number
+          id?: string
+          integrity_results?: Json
+          overall_status?: string
+          passed_tests?: number
+          self_healed?: number
+          stability_score?: number
+          summary?: string | null
+          total_tests?: number
+        }
+        Relationships: []
+      }
       redemptions: {
         Row: {
           approved_at: string | null

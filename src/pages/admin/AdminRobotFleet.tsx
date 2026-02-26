@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SystemArchitectPanel } from "@/components/admin/SystemArchitectPanel";
+import { ReadinessDrillPanel } from "@/components/admin/ReadinessDrillPanel";
 
 const iconMap: Record<string, React.ComponentType<any>> = {
   brain: Brain, megaphone: Megaphone, target: Target,
@@ -200,6 +201,9 @@ const AdminRobotFleet = () => {
             </AnimatePresence>
           </Card>
         )}
+
+        {/* 3 AM Readiness Drill Section */}
+        <ReadinessDrillPanel />
       </div>
     </AdminLayout>
   );
