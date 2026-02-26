@@ -290,7 +290,34 @@ export const CategoryUploadDialog = ({
         body: { sourceId },
       });
 
-      toast({ title: "אושר ונשמר! ✅", description: "הנתונים נוספו למערכת בהצלחה" });
+      // Trigger RAG processing (chunking + embeddings)
+      const { data: sourceData } = await supabase
+        .from("admin_data_sources" as any)
+        .select("title, file_url, extracted_data")
+        .eq("id", sourceId)
+        .single();
+
+      const ragBody: any = {
+        sourceId,
+        documentTitle: (sourceData as any)?.title || title,
+      };
+      if ((sourceData as any)?.file_url) {
+        ragBody.fileUrl = (sourceData as any).file_url;
+      }
+      if ((sourceData as any)?.extracted_data?.full_content) {
+        ragBody.textContent = (sourceData as any).extracted_data.full_content;
+      }
+
+      // Fire RAG processing in background (don't block approval)
+      supabase.functions.invoke("process-document-rag", { body: ragBody })
+        .then((res) => {
+          if (res.data?.success) {
+            console.log(`[RAG] Processed: ${res.data.report?.total_chunks} chunks`);
+          }
+        })
+        .catch((err) => console.warn("[RAG] Background processing error:", err));
+
+      toast({ title: "אושר ונשמר! ✅", description: "הנתונים נוספו למערכת ומעובדים ל-AI" });
       resetForm();
       onSuccess();
     } catch (err: any) {
