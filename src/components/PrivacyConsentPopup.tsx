@@ -63,7 +63,7 @@ export const PrivacyConsentPopup = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[300]"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[10010]"
           />
 
           {/* Dialog */}
@@ -73,11 +73,11 @@ export const PrivacyConsentPopup = () => {
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: "spring", damping: 25 }}
             className={cn(
-              "fixed z-[301]",
-              "inset-x-4 bottom-4 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2",
-              "max-w-sm mx-auto max-h-[85vh] overflow-y-auto",
-              "rounded-3xl overflow-hidden",
-              "bg-background/90 backdrop-blur-2xl",
+              "fixed z-[10011]",
+              "inset-x-4 top-1/2 -translate-y-1/2",
+              "max-w-sm mx-auto",
+              "rounded-3xl",
+              "bg-background backdrop-blur-2xl",
               "border border-border/40",
               "shadow-2xl",
             )}
