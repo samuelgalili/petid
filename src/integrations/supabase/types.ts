@@ -8319,6 +8319,42 @@ export type Database = {
         }
         Relationships: []
       }
+      rage_click_events: {
+        Row: {
+          click_count: number
+          created_at: string
+          element_selector: string | null
+          element_text: string | null
+          id: string
+          metadata: Json | null
+          route: string
+          session_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          click_count?: number
+          created_at?: string
+          element_selector?: string | null
+          element_text?: string | null
+          id?: string
+          metadata?: Json | null
+          route: string
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          click_count?: number
+          created_at?: string
+          element_selector?: string | null
+          element_text?: string | null
+          id?: string
+          metadata?: Json | null
+          route?: string
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       raw_imports: {
         Row: {
           created_at: string
@@ -11002,6 +11038,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_feedback: {
+        Row: {
+          created_at: string
+          id: string
+          is_angry_alert: boolean
+          message: string | null
+          metadata: Json | null
+          rating: number
+          route: string | null
+          sentiment: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_angry_alert?: boolean
+          message?: string | null
+          metadata?: Json | null
+          rating: number
+          route?: string | null
+          sentiment?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_angry_alert?: boolean
+          message?: string | null
+          metadata?: Json | null
+          rating?: number
+          route?: string | null
+          sentiment?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       user_follows: {
         Row: {
