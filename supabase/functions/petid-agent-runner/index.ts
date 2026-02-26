@@ -276,6 +276,40 @@ serve(async (req) => {
       });
     }
 
+    // ─── BRAIN DIRECTIVE MODE: Orchestrate before execution ───
+    let brainDelegations: Map<string, string> | null = null;
+    let brainReport: { reasoning: string; conflicts: string[] } | null = null;
+
+    if (brainDirective) {
+      console.log(`🧠 Brain analyzing directive and delegating to agents...`);
+      const orchestration = await brainOrchestrate(LOVABLE_API_KEY, supabase, brainDirective, bots);
+      
+      brainReport = { reasoning: orchestration.reasoning, conflicts: orchestration.conflicts };
+      brainDelegations = new Map(orchestration.delegations.map(d => [d.slug, d.subCommand]));
+
+      // Log Brain's analysis
+      await supabase.from("agent_action_logs").insert({
+        action_type: "brain_orchestration",
+        description: `🧠 [Brain] ניתוח פקודה: "${brainDirective}"\nהנמקה: ${orchestration.reasoning}\nהאצלה ל: ${orchestration.delegations.map(d => d.slug).join(", ")}${orchestration.conflicts.length ? `\nקונפליקטים: ${orchestration.conflicts.join("; ")}` : ""}`.substring(0, 2000),
+        reason: brainDirective,
+        expected_outcome: "Delegation to specialized agents",
+        actual_outcome: `Delegated to ${orchestration.delegations.length} agents`,
+        metadata: { delegations: orchestration.delegations, reasoning: orchestration.reasoning, conflicts: orchestration.conflicts },
+      });
+
+      // Filter bots to only delegated ones
+      const delegatedSlugs = new Set(orchestration.delegations.map(d => d.slug));
+      const filteredBots = bots.filter(b => delegatedSlugs.has(b.slug));
+      
+      // If Brain selected specific bots, only run those
+      if (filteredBots.length > 0) {
+        bots.length = 0;
+        bots.push(...filteredBots);
+      }
+
+      console.log(`🧠 Brain delegated to ${bots.length} agents: ${bots.map(b => b.slug).join(", ")}`);
+    }
+
     const results = [];
 
     for (const bot of bots) {
