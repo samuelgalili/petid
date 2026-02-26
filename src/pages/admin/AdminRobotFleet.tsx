@@ -3,6 +3,7 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -11,6 +12,7 @@ import {
   Bot, Brain, Megaphone, Target, MessageCircle, Store,
   Headphones, Stethoscope, Scale, Sparkles, FlaskConical,
   Cpu, ShieldAlert, Clock, ChevronDown, ChevronUp, Eye,
+  Play, Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SystemArchitectPanel } from "@/components/admin/SystemArchitectPanel";
@@ -78,6 +80,23 @@ const AdminRobotFleet = () => {
     },
   });
 
+  const runBots = useMutation({
+    mutationFn: async (botId?: string) => {
+      const { data, error } = await supabase.functions.invoke("petid-agent-runner", {
+        body: botId ? { bot_id: botId } : {},
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["automation-bots"] });
+      toast.success(data?.message || "הבוטים הופעלו בהצלחה");
+    },
+    onError: (err: any) => {
+      toast.error(`שגיאה בהפעלה: ${err.message}`);
+    },
+  });
+
   const activeBots = bots.filter((b: any) => b.is_active).length;
 
   return (
@@ -85,7 +104,7 @@ const AdminRobotFleet = () => {
       <div className="space-y-6">
         {/* Kill Switch Header */}
         <Card className="p-4 border-destructive/30 bg-destructive/5">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-3">
               <ShieldAlert className="w-6 h-6 text-destructive" />
               <div>
@@ -95,13 +114,28 @@ const AdminRobotFleet = () => {
                 </p>
               </div>
             </div>
-            <button
-              onClick={() => killAll.mutate()}
-              disabled={killAll.isPending || activeBots === 0}
-              className="px-4 py-2 rounded-lg bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90 disabled:opacity-50 transition-colors"
-            >
-              🛑 השבת הכל
-            </button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => runBots.mutate(undefined)}
+                disabled={runBots.isPending || activeBots === 0}
+                size="sm"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                {runBots.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin ml-1" />
+                ) : (
+                  <Play className="w-4 h-4 ml-1" />
+                )}
+                הפעל את כולם
+              </Button>
+              <button
+                onClick={() => killAll.mutate()}
+                disabled={killAll.isPending || activeBots === 0}
+                className="px-4 py-2 rounded-lg bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90 disabled:opacity-50 transition-colors"
+              >
+                🛑 השבת הכל
+              </button>
+            </div>
           </div>
         </Card>
 
@@ -124,12 +158,26 @@ const AdminRobotFleet = () => {
                     )}>
                       <Icon className="w-6 h-6 text-white" />
                     </div>
-                    <Switch
-                      checked={bot.is_active}
-                      onCheckedChange={(checked) =>
-                        toggleBot.mutate({ id: bot.id, is_active: checked })
-                      }
-                    />
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => runBots.mutate(bot.id)}
+                        disabled={!bot.is_active || runBots.isPending}
+                        className="p-1.5 rounded-md hover:bg-muted disabled:opacity-30 transition-colors"
+                        title="הפעל בוט"
+                      >
+                        {runBots.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                        ) : (
+                          <Play className="w-4 h-4 text-emerald-600" />
+                        )}
+                      </button>
+                      <Switch
+                        checked={bot.is_active}
+                        onCheckedChange={(checked) =>
+                          toggleBot.mutate({ id: bot.id, is_active: checked })
+                        }
+                      />
+                    </div>
                   </div>
                   <h3 className="font-semibold text-sm">{bot.name}</h3>
                   <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
@@ -156,6 +204,11 @@ const AdminRobotFleet = () => {
                         : "טרם הופעל"}
                     </div>
                   </div>
+                  {bot.last_output && (
+                    <p className="text-[10px] text-muted-foreground mt-2 line-clamp-2 bg-muted/50 rounded p-1.5">
+                      {bot.last_output}
+                    </p>
+                  )}
                   <div className="flex flex-wrap gap-1 mt-2">
                     {(bot.capabilities as string[] || []).slice(0, 3).map((cap: string) => (
                       <span key={cap} className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
