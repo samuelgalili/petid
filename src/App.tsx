@@ -39,6 +39,7 @@ import { SplashScreen } from "@/components/SplashScreen";
 import ScrollToTop from "@/components/ScrollToTop";
 import { LegalDrawer } from "@/components/LegalDrawer";
 import CompleteProfilePrompt from "@/components/CompleteProfilePrompt";
+import SarahDataGapAlert from "@/components/SarahDataGapAlert";
 
 // Route configuration - modular lazy-loaded routes
 import { allRoutes } from "@/routes";
@@ -83,6 +84,7 @@ const AnimatedRoutes = () => {
       <LoginPromptDialog />
       <PWAInstallPrompt />
       <CompleteProfilePrompt />
+      <SarahDataGapAlert />
       
       <div className="flex-1">
         <AnimatePresence mode="wait">
