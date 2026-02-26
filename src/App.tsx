@@ -43,6 +43,7 @@ import { allRoutes } from "@/routes";
 
 // Hooks
 import { useAdminNotifications } from "@/hooks/useAdminNotifications";
+import { useActivityTracker } from "@/hooks/useActivityTracker";
 
 // Query client - single instance
 const queryClient = new QueryClient({
@@ -66,6 +67,9 @@ const AnimatedRoutes = () => {
   
   // Initialize admin notifications listener
   useAdminNotifications();
+  
+  // Global user activity tracking
+  useActivityTracker();
   
   // Stable key for main shell routes so Feed never unmounts
   const routeKey = MAIN_SHELL_ROUTES.includes(location.pathname) ? 'main-shell' : location.pathname;
