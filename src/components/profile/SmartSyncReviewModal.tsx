@@ -107,7 +107,7 @@ export const SmartSyncReviewModal = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+        className="fixed inset-0 z-[10000] flex items-end sm:items-center justify-center"
         onClick={onClose}
       >
         {/* Backdrop */}
@@ -118,7 +118,7 @@ export const SmartSyncReviewModal = ({
           animate={{ y: 0, scale: 1 }}
           exit={{ y: "100%", scale: 0.95 }}
           transition={{ type: "spring", damping: 28, stiffness: 320 }}
-          className="relative w-full max-w-md max-h-[88vh] rounded-t-3xl sm:rounded-3xl overflow-hidden flex flex-col"
+          className="relative w-full max-w-md max-h-[88vh] rounded-t-3xl sm:rounded-3xl overflow-hidden flex flex-col mb-[calc(env(safe-area-inset-bottom)+80px)] sm:mb-0"
           style={{
             background: "linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--background)) 100%)",
             boxShadow: "0 -8px 40px rgba(0,0,0,0.3), 0 0 0 1px hsl(var(--border) / 0.15)",

@@ -1537,9 +1537,9 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
       {/* Conversational Edit Drawer — "The Scientist" */}
       <Drawer.Root open={editModalOpen} onOpenChange={setEditModalOpen}>
         <Drawer.Portal>
-          <Drawer.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-50" />
+          <Drawer.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[10000]" />
           <Drawer.Content 
-            className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl outline-none"
+            className="fixed bottom-0 left-0 right-0 z-[10001] rounded-t-3xl outline-none pb-[calc(env(safe-area-inset-bottom)+80px)]"
             dir="rtl"
           >
             <div className="bg-background/95 backdrop-blur-xl rounded-t-3xl border-t border-border/30 shadow-[0_-8px_40px_rgba(0,0,0,0.12)] p-5">

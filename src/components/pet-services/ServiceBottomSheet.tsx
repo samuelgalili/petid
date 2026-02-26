@@ -32,9 +32,9 @@ export const ServiceBottomSheet = ({
       shouldScaleBackground
     >
       <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-50" />
+        <Drawer.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[10000]" />
         <Drawer.Content 
-          className="fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-3xl outline-none"
+          className="fixed bottom-0 left-0 right-0 z-[10001] flex flex-col rounded-t-3xl outline-none pb-[calc(env(safe-area-inset-bottom)+80px)]"
           style={{ maxHeight: '92vh' }}
           dir="rtl"
         >

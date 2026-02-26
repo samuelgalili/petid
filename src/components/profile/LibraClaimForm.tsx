@@ -112,7 +112,7 @@ export const LibraClaimForm = ({ petId, claimData, open, onClose, onSubmitted }:
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-end justify-center bg-background/60 backdrop-blur-sm"
+        className="fixed inset-0 z-[10000] flex items-end justify-center bg-background/60 backdrop-blur-sm"
         onClick={onClose}
       >
         <motion.div
@@ -121,7 +121,7 @@ export const LibraClaimForm = ({ petId, claimData, open, onClose, onSubmitted }:
           exit={{ y: "100%" }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
           onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-md bg-card rounded-t-3xl border-t border-border/40 shadow-2xl max-h-[85vh] overflow-y-auto"
+          className="w-full max-w-md bg-card rounded-t-3xl border-t border-border/40 shadow-2xl max-h-[85vh] overflow-y-auto pb-[calc(env(safe-area-inset-bottom)+80px)]"
           dir="rtl"
         >
           {/* Submission progress overlay */}

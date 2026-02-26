@@ -158,7 +158,7 @@ export const VaccineCountdown = ({ petId, petName }: VaccineCountdownProps) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end justify-center bg-background/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[10000] flex items-end justify-center bg-background/60 backdrop-blur-sm"
             onClick={() => setSelectedVaccine(null)}
           >
             <motion.div
@@ -166,7 +166,7 @@ export const VaccineCountdown = ({ petId, petName }: VaccineCountdownProps) => {
               animate={{ y: 0 }}
               exit={{ y: 100 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-md mx-4 mb-6 p-5 bg-card rounded-2xl border border-border/40 shadow-xl"
+              className="w-full max-w-md mx-4 mb-[calc(env(safe-area-inset-bottom)+80px)] p-5 bg-card rounded-2xl border border-border/40 shadow-xl"
               dir="rtl"
             >
               <div className="flex items-center justify-between mb-4">
