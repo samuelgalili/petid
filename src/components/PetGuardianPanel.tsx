@@ -193,15 +193,15 @@ function generateInsights(
 ): Insight[] {
   const insights: Insight[] = [];
 
-  // NRC nutrition insight
+  // Nutrition insight (PetID Scientific Standard)
   if (snapshot.nrc) {
     insights.push({
       icon: Sparkles,
       type: "nutrition",
       title: isHe ? `צריכת אנרגיה יומית של ${petName}` : `${petName}'s daily energy needs`,
       description: isHe
-        ? `לפי נתוני NRC, ${petName} צריך/ה ${snapshot.nrc.mer} קק"ל ביום. אנחנו עוקבים בשבילך.`
-        : `Based on NRC data, ${petName} needs ${snapshot.nrc.mer} kcal/day. We're tracking for you.`,
+        ? `לפי התקן המדעי של PetID, ${petName} צריך/ה בערך ${snapshot.nrc.mer} קק"ל ביום. אנחנו עוקבים בשבילך.`
+        : `Based on PetID's Scientific Standard, ${petName} needs around ${snapshot.nrc.mer} kcal/day. We're tracking for you.`,
     });
   }
 
