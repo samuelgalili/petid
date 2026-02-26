@@ -3592,6 +3592,121 @@ export type Database = {
         }
         Relationships: []
       }
+      document_chunks: {
+        Row: {
+          chunk_index: number
+          content: string
+          created_at: string | null
+          detected_language: string | null
+          document_title: string
+          embedding: string | null
+          id: string
+          keywords: string[] | null
+          metadata: Json | null
+          page_number: number | null
+          section_title: string | null
+          source_id: string | null
+          summary: string | null
+          token_count: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          chunk_index?: number
+          content: string
+          created_at?: string | null
+          detected_language?: string | null
+          document_title: string
+          embedding?: string | null
+          id?: string
+          keywords?: string[] | null
+          metadata?: Json | null
+          page_number?: number | null
+          section_title?: string | null
+          source_id?: string | null
+          summary?: string | null
+          token_count?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          chunk_index?: number
+          content?: string
+          created_at?: string | null
+          detected_language?: string | null
+          document_title?: string
+          embedding?: string | null
+          id?: string
+          keywords?: string[] | null
+          metadata?: Json | null
+          page_number?: number | null
+          section_title?: string | null
+          source_id?: string | null
+          summary?: string | null
+          token_count?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_chunks_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "admin_data_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_processing_reports: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          detected_language: string | null
+          id: string
+          ocr_applied: boolean | null
+          processing_duration_ms: number | null
+          processing_errors: Json | null
+          source_id: string | null
+          started_at: string | null
+          status: string | null
+          total_chunks: number | null
+          total_pages: number | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          detected_language?: string | null
+          id?: string
+          ocr_applied?: boolean | null
+          processing_duration_ms?: number | null
+          processing_errors?: Json | null
+          source_id?: string | null
+          started_at?: string | null
+          status?: string | null
+          total_chunks?: number | null
+          total_pages?: number | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          detected_language?: string | null
+          id?: string
+          ocr_applied?: boolean | null
+          processing_duration_ms?: number | null
+          processing_errors?: Json | null
+          source_id?: string | null
+          started_at?: string | null
+          status?: string | null
+          total_chunks?: number | null
+          total_pages?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_processing_reports_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "admin_data_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dog_parks: {
         Row: {
           address: string
@@ -12693,6 +12808,25 @@ export type Database = {
       }
       is_moderator_or_admin: { Args: { _user_id: string }; Returns: boolean }
       is_reward_available: { Args: { p_reward_id: string }; Returns: boolean }
+      match_documents: {
+        Args: {
+          filter_source_ids?: string[]
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+        }
+        Returns: {
+          content: string
+          document_title: string
+          id: string
+          keywords: string[]
+          metadata: Json
+          section_title: string
+          similarity: number
+          source_id: string
+          summary: string
+        }[]
+      }
       search_food_products: {
         Args: { p_pet_type: string; q: string }
         Returns: {

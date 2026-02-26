@@ -32,6 +32,7 @@ interface CategoryHealth {
   avgQuality: number;
   lastUpdate: string | null;
   domainRecords: number;
+  ragChunks: number;
 }
 
 const DOMAIN_TABLE_MAP: Record<string, string> = {
@@ -81,6 +82,17 @@ export const DataHealthDashboard = () => {
           domainRecords = count || 0;
         }
 
+        // Fetch RAG chunk count
+        let ragChunks = 0;
+        const sourceIds = items.map((s: any) => s.id);
+        if (sourceIds.length > 0) {
+          const { count: chunkCount } = await supabase
+            .from("document_chunks" as any)
+            .select("*", { count: "exact", head: true })
+            .in("source_id", sourceIds);
+          ragChunks = chunkCount || 0;
+        }
+
         categories.push({
           category: cat.id,
           label: cat.labelHe,
@@ -92,6 +104,7 @@ export const DataHealthDashboard = () => {
           avgQuality: Math.round(avgQ * 10) / 10,
           lastUpdate: lastItem?.updated_at || null,
           domainRecords,
+          ragChunks,
         });
       }
 
@@ -225,6 +238,14 @@ export const DataHealthDashboard = () => {
                   <Database className="w-3.5 h-3.5 text-primary" />
                   <span className="text-xs text-muted-foreground">רשומות במערכת</span>
                   <span className="mr-auto text-sm font-bold text-foreground">{cat.domainRecords}</span>
+                </div>
+              )}
+
+              {cat.ragChunks > 0 && (
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-accent/50">
+                  <TrendingUp className="w-3.5 h-3.5 text-primary" />
+                  <span className="text-xs text-muted-foreground">חתיכות AI (RAG)</span>
+                  <span className="mr-auto text-sm font-bold text-foreground">{cat.ragChunks}</span>
                 </div>
               )}
 
