@@ -35,7 +35,7 @@ export const Header = () => {
         <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
         
         {/* Header - Fixed at Top - Clean Instagram-style */}
-        <div className="fixed top-0 left-0 right-0 bg-background border-b border-border px-3 z-40 transition-colors" style={{ height: '44px' }}>
+        <div className="fixed top-0 left-0 right-0 bg-background border-b border-border px-3 z-40 transition-colors" style={{ height: 'calc(44px + env(safe-area-inset-top, 0px))', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
           <div className="flex items-center justify-between h-full" dir="rtl">
             
             {/* Right Side: Heart/Notifications Icon */}
@@ -100,7 +100,7 @@ export const Header = () => {
         </div>
 
         {/* Spacer for fixed header */}
-        <div style={{ height: '44px' }}></div>
+        <div style={{ height: 'calc(44px + env(safe-area-inset-top, 0px))' }}></div>
       </TooltipProvider>
     </>
   );
