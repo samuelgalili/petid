@@ -374,6 +374,7 @@ const AdminTestSuite = lazy(() => import("@/pages/admin/AdminTestSuite"));
 const AdminShippingSettings = lazy(() => import("@/pages/admin/AdminShippingSettings"));
 const AdminVendorDashboard = lazy(() => import("@/pages/admin/AdminVendorDashboard"));
 const AdminComplianceFinance = lazy(() => import("@/pages/admin/AdminComplianceFinance"));
+const AdminUserTimeline = lazy(() => import("@/pages/admin/AdminUserTimeline"));
 
 // Helper for admin routes
 const AdminPage = ({ component: Component, pageName }: { component: ComponentType; pageName: string }) => (
@@ -453,6 +454,7 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/shipping-settings", element: <AdminPage component={AdminShippingSettings} pageName="הגדרות משלוחים" /> },
   { path: "/admin/vendor-dashboard", element: <AdminPage component={AdminVendorDashboard} pageName="ניהול ספקים" /> },
   { path: "/admin/compliance-finance", element: <AdminPage component={AdminComplianceFinance} pageName="ציות ופיננסים" /> },
+  { path: "/admin/user-timeline", element: <AdminPage component={AdminUserTimeline} pageName="מסע משתמש" /> },
 ];
 
 // ==========================================

@@ -10481,6 +10481,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_activity_logs: {
+        Row: {
+          created_at: string
+          element_id: string | null
+          element_label: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          route: string
+          route_label: string | null
+          scroll_depth: number | null
+          session_id: string
+          time_spent_seconds: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          element_id?: string | null
+          element_label?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          route: string
+          route_label?: string | null
+          scroll_depth?: number | null
+          session_id: string
+          time_spent_seconds?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          element_id?: string | null
+          element_label?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          route?: string
+          route_label?: string | null
+          scroll_depth?: number | null
+          session_id?: string
+          time_spent_seconds?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_engagement: {
         Row: {
           action: string
