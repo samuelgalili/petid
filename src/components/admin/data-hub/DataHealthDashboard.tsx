@@ -82,6 +82,17 @@ export const DataHealthDashboard = () => {
           domainRecords = count || 0;
         }
 
+        // Fetch RAG chunk count
+        let ragChunks = 0;
+        const sourceIds = items.map((s: any) => s.id);
+        if (sourceIds.length > 0) {
+          const { count: chunkCount } = await supabase
+            .from("document_chunks" as any)
+            .select("*", { count: "exact", head: true })
+            .in("source_id", sourceIds);
+          ragChunks = chunkCount || 0;
+        }
+
         categories.push({
           category: cat.id,
           label: cat.labelHe,
@@ -93,6 +104,7 @@ export const DataHealthDashboard = () => {
           avgQuality: Math.round(avgQ * 10) / 10,
           lastUpdate: lastItem?.updated_at || null,
           domainRecords,
+          ragChunks,
         });
       }
 
