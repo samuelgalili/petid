@@ -4,16 +4,19 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import { haptic, successFeedback } from "@/lib/haptics";
+import { useCEONotifications } from "@/hooks/useCEONotifications";
+import { CEOAlertsTab } from "@/components/admin/CEOAlertsTab";
 import {
   TrendingUp, DollarSign, Brain, Shield, Sparkles,
   CheckCircle2, AlertTriangle, XCircle, Package,
   Truck, Globe, ArrowUpRight, Zap, Crown,
   ChevronLeft, ChevronRight, FileWarning, Send,
-  Activity, Bot,
+  Activity, Bot, Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -155,6 +158,14 @@ const SwipeableCard = ({
 const CEODashboard = () => {
   const queryClient = useQueryClient();
   const [currentCard, setCurrentCard] = useState(0);
+  const {
+    notifications: ceoNotifications,
+    unreadCount,
+    markRead,
+    archive,
+    clearAll,
+    archiveAll,
+  } = useCEONotifications();
 
   // ─── Realtime ───────────────────────────────────────────────
   useEffect(() => {
@@ -311,9 +322,26 @@ const CEODashboard = () => {
 
   return (
     <AdminLayout title="CEO Dashboard" icon={Crown} breadcrumbs={[{ label: "דשבורד מנכ״ל" }]}>
-      <div className="space-y-6 max-w-2xl mx-auto" dir="rtl">
+      <div className="max-w-2xl mx-auto" dir="rtl">
+        <Tabs defaultValue="dashboard" className="w-full">
+          <TabsList className="w-full mb-5 bg-card border border-border/30 rounded-2xl p-1 h-auto">
+            <TabsTrigger value="dashboard" className="flex-1 rounded-xl text-xs py-2 gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+              <Zap className="w-3.5 h-3.5" />
+              דשבורד
+            </TabsTrigger>
+            <TabsTrigger value="alerts" className="flex-1 rounded-xl text-xs py-2 gap-1.5 relative data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+              <Bell className="w-3.5 h-3.5" />
+              התראות
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -left-1 min-w-4 h-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center px-1">
+                  {unreadCount}
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
 
-        {/* ─── Agent Status Strip ────────────────────────────── */}
+          <TabsContent value="dashboard" className="mt-0">
+            <div className="space-y-6">
         <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1">
           {(agents || []).slice(0, 6).map((bot: any) => (
             <div
@@ -541,6 +569,20 @@ const CEODashboard = () => {
             ))}
           </div>
         </motion.div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="alerts" className="mt-0">
+            <CEOAlertsTab
+              notifications={ceoNotifications}
+              unreadCount={unreadCount}
+              onMarkRead={markRead}
+              onArchive={archive}
+              onClearAll={clearAll}
+              onArchiveAll={archiveAll}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </AdminLayout>
   );
