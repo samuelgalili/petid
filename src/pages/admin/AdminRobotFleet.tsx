@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { SystemArchitectPanel } from "@/components/admin/SystemArchitectPanel";
 import { ReadinessDrillPanel } from "@/components/admin/ReadinessDrillPanel";
 import { UIHealthPanel } from "@/components/admin/UIHealthPanel";
+import { HappinessMeterPanel } from "@/components/admin/HappinessMeterPanel";
 
 const iconMap: Record<string, React.ComponentType<any>> = {
   brain: Brain, megaphone: Megaphone, target: Target,
@@ -208,6 +209,9 @@ const AdminRobotFleet = () => {
 
         {/* Ofek — UI Health Monitor */}
         <UIHealthPanel />
+
+        {/* Happiness Meter — Sentiment Dashboard */}
+        <HappinessMeterPanel />
       </div>
     </AdminLayout>
   );
