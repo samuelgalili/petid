@@ -189,6 +189,24 @@
      try {
        setUploading(true);
 
+       // Duplicate check by title
+       const { data: existing } = await supabase
+         .from("admin_data_sources" as any)
+         .select("id, title")
+         .eq("title", title.trim())
+         .eq("data_type", dataType)
+         .maybeSingle();
+
+       if (existing) {
+         toast({
+           title: "מקור כבר קיים במערכת",
+           description: `"${(existing as any).title}" כבר הועלה. ערוך את המקור הקיים אם חסרים נתונים.`,
+           variant: "destructive",
+         });
+         setUploading(false);
+         return;
+       }
+
        const { data: userData } = await supabase.auth.getUser();
        let fileUrl = null;
        let fileName = null;
