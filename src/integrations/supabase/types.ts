@@ -700,6 +700,48 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_data_access_log: {
+        Row: {
+          action_type: string
+          agent_name: string
+          agent_slug: string
+          created_at: string
+          data_fields: string[] | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          reason: string | null
+          route: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action_type?: string
+          agent_name: string
+          agent_slug: string
+          created_at?: string
+          data_fields?: string[] | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          reason?: string | null
+          route?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          agent_name?: string
+          agent_slug?: string
+          created_at?: string
+          data_fields?: string[] | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          reason?: string | null
+          route?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       agent_health_checks: {
         Row: {
           bot_slug: string
@@ -8052,6 +8094,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          ai_consent_date: string | null
+          ai_consent_given: boolean | null
           allow_messages_from: string | null
           apartment_number: string | null
           avatar_url: string | null
@@ -8091,6 +8135,8 @@ export type Database = {
           whatsapp_number: string | null
         }
         Insert: {
+          ai_consent_date?: string | null
+          ai_consent_given?: boolean | null
           allow_messages_from?: string | null
           apartment_number?: string | null
           avatar_url?: string | null
@@ -8130,6 +8176,8 @@ export type Database = {
           whatsapp_number?: string | null
         }
         Update: {
+          ai_consent_date?: string | null
+          ai_consent_given?: boolean | null
           allow_messages_from?: string | null
           apartment_number?: string | null
           avatar_url?: string | null

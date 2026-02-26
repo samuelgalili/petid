@@ -268,14 +268,57 @@ const Settings = () => {
     toast.success("המטמון נוקה בהצלחה");
   };
 
-  const handleExportData = () => {
-    toast.info("הייצוא יתחיל בקרוב — קובץ ZIP יישלח לאימייל שלך");
-    // Future: trigger edge function for ZIP export
+  const handleExportData = async () => {
+    toast.info("מכין ייצוא נתונים...");
+    try {
+      const { data, error } = await supabase.functions.invoke("right-to-be-forgotten", {
+        body: { export_data: true },
+      });
+      if (error) throw error;
+      // Download as JSON
+      const blob = new Blob([JSON.stringify(data.export, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `petid-data-export-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("הנתונים הורדו בהצלחה");
+    } catch {
+      toast.error("שגיאה בייצוא הנתונים");
+    }
   };
 
   const handleDeleteAccount = async () => {
-    toast.error("לא ניתן לשחזר חשבון לאחר מחיקה. פנה לתמיכה.");
-    navigate("/data-deletion");
+    const confirmed = window.confirm(
+      "האם את/ה בטוח/ה? כל הנתונים ימחקו לצמיתות — כולל פרופיל, חיות מחמד, פוסטים ולוגים.\n\nפעולה זו אינה הפיכה."
+    );
+    if (!confirmed) return;
+
+    toast.info("מייצא נתונים לפני מחיקה...");
+    try {
+      const { data, error } = await supabase.functions.invoke("right-to-be-forgotten", {
+        body: { export_data: true },
+      });
+      if (error) throw error;
+
+      // Auto-download export before deletion
+      if (data.export) {
+        const blob = new Blob([JSON.stringify(data.export, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `petid-data-export-${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      toast.success("החשבון נמחק. הנתונים הורדו למכשיר שלך.");
+      await signOut();
+      navigate("/auth");
+    } catch {
+      toast.error("שגיאה במחיקת החשבון — פנה לתמיכה");
+    }
   };
 
   const getThemeIcon = () => {
@@ -576,19 +619,25 @@ const Settings = () => {
               icon={Info}
               label="תנאי שימוש"
               description="תנאים והתניות"
-              action={() => navigate("/terms")}
+              action={() => window.dispatchEvent(new CustomEvent("open-legal-drawer", { detail: { key: "terms" } }))}
+            />
+            <SettingRow
+              icon={Shield}
+              label="זכויות צרכן וביטול"
+              description="מדיניות ביטול והחזרים — חוק הגנת הצרכן"
+              action={() => window.dispatchEvent(new CustomEvent("open-legal-drawer", { detail: { key: "consumer-protection" } }))}
             />
             <SettingRow
               icon={Lock}
               label="מדיניות פרטיות"
               description="כיצד אנו שומרים על המידע שלך"
-              action={() => navigate("/privacy")}
+              action={() => window.dispatchEvent(new CustomEvent("open-legal-drawer", { detail: { key: "privacy-policy" } }))}
             />
             <SettingRow
               icon={Info}
               label="הצהרת נגישות"
               description="מדיניות הנגישות שלנו"
-              action={() => navigate("/accessibility")}
+              action={() => window.dispatchEvent(new CustomEvent("open-legal-drawer", { detail: { key: "accessibility" } }))}
             />
             <SettingRow
               icon={Info}
