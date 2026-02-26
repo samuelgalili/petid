@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ShoppingCart, ShoppingBag, Plus, Minus, SlidersHorizontal, TrendingUp, Tag, Heart, Grid3X3, Bookmark, X, Search, Clock, Share2, Truck, Shield, Star, ChevronLeft, Dog, Cat, Info, Loader2, Flag, AlertTriangle, MessageCircle, RefreshCw } from "lucide-react";
+import { ShoppingCart, ShoppingBag, Plus, Minus, SlidersHorizontal, TrendingUp, Tag, Heart, Grid3X3, Bookmark, X, Search, Clock, Share2, Truck, Shield, Star, ChevronLeft, ChevronRight, Dog, Cat, Info, Loader2, Flag, AlertTriangle, MessageCircle, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { useFlyingCart } from "@/components/FlyingCartAnimation";
@@ -407,7 +407,7 @@ const Shop = () => {
                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
                 aria-label="חזרה לפיד"
               >
-                <ChevronLeft className="w-5 h-5 text-foreground" />
+                <ChevronRight className="w-5 h-5 text-foreground" />
               </motion.button>
               <img src={petidIcon} alt="PetID" className="w-7 h-7 object-contain" />
               <h1 className="text-lg font-semibold text-foreground">חנות</h1>
