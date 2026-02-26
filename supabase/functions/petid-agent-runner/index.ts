@@ -9,46 +9,131 @@ const corsHeaders = {
 
 // Bots whose output requires admin approval before reaching users
 const APPROVAL_REQUIRED_SLUGS = new Set([
-  "sales",           // Insurance leads, upsell — commercial
-  "marketing",       // Push notifications, campaigns — commercial
-  "compliance",      // Legal/regulatory actions
-  "cashflow-guardian", // Financial decisions
-  "financial-algo",  // Price changes, billing
-  "fraud-detection", // Security-critical
-  "crisis-pr",       // Public communications
-  "content",         // Blog/social posts need review
+  "sales", "marketing", "compliance", "cashflow-guardian",
+  "financial-algo", "fraud-detection", "crisis-pr", "content",
 ]);
 
-// Bots that send informational output directly (wrapped in approximation language)
+// Bots that send informational output directly
 const DIRECT_OUTPUT_SLUGS = new Set([
-  "brain",
-  "crm",
-  "nrc-science",
-  "support",
-  "inventory",
-  "medical",
-  "system-architect",
-  "ofek-visual-monitor",
-  "prometheus",
-  "market-intelligence",
-  "ethics-safety",
-  "vip-experience",
-  "supply-chain",
-  "health-prediction",
-  "onboarding-guide",
+  "brain", "crm", "nrc-science", "support", "inventory", "medical",
+  "system-architect", "ofek-visual-monitor", "prometheus", "market-intelligence",
+  "ethics-safety", "vip-experience", "supply-chain", "health-prediction", "onboarding-guide",
 ]);
 
-// Category mapping for approval queue
 const SLUG_CATEGORY_MAP: Record<string, string> = {
-  "sales": "commercial",
-  "marketing": "commercial",
-  "compliance": "legal",
-  "cashflow-guardian": "financial",
-  "financial-algo": "financial",
-  "fraud-detection": "security",
-  "crisis-pr": "communications",
-  "content": "content",
+  "sales": "commercial", "marketing": "commercial", "compliance": "legal",
+  "cashflow-guardian": "financial", "financial-algo": "financial",
+  "fraud-detection": "security", "crisis-pr": "communications", "content": "content",
 };
+
+const MAX_SELF_HEAL_ATTEMPTS = 2;
+
+// ─── Call AI Gateway ───
+async function callAI(apiKey: string, model: string, messages: Array<{ role: string; content: string }>) {
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ model, messages }),
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`AI gateway ${res.status}: ${errText}`);
+  }
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content || "";
+}
+
+// ─── Prometheus Self-Heal: rewrite a failed prompt ───
+async function prometheusHeal(
+  apiKey: string,
+  supabase: any,
+  bot: any,
+  originalPrompt: string,
+  errorMessage: string,
+  attempt: number
+): Promise<{ newPrompt: string; output: string } | null> {
+  console.log(`🔧 Prometheus healing ${bot.name} (attempt ${attempt})...`);
+
+  try {
+    // Ask Prometheus to rewrite the prompt
+    const healPrompt = `You are Prometheus, the Meta-Coach AI for the PetID fleet.
+A bot named "${bot.name}" (slug: ${bot.slug}) just FAILED with this error:
+"${errorMessage}"
+
+Its current system prompt is:
+"""
+${originalPrompt}
+"""
+
+Your job: Rewrite the system prompt to fix the failure. Keep the bot's role and purpose intact.
+Rules:
+- Output ONLY the new system prompt, nothing else
+- Keep it concise (under 500 words)
+- Make it more resilient to errors
+- Preserve Hebrew language instructions if present`;
+
+    const newPrompt = await callAI(apiKey, "google/gemini-2.5-flash", [
+      { role: "system", content: healPrompt },
+      { role: "user", content: "Rewrite the prompt now." },
+    ]);
+
+    if (!newPrompt || newPrompt.length < 20) {
+      console.error(`Prometheus returned empty/short prompt for ${bot.name}`);
+      return null;
+    }
+
+    // Log the prompt version
+    await supabase.from("agent_prompt_versions").insert({
+      agent_slug: bot.slug,
+      system_prompt: newPrompt,
+      is_active: false, // not deployed until success
+      created_by: "prometheus-self-heal",
+    });
+
+    // Retry the bot with the new prompt
+    const isApprovalRequired = APPROVAL_REQUIRED_SLUGS.has(bot.slug);
+    const approxSuffix = !isApprovalRequired
+      ? `\n\nIMPORTANT: Use approximation language: "כ-", "הערכה", "בסביבות". End with: "המידע הוא להעשרה בלבד ואינו מהווה המלצה רפואית או מקצועית."`
+      : "";
+
+    const output = await callAI(apiKey, "google/gemini-2.5-flash-lite", [
+      { role: "system", content: newPrompt + approxSuffix },
+      { role: "user", content: `Run your scheduled check. Current time: ${new Date().toISOString()}. Provide a brief status report (max 200 words). Respond in Hebrew.` },
+    ]);
+
+    if (!output || output.length < 10) {
+      console.error(`Healed bot ${bot.name} still produced empty output`);
+      return null;
+    }
+
+    // Success! Update the prompt version as active and deploy
+    await supabase
+      .from("agent_prompt_versions")
+      .update({ is_active: false })
+      .eq("agent_slug", bot.slug)
+      .eq("is_active", true);
+
+    await supabase
+      .from("agent_prompt_versions")
+      .update({ is_active: true, deployed_at: new Date().toISOString() })
+      .eq("agent_slug", bot.slug)
+      .eq("created_by", "prometheus-self-heal")
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    // Update the bot's system_prompt with the healed version
+    await supabase
+      .from("automation_bots")
+      .update({ system_prompt: newPrompt, updated_at: new Date().toISOString() })
+      .eq("id", bot.id);
+
+    console.log(`✅ Prometheus healed ${bot.name} successfully on attempt ${attempt}`);
+    return { newPrompt, output };
+  } catch (healError) {
+    console.error(`Prometheus heal failed for ${bot.name}:`, healError);
+    return null;
+  }
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -65,7 +150,6 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Parse optional body to run a specific bot
     let targetBotId: string | null = null;
     try {
       const body = await req.json();
@@ -74,11 +158,8 @@ serve(async (req) => {
       // No body = run all active bots
     }
 
-    // Fetch active bots
     let query = supabase.from("automation_bots").select("*").eq("is_active", true);
-    if (targetBotId) {
-      query = query.eq("id", targetBotId);
-    }
+    if (targetBotId) query = query.eq("id", targetBotId);
 
     const { data: bots, error: fetchError } = await query;
     if (fetchError) throw fetchError;
@@ -94,134 +175,148 @@ serve(async (req) => {
       try {
         console.log(`Running bot: ${bot.name} (${bot.slug})...`);
 
-        // Build prompt — informational bots get approximation instructions
         const isApprovalRequired = APPROVAL_REQUIRED_SLUGS.has(bot.slug);
         const approxInstruction = !isApprovalRequired
-          ? `\n\nIMPORTANT: You provide informational insights only. Use approximation language: "כ-" (approximately), "הערכה" (estimate), "בסביבות" (around). Never give definitive commands. End with: "המידע הוא להעשרה בלבד ואינו מהווה המלצה רפואית או מקצועית."`
+          ? `\n\nIMPORTANT: Use approximation language: "כ-", "הערכה", "בסביבות". Never give definitive commands. End with: "המידע הוא להעשרה בלבד ואינו מהווה המלצה רפואית או מקצועית."`
           : "";
 
         const prompt = bot.system_prompt ||
           `You are "${bot.name}", a specialized AI agent for PetID. Your role: ${bot.description || "assist with pet management"}. Capabilities: ${JSON.stringify(bot.capabilities || [])}.${approxInstruction}`;
 
-        const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "google/gemini-2.5-flash-lite",
-            messages: [
-              { role: "system", content: prompt },
-              { role: "user", content: `Run your scheduled check. Current time: ${new Date().toISOString()}. Provide a brief status report (max 200 words). Respond in Hebrew.` },
-            ],
-          }),
-        });
+        let aiOutput: string | null = null;
+        let healed = false;
+        let healAttempts = 0;
 
-        if (!aiResponse.ok) {
-          const errText = await aiResponse.text();
-          console.error(`AI error for ${bot.name}:`, aiResponse.status, errText);
+        // ─── Try running the bot ───
+        try {
+          aiOutput = await callAI(LOVABLE_API_KEY, "google/gemini-2.5-flash-lite", [
+            { role: "system", content: prompt + approxInstruction },
+            { role: "user", content: `Run your scheduled check. Current time: ${new Date().toISOString()}. Provide a brief status report (max 200 words). Respond in Hebrew.` },
+          ]);
+        } catch (aiError) {
+          // ─── SELF-HEALING: Prometheus kicks in ───
+          const errorMsg = aiError instanceof Error ? aiError.message : String(aiError);
+          console.warn(`⚠️ Bot ${bot.name} failed: ${errorMsg}. Engaging Prometheus...`);
 
-          await supabase
-            .from("automation_bots")
-            .update({
+          for (let attempt = 1; attempt <= MAX_SELF_HEAL_ATTEMPTS; attempt++) {
+            healAttempts = attempt;
+            const healResult = await prometheusHeal(
+              LOVABLE_API_KEY, supabase, bot, prompt, errorMsg, attempt
+            );
+            if (healResult) {
+              aiOutput = healResult.output;
+              healed = true;
+              break;
+            }
+          }
+
+          if (!aiOutput) {
+            // All heal attempts failed
+            await supabase.from("automation_bots").update({
               last_run_at: new Date().toISOString(),
-              health_status: "error",
-              last_error: `AI gateway returned ${aiResponse.status}`,
+              health_status: "critical",
+              last_error: `Failed after ${healAttempts} self-heal attempts: ${errorMsg}`,
               updated_at: new Date().toISOString(),
-            })
-            .eq("id", bot.id);
+            }).eq("id", bot.id);
 
-          results.push({ bot: bot.name, status: "error", routed: "none", error: `AI ${aiResponse.status}` });
-          continue;
+            // Log to agent_action_logs for visibility
+            await supabase.from("agent_action_logs").insert({
+              action_type: "self_heal_failed",
+              description: `[Prometheus] Failed to heal "${bot.name}" after ${healAttempts} attempts. Error: ${errorMsg}`,
+              reason: errorMsg,
+              expected_outcome: "Bot recovery",
+              actual_outcome: "All attempts failed — requires manual intervention",
+              metadata: { slug: bot.slug, attempts: healAttempts },
+            });
+
+            results.push({ bot: bot.name, status: "critical", routed: "none", healed: false, healAttempts, error: errorMsg });
+            continue;
+          }
         }
 
-        const aiData = await aiResponse.json();
-        const aiOutput = aiData.choices?.[0]?.message?.content || "No output";
+        if (!aiOutput) {
+          aiOutput = "No output generated";
+        }
 
-        // Update bot status in automation_bots
-        await supabase
-          .from("automation_bots")
-          .update({
-            last_run_at: new Date().toISOString(),
-            last_output: aiOutput,
-            health_status: "healthy",
-            last_error: null,
-            run_count: (bot.run_count || 0) + 1,
-            last_health_check: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", bot.id);
+        // ─── Update bot status ───
+        await supabase.from("automation_bots").update({
+          last_run_at: new Date().toISOString(),
+          last_output: aiOutput,
+          health_status: healed ? "healed" : "healthy",
+          last_error: healed ? `Self-healed after ${healAttempts} attempt(s)` : null,
+          run_count: (bot.run_count || 0) + 1,
+          last_health_check: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }).eq("id", bot.id);
 
-        // === OUTPUT ROUTING ===
+        // ─── Log self-heal success ───
+        if (healed) {
+          await supabase.from("agent_action_logs").insert({
+            action_type: "self_heal_success",
+            description: `[Prometheus] ✅ Successfully healed "${bot.name}" — prompt rewritten and bot recovered.`,
+            reason: `Original failure triggered self-heal`,
+            expected_outcome: "Bot recovery via prompt rewrite",
+            actual_outcome: "Bot recovered and produced valid output",
+            metadata: { slug: bot.slug, attempts: healAttempts },
+          });
+        }
+
+        // ─── OUTPUT ROUTING (same as before) ───
         let routed = "stored_only";
 
         if (isApprovalRequired) {
-          // Route to admin_approval_queue for human review
           const category = SLUG_CATEGORY_MAP[bot.slug] || "general";
-          const { error: queueError } = await supabase
-            .from("admin_approval_queue")
-            .insert({
-              bot_id: bot.id,
-              title: `[${bot.name}] דוח אוטומטי — ${new Date().toLocaleDateString("he-IL")}`,
-              description: `פלט אוטומטי מהרובוט "${bot.name}" שדורש אישור אדמין לפני פרסום או ביצוע.`,
-              category,
-              status: "pending",
-              draft_content: aiOutput,
-              proposed_changes: { source: "petid-agent-runner", slug: bot.slug, run_at: new Date().toISOString() },
-            });
-
-          if (queueError) {
-            console.error(`Approval queue insert error for ${bot.name}:`, queueError);
-          } else {
+          const { error: queueError } = await supabase.from("admin_approval_queue").insert({
+            bot_id: bot.id,
+            title: `[${bot.name}] דוח אוטומטי — ${new Date().toLocaleDateString("he-IL")}`,
+            description: `פלט אוטומטי מהרובוט "${bot.name}" שדורש אישור אדמין.`,
+            category,
+            status: "pending",
+            draft_content: aiOutput,
+            proposed_changes: { source: "petid-agent-runner", slug: bot.slug, run_at: new Date().toISOString(), healed },
+          });
+          if (!queueError) {
             routed = "approval_queue";
             console.log(`→ ${bot.name} output routed to approval_queue (${category})`);
           }
         } else if (DIRECT_OUTPUT_SLUGS.has(bot.slug)) {
-          // Route informational output — log to agent_action_logs for visibility
-          const { error: logError } = await supabase
-            .from("agent_action_logs")
-            .insert({
-              action_type: "bot_scheduled_report",
-              description: `[${bot.name}] ${aiOutput}`.substring(0, 2000),
-              reason: "Scheduled automated check",
-              expected_outcome: "Informational report for admin dashboard",
-              metadata: { slug: bot.slug, run_at: new Date().toISOString(), routed: "direct" },
-            });
-
-          if (logError) {
-            console.error(`Action log insert error for ${bot.name}:`, logError);
-          } else {
+          const { error: logError } = await supabase.from("agent_action_logs").insert({
+            action_type: "bot_scheduled_report",
+            description: `[${bot.name}] ${aiOutput}`.substring(0, 2000),
+            reason: "Scheduled automated check",
+            expected_outcome: "Informational report for admin dashboard",
+            metadata: { slug: bot.slug, run_at: new Date().toISOString(), routed: "direct", healed },
+          });
+          if (!logError) {
             routed = "direct_log";
             console.log(`→ ${bot.name} output routed to action_logs (informational)`);
           }
         }
 
-        results.push({ bot: bot.name, status: "success", routed });
+        results.push({ bot: bot.name, status: healed ? "healed" : "success", routed, healed, healAttempts });
       } catch (botError) {
         console.error(`Error running bot ${bot.name}:`, botError);
 
-        await supabase
-          .from("automation_bots")
-          .update({
-            last_run_at: new Date().toISOString(),
-            health_status: "error",
-            last_error: botError instanceof Error ? botError.message : "Unknown error",
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", bot.id);
+        await supabase.from("automation_bots").update({
+          last_run_at: new Date().toISOString(),
+          health_status: "error",
+          last_error: botError instanceof Error ? botError.message : "Unknown error",
+          updated_at: new Date().toISOString(),
+        }).eq("id", bot.id);
 
         results.push({ bot: bot.name, status: "error", routed: "none", error: String(botError) });
       }
     }
 
-    const successCount = results.filter((r) => r.status === "success").length;
+    const successCount = results.filter((r) => r.status === "success" || r.status === "healed").length;
+    const healedCount = results.filter((r) => r.status === "healed").length;
+    const criticalCount = results.filter((r) => r.status === "critical").length;
     const approvalCount = results.filter((r) => r.routed === "approval_queue").length;
     const directCount = results.filter((r) => r.routed === "direct_log").length;
 
     return new Response(
       JSON.stringify({
-        message: `Executed ${results.length} bots: ${successCount} success, ${approvalCount} → approval queue, ${directCount} → direct logs`,
+        message: `Executed ${results.length} bots: ${successCount} success (${healedCount} self-healed), ${criticalCount} critical, ${approvalCount} → approval queue, ${directCount} → direct logs`,
         results,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

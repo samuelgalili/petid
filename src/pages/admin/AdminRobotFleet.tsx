@@ -266,16 +266,25 @@ const AdminRobotFleet = () => {
                         variant={bot.is_active ? "default" : "secondary"}
                         className={cn(
                           "text-[10px] font-medium",
-                          bot.is_active
+                          bot.health_status === "healed"
+                            ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                            : bot.health_status === "critical"
+                            ? "bg-destructive/10 text-destructive border-destructive/20"
+                            : bot.is_active
                             ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
                             : "bg-muted text-muted-foreground"
                         )}
                       >
                         <span className={cn(
                           "w-1.5 h-1.5 rounded-full mr-1.5",
-                          bot.is_active ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground"
+                          bot.health_status === "healed" ? "bg-amber-500 animate-pulse"
+                            : bot.health_status === "critical" ? "bg-destructive animate-pulse"
+                            : bot.is_active ? "bg-emerald-500 animate-pulse"
+                            : "bg-muted-foreground"
                         )} />
-                        {bot.is_active ? "פעיל" : "מושבת"}
+                        {bot.health_status === "healed" ? "🔧 תוקן" 
+                          : bot.health_status === "critical" ? "🛑 קריטי"
+                          : bot.is_active ? "פעיל" : "מושבת"}
                       </Badge>
                       <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                         <Clock className="w-3 h-3" strokeWidth={1.5} />
