@@ -505,10 +505,29 @@ serve(async (req) => {
     const approvalCount = results.filter((r) => r.routed === "approval_queue").length;
     const directCount = results.filter((r) => r.routed === "direct_log").length;
 
+    // ─── BRAIN DIRECTIVE: Log chain status report for admin ───
+    if (brainDirective && brainReport) {
+      const chainStatus = results.map(r => `• ${r.bot}: ${r.status}${r.routed !== "none" ? ` → ${r.routed}` : ""}`).join("\n");
+      await supabase.from("agent_action_logs").insert({
+        action_type: "brain_chain_report",
+        description: `🧠 [Brain] דוח שרשרת ביצוע:\nפקודה: "${brainDirective}"\nהנמקה: ${brainReport.reasoning}\n${brainReport.conflicts.length ? `⚠️ קונפליקטים: ${brainReport.conflicts.join("; ")}\n` : ""}סטטוס סוכנים:\n${chainStatus}`.substring(0, 2000),
+        reason: brainDirective,
+        expected_outcome: "Full chain execution report",
+        actual_outcome: `${successCount}/${results.length} succeeded`,
+        metadata: { 
+          directive: brainDirective, 
+          reasoning: brainReport.reasoning, 
+          conflicts: brainReport.conflicts, 
+          chain: results,
+        },
+      });
+    }
+
     return new Response(
       JSON.stringify({
         message: `Executed ${results.length} bots: ${successCount} success (${healedCount} self-healed), ${criticalCount} critical, ${approvalCount} → approval queue, ${directCount} → direct logs`,
         results,
+        ...(brainReport ? { brain: brainReport } : {}),
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
