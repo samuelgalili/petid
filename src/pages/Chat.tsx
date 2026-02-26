@@ -668,18 +668,15 @@ const ChatContent = () => {
                     </motion.div>
                   </div>
                   <div className="px-4 py-2.5 bg-card/80 backdrop-blur-md border border-border/30 rounded-2xl rounded-bl-md shadow-[0_0_15px_hsla(260,60%,60%,0.08)]">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground font-medium">המדען חושב...</span>
-                      <div className="flex gap-0.5">
-                        {[0, 1, 2].map((i) => (
-                          <motion.div
-                            key={i}
-                            className="w-1.5 h-1.5 rounded-full bg-primary/50"
-                            animate={{ opacity: [0.3, 1, 0.3] }}
-                            transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
-                          />
-                        ))}
-                      </div>
+                    <div className="flex items-center gap-1.5">
+                      {[0, 1, 2].map((i) => (
+                        <motion.div
+                          key={i}
+                          className="w-1.5 h-1.5 rounded-full bg-primary/50"
+                          animate={{ opacity: [0.3, 1, 0.3] }}
+                          transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+                        />
+                      ))}
                     </div>
                   </div>
                 </div>
