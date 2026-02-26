@@ -10,8 +10,8 @@ import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "
 import { haptic, successFeedback } from "@/lib/haptics";
 import {
   Crown, Brain, Bot, Shield, Sparkles, Target, MessageCircle, Store,
-  Headphones, Stethoscope, Scale, Eye, Megaphone, Cpu,
-  CheckCircle2, XCircle, DollarSign, TrendingUp, Zap,
+  Headphones, Stethoscope, Scale, Eye, Megaphone, Cpu, Search,
+  CheckCircle2, XCircle, DollarSign, TrendingUp, Zap, Truck,
   ChevronRight, Activity, AlertTriangle, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -32,6 +32,11 @@ const AGENT_DEFS = [
   { slug: "vip-experience", name: "Siggy", icon: Sparkles, color: "from-pink-400 to-rose-600" },
   { slug: "crisis-pr", name: "Menachem", icon: Megaphone, color: "from-orange-500 to-red-600" },
   { slug: "ethics-safety", name: "Ethi", icon: Shield, color: "from-indigo-500 to-purple-600" },
+  { slug: "health-prediction", name: "Einstein", icon: Brain, color: "from-teal-500 to-emerald-600" },
+  { slug: "financial-algo", name: "Quant", icon: Cpu, color: "from-blue-600 to-indigo-700" },
+  { slug: "fraud-detection", name: "Sherlock", icon: Search, color: "from-red-500 to-rose-700" },
+  { slug: "supply-chain", name: "Walt", icon: Truck, color: "from-amber-500 to-orange-600" },
+  { slug: "onboarding-guide", name: "Ori", icon: Sparkles, color: "from-violet-400 to-purple-600" },
 ];
 
 // ─── Agent Sidebar Item ─────────────────────────────────────
@@ -434,7 +439,7 @@ const SovereignDashboard = () => {
           <div className="hidden lg:block w-64 shrink-0">
             <div className="sticky top-4 space-y-3">
               <div className="flex items-center justify-between mb-2">
-                <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">14 סוכנים</h2>
+                <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">19 סוכנים</h2>
                 <Badge variant="outline" className="text-[9px]">{activeBots} פעילים</Badge>
               </div>
               <div className="space-y-1.5">
