@@ -222,46 +222,120 @@ export const CategoryDataViewer = ({
     );
   };
 
-  const renderSourceCard = (source: any) => (
-    <Card key={source.id} className="overflow-hidden">
-      <CardContent className="p-2.5">
-        <div className="flex items-start gap-2">
-          {getSourceIcon(source)}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
-              <h4 className="text-xs font-medium truncate flex-1">{source.title}</h4>
-              <Badge variant={source.is_processed ? "default" : "secondary"} className="text-[8px] h-4 px-1.5">
-                {source.is_processed ? "✓" : "⏳"}
-              </Badge>
+  const renderSourceCard = (source: any) => {
+    const ext = source.extracted_data || {};
+    const hasReadableContent = ext.title || ext.summary || ext.summary_he || ext.full_content;
+    const isExpanded = expandedId === source.id;
+
+    return (
+      <Card key={source.id} className="overflow-hidden hover:shadow-sm transition-shadow">
+        <CardContent className="p-2.5">
+          <div className="flex items-start gap-2">
+            {getSourceIcon(source)}
+            <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setExpandedId(isExpanded ? null : source.id)}>
+              <div className="flex items-center gap-1.5">
+                <h4 className="text-xs font-medium truncate flex-1">{source.title}</h4>
+                <Badge variant={source.is_processed ? "default" : "secondary"} className="text-[8px] h-4 px-1.5">
+                  {source.is_processed ? "✓ עובד" : "⏳ ממתין"}
+                </Badge>
+              </div>
+              <p className="text-[9px] text-muted-foreground mt-0.5">
+                {format(new Date(source.created_at), "dd/MM/yy HH:mm", { locale: he })}
+                {source.file_type === "url" && source.file_url && (
+                  <a href={source.file_url} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-0.5 mr-2 text-primary hover:underline"
+                    onClick={(e) => e.stopPropagation()}>
+                    <ExternalLink className="w-2.5 h-2.5" /> מקור
+                  </a>
+                )}
+              </p>
             </div>
-            <p className="text-[9px] text-muted-foreground mt-0.5">
-              {format(new Date(source.created_at), "dd/MM/yy HH:mm", { locale: he })}
-              {source.file_url && source.file_type === "url" && (
-                <a href={source.file_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5 mr-2 text-primary hover:underline">
-                  <ExternalLink className="w-2.5 h-2.5" />
-                </a>
+            <div className="flex items-center gap-0.5 shrink-0">
+              <Button variant="ghost" size="icon" className="h-6 w-6"
+                onClick={() => setExpandedId(isExpanded ? null : source.id)}>
+                {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </Button>
+              <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10"
+                onClick={() => handleDeleteSource(source.id, source.file_url)}>
+                <Trash2 className="w-3 h-3" />
+              </Button>
+            </div>
+          </div>
+
+          {isExpanded && (
+            <div className="mt-2 space-y-2 border-t pt-2">
+              {hasReadableContent ? (
+                <>
+                  {ext.title_he && (
+                    <div>
+                      <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">כותרת בעברית</p>
+                      <p className="text-xs font-medium">{ext.title_he}</p>
+                    </div>
+                  )}
+                  {ext.summary_he && (
+                    <div>
+                      <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">סיכום</p>
+                      <p className="text-xs leading-relaxed">{ext.summary_he}</p>
+                    </div>
+                  )}
+                  {!ext.summary_he && ext.summary && (
+                    <div>
+                      <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">Summary</p>
+                      <p className="text-xs leading-relaxed" dir="ltr">{ext.summary}</p>
+                    </div>
+                  )}
+                  {ext.authors && Array.isArray(ext.authors) && (
+                    <div>
+                      <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">מחברים</p>
+                      <div className="flex flex-wrap gap-1">
+                        {ext.authors.map((a: string, i: number) => (
+                          <Badge key={i} variant="secondary" className="text-[9px]">{a}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {ext.topics && Array.isArray(ext.topics) && (
+                    <div>
+                      <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">נושאים</p>
+                      <div className="flex flex-wrap gap-1">
+                        {ext.topics.map((t: string, i: number) => (
+                          <Badge key={i} variant="outline" className="text-[9px]">{t}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {ext.key_findings_he && Array.isArray(ext.key_findings_he) && (
+                    <div>
+                      <p className="text-[10px] font-semibold text-muted-foreground mb-0.5">ממצאים עיקריים</p>
+                      <ul className="text-xs space-y-0.5 list-disc list-inside">
+                        {ext.key_findings_he.map((f: string, i: number) => <li key={i}>{f}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                  {source.file_url && source.file_type === "url" && (
+                    <a href={source.file_url} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1">
+                      <ExternalLink className="w-3 h-3" /> קרא את המחקר המלא
+                    </a>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-3 text-muted-foreground">
+                  <p className="text-[10px]">אין תוכן מעובד למקור זה</p>
+                  {source.file_url && source.file_type === "url" && (
+                    <a href={source.file_url} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1">
+                      <ExternalLink className="w-3 h-3" /> פתח קישור מקור
+                    </a>
+                  )}
+                </div>
               )}
-            </p>
-          </div>
-          <div className="flex items-center gap-0.5 shrink-0">
-            <Button variant="ghost" size="icon" className="h-6 w-6"
-              onClick={() => setExpandedId(expandedId === source.id ? null : source.id)}>
-              {expandedId === source.id ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-            </Button>
-            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10"
-              onClick={() => handleDeleteSource(source.id, source.file_url)}>
-              <Trash2 className="w-3 h-3" />
-            </Button>
-          </div>
-        </div>
-        {expandedId === source.id && source.extracted_data && (
-          <pre className="mt-2 text-[9px] bg-muted p-2 rounded max-h-32 overflow-auto whitespace-pre-wrap" dir="ltr">
-            {JSON.stringify(source.extracted_data, null, 2)}
-          </pre>
-        )}
-      </CardContent>
-    </Card>
-  );
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
