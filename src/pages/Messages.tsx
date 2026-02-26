@@ -109,7 +109,7 @@ export default function Messages() {
             lastMessage: message.message_text,
             lastMessageTime: message.created_at,
             unreadCount: 0,
-            isOnline: Math.random() > 0.5 // Simulated for demo
+            isOnline: false
           });
         }
 
