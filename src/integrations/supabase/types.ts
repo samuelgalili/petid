@@ -9780,6 +9780,66 @@ export type Database = {
         }
         Relationships: []
       }
+      system_error_logs: {
+        Row: {
+          component: string | null
+          created_at: string
+          error_source: string
+          error_type: string
+          first_seen_at: string
+          id: string
+          last_seen_at: string
+          message: string
+          metadata: Json | null
+          occurrence_count: number
+          resolved_at: string | null
+          route: string | null
+          severity: string
+          stack_trace: string | null
+          status: string
+          triage_notes: string | null
+          triaged_by: string | null
+        }
+        Insert: {
+          component?: string | null
+          created_at?: string
+          error_source?: string
+          error_type?: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          message: string
+          metadata?: Json | null
+          occurrence_count?: number
+          resolved_at?: string | null
+          route?: string | null
+          severity?: string
+          stack_trace?: string | null
+          status?: string
+          triage_notes?: string | null
+          triaged_by?: string | null
+        }
+        Update: {
+          component?: string | null
+          created_at?: string
+          error_source?: string
+          error_type?: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          message?: string
+          metadata?: Json | null
+          occurrence_count?: number
+          resolved_at?: string | null
+          route?: string | null
+          severity?: string
+          stack_trace?: string | null
+          status?: string
+          triage_notes?: string | null
+          triaged_by?: string | null
+        }
+        Relationships: []
+      }
       system_events: {
         Row: {
           bot_id: string | null
