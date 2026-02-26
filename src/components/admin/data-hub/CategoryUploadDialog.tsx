@@ -98,6 +98,34 @@ export const CategoryUploadDialog = ({
     try {
       const { data: userData } = await supabase.auth.getUser();
 
+      // --- Duplicate check ---
+      const checkTitle = title.trim() || (uploadMode === "url" ? urlInput.trim() : file?.name || "");
+      const checkUrl = uploadMode === "url" ? urlInput.trim() : null;
+
+      const dupQuery = supabase
+        .from("admin_data_sources" as any)
+        .select("id, title, file_url, extracted_data")
+        .eq("data_type", category);
+
+      if (checkUrl) {
+        dupQuery.eq("file_url", checkUrl);
+      } else {
+        dupQuery.eq("title", checkTitle);
+      }
+
+      const { data: existing } = await dupQuery.maybeSingle();
+
+      if (existing) {
+        toast({
+          title: "מקור כבר קיים במערכת",
+          description: `"${(existing as any).title}" כבר הועלה. אם חסרים נתונים, ערוך את המקור הקיים.`,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+      // --- End duplicate check ---
+
       if (uploadMode === "url") {
         if (!urlInput.trim()) {
           toast({ title: "יש להזין קישור", variant: "destructive" });
