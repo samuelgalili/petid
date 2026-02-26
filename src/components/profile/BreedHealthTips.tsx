@@ -5,11 +5,13 @@
 
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Eye, Wind, Scissors, Utensils, X, ShoppingBag, ChevronLeft } from "lucide-react";
+import { Sparkles, Eye, Wind, Scissors, Utensils, X, ShoppingBag, ShoppingCart, ChevronLeft } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { haptic } from "@/lib/haptics";
+import { useCart } from "@/contexts/CartContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface BreedHealthTipsProps {
   petName: string;
@@ -91,6 +93,8 @@ const isShihTzu = (breed?: string) => {
 // Quick product sheet for a tip
 const TipProductSheet = ({ tip, petName, onClose }: { tip: BreedTip; petName: string; onClose: () => void }) => {
   const navigate = useNavigate();
+  const { addToCart } = useCart();
+  const { toast } = useToast();
 
   const { data: product, isLoading } = useQuery({
     queryKey: ["tip-product", tip.title],
@@ -170,49 +174,76 @@ const TipProductSheet = ({ tip, petName, onClose }: { tip: BreedTip; petName: st
             </div>
           </div>
         ) : product ? (
-          <motion.button
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => {
-              haptic("light");
-              onClose();
-              navigate("/shop", { state: { highlightProductId: product.id } });
-            }}
-            className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-border/20 hover:bg-muted/50 transition-colors text-right"
-          >
-            <div className="w-16 h-16 rounded-xl bg-background border border-border/20 overflow-hidden shrink-0">
-              {product.image_url ? (
-                <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <ShoppingBag className="w-6 h-6 text-muted-foreground/30" />
-                </div>
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground truncate">{product.name}</p>
-              {product.brand && (
-                <p className="text-[10px] text-muted-foreground">{product.brand}</p>
-              )}
-              <div className="flex items-center gap-2 mt-1">
-                {product.sale_price ? (
-                  <>
-                    <span className="text-sm font-bold text-primary">₪{product.sale_price}</span>
-                    <span className="text-[10px] text-muted-foreground line-through">₪{product.price}</span>
-                  </>
+          <div className="space-y-3">
+            {/* Product card — tap to view in shop */}
+            <motion.button
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => {
+                haptic("light");
+                onClose();
+                navigate("/shop", { state: { highlightProductId: product.id } });
+              }}
+              className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-border/20 hover:bg-muted/50 transition-colors text-right"
+            >
+              <div className="w-16 h-16 rounded-xl bg-background border border-border/20 overflow-hidden shrink-0">
+                {product.image_url ? (
+                  <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-sm font-bold text-foreground">₪{product.price}</span>
-                )}
-                {product.safety_score && product.safety_score >= 8 && (
-                  <span className="text-[9px] font-semibold text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">
-                    ✓ מאושר
-                  </span>
+                  <div className="w-full h-full flex items-center justify-center">
+                    <ShoppingBag className="w-6 h-6 text-muted-foreground/30" />
+                  </div>
                 )}
               </div>
-            </div>
-            <ChevronLeft className="w-4 h-4 text-muted-foreground shrink-0" />
-          </motion.button>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground truncate">{product.name}</p>
+                {product.brand && (
+                  <p className="text-[10px] text-muted-foreground">{product.brand}</p>
+                )}
+                <div className="flex items-center gap-2 mt-1">
+                  {product.sale_price ? (
+                    <>
+                      <span className="text-sm font-bold text-primary">₪{product.sale_price}</span>
+                      <span className="text-[10px] text-muted-foreground line-through">₪{product.price}</span>
+                    </>
+                  ) : (
+                    <span className="text-sm font-bold text-foreground">₪{product.price}</span>
+                  )}
+                  {product.safety_score && product.safety_score >= 8 && (
+                    <span className="text-[9px] font-semibold text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">
+                      ✓ מאושר
+                    </span>
+                  )}
+                </div>
+              </div>
+              <ChevronLeft className="w-4 h-4 text-muted-foreground shrink-0" />
+            </motion.button>
+
+            {/* Add to Cart button */}
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.15 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => {
+                haptic("success");
+                addToCart({
+                  id: product.id,
+                  name: product.name,
+                  price: product.sale_price || product.price,
+                  image: product.image_url,
+                  quantity: 1,
+                });
+                toast({ title: "נוסף לעגלה 🛒", description: `${product.name} נוסף בהצלחה` });
+                onClose();
+              }}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-primary text-primary-foreground rounded-xl text-sm font-bold"
+            >
+              <ShoppingCart className="w-4 h-4" />
+              הוסף לעגלה · ₪{product.sale_price || product.price}
+            </motion.button>
+          </div>
         ) : (
           <div className="text-center py-4">
             <p className="text-xs text-muted-foreground">אין מוצר מתאים כרגע</p>
