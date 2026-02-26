@@ -45,6 +45,16 @@ const legalContent: Record<string, { he: { title: string; body: string }; en: { 
       body: `PetID Terms of Use\n\n1. Acceptance: Using the application constitutes agreement to these terms.\n2. Permitted Use: The application is intended for personal, non-commercial use.\n3. User Content: You are responsible for content you upload to the application.\n4. Intellectual Property: All rights in the application are reserved to PetID.\n5. Limitation of Liability: PetID is not responsible for indirect damages from app usage.\n6. Changes: PetID may modify these terms at any time.\n7. Governing Law: These terms are governed by the laws of the State of Israel.`,
     },
   },
+  "consumer-protection": {
+    he: {
+      title: "זכויות צרכן ומדיניות ביטול",
+      body: `מדיניות ביטול והחזרים — בהתאם לחוק הגנת הצרכן, התשמ"א-1981\n\n1. זכות ביטול עסקה:\nבהתאם לסעיף 14ג לחוק, הצרכן רשאי לבטל עסקה תוך 14 ימים מיום קבלת המוצר או מיום קבלת מסמך הגילוי (לפי המאוחר), בתנאי שהמוצר לא נפגם ולא נעשה בו שימוש.\n\n2. ביטול עסקת מרחוק:\nעסקאות שבוצעו באמצעות האפליקציה נחשבות עסקאות מרחוק. ניתן לבטלן תוך 14 ימים מיום קבלת המוצר, בכפוף לדמי ביטול של עד 5% ממחיר העסקה או 100 ש"ח — הנמוך מביניהם.\n\n3. החזרים:\nזיכוי יינתן באמצעי התשלום המקורי תוך 14 ימי עסקים ממועד אישור הביטול.\n\n4. חריגים:\nמוצרים פסידים (מזון לחיות מחמד שנפתח), מוצרים מותאמים אישית, ושירותים שכבר סופקו — אינם ניתנים לביטול.\n\n5. הגשת בקשת ביטול:\nניתן לפנות באמצעות:\n• אימייל: support@petid.co.il\n• טלפון: 03-1234567\n• דרך אזור "הגדרות > ניהול מידע" באפליקציה\n\n6. אחריות על מוצרים:\nכל המוצרים הנמכרים באפליקציה כפופים לתקנות אחריות ושירות לאחר מכירה בהתאם לחוק.\n\n7. מחירים ותשלום:\nכל המחירים כוללים מע"מ (17%). תשלום מבוצע בצורה מאובטחת דרך שער תשלומים מורשה.`,
+    },
+    en: {
+      title: "Consumer Rights & Cancellation Policy",
+      body: `Cancellation & Refund Policy — Per Israeli Consumer Protection Law, 5741-1981\n\n1. Right to Cancel:\nPer Section 14C, consumers may cancel within 14 days of receiving the product or disclosure document (whichever is later), provided the product is undamaged and unused.\n\n2. Distance Transactions:\nPurchases made via the app are distance transactions. Cancellation is allowed within 14 days, subject to a fee of up to 5% of the price or NIS 100 — whichever is lower.\n\n3. Refunds:\nCredits are issued to the original payment method within 14 business days of cancellation approval.\n\n4. Exceptions:\nPerishable goods (opened pet food), custom products, and already-delivered services are non-refundable.\n\n5. How to Cancel:\n• Email: support@petid.co.il\n• Phone: 03-1234567\n• In-app: Settings > Data Management\n\n6. Product Warranty:\nAll products are subject to post-sale warranty regulations under the law.\n\n7. Pricing:\nAll prices include VAT (17%). Payment is processed securely through a licensed payment gateway.`,
+    },
+  },
 };
 
 export const LegalDrawer = () => {

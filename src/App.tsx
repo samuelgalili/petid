@@ -42,6 +42,7 @@ import CompleteProfilePrompt from "@/components/CompleteProfilePrompt";
 import SarahDataGapAlert from "@/components/SarahDataGapAlert";
 import { UXGuardian } from "@/components/UXGuardian";
 import { SarahCrashPopup } from "@/components/SarahCrashPopup";
+import { PrivacyConsentPopup } from "@/components/PrivacyConsentPopup";
 
 // Route configuration - modular lazy-loaded routes
 import { allRoutes } from "@/routes";
@@ -104,6 +105,7 @@ const AnimatedRoutes = () => {
       <LegalDrawer />
       <UXGuardian />
       <SarahCrashPopup />
+      <PrivacyConsentPopup />
     </div>
   );
 };
