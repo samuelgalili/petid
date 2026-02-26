@@ -9,3 +9,4 @@ export * from './DashboardShopInsights';
 export * from './DashboardCRMInsights';
 export * from './DashboardContentInsights';
 export * from './DashboardSystemInsights';
+export * from './DashboardFleetCommand';
