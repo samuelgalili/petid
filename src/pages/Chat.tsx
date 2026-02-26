@@ -330,7 +330,7 @@ const ChatContent = () => {
           </button>
           <div className="flex items-center gap-1">
             
-            <span className="text-sm font-bold text-foreground">Chat Hub</span>
+            <span className="text-sm font-bold text-foreground">Petid AI</span>
           </div>
           <div className="w-8" />
         </div>
