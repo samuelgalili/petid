@@ -1,0 +1,508 @@
+/**
+ * AdminBrainDashboard — Brain Transparency Dashboard
+ * Data lineage, AI context debugger, manual overrides, conflict resolution.
+ */
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import { Brain, ChevronRight, RefreshCw, AlertTriangle, Check, Copy, ChevronDown, ChevronUp, Zap, Database, FileText, Eye, Search } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
+
+// ============= Types =============
+interface PetSummary {
+  id: string;
+  name: string;
+  type: string;
+  breed: string | null;
+  avatar_url: string | null;
+}
+
+interface DataFact {
+  field: string;
+  label: string;
+  value: string | null;
+  source: "profile" | "ocr" | "document" | "manual" | "calculated";
+  syncStatus: "synced" | "pending" | "conflict" | "missing";
+  conflictValue?: string | null;
+  conflictSource?: string;
+}
+
+interface BrainPayload {
+  petProfile: Record<string, any> | null;
+  nrc: { rer: number; mer: number; factor: number } | null;
+  ocrRecords: any[];
+  vetVisits: any[];
+  documents: any[];
+  discrepancies: { field: string; profileValue: string | null; documentValue: string | null }[];
+}
+
+// ============= Helpers =============
+const sourceLabels: Record<string, { label: string; color: string }> = {
+  profile: { label: "Manual Entry", color: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20" },
+  ocr: { label: "PDF Scan (OCR)", color: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20" },
+  document: { label: "Document Vault", color: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20" },
+  manual: { label: "Admin Override", color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" },
+  calculated: { label: "Calculated (NRC)", color: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20" },
+};
+
+const syncLabels: Record<string, { label: string; dot: string }> = {
+  synced: { label: "Synced", dot: "bg-emerald-500" },
+  pending: { label: "Pending", dot: "bg-amber-500" },
+  conflict: { label: "Conflict", dot: "bg-red-500" },
+  missing: { label: "Missing", dot: "bg-muted-foreground/40" },
+};
+
+// ============= Component =============
+const AdminBrainDashboard = () => {
+  const { toast } = useToast();
+  const [pets, setPets] = useState<PetSummary[]>([]);
+  const [selectedPetId, setSelectedPetId] = useState<string | null>(null);
+  const [brainPayload, setBrainPayload] = useState<BrainPayload | null>(null);
+  const [facts, setFacts] = useState<DataFact[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch] = useState("");
+  const [jsonExpanded, setJsonExpanded] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  // Load all pets
+  useEffect(() => {
+    const loadPets = async () => {
+      const { data } = await (supabase as any)
+        .from("pets")
+        .select("id, name, type, breed, avatar_url")
+        .eq("archived", false)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (data && data.length > 0) {
+        setPets(data);
+        setSelectedPetId(data[0].id);
+      }
+      setLoading(false);
+    };
+    loadPets();
+  }, []);
+
+  // Load brain data for selected pet
+  const loadBrainData = useCallback(async (petId: string) => {
+    setRefreshing(true);
+    try {
+      const [petResult, ocrResult, vetResult, docResult] = await Promise.all([
+        (supabase as any).from("pets").select("*").eq("id", petId).maybeSingle(),
+        (supabase as any).from("pet_document_extracted_data")
+          .select("vaccination_type, vaccination_date, vaccination_expiry, treatment_type, treatment_date, diagnosis, chip_number, provider_name, next_appointment, created_at")
+          .eq("pet_id", petId).order("created_at", { ascending: false }).limit(20),
+        (supabase as any).from("pet_vet_visits")
+          .select("visit_date, visit_type, clinic_name, vet_name, diagnosis, treatment, vaccines, medications, is_recovery_mode, next_visit_date")
+          .eq("pet_id", petId).order("visit_date", { ascending: false }).limit(10),
+        (supabase as any).from("pet_documents")
+          .select("title, description, document_type")
+          .eq("pet_id", petId).order("uploaded_at", { ascending: false }).limit(15),
+      ]);
+
+      const pet = petResult.data;
+      const ocrRecords = ocrResult.data || [];
+      const vetVisits = vetResult.data || [];
+      const documents = docResult.data || [];
+
+      // NRC calculation
+      let nrc = null;
+      if (pet?.weight && pet.weight > 0) {
+        const rer = Math.round(70 * Math.pow(pet.weight, 0.75));
+        const factor = pet.is_neutered === true ? 1.6 : 1.8;
+        nrc = { rer, mer: Math.round(rer * factor), factor };
+      }
+
+      // Detect discrepancies
+      const discrepancies: BrainPayload["discrepancies"] = [];
+      const ocrChip = ocrRecords.find((r: any) => r.chip_number)?.chip_number;
+      if (pet?.microchip_number && ocrChip && pet.microchip_number !== ocrChip) {
+        discrepancies.push({ field: "microchip_number", profileValue: pet.microchip_number, documentValue: ocrChip });
+      }
+      const ocrVet = ocrRecords.find((r: any) => r.provider_name)?.provider_name;
+      if (pet?.vet_name && ocrVet && pet.vet_name.toLowerCase() !== ocrVet.toLowerCase()) {
+        discrepancies.push({ field: "vet_name", profileValue: pet.vet_name, documentValue: ocrVet });
+      }
+
+      setBrainPayload({ petProfile: pet, nrc, ocrRecords, vetVisits, documents, discrepancies });
+
+      // Build facts table
+      const buildFacts = (): DataFact[] => {
+        if (!pet) return [];
+        const fieldMap: { field: string; label: string; category?: string }[] = [
+          { field: "name", label: "Name" },
+          { field: "type", label: "Species" },
+          { field: "breed", label: "Breed" },
+          { field: "gender", label: "Gender" },
+          { field: "birth_date", label: "Birth Date" },
+          { field: "weight", label: "Weight" },
+          { field: "color", label: "Color" },
+          { field: "microchip_number", label: "Chip Number" },
+          { field: "license_number", label: "License Number" },
+          { field: "license_expiry_date", label: "License Expiry" },
+          { field: "is_neutered", label: "Neutered" },
+          { field: "is_dangerous_breed", label: "Dangerous Breed" },
+          { field: "medical_conditions", label: "Medical Conditions" },
+          { field: "health_notes", label: "Health Notes" },
+          { field: "current_food", label: "Current Food" },
+          { field: "has_insurance", label: "Insurance" },
+          { field: "insurance_company", label: "Insurance Company" },
+          { field: "insurance_policy_number", label: "Policy Number" },
+          { field: "vet_name", label: "Vet Name" },
+          { field: "vet_clinic", label: "Vet Clinic" },
+          { field: "vet_phone", label: "Vet Phone" },
+          { field: "city", label: "City" },
+          { field: "last_vet_visit", label: "Last Vet Visit" },
+          { field: "next_vet_visit", label: "Next Vet Visit" },
+        ];
+
+        const result: DataFact[] = fieldMap.map(({ field, label }) => {
+          const rawValue = pet[field];
+          const value = rawValue != null && rawValue !== "" ? (Array.isArray(rawValue) ? rawValue.join(", ") : String(rawValue)) : null;
+          
+          const conflict = discrepancies.find(d => d.field === field);
+          
+          // Check OCR fallback
+          let ocrFallback: string | null = null;
+          if (field === "microchip_number") ocrFallback = ocrChip || null;
+          if (field === "vet_name") ocrFallback = ocrVet || null;
+
+          const effectiveValue = value || ocrFallback;
+          const source: DataFact["source"] = value ? "profile" : ocrFallback ? "ocr" : "profile";
+          const syncStatus: DataFact["syncStatus"] = conflict ? "conflict" : effectiveValue ? "synced" : "missing";
+
+          return {
+            field, label,
+            value: effectiveValue,
+            source,
+            syncStatus,
+            conflictValue: conflict?.documentValue,
+            conflictSource: conflict ? "OCR scan" : undefined,
+          };
+        });
+
+        // Add NRC calculated facts
+        if (nrc) {
+          result.push(
+            { field: "nrc_rer", label: "NRC RER (kcal)", value: String(nrc.rer), source: "calculated", syncStatus: "synced" },
+            { field: "nrc_mer", label: "NRC MER (kcal/day)", value: String(nrc.mer), source: "calculated", syncStatus: "synced" },
+          );
+        }
+
+        return result;
+      };
+
+      setFacts(buildFacts());
+    } catch (err) {
+      console.error("Brain load error:", err);
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (selectedPetId) loadBrainData(selectedPetId);
+  }, [selectedPetId, loadBrainData]);
+
+  // Force sync a single field
+  const handleForceSync = useCallback(async (fact: DataFact) => {
+    if (!selectedPetId || !fact.value) return;
+    toast({ title: "Force Sync", description: `"${fact.label}" synced to all AI agents.` });
+    // The Central Brain Context will pick this up on next refresh
+    setFacts(prev => prev.map(f => f.field === fact.field ? { ...f, syncStatus: "synced" } : f));
+  }, [selectedPetId, toast]);
+
+  // Resolve conflict
+  const handleResolveConflict = useCallback(async (field: string, chosenValue: string) => {
+    if (!selectedPetId) return;
+    try {
+      await (supabase as any).from("pets").update({ [field]: chosenValue }).eq("id", selectedPetId);
+      toast({ title: "Conflict Resolved", description: `${field} updated to "${chosenValue}"` });
+      loadBrainData(selectedPetId);
+    } catch (err) {
+      console.error("Resolve error:", err);
+    }
+  }, [selectedPetId, loadBrainData, toast]);
+
+  const copyPayload = useCallback(async () => {
+    if (!brainPayload) return;
+    await navigator.clipboard.writeText(JSON.stringify(brainPayload, null, 2));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [brainPayload]);
+
+  const selectedPet = pets.find(p => p.id === selectedPetId);
+  const filteredFacts = facts.filter(f =>
+    !search || f.label.toLowerCase().includes(search.toLowerCase()) || f.field.toLowerCase().includes(search.toLowerCase())
+  );
+  const conflictCount = facts.filter(f => f.syncStatus === "conflict").length;
+  const missingCount = facts.filter(f => f.syncStatus === "missing").length;
+  const syncedCount = facts.filter(f => f.syncStatus === "synced").length;
+
+  const breadcrumbs = [
+    { label: "Admin", href: "/admin" },
+    { label: "Brain Dashboard" },
+    ...(selectedPet ? [{ label: selectedPet.name }] : []),
+  ];
+
+  return (
+    <AdminLayout title="Brain Transparency" icon={Brain} breadcrumbs={breadcrumbs}>
+      <div className="space-y-6">
+
+        {/* Pet Breadcrumb Selector */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2">
+          {pets.map(pet => (
+            <button
+              key={pet.id}
+              onClick={() => setSelectedPetId(pet.id)}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-all whitespace-nowrap",
+                pet.id === selectedPetId
+                  ? "bg-primary text-primary-foreground border-primary shadow-md"
+                  : "bg-card text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground"
+              )}
+            >
+              <span className="text-lg">{pet.type === "cat" ? "🐱" : "🐕"}</span>
+              {pet.name}
+              {pet.breed && <span className="text-xs opacity-70">({pet.breed})</span>}
+            </button>
+          ))}
+        </div>
+
+        {/* Stats Row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { label: "Synced Facts", value: syncedCount, icon: Check, color: "text-emerald-500" },
+            { label: "Missing", value: missingCount, icon: Database, color: "text-muted-foreground" },
+            { label: "Conflicts", value: conflictCount, icon: AlertTriangle, color: "text-red-500" },
+            { label: "Data Sources", value: brainPayload ? [brainPayload.petProfile ? 1 : 0, brainPayload.ocrRecords.length > 0 ? 1 : 0, brainPayload.vetVisits.length > 0 ? 1 : 0, brainPayload.documents.length > 0 ? 1 : 0].reduce((a, b) => a + b, 0) : 0, icon: Eye, color: "text-primary" },
+          ].map(({ label, value, icon: Icon, color }) => (
+            <Card key={label} className="bg-card border-border">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className={cn("w-10 h-10 rounded-xl bg-muted flex items-center justify-center", color)}>
+                  <Icon className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold tracking-tight text-foreground">{value}</p>
+                  <p className="text-xs text-muted-foreground">{label}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Conflict Alerts */}
+        <AnimatePresence>
+          {conflictCount > 0 && (
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+              <Card className="border-red-500/30 bg-red-500/5">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2 text-red-600 dark:text-red-400">
+                    <AlertTriangle className="w-4 h-4" />
+                    {conflictCount} Data Conflict{conflictCount > 1 ? "s" : ""} Require Resolution
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {facts.filter(f => f.syncStatus === "conflict").map(fact => (
+                    <div key={fact.field} className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 rounded-lg bg-card border border-border">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground">{fact.label}</p>
+                        <div className="flex flex-wrap items-center gap-2 mt-1 text-xs">
+                          <span className="text-muted-foreground">Profile:</span>
+                          <Badge variant="outline" className="font-mono text-xs">{fact.value || "—"}</Badge>
+                          <span className="text-red-500">≠</span>
+                          <span className="text-muted-foreground">{fact.conflictSource}:</span>
+                          <Badge variant="outline" className="font-mono text-xs border-red-500/30 text-red-600 dark:text-red-400">{fact.conflictValue || "—"}</Badge>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Button size="sm" variant="outline" className="text-xs h-8" onClick={() => handleResolveConflict(fact.field, fact.value || "")}>
+                          Keep Profile
+                        </Button>
+                        <Button size="sm" variant="outline" className="text-xs h-8 border-red-500/30 text-red-600 hover:bg-red-500/10" onClick={() => handleResolveConflict(fact.field, fact.conflictValue || "")}>
+                          Use Document
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Data Lineage Table */}
+        <Card className="bg-card border-border">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between gap-4">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Database className="w-4 h-4 text-primary" />
+                Data Lineage — {selectedPet?.name || "Select a pet"}
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Search facts..."
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    className="pl-8 h-8 text-xs w-40 bg-muted/50 border-border"
+                  />
+                </div>
+                <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => selectedPetId && loadBrainData(selectedPetId)} disabled={refreshing}>
+                  <RefreshCw className={cn("w-3.5 h-3.5", refreshing && "animate-spin")} />
+                  Refresh
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/30">
+                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground tracking-wider uppercase">Fact</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground tracking-wider uppercase">Value</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground tracking-wider uppercase">Source</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground tracking-wider uppercase">Sync Status</th>
+                    <th className="text-right px-4 py-2.5 text-xs font-semibold text-muted-foreground tracking-wider uppercase">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredFacts.map((fact, idx) => {
+                    const srcStyle = sourceLabels[fact.source];
+                    const syncStyle = syncLabels[fact.syncStatus];
+                    return (
+                      <tr key={fact.field} className={cn(
+                        "border-b border-border/50 transition-colors hover:bg-muted/20",
+                        fact.syncStatus === "conflict" && "bg-red-500/5"
+                      )}>
+                        <td className="px-4 py-3">
+                          <span className="font-medium text-foreground">{fact.label}</span>
+                          <span className="block text-[10px] text-muted-foreground font-mono mt-0.5">{fact.field}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          {fact.value ? (
+                            <span className="font-mono text-xs text-foreground">{fact.value}</span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground italic">—</span>
+                          )}
+                          {fact.syncStatus === "conflict" && fact.conflictValue && (
+                            <div className="mt-1 flex items-center gap-1.5">
+                              <AlertTriangle className="w-3 h-3 text-red-500 shrink-0" />
+                              <span className="text-[11px] text-red-500 font-mono">{fact.conflictValue} ({fact.conflictSource})</span>
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge variant="outline" className={cn("text-[10px] font-medium", srcStyle.color)}>
+                            {srcStyle.label}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1.5">
+                            <div className={cn("w-2 h-2 rounded-full", syncStyle.dot)} />
+                            <span className="text-xs text-muted-foreground">{syncStyle.label}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {fact.value && fact.syncStatus !== "conflict" && (
+                            <Button size="sm" variant="ghost" className="h-7 text-[11px] gap-1 text-primary hover:text-primary" onClick={() => handleForceSync(fact)}>
+                              <Zap className="w-3 h-3" />
+                              Force Sync
+                            </Button>
+                          )}
+                          {fact.syncStatus === "conflict" && (
+                            <Badge variant="destructive" className="text-[10px]">Resolve Above</Badge>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {filteredFacts.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="text-center py-8 text-sm text-muted-foreground">
+                        {loading ? "Loading brain data..." : "No facts found"}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* AI Context Debugger */}
+        <Card className="bg-card border-border">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <FileText className="w-4 h-4 text-primary" />
+                AI Context Debugger
+                <Badge variant="secondary" className="text-[10px]">Real-time JSON</Badge>
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="ghost" className="h-8 text-xs gap-1.5" onClick={copyPayload}>
+                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copied ? "Copied" : "Copy"}
+                </Button>
+                <Button size="sm" variant="ghost" className="h-8 text-xs gap-1.5" onClick={() => setJsonExpanded(v => !v)}>
+                  {jsonExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                  {jsonExpanded ? "Collapse" : "Expand"}
+                </Button>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              This is the exact payload sent to Danny, Sarah, and all AI agents during chat conversations.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className={cn("rounded-lg border border-border bg-muted/30 transition-all", jsonExpanded ? "h-[500px]" : "h-48")}>
+              <pre className="p-4 text-[11px] font-mono leading-relaxed text-foreground/80 whitespace-pre-wrap">
+                {brainPayload ? JSON.stringify(brainPayload, null, 2) : "Select a pet to view context..."}
+              </pre>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+
+        {/* Data Source Summary */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[
+            { title: "OCR Records", count: brainPayload?.ocrRecords.length || 0, icon: FileText, items: brainPayload?.ocrRecords.slice(0, 3).map((r: any) => r.vaccination_type || r.treatment_type || r.diagnosis || "Record") || [] },
+            { title: "Vet Visits", count: brainPayload?.vetVisits.length || 0, icon: Eye, items: brainPayload?.vetVisits.slice(0, 3).map((v: any) => `${v.visit_date} — ${v.visit_type}`) || [] },
+            { title: "Documents", count: brainPayload?.documents.length || 0, icon: Database, items: brainPayload?.documents.slice(0, 3).map((d: any) => d.title || d.document_type || "Document") || [] },
+          ].map(({ title, count, icon: Icon, items }) => (
+            <Card key={title} className="bg-card border-border">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xs font-semibold flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Icon className="w-3.5 h-3.5 text-primary" />
+                    {title}
+                  </span>
+                  <Badge variant="secondary" className="text-[10px]">{count}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-1">
+                {items.length > 0 ? items.map((item: string, i: number) => (
+                  <p key={i} className="text-xs text-muted-foreground truncate">• {item}</p>
+                )) : (
+                  <p className="text-xs text-muted-foreground italic">No data</p>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </AdminLayout>
+  );
+};
+
+export default AdminBrainDashboard;

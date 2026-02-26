@@ -376,6 +376,7 @@ const AdminVendorDashboard = lazy(() => import("@/pages/admin/AdminVendorDashboa
 const AdminComplianceFinance = lazy(() => import("@/pages/admin/AdminComplianceFinance"));
 const AdminUserTimeline = lazy(() => import("@/pages/admin/AdminUserTimeline"));
 const AdminResearchLab = lazy(() => import("@/pages/admin/AdminResearchLab"));
+const AdminBrainDashboard = lazy(() => import("@/pages/admin/AdminBrainDashboard"));
 
 // Helper for admin routes
 const AdminPage = ({ component: Component, pageName }: { component: ComponentType; pageName: string }) => (
@@ -457,6 +458,7 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/compliance-finance", element: <AdminPage component={AdminComplianceFinance} pageName="ציות ופיננסים" /> },
   { path: "/admin/user-timeline", element: <AdminPage component={AdminUserTimeline} pageName="מסע משתמש" /> },
   { path: "/admin/research-lab", element: <AdminPage component={AdminResearchLab} pageName="מעבדת מחקר" /> },
+  { path: "/admin/brain-dashboard", element: <AdminPage component={AdminBrainDashboard} pageName="Brain Dashboard" /> },
 ];
 
 // ==========================================

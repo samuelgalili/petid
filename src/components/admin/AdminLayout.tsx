@@ -49,6 +49,7 @@ const navGroups: NavGroup[] = [
       { icon: ListTodo, label: "משימות", href: "/admin/tasks" },
       { icon: CalendarDays, label: "יומן", href: "/admin/calendar" },
       { icon: Crown, label: "AI Control Room", href: "/admin/control-room" },
+      { icon: Eye, label: "Brain Dashboard", href: "/admin/brain-dashboard" },
     ]
   },
   {
