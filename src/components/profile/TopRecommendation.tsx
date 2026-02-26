@@ -1558,7 +1558,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
                   <Sparkles className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <span className="text-sm font-bold text-foreground">המדען</span>
+                  <span className="text-sm font-bold text-foreground">המומחה</span>
                   <p className="text-xs text-muted-foreground">
                     {editField === 'age' 
                       ? `מתי נולד/ה ${pet.name}? זה עוזר לי להתאים תזונה ובריאות.`

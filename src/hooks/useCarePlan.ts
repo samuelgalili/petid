@@ -115,7 +115,7 @@ export function useCarePlan(petId: string | undefined) {
       toast({
         title: "✨🦴 נוסף לתוכנית הטיפול!",
         description: isApproved
-          ? `+${points} נקודות — מאושר על ידי המדען`
+          ? `+${points} נקודות — מאושר על ידי המומחה`
           : `+${points} נקודות`,
         duration: 2500,
       });

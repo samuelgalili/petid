@@ -199,7 +199,7 @@ export const ProductInfoDrawer = ({ product, petName, onClose, onAddToCart, onAd
                   {petName && (
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {safetyLevel === "safe" 
-                        ? `מאושר על ידי המדען עבור ${petName}` 
+                        ? `מאושר על ידי המומחה עבור ${petName}` 
                         : `דורש בדיקה נוספת עבור ${petName}`}
                     </p>
                   )}

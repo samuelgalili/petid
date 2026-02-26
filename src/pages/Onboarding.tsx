@@ -35,7 +35,7 @@ const SLIDES = [
   },
   {
     image: onboardingScientist,
-    title: "המדען האישי",
+    title: "המומחה האישי",
     subtitle: "AI שמבין את הגזע, הבריאות והתזונה של חיית המחמד שלכם",
     gradient: "from-sky-500/30 to-blue-500/10",
   },

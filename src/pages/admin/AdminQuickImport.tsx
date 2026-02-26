@@ -99,7 +99,7 @@ interface DuplicateResult {
 
 const STEP_LABELS = [
   { num: 1, icon: Search, label: "הצייד", desc: "סריקה וזיהוי כפילויות" },
-  { num: 2, icon: FlaskConical, label: "המדען", desc: "ניתוח רכיבים וסיכונים" },
+  { num: 2, icon: FlaskConical, label: "המומחה", desc: "ניתוח רכיבים וסיכונים" },
   { num: 3, icon: Flame, label: "לוגיקת האכלה", desc: "חישוב Kcal וכמויות" },
   { num: 4, icon: Package, label: "ספק ופרסום", desc: "קישור ספק, וריאנטים ושמירה" },
 ];
@@ -932,7 +932,7 @@ const AdminQuickImport = () => {
                     <FlaskConical size={24} strokeWidth={1.5} />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-extrabold">שלב 2: המדען</h2>
+                    <h2 className="text-2xl font-extrabold">שלב 2: המומחה</h2>
                     <p className="text-muted-foreground text-base">ניתוח רכיבים מבוסס מחקר מדעי – Zero Hallucination</p>
                   </div>
                 </div>
@@ -1124,7 +1124,7 @@ const AdminQuickImport = () => {
                                   <FlaskConical size={14} className="text-orange-500" />
                                 </div>
                                 <div>
-                                  <p className="text-xs font-bold text-foreground mb-1">טיפ מהמדען 🔬</p>
+                                  <p className="text-xs font-bold text-foreground mb-1">טיפ מהמומחה 🔬</p>
                                   <p className="text-xs text-muted-foreground leading-relaxed">
                                     {pos.scientistTip || getDefaultScientistTip(pos.name)}
                                   </p>

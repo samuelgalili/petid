@@ -574,7 +574,7 @@ const Radar = () => {
                   <Sparkles className="w-3.5 h-3.5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-primary mb-0.5">{isRtl ? "תובנת המדען" : "Scientist Insight"}</p>
+                  <p className="text-[10px] font-bold text-primary mb-0.5">{isRtl ? "תובנת המומחה" : "Expert Insight"}</p>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     {isRtl
                       ? `${selectedPark.friendsCount > 0 ? `${selectedPark.friendsCount} מחברי ${activePetName} כאן עכשיו!` : `אף אחד מחברי ${activePetName} לא כאן כרגע. תהיה הראשון!`}`

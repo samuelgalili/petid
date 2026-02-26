@@ -205,7 +205,7 @@ export const PetVaultDrawer = ({ isOpen, onClose, pet }: PetVaultDrawerProps) =>
         if (result?.deworming) msgs.push(`💊 תילוע`);
 
         toast({
-          title: `🔬 המדען עיבד את המסמך של ${pet?.name}`,
+          title: `🔬 המומחה עיבד את המסמך של ${pet?.name}`,
           description: msgs.length > 0
             ? `${msgs.join(' | ')} — הכל מעודכן!`
             : 'המסמך נשמר בכספת',
@@ -315,7 +315,7 @@ export const PetVaultDrawer = ({ isOpen, onClose, pet }: PetVaultDrawerProps) =>
               </div>
               <div className="text-right flex-1">
                 <p className="text-sm font-bold text-foreground">סריקת מסמך</p>
-                <p className="text-[10px] text-muted-foreground">צלם מסמך — המדען יחלץ את הנתונים אוטומטית</p>
+                <p className="text-[10px] text-muted-foreground">צלם מסמך — המומחה יחלץ את הנתונים אוטומטית</p>
               </div>
               <Sparkles className="w-4 h-4 text-primary/60" />
             </motion.button>
@@ -432,7 +432,7 @@ export const PetVaultDrawer = ({ isOpen, onClose, pet }: PetVaultDrawerProps) =>
                                       {isVerified && (
                                         <div className="flex items-center gap-1 mt-1">
                                           <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                                          <span className="text-[9px] font-medium text-emerald-600">אומת על ידי המדען</span>
+                                          <span className="text-[9px] font-medium text-emerald-600">אומת על ידי המומחה</span>
                                         </div>
                                       )}
                                     </div>
@@ -521,7 +521,7 @@ export const PetVaultDrawer = ({ isOpen, onClose, pet }: PetVaultDrawerProps) =>
                         >
                           <Sparkles className="w-5 h-5 text-primary" />
                         </motion.div>
-                        <p className="text-white/80 text-sm font-medium">המדען מנתח את המסמך...</p>
+                        <p className="text-white/80 text-sm font-medium">המומחה מנתח את המסמך...</p>
                       </div>
                     </motion.div>
                   ) : (
