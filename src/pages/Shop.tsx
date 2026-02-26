@@ -409,7 +409,7 @@ const Shop = () => {
               >
                 <ChevronRight className="w-5 h-5 text-foreground" />
               </motion.button>
-              <img src={petidIcon} alt="PetID" className="w-7 h-7 object-contain" />
+              
               <h1 className="text-lg font-semibold text-foreground">חנות</h1>
             </div>
             <div className="flex items-center gap-1">
