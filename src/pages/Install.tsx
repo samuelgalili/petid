@@ -246,7 +246,7 @@ const Install = () => {
 
           <ScrollReveal delay={0.2}>
             <h2 className="text-3xl md:text-4xl font-black text-foreground mb-4">
-              מאושר על ידי <span className="text-primary">המדען</span>
+              מאושר על ידי <span className="text-primary">המומחה</span>
             </h2>
             <p className="text-muted-foreground max-w-lg mx-auto mb-8 leading-relaxed">
               כל מוצר בחנות עובר בדיקת SafeScore — ציון בטיחות מבוסס AI שמנתח
