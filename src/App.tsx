@@ -22,6 +22,8 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { PetPreferenceProvider } from "@/contexts/PetPreferenceContext";
+import { CentralBrainProvider } from "@/contexts/CentralBrainContext";
+import { BrainDebuggerOverlay } from "@/components/admin/BrainDebuggerOverlay";
 import { OverlayNavProvider } from "@/contexts/OverlayNavContext";
 import { GuestProvider } from "@/contexts/GuestContext";
 import { GameProvider } from "@/contexts/GameContext";
@@ -110,19 +112,22 @@ const GlobalProviders = ({ children }: { children: React.ReactNode }) => (
       <AccessibilityProvider>
         <LanguageProvider>
           <PetPreferenceProvider>
-            <OverlayNavProvider>
-              <GuestProvider>
-                <GameProvider>
-                  <CartProvider>
-                    <FlyingCartProvider>
-                      <TooltipProvider>
-                        {children}
-                      </TooltipProvider>
-                    </FlyingCartProvider>
-                  </CartProvider>
-                </GameProvider>
-              </GuestProvider>
-            </OverlayNavProvider>
+            <CentralBrainProvider>
+              <OverlayNavProvider>
+                <GuestProvider>
+                  <GameProvider>
+                    <CartProvider>
+                      <FlyingCartProvider>
+                        <TooltipProvider>
+                          {children}
+                          <BrainDebuggerOverlay />
+                        </TooltipProvider>
+                      </FlyingCartProvider>
+                    </CartProvider>
+                  </GameProvider>
+                </GuestProvider>
+              </OverlayNavProvider>
+            </CentralBrainProvider>
           </PetPreferenceProvider>
         </LanguageProvider>
       </AccessibilityProvider>
