@@ -924,6 +924,80 @@ export type Database = {
         }
         Relationships: []
       }
+      architect_evolution_cards: {
+        Row: {
+          category: string
+          code_after: string | null
+          code_before: string | null
+          component: string | null
+          confidence: number | null
+          created_at: string
+          deploy_commit_sha: string | null
+          deploy_pr_url: string | null
+          deployed_at: string | null
+          deployed_by: string | null
+          error_source_id: string | null
+          file_path: string | null
+          id: string
+          insight: string
+          metadata: Json | null
+          rollback_reason: string | null
+          solution: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          code_after?: string | null
+          code_before?: string | null
+          component?: string | null
+          confidence?: number | null
+          created_at?: string
+          deploy_commit_sha?: string | null
+          deploy_pr_url?: string | null
+          deployed_at?: string | null
+          deployed_by?: string | null
+          error_source_id?: string | null
+          file_path?: string | null
+          id?: string
+          insight: string
+          metadata?: Json | null
+          rollback_reason?: string | null
+          solution: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          code_after?: string | null
+          code_before?: string | null
+          component?: string | null
+          confidence?: number | null
+          created_at?: string
+          deploy_commit_sha?: string | null
+          deploy_pr_url?: string | null
+          deployed_at?: string | null
+          deployed_by?: string | null
+          error_source_id?: string | null
+          file_path?: string | null
+          id?: string
+          insight?: string
+          metadata?: Json | null
+          rollback_reason?: string | null
+          solution?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "architect_evolution_cards_error_source_id_fkey"
+            columns: ["error_source_id"]
+            isOneToOne: false
+            referencedRelation: "system_error_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       auto_replies: {
         Row: {
           away_enabled: boolean | null
