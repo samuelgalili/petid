@@ -1185,10 +1185,12 @@ export type Database = {
           is_active: boolean | null
           last_error: string | null
           last_health_check: string | null
+          last_output: string | null
           last_run_at: string | null
           name: string
           run_count: number | null
           slug: string
+          system_prompt: string | null
           updated_at: string | null
         }
         Insert: {
@@ -1203,10 +1205,12 @@ export type Database = {
           is_active?: boolean | null
           last_error?: string | null
           last_health_check?: string | null
+          last_output?: string | null
           last_run_at?: string | null
           name: string
           run_count?: number | null
           slug: string
+          system_prompt?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -1221,10 +1225,12 @@ export type Database = {
           is_active?: boolean | null
           last_error?: string | null
           last_health_check?: string | null
+          last_output?: string | null
           last_run_at?: string | null
           name?: string
           run_count?: number | null
           slug?: string
+          system_prompt?: string | null
           updated_at?: string | null
         }
         Relationships: []
