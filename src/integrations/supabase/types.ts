@@ -2473,9 +2473,15 @@ export type Database = {
           approved_by: string | null
           bot_id: string | null
           channel: string | null
+          compliance_status: string | null
+          consent_verified: boolean | null
           content: string | null
+          content_type: string | null
           created_at: string | null
           id: string
+          leads_generated: number | null
+          link_clicks: number | null
+          lumi_category: string | null
           nrc_verified: boolean | null
           pet_context: Json | null
           published_at: string | null
@@ -2489,9 +2495,15 @@ export type Database = {
           approved_by?: string | null
           bot_id?: string | null
           channel?: string | null
+          compliance_status?: string | null
+          consent_verified?: boolean | null
           content?: string | null
+          content_type?: string | null
           created_at?: string | null
           id?: string
+          leads_generated?: number | null
+          link_clicks?: number | null
+          lumi_category?: string | null
           nrc_verified?: boolean | null
           pet_context?: Json | null
           published_at?: string | null
@@ -2505,9 +2517,15 @@ export type Database = {
           approved_by?: string | null
           bot_id?: string | null
           channel?: string | null
+          compliance_status?: string | null
+          consent_verified?: boolean | null
           content?: string | null
+          content_type?: string | null
           created_at?: string | null
           id?: string
+          leads_generated?: number | null
+          link_clicks?: number | null
+          lumi_category?: string | null
           nrc_verified?: boolean | null
           pet_context?: Json | null
           published_at?: string | null
@@ -4838,6 +4856,36 @@ export type Database = {
           requires_tenure_days?: number | null
           updated_at?: string
           weekly_limit?: number | null
+        }
+        Relationships: []
+      }
+      marketing_opt_out_log: {
+        Row: {
+          action: string
+          channel: string | null
+          created_at: string | null
+          id: string
+          keyword: string | null
+          source: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          channel?: string | null
+          created_at?: string | null
+          id?: string
+          keyword?: string | null
+          source?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          channel?: string | null
+          created_at?: string | null
+          id?: string
+          keyword?: string | null
+          source?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -8157,6 +8205,9 @@ export type Database = {
           last_name: string | null
           last_seen_at: string | null
           location_blur_enabled: boolean | null
+          marketing_consent: boolean | null
+          marketing_consent_date: string | null
+          marketing_unsubscribed_at: string | null
           phone: string | null
           points: number
           postal_code: string | null
@@ -8198,6 +8249,9 @@ export type Database = {
           last_name?: string | null
           last_seen_at?: string | null
           location_blur_enabled?: boolean | null
+          marketing_consent?: boolean | null
+          marketing_consent_date?: string | null
+          marketing_unsubscribed_at?: string | null
           phone?: string | null
           points?: number
           postal_code?: string | null
@@ -8239,6 +8293,9 @@ export type Database = {
           last_name?: string | null
           last_seen_at?: string | null
           location_blur_enabled?: boolean | null
+          marketing_consent?: boolean | null
+          marketing_consent_date?: string | null
+          marketing_unsubscribed_at?: string | null
           phone?: string | null
           points?: number
           postal_code?: string | null

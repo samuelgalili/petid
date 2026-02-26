@@ -78,18 +78,26 @@ serve(async (req) => {
 
     const startDate = week_start || new Date().toISOString().split("T")[0];
 
-    const systemPrompt = `You are the PetID Content Calendar AI. Generate a 7-day content calendar for the week starting ${startDate}.
+    const systemPrompt = `You are Lumi, the PetID Creative AI Director. Generate a 7-day content calendar for the week starting ${startDate}.
+
+GANTT LOGIC (CRITICAL):
+- Monday: Educational / NRC Insight — science-based nutrition tip referencing NRC 2006
+- Wednesday: Social Proof — user success story from pet health data (weight goals, recovery)
+- Friday: Commercial — insurance deal or product promotion
+- Other days: Mix of pet care tips, push notifications, and community engagement
 
 RULES:
 1. Output MUST be valid JSON array with exactly 7 objects (one per day).
 2. Each day object: { "day": "YYYY-MM-DD", "items": [...] }
-3. Each item: { "type": "blog_post"|"social_caption"|"pet_care_tip"|"push_notification"|"email_newsletter", "title": "...", "draft": "...", "channel": "feed"|"email"|"whatsapp"|"push", "pet_context": "..." }
-4. Use REAL pet names and locations from the data below — this is critical for personalization.
-5. Every nutritional tip MUST reference NRC 2006 standards and use verified data from the rules below.
-6. All content in Hebrew.
-7. Mix content types across the week: 2 blog posts, 3 social captions, 5 pet care tips, 3 push notifications, 1 email newsletter.
+3. Each item: { "type": "blog_post"|"social_caption"|"pet_care_tip"|"push_notification"|"email_newsletter", "title": "...", "draft": "...", "channel": "feed"|"email"|"whatsapp"|"push", "pet_context": "...", "lumi_category": "educational"|"social_proof"|"commercial"|"engagement"|"tip", "hashtags": ["...", "..."] }
+4. Use REAL pet names and locations from the data below.
+5. Every nutritional tip MUST reference NRC 2006 standards.
+6. All content in Hebrew. Brand voice: high-end, scientific yet emotional, minimalist.
+7. Mix content types: 2 blog posts, 3 social captions, 5 pet care tips, 3 push notifications, 1 email newsletter.
 8. Never repeat topics from recent posts.
 9. Use PetID branding only.
+10. For WhatsApp/SMS items, ALWAYS end draft with: "להסרה השב הסר"
+11. Include visual_description field for items that need images (describe what image to create).
 
 PET PROFILES:
 ${petProfiles}
@@ -118,7 +126,7 @@ Return ONLY the JSON array, no markdown fences.`;
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Generate a 7-day content calendar starting ${startDate}. Use real pet names like ${(pets || []).slice(0, 3).map((p: any) => p.name).join(", ")} and real addresses/cities from their profiles. Every nutrition claim must cite NRC 2006.` },
+          { role: "user", content: `Generate a 7-day Lumi content calendar starting ${startDate}. Follow the Mon=Educational, Wed=Social, Fri=Commercial Gantt schedule. Use pet names like ${(pets || []).slice(0, 3).map((p: any) => p.name).join(", ")}. Every nutrition claim must cite NRC 2006. WhatsApp messages must end with unsubscribe option.` },
         ],
       }),
     });
@@ -168,13 +176,13 @@ Return ONLY the JSON array, no markdown fences.`;
           await supabase.from("agent_tasks").insert({
             bot_id: bot.id,
             title: item.title || `Content: ${item.type}`,
-            description: `יום: ${day.day} | סוג: ${item.type} | ערוץ: ${item.channel || "feed"}${item.pet_context ? ` | ${item.pet_context}` : ""}`,
+            description: `יום: ${day.day} | סוג: ${item.type} | ערוץ: ${item.channel || "feed"} | קטגוריה: ${item.lumi_category || "general"}${item.pet_context ? ` | ${item.pet_context}` : ""}`,
             task_type: "content-creation",
             priority: "medium",
             requires_approval: true,
             status: "pending_approval",
             scheduled_for: day.day,
-            reason: "Content Calendar — תוכן שנוצר אוטומטית דורש אישור",
+            reason: "Lumi Content Calendar — תוכן שנוצר אוטומטית דורש אישור",
             expected_outcome: `פרסום ב-${item.channel || "feed"} בתאריך ${day.day}`,
             payload: {
               draft_content: item.draft,
@@ -183,6 +191,10 @@ Return ONLY the JSON array, no markdown fences.`;
               scheduled_date: day.day,
               pet_context: item.pet_context,
               calendar_week: startDate,
+              lumi_category: item.lumi_category,
+              hashtags: item.hashtags,
+              visual_description: item.visual_description,
+              has_unsubscribe: item.channel === "whatsapp" || item.channel === "sms",
             },
           });
         }
