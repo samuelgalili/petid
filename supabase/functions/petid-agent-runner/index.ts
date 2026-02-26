@@ -41,6 +41,84 @@ const SYNERGY_MAP: Record<string, string[]> = {
   "financial-algo": ["cashflow-guardian", "fraud-detection"],
 };
 
+// ─── Agent expertise domains for Brain routing ───
+const AGENT_EXPERTISE: Record<string, string> = {
+  "sales": "מכירות, הנחות, מבצעים, pricing",
+  "nrc-science": "תזונה, מדע, NRC, בריאות מזון, רכיבים",
+  "health-prediction": "חיזוי בריאות, מחלות, ניטור רפואי",
+  "crm": "לקוחות, CRM, פרופילים, נתוני משתמשים",
+  "content": "תוכן, מאמרים, בלוג, שיווק תוכן",
+  "support": "שירות לקוחות, תמיכה, FAQ",
+  "system-architect": "קוד, ארכיטקטורה, באגים, מערכת",
+  "maya-ux": "UX, עיצוב, חוויית משתמש, המרות",
+  "ofek-visual-monitor": "ויזואליות, תמונות, עיצוב גרפי",
+  "prometheus": "אופטימיזציה, ביצועים, prompt engineering",
+  "market-intelligence": "מתחרים, מחקר שוק, מגמות",
+  "cashflow-guardian": "תזרים מזומנים, כספים, תשלומים",
+  "financial-algo": "אלגוריתמים פיננסיים, תמחור",
+  "fraud-detection": "הונאה, אבטחה, חריגות",
+  "crisis-pr": "משברים, יח\"צ, תקשורת חיצונית",
+  "ethics-safety": "אתיקה, בטיחות, פרטיות",
+  "vip-experience": "VIP, חוויית פרימיום, נאמנות",
+  "supply-chain": "שרשרת אספקה, ספקים, לוגיסטיקה",
+  "inventory": "מלאי, מוצרים, ניהול מלאי",
+  "onboarding-guide": "הצטרפות, אונבורדינג, הדרכה",
+  "compliance": "רגולציה, ביטוח, תאימות",
+};
+
+// ─── Brain Orchestrator: analyze command and delegate ───
+async function brainOrchestrate(
+  apiKey: string,
+  supabase: any,
+  command: string,
+  availableBots: any[]
+): Promise<{ delegations: Array<{ slug: string; subCommand: string }>; reasoning: string; conflicts: string[] }> {
+  const botList = availableBots.map(b => `- ${b.slug}: ${AGENT_EXPERTISE[b.slug] || b.description || b.name}`).join("\n");
+
+  const brainPrompt = `You are "The Brain" — the central orchestrator of PetID's 21-agent fleet.
+
+AVAILABLE AGENTS:
+${botList}
+
+RULES:
+1. Analyze the admin command and decide which agent(s) should handle it.
+2. NEVER do everything yourself — delegate sub-commands to the right specialists.
+3. CONFLICT RESOLUTION: If a command could create a conflict (e.g., sales vs safety), ALWAYS rule in favor of science and safety (Dr. NRC / Ethics / Health Prediction win).
+4. You may assign multiple agents. Each gets a specific sub-command.
+5. Return ONLY valid JSON, no markdown.
+
+OUTPUT FORMAT (strict JSON):
+{
+  "delegations": [
+    { "slug": "agent-slug", "subCommand": "specific instruction for this agent in Hebrew" }
+  ],
+  "reasoning": "Brief explanation of your routing decision in Hebrew",
+  "conflicts": ["Any detected conflicts and how you resolved them, in Hebrew"]
+}`;
+
+  const output = await callAI(apiKey, "google/gemini-2.5-flash", [
+    { role: "system", content: brainPrompt },
+    { role: "user", content: `פקודת אדמין: "${command}"` },
+  ]);
+
+  try {
+    // Extract JSON from response (handle markdown wrapping)
+    const jsonMatch = output.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+  } catch {
+    console.error("Brain failed to parse delegation JSON:", output);
+  }
+
+  // Fallback: run all bots with the command
+  return {
+    delegations: availableBots.map(b => ({ slug: b.slug, subCommand: command })),
+    reasoning: "Brain לא הצליח לנתח — שולח לכל הסוכנים",
+    conflicts: [],
+  };
+}
+
 // ─── Call AI Gateway ───
 async function callAI(apiKey: string, model: string, messages: Array<{ role: string; content: string }>) {
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
