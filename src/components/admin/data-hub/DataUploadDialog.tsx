@@ -179,20 +179,30 @@
        let fileSize = null;
 
        if (file) {
-         const fileExt = file.name.split(".").pop();
-         const filePath = `${dataType}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+         try {
+           const fileExt = file.name.split(".").pop();
+           const filePath = `${dataType}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-         const { error: uploadError } = await supabase.storage
-           .from("admin-data")
-           .upload(filePath, file);
+           const { error: uploadError } = await supabase.storage
+             .from("admin-data")
+             .upload(filePath, file);
 
-         if (uploadError) throw uploadError;
+           if (uploadError) throw uploadError;
 
-         const { data: urlData } = supabase.storage
-           .from("admin-data")
-           .getPublicUrl(filePath);
+           const { data: urlData } = supabase.storage
+             .from("admin-data")
+             .getPublicUrl(filePath);
 
-         fileUrl = urlData.publicUrl;
+           fileUrl = urlData.publicUrl;
+         } catch (storageErr: any) {
+           console.warn("Storage unavailable, using base64 fallback:", storageErr.message);
+           fileUrl = await new Promise<string>((resolve, reject) => {
+             const reader = new FileReader();
+             reader.onload = () => resolve(reader.result as string);
+             reader.onerror = () => reject(new Error("Failed to read file"));
+             reader.readAsDataURL(file);
+           });
+         }
          fileName = file.name;
          fileType = file.type;
          fileSize = file.size;
