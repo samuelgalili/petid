@@ -49,15 +49,7 @@ export const DashboardProductTable = () => {
       })) || []);
     } catch (error) {
       console.error('Error fetching products:', error);
-      // Mock data fallback
-      setProducts([
-        { id: '1', name: 'TAURO Pro Line Pure Mist', sku: '4779051E', price: 109, sale_price: 319, stock: 15 },
-        { id: '2', name: 'YOWUP Dog Bath Shampoo', sku: '84970237', price: 30, sale_price: 34, stock: 12 },
-        { id: '3', name: 'Morando Professional Sterilized Adult Dog. 3kg', sku: '84198155', price: 286, sale_price: 832, stock: 34 },
-        { id: '4', name: 'KONG Classic Medium Dog', sku: 'SN1911REDM', price: 37, sale_price: 250, stock: 28 },
-        { id: '5', name: 'Josera Kids Puppy Food', sku: '4043941', price: 237, sale_price: 699, stock: 49 },
-        { id: '6', name: 'HERTA Cat Food Special Sterilized 12kg', sku: 'H1897293', price: 118, sale_price: 33, stock: 49 },
-      ]);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
