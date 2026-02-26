@@ -1793,6 +1793,36 @@ export type Database = {
           },
         ]
       }
+      business_payouts: {
+        Row: {
+          amount: number
+          business_id: string | null
+          created_at: string
+          id: string
+          method: string | null
+          payout_date: string | null
+          status: string
+        }
+        Insert: {
+          amount?: number
+          business_id?: string | null
+          created_at?: string
+          id?: string
+          method?: string | null
+          payout_date?: string | null
+          status?: string
+        }
+        Update: {
+          amount?: number
+          business_id?: string | null
+          created_at?: string
+          id?: string
+          method?: string | null
+          payout_date?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       business_products: {
         Row: {
           api_sync_enabled: boolean | null
@@ -2584,6 +2614,39 @@ export type Database = {
         }
         Relationships: []
       }
+      compliance_checks: {
+        Row: {
+          category: string | null
+          created_at: string
+          detail: string | null
+          id: string
+          last_checked_at: string | null
+          name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          detail?: string | null
+          id?: string
+          last_checked_at?: string | null
+          name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          detail?: string | null
+          id?: string
+          last_checked_at?: string | null
+          name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       content_calendar: {
         Row: {
           approved_at: string | null
@@ -3336,6 +3399,42 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_segments: {
+        Row: {
+          color: string | null
+          created_at: string
+          criteria: Json | null
+          customer_count: number | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          criteria?: Json | null
+          customer_count?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          criteria?: Json | null
+          customer_count?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customer_tag_assignments: {
         Row: {
           assigned_at: string
@@ -3834,6 +3933,45 @@ export type Database = {
           type?: string
           updated_at?: string
           year?: number
+        }
+        Relationships: []
+      }
+      flagged_content: {
+        Row: {
+          content_type: string
+          created_at: string
+          flagged_at: string | null
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          risk_level: string | null
+          status: string | null
+          title: string
+          user_identifier: string | null
+        }
+        Insert: {
+          content_type: string
+          created_at?: string
+          flagged_at?: string | null
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          risk_level?: string | null
+          status?: string | null
+          title: string
+          user_identifier?: string | null
+        }
+        Update: {
+          content_type?: string
+          created_at?: string
+          flagged_at?: string | null
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          risk_level?: string | null
+          status?: string | null
+          title?: string
+          user_identifier?: string | null
         }
         Relationships: []
       }
@@ -4448,6 +4586,51 @@ export type Database = {
           partner_name?: string
           share_default_off?: boolean | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      invoices: {
+        Row: {
+          amount: number
+          created_at: string
+          customer_email: string | null
+          customer_name: string
+          due_date: string | null
+          id: string
+          invoice_number: string
+          issued_at: string
+          notes: string | null
+          paid_at: string | null
+          status: string
+          vat_amount: number | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          customer_email?: string | null
+          customer_name: string
+          due_date?: string | null
+          id?: string
+          invoice_number: string
+          issued_at?: string
+          notes?: string | null
+          paid_at?: string | null
+          status?: string
+          vat_amount?: number | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string
+          due_date?: string | null
+          id?: string
+          invoice_number?: string
+          issued_at?: string
+          notes?: string | null
+          paid_at?: string | null
+          status?: string
+          vat_amount?: number | null
         }
         Relationships: []
       }
@@ -9121,6 +9304,48 @@ export type Database = {
           },
         ]
       }
+      return_requests: {
+        Row: {
+          amount: number
+          created_at: string
+          customer_email: string | null
+          customer_name: string
+          id: string
+          notes: string | null
+          order_id: string
+          product_name: string
+          reason: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          customer_email?: string | null
+          customer_name: string
+          id?: string
+          notes?: string | null
+          order_id: string
+          product_name: string
+          reason: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string
+          id?: string
+          notes?: string | null
+          order_id?: string
+          product_name?: string
+          reason?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       rewards: {
         Row: {
           created_at: string
@@ -10428,6 +10653,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      system_integrations: {
+        Row: {
+          category: string
+          config: Json | null
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          is_connected: boolean | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          config?: Json | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_connected?: boolean | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          config?: Json | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_connected?: boolean | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       system_settings: {
         Row: {
