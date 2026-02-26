@@ -39,7 +39,10 @@ export const UXGuardian = () => {
       if (entry) {
         entry.count++;
         if (entry.count >= 4) {
-          // Rage click detected!
+          // Rage click detected — dispatch custom event
+          window.dispatchEvent(new CustomEvent("UXG_RageClick", {
+            detail: { element: target, count: entry.count, route: window.location.pathname },
+          }));
           logRageClick(target, entry.count);
           entry.count = 0;
         }
