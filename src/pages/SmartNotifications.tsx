@@ -44,10 +44,54 @@ const categoryConfig: Record<NotifCategory, { icon: typeof ShoppingCart; color: 
 const SmartNotifications = () => {
   const navigate = useNavigate();
   const [filter, setFilter] = useState<'all' | NotifCategory>('all');
-  const [readIds, setReadIds] = useState<Set<string>>(new Set(notifications.filter(n => n.read).map(n => n.id)));
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+
+  // Fetch AI insights from agent action logs
+  const { data: aiInsights = [] } = useQuery({
+    queryKey: ["smart-notifications-insights"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("agent_action_logs")
+        .select("*")
+        .eq("action_type", "bot_scheduled_report")
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return (data || []).map((log: any) => ({
+        id: log.id,
+        assistant: log.description?.match(/\[([^\]]+)\]/)?.[1] || "AI",
+        title: log.description?.replace(/\[[^\]]+\]\s*/, "").substring(0, 60) || "תובנה",
+        body: log.description?.replace(/\[[^\]]+\]\s*/, "").substring(0, 200) || "",
+        badge: false,
+        action: { label: 'צפה בפרטים', route: '/admin/robot-fleet' },
+      }));
+    },
+  });
+
+  // Fetch recent notifications from admin_data_alerts
+  const { data: notifications = [] } = useQuery({
+    queryKey: ["smart-notifications-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("admin_data_alerts")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return (data || []).map((alert: any): Notification => ({
+        id: alert.id,
+        category: alert.category === 'inventory' ? 'inventory' : alert.category === 'sales' ? 'sales' : 'ai' as NotifCategory,
+        title: alert.title,
+        body: alert.description || "",
+        time: new Date(alert.created_at).toLocaleString("he-IL", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }),
+        read: alert.is_read || false,
+        action: { label: 'צפה', route: '/admin/notifications' },
+      }));
+    },
+  });
 
   const filtered = filter === 'all' ? notifications : notifications.filter(n => n.category === filter);
-  const unreadCount = notifications.filter(n => !readIds.has(n.id)).length;
+  const unreadCount = notifications.filter(n => !n.read && !readIds.has(n.id)).length;
 
   const markRead = (id: string) => setReadIds(prev => new Set(prev).add(id));
   const markAllRead = () => setReadIds(new Set(notifications.map(n => n.id)));
@@ -61,7 +105,6 @@ const SmartNotifications = () => {
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
-      {/* Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/40">
         <div className="flex items-center justify-between px-5 h-14 max-w-3xl mx-auto">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
@@ -86,6 +129,7 @@ const SmartNotifications = () => {
       <div className="max-w-3xl mx-auto px-5 py-6 space-y-8">
 
         {/* ─── AI Insights Section ─── */}
+        {aiInsights.length > 0 && (
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -94,11 +138,10 @@ const SmartNotifications = () => {
           <div className="flex items-center gap-2 mb-1">
             <Sparkles className="w-4 h-4 text-primary" strokeWidth={1.5} />
             <h2 className="text-sm font-semibold">המלצות חכמות</h2>
-            <span className="text-[10px] text-muted-foreground">מ-Danny & Sarah</span>
           </div>
 
           <div className="space-y-3">
-            {aiInsights.map((insight, i) => (
+            {aiInsights.map((insight: AiInsight, i: number) => (
               <motion.div
                 key={insight.id}
                 initial={{ opacity: 0, y: 10 }}
