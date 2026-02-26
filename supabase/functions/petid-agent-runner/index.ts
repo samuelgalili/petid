@@ -164,9 +164,19 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     let targetBotId: string | null = null;
+    let adminOverride: { command: string; source: string; synergy?: boolean } | null = null;
     try {
       const body = await req.json();
       targetBotId = body?.bot_id || null;
+      // Admin Override Protocol: Priority 1 commands from dashboard
+      if (body?.admin_override) {
+        adminOverride = {
+          command: body.admin_override.command || "",
+          source: body.admin_override.source || "admin-dashboard",
+          synergy: body.admin_override.synergy !== false,
+        };
+        console.log(`🔴 ADMIN OVERRIDE received from ${adminOverride.source}: "${adminOverride.command}"`);
+      }
     } catch {
       // No body = run all active bots
     }
