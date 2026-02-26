@@ -2097,6 +2097,51 @@ export type Database = {
           },
         ]
       }
+      ceo_daily_briefs: {
+        Row: {
+          ai_insight: string | null
+          brief_date: string
+          costs_saved: number | null
+          created_at: string | null
+          gross_revenue: number | null
+          id: string
+          is_read: boolean | null
+          net_profit: number | null
+          orders_count: number | null
+          scientific_fact: string | null
+          total_costs: number | null
+          total_vat: number | null
+        }
+        Insert: {
+          ai_insight?: string | null
+          brief_date?: string
+          costs_saved?: number | null
+          created_at?: string | null
+          gross_revenue?: number | null
+          id?: string
+          is_read?: boolean | null
+          net_profit?: number | null
+          orders_count?: number | null
+          scientific_fact?: string | null
+          total_costs?: number | null
+          total_vat?: number | null
+        }
+        Update: {
+          ai_insight?: string | null
+          brief_date?: string
+          costs_saved?: number | null
+          created_at?: string | null
+          gross_revenue?: number | null
+          id?: string
+          is_read?: boolean | null
+          net_profit?: number | null
+          orders_count?: number | null
+          scientific_fact?: string | null
+          total_costs?: number | null
+          total_vat?: number | null
+        }
+        Relationships: []
+      }
       challenge_participants: {
         Row: {
           challenge_id: string
