@@ -381,6 +381,93 @@ async function fetchOCRDocumentData(supabase: any, petId: string): Promise<strin
   return result;
 }
 
+// ============= Brain Context Integrity: Cross-reference OCR for missing pet fields =============
+async function buildBrainIntegrityReport(supabase: any, petId: string, petData: any): Promise<string> {
+  if (!petId || !petData) return "";
+
+  const criticalFields: { key: string; label: string }[] = [
+    { key: "microchip_number", label: "מספר שבב" },
+    { key: "breed", label: "גזע" },
+    { key: "weight", label: "משקל" },
+    { key: "birth_date", label: "תאריך לידה" },
+    { key: "gender", label: "מין" },
+    { key: "vet_name", label: "וטרינר" },
+    { key: "license_number", label: "מספר רישיון" },
+  ];
+
+  const missingFields = criticalFields.filter(f => !petData[f.key]);
+  if (missingFields.length === 0) return "\n[BRAIN_INTEGRITY]\n✅ כל הנתונים הקריטיים זמינים — Brain Context שלם.\n[/BRAIN_INTEGRITY]";
+
+  const { data: ocrDocs } = await supabase
+    .from("pet_document_extracted_data")
+    .select("chip_number, vaccination_type, diagnosis, provider_name, treatment_type")
+    .eq("pet_id", petId)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  const { data: vaultDocs } = await supabase
+    .from("pet_documents")
+    .select("title, description")
+    .eq("pet_id", petId)
+    .order("uploaded_at", { ascending: false })
+    .limit(15);
+
+  const recoveredFields: string[] = [];
+  const stillMissing: string[] = [];
+
+  for (const field of missingFields) {
+    let found = false;
+    
+    if (field.key === "microchip_number" && ocrDocs) {
+      const chipDoc = ocrDocs.find((d: any) => d.chip_number);
+      if (chipDoc) {
+        recoveredFields.push(`✅ ${field.label}: נמצא במסמך סרוק — ${chipDoc.chip_number}`);
+        found = true;
+      }
+    }
+
+    if (field.key === "vet_name" && ocrDocs) {
+      const vetDoc = ocrDocs.find((d: any) => d.provider_name);
+      if (vetDoc) {
+        recoveredFields.push(`✅ ${field.label}: נמצא במסמך סרוק — ${vetDoc.provider_name}`);
+        found = true;
+      }
+    }
+
+    if (!found && vaultDocs) {
+      const searchTerms: Record<string, string[]> = {
+        microchip_number: ["שבב", "chip", "microchip"],
+        breed: ["גזע", "breed"],
+        weight: ["משקל", "kg", "weight"],
+        license_number: ["רישיון", "license"],
+      };
+      const terms = searchTerms[field.key] || [];
+      for (const doc of vaultDocs) {
+        const text = `${doc.title || ""} ${doc.description || ""}`.toLowerCase();
+        if (terms.some(t => text.includes(t))) {
+          recoveredFields.push(`🔍 ${field.label}: נמצא מסמך רלוונטי — "${doc.title}". בדוק תוכן.`);
+          found = true;
+          break;
+        }
+      }
+    }
+
+    if (!found) {
+      stillMissing.push(`❌ ${field.label}: לא נמצא בשום מקור.`);
+    }
+  }
+
+  let report = "\n[BRAIN_INTEGRITY — VALIDATION REPORT]";
+  if (recoveredFields.length > 0) {
+    report += `\nנתונים שוחזרו ממסמכים סרוקים:\n${recoveredFields.join("\n")}`;
+  }
+  if (stillMissing.length > 0) {
+    report += `\nנתונים חסרים (ניתן לבקש מהמשתמש):\n${stillMissing.join("\n")}`;
+  }
+  report += "\n[/BRAIN_INTEGRITY]";
+  return report;
+}
+
 // ============= Fetch Vet Visit History (OCR-scanned records) =============
 async function fetchVetHistory(supabase: any, petId: string): Promise<string> {
   if (!petId) return "";
@@ -522,11 +609,12 @@ serve(async (req) => {
 
     // ============= Enrich Pet Data from DB =============
     let petCard = "\n[ACTIVE_PET]\nnone\n[/ACTIVE_PET]";
+    let fullPetData: any = null;
     
     if (activePet?.id) {
       const { data: fullPet } = await supabase
         .from("pets")
-        .select("name, type, breed, age, gender, birth_date, weight, weight_unit, size, health_notes, medical_conditions, has_insurance, insurance_company, insurance_expiry_date, last_vet_visit, next_vet_visit, vet_name, vet_clinic, is_neutered, current_food, microchip_number, city")
+        .select("name, type, breed, age, gender, birth_date, weight, weight_unit, size, color, health_notes, medical_conditions, has_insurance, insurance_company, insurance_expiry_date, insurance_policy_number, last_vet_visit, next_vet_visit, vet_name, vet_clinic, vet_clinic_name, vet_clinic_phone, vet_phone, is_neutered, current_food, microchip_number, license_number, license_expiry_date, license_conditions, is_dangerous_breed, favorite_activities, personality_tags, city")
         .eq("id", activePet.id)
         .maybeSingle();
       
@@ -546,34 +634,55 @@ serve(async (req) => {
           ? fullPet.medical_conditions.join(", ") 
           : "אין ידועים";
 
+        // NRC 2006 MER calculation
+        let nrcCalc = "לא ניתן לחשב (חסר משקל)";
+        if (fullPet.weight && fullPet.weight > 0) {
+          const rer = Math.round(70 * Math.pow(fullPet.weight, 0.75));
+          const isNeutered = fullPet.is_neutered === true;
+          const factor = isNeutered ? 1.6 : 1.8;
+          const mer = Math.round(rer * factor);
+          nrcCalc = `RER=${rer} kcal, MER=${mer} kcal/יום (factor=${factor})`;
+        }
+
         petCard = `
-[ACTIVE_PET]
+[ACTIVE_PET — CENTRALIZED BRAIN CONTEXT]
 name: ${fullPet.name}
 type: ${fullPet.type === 'dog' ? 'כלב' : fullPet.type === 'cat' ? 'חתול' : fullPet.type}
 breed: ${fullPet.breed ?? "לא ידוע"}
 age: ${ageDisplay}
 birth_date: ${fullPet.birth_date ?? "לא ידוע"}
 gender: ${fullPet.gender === 'male' ? 'זכר' : fullPet.gender === 'female' ? 'נקבה' : fullPet.gender ?? "לא ידוע"}
+color: ${fullPet.color ?? "לא ידוע"}
 weight: ${fullPet.weight ? `${fullPet.weight} ${fullPet.weight_unit || 'ק"ג'}` : "לא ידוע"}
 size: ${fullPet.size ?? "לא ידוע"}
 is_neutered: ${fullPet.is_neutered === true ? 'כן' : fullPet.is_neutered === false ? 'לא' : 'לא ידוע'}
 health_notes: ${fullPet.health_notes ?? "אין"}
 medical_conditions: ${medConditions}
 current_food: ${fullPet.current_food ?? "לא ידוע"}
+microchip_number: ${fullPet.microchip_number ?? "לא ידוע"}
+license_number: ${fullPet.license_number ?? "לא ידוע"}
+license_expiry: ${fullPet.license_expiry_date ?? "לא ידוע"}
+license_conditions: ${fullPet.license_conditions ?? "אין"}
+is_dangerous_breed: ${fullPet.is_dangerous_breed ? 'כן — חלים הגבלות חוקיות' : 'לא'}
 has_insurance: ${fullPet.has_insurance === true ? 'כן' : fullPet.has_insurance === false ? 'לא' : 'לא ידוע'}
 insurance_company: ${fullPet.insurance_company ?? "אין"}
+insurance_policy: ${fullPet.insurance_policy_number ?? "לא ידוע"}
 insurance_expiry: ${fullPet.insurance_expiry_date ?? "לא ידוע"}
 last_vet_visit: ${fullPet.last_vet_visit ?? "לא ידוע"}
 next_vet_visit: ${fullPet.next_vet_visit ?? "לא ידוע"}
 vet_name: ${fullPet.vet_name ?? "לא ידוע"}
-vet_clinic: ${fullPet.vet_clinic ?? "לא ידוע"}
-microchip_number: ${fullPet.microchip_number ?? "לא ידוע"}
+vet_clinic: ${fullPet.vet_clinic ?? fullPet.vet_clinic_name ?? "לא ידוע"}
+vet_phone: ${fullPet.vet_phone ?? fullPet.vet_clinic_phone ?? "לא ידוע"}
 city: ${fullPet.city ?? "לא ידוע"}
+favorite_activities: ${fullPet.favorite_activities?.join(", ") ?? "לא ידוע"}
+personality: ${fullPet.personality_tags?.join(", ") ?? "לא ידוע"}
+nrc_calculation: ${nrcCalc}
 [/ACTIVE_PET]`;
 
         // Update activePet with DB data for downstream use
         activePet.breed = fullPet.breed || activePet.breed;
         activePet.type = fullPet.type || activePet.type;
+        fullPetData = fullPet;
       }
     } else if (activePet) {
       petCard = `\n[ACTIVE_PET]\nname: ${activePet.name}\ntype: ${activePet.type === 'dog' ? 'כלב' : activePet.type === 'cat' ? 'חתול' : activePet.type}\nbreed: ${activePet.breed ?? "לא ידוע"}\nage: ${activePet.age ?? "לא ידוע"}\ngender: ${activePet.gender === 'male' ? 'זכר' : activePet.gender === 'female' ? 'נקבה' : activePet.gender ?? "לא ידוע"}\nhealth_notes: ${activePet.health_notes ?? "אין"}\n[/ACTIVE_PET]`;
@@ -600,6 +709,7 @@ city: ${fullPet.city ?? "לא ידוע"}
     let ownerProfile = "";
     let purchaseHistory = "";
     let ocrDocumentData = "";
+    let brainIntegrity = "";
 
     // Get user ID from auth header for owner/purchase data
     const authHeader = req.headers.get("authorization");
@@ -658,6 +768,12 @@ city: ${fullPet.city ?? "לא ידוע"}
           }
         })()
       );
+      // Brain Context Integrity — cross-reference OCR for missing fields
+      if (fullPetData) {
+        dataPromises.push(
+          buildBrainIntegrityReport(supabase, activePet.id, fullPetData).then(r => { brainIntegrity = r; })
+        );
+      }
     }
 
     // Owner profile + purchase history
@@ -819,7 +935,7 @@ When greeting the user, check for:
 4. Upcoming appointments → remind about vet visits
 5. Expired vaccines → alert proactively
 
-${userName}${ownerProfile}${petCard}${breedReminder}${breedContext}${dietRulesContext}${medicalMemory}${vetHistory}${ocrDocumentData}${purchaseHistory}${productContext}
+${userName}${ownerProfile}${petCard}${brainIntegrity}${breedReminder}${breedContext}${dietRulesContext}${medicalMemory}${vetHistory}${ocrDocumentData}${purchaseHistory}${productContext}
 
 === V71: THE CHAT CONSULTANT — CLINICAL, EMPATHETIC, PROACTIVE ===
 אתה קליני, אמפתי ופרואקטיבי. שלוש שכבות חדשות:
@@ -889,10 +1005,22 @@ ${speciesProtocol}
 • כל שיחה → has_insurance: אם לא → "💡 ${petName} ללא ביטוח. כדאי לבדוק אפשרויות."
 • כל שאלה על שבב/מיקרוצ'יפ → אם microchip_number קיים ב-ACTIVE_PET, הצג אותו ישירות: "מספר השבב של ${petName} הוא [X]." אל תשאל אם המשתמש יודע — תציג את מה שיש.
 
-=== שכבה 2.5: DOCUMENT FALLBACK PROTOCOL ===
-• אם שדה מציג "לא ידוע" — לפני שאתה אומר שאתה לא יודע, בדוק ב-OCR_MEDICAL_RECORDS וב-PET_DOCUMENTS_VAULT.
-• אם מצאת שם את המידע — הצג אותו עם הערה: "לפי מסמך סרוק, [המידע]."
-• רק אם גם שם אין — אמור: "המידע הזה לא נמצא. רוצה להעלות מסמך רלוונטי?"
+=== שכבה 2.5: CENTRALIZED BRAIN VALIDATION PROTOCOL ===
+כלל ברזל: אם נתון מוצג ב-UI של הפרופיל — חובה שתהיה לך גישה אליו דרך ACTIVE_PET.
+לפני שאתה אומר "אין לי מידע" על כל שדה, עקוב אחר הסדר:
+1. בדוק ב-ACTIVE_PET (המקור הראשי).
+2. בדוק ב-BRAIN_INTEGRITY — אם שדה שוחזר ממסמך סרוק, השתמש בו והצג: "לפי מסמך סרוק, [המידע]."
+3. בדוק ב-OCR_MEDICAL_RECORDS — חיסונים, טיפולים, מספר שבב.
+4. בדוק ב-PET_DOCUMENTS_VAULT — כותרות ותיאורי מסמכים.
+5. רק אם כל 4 המקורות ריקים — אמור: "המידע הזה לא נמצא במערכת. רוצה להעלות מסמך רלוונטי?"
+
+⚠️ NEVER claim data is missing without completing all 4 checks above.
+⚠️ If microchip_number exists in ANY source — display it immediately. Never ask the user for it.
+
+=== שכבה 3: Local Expert (V39) ===
+• זהה אוטומטית עיר מ-ACTIVE_PET.city או OWNER_PROFILE.city.
+• וטרינר חירום 24/7: "*3939 — מוקד חירום ארצי"
+• וטרינר רשותי: "הוטרינר הרשותי ב{עיר} — חייג לעירייה לפרטים."
 • גינות כלבים: המלץ עד 3 לפי עיר.
 • אירועי קהילה: "מומלץ לבדוק אירועים לבעלי חיות ב{עיר}."
 
