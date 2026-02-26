@@ -162,7 +162,7 @@ export default function Messages() {
               <button onClick={() => navigate(-1)} className="p-1 -mr-1" aria-label="חזרה">
                 <ChevronRight className="w-6 h-6 text-foreground" />
               </button>
-              <img src={petidIcon} alt="PetID" className="w-7 h-7 object-contain" />
+              
               <h1 className="text-xl font-bold text-foreground">
                 {currentUserName || "הודעות"}
               </h1>
