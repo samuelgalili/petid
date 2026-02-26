@@ -141,7 +141,7 @@ export const AppHeader = ({
 
         {/* Center — Title + role badge */}
         <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5">
-          <img src={petidIcon} alt="PetID" className="w-5 h-5 object-contain" />
+          
           <h1
             className="text-sm font-semibold truncate max-w-[160px]"
             style={{ color: dark ? "white" : "hsl(var(--foreground))" }}
