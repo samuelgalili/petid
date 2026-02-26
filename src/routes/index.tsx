@@ -260,6 +260,7 @@ const CreatorDashboard = lazy(() => import("@/pages/CreatorDashboard"));
 const CreatorAnalytics = lazy(() => import("@/pages/CreatorAnalytics"));
 const ProductSourcing = lazy(() => import("@/pages/ProductSourcing"));
 const SmartNotifications = lazy(() => import("@/pages/SmartNotifications"));
+const BusinessSettings = lazy(() => import("@/pages/BusinessSettings"));
 
 export const businessRoutes: RouteObject[] = [
   { path: "/businesses", element: <LazyPage component={BusinessDirectory} pageName="ספריית עסקים" /> },
@@ -268,6 +269,7 @@ export const businessRoutes: RouteObject[] = [
   { path: "/creator-dashboard", element: <Protected><LazyPage component={CreatorDashboard} pageName="Creator Studio" /></Protected> },
   { path: "/creator-analytics", element: <Protected><LazyPage component={CreatorAnalytics} pageName="Creator Analytics" /></Protected> },
   { path: "/smart-notifications", element: <Protected><LazyPage component={SmartNotifications} pageName="מרכז התראות" /></Protected> },
+  { path: "/business-settings", element: <Protected><LazyPage component={BusinessSettings} pageName="הגדרות עסק" /></Protected> },
   { path: "/product-sourcing", element: <Protected><LazyPage component={ProductSourcing} pageName="קטלוג מוצרים" /></Protected> },
   { path: "/ad-campaigns", element: <LazyPage component={AdCampaigns} pageName="קמפיינים" /> },
   { path: "/parks", element: <Navigate to="/chat" replace /> },
