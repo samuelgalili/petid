@@ -48,7 +48,17 @@ export const VaccineCountdown = ({ petId, petName }: VaccineCountdownProps) => {
             nextDate: v.next_visit_date,
             daysUntil: Math.ceil((new Date(v.next_visit_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
           }));
-        setUpcoming(items);
+
+        // Deduplicate by vaccine names + date to avoid showing the same vaccine twice
+        const seen = new Set<string>();
+        const unique = items.filter((item) => {
+          const key = `${item.vaccines.sort().join(",")}|${item.nextDate}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+
+        setUpcoming(unique);
       }
     };
     fetch();
