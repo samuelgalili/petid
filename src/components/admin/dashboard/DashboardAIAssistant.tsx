@@ -228,10 +228,10 @@ export const DashboardAIAssistant = () => {
                         {/* Status dot */}
                         <div className={cn(
                           "absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-card",
-                          bot.health_status === "healthy" ? "bg-emerald-500" :
-                          bot.health_status === "healed" ? "bg-sky-500" :
-                          bot.health_status === "error" || bot.health_status === "critical" ? "bg-destructive" :
-                          bot.is_active ? "bg-muted-foreground/40" : "bg-muted-foreground/20"
+                        bot.health_status === "healthy" ? "bg-primary" :
+                        bot.health_status === "healed" ? "bg-accent-foreground" :
+                        bot.health_status === "error" || bot.health_status === "critical" ? "bg-destructive" :
+                        bot.is_active ? "bg-muted-foreground/40" : "bg-muted-foreground/20"
                         )} />
                       </div>
                     </TooltipTrigger>
