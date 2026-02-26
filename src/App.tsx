@@ -35,7 +35,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { OfflineBadge } from "@/components/OfflineBadge";
 import { LoginPromptDialog } from "@/components/LoginPromptDialog";
-import { SplashScreen } from "@/components/SplashScreen";
+
 import ScrollToTop from "@/components/ScrollToTop";
 import { LegalDrawer } from "@/components/LegalDrawer";
 import CompleteProfilePrompt from "@/components/CompleteProfilePrompt";
