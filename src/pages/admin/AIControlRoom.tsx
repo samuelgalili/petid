@@ -253,11 +253,11 @@ const AIControlRoom = () => {
   return (
     <AdminLayout title="AI Control Room" icon={Crown}>
       <div className="grid lg:grid-cols-[1fr_400px] gap-6 h-[calc(100vh-180px)]">
-        {/* Main Chat Area */}
-        <div className="flex flex-col gap-4 overflow-auto">
-          {/* Global Kill Switch Bar */}
+        {/* Main Column — fixed layout, no overflow push */}
+        <div className="flex flex-col gap-4 min-h-0">
+          {/* Global Kill Switch Bar — always visible */}
           <Card className={cn(
-            "p-4 flex items-center justify-between border-2 transition-colors",
+            "p-4 flex items-center justify-between border-2 transition-colors shrink-0",
             globalKillSwitch ? "border-red-500/50 bg-red-500/5" : "border-emerald-500/30 bg-emerald-500/5"
           )}>
             <div className="flex items-center gap-3">
@@ -285,27 +285,29 @@ const AIControlRoom = () => {
             </div>
           </Card>
 
-          {/* AI Insights */}
-          <AIInsightsPanel />
+          {/* AI Insights — collapsible, never pushes chat out */}
+          <div className="shrink-0 max-h-[200px] overflow-y-auto rounded-xl">
+            <AIInsightsPanel />
+          </div>
           
-          {/* Chat */}
-          <Card className="flex flex-col flex-1 overflow-hidden border-border/50">
-            <CardHeader className="border-b border-border/50 pb-4">
+          {/* Chat — takes remaining space, never hidden */}
+          <Card className="flex flex-col flex-1 min-h-0 overflow-hidden border-border/50">
+            <CardHeader className="border-b border-border/50 pb-4 shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/25">
                   <Brain className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <CardTitle className="text-lg">PetID Brain Bot</CardTitle>
+                  <CardTitle className="text-lg">PetID Ops Commander</CardTitle>
                   <div className="flex items-center gap-2 mt-1">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                     <span className="text-sm text-muted-foreground">מנהל {fleetBots.length} רובוטים · The Fleet</span>
                   </div>
                 </div>
               </div>
             </CardHeader>
 
-            <ScrollArea className="flex-1 p-4">
+            <ScrollArea className="flex-1 min-h-0 p-4">
               <div className="space-y-4">
                 {chatMessages.map((message) => (
                   <motion.div
@@ -336,7 +338,7 @@ const AIControlRoom = () => {
               </div>
             </ScrollArea>
 
-            <div className="p-4 border-t border-border/50">
+            <div className="p-4 border-t border-border/50 shrink-0">
               <div className="flex gap-2">
                 <input
                   type="text"

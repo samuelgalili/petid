@@ -190,13 +190,19 @@ export const DashboardAIAssistant = () => {
 
       {/* Bot Status Strip */}
       {bots.length > 0 && (
-        <div className="px-4 py-2.5 border-b border-border bg-muted/30">
-          <div className="flex items-center gap-1.5 mb-2">
-            <HeartPulse className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={1.5} />
-            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Fleet Status</span>
+        <div className="px-4 py-3 border-b border-border bg-muted/20">
+          <div className="flex items-center justify-between mb-2.5">
+            <div className="flex items-center gap-1.5">
+              <HeartPulse className="w-3.5 h-3.5 text-primary" strokeWidth={1.5} />
+              <span className="text-[11px] font-semibold text-foreground uppercase tracking-wider">Fleet Status</span>
+            </div>
+            <div className="flex items-center gap-2 text-[11px]">
+              <span className="text-primary font-medium">{healthyCt} ✓</span>
+              {errorCt > 0 && <span className="text-destructive font-medium">{errorCt} ✕</span>}
+            </div>
           </div>
           <TooltipProvider delayDuration={200}>
-            <div className="flex flex-wrap gap-1">
+            <div className="grid grid-cols-6 lg:grid-cols-8 gap-1.5">
               {bots.map((bot) => {
                 const health = HEALTH_CONFIG[bot.health_status || ""] || {
                   color: bot.is_active ? "text-muted-foreground" : "text-muted-foreground/40",
@@ -213,25 +219,27 @@ export const DashboardAIAssistant = () => {
                   <Tooltip key={bot.id}>
                     <TooltipTrigger asChild>
                       <div className={cn(
-                        "relative flex items-center justify-center w-7 h-7 rounded-md text-[9px] font-bold cursor-default transition-all",
-                        bot.is_active ? "bg-card border border-border shadow-sm" : "bg-muted/50 border border-transparent",
+                        "relative flex flex-col items-center justify-center h-10 rounded-lg text-[10px] font-bold cursor-default transition-all",
+                        bot.is_active 
+                          ? "bg-card border border-border shadow-sm hover:shadow-md hover:border-primary/30" 
+                          : "bg-muted/50 border border-transparent opacity-50",
                         bot.health_status === "error" || bot.health_status === "critical" 
-                          ? "ring-1 ring-destructive/40" 
+                          ? "ring-2 ring-destructive/50 border-destructive/30" 
                           : "",
                       )}>
                         <span className={cn(
-                          "leading-none",
+                          "leading-none text-[11px]",
                           bot.is_active ? "text-foreground" : "text-muted-foreground/50"
                         )}>
                           {initials}
                         </span>
                         {/* Status dot */}
                         <div className={cn(
-                          "absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-card",
-                        bot.health_status === "healthy" ? "bg-primary" :
-                        bot.health_status === "healed" ? "bg-accent-foreground" :
-                        bot.health_status === "error" || bot.health_status === "critical" ? "bg-destructive" :
-                        bot.is_active ? "bg-muted-foreground/40" : "bg-muted-foreground/20"
+                          "absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-card",
+                          bot.health_status === "healthy" ? "bg-primary" :
+                          bot.health_status === "healed" ? "bg-accent-foreground" :
+                          bot.health_status === "error" || bot.health_status === "critical" ? "bg-destructive" :
+                          bot.is_active ? "bg-muted-foreground/40" : "bg-muted-foreground/20"
                         )} />
                       </div>
                     </TooltipTrigger>
