@@ -3975,6 +3975,42 @@ export type Database = {
         }
         Relationships: []
       }
+      fleet_commands: {
+        Row: {
+          brain_analysis: Json | null
+          created_at: string
+          id: string
+          issued_by: string | null
+          raw_command: string
+          result: string | null
+          status: string
+          target_agent: string | null
+          updated_at: string
+        }
+        Insert: {
+          brain_analysis?: Json | null
+          created_at?: string
+          id?: string
+          issued_by?: string | null
+          raw_command: string
+          result?: string | null
+          status?: string
+          target_agent?: string | null
+          updated_at?: string
+        }
+        Update: {
+          brain_analysis?: Json | null
+          created_at?: string
+          id?: string
+          issued_by?: string | null
+          raw_command?: string
+          result?: string | null
+          status?: string
+          target_agent?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       food_consumption_predictions: {
         Row: {
           bag_weight_kg: number

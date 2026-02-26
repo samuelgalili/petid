@@ -35,6 +35,7 @@ import {
   DashboardCRMInsights,
   DashboardContentInsights,
   DashboardSystemInsights,
+  DashboardFleetCommand,
 } from "@/components/admin/dashboard";
 
 interface OrderStats {
@@ -219,6 +220,9 @@ const AdminDashboard = () => {
 
                 {/* AI Assistant */}
                 <DashboardAIAssistant />
+
+                {/* Fleet Command Center */}
+                <DashboardFleetCommand />
 
                 {/* Product Management Header */}
                 <div className="bg-slate-800 rounded-xl p-4 text-white">
