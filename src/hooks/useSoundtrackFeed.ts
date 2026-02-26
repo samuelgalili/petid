@@ -433,6 +433,9 @@ export function useSoundtrackFeed() {
     setDiscoverPosts(updater);
     setFollowingPosts(updater);
 
+    // Skip DB operation for promo users
+    if (isPromoId(targetUserId)) return;
+
     try {
       if (isFollowing) {
         await supabase
