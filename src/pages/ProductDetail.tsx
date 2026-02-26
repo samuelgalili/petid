@@ -2206,6 +2206,7 @@ const ProductDetail = () => {
   const [reportDetails, setReportDetails] = useState("");
   const [isReporting, setIsReporting] = useState(false);
   const [dogWeight, setDogWeight] = useState<string>("");
+  const [detailTab, setDetailTab] = useState<'overview' | 'specs'>('overview');
   const [puppyAgeMonths, setPuppyAgeMonths] = useState<string>("");
   const touchStartX = useRef(0);
 
