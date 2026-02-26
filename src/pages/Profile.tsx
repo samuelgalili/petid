@@ -96,6 +96,8 @@ const Profile = () => {
   const [healthRefreshKey, setHealthRefreshKey] = useState(0);
   const [healthBreakdownOpen, setHealthBreakdownOpen] = useState(false);
   const [showEmergencyHub, setShowEmergencyHub] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const triggerHealthRefresh = () => {
     setHealthRefreshKey((k) => k + 1);
     fetchAllData();
@@ -390,8 +392,11 @@ const Profile = () => {
             {isAdmin && <button onClick={() => navigate('/admin/growo')} className="p-2" aria-label="ניהול">
                 <Shield className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
               </button>}
+            <button onClick={() => setShowDeleteConfirm(true)} className="p-2" aria-label="מחיקת חיית מחמד">
+              <Trash2 className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+            </button>
             <button onClick={() => setShowEmergencyHub(true)} className="p-2" aria-label="מרכז חירום">
-              <AlertTriangle className="w-5 h-5 text-red-500" strokeWidth={1.5} />
+              <AlertTriangle className="w-5 h-5 text-destructive" strokeWidth={1.5} />
             </button>
             <button onClick={() => navigate('/messages')} className="p-2 relative" aria-label="הודעות">
               <MessageCircle className="w-5 h-5 text-foreground" strokeWidth={1.5} />
