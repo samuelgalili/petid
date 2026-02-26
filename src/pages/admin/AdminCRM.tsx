@@ -32,13 +32,14 @@ import {
   CreditCard, Receipt, DollarSign, Banknote, Package, Percent, Trash2, Minus,
   RefreshCw, Building2, Send, ExternalLink, MapPin, Home, Edit, Save, PawPrint,
   Syringe, Stethoscope, FileText, GraduationCap, Scale, Shield, ShieldCheck, ShieldX,
-  Image, ThumbsUp, Scissors, Gem
+  Image, ThumbsUp, Scissors, Gem, Route
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, differenceInDays, subDays } from "date-fns";
 import { he } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { CRMBehavioralJourney } from "@/components/admin/CRMBehavioralJourney";
 
 // RFM Score Calculation with enhanced metrics
 const calculateRFMScore = (orders: any[], customerId: string) => {
@@ -905,7 +906,7 @@ const AdminCRM = () => {
 
                   {/* Tabs */}
                   <Tabs defaultValue="details" className="p-6">
-                    <TabsList className="w-full mb-6 grid grid-cols-7">
+                    <TabsList className="w-full mb-6 grid grid-cols-8">
                       <TabsTrigger value="details" className="gap-1 text-xs">
                         <Users className="h-4 w-4" />
                         פרטים
@@ -913,6 +914,10 @@ const AdminCRM = () => {
                       <TabsTrigger value="overview" className="gap-1 text-xs">
                         <Activity className="h-4 w-4" />
                         סקירה
+                      </TabsTrigger>
+                      <TabsTrigger value="journey" className="gap-1 text-xs">
+                        <Route className="h-4 w-4" />
+                        מסע
                       </TabsTrigger>
                       <TabsTrigger value="activity" className="gap-1 text-xs">
                         <Heart className="h-4 w-4" />
@@ -2185,6 +2190,11 @@ const AdminCRM = () => {
                           )}
                         </ScrollArea>
                       </div>
+                    </TabsContent>
+
+                    {/* Behavioral Journey Tab */}
+                    <TabsContent value="journey">
+                      <CRMBehavioralJourney userId={selectedCustomer.id} />
                     </TabsContent>
                   </Tabs>
                 </div>
