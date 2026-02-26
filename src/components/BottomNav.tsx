@@ -20,6 +20,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { usePetButtonAnimation, PetButtonOverlay } from "@/components/ui/PetButtonAnimations";
 import { useOverlayNav } from "@/contexts/OverlayNavContext";
+import { PetGuardianPanel } from "@/components/PetGuardianPanel";
 
 const navLabels = {
   he: { feed: "פיד", shop: "חנות", chat: "AI", addPet: "הוסף חיית מחמד" },
@@ -58,6 +59,7 @@ const BottomNav = () => {
 
   const [showPetSwitcher, setShowPetSwitcher] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
+  const [showGuardian, setShowGuardian] = useState(false);
   const { activeAnim, triggerRandom } = usePetButtonAnimation();
 
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -142,6 +144,34 @@ const BottomNav = () => {
               transition={{ type: "spring", stiffness: 400, damping: 25 }}
               className="fixed bottom-[80px] inset-x-0 mx-auto w-fit z-[9999] flex items-end gap-4 px-6 py-4"
             >
+              {/* Guardian button — first in the row */}
+              <motion.button
+                initial={{ opacity: 0, y: 20, scale: 0.7 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 20, scale: 0.7 }}
+                transition={{ delay: 0, type: "spring", stiffness: 500, damping: 25 }}
+                whileTap={{ scale: 0.85 }}
+                onClick={() => {
+                  setShowQuickActions(false);
+                  setShowGuardian(true);
+                }}
+                className="flex flex-col items-center gap-2"
+              >
+                <div
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg"
+                  style={{
+                    background: "linear-gradient(135deg, hsl(var(--primary) / 0.2), hsl(var(--primary) / 0.08))",
+                    border: "1.5px solid hsl(var(--primary) / 0.3)",
+                    backdropFilter: "blur(12px)",
+                  }}
+                >
+                  <Brain className="w-6 h-6 text-primary" strokeWidth={1.5} />
+                </div>
+                <span className="text-[11px] font-semibold text-white drop-shadow-md">
+                  {(language === "he" || language === "ar") ? "שומר" : "Guardian"}
+                </span>
+              </motion.button>
+
               {actions.map((action, i) => {
                 const Icon = action.icon;
                 return (
@@ -150,7 +180,7 @@ const BottomNav = () => {
                     initial={{ opacity: 0, y: 20, scale: 0.7 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 20, scale: 0.7 }}
-                    transition={{ delay: i * 0.06, type: "spring", stiffness: 500, damping: 25 }}
+                    transition={{ delay: (i + 1) * 0.06, type: "spring", stiffness: 500, damping: 25 }}
                     whileTap={{ scale: 0.85 }}
                     onClick={() => {
                       setShowQuickActions(false);
@@ -380,6 +410,9 @@ const BottomNav = () => {
           </NavButton>
         </div>
       </nav>
+
+      {/* Pet Guardian Panel */}
+      <PetGuardianPanel isOpen={showGuardian} onClose={() => setShowGuardian(false)} />
     </>
   );
 };
