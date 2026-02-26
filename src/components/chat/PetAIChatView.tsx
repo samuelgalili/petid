@@ -19,12 +19,19 @@ import {
   ChevronLeft,
   ShoppingBag,
   ArrowDown,
+  ShieldCheck,
 } from "lucide-react";
 import {
   Drawer,
   DrawerContent,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -64,6 +71,47 @@ interface PetAIChatViewProps {
   onProductClick?: (productId: string) => void;
   onActionClick?: (actionId: string) => void;
   onAttachment?: (type: "camera" | "gallery" | "document" | "scan" | "location") => void;
+}
+
+/* ─── Verified Source Badge ─── */
+
+const VerifiedBadge = ({ text }: { text: string }) => (
+  <TooltipProvider delayDuration={200}>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="inline-flex items-center gap-0.5 mx-0.5 px-1 py-[1px] rounded-md bg-emerald-500/10 border border-emerald-500/20 cursor-help align-middle">
+          <ShieldCheck className="w-3 h-3 text-emerald-500 shrink-0" strokeWidth={2} />
+          <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 leading-none">Verified</span>
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="text-xs max-w-[200px]">
+        <p className="font-medium">Brain-verified data</p>
+        <p className="text-muted-foreground">Source: PetID Central Brain</p>
+      </TooltipContent>
+    </Tooltip>
+  </TooltipProvider>
+);
+
+/**
+ * Renders message content, replacing ✅🛡️ markers with interactive verified badges.
+ */
+function renderVerifiedContent(content: string) {
+  const MARKER = "✅🛡️";
+  if (!content.includes(MARKER)) {
+    return <p className="whitespace-pre-wrap">{content}</p>;
+  }
+
+  const parts = content.split(MARKER);
+  return (
+    <p className="whitespace-pre-wrap">
+      {parts.map((part, i) => (
+        <span key={i}>
+          {part}
+          {i < parts.length - 1 && <VerifiedBadge text="" />}
+        </span>
+      ))}
+    </p>
+  );
 }
 
 /* ─── Paw Print SVG Pattern ─── */
@@ -391,7 +439,7 @@ export const PetAIChatView = ({
                         : "bg-card border border-border/40 text-foreground rounded-tr-md"
                     )}
                   >
-                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                    {renderVerifiedContent(msg.content)}
                     <p className={cn(
                       "text-[10px] mt-1.5",
                       isUser ? "text-primary-foreground/60" : "text-muted-foreground"
