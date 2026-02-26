@@ -32,6 +32,7 @@ interface CategoryHealth {
   avgQuality: number;
   lastUpdate: string | null;
   domainRecords: number;
+  ragChunks: number;
 }
 
 const DOMAIN_TABLE_MAP: Record<string, string> = {
