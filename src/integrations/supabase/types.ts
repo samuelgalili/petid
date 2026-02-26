@@ -3541,6 +3541,78 @@ export type Database = {
         }
         Relationships: []
       }
+      food_consumption_predictions: {
+        Row: {
+          bag_weight_kg: number
+          created_at: string | null
+          daily_intake_grams: number
+          days_remaining: number
+          estimated_empty_date: string | null
+          id: string
+          kcal_per_kg: number | null
+          mer_kcal: number | null
+          notification_sent: boolean | null
+          pet_id: string
+          pet_weight_kg: number | null
+          product_id: string | null
+          product_name: string | null
+          reorder_triggered: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          bag_weight_kg?: number
+          created_at?: string | null
+          daily_intake_grams?: number
+          days_remaining?: number
+          estimated_empty_date?: string | null
+          id?: string
+          kcal_per_kg?: number | null
+          mer_kcal?: number | null
+          notification_sent?: boolean | null
+          pet_id: string
+          pet_weight_kg?: number | null
+          product_id?: string | null
+          product_name?: string | null
+          reorder_triggered?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          bag_weight_kg?: number
+          created_at?: string | null
+          daily_intake_grams?: number
+          days_remaining?: number
+          estimated_empty_date?: string | null
+          id?: string
+          kcal_per_kg?: number | null
+          mer_kcal?: number | null
+          notification_sent?: boolean | null
+          pet_id?: string
+          pet_weight_kg?: number | null
+          product_id?: string | null
+          product_name?: string | null
+          reorder_triggered?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "food_consumption_predictions_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "food_consumption_predictions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "business_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gift_cards: {
         Row: {
           code: string
