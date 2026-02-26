@@ -35,3 +35,8 @@
 ## 6. Database & Integration ✅
 - Schema with tables for `system_events`, `automation_bots`, `admin_approval_queue`, and `external_integrations`.
 - Securely manage API Keys for Libra Insurance and messaging gateways.
+
+## 7. Fleet Expansion (Agents 20 & 21) ✅
+- **Agent 20 — Lex (Underwriting & Compliance):** Converts medical + nutritional data into insurance value. Cross-references Dr. NRC and Einstein. Generates eligibility reports. Enforces Privacy by Design (anonymization). Notifies Siggy for VIP benefits on excellent health profiles.
+- **Agent 21 — Juno (Viral Growth & Community):** Analyzes social feed UGC for high engagement. Proposes content to Lumi based on real success stories. Identifies ambassador candidates. Routes budget approvals through Golan. Escalates trust crises to Menachem.
+- **Inter-Agent Protocol:** Both operate under Human-in-the-Loop — all financial, legal, and external marketing actions require admin approval.
