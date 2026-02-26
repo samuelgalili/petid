@@ -61,24 +61,7 @@ export const BrainDebuggerOverlay = () => {
 
   return (
     <>
-      {/* Floating trigger button */}
-      <Button
-        onClick={() => setIsOpen(prev => !prev)}
-        size="icon"
-        className={cn(
-          "fixed bottom-24 left-4 z-[9999] rounded-full w-12 h-12 shadow-lg",
-          "bg-violet-600 hover:bg-violet-700 text-white",
-          discrepancies.length > 0 && "animate-pulse"
-        )}
-        title="Brain Debugger (Ctrl+Shift+B)"
-      >
-        <Brain className="w-5 h-5" />
-        {discrepancies.length > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold">
-            {discrepancies.length}
-          </span>
-        )}
-      </Button>
+      {/* Brain debugger triggered via Ctrl+Shift+B only — no standalone floating button */}
 
       {/* Overlay Panel */}
       <AnimatePresence>
