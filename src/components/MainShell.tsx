@@ -111,13 +111,6 @@ const MainShell = () => {
             >
               <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1" />
             </motion.button>
-            <button
-              onClick={closeDashboard}
-              className="absolute top-3 left-4 z-20 w-8 h-8 rounded-full bg-muted/60 flex items-center justify-center"
-              aria-label="Close dashboard"
-            >
-              <ChevronDown className="w-5 h-5 text-foreground" />
-            </button>
 
             <Suspense fallback={<LoadingFallback />}>
               <ProfilePage />
