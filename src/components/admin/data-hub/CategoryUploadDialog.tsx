@@ -85,8 +85,8 @@ export const CategoryUploadDialog = ({
       toast({ title: "סוג קובץ לא נתמך", description: "PDF, CSV, JSON, Excel, TXT", variant: "destructive" });
       return;
     }
-    if (f.size > 50 * 1024 * 1024) {
-      toast({ title: "קובץ גדול מדי", description: "עד 50MB", variant: "destructive" });
+    if (f.size > 200 * 1024 * 1024) {
+      toast({ title: "קובץ גדול מדי", description: "עד 200MB", variant: "destructive" });
       return;
     }
     setFile(f);
@@ -361,7 +361,7 @@ export const CategoryUploadDialog = ({
                   ) : (
                     <>
                       <Upload className="w-8 h-8 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">PDF, CSV, JSON, Excel, TXT (עד 50MB)</span>
+                      <span className="text-xs text-muted-foreground">PDF, CSV, JSON, Excel, TXT (עד 200MB)</span>
                     </>
                   )}
                 </label>

@@ -62,10 +62,10 @@
          return;
        }
 
-       if (selectedFile.size > 50 * 1024 * 1024) {
+       if (selectedFile.size > 200 * 1024 * 1024) {
          toast({
            title: "קובץ גדול מדי",
-           description: "גודל הקובץ המקסימלי הוא 50MB",
+           description: "גודל הקובץ המקסימלי הוא 200MB",
            variant: "destructive",
          });
          return;
@@ -417,7 +417,7 @@
                          גרור קובץ או לחץ לבחירה
                        </span>
                        <span className="text-xs text-muted-foreground">
-                         PDF, CSV, JSON, Excel, TXT (עד 50MB)
+                         PDF, CSV, JSON, Excel, TXT (עד 200MB)
                        </span>
                      </>
                    )}
