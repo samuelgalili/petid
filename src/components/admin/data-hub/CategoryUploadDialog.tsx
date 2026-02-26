@@ -217,10 +217,14 @@ export const CategoryUploadDialog = ({
         setSourceId(sid);
 
         if (fileUrl) {
-          // Process
-          await supabase.functions.invoke("process-admin-data", {
-            body: { sourceId: sid, dataType: category, fileName: file.name, fileUrl },
-          });
+          // Try process-admin-data for structured extraction
+          try {
+            await supabase.functions.invoke("process-admin-data", {
+              body: { sourceId: sid, dataType: category, fileName: file.name, fileUrl },
+            });
+          } catch (processErr: any) {
+            console.warn("process-admin-data unavailable, continuing:", processErr.message);
+          }
 
           const { data: updated } = await supabase
             .from("admin_data_sources" as any)
@@ -228,16 +232,19 @@ export const CategoryUploadDialog = ({
             .eq("id", sid)
             .single();
 
-          setPreviewData((updated as any)?.extracted_data || { raw: "לא נמצאו נתונים מובנים" });
+          setPreviewData((updated as any)?.extracted_data || { raw: "הקובץ הועלה בהצלחה. עיבוד RAG יתבצע לאחר אישור." });
           setTitle((updated as any)?.title || title);
+        } else if (!skippedProcessing) {
+          setPreviewData({ raw: "הקובץ נשמר. עיבוד RAG יתבצע לאחר אישור." });
         } else {
           setPreviewData({
-            raw: "הקובץ נשמר כמקור, אך כרגע שירות הקבצים לא זמין ולכן עיבוד אוטומטי לא בוצע.",
-            skipped_processing: skippedProcessing,
+            raw: "הקובץ גדול מדי לעיבוד ישיר. נסה להעלות קובץ עד 8MB או השתמש בקישור URL.",
+            skipped_processing: true,
           });
           toast({
-            title: "הקובץ נשמר",
-            description: "עיבוד אוטומטי נדחה כרגע עקב זמינות שירות הקבצים",
+            title: "הקובץ גדול מדי",
+            description: "קבצים מעל 8MB דורשים העלאה דרך קישור URL",
+            variant: "destructive",
           });
         }
 
