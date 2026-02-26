@@ -80,6 +80,23 @@ const AdminRobotFleet = () => {
     },
   });
 
+  const runBots = useMutation({
+    mutationFn: async (botId?: string) => {
+      const { data, error } = await supabase.functions.invoke("petid-agent-runner", {
+        body: botId ? { bot_id: botId } : {},
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["automation-bots"] });
+      toast.success(data?.message || "הבוטים הופעלו בהצלחה");
+    },
+    onError: (err: any) => {
+      toast.error(`שגיאה בהפעלה: ${err.message}`);
+    },
+  });
+
   const activeBots = bots.filter((b: any) => b.is_active).length;
 
   return (
