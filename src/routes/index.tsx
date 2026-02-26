@@ -378,6 +378,7 @@ const AdminUserTimeline = lazy(() => import("@/pages/admin/AdminUserTimeline"));
 const AdminResearchLab = lazy(() => import("@/pages/admin/AdminResearchLab"));
 const AdminBrainDashboard = lazy(() => import("@/pages/admin/AdminBrainDashboard"));
 const AdminVendorAudit = lazy(() => import("@/pages/admin/AdminVendorAudit"));
+const AdminCommandCenter = lazy(() => import("@/pages/admin/AdminCommandCenter"));
 
 // Helper for admin routes
 const AdminPage = ({ component: Component, pageName }: { component: ComponentType; pageName: string }) => (
@@ -461,6 +462,7 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/research-lab", element: <AdminPage component={AdminResearchLab} pageName="מעבדת מחקר" /> },
   { path: "/admin/brain-dashboard", element: <AdminPage component={AdminBrainDashboard} pageName="Brain Dashboard" /> },
   { path: "/admin/vendor-audit", element: <AdminPage component={AdminVendorAudit} pageName="ביקורת ספקים" /> },
+  { path: "/admin/command-center", element: <AdminPage component={AdminCommandCenter} pageName="מרכז פיקוד" /> },
 ];
 
 // ==========================================
