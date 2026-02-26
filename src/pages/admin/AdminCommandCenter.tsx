@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   DollarSign, TrendingUp, Truck, Brain, Shield, Users,
   Activity, CheckCircle2, AlertTriangle, XCircle, RefreshCw,
@@ -54,6 +54,32 @@ const PIPELINE_STAGES = [
 const MONTHS_HE = ["ינו", "פבר", "מרץ", "אפר", "מאי", "יונ", "יול", "אוג", "ספט", "אוק", "נוב", "דצמ"];
 
 const AdminCommandCenter = () => {
+  const queryClient = useQueryClient();
+
+  // ─── Full Realtime Subscriptions ────────────────────────────
+  useEffect(() => {
+    const channel = supabase
+      .channel("command-center-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["command-center-financials"] });
+        queryClient.invalidateQueries({ queryKey: ["command-center-logistics"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "insurance_leads" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["command-center-leads"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "automation_bots" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["command-center-agents"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "supplier_invoices" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["command-center-financials"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "food_consumption_predictions" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["command-center-consumption"] });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
   // ─── Financial Data ─────────────────────────────────────────
   const { data: financialData, isLoading: finLoading } = useQuery({
     queryKey: ["command-center-financials"],
@@ -139,6 +165,19 @@ const AdminCommandCenter = () => {
     queryKey: ["command-center-agents"],
     queryFn: async () => {
       const { data } = await supabase.from("automation_bots").select("slug, is_active, health_status, last_run_at, name");
+      return data || [];
+    },
+  });
+
+  // ─── Consumption Predictions ─────────────────────────────────
+  const { data: consumptionData } = useQuery({
+    queryKey: ["command-center-consumption"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("food_consumption_predictions")
+        .select("*")
+        .order("days_remaining", { ascending: true })
+        .limit(10);
       return data || [];
     },
   });
@@ -447,6 +486,66 @@ const AdminCommandCenter = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* ─── Predictive Consumption — Sarah's Reorder Engine ── */}
+        {consumptionData && consumptionData.length > 0 && (
+          <Card className="rounded-[20px] shadow-sm border-border">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Package className="w-4.5 h-4.5" strokeWidth={1.5} />
+                צריכה חזויה — NRC 2006 MER
+                <Badge variant="outline" className="text-[10px] rounded-full ml-auto">
+                  💬 Sarah Auto-Reorder
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-right py-2 px-2 text-xs font-semibold text-muted-foreground">חיית מחמד</th>
+                      <th className="text-right py-2 px-2 text-xs font-semibold text-muted-foreground">מזון</th>
+                      <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">צריכה/יום</th>
+                      <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">ימים נותרים</th>
+                      <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">סטטוס</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {consumptionData.map((pred) => {
+                      const urgent = (pred.days_remaining || 0) <= 3;
+                      const warning = (pred.days_remaining || 0) <= 7;
+                      return (
+                        <tr key={pred.id} className={`border-b border-border/50 ${urgent ? "bg-destructive/5" : ""}`}>
+                          <td className="py-2.5 px-2 font-medium text-foreground">{pred.pet_id?.slice(0, 8)}…</td>
+                          <td className="py-2.5 px-2 text-muted-foreground">{pred.product_name || "—"}</td>
+                          <td className="py-2.5 px-2 text-center">{pred.daily_intake_grams}g</td>
+                          <td className="py-2.5 px-2 text-center">
+                            <span className={`font-bold ${urgent ? "text-destructive" : warning ? "text-amber-500" : "text-foreground"}`}>
+                              {pred.days_remaining}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-2 text-center">
+                            {pred.reorder_triggered ? (
+                              <Badge variant="destructive" className="text-[10px] rounded-full">הזמנה מחדש</Badge>
+                            ) : warning ? (
+                              <Badge variant="outline" className="text-[10px] rounded-full border-amber-300 text-amber-600">מתקרב</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[10px] rounded-full">תקין</Badge>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">
+                MER = 110 × (משקל^0.75) kcal/יום. Sarah מפעילה התראת הזמנה מחדש 3 ימים לפני אזילה.
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </AdminLayout>
   );
