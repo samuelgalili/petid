@@ -144,25 +144,45 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    // Fetch context
-    const [{ data: recentTasks }, { data: bots }, { data: recentLogs }] = await Promise.all([
+    // Fetch context — including pending approvals from automation bots
+    const [{ data: recentTasks }, { data: bots }, { data: recentLogs }, { data: pendingApprovals }, { data: automationBots }] = await Promise.all([
       supabase.from('agent_tasks').select('title, status, priority, bot_id, created_at').order('created_at', { ascending: false }).limit(15),
       supabase.from('agent_bots').select('id, name, slug, is_active').order('created_at'),
       supabase.from('agent_action_logs').select('action_type, description, created_at').order('created_at', { ascending: false }).limit(10),
+      supabase.from('admin_approval_queue').select('id, title, category, status, draft_content, bot_id, created_at').eq('status', 'pending').order('created_at', { ascending: false }).limit(20),
+      supabase.from('automation_bots').select('name, slug, health_status, last_run_at, last_output, is_active').order('last_run_at', { ascending: false }).limit(10),
     ]);
 
     const activeBots = bots?.filter(b => b.is_active) || [];
     const inactiveBots = bots?.filter(b => !b.is_active) || [];
+
+    // Format pending approvals for the AI
+    const pendingApprovalsSummary = (pendingApprovals && pendingApprovals.length > 0)
+      ? pendingApprovals.map((a: any) => `  • [${a.category || 'general'}] ${a.title} (${new Date(a.created_at).toLocaleString('he-IL')})\n    תוכן: ${(a.draft_content || '').substring(0, 150)}...`).join('\n')
+      : 'אין פריטים ממתינים';
+
+    // Format recent automation bot outputs
+    const recentBotOutputs = (automationBots && automationBots.length > 0)
+      ? automationBots.filter((b: any) => b.last_run_at).slice(0, 5).map((b: any) => `  • ${b.name} (${b.health_status}): ${(b.last_output || '').substring(0, 100)}...`).join('\n')
+      : 'אין דוחות אחרונים';
 
     const contextInfo = `
 ## Current System State:
 - Active Bots: ${activeBots.map(b => b.name).join(', ') || 'None'}
 - Deactivated Bots (Kill Switch): ${inactiveBots.map(b => b.name).join(', ') || 'None'}
 - Tasks in Queue: ${recentTasks?.length || 0}
-- Pending Approval: ${recentTasks?.filter(t => t.status === 'pending_approval').length || 0}
+- Pending Approval (Tasks): ${recentTasks?.filter(t => t.status === 'pending_approval').length || 0}
 - Recent Actions: ${recentLogs?.map(l => l.description).slice(0, 5).join('; ') || 'None'}
 - Date: ${new Date().toLocaleDateString('he-IL')}
 - Admin: ${user.email}
+
+## 🔔 Pending Bot Approvals (${pendingApprovals?.length || 0} items):
+${pendingApprovalsSummary}
+
+## 📊 Recent Automation Bot Reports:
+${recentBotOutputs}
+
+IMPORTANT: When the admin asks about pending approvals, bot status, or recent reports — present the above data clearly. Highlight items that need urgent attention (security, financial, compliance).
 `;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
