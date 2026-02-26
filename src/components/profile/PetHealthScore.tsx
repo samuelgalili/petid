@@ -369,27 +369,17 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
         animate={{ opacity: 1, y: 0 }}
         className="mx-4 mb-4"
       >
-        <div className="w-full p-4 bg-card rounded-2xl border border-border/30 text-right">
-          <div className="flex items-center gap-4">
-            {/* Circular Score Gauge with GlowRing */}
-            <GlowRing score={healthScore} size={64}>
-            <button onClick={onViewDetails} className="relative w-16 h-16 flex-shrink-0 hover:scale-105 transition-transform">
-              {/* Pulse glow ring for incomplete profiles */}
+        <div className="w-full p-3.5 bg-card rounded-2xl border border-border/30 text-right">
+          <div className="flex items-center gap-3">
+            {/* Compact Circular Score */}
+            <GlowRing score={healthScore} size={52}>
+            <button onClick={onViewDetails} className="relative w-13 h-13 flex-shrink-0 hover:scale-105 transition-transform">
               {healthScore < 85 && (
                 <motion.div
-                  className="absolute inset-[-4px] rounded-full"
-                  style={{ 
-                    background: `radial-gradient(circle, ${gradientColors.start}20 0%, transparent 70%)`,
-                  }}
-                  animate={{ 
-                    scale: [1, 1.15, 1],
-                    opacity: [0.4, 0.8, 0.4],
-                  }}
-                  transition={{ 
-                    duration: 2.5,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
+                  className="absolute inset-[-3px] rounded-full"
+                  style={{ background: `radial-gradient(circle, ${gradientColors.start}20 0%, transparent 70%)` }}
+                  animate={{ scale: [1, 1.12, 1], opacity: [0.3, 0.7, 0.3] }}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
                 />
               )}
               <svg className="w-full h-full transform -rotate-90 relative z-10" viewBox="0 0 36 36">
@@ -404,50 +394,28 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
                   transition={{ duration: 1, ease: "easeOut" }}
                 />
               </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className={`text-[11px] font-bold ${getScoreColor()} leading-tight text-center px-1`}>
-                  {healthScore >= 85 ? '🌟' : healthScore >= 70 ? '💪' : healthScore >= 50 ? '🐾' : '❤️'}
-                </span>
-                <span className="text-[8px] text-muted-foreground font-medium">{healthScore}%</span>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-[10px] font-bold text-foreground">{healthScore}%</span>
               </div>
-
-              {/* Vaccine boost '+' animation */}
-              <AnimatePresence>
-                {showVaccineBoost && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, y: -16, scale: 1.2 }}
-                    exit={{ opacity: 0, y: -28, scale: 0.8 }}
-                    transition={{ duration: 0.8 }}
-                    className="absolute -top-1 right-0 flex items-center"
-                  >
-                    <span className="text-xs font-bold text-green-500 bg-green-500/15 rounded-full px-1.5 py-0.5">
-                      +{vaccineCount * 4}
-                    </span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </button>
             </GlowRing>
 
-            {/* Score Info */}
+            {/* Score Info — compact */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-0.5">
-                <Activity className="w-4 h-4 text-primary" strokeWidth={1.5} />
-                <span className="font-semibold text-foreground">מצב הרוח של {pet.name}</span>
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <Activity className="w-3.5 h-3.5 text-primary" strokeWidth={1.5} />
+                <span className="text-sm font-semibold text-foreground">מצב הרוח של {pet.name}</span>
               </div>
-              <p className={`text-sm font-medium ${getScoreColor()}`}>{getStatusText()}</p>
-              {/* Sub-label */}
-              <p className="text-[10px] text-muted-foreground mt-0.5">{getSubLabel()}</p>
+              <p className={`text-xs font-medium ${getScoreColor()}`}>{getStatusText()}</p>
 
-              {/* Alerts row */}
+              {/* Top 2 alerts only */}
               {alerts.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {alerts.slice(0, 3).map((alert, i) => (
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {alerts.slice(0, 2).map((alert, i) => (
                     <button
                       key={i}
                       onClick={alert.action}
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors ${
+                      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-medium transition-colors ${
                         alert.action ? 'cursor-pointer hover:opacity-80' : 'cursor-default'
                       } ${
                         alert.type === 'warning'
@@ -457,7 +425,7 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
                           : 'bg-muted text-muted-foreground'
                       }`}
                     >
-                      <alert.icon className="w-3 h-3" />
+                      <alert.icon className="w-2.5 h-2.5" />
                       {alert.text}
                     </button>
                   ))}
@@ -465,15 +433,10 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
               )}
             </div>
 
-            {/* Actions */}
-            <div className="flex flex-col items-center gap-1.5">
-              <button onClick={() => setShowIdCard(true)} className="p-1.5 hover:bg-muted/60 rounded-lg transition-colors" title="תעודת זיהוי">
-                <CreditCard className="w-4.5 h-4.5 text-primary/70" strokeWidth={1.5} />
-              </button>
-              <button onClick={onViewDetails} className="p-1.5">
-                <ChevronLeft className="w-5 h-5 text-muted-foreground" />
-              </button>
-            </div>
+            {/* Actions — single button */}
+            <button onClick={() => setShowIdCard(true)} className="p-1.5 hover:bg-muted/60 rounded-lg transition-colors" title="תעודת זיהוי">
+              <CreditCard className="w-4 h-4 text-primary/70" strokeWidth={1.5} />
+            </button>
           </div>
         </div>
       </motion.div>
