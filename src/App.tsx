@@ -147,21 +147,14 @@ const GlobalProviders = ({ children }: { children: React.ReactNode }) => (
  * Main App Component
  */
 const App = () => {
-  const [splashDone, setSplashDone] = useState(false);
-
   return (
     <ErrorBoundary>
       <GlobalProviders>
-        {!splashDone && <SplashScreen onFinish={() => setSplashDone(true)} />}
-        {splashDone && (
-          <>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <AnimatedRoutes />
-            </BrowserRouter>
-          </>
-        )}
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AnimatedRoutes />
+        </BrowserRouter>
       </GlobalProviders>
     </ErrorBoundary>
   );
