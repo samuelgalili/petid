@@ -103,7 +103,7 @@ function renderVerifiedContent(content: string) {
     return <p className="whitespace-pre-wrap">{cleaned}</p>;
   }
 
-  const parts = content.split(MARKER);
+  const parts = cleaned.split(MARKER);
   return (
     <p className="whitespace-pre-wrap">
       {parts.map((part, i) => (
