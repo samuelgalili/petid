@@ -206,9 +206,9 @@ export const useCEONotifications = () => {
         table: "pets",
       }, (payload) => {
         const pet = payload.new as any;
-        // Check if profile is now "complete" — has name, breed, weight, chip_number, and birthday
+        // Check if profile is now "complete" — has name, breed, weight, microchip_number, and birthday
         if (
-          pet.name && pet.breed && pet.weight && pet.chip_number && pet.birthday &&
+          pet.name && pet.breed && pet.weight && pet.microchip_number && pet.birth_date &&
           !processedAlerts.current.has(`pet-complete-${pet.id}`)
         ) {
           processedAlerts.current.add(`pet-complete-${pet.id}`);

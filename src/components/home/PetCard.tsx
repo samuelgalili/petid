@@ -245,7 +245,7 @@ export const PetCard = memo(({
           />
           <StatCell
             label="שבב"
-            value={pet.chip_number || null}
+            value={pet.microchip_number || null}
             placeholder="הוסף שבב"
           />
         </div>
@@ -279,7 +279,7 @@ export const PetCard = memo(({
     prevProps.pet.birth_date === nextProps.pet.birth_date &&
     prevProps.pet.gender === nextProps.pet.gender &&
     prevProps.pet.weight === nextProps.pet.weight &&
-    prevProps.pet.chip_number === nextProps.pet.chip_number &&
+    prevProps.pet.microchip_number === nextProps.pet.microchip_number &&
     prevProps.pet.is_lost === nextProps.pet.is_lost
   );
 });
