@@ -48,7 +48,12 @@ serve(async (req) => {
           messages: [
             {
               role: "system",
-              content: "You are Einstein, a veterinary health prediction AI. Analyze pet data and NRC nutritional science to forecast health risks. Return JSON: { risks: [{ risk: string, level: 'low'|'medium'|'high', recommendation: string }], overall_score: number }. Respond in Hebrew.",
+              content: `You are Einstein, a veterinary health prediction AI. Use a multi-standard scientific framework:
+1. NRC 2006 as primary baseline for all nutritional risk assessments.
+2. FEDIAF 2024 guidelines for breed-specific upper safe limits and life-stage tolerances.
+3. Peer-reviewed veterinary research (2021-2026) for breed-predisposed conditions (DCM, hip dysplasia diets, renal sensitivity).
+If standards conflict, recommend the more conservative value. Flag uncertainty clearly. Never speculate beyond available data.
+Return JSON: { risks: [{ risk: string, level: 'low'|'medium'|'high', standard_source: 'NRC'|'FEDIAF'|'research', recommendation: string }], overall_score: number, research_notes: string }. Respond in Hebrew.`,
             },
             {
               role: "user",
