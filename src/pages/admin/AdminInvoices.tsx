@@ -32,6 +32,7 @@ import { he } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { InvoiceLineItemReview, type ScannedInvoiceData } from "@/components/admin/InvoiceLineItemReview";
 
 const AdminInvoices = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -39,6 +40,8 @@ const AdminInvoices = () => {
   const [scanDialogOpen, setScanDialogOpen] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [scannedData, setScannedData] = useState<any>(null);
+  const [showLineItemReview, setShowLineItemReview] = useState(false);
+  const [savingLineItems, setSavingLineItems] = useState(false);
   const [newSupplierDialogOpen, setNewSupplierDialogOpen] = useState(false);
   const [pendingSupplierData, setPendingSupplierData] = useState<any>(null);
   const [existingSupplier, setExistingSupplier] = useState<any>(null);
@@ -218,6 +221,12 @@ const AdminInvoices = () => {
   const saveScannedInvoice = async () => {
     if (!scannedData) return;
     
+    // If line items exist, show review UI instead of saving directly
+    if (scannedData.lineItems?.length > 0 && !showLineItemReview) {
+      setShowLineItemReview(true);
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from("supplier_invoices")
@@ -239,6 +248,7 @@ const AdminInvoices = () => {
       queryClient.invalidateQueries({ queryKey: ["supplier-invoices"] });
       setScanDialogOpen(false);
       setScannedData(null);
+      setShowLineItemReview(false);
     } catch (error) {
       console.error('Save error:', error);
       toast({
@@ -246,6 +256,52 @@ const AdminInvoices = () => {
         description: "לא ניתן היה לשמור את החשבונית",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleLineItemSave = async (reviewItems: any[], invoiceData: ScannedInvoiceData) => {
+    setSavingLineItems(true);
+    try {
+      // 1. Save the invoice record
+      const { error: invoiceError } = await supabase
+        .from("supplier_invoices")
+        .insert({
+          invoice_number: invoiceData.invoiceNumber || null,
+          amount: invoiceData.total || 0,
+          invoice_date: invoiceData.date || new Date().toISOString().split('T')[0],
+          supplier_id: invoiceData.supplierId || null,
+          notes: `ספק: ${invoiceData.vendor || 'לא זוהה'}\nפריטים: ${reviewItems.map(r => r.name).join(', ')}`,
+        });
+      if (invoiceError) throw invoiceError;
+
+      // 2. Update cost_price for matched products
+      const matchedItems = reviewItems.filter((r: any) => r.matchedProduct);
+      for (const item of matchedItems) {
+        await supabase
+          .from("business_products")
+          .update({ cost_price: item.finalCostPerUnit })
+          .eq("id", item.matchedProduct.id);
+      }
+
+      toast({
+        title: "החשבונית ופריטים נשמרו",
+        description: `${matchedItems.length} מוצרים עודכנו במלאי, ${reviewItems.length - matchedItems.length} מוצרים חדשים זוהו`,
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["supplier-invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-products-for-matching"] });
+      setScanDialogOpen(false);
+      setScannedData(null);
+      setShowLineItemReview(false);
+    } catch (error) {
+      console.error('Save line items error:', error);
+      toast({
+        title: "שגיאה בשמירה",
+        description: "לא ניתן היה לשמור את הפריטים",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingLineItems(false);
     }
   };
 
@@ -500,12 +556,18 @@ const AdminInvoices = () => {
         </motion.div>
 
         {/* Scan Invoice Dialog */}
-        <Dialog open={scanDialogOpen} onOpenChange={setScanDialogOpen}>
-          <DialogContent className="max-w-md bg-slate-900 border-slate-700">
+        <Dialog open={scanDialogOpen} onOpenChange={(open) => {
+          setScanDialogOpen(open);
+          if (!open) { setScannedData(null); setShowLineItemReview(false); setExistingSupplier(null); }
+        }}>
+          <DialogContent className={cn(
+            showLineItemReview ? "max-w-3xl" : "max-w-md",
+            "bg-card border-border transition-all"
+          )}>
             <DialogHeader>
-              <DialogTitle className="text-white flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-violet-400" />
-                סריקת חשבונית עם AI
+              <DialogTitle className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary" />
+                {showLineItemReview ? 'סקירת פריטים וחשבונית' : 'סריקת חשבונית עם AI'}
               </DialogTitle>
             </DialogHeader>
 
@@ -518,9 +580,16 @@ const AdminInvoices = () => {
                 className="hidden"
               />
 
-              {!scannedData ? (
+              {/* Line-Item Review Mode */}
+              {showLineItemReview && scannedData ? (
+                <InvoiceLineItemReview
+                  data={scannedData as ScannedInvoiceData}
+                  onSave={handleLineItemSave}
+                  onCancel={() => setShowLineItemReview(false)}
+                  saving={savingLineItems}
+                />
+              ) : !scannedData ? (
                 <div className="space-y-4">
-                  {/* Camera capture input */}
                   <input
                     type="file"
                     accept="image/*"
@@ -531,39 +600,37 @@ const AdminInvoices = () => {
                   />
 
                   {scanning ? (
-                    <div className="border-2 border-dashed border-slate-700 rounded-xl p-8 text-center">
+                    <div className="border-2 border-dashed border-border rounded-xl p-8 text-center">
                       <div className="flex flex-col items-center gap-3">
-                        <Loader2 className="w-10 h-10 text-violet-400 animate-spin" />
-                        <p className="text-slate-400">סורק את החשבונית...</p>
+                        <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                        <p className="text-muted-foreground">סורק את החשבונית...</p>
                       </div>
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 gap-3">
-                      {/* Camera button */}
                       <div 
-                        className="border-2 border-dashed border-slate-700 rounded-xl p-6 text-center cursor-pointer hover:border-violet-500/50 hover:bg-violet-500/5 transition-all"
+                        className="border-2 border-dashed border-border rounded-xl p-6 text-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all"
                         onClick={() => cameraInputRef.current?.click()}
                       >
                         <div className="flex flex-col items-center gap-3">
-                          <div className="w-12 h-12 rounded-full bg-violet-500/20 flex items-center justify-center">
-                            <Camera className="w-6 h-6 text-violet-400" />
+                          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                            <Camera className="w-6 h-6 text-primary" />
                           </div>
-                          <p className="text-slate-300 font-medium">צלם עם המצלמה</p>
-                          <p className="text-xs text-slate-500">פתח את המצלמה וצלם</p>
+                          <p className="text-foreground font-medium">צלם עם המצלמה</p>
+                          <p className="text-xs text-muted-foreground">פתח את המצלמה וצלם</p>
                         </div>
                       </div>
 
-                      {/* Upload button */}
                       <div 
-                        className="border-2 border-dashed border-slate-700 rounded-xl p-6 text-center cursor-pointer hover:border-violet-500/50 hover:bg-violet-500/5 transition-all"
+                        className="border-2 border-dashed border-border rounded-xl p-6 text-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all"
                         onClick={() => fileInputRef.current?.click()}
                       >
                         <div className="flex flex-col items-center gap-3">
-                          <div className="w-12 h-12 rounded-full bg-slate-700/50 flex items-center justify-center">
-                            <Upload className="w-6 h-6 text-slate-400" />
+                          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                            <Upload className="w-6 h-6 text-muted-foreground" />
                           </div>
-                          <p className="text-slate-300 font-medium">העלה מהמכשיר</p>
-                          <p className="text-xs text-slate-500">JPG, PNG, PDF</p>
+                          <p className="text-foreground font-medium">העלה מהמכשיר</p>
+                          <p className="text-xs text-muted-foreground">JPG, PNG, PDF</p>
                         </div>
                       </div>
                     </div>
@@ -573,41 +640,59 @@ const AdminInvoices = () => {
                 <div className="space-y-4">
                   {/* Supplier status badge */}
                   {existingSupplier ? (
-                    <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
-                      <Building2 className="w-5 h-5 text-emerald-400" />
-                      <span className="text-emerald-300 text-sm">ספק קיים: {existingSupplier.name}</span>
+                    <div className="flex items-center gap-2 p-3 bg-primary/10 border border-primary/30 rounded-lg">
+                      <Building2 className="w-5 h-5 text-primary" />
+                      <span className="text-foreground text-sm">ספק קיים: {existingSupplier.name}</span>
                     </div>
                   ) : scannedData.supplierId ? (
-                    <div className="flex items-center gap-2 p-3 bg-violet-500/10 border border-violet-500/30 rounded-lg">
-                      <UserPlus className="w-5 h-5 text-violet-400" />
-                      <span className="text-violet-300 text-sm">ספק חדש נוסף: {scannedData.supplierName}</span>
+                    <div className="flex items-center gap-2 p-3 bg-accent border border-border rounded-lg">
+                      <UserPlus className="w-5 h-5 text-primary" />
+                      <span className="text-foreground text-sm">ספק חדש נוסף: {scannedData.supplierName}</span>
                     </div>
                   ) : null}
 
-                  <div className="bg-slate-800/50 rounded-xl p-4 space-y-3">
+                  <div className="bg-muted/50 rounded-xl p-4 space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-slate-400 text-sm">ספק:</span>
-                      <span className="text-white font-medium">{scannedData.supplierName || scannedData.vendor || 'לא זוהה'}</span>
+                      <span className="text-muted-foreground text-sm">ספק:</span>
+                      <span className="text-foreground font-medium">{scannedData.supplierName || scannedData.vendor || 'לא זוהה'}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-slate-400 text-sm">מספר חשבונית:</span>
-                      <span className="text-white font-medium">{scannedData.invoiceNumber || 'לא זוהה'}</span>
+                      <span className="text-muted-foreground text-sm">מספר חשבונית:</span>
+                      <span className="text-foreground font-medium">{scannedData.invoiceNumber || 'לא זוהה'}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-slate-400 text-sm">תאריך:</span>
-                      <span className="text-white font-medium">{scannedData.date || 'לא זוהה'}</span>
+                      <span className="text-muted-foreground text-sm">תאריך:</span>
+                      <span className="text-foreground font-medium">{scannedData.date || 'לא זוהה'}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-slate-400 text-sm">סכום:</span>
-                      <span className="text-violet-400 font-bold text-lg">
+                      <span className="text-muted-foreground text-sm">סכום:</span>
+                      <span className="text-primary font-bold text-lg">
                         {scannedData.currency === 'ILS' ? '₪' : scannedData.currency}
                         {scannedData.total?.toLocaleString() || 0}
                       </span>
                     </div>
-                    {scannedData.items?.length > 0 && (
-                      <div className="pt-2 border-t border-slate-700">
-                        <span className="text-slate-400 text-sm block mb-2">פריטים:</span>
-                        <ul className="text-white text-sm space-y-1">
+                    {scannedData.lineItems?.length > 0 && (
+                      <div className="pt-2 border-t border-border">
+                        <span className="text-muted-foreground text-sm block mb-2">
+                          {scannedData.lineItems.length} פריטים זוהו
+                        </span>
+                        <ul className="text-foreground text-sm space-y-1">
+                          {scannedData.lineItems.slice(0, 3).map((item: any, i: number) => (
+                            <li key={i} className="truncate flex items-center justify-between">
+                              <span>• {item.name}</span>
+                              <span className="text-muted-foreground text-xs">×{item.quantity} · ₪{item.unitPrice}</span>
+                            </li>
+                          ))}
+                          {scannedData.lineItems.length > 3 && (
+                            <li className="text-xs text-muted-foreground">...ועוד {scannedData.lineItems.length - 3} פריטים</li>
+                          )}
+                        </ul>
+                      </div>
+                    )}
+                    {scannedData.items?.length > 0 && !scannedData.lineItems?.length && (
+                      <div className="pt-2 border-t border-border">
+                        <span className="text-muted-foreground text-sm block mb-2">פריטים:</span>
+                        <ul className="text-foreground text-sm space-y-1">
                           {scannedData.items.slice(0, 5).map((item: string, i: number) => (
                             <li key={i} className="truncate">• {item}</li>
                           ))}
@@ -619,7 +704,7 @@ const AdminInvoices = () => {
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
-                      className="flex-1 border-slate-700"
+                      className="flex-1"
                       onClick={() => {
                         setScannedData(null);
                         fileInputRef.current?.click();
@@ -628,10 +713,10 @@ const AdminInvoices = () => {
                       סריקה מחדש
                     </Button>
                     <Button
-                      className="flex-1 bg-violet-600 hover:bg-violet-700"
+                      className="flex-1"
                       onClick={saveScannedInvoice}
                     >
-                      שמור חשבונית
+                      {scannedData.lineItems?.length > 0 ? 'סקירת פריטים →' : 'שמור חשבונית'}
                     </Button>
                   </div>
                 </div>
@@ -642,37 +727,37 @@ const AdminInvoices = () => {
 
         {/* New Supplier Confirmation Dialog */}
         <AlertDialog open={newSupplierDialogOpen} onOpenChange={setNewSupplierDialogOpen}>
-          <AlertDialogContent className="bg-slate-900 border-slate-800">
+          <AlertDialogContent className="bg-card border-border">
             <AlertDialogHeader>
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-12 h-12 rounded-full bg-violet-500/20 flex items-center justify-center">
-                  <UserPlus className="w-6 h-6 text-violet-400" />
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <UserPlus className="w-6 h-6 text-primary" />
                 </div>
                 <AlertDialogTitle className="text-xl">ספק חדש זוהה</AlertDialogTitle>
               </div>
-              <AlertDialogDescription className="text-slate-400">
-                הספק <span className="text-white font-semibold">"{pendingSupplierData?.name}"</span> לא נמצא במערכת.
+              <AlertDialogDescription className="text-muted-foreground">
+                הספק <span className="text-foreground font-semibold">"{pendingSupplierData?.name}"</span> לא נמצא במערכת.
                 <br />
                 האם ברצונך להוסיף אותו כספק חדש?
               </AlertDialogDescription>
             </AlertDialogHeader>
             
             {pendingSupplierData && (
-              <div className="bg-slate-800/50 rounded-lg p-4 space-y-2 my-4">
+              <div className="bg-muted/50 rounded-lg p-4 space-y-2 my-4">
                 <div className="flex justify-between">
-                  <span className="text-slate-400 text-sm">שם הספק:</span>
-                  <span className="text-white">{pendingSupplierData.name}</span>
+                  <span className="text-muted-foreground text-sm">שם הספק:</span>
+                  <span className="text-foreground">{pendingSupplierData.name}</span>
                 </div>
                 {pendingSupplierData.phone && (
                   <div className="flex justify-between">
-                    <span className="text-slate-400 text-sm">טלפון:</span>
-                    <span className="text-white">{pendingSupplierData.phone}</span>
+                    <span className="text-muted-foreground text-sm">טלפון:</span>
+                    <span className="text-foreground">{pendingSupplierData.phone}</span>
                   </div>
                 )}
                 {pendingSupplierData.email && (
                   <div className="flex justify-between">
-                    <span className="text-slate-400 text-sm">אימייל:</span>
-                    <span className="text-white">{pendingSupplierData.email}</span>
+                    <span className="text-muted-foreground text-sm">אימייל:</span>
+                    <span className="text-foreground">{pendingSupplierData.email}</span>
                   </div>
                 )}
               </div>
@@ -681,13 +766,11 @@ const AdminInvoices = () => {
             <AlertDialogFooter className="gap-2">
               <AlertDialogCancel 
                 onClick={handleSkipNewSupplier}
-                className="border-slate-700 bg-transparent hover:bg-slate-800"
               >
                 דלג
               </AlertDialogCancel>
               <AlertDialogAction 
                 onClick={handleConfirmNewSupplier}
-                className="bg-violet-600 hover:bg-violet-700"
               >
                 <UserPlus className="w-4 h-4 ml-2" />
                 הוסף ספק

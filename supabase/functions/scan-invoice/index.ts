@@ -2,11 +2,10 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -21,14 +20,16 @@ serve(async (req) => {
       );
     }
 
-    console.log('Scanning invoice image...');
+    console.log('Scanning invoice image with line-item extraction...');
 
-    // Use Lovable AI (Gemini) to analyze the invoice
-    const response = await fetch('https://api.lovable.dev/v1/chat/completions', {
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY is not configured');
+
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${Deno.env.get('LOVABLE_API_KEY')}`,
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
       },
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
@@ -38,24 +39,43 @@ serve(async (req) => {
             content: [
               {
                 type: 'text',
-                text: `Analyze this invoice image and extract the following information in JSON format:
+                text: `You are an expert invoice parser. Analyze this invoice/receipt image and extract EVERY line item with full detail.
+
+Return ONLY valid JSON in this exact structure:
 {
-  "invoiceNumber": "invoice number if visible",
-  "vendor": "vendor/supplier name",
-  "vendorPhone": "vendor phone number if visible",
-  "vendorEmail": "vendor email if visible",
-  "vendorAddress": "vendor address if visible",
-  "vendorTaxId": "vendor tax ID / business number if visible",
-  "date": "invoice date in YYYY-MM-DD format",
-  "total": numeric total amount,
-  "currency": "currency code (ILS, USD, etc)",
-  "items": ["list of items/products"],
-  "taxAmount": numeric tax amount if visible,
-  "subtotal": numeric subtotal if visible
+  "invoiceNumber": "string or null",
+  "vendor": "supplier/vendor name or null",
+  "vendorPhone": "phone or null",
+  "vendorEmail": "email or null",
+  "vendorAddress": "address or null",
+  "vendorTaxId": "tax ID / business number or null",
+  "date": "YYYY-MM-DD or null",
+  "currency": "ILS",
+  "lineItems": [
+    {
+      "name": "product name as written on invoice",
+      "sku": "SKU/catalog number if visible, or null",
+      "quantity": 1,
+      "unitPrice": 0.00,
+      "totalPrice": 0.00,
+      "unit": "unit of measure if visible (kg, pcs, etc) or null"
+    }
+  ],
+  "subtotal": 0.00,
+  "taxRate": 17,
+  "taxAmount": 0.00,
+  "shippingCost": 0.00,
+  "discount": 0.00,
+  "total": 0.00
 }
 
-If any field is not visible or unclear, use null. For numeric fields, return only the number without currency symbols.
-Respond ONLY with valid JSON, no additional text.`
+Rules:
+- Extract EVERY line item row from the invoice. Do not summarize or skip items.
+- For numeric fields, return only numbers (no currency symbols).
+- If tax rate is visible use that, otherwise default to 17 (Israel VAT).
+- If shipping/delivery cost is listed separately, put it in shippingCost.
+- If discount is listed, put it in discount.
+- Respond ONLY with valid JSON, no additional text.`
               },
               {
                 type: 'image_url',
@@ -66,13 +86,23 @@ Respond ONLY with valid JSON, no additional text.`
             ]
           }
         ],
-        max_tokens: 1000,
+        max_tokens: 4000,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('AI API error:', errorText);
+      console.error('AI API error:', response.status, errorText);
+      if (response.status === 429) {
+        return new Response(JSON.stringify({ error: 'Rate limit exceeded, please try again later.' }), {
+          status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      if (response.status === 402) {
+        return new Response(JSON.stringify({ error: 'Payment required, please add credits.' }), {
+          status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
       throw new Error(`AI API error: ${response.status}`);
     }
 
@@ -81,10 +111,8 @@ Respond ONLY with valid JSON, no additional text.`
     
     console.log('AI Response:', content);
 
-    // Parse the JSON from the response
     let parsedData;
     try {
-      // Extract JSON from the response (handle potential markdown code blocks)
       const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || 
                         content.match(/```\s*([\s\S]*?)\s*```/) ||
                         [null, content];
@@ -98,13 +126,21 @@ Respond ONLY with valid JSON, no additional text.`
         date: new Date().toISOString().split('T')[0],
         total: 0,
         currency: 'ILS',
-        items: [],
+        lineItems: [],
+        subtotal: 0,
+        taxRate: 17,
         taxAmount: null,
-        subtotal: null
+        shippingCost: 0,
+        discount: 0,
       };
     }
 
-    console.log('Parsed invoice data:', parsedData);
+    // Backwards compat: keep items as string array too
+    if (parsedData.lineItems) {
+      parsedData.items = parsedData.lineItems.map((li: any) => li.name);
+    }
+
+    console.log('Parsed invoice data:', JSON.stringify(parsedData));
 
     return new Response(
       JSON.stringify(parsedData),
