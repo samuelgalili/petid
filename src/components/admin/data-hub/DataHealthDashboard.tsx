@@ -204,8 +204,19 @@ export const DataHealthDashboard = () => {
                   <span className="text-lg">{cat.icon}</span>
                   {cat.label}
                 </span>
-                {getHealthIcon(cat)}
+              {getHealthIcon(cat)}
               </CardTitle>
+              {/* Status explanation */}
+              <div className={`text-[10px] font-medium ${getHealthColor(cat)}`}>
+                {cat.totalSources === 0 && cat.domainRecords === 0 && "אין מקורות עדיין"}
+                {cat.failedSources > 0 && `${cat.failedSources} מקורות נכשלו בעיבוד`}
+                {cat.failedSources === 0 && cat.totalSources > 0 && cat.processedSources < cat.totalSources && 
+                  `${cat.totalSources - cat.processedSources} מקורות ממתינים לעיבוד`}
+                {cat.failedSources === 0 && cat.totalSources > 0 && cat.processedSources === cat.totalSources && cat.syncedSources < cat.totalSources &&
+                  `עובד — ממתין לסנכרון`}
+                {cat.failedSources === 0 && (cat.domainRecords > 0 || (cat.processedSources === cat.totalSources && cat.syncedSources === cat.totalSources && cat.totalSources > 0)) && 
+                  "✅ נלמד ומסונכרן"}
+              </div>
             </CardHeader>
             <CardContent className="p-3 pt-0 space-y-2.5">
               {/* Domain record count - prominent display */}
