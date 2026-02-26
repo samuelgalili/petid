@@ -74,27 +74,25 @@ export const PrivacyConsentPopup = () => {
             transition={{ type: "spring", damping: 25 }}
             className={cn(
               "fixed z-[10011]",
-              "inset-x-4 top-1/2 -translate-y-1/2",
-              "max-w-sm mx-auto",
-              "rounded-3xl",
-              "bg-background backdrop-blur-2xl",
+              "inset-x-3 top-[50%] -translate-y-1/2",
+              "max-w-[340px] mx-auto max-h-[calc(100vh-40px)] overflow-y-auto",
+              "rounded-2xl",
+              "bg-background",
               "border border-border/40",
               "shadow-2xl",
             )}
             dir="rtl"
           >
-            <div className="p-6 space-y-4">
-              {/* Icon */}
-              <div className="w-14 h-14 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
-                <Shield className="w-7 h-7 text-primary" strokeWidth={1.5} />
+            <div className="p-5 space-y-3">
+              <div className="w-11 h-11 mx-auto rounded-xl bg-primary/10 flex items-center justify-center">
+                <Shield className="w-5 h-5 text-primary" strokeWidth={1.5} />
               </div>
 
               {/* Title */}
-              <div className="text-center space-y-1.5">
-                <h2 className="text-lg font-bold text-foreground">הסכמת פרטיות</h2>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  PetID משתמשת בבינה מלאכותית כדי לנתח מסמכים רפואיים וליצור המלצות מותאמות אישית
-                  עבור חיית המחמד שלך.
+              <div className="text-center space-y-1">
+                <h2 className="text-base font-bold text-foreground">הסכמת פרטיות</h2>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  PetID משתמשת בבינה מלאכותית כדי לנתח מסמכים רפואיים וליצור המלצות מותאמות אישית עבור חיית המחמד שלך.
                 </p>
               </div>
 
