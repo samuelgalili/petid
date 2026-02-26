@@ -342,6 +342,8 @@ export function useSoundtrackFeed() {
     fetchPostsInner();
   };
 
+  const isPromoId = (id: string) => id.startsWith("promo-") || id.startsWith("petid-");
+
   const handleLike = async (postId: string) => {
     if (!user) {
       navigate("/auth");
@@ -361,6 +363,9 @@ export function useSoundtrackFeed() {
     setDiscoverPosts(updater);
     setFollowingPosts(updater);
 
+    // Skip DB operation for promo posts
+    if (isPromoId(postId)) return;
+
     try {
       if (wasLiked) {
         await supabase.from("post_likes").delete().eq("post_id", postId).eq("user_id", user.id);
@@ -379,6 +384,8 @@ export function useSoundtrackFeed() {
     }
   };
 
+
+
   const handleSave = async (postId: string) => {
     if (!user) {
       navigate("/auth");
@@ -392,6 +399,12 @@ export function useSoundtrackFeed() {
       prev.map((p) => (p.id === postId ? { ...p, is_saved: !wasSaved } : p));
     setDiscoverPosts(updater);
     setFollowingPosts(updater);
+
+    // Skip DB operation for promo posts
+    if (isPromoId(postId)) {
+      toast.success(!wasSaved ? "נשמר!" : "הוסר מהשמורים");
+      return;
+    }
 
     try {
       if (wasSaved) {
@@ -419,6 +432,9 @@ export function useSoundtrackFeed() {
       prev.map((p) => (p.user_id === targetUserId ? { ...p, is_following: !isFollowing } : p));
     setDiscoverPosts(updater);
     setFollowingPosts(updater);
+
+    // Skip DB operation for promo users
+    if (isPromoId(targetUserId)) return;
 
     try {
       if (isFollowing) {
