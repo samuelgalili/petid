@@ -43,6 +43,7 @@ const navGroups: NavGroup[] = [
     label: "ראשי",
     icon: LayoutDashboard,
     items: [
+      { icon: Crown, label: "Sovereign Dashboard", href: "/admin/sovereign" },
       { icon: Crown, label: "דשבורד מנכ״ל", href: "/admin/ceo" },
       { icon: Zap, label: "מרכז פיקוד", href: "/admin/command-center" },
       { icon: Brain, label: "דשבורד", href: "/admin/growo" },

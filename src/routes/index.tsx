@@ -383,6 +383,7 @@ const AdminSupplierNegotiation = lazy(() => import("@/pages/admin/AdminSupplierN
 const CEODashboard = lazy(() => import("@/pages/admin/CEODashboard"));
 const AdminArchitectConsole = lazy(() => import("@/pages/admin/AdminArchitectConsole"));
 const AdminPrometheus = lazy(() => import("@/pages/admin/AdminPrometheus"));
+const SovereignDashboard = lazy(() => import("@/pages/admin/SovereignDashboard"));
 
 // Helper for admin routes
 const AdminPage = ({ component: Component, pageName }: { component: ComponentType; pageName: string }) => (
@@ -471,6 +472,7 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/ceo", element: <AdminPage component={CEODashboard} pageName="דשבורד מנכ״ל" /> },
   { path: "/admin/architect", element: <AdminPage component={AdminArchitectConsole} pageName="Architect Console" /> },
   { path: "/admin/prometheus", element: <AdminPage component={AdminPrometheus} pageName="Prometheus — מאמן הסוכנים" /> },
+  { path: "/admin/sovereign", element: <AdminPage component={SovereignDashboard} pageName="Sovereign Dashboard" /> },
 ];
 
 // ==========================================
