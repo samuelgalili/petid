@@ -73,8 +73,9 @@ export const PrivacyConsentPopup = () => {
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: "spring", damping: 25 }}
             className={cn(
-              "fixed inset-x-4 top-1/2 -translate-y-1/2 z-[301]",
-              "max-w-sm mx-auto",
+              "fixed z-[301]",
+              "inset-x-4 bottom-4 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2",
+              "max-w-sm mx-auto max-h-[85vh] overflow-y-auto",
               "rounded-3xl overflow-hidden",
               "bg-background/90 backdrop-blur-2xl",
               "border border-border/40",
@@ -102,7 +103,7 @@ export const PrivacyConsentPopup = () => {
                 <p className="text-[11px] font-medium text-foreground">אנחנו מבקשים את הסכמתך ל:</p>
                 {[
                   "ניתוח AI של מסמכים רפואיים שתעלה",
-                  "יצירת המלצות תזונה מותאמות על בסיס NRC 2006",
+                  "יצירת המלצות תזונה מותאמות על בסיס התקן המדעי של PetID",
                   "שמירת לוג גישה שקוף לביקורת פרטיות",
                 ].map((item, i) => (
                   <div key={i} className="flex items-start gap-2">
