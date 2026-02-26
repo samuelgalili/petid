@@ -7,7 +7,7 @@ import {
   Bell, Globe, Lock, Info, LogOut, Moon, Sun, Languages, Monitor,
   Type, Contrast, Zap, BellOff, ChevronLeft, Store, QrCode, Star,
   FileText, Calendar, Sparkles, Shield, ShieldCheck, Eye, EyeOff,
-  Download, Trash2, HardDrive, Smartphone, Heart, Siren,
+  Download, Trash2, HardDrive, Smartphone, Heart, Siren, Mail,
   ShoppingBag, Users, Link2, ChevronDown, ChevronUp, Thermometer,
   Weight, Palette, ExternalLink, StarIcon,
 } from "lucide-react";
@@ -204,6 +204,7 @@ const Settings = () => {
 
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
   const [profileName, setProfileName] = useState<string | null>(null);
+  const [marketingConsent, setMarketingConsent] = useState(false);
 
   // Notification preferences (local state, persisted via localStorage)
   const [healthAlerts, setHealthAlerts] = useState(() => localStorage.getItem("pref_health_alerts") !== "false");
@@ -232,16 +233,35 @@ const Settings = () => {
       if (!user?.id) return;
       const { data } = await supabase
         .from("profiles")
-        .select("avatar_url, full_name")
+        .select("avatar_url, full_name, marketing_consent")
         .eq("id", user.id)
         .maybeSingle();
       if (data) {
         setProfileAvatar(data.avatar_url);
         setProfileName(data.full_name);
+        setMarketingConsent((data as any).marketing_consent ?? false);
       }
     };
     fetchProfile();
   }, [user?.id]);
+
+  const handleMarketingConsentToggle = async () => {
+    if (!user?.id) return;
+    const next = !marketingConsent;
+    setMarketingConsent(next);
+    await supabase.from("profiles").update({
+      marketing_consent: next,
+      marketing_consent_date: next ? new Date().toISOString() : null,
+      marketing_unsubscribed_at: next ? null : new Date().toISOString(),
+    } as any).eq("id", user.id);
+    // Log for compliance
+    await supabase.from("marketing_opt_out_log" as any).insert({
+      user_id: user.id,
+      action: next ? "opt_in" : "opt_out",
+      source: "settings",
+    });
+    toast.success(next ? "הסכמה לשיווק הופעלה" : "הוסרת מרשימת השיווק");
+  };
 
   // Persist toggles
   const toggle = (key: string, setter: (v: boolean) => void, current: boolean) => {
@@ -429,6 +449,14 @@ const Settings = () => {
               label="מצב שקט"
               description="השתק התראות זמנית"
               action={() => setShowQuietMode(true)}
+            />
+            <SettingRow
+              icon={Mail}
+              label="הסכמה לשיווק"
+              description="קבל עדכונים, מבצעים ותוכן מותאם"
+              type="toggle"
+              value={marketingConsent}
+              action={handleMarketingConsentToggle}
               showSeparator={false}
             />
           </SettingsSection>
