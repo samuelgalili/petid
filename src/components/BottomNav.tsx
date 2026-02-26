@@ -6,7 +6,8 @@ import {
   Cat,
   Camera,
   ScanLine,
-  MessageCircle,
+  FileText,
+  Brain,
   X,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -28,19 +29,19 @@ const navLabels = {
 
 const quickActions = {
   he: [
-    { key: "upload", icon: Camera, label: "העלאה", path: "/feed", color: "#FF6B8A" },
-    { key: "scan", icon: ScanLine, label: "סריקה", path: "/chat", color: "#4ECDC4" },
-    { key: "chat", icon: MessageCircle, label: "צ'אט", path: "/chat", color: "#7C5CFC" },
+    { key: "scan-food", icon: ScanLine, label: "סריקת מזון", path: "/chat", color: "#4ECDC4" },
+    { key: "scan-doc", icon: FileText, label: "סריקת מסמך", path: "/chat", color: "#7C5CFC" },
+    { key: "post", icon: Camera, label: "פוסט", path: "/feed", color: "#FF6B8A" },
   ],
   en: [
-    { key: "upload", icon: Camera, label: "Upload", path: "/feed", color: "#FF6B8A" },
-    { key: "scan", icon: ScanLine, label: "Scan", path: "/chat", color: "#4ECDC4" },
-    { key: "chat", icon: MessageCircle, label: "Chat", path: "/chat", color: "#7C5CFC" },
+    { key: "scan-food", icon: ScanLine, label: "Scan Food", path: "/chat", color: "#4ECDC4" },
+    { key: "scan-doc", icon: FileText, label: "Scan Doc", path: "/chat", color: "#7C5CFC" },
+    { key: "post", icon: Camera, label: "Post", path: "/feed", color: "#FF6B8A" },
   ],
   ar: [
-    { key: "upload", icon: Camera, label: "رفع", path: "/feed", color: "#FF6B8A" },
-    { key: "scan", icon: ScanLine, label: "مسح", path: "/chat", color: "#4ECDC4" },
-    { key: "chat", icon: MessageCircle, label: "دردشة", path: "/chat", color: "#7C5CFC" },
+    { key: "scan-food", icon: ScanLine, label: "مسح طعام", path: "/chat", color: "#4ECDC4" },
+    { key: "scan-doc", icon: FileText, label: "مسح مستند", path: "/chat", color: "#7C5CFC" },
+    { key: "post", icon: Camera, label: "نشر", path: "/feed", color: "#FF6B8A" },
   ],
 };
 
@@ -249,25 +250,51 @@ const BottomNav = () => {
         )}
       </AnimatePresence>
 
-      {/* Floating FAB (+) — always bottom-right, hidden when dashboard is open */}
+      {/* Floating FAB — Intelligence Hub: transforms + → Brain on expand */}
       {!dashboardOpen && (
         <motion.button
           whileTap={{ scale: 0.85 }}
           onClick={() => setShowQuickActions((v) => !v)}
-          className="fixed z-[10000] w-11 h-11 rounded-full flex items-center justify-center bg-transparent border-[1.5px] border-primary/60 text-primary backdrop-blur-sm left-4"
+          className={cn(
+            "fixed z-[10000] w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md left-4 transition-all duration-300",
+            showQuickActions
+              ? "bg-primary/15 border-[1.5px] border-primary/40 shadow-[0_0_20px_hsl(var(--primary)/0.3)]"
+              : "bg-primary/10 border-[1.5px] border-primary/30"
+          )}
           style={{ bottom: `calc(72px + env(safe-area-inset-bottom))` }}
-          aria-label="Quick actions"
+          aria-label="Intelligence Hub"
         >
-          <motion.div
-            animate={{ rotate: showQuickActions ? 45 : 0 }}
-            transition={{ type: "spring", stiffness: 400, damping: 20 }}
-          >
+          <AnimatePresence mode="wait">
             {showQuickActions ? (
-              <X className="w-5 h-5" strokeWidth={2} />
+              <motion.div
+                key="brain"
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                exit={{ scale: 0, rotate: 180 }}
+                transition={{ type: "spring", stiffness: 500, damping: 25 }}
+              >
+                <Brain className="w-5 h-5 text-primary" strokeWidth={2} />
+              </motion.div>
             ) : (
-              <Plus className="w-5 h-5" strokeWidth={2} />
+              <motion.div
+                key="plus"
+                initial={{ scale: 0, rotate: 180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                exit={{ scale: 0, rotate: -180 }}
+                transition={{ type: "spring", stiffness: 500, damping: 25 }}
+              >
+                <Plus className="w-5 h-5 text-primary" strokeWidth={2} />
+              </motion.div>
             )}
-          </motion.div>
+          </AnimatePresence>
+          {/* Subtle pulse ring when closed */}
+          {!showQuickActions && (
+            <motion.div
+              className="absolute inset-0 rounded-full border border-primary/20"
+              animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+            />
+          )}
         </motion.button>
       )}
 
