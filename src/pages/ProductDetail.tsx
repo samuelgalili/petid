@@ -5394,7 +5394,7 @@ const ProductDetail = () => {
                   <ShieldPlus className="w-5 h-5 text-[hsl(200,55%,45%)]" />
                 </div>
                 <div>
-                  <p className="text-[12px] font-bold text-foreground">💡 טיפ ביטוחי – Libra</p>
+                  <p className="text-[12px] font-bold text-foreground">💡 טיפ ביטוחי</p>
                   <p className="text-[11px] text-muted-foreground">{jointFeatures.insuranceTip}</p>
                 </div>
               </div>

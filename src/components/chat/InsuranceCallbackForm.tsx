@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Shield, Phone, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-
-const LIBRA_BLUE = "210 90% 45%";
+import { useInsurancePartner } from "@/hooks/useInsurancePartner";
+import { useEffect } from "react";
 
 interface InsuranceCallbackFormProps {
   petName: string;
@@ -32,6 +32,7 @@ export const InsuranceCallbackForm = ({
   const [isSuccess, setIsSuccess] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+  const { partnerName } = useInsurancePartner();
 
   useEffect(() => {
     if (!user?.id) return;
@@ -92,15 +93,14 @@ export const InsuranceCallbackForm = ({
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: "spring", delay: 0.1 }}
-          className="w-16 h-16 rounded-full flex items-center justify-center"
-          style={{ backgroundColor: `hsl(${LIBRA_BLUE} / 0.15)` }}
+          className="w-16 h-16 rounded-full flex items-center justify-center bg-primary/15"
         >
-          <Check className="w-8 h-8" style={{ color: `hsl(${LIBRA_BLUE})` }} />
+          <Check className="w-8 h-8 text-primary" />
         </motion.div>
         <div>
           <p className="text-base font-bold text-foreground">הפרטים נשלחו בהצלחה! 🎉</p>
           <p className="text-sm text-muted-foreground mt-1">
-            נציג מקצועי מ-Libra יחזור אליך תוך 24 שעות לבדיקת המקרה
+            נציג מקצועי מ-{partnerName} יחזור אליך תוך 24 שעות לבדיקת המקרה
           </p>
         </div>
       </motion.div>
@@ -114,9 +114,9 @@ export const InsuranceCallbackForm = ({
       className="space-y-3 mt-2"
     >
       <div className="flex items-center gap-2 px-1">
-        <Shield className="w-4 h-4" style={{ color: `hsl(${LIBRA_BLUE})` }} />
-        <span className="text-xs font-bold" style={{ color: `hsl(${LIBRA_BLUE})` }}>
-          Libra Insurance
+        <Shield className="w-4 h-4 text-primary" strokeWidth={1.5} />
+        <span className="text-xs font-bold text-primary">
+          {partnerName}
         </span>
         <span className="text-[10px] text-muted-foreground">• בדיקה אישית ל{petName}</span>
       </div>
@@ -153,14 +153,13 @@ export const InsuranceCallbackForm = ({
         <Button
           onClick={handleSubmit}
           disabled={isSubmitting || !phone.trim()}
-          className="w-full h-11 rounded-xl font-bold gap-2 text-white"
-          style={{ backgroundColor: `hsl(${LIBRA_BLUE})` }}
+          className="w-full h-11 rounded-xl font-bold gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
         >
           {isSubmitting ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
             <>
-              <Phone className="w-4 h-4" />
+              <Shield className="w-4 h-4" />
               שלח פרטים לנציג
             </>
           )}

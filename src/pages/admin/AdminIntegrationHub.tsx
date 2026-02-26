@@ -133,7 +133,7 @@ const AdminIntegrationHub = () => {
             </DialogHeader>
             <div className="space-y-4">
               <Input
-                placeholder="שם השירות (e.g. Libra Insurance)"
+                placeholder="שם השירות (e.g. Insurance Partner)"
                 value={newService.service_name}
                 onChange={(e) => setNewService({ ...newService, service_name: e.target.value })}
               />

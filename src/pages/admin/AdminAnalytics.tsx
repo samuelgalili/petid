@@ -262,7 +262,7 @@ const AdminAnalytics = () => {
       "תזונה": ["אוכל", "מזון", "תזונה", "diet", "food", "feeding"],
       "בריאות": ["חולה", "כאב", "בריאות", "health", "sick", "pain", "vet"],
       "גזע": ["גזע", "breed", "שיצו", "לברדור"],
-      "ביטוח": ["ביטוח", "ליברה", "insurance", "libra", "כיסוי"],
+      "ביטוח": ["ביטוח", "insurance", "כיסוי", "פוליסה"],
       "חנות": ["מוצר", "הזמנה", "משלוח", "shop", "order", "delivery"],
       "אילוף": ["אילוף", "training", "התנהגות", "behavior"],
     };
@@ -518,7 +518,7 @@ const AdminAnalytics = () => {
           <KPICard
             title="סה״כ הכנסות"
             value={`₪${kpis.revenue.value.toLocaleString()}`}
-            subtitle="חנות + עמלת ליברה"
+            subtitle="חנות + עמלת ביטוח"
             change={kpis.revenue.change}
             icon={DollarSign}
             color="bg-emerald-500/10 text-emerald-600"

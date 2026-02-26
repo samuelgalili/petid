@@ -43,7 +43,7 @@ type CriticalCategory = "communication" | "pricing" | "leads" | "all";
 const categoryConfig: Record<string, { label: string; icon: React.ComponentType<any>; keywords: string[] }> = {
   communication: { label: "תקשורת", icon: MessageCircle, keywords: ["whatsapp", "sms", "email", "הודעה"] },
   pricing: { label: "מחירים", icon: DollarSign, keywords: ["price", "מחיר", "הנחה", "discount"] },
-  leads: { label: "לידים", icon: Target, keywords: ["lead", "ליד", "libra", "insurance", "ביטוח"] },
+  leads: { label: "לידים", icon: Target, keywords: ["lead", "ליד", "insurance", "ביטוח"] },
 };
 
 const AdminApprovalQueue = () => {

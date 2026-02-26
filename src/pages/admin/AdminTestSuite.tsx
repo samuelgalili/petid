@@ -27,11 +27,11 @@ const TEST_SCENARIOS = [
   {
     id: "document-upload-flow",
     name: "זרימת העלאת מסמך",
-    description: "סימולציה: העלאת חוזה שכירות ל-רחוב צרת 12. בדיקה: גאי מעדכן כתובת, רוני מכין ליד Libra, אלונה מטייטת פוסט מותאם.",
+    description: "סימולציה: העלאת חוזה שכירות ל-רחוב צרת 12. בדיקה: גאי מעדכן כתובת, רוני מכין ליד ביטוח, אלונה מטייטת פוסט מותאם.",
     icon: FileText,
     steps: [
       { agent: "גאי", action: "עדכון כתובת ← רחוב צרת 12", check: "admin_approval_queue" },
-      { agent: "רוני", action: "הכנת ליד ביטוח Libra", check: "admin_approval_queue" },
+      { agent: "רוני", action: "הכנת ליד ביטוח", check: "admin_approval_queue" },
       { agent: "אלונה", action: "טיוטת פוסט מותאם מיקום", check: "admin_approval_queue" },
     ],
   },

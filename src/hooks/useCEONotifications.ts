@@ -216,7 +216,7 @@ export const useCEONotifications = () => {
             tier: "opportunity",
             title: "פרופיל מלא — מוכן לביטוח",
             message: `${pet.name} (${pet.breed}) השלים 100% פרופיל. ליד ביטוח Elite מוכן`,
-            actionLabel: "שלח ל-Libra",
+            actionLabel: "שלח לשותף ביטוח",
             source: "Insurance Engine",
             sourceEmoji: "🏆",
             metadata: { petId: pet.id, petName: pet.name },
@@ -277,7 +277,7 @@ export const useCEONotifications = () => {
             tier: "opportunity",
             title: "8 לידים Elite מוכנים",
             message: "פרופילים עם שבב מאומת + היסטוריה רפואית 100% — שווי הערכה ₪12,400",
-            actionLabel: "Push ל-Libra",
+            actionLabel: "Push לשותף ביטוח",
             source: "Insurance Engine",
             sourceEmoji: "🏆",
           });

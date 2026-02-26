@@ -57,7 +57,7 @@ const CANNED_RESPONSES = [
   },
   {
     category: "ביטוח",
-    title: "מידע על פוליסת Libra",
+    title: "מידע על פוליסת ביטוח",
     text: "שלום {customer},\n\nלגבי פוליסת הביטוח של {pet} – הפוליסה מכסה טיפולים וטרינריים בהתאם לתנאי התוכנית שנבחרה.\n\nלפרטים מלאים, ניתן לצפות בפרטי הפוליסה באפליקציה בתפריט 'ביטוח'.\n\nצוות PetID",
   },
   {
@@ -881,13 +881,13 @@ const AdminHelpDesk = () => {
                   <CardHeader className="pb-2">
                     <CardTitle className="text-xs flex items-center gap-1.5">
                       <Shield className="w-3.5 h-3.5 text-primary" strokeWidth={1.5} />
-                      ביטוח Libra
+                      ביטוח
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="p-2 rounded-lg bg-primary/5 border border-primary/10">
                       <p className="text-[10px] font-medium text-primary">בדיקה ידנית נדרשת</p>
-                      <p className="text-[9px] text-muted-foreground">יש לבדוק סטטוס פוליסה במערכת Libra</p>
+                      <p className="text-[9px] text-muted-foreground">יש לבדוק סטטוס פוליסה במערכת שותף הביטוח</p>
                     </div>
                   </CardContent>
                 </Card>
