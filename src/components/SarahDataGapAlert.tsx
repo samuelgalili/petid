@@ -97,16 +97,16 @@ const SarahDataGapAlert: React.FC = () => {
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
           className="fixed bottom-20 left-4 right-4 z-50 mx-auto max-w-sm"
         >
-          <div className="rounded-[20px] bg-card border border-border shadow-elevated p-5">
+          <div className="rounded-[20px] bg-card border border-border shadow-elevated p-6 h-auto" dir="rtl">
             <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-9 h-9 rounded-full bg-accent flex items-center justify-center">
+              <div className="flex-shrink-0 w-9 h-9 min-w-[36px] min-h-[36px] rounded-full bg-accent flex items-center justify-center">
                 <CheckCircle2 className="w-5 h-5 text-primary" />
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-muted-foreground mb-1">Science Update</p>
-                <p className="text-sm text-foreground leading-relaxed">{reward}</p>
+              <div className="flex-1 min-w-0 overflow-hidden">
+                <p className="text-xs font-semibold text-muted-foreground mb-1" dir="ltr" style={{ textAlign: 'right' }}>Science Update</p>
+                <p className="text-sm text-foreground leading-relaxed" style={{ wordBreak: 'break-word', unicodeBidi: 'plaintext' }} dir="auto">{reward}</p>
               </div>
-              <button onClick={handleDismissReward} className="text-muted-foreground hover:text-foreground transition-colors">
+              <button onClick={handleDismissReward} className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
