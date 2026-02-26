@@ -526,7 +526,7 @@ serve(async (req) => {
     if (activePet?.id) {
       const { data: fullPet } = await supabase
         .from("pets")
-        .select("name, type, breed, age, gender, birth_date, weight, weight_unit, size, health_notes, medical_conditions, has_insurance, insurance_company, insurance_expiry_date, last_vet_visit, next_vet_visit, vet_name, vet_clinic, is_neutered, current_food")
+        .select("name, type, breed, age, gender, birth_date, weight, weight_unit, size, health_notes, medical_conditions, has_insurance, insurance_company, insurance_expiry_date, last_vet_visit, next_vet_visit, vet_name, vet_clinic, is_neutered, current_food, microchip_number, city")
         .eq("id", activePet.id)
         .maybeSingle();
       
@@ -567,6 +567,8 @@ last_vet_visit: ${fullPet.last_vet_visit ?? "לא ידוע"}
 next_vet_visit: ${fullPet.next_vet_visit ?? "לא ידוע"}
 vet_name: ${fullPet.vet_name ?? "לא ידוע"}
 vet_clinic: ${fullPet.vet_clinic ?? "לא ידוע"}
+microchip_number: ${fullPet.microchip_number ?? "לא ידוע"}
+city: ${fullPet.city ?? "לא ידוע"}
 [/ACTIVE_PET]`;
 
         // Update activePet with DB data for downstream use
@@ -640,6 +642,21 @@ vet_clinic: ${fullPet.vet_clinic ?? "לא ידוע"}
       );
       dataPromises.push(
         fetchOCRDocumentData(supabase, activePet.id).then(r => { ocrDocumentData = r; })
+      );
+      // Secondary search: pet_documents for scanned data fallback
+      dataPromises.push(
+        (async () => {
+          const { data: docs } = await supabase
+            .from("pet_documents")
+            .select("title, description, document_type, file_url")
+            .eq("pet_id", activePet!.id!)
+            .order("uploaded_at", { ascending: false })
+            .limit(10);
+          if (docs && docs.length > 0) {
+            const docLines = docs.map((d: any) => `📄 ${d.title || d.document_type || "מסמך"} — ${d.description || "ללא תיאור"}`);
+            ocrDocumentData += `\n[PET_DOCUMENTS_VAULT]\n${docLines.join("\n")}\n[/PET_DOCUMENTS_VAULT]`;
+          }
+        })()
       );
     }
 
@@ -870,11 +887,12 @@ ${speciesProtocol}
 • אילוף → גיל: אם גור → "סושיאליזציה קריטית בגיל הזה." אם גזע עבודה → "גירוי מנטלי."
 • טיפוח → עור: אם medical_conditions כולל עור → "שמפו היפואלרגני בלבד."
 • כל שיחה → has_insurance: אם לא → "💡 ${petName} ללא ביטוח. כדאי לבדוק אפשרויות."
+• כל שאלה על שבב/מיקרוצ'יפ → אם microchip_number קיים ב-ACTIVE_PET, הצג אותו ישירות: "מספר השבב של ${petName} הוא [X]." אל תשאל אם המשתמש יודע — תציג את מה שיש.
 
-=== שכבה 3: Local Expert (V39) ===
-• זהה אוטומטית עיר מ-OWNER_PROFILE.city.
-• וטרינר חירום 24/7: "*3939 — מוקד חירום ארצי"
-• וטרינר רשותי: "הוטרינר הרשותי ב{עיר} — חייג לעירייה לפרטים."
+=== שכבה 2.5: DOCUMENT FALLBACK PROTOCOL ===
+• אם שדה מציג "לא ידוע" — לפני שאתה אומר שאתה לא יודע, בדוק ב-OCR_MEDICAL_RECORDS וב-PET_DOCUMENTS_VAULT.
+• אם מצאת שם את המידע — הצג אותו עם הערה: "לפי מסמך סרוק, [המידע]."
+• רק אם גם שם אין — אמור: "המידע הזה לא נמצא. רוצה להעלות מסמך רלוונטי?"
 • גינות כלבים: המלץ עד 3 לפי עיר.
 • אירועי קהילה: "מומלץ לבדוק אירועים לבעלי חיות ב{עיר}."
 
