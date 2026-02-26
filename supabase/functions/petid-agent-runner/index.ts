@@ -328,14 +328,19 @@ serve(async (req) => {
         let healed = false;
         let healAttempts = 0;
 
-        // ─── Determine user message (Admin Override = Priority 1) ───
-        const userMessage = adminOverride
-          ? `🔴 ADMIN OVERRIDE (Priority 1) from ${adminOverride.source}:\n"${adminOverride.command}"\n\nExecute this command immediately. Analyze the request, perform the action, and report completion status. Current time: ${new Date().toISOString()}. Respond in Hebrew.`
-          : `Run your scheduled check. Current time: ${new Date().toISOString()}. Provide a brief status report (max 200 words). Respond in Hebrew.`;
+        // ─── Determine user message (Brain Directive > Admin Override > Scheduled) ───
+        const brainSubCommand = brainDelegations?.get(bot.slug);
+        const userMessage = brainSubCommand
+          ? `🧠 BRAIN DIRECTIVE (Priority 1) — הפקודה שהוקצתה לך:\n"${brainSubCommand}"\n\nבצע את המשימה ודווח על סטטוס הביצוע. Current time: ${new Date().toISOString()}. Respond in Hebrew.`
+          : adminOverride
+            ? `🔴 ADMIN OVERRIDE (Priority 1) from ${adminOverride.source}:\n"${adminOverride.command}"\n\nExecute this command immediately. Analyze the request, perform the action, and report completion status. Current time: ${new Date().toISOString()}. Respond in Hebrew.`
+            : `Run your scheduled check. Current time: ${new Date().toISOString()}. Provide a brief status report (max 200 words). Respond in Hebrew.`;
+
+        const useStrongerModel = !!(brainSubCommand || adminOverride);
 
         // ─── Try running the bot ───
         try {
-          aiOutput = await callAI(LOVABLE_API_KEY, adminOverride ? "google/gemini-2.5-flash" : "google/gemini-2.5-flash-lite", [
+          aiOutput = await callAI(LOVABLE_API_KEY, useStrongerModel ? "google/gemini-2.5-flash" : "google/gemini-2.5-flash-lite", [
             { role: "system", content: prompt + approxInstruction },
             { role: "user", content: userMessage },
           ]);
