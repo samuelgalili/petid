@@ -57,38 +57,25 @@ export const PrivacyConsentPopup = () => {
   return (
     <AnimatePresence>
       {visible && (
-        <>
-          {/* Backdrop */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[10010] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          dir="rtl"
+        >
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[10010]"
-          />
-
-          {/* Dialog */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
             transition={{ type: "spring", damping: 25 }}
-            className={cn(
-              "fixed z-[10011]",
-              "inset-x-3 top-[50%] -translate-y-1/2",
-              "max-w-[340px] mx-auto max-h-[calc(100vh-40px)] overflow-y-auto",
-              "rounded-2xl",
-              "bg-background",
-              "border border-border/40",
-              "shadow-2xl",
-            )}
-            dir="rtl"
+            className="w-full max-w-[340px] rounded-2xl bg-background border border-border/40 shadow-2xl"
           >
             <div className="p-5 space-y-3">
               <div className="w-11 h-11 mx-auto rounded-xl bg-primary/10 flex items-center justify-center">
                 <Shield className="w-5 h-5 text-primary" strokeWidth={1.5} />
               </div>
 
-              {/* Title */}
               <div className="text-center space-y-1">
                 <h2 className="text-base font-bold text-foreground">הסכמת פרטיות</h2>
                 <p className="text-[11px] text-muted-foreground leading-relaxed">
@@ -96,7 +83,6 @@ export const PrivacyConsentPopup = () => {
                 </p>
               </div>
 
-              {/* Consent details */}
               <div className="bg-muted/30 rounded-2xl p-3.5 space-y-2">
                 <p className="text-[11px] font-medium text-foreground">אנחנו מבקשים את הסכמתך ל:</p>
                 {[
@@ -111,13 +97,11 @@ export const PrivacyConsentPopup = () => {
                 ))}
               </div>
 
-              {/* Disclaimer */}
               <p className="text-[9px] text-muted-foreground/60 text-center leading-relaxed">
                 תוכל לבטל הסכמה ולמחוק את כל הנתונים בכל עת דרך ההגדרות.
                 המידע שלך לא ישותף עם צדדים שלישיים.
               </p>
 
-              {/* Accept button */}
               <button
                 onClick={handleAccept}
                 disabled={accepting}
@@ -131,7 +115,7 @@ export const PrivacyConsentPopup = () => {
               </button>
             </div>
           </motion.div>
-        </>
+        </motion.div>
       )}
     </AnimatePresence>
   );
