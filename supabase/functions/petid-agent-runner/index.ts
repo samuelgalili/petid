@@ -41,6 +41,84 @@ const SYNERGY_MAP: Record<string, string[]> = {
   "financial-algo": ["cashflow-guardian", "fraud-detection"],
 };
 
+// ─── Agent expertise domains for Brain routing ───
+const AGENT_EXPERTISE: Record<string, string> = {
+  "sales": "מכירות, הנחות, מבצעים, pricing",
+  "nrc-science": "תזונה, מדע, NRC, בריאות מזון, רכיבים",
+  "health-prediction": "חיזוי בריאות, מחלות, ניטור רפואי",
+  "crm": "לקוחות, CRM, פרופילים, נתוני משתמשים",
+  "content": "תוכן, מאמרים, בלוג, שיווק תוכן",
+  "support": "שירות לקוחות, תמיכה, FAQ",
+  "system-architect": "קוד, ארכיטקטורה, באגים, מערכת",
+  "maya-ux": "UX, עיצוב, חוויית משתמש, המרות",
+  "ofek-visual-monitor": "ויזואליות, תמונות, עיצוב גרפי",
+  "prometheus": "אופטימיזציה, ביצועים, prompt engineering",
+  "market-intelligence": "מתחרים, מחקר שוק, מגמות",
+  "cashflow-guardian": "תזרים מזומנים, כספים, תשלומים",
+  "financial-algo": "אלגוריתמים פיננסיים, תמחור",
+  "fraud-detection": "הונאה, אבטחה, חריגות",
+  "crisis-pr": "משברים, יח\"צ, תקשורת חיצונית",
+  "ethics-safety": "אתיקה, בטיחות, פרטיות",
+  "vip-experience": "VIP, חוויית פרימיום, נאמנות",
+  "supply-chain": "שרשרת אספקה, ספקים, לוגיסטיקה",
+  "inventory": "מלאי, מוצרים, ניהול מלאי",
+  "onboarding-guide": "הצטרפות, אונבורדינג, הדרכה",
+  "compliance": "רגולציה, ביטוח, תאימות",
+};
+
+// ─── Brain Orchestrator: analyze command and delegate ───
+async function brainOrchestrate(
+  apiKey: string,
+  supabase: any,
+  command: string,
+  availableBots: any[]
+): Promise<{ delegations: Array<{ slug: string; subCommand: string }>; reasoning: string; conflicts: string[] }> {
+  const botList = availableBots.map(b => `- ${b.slug}: ${AGENT_EXPERTISE[b.slug] || b.description || b.name}`).join("\n");
+
+  const brainPrompt = `You are "The Brain" — the central orchestrator of PetID's 21-agent fleet.
+
+AVAILABLE AGENTS:
+${botList}
+
+RULES:
+1. Analyze the admin command and decide which agent(s) should handle it.
+2. NEVER do everything yourself — delegate sub-commands to the right specialists.
+3. CONFLICT RESOLUTION: If a command could create a conflict (e.g., sales vs safety), ALWAYS rule in favor of science and safety (Dr. NRC / Ethics / Health Prediction win).
+4. You may assign multiple agents. Each gets a specific sub-command.
+5. Return ONLY valid JSON, no markdown.
+
+OUTPUT FORMAT (strict JSON):
+{
+  "delegations": [
+    { "slug": "agent-slug", "subCommand": "specific instruction for this agent in Hebrew" }
+  ],
+  "reasoning": "Brief explanation of your routing decision in Hebrew",
+  "conflicts": ["Any detected conflicts and how you resolved them, in Hebrew"]
+}`;
+
+  const output = await callAI(apiKey, "google/gemini-2.5-flash", [
+    { role: "system", content: brainPrompt },
+    { role: "user", content: `פקודת אדמין: "${command}"` },
+  ]);
+
+  try {
+    // Extract JSON from response (handle markdown wrapping)
+    const jsonMatch = output.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+  } catch {
+    console.error("Brain failed to parse delegation JSON:", output);
+  }
+
+  // Fallback: run all bots with the command
+  return {
+    delegations: availableBots.map(b => ({ slug: b.slug, subCommand: command })),
+    reasoning: "Brain לא הצליח לנתח — שולח לכל הסוכנים",
+    conflicts: [],
+  };
+}
+
 // ─── Call AI Gateway ───
 async function callAI(apiKey: string, model: string, messages: Array<{ role: string; content: string }>) {
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -165,9 +243,15 @@ serve(async (req) => {
 
     let targetBotId: string | null = null;
     let adminOverride: { command: string; source: string; synergy?: boolean } | null = null;
+    let brainDirective: string | null = null;
     try {
       const body = await req.json();
       targetBotId = body?.bot_id || null;
+      // Brain Directive: Brain orchestrates and delegates
+      if (body?.brain_directive) {
+        brainDirective = body.brain_directive;
+        console.log(`🧠 BRAIN DIRECTIVE received: "${brainDirective}"`);
+      }
       // Admin Override Protocol: Priority 1 commands from dashboard
       if (body?.admin_override) {
         adminOverride = {
@@ -192,6 +276,40 @@ serve(async (req) => {
       });
     }
 
+    // ─── BRAIN DIRECTIVE MODE: Orchestrate before execution ───
+    let brainDelegations: Map<string, string> | null = null;
+    let brainReport: { reasoning: string; conflicts: string[] } | null = null;
+
+    if (brainDirective) {
+      console.log(`🧠 Brain analyzing directive and delegating to agents...`);
+      const orchestration = await brainOrchestrate(LOVABLE_API_KEY, supabase, brainDirective, bots);
+      
+      brainReport = { reasoning: orchestration.reasoning, conflicts: orchestration.conflicts };
+      brainDelegations = new Map(orchestration.delegations.map(d => [d.slug, d.subCommand]));
+
+      // Log Brain's analysis
+      await supabase.from("agent_action_logs").insert({
+        action_type: "brain_orchestration",
+        description: `🧠 [Brain] ניתוח פקודה: "${brainDirective}"\nהנמקה: ${orchestration.reasoning}\nהאצלה ל: ${orchestration.delegations.map(d => d.slug).join(", ")}${orchestration.conflicts.length ? `\nקונפליקטים: ${orchestration.conflicts.join("; ")}` : ""}`.substring(0, 2000),
+        reason: brainDirective,
+        expected_outcome: "Delegation to specialized agents",
+        actual_outcome: `Delegated to ${orchestration.delegations.length} agents`,
+        metadata: { delegations: orchestration.delegations, reasoning: orchestration.reasoning, conflicts: orchestration.conflicts },
+      });
+
+      // Filter bots to only delegated ones
+      const delegatedSlugs = new Set(orchestration.delegations.map(d => d.slug));
+      const filteredBots = bots.filter(b => delegatedSlugs.has(b.slug));
+      
+      // If Brain selected specific bots, only run those
+      if (filteredBots.length > 0) {
+        bots.length = 0;
+        bots.push(...filteredBots);
+      }
+
+      console.log(`🧠 Brain delegated to ${bots.length} agents: ${bots.map(b => b.slug).join(", ")}`);
+    }
+
     const results = [];
 
     for (const bot of bots) {
@@ -210,14 +328,19 @@ serve(async (req) => {
         let healed = false;
         let healAttempts = 0;
 
-        // ─── Determine user message (Admin Override = Priority 1) ───
-        const userMessage = adminOverride
-          ? `🔴 ADMIN OVERRIDE (Priority 1) from ${adminOverride.source}:\n"${adminOverride.command}"\n\nExecute this command immediately. Analyze the request, perform the action, and report completion status. Current time: ${new Date().toISOString()}. Respond in Hebrew.`
-          : `Run your scheduled check. Current time: ${new Date().toISOString()}. Provide a brief status report (max 200 words). Respond in Hebrew.`;
+        // ─── Determine user message (Brain Directive > Admin Override > Scheduled) ───
+        const brainSubCommand = brainDelegations?.get(bot.slug);
+        const userMessage = brainSubCommand
+          ? `🧠 BRAIN DIRECTIVE (Priority 1) — הפקודה שהוקצתה לך:\n"${brainSubCommand}"\n\nבצע את המשימה ודווח על סטטוס הביצוע. Current time: ${new Date().toISOString()}. Respond in Hebrew.`
+          : adminOverride
+            ? `🔴 ADMIN OVERRIDE (Priority 1) from ${adminOverride.source}:\n"${adminOverride.command}"\n\nExecute this command immediately. Analyze the request, perform the action, and report completion status. Current time: ${new Date().toISOString()}. Respond in Hebrew.`
+            : `Run your scheduled check. Current time: ${new Date().toISOString()}. Provide a brief status report (max 200 words). Respond in Hebrew.`;
+
+        const useStrongerModel = !!(brainSubCommand || adminOverride);
 
         // ─── Try running the bot ───
         try {
-          aiOutput = await callAI(LOVABLE_API_KEY, adminOverride ? "google/gemini-2.5-flash" : "google/gemini-2.5-flash-lite", [
+          aiOutput = await callAI(LOVABLE_API_KEY, useStrongerModel ? "google/gemini-2.5-flash" : "google/gemini-2.5-flash-lite", [
             { role: "system", content: prompt + approxInstruction },
             { role: "user", content: userMessage },
           ]);
@@ -382,10 +505,29 @@ serve(async (req) => {
     const approvalCount = results.filter((r) => r.routed === "approval_queue").length;
     const directCount = results.filter((r) => r.routed === "direct_log").length;
 
+    // ─── BRAIN DIRECTIVE: Log chain status report for admin ───
+    if (brainDirective && brainReport) {
+      const chainStatus = results.map(r => `• ${r.bot}: ${r.status}${r.routed !== "none" ? ` → ${r.routed}` : ""}`).join("\n");
+      await supabase.from("agent_action_logs").insert({
+        action_type: "brain_chain_report",
+        description: `🧠 [Brain] דוח שרשרת ביצוע:\nפקודה: "${brainDirective}"\nהנמקה: ${brainReport.reasoning}\n${brainReport.conflicts.length ? `⚠️ קונפליקטים: ${brainReport.conflicts.join("; ")}\n` : ""}סטטוס סוכנים:\n${chainStatus}`.substring(0, 2000),
+        reason: brainDirective,
+        expected_outcome: "Full chain execution report",
+        actual_outcome: `${successCount}/${results.length} succeeded`,
+        metadata: { 
+          directive: brainDirective, 
+          reasoning: brainReport.reasoning, 
+          conflicts: brainReport.conflicts, 
+          chain: results,
+        },
+      });
+    }
+
     return new Response(
       JSON.stringify({
         message: `Executed ${results.length} bots: ${successCount} success (${healedCount} self-healed), ${criticalCount} critical, ${approvalCount} → approval queue, ${directCount} → direct logs`,
         results,
+        ...(brainReport ? { brain: brainReport } : {}),
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
