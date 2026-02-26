@@ -321,7 +321,47 @@ serve(async (req) => {
           }
         }
 
-        results.push({ bot: bot.name, status: healed ? "healed" : "success", routed, healed, healAttempts });
+        // ─── ADMIN OVERRIDE: Log execution report to admin feed ───
+        if (adminOverride) {
+          await supabase.from("agent_action_logs").insert({
+            action_type: "admin_override_executed",
+            bot_id: bot.id,
+            description: `[${bot.name}] ביצע פקודת Admin Override: "${adminOverride.command}"`.substring(0, 2000),
+            reason: `Admin Override (Priority 1) from ${adminOverride.source}`,
+            expected_outcome: adminOverride.command,
+            actual_outcome: aiOutput?.substring(0, 500) || "No output",
+            metadata: { slug: bot.slug, source: adminOverride.source, override: true, healed },
+          });
+
+          // ─── SYNERGY: Trigger collaborating agents if needed ───
+          if (adminOverride.synergy && SYNERGY_MAP[bot.slug]) {
+            const synergyPartners = SYNERGY_MAP[bot.slug];
+            console.log(`🔗 Synergy: ${bot.name} triggering partners: ${synergyPartners.join(", ")}`);
+
+            for (const partnerSlug of synergyPartners) {
+              const { data: partnerBots } = await supabase
+                .from("automation_bots")
+                .select("id, name, slug")
+                .eq("slug", partnerSlug)
+                .eq("is_active", true)
+                .limit(1);
+
+              if (partnerBots && partnerBots.length > 0) {
+                await supabase.from("agent_action_logs").insert({
+                  action_type: "synergy_notification",
+                  bot_id: partnerBots[0].id,
+                  description: `[סינרגיה] ${bot.name} → ${partnerBots[0].name}: "${adminOverride.command}"`.substring(0, 2000),
+                  reason: `Admin Override synergy from ${bot.name}`,
+                  expected_outcome: `${partnerBots[0].name} reviews and acts on related aspects`,
+                  metadata: { source_slug: bot.slug, target_slug: partnerSlug, command: adminOverride.command },
+                });
+                console.log(`  → Synergy notification sent to ${partnerBots[0].name}`);
+              }
+            }
+          }
+        }
+
+        results.push({ bot: bot.name, status: healed ? "healed" : "success", routed, healed, healAttempts, adminOverride: !!adminOverride });
       } catch (botError) {
         console.error(`Error running bot ${bot.name}:`, botError);
 
