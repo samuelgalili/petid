@@ -5,11 +5,13 @@
 
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Eye, Wind, Scissors, Utensils, X, ShoppingBag, ChevronLeft } from "lucide-react";
+import { Sparkles, Eye, Wind, Scissors, Utensils, X, ShoppingBag, ShoppingCart, ChevronLeft } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { haptic } from "@/lib/haptics";
+import { useCart } from "@/contexts/CartContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface BreedHealthTipsProps {
   petName: string;
