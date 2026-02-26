@@ -143,8 +143,9 @@ export const CategoryUploadDialog = ({
           toast({ title: "יש לבחור קובץ", variant: "destructive" });
           return;
         }
-        // Upload file - try storage first, fallback to base64
-        let fileUrl: string;
+        // Upload file - try storage first, then small-file base64 fallback
+        let fileUrl: string | null = null;
+        let skippedProcessing = false;
         try {
           const ext = file.name.split(".").pop();
           const path = `${category}/${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
@@ -153,14 +154,18 @@ export const CategoryUploadDialog = ({
           const { data: urlData } = supabase.storage.from("admin-data").getPublicUrl(path);
           fileUrl = urlData.publicUrl;
         } catch (storageErr: any) {
-          console.warn("Storage unavailable, using base64 fallback:", storageErr.message);
-          // Convert file to base64 data URL
-          fileUrl = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = () => reject(new Error("Failed to read file"));
-            reader.readAsDataURL(file);
-          });
+          console.warn("Storage unavailable, trying fallback:", storageErr.message);
+          const maxInlineSize = 8 * 1024 * 1024;
+          if (file.size <= maxInlineSize) {
+            fileUrl = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = () => reject(new Error("Failed to read file"));
+              reader.readAsDataURL(file);
+            });
+          } else {
+            skippedProcessing = true;
+          }
         }
 
         const { data: src, error: srcErr } = await supabase
@@ -183,19 +188,31 @@ export const CategoryUploadDialog = ({
         const sid = (src as any).id;
         setSourceId(sid);
 
-        // Process
-        await supabase.functions.invoke("process-admin-data", {
-          body: { sourceId: sid, dataType: category, fileName: file.name, fileUrl },
-        });
+        if (fileUrl) {
+          // Process
+          await supabase.functions.invoke("process-admin-data", {
+            body: { sourceId: sid, dataType: category, fileName: file.name, fileUrl },
+          });
 
-        const { data: updated } = await supabase
-          .from("admin_data_sources" as any)
-          .select("*")
-          .eq("id", sid)
-          .single();
+          const { data: updated } = await supabase
+            .from("admin_data_sources" as any)
+            .select("*")
+            .eq("id", sid)
+            .single();
 
-        setPreviewData((updated as any)?.extracted_data || { raw: "לא נמצאו נתונים מובנים" });
-        setTitle((updated as any)?.title || title);
+          setPreviewData((updated as any)?.extracted_data || { raw: "לא נמצאו נתונים מובנים" });
+          setTitle((updated as any)?.title || title);
+        } else {
+          setPreviewData({
+            raw: "הקובץ נשמר כמקור, אך כרגע שירות הקבצים לא זמין ולכן עיבוד אוטומטי לא בוצע.",
+            skipped_processing: skippedProcessing,
+          });
+          toast({
+            title: "הקובץ נשמר",
+            description: "עיבוד אוטומטי נדחה כרגע עקב זמינות שירות הקבצים",
+          });
+        }
+
         setStep("preview");
       } else {
         // Manual content

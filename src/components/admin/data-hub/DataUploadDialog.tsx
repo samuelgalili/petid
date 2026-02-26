@@ -178,6 +178,7 @@
        let fileType = null;
        let fileSize = null;
 
+       let fileProcessingAvailable = true;
        if (file) {
          try {
            const fileExt = file.name.split(".").pop();
@@ -195,13 +196,19 @@
 
            fileUrl = urlData.publicUrl;
          } catch (storageErr: any) {
-           console.warn("Storage unavailable, using base64 fallback:", storageErr.message);
-           fileUrl = await new Promise<string>((resolve, reject) => {
-             const reader = new FileReader();
-             reader.onload = () => resolve(reader.result as string);
-             reader.onerror = () => reject(new Error("Failed to read file"));
-             reader.readAsDataURL(file);
-           });
+           console.warn("Storage unavailable, trying fallback:", storageErr.message);
+           const maxInlineSize = 8 * 1024 * 1024;
+           if (file.size <= maxInlineSize) {
+             fileUrl = await new Promise<string>((resolve, reject) => {
+               const reader = new FileReader();
+               reader.onload = () => resolve(reader.result as string);
+               reader.onerror = () => reject(new Error("Failed to read file"));
+               reader.readAsDataURL(file);
+             });
+           } else {
+             fileProcessingAvailable = false;
+             fileUrl = null;
+           }
          }
          fileName = file.name;
          fileType = file.type;
@@ -227,7 +234,7 @@
 
        if (sourceError) throw sourceError;
 
-       if (file && sourceData) {
+       if (file && sourceData && fileUrl) {
          setProcessing(true);
          try {
            await supabase.functions.invoke("process-admin-data", {
@@ -241,6 +248,13 @@
          } catch (processError) {
            console.error("Processing error:", processError);
          }
+       }
+
+       if (file && !fileUrl && !fileProcessingAvailable) {
+         toast({
+           title: "הקובץ נשמר",
+           description: "עיבוד אוטומטי נדחה כרגע עקב זמינות שירות הקבצים",
+         });
        }
 
        toast({
