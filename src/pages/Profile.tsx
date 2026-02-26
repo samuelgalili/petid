@@ -5,7 +5,7 @@ import { SEO } from "@/components/SEO";
 import { PageTransition } from "@/components/PageTransition";
 import BottomNav from "@/components/BottomNav";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, Plus, Menu, Edit3, ChevronDown, ChevronLeft, Utensils, Building2, Scissors, Heart, Stethoscope, Info, GraduationCap, FileText, Camera, Video, MessageCircle, Calendar, Dog, Gift, Flame, BookOpen, ShoppingBag, Truck, Handshake, Footprints, Search, Star, Clock, MapPin, Bell, AlertTriangle, Shield } from "lucide-react";
+import { ChevronRight, Plus, Menu, Edit3, ChevronDown, ChevronLeft, Utensils, Building2, Scissors, Heart, Stethoscope, Info, GraduationCap, FileText, Camera, Video, MessageCircle, Calendar, Dog, Gift, Flame, BookOpen, ShoppingBag, Truck, Handshake, Footprints, Search, Star, Clock, MapPin, Bell, AlertTriangle, Shield, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -96,6 +96,8 @@ const Profile = () => {
   const [healthRefreshKey, setHealthRefreshKey] = useState(0);
   const [healthBreakdownOpen, setHealthBreakdownOpen] = useState(false);
   const [showEmergencyHub, setShowEmergencyHub] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const triggerHealthRefresh = () => {
     setHealthRefreshKey((k) => k + 1);
     fetchAllData();
@@ -369,6 +371,68 @@ const Profile = () => {
   return <PageTransition>
       <HeartRain active={heartRainActive} />
       <EmergencyHub open={showEmergencyHub} onOpenChange={setShowEmergencyHub} />
+
+      {/* Delete Pet Confirmation Dialog */}
+      <AnimatePresence>
+        {showDeleteConfirm && selectedPet && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm"
+              onClick={() => !deleting && setShowDeleteConfirm(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-[10000] bg-background rounded-2xl p-6 shadow-2xl border border-border max-w-sm mx-auto"
+              dir="rtl"
+            >
+              <h3 className="text-lg font-bold text-foreground mb-2">מחיקת {selectedPet.name}?</h3>
+              <p className="text-sm text-muted-foreground mb-5">
+                הפעולה תמחק את כל המידע של {selectedPet.name} לצמיתות — כולל מסמכים, היסטוריה רפואית ותמונות. לא ניתן לשחזר.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  disabled={deleting}
+                  onClick={async () => {
+                    setDeleting(true);
+                    try {
+                      const { error } = await supabase.from('pets').delete().eq('id', selectedPet.id);
+                      if (error) throw error;
+                      toast({ title: `${selectedPet.name} נמחק/ה`, description: 'חיית המחמד הוסרה מהפרופיל' });
+                      setPets((prev) => prev.filter((p) => p.id !== selectedPet.id));
+                      queryClient.invalidateQueries({ queryKey: ['pets'] });
+                      if (selectedPetId === selectedPet.id) {
+                        const remaining = pets.filter((p) => p.id !== selectedPet.id);
+                        setSelectedPetId(remaining[0]?.id || null);
+                      }
+                    } catch {
+                      toast({ title: 'שגיאה', description: 'לא הצלחנו למחוק', variant: 'destructive' });
+                    } finally {
+                      setDeleting(false);
+                      setShowDeleteConfirm(false);
+                    }
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-destructive text-destructive-foreground font-semibold text-sm disabled:opacity-50"
+                >
+                  {deleting ? 'מוחק...' : 'מחק לצמיתות'}
+                </button>
+                <button
+                  disabled={deleting}
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 py-2.5 rounded-xl bg-muted text-foreground font-semibold text-sm"
+                >
+                  ביטול
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       <SEO title="הפרופיל שלי" description="נהלו את חיית המחמד שלכם - ביטוח, טיפוח, אימונים ועוד" url="/profile" type="profile" />
       <div className="h-screen bg-background overflow-hidden flex flex-col" dir="rtl">
         {/* Header with Collapsible Profile */}
@@ -390,8 +454,11 @@ const Profile = () => {
             {isAdmin && <button onClick={() => navigate('/admin/growo')} className="p-2" aria-label="ניהול">
                 <Shield className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
               </button>}
+            <button onClick={() => setShowDeleteConfirm(true)} className="p-2" aria-label="מחיקת חיית מחמד">
+              <Trash2 className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+            </button>
             <button onClick={() => setShowEmergencyHub(true)} className="p-2" aria-label="מרכז חירום">
-              <AlertTriangle className="w-5 h-5 text-red-500" strokeWidth={1.5} />
+              <AlertTriangle className="w-5 h-5 text-destructive" strokeWidth={1.5} />
             </button>
             <button onClick={() => navigate('/messages')} className="p-2 relative" aria-label="הודעות">
               <MessageCircle className="w-5 h-5 text-foreground" strokeWidth={1.5} />
