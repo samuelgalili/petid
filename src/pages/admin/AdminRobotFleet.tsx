@@ -158,12 +158,26 @@ const AdminRobotFleet = () => {
                     )}>
                       <Icon className="w-6 h-6 text-white" />
                     </div>
-                    <Switch
-                      checked={bot.is_active}
-                      onCheckedChange={(checked) =>
-                        toggleBot.mutate({ id: bot.id, is_active: checked })
-                      }
-                    />
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => runBots.mutate(bot.id)}
+                        disabled={!bot.is_active || runBots.isPending}
+                        className="p-1.5 rounded-md hover:bg-muted disabled:opacity-30 transition-colors"
+                        title="הפעל בוט"
+                      >
+                        {runBots.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                        ) : (
+                          <Play className="w-4 h-4 text-emerald-600" />
+                        )}
+                      </button>
+                      <Switch
+                        checked={bot.is_active}
+                        onCheckedChange={(checked) =>
+                          toggleBot.mutate({ id: bot.id, is_active: checked })
+                        }
+                      />
+                    </div>
                   </div>
                   <h3 className="font-semibold text-sm">{bot.name}</h3>
                   <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
@@ -190,6 +204,11 @@ const AdminRobotFleet = () => {
                         : "טרם הופעל"}
                     </div>
                   </div>
+                  {bot.last_output && (
+                    <p className="text-[10px] text-muted-foreground mt-2 line-clamp-2 bg-muted/50 rounded p-1.5">
+                      {bot.last_output}
+                    </p>
+                  )}
                   <div className="flex flex-wrap gap-1 mt-2">
                     {(bot.capabilities as string[] || []).slice(0, 3).map((cap: string) => (
                       <span key={cap} className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
