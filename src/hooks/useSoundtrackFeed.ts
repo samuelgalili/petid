@@ -400,6 +400,12 @@ export function useSoundtrackFeed() {
     setDiscoverPosts(updater);
     setFollowingPosts(updater);
 
+    // Skip DB operation for promo posts
+    if (isPromoId(postId)) {
+      toast.success(!wasSaved ? "נשמר!" : "הוסר מהשמורים");
+      return;
+    }
+
     try {
       if (wasSaved) {
         await supabase.from("saved_posts").delete().eq("post_id", postId).eq("user_id", user.id);
