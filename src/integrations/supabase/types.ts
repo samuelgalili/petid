@@ -2467,6 +2467,24 @@ export type Database = {
           },
         ]
       }
+      communication_blacklist: {
+        Row: {
+          added_at: string | null
+          phone_number: string
+          reason: string | null
+        }
+        Insert: {
+          added_at?: string | null
+          phone_number: string
+          reason?: string | null
+        }
+        Update: {
+          added_at?: string | null
+          phone_number?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
       content_calendar: {
         Row: {
           approved_at: string | null
@@ -8190,6 +8208,7 @@ export type Database = {
           blocked_reason: string | null
           building_code: string | null
           city: string | null
+          consent_method: string | null
           created_at: string | null
           email: string | null
           favorite_breeds: string[] | null
@@ -8234,6 +8253,7 @@ export type Database = {
           blocked_reason?: string | null
           building_code?: string | null
           city?: string | null
+          consent_method?: string | null
           created_at?: string | null
           email?: string | null
           favorite_breeds?: string[] | null
@@ -8278,6 +8298,7 @@ export type Database = {
           blocked_reason?: string | null
           building_code?: string | null
           city?: string | null
+          consent_method?: string | null
           created_at?: string | null
           email?: string | null
           favorite_breeds?: string[] | null
@@ -9490,6 +9511,33 @@ export type Database = {
           tracking_url_template?: string | null
           updated_at?: string
           webhook_secret?: string | null
+        }
+        Relationships: []
+      }
+      spam_compliance_logs: {
+        Row: {
+          action_type: string
+          created_at: string | null
+          id: string
+          platform: string
+          raw_message_ref: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          created_at?: string | null
+          id?: string
+          platform: string
+          raw_message_ref?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string | null
+          id?: string
+          platform?: string
+          raw_message_ref?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
