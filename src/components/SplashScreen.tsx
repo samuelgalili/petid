@@ -45,8 +45,7 @@ export const SplashScreen = ({ onFinish }: SplashScreenProps) => {
             alt="PetID"
             onLoad={handleLoad}
             onError={handleError}
-            className="w-[85vw] max-w-[420px] object-contain"
-            style={{ filter: 'drop-shadow(0 0 0 transparent)' }}
+            className="w-full h-auto max-h-screen object-cover"
           />
         </motion.div>
       )}
