@@ -243,9 +243,15 @@ serve(async (req) => {
 
     let targetBotId: string | null = null;
     let adminOverride: { command: string; source: string; synergy?: boolean } | null = null;
+    let brainDirective: string | null = null;
     try {
       const body = await req.json();
       targetBotId = body?.bot_id || null;
+      // Brain Directive: Brain orchestrates and delegates
+      if (body?.brain_directive) {
+        brainDirective = body.brain_directive;
+        console.log(`🧠 BRAIN DIRECTIVE received: "${brainDirective}"`);
+      }
       // Admin Override Protocol: Priority 1 commands from dashboard
       if (body?.admin_override) {
         adminOverride = {
