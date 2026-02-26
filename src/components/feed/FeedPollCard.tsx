@@ -153,7 +153,7 @@ const POLL_TEMPLATES: PollTemplate[] = [
 interface Pet {
   id: string;
   name: string;
-  pet_type: string;
+  type: string;
 }
 
 interface Product {
@@ -272,7 +272,7 @@ export const FeedPollCard = () => {
           poll_key: poll.key,
           selected_option: index,
           selected_text: poll.options[index],
-          pet_type: activePet.pet_type,
+          pet_type: activePet.type || "dog",
         },
         { onConflict: "user_id,pet_id,poll_key" }
       );
