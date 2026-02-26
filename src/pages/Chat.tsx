@@ -329,7 +329,7 @@ const ChatContent = () => {
             <ChevronRight className="w-5 h-5 text-foreground" />
           </button>
           <div className="flex items-center gap-1">
-            <img src={petidIcon} alt="PetID" className="w-5 h-5 object-contain" />
+            
             <span className="text-sm font-bold text-foreground">Chat Hub</span>
           </div>
           <div className="w-8" />
