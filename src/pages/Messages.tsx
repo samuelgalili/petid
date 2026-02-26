@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, Edit, Camera, Bot, Sparkles } from "lucide-react";
+import { Loader2, Edit, Camera, Bot, Sparkles, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import BottomNav from "@/components/BottomNav";
 import { motion } from "framer-motion";
@@ -159,7 +159,9 @@ export default function Messages() {
         <div className="bg-background border-b border-border sticky top-0 z-10">
           <div className="px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              
+              <button onClick={() => navigate(-1)} className="p-1">
+                <ChevronRight className="h-6 w-6 text-foreground" />
+              </button>
               <h1 className="text-xl font-bold text-foreground">
                 {currentUserName || "הודעות"}
               </h1>
