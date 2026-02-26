@@ -28,6 +28,19 @@ const SLUG_CATEGORY_MAP: Record<string, string> = {
 
 const MAX_SELF_HEAL_ATTEMPTS = 2;
 
+// ─── Inter-Agent Synergy Map: which agents collaborate ───
+const SYNERGY_MAP: Record<string, string[]> = {
+  "maya-ux": ["system-architect", "ofek-visual-monitor"],
+  "system-architect": ["maya-ux", "ofek-visual-monitor"],
+  "ofek-visual-monitor": ["maya-ux", "system-architect"],
+  "sales": ["crm", "content"],
+  "content": ["maya-ux", "ofek-visual-monitor"],
+  "nrc-science": ["health-prediction", "ethics-safety"],
+  "health-prediction": ["nrc-science", "ethics-safety"],
+  "cashflow-guardian": ["financial-algo", "fraud-detection"],
+  "financial-algo": ["cashflow-guardian", "fraud-detection"],
+};
+
 // ─── Call AI Gateway ───
 async function callAI(apiKey: string, model: string, messages: Array<{ role: string; content: string }>) {
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
