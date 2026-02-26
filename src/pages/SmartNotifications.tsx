@@ -4,12 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight, ShoppingCart, Package, Brain, Sparkles,
   TrendingUp, AlertTriangle, Wallet, Eye, RotateCcw,
-  ChevronLeft, Check, Clock, Bell
+  ChevronLeft, Check, Clock, Bell, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScienceBadge } from '@/components/ui/ScienceBadge';
 import { cn } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 // ─── Types ───
 type NotifCategory = 'sales' | 'inventory' | 'ai';
@@ -26,49 +28,12 @@ interface Notification {
 
 interface AiInsight {
   id: string;
-  assistant: 'Danny' | 'Sarah';
+  assistant: string;
   title: string;
   body: string;
   badge?: boolean;
   action: { label: string; route: string };
 }
-
-// ─── Mock Data ───
-const aiInsights: AiInsight[] = [
-  {
-    id: 'ai1',
-    assistant: 'Danny',
-    title: 'מוצר NRC מוביל במכירות',
-    body: 'המוצר "Premium Joint Chews" עלה ב-34% בשבוע האחרון. מומלץ להגדיל מלאי ולהוסיף אותו לעמוד הראשי.',
-    badge: true,
-    action: { label: 'צפה במוצר', route: '/product-sourcing' },
-  },
-  {
-    id: 'ai2',
-    assistant: 'Sarah',
-    title: 'הזדמנות עמלות חדשה',
-    body: 'זיהינו ביקוש גבוה למוצרי Omega-3 בקרב בעלי גולדן רטריבר. הוספת המוצר לחנות שלך עשויה להניב ₪850+ בעמלות.',
-    badge: true,
-    action: { label: 'הוסף לחנות', route: '/product-sourcing' },
-  },
-  {
-    id: 'ai3',
-    assistant: 'Danny',
-    title: 'שיעור החזרות ירד',
-    body: 'מוצרים מאומתים מדעית מציגים שיעור החזרות של 2.1% לעומת 8.4% בגנריים. המשך להתמקד בקו זה.',
-    action: { label: 'צפה בנתונים', route: '/creator-analytics' },
-  },
-];
-
-const notifications: Notification[] = [
-  { id: 'n1', category: 'sales', title: 'הזמנה חדשה #4821', body: 'Premium Dog Food NRC × 2 — ₪378', time: 'לפני 12 דק׳', read: false, action: { label: 'צפה בהזמנה', route: '/admin/vendor-dashboard' } },
-  { id: 'n2', category: 'sales', title: 'עמלה אושרה', body: '₪42.50 התקבלו מהזמנה #4819', time: 'לפני 28 דק׳', read: false, action: { label: 'משוך כספים', route: '/creator-dashboard' } },
-  { id: 'n3', category: 'inventory', title: 'מלאי נמוך', body: 'Joint Health Chews — נותרו 3 יחידות', time: 'לפני שעה', read: false, action: { label: 'השלם מלאי', route: '/product-sourcing' } },
-  { id: 'n4', category: 'ai', title: 'תובנה חדשה מ-Danny', body: 'מגמת עלייה בחיפושי "אוכל היפואלרגני" — שקול להוסיף מוצרים רלוונטיים.', time: 'לפני 2 שע׳', read: true, action: { label: 'צפה בתובנות', route: '/creator-analytics' } },
-  { id: 'n5', category: 'sales', title: 'הזמנה נשלחה', body: 'הזמנה #4815 עודכנה לסטטוס "נשלח"', time: 'לפני 3 שע׳', read: true, action: { label: 'מעקב', route: '/admin/vendor-dashboard' } },
-  { id: 'n6', category: 'inventory', title: 'מוצר אזל מהמלאי', body: 'Dental Care Sticks — 0 יחידות', time: 'לפני 5 שע׳', read: true, action: { label: 'השלם מלאי', route: '/product-sourcing' } },
-  { id: 'n7', category: 'ai', title: 'המלצה מ-Sarah', body: 'לקוחות שרכשו Omega-3 קנו גם Joint Chews ב-68% מהמקרים. שקול חבילה משולבת.', time: 'לפני 6 שע׳', read: true, action: { label: 'צור חבילה', route: '/product-sourcing' } },
-];
 
 const categoryConfig: Record<NotifCategory, { icon: typeof ShoppingCart; color: string; bg: string; label: string }> = {
   sales: { icon: ShoppingCart, color: 'text-emerald-600', bg: 'bg-emerald-500/10', label: 'מכירות' },
