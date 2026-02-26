@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Bot } from "lucide-react";
 import { format } from "date-fns";
+import { cleanProse } from "@/lib/cleanProse";
 
 interface ChatBubbleProps {
   content: string;
@@ -74,7 +75,7 @@ export const ChatBubble = ({
           }`}
         >
           <p className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">
-            {content}
+            {isAI ? cleanProse(content) : content}
           </p>
         </div>
 

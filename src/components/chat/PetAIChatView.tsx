@@ -33,6 +33,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { cleanProse } from "@/lib/cleanProse";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 /* ─── Types ─── */
@@ -96,12 +97,13 @@ const VerifiedBadge = ({ text }: { text: string }) => (
  * Renders message content, replacing ✅🛡️ markers with interactive verified badges.
  */
 function renderVerifiedContent(content: string) {
+  const cleaned = cleanProse(content);
   const MARKER = "✅🛡️";
-  if (!content.includes(MARKER)) {
-    return <p className="whitespace-pre-wrap">{content}</p>;
+  if (!cleaned.includes(MARKER)) {
+    return <p className="whitespace-pre-wrap">{cleaned}</p>;
   }
 
-  const parts = content.split(MARKER);
+  const parts = cleaned.split(MARKER);
   return (
     <p className="whitespace-pre-wrap">
       {parts.map((part, i) => (

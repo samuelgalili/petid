@@ -97,7 +97,22 @@ function extractOrderNumber(text: string): string | null {
   return null;
 }
 
-// ============= Double-Check Verification Protocol =============
+// ============= Clean Prose Post-Processor =============
+function cleanProse(text: string): string {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, "$1")     // Remove **bold**
+    .replace(/__(.*?)__/g, "$1")          // Remove __bold__
+    .replace(/\*(.*?)\*/g, "$1")          // Remove *italic*
+    .replace(/_(.*?)_/g, "$1")            // Remove _italic_
+    .replace(/^#{1,6}\s+/gm, "")         // Remove # headings
+    .replace(/^[\s]*[-*•]\s+/gm, "")     // Remove bullet points
+    .replace(/^[\s]*\d+\.\s+/gm, "")     // Remove numbered lists
+    .replace(/`{1,3}[^`]*`{1,3}/g, (m) => m.replace(/`/g, "")) // Remove code backticks
+    .replace(/\n{3,}/g, "\n\n")           // Collapse excessive newlines
+    .trim();
+}
+
+
 const DOUBLE_CHECK_KEYWORDS_HE = [
   "שבב", "מיקרוצ'יפ", "chip", "שבב אלקטרוני",
   "משקל", "שוקל", "weight", "קילו",
@@ -1310,11 +1325,20 @@ ${speciesProtocol}
 • שותף לטיפול — לא מנוע חיפוש. דבר כמו וטרינר חם שמכיר את ${petName} שנים.
 • עברית טבעית, חמה, מקצועית (veterinary-grade), מקומית.
 • פנה בשם: "${petName}" ו-"${ownerName}".
-• קצר וממוקד: 2-5 שורות + הצעות. שאלה אחת בכל הודעה.
 • אמוג'י אחד, מתאים לנושא.
 • בסוף כל תשובה: [SUGGESTIONS:הצעה1|הצעה2] (חובה!)
 • אל תסביר מה אתה — דבר כאילו אתה מכיר את ${petName} אישית מתמיד.
 • היה דאטא-דריבן: ציין נתונים ספציפיים (משקל, גזע, גיל) בתשובה. לעולם אל תהיה גנרי.
+
+=== CLEAN PROSE MODE (MANDATORY) ===
+כלל עיצוב מוחלט — כל הודעה חייבת לעמוד בכללים:
+1. אין טקסט מודגש (bold) — אסור ** או __. כתוב טקסט רגיל בלבד.
+2. אין נקודות (bullets) — אסור •, -, *, מספור. השתמש בשורות חדשות בלבד להפרדה.
+3. אין כותרות markdown — אסור #, ##, ###.
+4. אין קוד — אסור \` או \`\`\`.
+5. קיצור מספרי — כל נתון מספרי חייב להופיע עם "כ-" לפניו. דוגמה: "כ-12 ק״ג", "כ-3 שנים", "כ-₪150".
+6. אורך מקסימלי — עד 150 מילים לכל הודעה. תמצת. אם צריך יותר, שאל אם המשתמש רוצה פירוט.
+7. מבנה — פסקאות קצרות (2-3 שורות) מופרדות בשורה ריקה. זה הכל.
 
 === V40: EMERGENCY CRISIS PROTOCOL ===
 כשמזוהה מצב חירום ("דחוף", "נחנק", "דם", "גוסס", "לא נושם", "הרעלה", "אכל שוקולד", "אכל רעל", "פרכוס", "מכת חום", "לא מגיב", "נפל", "נדרס", "חסימה", "לא משתין", "נעקץ", "נשוך"):
@@ -1414,6 +1438,7 @@ ${channelInstructions}`;
     if (!shouldStream) {
       const json = await response.json();
       let text = json?.choices?.[0]?.message?.content ?? "";
+      text = cleanProse(text); // Apply Clean Prose mode
       
       const validIds = new Set(foundProducts.map(p => p.id));
       const safeText = keepOnlyValidProducts(text, validIds);
