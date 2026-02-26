@@ -175,7 +175,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           const petWeight = petData?.weight;
           const petBreed = petData?.breed;
           
-          let greeting = `היי ${firstName}! מה שלום ${pets[0].name}? 🐾\n\nאני ה-Hub החכם של PetID — כל 9 הבוטים שלנו עובדים בשבילך.\nאיך אוכל לעזור היום?`;
+          let greeting = `היי ${firstName}! מה שלום ${pets[0].name}? 🐾\n\nאיך אוכל לעזור היום?`;
           
           // Proactive updates
           const updates: string[] = [];
@@ -215,21 +215,21 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           }
           
           if (updates.length > 0) {
-            greeting = `היי ${firstName}! 🐾\n\n${updates.join("\n")}\n\nכל 9 הבוטים עובדים ברקע. במה נתמקד?`;
+            greeting = `היי ${firstName}! 🐾\n\n${updates.join("\n")}\n\nבמה נתמקד?`;
           }
           
           setMessages([{ role: "assistant", content: greeting }]);
         } else {
           setMessages([{
             role: "assistant",
-            content: `היי ${firstName}! מה שלום? 🐾\n\nאני ה-Hub של PetID — כל הבוטים שלנו לשירותך.\nעל מי נדבר היום?`,
+            content: `היי ${firstName}! מה שלום? 🐾\n\nעל מי נדבר היום?`,
             suggestions: pets.map(p => p.name),
           }]);
         }
       } else {
         setMessages([{
           role: "assistant",
-          content: `היי ${firstName}! 🐾\n\nאני ה-Hub החכם של PetID.\nבמה אוכל לעזור היום?`,
+          content: `היי ${firstName}! 🐾\n\nבמה אוכל לעזור היום?`,
         }]);
       }
     };
