@@ -3,6 +3,7 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -11,6 +12,7 @@ import {
   Bot, Brain, Megaphone, Target, MessageCircle, Store,
   Headphones, Stethoscope, Scale, Sparkles, FlaskConical,
   Cpu, ShieldAlert, Clock, ChevronDown, ChevronUp, Eye,
+  Play, Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SystemArchitectPanel } from "@/components/admin/SystemArchitectPanel";

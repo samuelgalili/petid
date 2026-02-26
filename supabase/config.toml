@@ -98,3 +98,6 @@ verify_jwt = false
 
 [functions.architect-deploy]
 verify_jwt = false
+
+[functions.petid-agent-runner]
+verify_jwt = false
