@@ -104,7 +104,7 @@ const AdminRobotFleet = () => {
       <div className="space-y-6">
         {/* Kill Switch Header */}
         <Card className="p-4 border-destructive/30 bg-destructive/5">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-3">
               <ShieldAlert className="w-6 h-6 text-destructive" />
               <div>
@@ -114,13 +114,28 @@ const AdminRobotFleet = () => {
                 </p>
               </div>
             </div>
-            <button
-              onClick={() => killAll.mutate()}
-              disabled={killAll.isPending || activeBots === 0}
-              className="px-4 py-2 rounded-lg bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90 disabled:opacity-50 transition-colors"
-            >
-              🛑 השבת הכל
-            </button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => runBots.mutate(undefined)}
+                disabled={runBots.isPending || activeBots === 0}
+                size="sm"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                {runBots.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin ml-1" />
+                ) : (
+                  <Play className="w-4 h-4 ml-1" />
+                )}
+                הפעל את כולם
+              </Button>
+              <button
+                onClick={() => killAll.mutate()}
+                disabled={killAll.isPending || activeBots === 0}
+                className="px-4 py-2 rounded-lg bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90 disabled:opacity-50 transition-colors"
+              >
+                🛑 השבת הכל
+              </button>
+            </div>
           </div>
         </Card>
 
