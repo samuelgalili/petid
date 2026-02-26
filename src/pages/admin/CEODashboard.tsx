@@ -16,9 +16,12 @@ import {
   CheckCircle2, AlertTriangle, XCircle, Package,
   Truck, Globe, ArrowUpRight, Zap, Crown,
   ChevronLeft, ChevronRight, FileWarning, Send,
-  Activity, Bot, Bell,
+  Activity, Bot, Bell, Sun, Beaker, BadgeDollarSign,
+  Receipt, PiggyBank, ShoppingCart, RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { he } from "date-fns/locale";
 
 // ─── Types ──────────────────────────────────────────────────
 interface ActionCard {
@@ -183,9 +186,40 @@ const CEODashboard = () => {
       .on("postgres_changes", { event: "*", schema: "public", table: "automation_bots" }, () => {
         queryClient.invalidateQueries({ queryKey: ["ceo-agents"] });
       })
+      .on("postgres_changes", { event: "*", schema: "public", table: "ceo_daily_briefs" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["ceo-daily-brief"] });
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [queryClient]);
+
+  // ─── Daily Brief Data ──────────────────────────────────────
+  const { data: dailyBrief, refetch: refetchBrief } = useQuery({
+    queryKey: ["ceo-daily-brief"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("ceo_daily_briefs")
+        .select("*")
+        .order("brief_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  const [briefGenerating, setBriefGenerating] = useState(false);
+  const generateBrief = async () => {
+    setBriefGenerating(true);
+    haptic("medium");
+    try {
+      await supabase.functions.invoke("daily-brief");
+      await refetchBrief();
+      successFeedback();
+    } catch (e) {
+      console.error("Brief generation failed:", e);
+    }
+    setBriefGenerating(false);
+  };
 
   // ─── Financial Data ─────────────────────────────────────────
   const { data: fin } = useQuery({
@@ -353,6 +387,132 @@ const CEODashboard = () => {
             </div>
           ))}
         </div>
+
+        {/* ─── Morning Brief Card (Glassmorphism) ────────────── */}
+        {dailyBrief && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+          >
+            <div
+              className={cn(
+                "relative rounded-[24px] overflow-hidden border border-amber-500/20",
+                "backdrop-blur-2xl",
+                dailyBrief.is_read ? "opacity-80" : ""
+              )}
+              style={{
+                background: "linear-gradient(135deg, rgba(245,158,11,0.06) 0%, rgba(0,0,0,0.02) 50%, rgba(16,185,129,0.04) 100%)",
+                boxShadow: "0 8px 32px rgba(245,158,11,0.08), inset 0 1px 0 rgba(255,255,255,0.05)",
+              }}
+            >
+              {/* Gold top accent */}
+              <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500/60 to-transparent" />
+
+              <div className="p-5">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-2xl bg-amber-500/15 flex items-center justify-center">
+                      <Sun className="w-5 h-5 text-amber-500" strokeWidth={1.5} />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-foreground">סקירה יומית</h3>
+                      <p className="text-[10px] text-muted-foreground">
+                        {dailyBrief.brief_date
+                          ? format(new Date(dailyBrief.brief_date + 'T00:00:00'), "EEEE, d בMMMM", { locale: he })
+                          : "היום"}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-muted-foreground hover:text-amber-500"
+                    onClick={generateBrief}
+                    disabled={briefGenerating}
+                  >
+                    <RefreshCw className={cn("w-3.5 h-3.5", briefGenerating && "animate-spin")} />
+                  </Button>
+                </div>
+
+                {/* Financial KPIs row */}
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  <div className="rounded-xl bg-card/60 border border-border/20 p-3 text-center backdrop-blur-sm">
+                    <div className="flex items-center justify-center gap-1 mb-1.5">
+                      <TrendingUp className="w-3 h-3 text-emerald-500" />
+                    </div>
+                    <p className="text-base font-black text-foreground">
+                      ₪{(dailyBrief.net_profit || 0).toLocaleString("he-IL", { maximumFractionDigits: 0 })}
+                    </p>
+                    <p className="text-[9px] text-muted-foreground mt-0.5">רווח נקי</p>
+                  </div>
+                  <div className="rounded-xl bg-card/60 border border-border/20 p-3 text-center backdrop-blur-sm">
+                    <div className="flex items-center justify-center gap-1 mb-1.5">
+                      <Receipt className="w-3 h-3 text-primary" />
+                    </div>
+                    <p className="text-base font-black text-foreground">
+                      ₪{(dailyBrief.total_vat || 0).toLocaleString("he-IL", { maximumFractionDigits: 0 })}
+                    </p>
+                    <p className="text-[9px] text-muted-foreground mt-0.5">מע״מ</p>
+                  </div>
+                  <div className="rounded-xl bg-card/60 border border-border/20 p-3 text-center backdrop-blur-sm">
+                    <div className="flex items-center justify-center gap-1 mb-1.5">
+                      <PiggyBank className="w-3 h-3 text-amber-500" />
+                    </div>
+                    <p className="text-base font-black text-foreground">
+                      ₪{(dailyBrief.costs_saved || 0).toLocaleString("he-IL", { maximumFractionDigits: 0 })}
+                    </p>
+                    <p className="text-[9px] text-muted-foreground mt-0.5">חיסכון AI</p>
+                  </div>
+                </div>
+
+                {/* AI Insight */}
+                {dailyBrief.ai_insight && (
+                  <div className="rounded-xl bg-card/40 border border-border/15 p-3 mb-2.5 backdrop-blur-sm">
+                    <div className="flex items-start gap-2">
+                      <Brain className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" strokeWidth={1.5} />
+                      <p className="text-xs text-foreground leading-relaxed">{dailyBrief.ai_insight}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Scientific Fact */}
+                {dailyBrief.scientific_fact && (
+                  <div className="rounded-xl bg-card/40 border border-primary/10 p-3 backdrop-blur-sm">
+                    <div className="flex items-start gap-2">
+                      <Beaker className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" strokeWidth={1.5} />
+                      <p className="text-xs text-muted-foreground leading-relaxed">{dailyBrief.scientific_fact}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Orders badge */}
+                <div className="flex items-center justify-center gap-2 mt-3">
+                  <Badge variant="outline" className="text-[10px] border-border/30 text-muted-foreground gap-1">
+                    <ShoppingCart className="w-2.5 h-2.5" />
+                    {dailyBrief.orders_count || 0} הזמנות ב-24 שעות
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Generate Brief button if none exists */}
+        {!dailyBrief && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <Button
+              variant="outline"
+              className="w-full rounded-2xl h-14 border-dashed border-amber-500/30 text-amber-500 gap-2 hover:bg-amber-500/5"
+              onClick={generateBrief}
+              disabled={briefGenerating}
+            >
+              <Sun className="w-4 h-4" />
+              {briefGenerating ? "מייצר סקירה יומית..." : "צור סקירה יומית"}
+            </Button>
+          </motion.div>
+        )}
 
         {/* ─── Primary Metrics ───────────────────────────────── */}
         <div className="grid grid-cols-2 gap-3">
