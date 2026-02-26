@@ -58,6 +58,7 @@ import {
 } from "recharts";
 import { cn } from "@/lib/utils";
 import { PetOMeter } from "@/components/admin/PetOMeter";
+import { DashboardFleetCommand } from "@/components/admin/dashboard/DashboardFleetCommand";
 import { format, subDays, startOfDay, endOfDay, parseISO, differenceInDays } from "date-fns";
 import { he } from "date-fns/locale";
 
@@ -467,6 +468,9 @@ const AdminGrowo = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Fleet Command Center */}
+        <DashboardFleetCommand />
 
         {/* Main Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

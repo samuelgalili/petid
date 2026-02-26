@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Zap, CheckCircle2, Loader2, Clock, AlertTriangle, Brain, Send } from "lucide-react";
+import { Zap, CheckCircle2, Loader2, Clock, AlertTriangle, Brain, Play, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,7 +20,7 @@ const STATUS_CONFIG: Record<string, { icon: typeof CheckCircle2; label: string; 
   pending: { icon: Clock, label: "ממתין", className: "text-amber-500" },
   processing: { icon: Loader2, label: "מעבד", className: "text-sky-500 animate-spin" },
   completed: { icon: CheckCircle2, label: "הושלם", className: "text-emerald-500" },
-  failed: { icon: AlertTriangle, label: "נכשל", className: "text-red-500" },
+  failed: { icon: AlertTriangle, label: "נכשל", className: "text-destructive" },
 };
 
 export const DashboardFleetCommand = () => {
@@ -28,6 +28,8 @@ export const DashboardFleetCommand = () => {
   const [command, setCommand] = useState("");
   const [sending, setSending] = useState(false);
   const [commands, setCommands] = useState<FleetCommand[]>([]);
+  const [fleetRunning, setFleetRunning] = useState(false);
+  const [runningAll, setRunningAll] = useState(false);
 
   useEffect(() => {
     fetchCommands();
@@ -77,6 +79,31 @@ export const DashboardFleetCommand = () => {
     }
   };
 
+  const runAllAgents = async () => {
+    setRunningAll(true);
+    setFleetRunning(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("petid-agent-runner", {
+        body: {},
+      });
+      if (error) throw error;
+      toast({
+        title: "הצי הופעל",
+        description: data?.message || "כל הסוכנים פעילים",
+      });
+    } catch (err: any) {
+      toast({ title: "שגיאה", description: err.message, variant: "destructive" });
+    } finally {
+      setRunningAll(false);
+      setFleetRunning(false);
+    }
+  };
+
+  const pauseFleet = () => {
+    setFleetRunning(false);
+    toast({ title: "הצי הושהה", description: "הסוכנים הופסקו" });
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
@@ -86,14 +113,35 @@ export const DashboardFleetCommand = () => {
 
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
-      {/* Header */}
-      <div className="px-5 py-4 border-b border-border flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-          <Brain className="w-4 h-4 text-primary" strokeWidth={1.5} />
+      {/* Header with Play/Pause */}
+      <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Brain className="w-4 h-4 text-primary" strokeWidth={1.5} />
+          </div>
+          <div>
+            <h3 className="font-semibold text-foreground text-sm">Fleet Command Center</h3>
+            <p className="text-xs text-muted-foreground">שלח פקודות ל-Brain — הוא ינתח, יאציל ידווח</p>
+          </div>
         </div>
-        <div>
-          <h3 className="font-semibold text-foreground text-sm">Fleet Command Center</h3>
-          <p className="text-xs text-muted-foreground">שלח פקודות ל-Brain — הוא ינתח, יאציל ידווח</p>
+
+        {/* Play / Pause controls */}
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant={fleetRunning ? "secondary" : "default"}
+            size="icon"
+            className="h-8 w-8 rounded-lg"
+            onClick={fleetRunning ? pauseFleet : runAllAgents}
+            disabled={runningAll}
+          >
+            {runningAll ? (
+              <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.5} />
+            ) : fleetRunning ? (
+              <Pause className="w-4 h-4" strokeWidth={1.5} />
+            ) : (
+              <Play className="w-4 h-4" strokeWidth={1.5} />
+            )}
+          </Button>
         </div>
       </div>
 
