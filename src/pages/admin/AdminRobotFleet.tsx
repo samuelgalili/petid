@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -5,19 +6,20 @@ import { Switch } from "@/components/ui/switch";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Bot, Brain, Megaphone, Target, MessageCircle, Store,
   Headphones, Stethoscope, Scale, Sparkles, FlaskConical,
-  Cpu, ShieldAlert, Clock
+  Cpu, ShieldAlert, Clock, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SystemArchitectPanel } from "@/components/admin/SystemArchitectPanel";
 
 const iconMap: Record<string, React.ComponentType<any>> = {
   brain: Brain, megaphone: Megaphone, target: Target,
   "message-circle": MessageCircle, store: Store,
   headphones: Headphones, stethoscope: Stethoscope, scale: Scale,
-  bot: FlaskConical, sparkles: Sparkles,
+  bot: FlaskConical, sparkles: Sparkles, cpu: Cpu,
 };
 
 const colorMap: Record<string, string> = {
@@ -26,9 +28,11 @@ const colorMap: Record<string, string> = {
   green: "from-green-500 to-green-600", blue: "from-blue-500 to-blue-600",
   amber: "from-amber-500 to-amber-600", emerald: "from-emerald-500 to-emerald-600",
   indigo: "from-indigo-500 to-indigo-600", violet: "from-violet-500 to-violet-600",
+  slate: "from-slate-600 to-slate-800",
 };
 
 const AdminRobotFleet = () => {
+  const [architectExpanded, setArchitectExpanded] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: bots = [], isLoading } = useQuery({
@@ -161,6 +165,41 @@ const AdminRobotFleet = () => {
             );
           })}
         </div>
+
+        {/* System Architect Expandable Section */}
+        {bots.some((b: any) => b.slug === "system-architect") && (
+          <Card className="overflow-hidden">
+            <button
+              onClick={() => setArchitectExpanded(!architectExpanded)}
+              className="w-full p-4 flex items-center justify-between hover:bg-muted/30 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center">
+                  <Cpu className="w-5 h-5 text-white" />
+                </div>
+                <div className="text-right">
+                  <h3 className="font-semibold text-sm">The System Architect — מוניטור שגיאות</h3>
+                  <p className="text-[10px] text-muted-foreground">מעקב אחר שגיאות Client, Edge Functions ומסד נתונים</p>
+                </div>
+              </div>
+              {architectExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+            <AnimatePresence>
+              {architectExpanded && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="border-t"
+                >
+                  <div className="p-4">
+                    <SystemArchitectPanel />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </Card>
+        )}
       </div>
     </AdminLayout>
   );
