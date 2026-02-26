@@ -469,6 +469,9 @@ const AdminGrowo = () => {
           </CardContent>
         </Card>
 
+        {/* Fleet Command Center */}
+        <DashboardFleetCommand />
+
         {/* Main Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="bg-muted/50 p-1 rounded-xl">
