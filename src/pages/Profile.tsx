@@ -43,6 +43,7 @@ import { PreventiveCareEngine } from "@/components/profile/PreventiveCareEngine"
 import { MedicalDocumentFAB } from "@/components/profile/MedicalDocumentFAB";
 import { DiscoveryCards } from "@/components/profile/DiscoveryCards";
 import { MemoryCard } from "@/components/profile/MemoryCard";
+import { PetDashboardTabs } from "@/components/profile/PetDashboardTabs";
 import { HeartRain } from "@/components/profile/HeartRain";
 import { haptic } from "@/lib/haptics";
 interface Pet {
