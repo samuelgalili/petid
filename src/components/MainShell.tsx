@@ -27,7 +27,7 @@ const overlayVariants = {
 const dashboardVariants = {
   hidden: { y: "-100%" },
   visible: { y: 0 },
-  exit: { y: "-100%" },
+  exit: { y: "100%" },
 };
 
 const overlayTransition = { type: "spring" as const, damping: 30, stiffness: 300 };
