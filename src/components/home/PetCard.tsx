@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Plus, Heart, Calendar, MapPin, Siren, Trash2 } from "lucide-react";
+import { Plus, Heart, Calendar, Siren, Trash2, FlaskConical } from "lucide-react";
 import { memo, useMemo, useState } from "react";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,7 @@ interface PetCardProps {
   index: number;
   isNewPet: boolean;
   isSelected?: boolean;
+  hasNewInsight?: boolean;
   onLongPressStart: () => void;
   onLongPressEnd: () => void;
   onSelect?: () => void;
@@ -39,11 +40,18 @@ const getGenderColor = (gender: string | null) => {
   return 'text-muted-foreground';
 };
 
+/** Approx prefix for safety/legal compliance */
+const approx = (value: number | null | undefined, unit: string) => {
+  if (value == null) return null;
+  return `כ-${value} ${unit}`;
+};
+
 export const PetCard = memo(({ 
   pet, 
   index, 
   isNewPet,
   isSelected = false,
+  hasNewInsight = false,
   onLongPressStart, 
   onLongPressEnd,
   onSelect,
@@ -56,6 +64,13 @@ export const PetCard = memo(({
   const genderColor = useMemo(() => getGenderColor(pet.gender), [pet.gender]);
   const petEmoji = pet.type === 'dog' ? '🐕' : '🐈';
   const petTypeLabel = pet.type === 'dog' ? 'כלב' : 'חתול';
+
+  const weightLabel = useMemo(() => approx(pet.weight, 'ק"ג'), [pet.weight]);
+  const dailyKcal = useMemo(() => {
+    if (!pet.weight) return null;
+    return Math.round(70 * Math.pow(pet.weight, 0.75));
+  }, [pet.weight]);
+  const kcalLabel = useMemo(() => approx(dailyKcal, 'kcal'), [dailyKcal]);
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -85,10 +100,12 @@ export const PetCard = memo(({
         opacity: 1,
         y: 0,
         scale: isNewPet ? [1, 1.03, 1] : 1,
+        ...(hasNewInsight ? { boxShadow: ['0 0 0 0px hsl(var(--primary)/0)', '0 0 0 4px hsl(var(--primary)/0.2)', '0 0 0 0px hsl(var(--primary)/0)'] } : {}),
       }}
       transition={{
         delay: 0.05 + index * 0.08,
         scale: isNewPet ? { duration: 0.6, repeat: 3, repeatType: "reverse" } : {},
+        boxShadow: hasNewInsight ? { duration: 2, repeat: Infinity, ease: "easeInOut" } : {},
         type: "spring",
         stiffness: 260,
         damping: 20
@@ -103,10 +120,10 @@ export const PetCard = memo(({
       onClick={() => {
         if (onSelect) onSelect();
       }}
-      className={`cursor-pointer rounded-2xl border bg-card shadow-card transition-all duration-200 overflow-hidden ${
+      className={`cursor-pointer rounded-2xl border bg-card/70 backdrop-blur-[10px] shadow-card transition-all duration-200 overflow-hidden ${
         isSelected 
-          ? 'border-primary ring-2 ring-primary/30 shadow-elevated' 
-          : 'border-card-border hover:shadow-elevated'
+          ? 'border-primary/40 ring-2 ring-primary/30 shadow-elevated' 
+          : 'border-border/30 hover:shadow-elevated'
       }`}
     >
       {/* Image Section */}
@@ -185,15 +202,20 @@ export const PetCard = memo(({
         )}
       </div>
 
-      {/* Info Section */}
+      {/* Info Section — Glassmorphism panel */}
       <div className="p-3.5 space-y-2" dir="rtl">
-        {/* Name + Gender */}
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-extrabold text-foreground font-jakarta truncate flex-1">
+        {/* Name + Science Badge + Gender */}
+        <div className="flex items-center gap-1.5">
+          <h3 className="text-base font-extrabold text-foreground font-jakarta truncate flex-1" style={{ wordBreak: 'break-word' }}>
             {pet.name}
           </h3>
+          {/* PetID Science Score badge */}
+          <div className="flex-shrink-0 flex items-center gap-0.5 bg-primary/10 rounded-full px-1.5 py-0.5 border border-primary/20">
+            <FlaskConical className="w-2.5 h-2.5 text-primary" strokeWidth={1.5} />
+            <span className="text-[8px] font-bold text-primary leading-none">NRC</span>
+          </div>
           {genderIcon && (
-            <span className={`text-lg font-extrabold ${genderColor} mr-1`}>
+            <span className={`text-lg font-extrabold ${genderColor} flex-shrink-0`}>
               {genderIcon}
             </span>
           )}
@@ -201,18 +223,28 @@ export const PetCard = memo(({
 
         {/* Breed */}
         {pet.breed && (
-          <p className="text-sm font-medium text-muted-foreground truncate font-jakarta">
+          <p className="text-sm font-medium text-muted-foreground truncate font-jakarta" style={{ wordBreak: 'break-word', unicodeBidi: 'plaintext' }} dir="auto">
             {pet.breed}
           </p>
         )}
 
-        {/* Age + Events */}
-        <div className="flex items-center justify-between pt-1">
+        {/* Stats row: Age, Weight, Kcal */}
+        <div className="flex items-center flex-wrap gap-x-3 gap-y-1 pt-1">
           {age && (
-            <div className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
-              <Calendar className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-1 text-xs font-semibold text-muted-foreground">
+              <Calendar className="w-3 h-3 flex-shrink-0" strokeWidth={1.5} />
               <span>{age}</span>
             </div>
+          )}
+          {weightLabel && (
+            <span className="text-xs text-muted-foreground" dir="auto" style={{ unicodeBidi: 'plaintext' }}>
+              {weightLabel}
+            </span>
+          )}
+          {kcalLabel && (
+            <span className="text-xs text-muted-foreground" dir="auto" style={{ unicodeBidi: 'plaintext' }}>
+              {kcalLabel}
+            </span>
           )}
         </div>
       </div>
@@ -223,11 +255,13 @@ export const PetCard = memo(({
     prevProps.pet.id === nextProps.pet.id &&
     prevProps.isNewPet === nextProps.isNewPet &&
     prevProps.isSelected === nextProps.isSelected &&
+    prevProps.hasNewInsight === nextProps.hasNewInsight &&
     prevProps.pet.name === nextProps.pet.name &&
     prevProps.pet.breed === nextProps.pet.breed &&
     prevProps.pet.avatar_url === nextProps.pet.avatar_url &&
     prevProps.pet.birth_date === nextProps.pet.birth_date &&
     prevProps.pet.gender === nextProps.pet.gender &&
+    prevProps.pet.weight === nextProps.pet.weight &&
     prevProps.pet.is_lost === nextProps.pet.is_lost
   );
 });
