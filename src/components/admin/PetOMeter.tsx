@@ -23,7 +23,7 @@ function calculateHealthScore(pet: any, hasDoc: boolean, hasVacc: boolean): numb
   if (pet.birth_date) score += 10;
   if (pet.breed) score += 5;
   if (pet.weight) score += 5;
-  if (pet.chip_number) score += 10;
+  if (pet.microchip_number) score += 10;
   if (hasVacc) score += 15;
   if (hasDoc) score += 15;
   return Math.min(score, 100);
@@ -36,7 +36,7 @@ export const PetOMeter = () => {
       // Fetch all active pets
       const { data: pets, error } = await (supabase as any)
         .from("pets")
-        .select("id, birth_date, breed, weight, chip_number, medical_conditions")
+        .select("id, birth_date, breed, weight, microchip_number, medical_conditions")
         .eq("archived", false);
 
       if (error) throw error;

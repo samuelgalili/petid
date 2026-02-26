@@ -198,7 +198,7 @@ export const FeedPollCard = () => {
 
       const { data: userPets } = await (supabase as any)
         .from("pets")
-        .select("id, name, pet_type")
+        .select("id, name, type")
         .eq("user_id", user.id)
         .eq("archived", false)
         .order("created_at", { ascending: false });
@@ -215,7 +215,7 @@ export const FeedPollCard = () => {
       localStorage.setItem("petid_poll_pet_idx", String(idx + 1));
 
       // Pick a random species-appropriate poll
-      const available = getPollsForPet(pet.pet_type);
+      const available = getPollsForPet(pet.type || "dog");
       const randomPoll = available[Math.floor(Math.random() * available.length)];
       setPoll(randomPoll);
       setVotes(randomPoll.options.map(() => Math.floor(Math.random() * 50) + 10));

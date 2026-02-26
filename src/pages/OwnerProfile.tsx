@@ -36,7 +36,7 @@ interface Pet {
   avatar_url?: string;
   health_score?: number;
   weight?: number;
-  chip_number?: string;
+  microchip_number?: string;
   birth_date?: string;
   vet_clinic_name?: string;
   vet_clinic_phone?: string;
@@ -370,7 +370,7 @@ const OwnerProfile = () => {
                   </div>
 
                   {/* Microchip link status */}
-                  {pet.chip_number && (
+                  {pet.microchip_number && (
                     <div className="flex items-center justify-center gap-1 mt-2">
                       <Cpu className="w-3 h-3 text-muted-foreground" strokeWidth={1.5} />
                       <span className="text-[9px] text-muted-foreground">שבב מקושר</span>
