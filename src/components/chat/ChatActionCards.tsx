@@ -77,8 +77,8 @@ export const InsuranceLeadCard = ({ petName, breed, onSubmit }: InsuranceLeadCar
   <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
     <Card className="p-4 border-blue-500/20 bg-blue-500/5">
       <div className="flex items-center gap-2 mb-2">
-        <Shield className="w-4 h-4 text-blue-600" />
-        <span className="text-sm font-semibold">ליד ביטוח Libra</span>
+        <Shield className="w-4 h-4 text-primary" strokeWidth={1.5} />
+        <span className="text-sm font-semibold">ליד ביטוח</span>
       </div>
       <p className="text-sm text-muted-foreground mb-3">
         ביטוח מותאם ל{petName}{breed ? ` (${breed})` : ""} — כיסוי מלא לטיפולים וטרינריים.

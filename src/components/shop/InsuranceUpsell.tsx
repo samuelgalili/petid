@@ -1,5 +1,5 @@
 /**
- * InsuranceUpsell — Shows Libra Insurance recommendation in checkout for high-risk breeds.
+ * InsuranceUpsell — Shows Insurance Partner recommendation in checkout for high-risk breeds.
  * Emphasized more for breeds with known health issues.
  */
 
@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { Shield, ChevronLeft } from "lucide-react";
 import { useActivePet } from "@/hooks/useActivePet";
 import { useNavigate } from "react-router-dom";
+import { useInsurancePartner } from "@/hooks/useInsurancePartner";
 
 const HIGH_RISK_BREEDS = [
   "בולדוג", "bulldog", "פאג", "pug", "גרמן שפרד", "german shepherd",
@@ -17,11 +18,10 @@ const HIGH_RISK_BREEDS = [
   "שר-פיי", "shar pei", "דלמטי", "dalmatian", "האסקי", "husky",
 ];
 
-const LIBRA_BLUE = "210 90% 45%";
-
 export const InsuranceUpsell = () => {
   const { pet } = useActivePet();
   const navigate = useNavigate();
+  const { partnerName } = useInsurancePartner();
 
   const isHighRisk = useMemo(() => {
     if (!pet?.breed) return false;
@@ -42,23 +42,16 @@ export const InsuranceUpsell = () => {
     >
       <button
         onClick={() => navigate("/insurance")}
-        className="w-full p-4 rounded-2xl border-2 text-right transition-all hover:shadow-md"
-        style={{
-          borderColor: `hsl(${LIBRA_BLUE} / 0.3)`,
-          background: `linear-gradient(135deg, hsl(${LIBRA_BLUE} / 0.05), hsl(${LIBRA_BLUE} / 0.1))`,
-        }}
+        className="w-full p-4 rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10 text-right transition-all hover:shadow-md"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center"
-              style={{ background: `hsl(${LIBRA_BLUE} / 0.15)` }}
-            >
-              <Shield className="w-4 h-4" style={{ color: `hsl(${LIBRA_BLUE})` }} strokeWidth={2} />
+            <div className="w-8 h-8 rounded-full flex items-center justify-center bg-primary/15">
+              <Shield className="w-4 h-4 text-primary" strokeWidth={1.5} />
             </div>
             <div>
               <p className="text-xs font-bold text-foreground">
-                ביטוח Libra ל{pet.name}
+                ביטוח {partnerName} ל{pet.name}
               </p>
               <p className="text-[10px] text-muted-foreground">
                 {isHighRisk

@@ -41,14 +41,14 @@ interface PetHealthScoreProps {
 
 // Breed-specific insurance pitches (Hebrew)
 const BREED_INSURANCE_PITCHES: Record<string, { risks: string; pitch: string }> = {
-  'שיצו': { risks: 'בעיות עיניים ונשימה', pitch: 'ביטוח Libra יכסה טיפולים אלו' },
-  'shih tzu': { risks: 'בעיות עיניים ונשימה', pitch: 'ביטוח Libra יכסה טיפולים אלו' },
-  'בולדוג צרפתי': { risks: 'בעיות נשימה, עור וקיפולי עור', pitch: 'ביטוח Libra יכסה ניתוחים וטיפולי עור' },
-  'french bulldog': { risks: 'בעיות נשימה, עור וקיפולי עור', pitch: 'ביטוח Libra יכסה ניתוחים וטיפולי עור' },
-  'גולדן רטריבר': { risks: 'דיספלזיה וסרטן', pitch: 'ביטוח Libra יכסה בדיקות וטיפולים מתקדמים' },
-  'golden retriever': { risks: 'דיספלזיה וסרטן', pitch: 'ביטוח Libra יכסה בדיקות וטיפולים מתקדמים' },
-  'פאג': { risks: 'בעיות נשימה ועיניים', pitch: 'ביטוח Libra יכסה ניתוחים ובדיקות עיניים' },
-  'pug': { risks: 'בעיות נשימה ועיניים', pitch: 'ביטוח Libra יכסה ניתוחים ובדיקות עיניים' },
+  'שיצו': { risks: 'בעיות עיניים ונשימה', pitch: 'ביטוח יכסה טיפולים אלו' },
+  'shih tzu': { risks: 'בעיות עיניים ונשימה', pitch: 'ביטוח יכסה טיפולים אלו' },
+  'בולדוג צרפתי': { risks: 'בעיות נשימה, עור וקיפולי עור', pitch: 'ביטוח יכסה ניתוחים וטיפולי עור' },
+  'french bulldog': { risks: 'בעיות נשימה, עור וקיפולי עור', pitch: 'ביטוח יכסה ניתוחים וטיפולי עור' },
+  'גולדן רטריבר': { risks: 'דיספלזיה וסרטן', pitch: 'ביטוח יכסה בדיקות וטיפולים מתקדמים' },
+  'golden retriever': { risks: 'דיספלזיה וסרטן', pitch: 'ביטוח יכסה בדיקות וטיפולים מתקדמים' },
+  'פאג': { risks: 'בעיות נשימה ועיניים', pitch: 'ביטוח יכסה ניתוחים ובדיקות עיניים' },
+  'pug': { risks: 'בעיות נשימה ועיניים', pitch: 'ביטוח יכסה ניתוחים ובדיקות עיניים' },
 };
 
 export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScoreProps) => {
@@ -529,7 +529,7 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
               {totalVetSpend > 0 && (
                 <div className="p-2.5 bg-primary/5 rounded-xl mb-3 border border-primary/10">
                   <p className="text-[11px] font-medium text-foreground">
-                    💰 הוצאת עד כה ₪{totalVetSpend.toLocaleString()} על ביקורי וטרינר. עם ביטוח Libra, היית יכול לחסוך עד ₪{Math.round(totalVetSpend * 0.75).toLocaleString()}.
+                    💰 הוצאת עד כה ₪{totalVetSpend.toLocaleString()} על ביקורי וטרינר. עם ביטוח, היית יכול לחסוך עד ₪{Math.round(totalVetSpend * 0.75).toLocaleString()}.
                   </p>
                 </div>
               )}

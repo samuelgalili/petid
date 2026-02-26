@@ -1,5 +1,5 @@
 /**
- * LibraClaimForm - Insurance claim submission from OCR-extracted data
+ * InsuranceClaimForm - Insurance claim submission from OCR-extracted data
  * Auto-fills owner, pet, medical, and financial data from scan results
  */
 
@@ -79,7 +79,7 @@ export const LibraClaimForm = ({ petId, claimData, open, onClose, onSubmitted }:
 
       // Brief animation then close
       setTimeout(() => {
-        toast({ title: "הבקשה נשלחה ל-Libra ✅", description: "הסטטוס יתעדכן בכרטיסיית הבריאות" });
+        toast({ title: "הבקשה נשלחה בהצלחה ✅", description: "הסטטוס יתעדכן בכרטיסיית הבריאות" });
         onSubmitted?.();
         onClose();
         setSubmitted(false);
@@ -136,7 +136,7 @@ export const LibraClaimForm = ({ petId, claimData, open, onClose, onSubmitted }:
                 {submitting && !submitted && (
                   <>
                     <Loader2 className="w-10 h-10 text-primary animate-spin" />
-                    <p className="text-sm font-semibold text-foreground">שולח את הבקשה ל-Libra...</p>
+                    <p className="text-sm font-semibold text-foreground">שולח את הבקשה...</p>
                     <p className="text-xs text-muted-foreground">הסטטוס יתעדכן בכרטיסיית הבריאות</p>
                   </>
                 )}
@@ -166,7 +166,7 @@ export const LibraClaimForm = ({ petId, claimData, open, onClose, onSubmitted }:
                   <Shield className="w-5 h-5 text-primary" strokeWidth={1.5} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-foreground">בקשת החזר מ-Libra</h3>
+                  <h3 className="font-bold text-foreground">בקשת החזר ביטוחי</h3>
                   <p className="text-[10px] text-muted-foreground">הנתונים מולאו אוטומטית מהסריקה</p>
                 </div>
               </div>

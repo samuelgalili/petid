@@ -4280,6 +4280,42 @@ export type Database = {
         }
         Relationships: []
       }
+      insurance_partner_settings: {
+        Row: {
+          api_endpoint: string | null
+          api_key_name: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          partner_name: string
+          share_default_off: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          api_endpoint?: string | null
+          api_key_name?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          partner_name?: string
+          share_default_off?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          api_endpoint?: string | null
+          api_key_name?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          partner_name?: string
+          share_default_off?: boolean | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       knowledge_base: {
         Row: {
           category: string

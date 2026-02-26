@@ -394,8 +394,8 @@ const OwnerProfile = () => {
           )}
         </Section>
 
-        {/* ═══ 3. Insurance & Finance Center (Libra Wing) ═══ */}
-        <Section title="ביטוח ופיננסים — ליברה" icon={Shield}>
+        {/* ═══ 3. Insurance & Finance Center ═══ */}
+        <Section title="ביטוח ופיננסים" icon={Shield}>
           {/* Financial Summary Row */}
           <div className="grid grid-cols-2 gap-2 mb-3">
             {totalSaved > 0 && (

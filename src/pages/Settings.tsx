@@ -447,7 +447,7 @@ const Settings = () => {
             <SettingRow
               icon={Link2}
               label="חשבונות מקושרים"
-              description="ליברה ביטוח, Google, Apple ID"
+              description="שותף ביטוח, Google, Apple ID"
               action={() => navigate("/privacy-settings")}
             />
             <SettingRow

@@ -308,7 +308,7 @@ const CEODashboard = () => {
     {
       id: "insurance",
       type: "insurance",
-      title: "Push לידים ל-Libra",
+      title: "Push לידים לשותף ביטוח",
       subtitle: `${leads?.elite || 12} לידים מאומתים Elite — שבב + היסטוריה רפואית מלאה`,
       metric: String(leads?.elite || 12),
       metricLabel: "לידים Elite מאומתים",

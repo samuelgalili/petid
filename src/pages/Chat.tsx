@@ -444,7 +444,7 @@ const ChatContent = () => {
                     {message.role === "assistant" && message.insuranceLead && (
                       <InsuranceLeadCard
                         {...message.insuranceLead}
-                        onSubmit={() => sendMessage(`אני מעוניין בביטוח Libra עבור ${message.insuranceLead!.petName}`)}
+                        onSubmit={() => sendMessage(`אני מעוניין בביטוח עבור ${message.insuranceLead!.petName}`)}
                       />
                     )}
 

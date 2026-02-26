@@ -391,12 +391,12 @@ const AdminCommandCenter = () => {
         {/* ─── Lead Monitor + Agent Details ─────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-          {/* Insurance Leads → Libra */}
+          {/* Insurance Leads */}
           <Card className="rounded-[20px] shadow-sm border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <Shield className="w-4.5 h-4.5" strokeWidth={1.5} />
-                לידים ביטוחיים — Libra
+                לידים ביטוחיים
               </CardTitle>
             </CardHeader>
             <CardContent>
