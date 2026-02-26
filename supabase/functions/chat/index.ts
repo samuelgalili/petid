@@ -1438,6 +1438,7 @@ ${channelInstructions}`;
     if (!shouldStream) {
       const json = await response.json();
       let text = json?.choices?.[0]?.message?.content ?? "";
+      text = cleanProse(text); // Apply Clean Prose mode
       
       const validIds = new Set(foundProducts.map(p => p.id));
       const safeText = keepOnlyValidProducts(text, validIds);
