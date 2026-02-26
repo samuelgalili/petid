@@ -10,7 +10,7 @@ import {
   ShoppingCart, DollarSign, Eye, AlertCircle, Printer,
   MapPin, MessageSquare, ChevronRight, Repeat, Heart,
   CheckSquare, Square, Send, Download, User, PawPrint,
-  AlertTriangle, X,
+  AlertTriangle, X, Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -34,7 +34,7 @@ import {
   AdminEmptyState, AdminPageHeader,
 } from "@/components/admin/AdminStyles";
 import { cn } from "@/lib/utils";
-import { OrderLabelGenerator } from "@/components/admin/OrderLabelGenerator";
+import { OrderLabelGenerator, type LabelFormat } from "@/components/admin/OrderLabelGenerator";
 
 interface OrderItem {
   id: string;
@@ -117,6 +117,7 @@ const AdminOrders = () => {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [outOfStockItems, setOutOfStockItems] = useState<Set<string>>(new Set());
   const [showLabels, setShowLabels] = useState(false);
+  const [labelFormat, setLabelFormat] = useState<LabelFormat>("lite");
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -488,6 +489,12 @@ const AdminOrders = () => {
                 onStatusChange={updateSingleStatus}
                 isUpdating={updatingStatus}
                 onClose={() => setSelectedOrder(null)}
+                onPrintLabel={(format: LabelFormat) => {
+                  setSelectedIds(new Set([selectedOrder.id]));
+                  setLabelFormat(format);
+                  setShowLabels(true);
+                  setSelectedOrder(null);
+                }}
               />
             )}
           </SheetContent>
@@ -498,6 +505,7 @@ const AdminOrders = () => {
           orders={filteredOrders.filter(o => selectedIds.has(o.id))}
           open={showLabels}
           onClose={() => setShowLabels(false)}
+          initialFormat={labelFormat}
         />
       </div>
     </AdminLayout>
@@ -509,13 +517,14 @@ const AdminOrders = () => {
 // =====================================================
 
 function OrderDetailPanel({
-  order, outOfStockItems, onStatusChange, isUpdating, onClose,
+  order, outOfStockItems, onStatusChange, isUpdating, onClose, onPrintLabel,
 }: {
   order: Order;
   outOfStockItems: Set<string>;
   onStatusChange: (id: string, status: Order["status"]) => void;
   isUpdating: boolean;
   onClose: () => void;
+  onPrintLabel: (format: LabelFormat) => void;
 }) {
   const urgencyCfg = URGENCY_CONFIG[order.medical_urgency || "none"] || URGENCY_CONFIG.none;
   const addr = order.shipping_address;
@@ -677,11 +686,28 @@ function OrderDetailPanel({
           </div>
         </div>
 
-        {/* Print Label */}
-        <Button variant="outline" className="w-full gap-2 text-xs" onClick={() => window.print()}>
-          <Printer className="w-4 h-4" strokeWidth={1.5} />
-          הדפס תווית משלוח
-        </Button>
+        {/* Print Label with Format Selection */}
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-muted-foreground">הדפסת תווית</p>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="outline"
+              className="gap-1.5 text-[10px] h-9"
+              onClick={() => onPrintLabel("lite")}
+            >
+              <Package className="w-3.5 h-3.5" />
+              Lite 10×15
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-1.5 text-[10px] h-9 border-amber-500/30 text-amber-600 hover:bg-amber-500/5"
+              onClick={() => onPrintLabel("premium")}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Premium A5
+            </Button>
+          </div>
+        </div>
       </div>
     </ScrollArea>
   );
