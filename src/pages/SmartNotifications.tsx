@@ -180,6 +180,7 @@ const SmartNotifications = () => {
             ))}
           </div>
         </motion.section>
+        )}
 
         {/* ─── Filter Chips ─── */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1">
