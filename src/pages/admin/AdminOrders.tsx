@@ -34,6 +34,7 @@ import {
   AdminEmptyState, AdminPageHeader,
 } from "@/components/admin/AdminStyles";
 import { cn } from "@/lib/utils";
+import { OrderLabelGenerator } from "@/components/admin/OrderLabelGenerator";
 
 interface OrderItem {
   id: string;
@@ -115,6 +116,7 @@ const AdminOrders = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [outOfStockItems, setOutOfStockItems] = useState<Set<string>>(new Set());
+  const [showLabels, setShowLabels] = useState(false);
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -340,6 +342,9 @@ const AdminOrders = () => {
               <Button size="sm" variant="outline" className="gap-1.5">
                 <Download className="w-3.5 h-3.5" /> ייצוא לשליח
               </Button>
+              <Button size="sm" variant="default" className="gap-1.5" onClick={() => setShowLabels(true)}>
+                <Printer className="w-3.5 h-3.5" /> הדפס תוויות
+              </Button>
               <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
                 <X className="w-3.5 h-3.5" /> ביטול
               </Button>
@@ -487,6 +492,13 @@ const AdminOrders = () => {
             )}
           </SheetContent>
         </Sheet>
+
+        {/* Label Generator */}
+        <OrderLabelGenerator
+          orders={filteredOrders.filter(o => selectedIds.has(o.id))}
+          open={showLabels}
+          onClose={() => setShowLabels(false)}
+        />
       </div>
     </AdminLayout>
   );
