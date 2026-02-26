@@ -10890,6 +10890,193 @@ export type Database = {
           },
         ]
       }
+      vendor_audit_results: {
+        Row: {
+          created_at: string | null
+          discrepancies: Json | null
+          email_draft: string | null
+          email_sent: boolean | null
+          id: string
+          invoice_id: string | null
+          order_id: string
+          quote_id: string | null
+          resolved_at: string | null
+          total_delta: number | null
+          updated_at: string | null
+          validation_status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          discrepancies?: Json | null
+          email_draft?: string | null
+          email_sent?: boolean | null
+          id?: string
+          invoice_id?: string | null
+          order_id: string
+          quote_id?: string | null
+          resolved_at?: string | null
+          total_delta?: number | null
+          updated_at?: string | null
+          validation_status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          discrepancies?: Json | null
+          email_draft?: string | null
+          email_sent?: boolean | null
+          id?: string
+          invoice_id?: string | null
+          order_id?: string
+          quote_id?: string | null
+          resolved_at?: string | null
+          total_delta?: number | null
+          updated_at?: string | null
+          validation_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_audit_results_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_audit_results_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_cost_savings: {
+        Row: {
+          audits_count: number | null
+          created_at: string | null
+          discrepancies_found: number | null
+          id: string
+          month: string
+          total_overcharges: number | null
+          total_saved: number | null
+        }
+        Insert: {
+          audits_count?: number | null
+          created_at?: string | null
+          discrepancies_found?: number | null
+          id?: string
+          month: string
+          total_overcharges?: number | null
+          total_saved?: number | null
+        }
+        Update: {
+          audits_count?: number | null
+          created_at?: string | null
+          discrepancies_found?: number | null
+          id?: string
+          month?: string
+          total_overcharges?: number | null
+          total_saved?: number | null
+        }
+        Relationships: []
+      }
+      vendor_quote_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          product_name: string
+          quantity: number
+          quote_id: string
+          sku: string | null
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          product_name: string
+          quantity?: number
+          quote_id: string
+          sku?: string | null
+          total_price?: number
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          product_name?: string
+          quantity?: number
+          quote_id?: string
+          sku?: string | null
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_quotes: {
+        Row: {
+          created_at: string | null
+          id: string
+          notes: string | null
+          order_id: string
+          quote_date: string
+          shipping_cost: number | null
+          status: string | null
+          subtotal: number | null
+          supplier_id: string | null
+          supplier_name: string | null
+          tax_amount: number | null
+          total: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          order_id: string
+          quote_date?: string
+          shipping_cost?: number | null
+          status?: string | null
+          subtotal?: number | null
+          supplier_id?: string | null
+          supplier_name?: string | null
+          tax_amount?: number | null
+          total?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          order_id?: string
+          quote_date?: string
+          shipping_cost?: number | null
+          status?: string | null
+          subtotal?: number | null
+          supplier_id?: string | null
+          supplier_name?: string | null
+          tax_amount?: number | null
+          total?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_quotes_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       video_posts: {
         Row: {
           business_id: string | null
