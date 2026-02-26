@@ -143,12 +143,25 @@ export const CategoryUploadDialog = ({
           toast({ title: "יש לבחור קובץ", variant: "destructive" });
           return;
         }
-        // Upload file
-        const ext = file.name.split(".").pop();
-        const path = `${category}/${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("admin-data").upload(path, file);
-        if (upErr) throw upErr;
-        const { data: urlData } = supabase.storage.from("admin-data").getPublicUrl(path);
+        // Upload file - try storage first, fallback to base64
+        let fileUrl: string;
+        try {
+          const ext = file.name.split(".").pop();
+          const path = `${category}/${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
+          const { error: upErr } = await supabase.storage.from("admin-data").upload(path, file);
+          if (upErr) throw upErr;
+          const { data: urlData } = supabase.storage.from("admin-data").getPublicUrl(path);
+          fileUrl = urlData.publicUrl;
+        } catch (storageErr: any) {
+          console.warn("Storage unavailable, using base64 fallback:", storageErr.message);
+          // Convert file to base64 data URL
+          fileUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = () => reject(new Error("Failed to read file"));
+            reader.readAsDataURL(file);
+          });
+        }
 
         const { data: src, error: srcErr } = await supabase
           .from("admin_data_sources" as any)
@@ -156,7 +169,7 @@ export const CategoryUploadDialog = ({
             data_type: category,
             title: title.trim() || file.name,
             description: description.trim() || null,
-            file_url: urlData.publicUrl,
+            file_url: fileUrl,
             file_name: file.name,
             file_type: file.type,
             file_size: file.size,
@@ -172,7 +185,7 @@ export const CategoryUploadDialog = ({
 
         // Process
         await supabase.functions.invoke("process-admin-data", {
-          body: { sourceId: sid, dataType: category, fileName: file.name, fileUrl: urlData.publicUrl },
+          body: { sourceId: sid, dataType: category, fileName: file.name, fileUrl },
         });
 
         const { data: updated } = await supabase
