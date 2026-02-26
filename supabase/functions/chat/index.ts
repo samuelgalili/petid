@@ -97,7 +97,210 @@ function extractOrderNumber(text: string): string | null {
   return null;
 }
 
-// ============= Product Search Utilities =============
+// ============= Double-Check Verification Protocol =============
+const DOUBLE_CHECK_KEYWORDS_HE = [
+  "שבב", "מיקרוצ'יפ", "chip", "שבב אלקטרוני",
+  "משקל", "שוקל", "weight", "קילו",
+  "חיסון", "חיסונים", "vaccine", "vaccination",
+  "nrc", "קלוריות", "kcal", "תזונה", "דיאטה", "מזון",
+  "גזע", "breed", "סוג",
+  "רישיון", "license", "רשיון",
+  "ביטוח", "insurance", "פוליסה",
+  "וטרינר", "vet", "רופא", "קליניקה",
+  "עיקור", "סירוס", "neutered",
+  "גיל", "תאריך לידה", "age",
+];
+
+interface DoubleCheckResult {
+  triggered: boolean;
+  matchedKeywords: string[];
+  verifiedFacts: { field: string; value: string; source: string }[];
+  antiHallucinationRecoveries: { field: string; value: string; source: string }[];
+}
+
+function detectDoubleCheckKeywords(text: string): string[] {
+  const t = text.toLowerCase();
+  return DOUBLE_CHECK_KEYWORDS_HE.filter(k => t.includes(k));
+}
+
+async function runDoubleCheckProtocol(
+  supabase: any,
+  petId: string,
+  keywords: string[],
+  petData: any,
+): Promise<DoubleCheckResult> {
+  const result: DoubleCheckResult = {
+    triggered: true,
+    matchedKeywords: keywords,
+    verifiedFacts: [],
+    antiHallucinationRecoveries: [],
+  };
+
+  // Map keywords to fields
+  const keywordFieldMap: Record<string, { field: string; label: string }[]> = {
+    "שבב": [{ field: "microchip_number", label: "מספר שבב" }],
+    "מיקרוצ'יפ": [{ field: "microchip_number", label: "מספר שבב" }],
+    "chip": [{ field: "microchip_number", label: "מספר שבב" }],
+    "משקל": [{ field: "weight", label: "משקל" }],
+    "שוקל": [{ field: "weight", label: "משקל" }],
+    "weight": [{ field: "weight", label: "משקל" }],
+    "קילו": [{ field: "weight", label: "משקל" }],
+    "חיסון": [{ field: "vaccinations", label: "חיסונים" }],
+    "חיסונים": [{ field: "vaccinations", label: "חיסונים" }],
+    "vaccine": [{ field: "vaccinations", label: "חיסונים" }],
+    "nrc": [{ field: "weight", label: "NRC/משקל" }],
+    "קלוריות": [{ field: "weight", label: "NRC/קלוריות" }],
+    "תזונה": [{ field: "current_food", label: "מזון נוכחי" }],
+    "גזע": [{ field: "breed", label: "גזע" }],
+    "breed": [{ field: "breed", label: "גזע" }],
+    "רישיון": [{ field: "license_number", label: "רישיון" }],
+    "ביטוח": [{ field: "insurance_company", label: "ביטוח" }],
+    "וטרינר": [{ field: "vet_name", label: "וטרינר" }],
+    "עיקור": [{ field: "is_neutered", label: "עיקור/סירוס" }],
+    "גיל": [{ field: "birth_date", label: "תאריך לידה" }],
+  };
+
+  // Collect unique fields to verify
+  const fieldsToVerify = new Set<{ field: string; label: string }>();
+  for (const kw of keywords) {
+    const mappings = keywordFieldMap[kw];
+    if (mappings) mappings.forEach(m => fieldsToVerify.add(m));
+  }
+
+  // Step 1: Check pet profile (primary source)
+  for (const { field, label } of fieldsToVerify) {
+    if (field === "vaccinations") continue; // handled separately via OCR
+    const val = petData?.[field];
+    if (val != null && val !== "" && val !== "לא ידוע") {
+      result.verifiedFacts.push({
+        field: label,
+        value: String(val),
+        source: "Pet Profile (Manual Entry)",
+      });
+    }
+  }
+
+  // Step 2: Anti-Hallucination — deep search OCR + documents for missing fields
+  const verifiedFieldLabels = new Set(result.verifiedFacts.map(f => f.field));
+
+  // Fetch OCR data for unverified fields
+  const { data: ocrDocs } = await supabase
+    .from("pet_document_extracted_data")
+    .select("chip_number, provider_name, vaccination_type, vaccination_date, vaccination_expiry, diagnosis, treatment_type, created_at")
+    .eq("pet_id", petId)
+    .order("created_at", { ascending: false })
+    .limit(30);
+
+  const { data: vaultDocs } = await supabase
+    .from("pet_documents")
+    .select("title, description, document_type")
+    .eq("pet_id", petId)
+    .order("uploaded_at", { ascending: false })
+    .limit(20);
+
+  // Recover microchip from OCR
+  if (!verifiedFieldLabels.has("מספר שבב")) {
+    const ocrChip = ocrDocs?.find((d: any) => d.chip_number)?.chip_number;
+    if (ocrChip) {
+      result.antiHallucinationRecoveries.push({
+        field: "מספר שבב",
+        value: ocrChip,
+        source: "OCR Scan (recovered from document)",
+      });
+    }
+  }
+
+  // Recover vet from OCR
+  if (!verifiedFieldLabels.has("וטרינר")) {
+    const ocrVet = ocrDocs?.find((d: any) => d.provider_name)?.provider_name;
+    if (ocrVet) {
+      result.antiHallucinationRecoveries.push({
+        field: "וטרינר",
+        value: ocrVet,
+        source: "OCR Scan (recovered from document)",
+      });
+    }
+  }
+
+  // Vaccinations from OCR
+  if (keywords.some(k => ["חיסון", "חיסונים", "vaccine", "vaccination"].includes(k)) && ocrDocs) {
+    const vaccines = ocrDocs.filter((d: any) => d.vaccination_type);
+    for (const v of vaccines.slice(0, 5)) {
+      const expiry = v.vaccination_expiry ? new Date(v.vaccination_expiry) : null;
+      const status = expiry && expiry < new Date() ? "פג תוקף ⚠️" : "בתוקף ✅";
+      result.verifiedFacts.push({
+        field: `חיסון: ${v.vaccination_type}`,
+        value: `${v.vaccination_date || "?"} (${status})`,
+        source: "OCR Medical Record",
+      });
+    }
+  }
+
+  // Final recursive search through vault document metadata
+  const missingFields = [...fieldsToVerify].filter(f => 
+    !verifiedFieldLabels.has(f.label) && 
+    !result.antiHallucinationRecoveries.some(r => r.field === f.label)
+  );
+  
+  if (missingFields.length > 0 && vaultDocs) {
+    const searchMap: Record<string, string[]> = {
+      "מספר שבב": ["שבב", "chip", "microchip"],
+      "רישיון": ["רישיון", "license"],
+      "ביטוח": ["ביטוח", "insurance", "פוליסה"],
+      "גזע": ["גזע", "breed"],
+      "משקל": ["משקל", "kg", "weight"],
+    };
+    
+    for (const { label } of missingFields) {
+      const terms = searchMap[label];
+      if (!terms) continue;
+      for (const doc of vaultDocs) {
+        const text = `${doc.title || ""} ${doc.description || ""}`.toLowerCase();
+        if (terms.some((t: string) => text.includes(t))) {
+          result.antiHallucinationRecoveries.push({
+            field: label,
+            value: `Found in document: "${doc.title}"`,
+            source: `Document Vault (${doc.document_type || "file"})`,
+          });
+          break;
+        }
+      }
+    }
+  }
+
+  return result;
+}
+
+function buildDoubleCheckContext(dcResult: DoubleCheckResult): string {
+  if (!dcResult.triggered) return "";
+
+  let ctx = "\n[DOUBLE_CHECK_VERIFICATION — HIGH PRIORITY]\n";
+  ctx += `🔍 Keywords detected: ${dcResult.matchedKeywords.join(", ")}\n`;
+  ctx += `Protocol: Verified data MUST be used. Do NOT claim data is missing.\n\n`;
+
+  if (dcResult.verifiedFacts.length > 0) {
+    ctx += "✅ VERIFIED FACTS (use these in your response):\n";
+    for (const f of dcResult.verifiedFacts) {
+      ctx += `  • ${f.field}: ${f.value} [Source: ${f.source}]\n`;
+    }
+  }
+
+  if (dcResult.antiHallucinationRecoveries.length > 0) {
+    ctx += "\n🔄 ANTI-HALLUCINATION RECOVERIES (data recovered from scanned documents):\n";
+    for (const r of dcResult.antiHallucinationRecoveries) {
+      ctx += `  • ${r.field}: ${r.value} [Source: ${r.source}]\n`;
+    }
+  }
+
+  ctx += `\n⚠️ STRICT RULE: For every fact above, you MUST cite it in your answer using this format:\n`;
+  ctx += `"[field] הוא [value]" — and include the marker ✅🛡️ after verified data points.\n`;
+  ctx += `Example: "מספר השבב של [pet] הוא 123456789 ✅🛡️"\n`;
+  ctx += "[/DOUBLE_CHECK_VERIFICATION]\n";
+
+  return ctx;
+}
+
+
 function isProductIntent(text: string): boolean {
   const t = normalize(text);
   return (
@@ -854,6 +1057,16 @@ nrc_calculation: ${nrcCalc}
       }
     }
 
+    // ============= Double-Check Verification Protocol =============
+    let doubleCheckContext = "";
+    if (activePet?.id && fullPetData) {
+      const matchedKeywords = detectDoubleCheckKeywords(lastUserMsg);
+      if (matchedKeywords.length > 0) {
+        const dcResult = await runDoubleCheckProtocol(supabase, activePet.id, matchedKeywords, fullPetData);
+        doubleCheckContext = buildDoubleCheckContext(dcResult);
+      }
+    }
+
     // ============= Build System Prompt (Category-Aware) =============
     let channelInstructions = "";
     if (isWhatsApp) {
@@ -935,7 +1148,7 @@ When greeting the user, check for:
 4. Upcoming appointments → remind about vet visits
 5. Expired vaccines → alert proactively
 
-${userName}${ownerProfile}${petCard}${brainIntegrity}${breedReminder}${breedContext}${dietRulesContext}${medicalMemory}${vetHistory}${ocrDocumentData}${purchaseHistory}${productContext}
+${userName}${ownerProfile}${petCard}${brainIntegrity}${doubleCheckContext}${breedReminder}${breedContext}${dietRulesContext}${medicalMemory}${vetHistory}${ocrDocumentData}${purchaseHistory}${productContext}
 
 === V71: THE CHAT CONSULTANT — CLINICAL, EMPATHETIC, PROACTIVE ===
 אתה קליני, אמפתי ופרואקטיבי. שלוש שכבות חדשות:
