@@ -101,3 +101,9 @@ verify_jwt = false
 
 [functions.petid-agent-runner]
 verify_jwt = false
+
+[functions.process-document-rag]
+verify_jwt = false
+
+[functions.semantic-search]
+verify_jwt = false
