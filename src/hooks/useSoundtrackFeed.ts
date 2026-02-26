@@ -342,6 +342,8 @@ export function useSoundtrackFeed() {
     fetchPostsInner();
   };
 
+  const isPromoId = (id: string) => id.startsWith("promo-") || id.startsWith("petid-");
+
   const handleLike = async (postId: string) => {
     if (!user) {
       navigate("/auth");
@@ -361,6 +363,9 @@ export function useSoundtrackFeed() {
     setDiscoverPosts(updater);
     setFollowingPosts(updater);
 
+    // Skip DB operation for promo posts
+    if (isPromoId(postId)) return;
+
     try {
       if (wasLiked) {
         await supabase.from("post_likes").delete().eq("post_id", postId).eq("user_id", user.id);
@@ -368,6 +373,16 @@ export function useSoundtrackFeed() {
         await supabase.from("post_likes").insert({ post_id: postId, user_id: user.id });
       }
     } catch {
+      const rollback = (prev: FeedPost[]) =>
+        prev.map((p) =>
+          p.id === postId
+            ? { ...p, is_liked: wasLiked, likes_count: p.likes_count + (wasLiked ? 1 : -1) }
+            : p
+        );
+      setDiscoverPosts(rollback);
+      setFollowingPosts(rollback);
+    }
+  };
       const rollback = (prev: FeedPost[]) =>
         prev.map((p) =>
           p.id === postId
