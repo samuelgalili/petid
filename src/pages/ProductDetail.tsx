@@ -2206,6 +2206,7 @@ const ProductDetail = () => {
   const [reportDetails, setReportDetails] = useState("");
   const [isReporting, setIsReporting] = useState(false);
   const [dogWeight, setDogWeight] = useState<string>("");
+  const [detailTab, setDetailTab] = useState<'overview' | 'specs'>('overview');
   const [puppyAgeMonths, setPuppyAgeMonths] = useState<string>("");
   const touchStartX = useRef(0);
 
@@ -2968,6 +2969,26 @@ const ProductDetail = () => {
           </motion.div>
         )}
 
+        {/* ── Detail Tab Bar ── */}
+        <div className="mx-4 mt-4 mb-2">
+          <div className="flex gap-1.5 bg-muted/40 p-1 rounded-xl border border-border/30">
+            <button
+              onClick={() => setDetailTab('overview')}
+              className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all ${detailTab === 'overview' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'}`}
+            >
+              סקירה
+            </button>
+            <button
+              onClick={() => setDetailTab('specs')}
+              className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all ${detailTab === 'specs' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'}`}
+            >
+              מפרט מקצועי
+            </button>
+          </div>
+        </div>
+
+        {/* ── SPECS TAB: Technical / Scientific Details ── */}
+        {detailTab === 'specs' && (<>
         {/* ── Feeding Calculator (food only) ── */}
         {!isAccessory && hasFeedingGuide && (
           <motion.div className="mx-4 mt-3" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
@@ -7122,6 +7143,10 @@ const ProductDetail = () => {
             </Card>
           </motion.div>
         )}
+        </>)}
+
+        {/* ── OVERVIEW TAB: Purchase-driving content ── */}
+        {detailTab === 'overview' && (<>
 
         {/* ── Description ── */}
         {(product.subtitle || product.description) && (
@@ -7151,6 +7176,8 @@ const ProductDetail = () => {
             <ProductReviews productId={id} />
           </motion.div>
         )}
+
+        </>)}
 
         {/* ── Enrichment: Frequently Bought Together ── */}
         {isEnrichment && enrichmentCompanions.length > 0 && (
