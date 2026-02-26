@@ -820,6 +820,99 @@ export type Database = {
           },
         ]
       }
+      agent_performance_scores: {
+        Row: {
+          accuracy_score: number | null
+          agent_slug: string
+          conversion_rate: number | null
+          created_at: string | null
+          empathy_score: number | null
+          id: string
+          improvements_applied: number | null
+          logic_gaps_found: number | null
+          metadata: Json | null
+          response_quality: number | null
+          score_date: string | null
+          total_interactions: number | null
+        }
+        Insert: {
+          accuracy_score?: number | null
+          agent_slug: string
+          conversion_rate?: number | null
+          created_at?: string | null
+          empathy_score?: number | null
+          id?: string
+          improvements_applied?: number | null
+          logic_gaps_found?: number | null
+          metadata?: Json | null
+          response_quality?: number | null
+          score_date?: string | null
+          total_interactions?: number | null
+        }
+        Update: {
+          accuracy_score?: number | null
+          agent_slug?: string
+          conversion_rate?: number | null
+          created_at?: string | null
+          empathy_score?: number | null
+          id?: string
+          improvements_applied?: number | null
+          logic_gaps_found?: number | null
+          metadata?: Json | null
+          response_quality?: number | null
+          score_date?: string | null
+          total_interactions?: number | null
+        }
+        Relationships: []
+      }
+      agent_prompt_versions: {
+        Row: {
+          accuracy_score: number | null
+          agent_slug: string
+          conversion_rate: number | null
+          created_at: string | null
+          created_by: string | null
+          deployed_at: string | null
+          empathy_score: number | null
+          id: string
+          is_active: boolean | null
+          performance_score: number | null
+          system_prompt: string
+          updated_at: string | null
+          version: number
+        }
+        Insert: {
+          accuracy_score?: number | null
+          agent_slug: string
+          conversion_rate?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          deployed_at?: string | null
+          empathy_score?: number | null
+          id?: string
+          is_active?: boolean | null
+          performance_score?: number | null
+          system_prompt: string
+          updated_at?: string | null
+          version?: number
+        }
+        Update: {
+          accuracy_score?: number | null
+          agent_slug?: string
+          conversion_rate?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          deployed_at?: string | null
+          empathy_score?: number | null
+          id?: string
+          is_active?: boolean | null
+          performance_score?: number | null
+          system_prompt?: string
+          updated_at?: string | null
+          version?: number
+        }
+        Relationships: []
+      }
       agent_tasks: {
         Row: {
           approved_at: string | null
@@ -8329,6 +8422,108 @@ export type Database = {
           street?: string | null
           updated_at?: string | null
           whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
+      prometheus_ab_tests: {
+        Row: {
+          agent_slug: string
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          started_at: string | null
+          status: string | null
+          test_name: string
+          variant_a_prompt_id: string | null
+          variant_a_samples: number | null
+          variant_a_score: number | null
+          variant_b_prompt_id: string | null
+          variant_b_samples: number | null
+          variant_b_score: number | null
+          winner: string | null
+        }
+        Insert: {
+          agent_slug: string
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          started_at?: string | null
+          status?: string | null
+          test_name: string
+          variant_a_prompt_id?: string | null
+          variant_a_samples?: number | null
+          variant_a_score?: number | null
+          variant_b_prompt_id?: string | null
+          variant_b_samples?: number | null
+          variant_b_score?: number | null
+          winner?: string | null
+        }
+        Update: {
+          agent_slug?: string
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          started_at?: string | null
+          status?: string | null
+          test_name?: string
+          variant_a_prompt_id?: string | null
+          variant_a_samples?: number | null
+          variant_a_score?: number | null
+          variant_b_prompt_id?: string | null
+          variant_b_samples?: number | null
+          variant_b_score?: number | null
+          winner?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prometheus_ab_tests_variant_a_prompt_id_fkey"
+            columns: ["variant_a_prompt_id"]
+            isOneToOne: false
+            referencedRelation: "agent_prompt_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prometheus_ab_tests_variant_b_prompt_id_fkey"
+            columns: ["variant_b_prompt_id"]
+            isOneToOne: false
+            referencedRelation: "agent_prompt_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prometheus_intelligence_log: {
+        Row: {
+          after_value: number | null
+          agent_slug: string
+          auto_applied: boolean | null
+          before_value: number | null
+          created_at: string | null
+          description: string
+          id: string
+          improvement_pct: number | null
+          improvement_type: string
+        }
+        Insert: {
+          after_value?: number | null
+          agent_slug: string
+          auto_applied?: boolean | null
+          before_value?: number | null
+          created_at?: string | null
+          description: string
+          id?: string
+          improvement_pct?: number | null
+          improvement_type: string
+        }
+        Update: {
+          after_value?: number | null
+          agent_slug?: string
+          auto_applied?: boolean | null
+          before_value?: number | null
+          created_at?: string | null
+          description?: string
+          id?: string
+          improvement_pct?: number | null
+          improvement_type?: string
         }
         Relationships: []
       }
