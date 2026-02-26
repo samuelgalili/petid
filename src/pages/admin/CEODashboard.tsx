@@ -45,6 +45,59 @@ interface BrainUpdate {
   type: "learning" | "action" | "alert";
 }
 
+// ─── Intelligence Growth Section (Prometheus) ───────────────
+const IntelligenceGrowthSection = () => {
+  const { data: improvements = [] } = useQuery({
+    queryKey: ["ceo-intelligence-growth"],
+    queryFn: async () => {
+      const yesterday = new Date(Date.now() - 86400000).toISOString();
+      const { data, error } = await supabase
+        .from("prometheus_intelligence_log")
+        .select("*")
+        .gte("created_at", yesterday)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  if (improvements.length === 0) return null;
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
+      <div className="flex items-center gap-2 mb-3">
+        <Sparkles className="w-4 h-4 text-primary" strokeWidth={1.5} />
+        <h2 className="text-sm font-bold text-foreground">Intelligence Growth</h2>
+        <Badge variant="outline" className="text-[9px]">{improvements.length} שיפורים</Badge>
+      </div>
+      <div className="space-y-2">
+        {improvements.map((imp: any, idx: number) => (
+          <motion.div
+            key={imp.id}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.6 + idx * 0.05 }}
+          >
+            <div className="flex items-start gap-3 p-3 rounded-2xl bg-card border border-border/20">
+              <span className="text-lg shrink-0">{imp.auto_applied ? "🚀" : "🧠"}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-foreground">{imp.description}</p>
+                {imp.improvement_pct && (
+                  <p className="text-[10px] text-emerald-500 mt-0.5">+{Math.round(imp.improvement_pct)}% שיפור</p>
+                )}
+              </div>
+              {imp.auto_applied && (
+                <Badge className="text-[9px] bg-emerald-500/10 text-emerald-600 shrink-0">auto</Badge>
+              )}
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  );
+};
+
 // ─── Swipeable Action Card ──────────────────────────────────
 const SwipeableCard = ({
   card,
@@ -729,6 +782,9 @@ const CEODashboard = () => {
             ))}
           </div>
         </motion.div>
+
+        {/* ─── Intelligence Growth (Prometheus) ──────────────── */}
+        <IntelligenceGrowthSection />
             </div>
           </TabsContent>
 
