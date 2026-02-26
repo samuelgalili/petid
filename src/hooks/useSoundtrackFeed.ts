@@ -383,16 +383,8 @@ export function useSoundtrackFeed() {
       setFollowingPosts(rollback);
     }
   };
-      const rollback = (prev: FeedPost[]) =>
-        prev.map((p) =>
-          p.id === postId
-            ? { ...p, is_liked: wasLiked, likes_count: p.likes_count + (wasLiked ? 1 : -1) }
-            : p
-        );
-      setDiscoverPosts(rollback);
-      setFollowingPosts(rollback);
-    }
-  };
+
+
 
   const handleSave = async (postId: string) => {
     if (!user) {
