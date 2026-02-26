@@ -88,6 +88,23 @@
        setUploading(true);
        setScrapeResult(null);
 
+       // Duplicate check by URL
+       const { data: existing } = await supabase
+         .from("admin_data_sources" as any)
+         .select("id, title")
+         .eq("file_url", urlInput.trim())
+         .maybeSingle();
+
+       if (existing) {
+         toast({
+           title: "מקור כבר קיים במערכת",
+           description: `"${(existing as any).title}" כבר הועלה. ערוך את המקור הקיים אם חסרים נתונים.`,
+           variant: "destructive",
+         });
+         setUploading(false);
+         return;
+       }
+
        const { data: userData } = await supabase.auth.getUser();
 
        // Create data source record first
