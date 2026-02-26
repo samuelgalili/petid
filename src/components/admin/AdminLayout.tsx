@@ -407,25 +407,31 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
   return (
     <div className="min-h-screen bg-muted/20" dir="rtl">
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-b border-border/20">
-        <div className="flex items-center justify-between px-4 h-13">
+      <header
+        className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-b border-border/20"
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      >
+        <div className="flex items-center justify-between px-4 h-[52px]">
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="shrink-0 w-8 h-8">
+              <Button variant="ghost" size="icon" className="shrink-0 w-9 h-9">
                 <Menu className="w-5 h-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="p-0 w-60 border-l border-border/20">
+            <SheetContent side="right" className="p-0 w-64 border-l border-border/20">
               <NavContent />
             </SheetContent>
           </Sheet>
-          <h1 className="font-semibold text-sm flex items-center gap-1.5 truncate">
+          <h1 className="font-semibold text-sm flex items-center gap-1.5 truncate flex-1 mx-3">
             {Icon && <Icon className="w-4 h-4 shrink-0 text-primary" strokeWidth={1.5} />}
             <span className="truncate">{title}</span>
           </h1>
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="shrink-0 w-8 h-8">
-            <Home className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-1 shrink-0">
+            <AdminNotificationsBell />
+            <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="w-9 h-9">
+              <Home className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -440,81 +446,81 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
           <Button
             variant="ghost"
             size="icon"
-            className="absolute left-0 top-18 -translate-x-1/2 w-5 h-5 rounded-full bg-card border border-border/20 shadow-sm hover:bg-muted transition-all"
+            className="absolute left-0 top-[72px] -translate-x-1/2 w-6 h-6 rounded-full bg-card border border-border/30 shadow-sm hover:bg-muted transition-all z-10"
             onClick={() => setIsCollapsed(!isCollapsed)}
           >
             {isCollapsed ? (
-              <PanelLeft className="w-2.5 h-2.5" />
+              <PanelLeft className="w-3 h-3" />
             ) : (
-              <PanelLeftClose className="w-2.5 h-2.5" />
+              <PanelLeftClose className="w-3 h-3" />
             )}
           </Button>
         </aside>
 
         {/* Main */}
         <main className={cn(
-          "flex-1 min-h-screen transition-all duration-300",
-          "lg:mr-56",
-          isCollapsed && "lg:mr-14",
-          "pt-13 lg:pt-0"
-        )}>
-          {/* Desktop Header */}
-          <header className="hidden lg:flex items-center justify-between px-5 h-12 border-b border-border/20 bg-card/60 backdrop-blur-sm sticky top-0 z-40">
-            <div className="flex items-center gap-2">
-              {Icon && (
-                <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center">
-                  <Icon className="w-3.5 h-3.5 text-primary" strokeWidth={1.5} />
-                </div>
-              )}
-              <div>
-                {breadcrumbs.length > 0 ? (
-                  <nav className="flex items-center gap-1 text-xs">
-                    <Link to="/admin/growo" className="text-muted-foreground hover:text-foreground transition-colors">
-                      ניהול
-                    </Link>
-                    {breadcrumbs.map((crumb, i) => (
-                      <div key={i} className="flex items-center gap-1">
-                        <ChevronRight className="w-3 h-3 text-muted-foreground rotate-180" />
-                        {crumb.href ? (
-                          <Link to={crumb.href} className="text-muted-foreground hover:text-foreground transition-colors">
-                            {crumb.label}
-                          </Link>
-                        ) : (
-                          <span className="text-foreground font-medium">{crumb.label}</span>
-                        )}
-                      </div>
-                    ))}
-                  </nav>
-                ) : (
-                  <h1 className="font-semibold text-sm">{title}</h1>
+          "flex-1 min-h-screen transition-all duration-300 w-full overflow-x-hidden",
+          isCollapsed ? "lg:mr-14" : "lg:mr-56",
+        )} style={{ paddingTop: 'calc(52px + env(safe-area-inset-top, 0px))' }}>
+          {/* Remove mobile padding on desktop */}
+          <div className="lg:!pt-0">
+            {/* Desktop Header */}
+            <header className="hidden lg:flex items-center justify-between px-5 h-12 border-b border-border/20 bg-card/60 backdrop-blur-sm sticky top-0 z-40">
+              <div className="flex items-center gap-2 min-w-0">
+                {Icon && (
+                  <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                    <Icon className="w-3.5 h-3.5 text-primary" strokeWidth={1.5} />
+                  </div>
                 )}
+                <div className="min-w-0">
+                  {breadcrumbs.length > 0 ? (
+                    <nav className="flex items-center gap-1 text-xs">
+                      <Link to="/admin/growo" className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
+                        ניהול
+                      </Link>
+                      {breadcrumbs.map((crumb, i) => (
+                        <div key={i} className="flex items-center gap-1">
+                          <ChevronRight className="w-3 h-3 text-muted-foreground rotate-180 shrink-0" />
+                          {crumb.href ? (
+                            <Link to={crumb.href} className="text-muted-foreground hover:text-foreground transition-colors truncate">
+                              {crumb.label}
+                            </Link>
+                          ) : (
+                            <span className="text-foreground font-medium truncate">{crumb.label}</span>
+                          )}
+                        </div>
+                      ))}
+                    </nav>
+                  ) : (
+                    <h1 className="font-semibold text-sm truncate">{title}</h1>
+                  )}
+                </div>
               </div>
-            </div>
-            
-            <div className="flex items-center gap-1">
-              {/* Quick Actions */}
-              {quickActions.map((action) => (
-                <Button
-                  key={action.href + action.label}
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-[11px] gap-1 text-muted-foreground hover:text-foreground"
-                  onClick={() => navigate(action.href)}
-                >
-                  <action.icon className="w-3 h-3" />
-                  {action.label}
+              
+              <div className="flex items-center gap-1 shrink-0">
+                {quickActions.map((action) => (
+                  <Button
+                    key={action.href + action.label}
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-[11px] gap-1 text-muted-foreground hover:text-foreground"
+                    onClick={() => navigate(action.href)}
+                  >
+                    <action.icon className="w-3 h-3" />
+                    {action.label}
+                  </Button>
+                ))}
+                <div className="w-px h-5 bg-border/30 mx-1" />
+                <AdminNotificationsBell />
+                <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => navigate("/")}>
+                  <Home className="w-3.5 h-3.5" />
                 </Button>
-              ))}
-              <div className="w-px h-5 bg-border/30 mx-1" />
-              <AdminNotificationsBell />
-              <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => navigate("/")}>
-                <Home className="w-3.5 h-3.5" />
-              </Button>
-            </div>
-          </header>
+              </div>
+            </header>
 
-          <div className="p-4 lg:p-5">
-            {children}
+            <div className="p-4 lg:p-5">
+              {children}
+            </div>
           </div>
         </main>
       </div>
