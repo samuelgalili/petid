@@ -28,6 +28,19 @@ const SLUG_CATEGORY_MAP: Record<string, string> = {
 
 const MAX_SELF_HEAL_ATTEMPTS = 2;
 
+// ─── Inter-Agent Synergy Map: which agents collaborate ───
+const SYNERGY_MAP: Record<string, string[]> = {
+  "maya-ux": ["system-architect", "ofek-visual-monitor"],
+  "system-architect": ["maya-ux", "ofek-visual-monitor"],
+  "ofek-visual-monitor": ["maya-ux", "system-architect"],
+  "sales": ["crm", "content"],
+  "content": ["maya-ux", "ofek-visual-monitor"],
+  "nrc-science": ["health-prediction", "ethics-safety"],
+  "health-prediction": ["nrc-science", "ethics-safety"],
+  "cashflow-guardian": ["financial-algo", "fraud-detection"],
+  "financial-algo": ["cashflow-guardian", "fraud-detection"],
+};
+
 // ─── Call AI Gateway ───
 async function callAI(apiKey: string, model: string, messages: Array<{ role: string; content: string }>) {
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -151,9 +164,19 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     let targetBotId: string | null = null;
+    let adminOverride: { command: string; source: string; synergy?: boolean } | null = null;
     try {
       const body = await req.json();
       targetBotId = body?.bot_id || null;
+      // Admin Override Protocol: Priority 1 commands from dashboard
+      if (body?.admin_override) {
+        adminOverride = {
+          command: body.admin_override.command || "",
+          source: body.admin_override.source || "admin-dashboard",
+          synergy: body.admin_override.synergy !== false,
+        };
+        console.log(`🔴 ADMIN OVERRIDE received from ${adminOverride.source}: "${adminOverride.command}"`);
+      }
     } catch {
       // No body = run all active bots
     }
@@ -187,11 +210,16 @@ serve(async (req) => {
         let healed = false;
         let healAttempts = 0;
 
+        // ─── Determine user message (Admin Override = Priority 1) ───
+        const userMessage = adminOverride
+          ? `🔴 ADMIN OVERRIDE (Priority 1) from ${adminOverride.source}:\n"${adminOverride.command}"\n\nExecute this command immediately. Analyze the request, perform the action, and report completion status. Current time: ${new Date().toISOString()}. Respond in Hebrew.`
+          : `Run your scheduled check. Current time: ${new Date().toISOString()}. Provide a brief status report (max 200 words). Respond in Hebrew.`;
+
         // ─── Try running the bot ───
         try {
-          aiOutput = await callAI(LOVABLE_API_KEY, "google/gemini-2.5-flash-lite", [
+          aiOutput = await callAI(LOVABLE_API_KEY, adminOverride ? "google/gemini-2.5-flash" : "google/gemini-2.5-flash-lite", [
             { role: "system", content: prompt + approxInstruction },
-            { role: "user", content: `Run your scheduled check. Current time: ${new Date().toISOString()}. Provide a brief status report (max 200 words). Respond in Hebrew.` },
+            { role: "user", content: userMessage },
           ]);
         } catch (aiError) {
           // ─── SELF-HEALING: Prometheus kicks in ───
@@ -293,7 +321,47 @@ serve(async (req) => {
           }
         }
 
-        results.push({ bot: bot.name, status: healed ? "healed" : "success", routed, healed, healAttempts });
+        // ─── ADMIN OVERRIDE: Log execution report to admin feed ───
+        if (adminOverride) {
+          await supabase.from("agent_action_logs").insert({
+            action_type: "admin_override_executed",
+            bot_id: bot.id,
+            description: `[${bot.name}] ביצע פקודת Admin Override: "${adminOverride.command}"`.substring(0, 2000),
+            reason: `Admin Override (Priority 1) from ${adminOverride.source}`,
+            expected_outcome: adminOverride.command,
+            actual_outcome: aiOutput?.substring(0, 500) || "No output",
+            metadata: { slug: bot.slug, source: adminOverride.source, override: true, healed },
+          });
+
+          // ─── SYNERGY: Trigger collaborating agents if needed ───
+          if (adminOverride.synergy && SYNERGY_MAP[bot.slug]) {
+            const synergyPartners = SYNERGY_MAP[bot.slug];
+            console.log(`🔗 Synergy: ${bot.name} triggering partners: ${synergyPartners.join(", ")}`);
+
+            for (const partnerSlug of synergyPartners) {
+              const { data: partnerBots } = await supabase
+                .from("automation_bots")
+                .select("id, name, slug")
+                .eq("slug", partnerSlug)
+                .eq("is_active", true)
+                .limit(1);
+
+              if (partnerBots && partnerBots.length > 0) {
+                await supabase.from("agent_action_logs").insert({
+                  action_type: "synergy_notification",
+                  bot_id: partnerBots[0].id,
+                  description: `[סינרגיה] ${bot.name} → ${partnerBots[0].name}: "${adminOverride.command}"`.substring(0, 2000),
+                  reason: `Admin Override synergy from ${bot.name}`,
+                  expected_outcome: `${partnerBots[0].name} reviews and acts on related aspects`,
+                  metadata: { source_slug: bot.slug, target_slug: partnerSlug, command: adminOverride.command },
+                });
+                console.log(`  → Synergy notification sent to ${partnerBots[0].name}`);
+              }
+            }
+          }
+        }
+
+        results.push({ bot: bot.name, status: healed ? "healed" : "success", routed, healed, healAttempts, adminOverride: !!adminOverride });
       } catch (botError) {
         console.error(`Error running bot ${bot.name}:`, botError);
 
