@@ -103,14 +103,17 @@ const MainShell = () => {
             transition={overlayTransition}
             className="fixed inset-0 z-[250] bg-background overflow-auto"
           >
-            {/* Close handle (top) */}
-            <motion.button
-              onClick={closeDashboard}
-              className="sticky top-0 z-10 w-full flex items-center justify-center py-2 bg-background/80 backdrop-blur-md"
-              whileTap={{ scale: 0.95 }}
-            >
-              <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1" />
-            </motion.button>
+            {/* Close handle — narrow pill, doesn't block header buttons */}
+            <div className="sticky top-0 z-30 w-full flex justify-center pointer-events-none">
+              <motion.button
+                onClick={closeDashboard}
+                className="pointer-events-auto px-6 py-2 bg-background/80 backdrop-blur-md rounded-b-xl"
+                whileTap={{ scale: 0.95 }}
+                aria-label="סגור דשבורד"
+              >
+                <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+              </motion.button>
+            </div>
 
             <Suspense fallback={<LoadingFallback />}>
               <ProfilePage />
