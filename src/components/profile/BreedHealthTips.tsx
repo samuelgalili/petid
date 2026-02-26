@@ -129,7 +129,7 @@ const TipProductSheet = ({ tip, petName, onClose }: { tip: BreedTip; petName: st
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-end justify-center bg-background/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[10001] flex items-end justify-center bg-background/60 backdrop-blur-sm"
       onClick={onClose}
     >
       <motion.div
@@ -138,7 +138,8 @@ const TipProductSheet = ({ tip, petName, onClose }: { tip: BreedTip; petName: st
         exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 300 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md bg-card rounded-t-2xl border-t border-border/30 shadow-2xl p-5 pb-8"
+        className="w-full max-w-md bg-card rounded-t-2xl border-t border-border/30 shadow-2xl p-5"
+        style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 16px))" }}
         dir="rtl"
       >
         {/* Handle */}
