@@ -71,6 +71,7 @@ const navGroups: NavGroup[] = [
       { icon: ShoppingCart, label: "הזמנות רכש", href: "/admin/purchase-orders" },
       { icon: Receipt, label: "חשבוניות", href: "/admin/invoices" },
       { icon: FileCheck, label: "ביקורת ספקים", href: "/admin/vendor-audit" },
+      { icon: Sparkles, label: "משא״מ ספקים AI", href: "/admin/supplier-negotiation" },
       { icon: Megaphone, label: "שיווק", href: "/admin/marketing" },
     ]
   },

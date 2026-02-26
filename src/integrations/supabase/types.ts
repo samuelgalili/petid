@@ -4041,18 +4041,23 @@ export type Database = {
           admin_approved_by: string | null
           admin_notes: string | null
           age_years: number | null
+          auto_pushed_at: string | null
           breed: string | null
           created_at: string
           forwarded_at: string | null
           forwarded_to_email: string | null
+          has_verified_chip: boolean | null
           health_answer_1: string | null
           health_answer_2: string | null
           id: string
+          medical_completeness: number | null
           notes: string | null
           pet_id: string | null
           pet_name: string
           pet_type: string
           phone: string
+          quality_score: number | null
+          quality_tier: string | null
           selected_plan: string | null
           status: string
           updated_at: string
@@ -4063,18 +4068,23 @@ export type Database = {
           admin_approved_by?: string | null
           admin_notes?: string | null
           age_years?: number | null
+          auto_pushed_at?: string | null
           breed?: string | null
           created_at?: string
           forwarded_at?: string | null
           forwarded_to_email?: string | null
+          has_verified_chip?: boolean | null
           health_answer_1?: string | null
           health_answer_2?: string | null
           id?: string
+          medical_completeness?: number | null
           notes?: string | null
           pet_id?: string | null
           pet_name: string
           pet_type?: string
           phone: string
+          quality_score?: number | null
+          quality_tier?: string | null
           selected_plan?: string | null
           status?: string
           updated_at?: string
@@ -4085,18 +4095,23 @@ export type Database = {
           admin_approved_by?: string | null
           admin_notes?: string | null
           age_years?: number | null
+          auto_pushed_at?: string | null
           breed?: string | null
           created_at?: string
           forwarded_at?: string | null
           forwarded_to_email?: string | null
+          has_verified_chip?: boolean | null
           health_answer_1?: string | null
           health_answer_2?: string | null
           id?: string
+          medical_completeness?: number | null
           notes?: string | null
           pet_id?: string | null
           pet_name?: string
           pet_type?: string
           phone?: string
+          quality_score?: number | null
+          quality_tier?: string | null
           selected_plan?: string | null
           status?: string
           updated_at?: string
@@ -10627,6 +10642,39 @@ export type Database = {
           duration_seconds?: number | null
           id?: string
           metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_engagement_logs: {
+        Row: {
+          created_at: string | null
+          id: string
+          interaction_count: number
+          last_visited_at: string | null
+          section: string
+          time_spent_seconds: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          interaction_count?: number
+          last_visited_at?: string | null
+          section: string
+          time_spent_seconds?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          interaction_count?: number
+          last_visited_at?: string | null
+          section?: string
+          time_spent_seconds?: number
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
