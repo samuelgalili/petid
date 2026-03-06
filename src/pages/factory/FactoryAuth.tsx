@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Factory, Package, TrendingUp, Shield, Loader2 } from "lucide-react";
@@ -34,29 +34,20 @@ const FactoryAuth = () => {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-
-      // Check if user has a supplier profile
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: supplier } = await (supabase as any)
-          .from("suppliers")
-          .select("id")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        if (supplier) {
-          navigate("/factory");
-        } else {
-          toast({ title: "אין פרופיל מפעל", description: "החשבון שלך לא משויך למפעל. אנא הירשם.", variant: "destructive" });
-          await supabase.auth.signOut();
-        }
-      }
+      navigate("/factory");
     } catch (err: any) {
       toast({ title: "שגיאה", description: err.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
+
+  // If already logged in, go straight to dashboard
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) navigate("/factory");
+    });
+  }, [navigate]);
 
   const handleRegister = async () => {
     if (!email || !password || !companyName || !contactName) {

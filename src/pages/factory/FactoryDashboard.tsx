@@ -39,18 +39,36 @@ const FactoryDashboard = () => {
         return;
       }
 
-      const { data, error } = await (supabase as any)
+      // Check if user is admin — admins can access the factory portal freely
+      const { data: adminRole } = await (supabase as any)
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      // Try to find a linked supplier profile
+      const { data } = await (supabase as any)
         .from("suppliers")
         .select("*")
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (error || !data) {
+      if (data) {
+        setSupplier(data);
+      } else if (adminRole) {
+        // Admin without supplier profile — show first supplier or create a virtual one
+        const { data: firstSupplier } = await (supabase as any)
+          .from("suppliers")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        setSupplier(firstSupplier || { id: "admin-view", name: "Admin View", verification_status: "verified" });
+      } else {
         navigate("/factory/auth");
         return;
       }
-
-      setSupplier(data);
 
       // Load stats
       const [productsRes, ordersRes, pendingRes, paymentsRes] = await Promise.all([
