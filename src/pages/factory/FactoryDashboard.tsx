@@ -16,6 +16,7 @@ import { FactoryOrdersList } from "@/components/factory/FactoryOrdersList";
 import { FactoryShipments } from "@/components/factory/FactoryShipments";
 import { FactoryFinancials } from "@/components/factory/FactoryFinancials";
 import { FactoryAnalytics } from "@/components/factory/FactoryAnalytics";
+import { FactoryApiSettings } from "@/components/factory/FactoryApiSettings";
 
 const FactoryDashboard = () => {
   const navigate = useNavigate();
@@ -45,13 +46,13 @@ const FactoryDashboard = () => {
       } else if (adminRole) {
         const { data: firstSupplier } = await (supabase as any)
           .from("suppliers").select("*").order("created_at", { ascending: false }).limit(1).maybeSingle();
-        setSupplier(firstSupplier || { id: "admin-view", name: "Admin View", verification_status: "verified" });
+        setSupplier(firstSupplier || { id: null, name: "Admin View", verification_status: "verified" });
       } else {
         navigate("/factory/auth"); return;
       }
 
-      const supplierId = data?.id || "admin-view";
-      if (supplierId !== "admin-view") {
+      const supplierId = data?.id || null;
+      if (supplierId) {
         const [productsRes, ordersRes, pendingRes, paymentsRes] = await Promise.all([
           (supabase as any).from("factory_product_submissions").select("id", { count: "exact", head: true }).eq("supplier_id", supplierId),
           (supabase as any).from("factory_orders").select("id", { count: "exact", head: true }).eq("supplier_id", supplierId),
@@ -160,6 +161,9 @@ const FactoryDashboard = () => {
             <TabsTrigger value="financials">
               <DollarSign className="w-4 h-4 mr-1.5" strokeWidth={1.5} /> Financials
             </TabsTrigger>
+            <TabsTrigger value="api">
+              <Settings className="w-4 h-4 mr-1.5" strokeWidth={1.5} /> API
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
@@ -179,6 +183,9 @@ const FactoryDashboard = () => {
           </TabsContent>
           <TabsContent value="financials">
             <FactoryFinancials supplierId={supplier?.id} />
+          </TabsContent>
+          <TabsContent value="api">
+            <FactoryApiSettings supplierId={supplier?.id} />
           </TabsContent>
         </Tabs>
       </main>

@@ -107,3 +107,9 @@ verify_jwt = false
 
 [functions.semantic-search]
 verify_jwt = false
+
+[functions.generate-factory-api-key]
+verify_jwt = false
+
+[functions.factory-api]
+verify_jwt = false

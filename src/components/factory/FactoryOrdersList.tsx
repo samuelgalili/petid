@@ -12,7 +12,7 @@ export const FactoryOrdersList = ({ supplierId }: Props) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!supplierId) return;
+    if (!supplierId) { setLoading(false); return; }
     (async () => {
       const { data } = await (supabase as any)
         .from("factory_orders").select("*")
