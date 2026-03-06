@@ -476,6 +476,17 @@ export const adminRoutes: RouteObject[] = [
 ];
 
 // ==========================================
+// FACTORY PORTAL MODULE
+// ==========================================
+const FactoryAuth = lazy(() => import("@/pages/factory/FactoryAuth"));
+const FactoryDashboard = lazy(() => import("@/pages/factory/FactoryDashboard"));
+
+export const factoryRoutes: RouteObject[] = [
+  { path: "/factory/auth", element: <LazyPage component={FactoryAuth} pageName="Factory Login" dark /> },
+  { path: "/factory", element: <LazyPage component={FactoryDashboard} pageName="Factory Dashboard" dark /> },
+];
+
+// ==========================================
 // ALL ROUTES COMBINED
 // ==========================================
 export const allRoutes: RouteObject[] = [
@@ -486,6 +497,7 @@ export const allRoutes: RouteObject[] = [
   ...userRoutes,
   ...businessRoutes,
   ...adminRoutes,
+  ...factoryRoutes,
   ...staticRoutes,
 ];
 
