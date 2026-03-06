@@ -11,7 +11,7 @@ export const FactoryAnalytics = ({ supplierId }: Props) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!supplierId) return;
+    if (!supplierId) { setLoading(false); return; }
     (async () => {
       const [products, approved, orders, payments] = await Promise.all([
         (supabase as any).from("factory_product_submissions").select("id", { count: "exact", head: true }).eq("supplier_id", supplierId),

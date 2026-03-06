@@ -16,7 +16,7 @@ export const FactoryShipments = ({ supplierId }: Props) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!supplierId) return;
+    if (!supplierId) { setLoading(false); return; }
     (async () => {
       const { data } = await (supabase as any)
         .from("factory_shipments").select("*")
