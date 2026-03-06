@@ -3947,6 +3947,50 @@ export type Database = {
         }
         Relationships: []
       }
+      factory_api_logs: {
+        Row: {
+          created_at: string | null
+          endpoint: string
+          id: string
+          ip_address: string | null
+          method: string
+          request_body: Json | null
+          response_summary: string | null
+          status_code: number | null
+          supplier_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          endpoint: string
+          id?: string
+          ip_address?: string | null
+          method: string
+          request_body?: Json | null
+          response_summary?: string | null
+          status_code?: number | null
+          supplier_id: string
+        }
+        Update: {
+          created_at?: string | null
+          endpoint?: string
+          id?: string
+          ip_address?: string | null
+          method?: string
+          request_body?: Json | null
+          response_summary?: string | null
+          status_code?: number | null
+          supplier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "factory_api_logs_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       factory_orders: {
         Row: {
           created_at: string
@@ -10788,8 +10832,11 @@ export type Database = {
       suppliers: {
         Row: {
           address: string | null
+          api_enabled: boolean | null
           api_endpoint: string | null
           api_key_encrypted: string | null
+          api_key_hash: string | null
+          api_key_prefix: string | null
           city: string | null
           company_description: string | null
           contact_name: string | null
@@ -10813,12 +10860,18 @@ export type Database = {
           updated_at: string
           user_id: string | null
           verification_status: string | null
+          webhook_enabled: boolean | null
+          webhook_secret: string | null
+          webhook_url: string | null
           website: string | null
         }
         Insert: {
           address?: string | null
+          api_enabled?: boolean | null
           api_endpoint?: string | null
           api_key_encrypted?: string | null
+          api_key_hash?: string | null
+          api_key_prefix?: string | null
           city?: string | null
           company_description?: string | null
           contact_name?: string | null
@@ -10842,12 +10895,18 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
           verification_status?: string | null
+          webhook_enabled?: boolean | null
+          webhook_secret?: string | null
+          webhook_url?: string | null
           website?: string | null
         }
         Update: {
           address?: string | null
+          api_enabled?: boolean | null
           api_endpoint?: string | null
           api_key_encrypted?: string | null
+          api_key_hash?: string | null
+          api_key_prefix?: string | null
           city?: string | null
           company_description?: string | null
           contact_name?: string | null
@@ -10871,6 +10930,9 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
           verification_status?: string | null
+          webhook_enabled?: boolean | null
+          webhook_secret?: string | null
+          webhook_url?: string | null
           website?: string | null
         }
         Relationships: []
