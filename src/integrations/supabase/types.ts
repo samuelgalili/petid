@@ -3947,6 +3947,275 @@ export type Database = {
         }
         Relationships: []
       }
+      factory_orders: {
+        Row: {
+          created_at: string
+          currency: string | null
+          estimated_delivery: string | null
+          id: string
+          items: Json | null
+          notes: string | null
+          order_number: string
+          shipping_address: string | null
+          shipping_method: string | null
+          status: string | null
+          supplier_id: string
+          total_amount: number | null
+          tracking_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string | null
+          estimated_delivery?: string | null
+          id?: string
+          items?: Json | null
+          notes?: string | null
+          order_number: string
+          shipping_address?: string | null
+          shipping_method?: string | null
+          status?: string | null
+          supplier_id: string
+          total_amount?: number | null
+          tracking_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string | null
+          estimated_delivery?: string | null
+          id?: string
+          items?: Json | null
+          notes?: string | null
+          order_number?: string
+          shipping_address?: string | null
+          shipping_method?: string | null
+          status?: string | null
+          supplier_id?: string
+          total_amount?: number | null
+          tracking_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "factory_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      factory_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string | null
+          id: string
+          order_id: string | null
+          paid_at: string | null
+          payment_method: string | null
+          reference_number: string | null
+          status: string | null
+          supplier_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string | null
+          id?: string
+          order_id?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          reference_number?: string | null
+          status?: string | null
+          supplier_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string | null
+          id?: string
+          order_id?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          reference_number?: string | null
+          status?: string | null
+          supplier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "factory_payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "factory_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "factory_payments_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      factory_product_submissions: {
+        Row: {
+          admin_notes: string | null
+          category: string | null
+          certifications: string[] | null
+          cost_price: number | null
+          created_at: string
+          description: string | null
+          id: string
+          images: string[] | null
+          ingredients: string | null
+          kcal_per_kg: number | null
+          life_stage: string | null
+          min_order_qty: number | null
+          name: string
+          pet_type: string | null
+          price: number
+          published_product_id: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          safety_data_sheet_url: string | null
+          status: string | null
+          supplier_id: string
+          updated_at: string
+          weight_kg: number | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          category?: string | null
+          certifications?: string[] | null
+          cost_price?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          images?: string[] | null
+          ingredients?: string | null
+          kcal_per_kg?: number | null
+          life_stage?: string | null
+          min_order_qty?: number | null
+          name: string
+          pet_type?: string | null
+          price: number
+          published_product_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          safety_data_sheet_url?: string | null
+          status?: string | null
+          supplier_id: string
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Update: {
+          admin_notes?: string | null
+          category?: string | null
+          certifications?: string[] | null
+          cost_price?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          images?: string[] | null
+          ingredients?: string | null
+          kcal_per_kg?: number | null
+          life_stage?: string | null
+          min_order_qty?: number | null
+          name?: string
+          pet_type?: string | null
+          price?: number
+          published_product_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          safety_data_sheet_url?: string | null
+          status?: string | null
+          supplier_id?: string
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "factory_product_submissions_published_product_id_fkey"
+            columns: ["published_product_id"]
+            isOneToOne: false
+            referencedRelation: "business_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "factory_product_submissions_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      factory_shipments: {
+        Row: {
+          carrier: string | null
+          created_at: string
+          customs_status: string | null
+          delivered_at: string | null
+          dimensions: string | null
+          id: string
+          order_id: string
+          shipped_at: string | null
+          status: string | null
+          supplier_id: string
+          tracking_number: string | null
+          updated_at: string
+          weight_kg: number | null
+        }
+        Insert: {
+          carrier?: string | null
+          created_at?: string
+          customs_status?: string | null
+          delivered_at?: string | null
+          dimensions?: string | null
+          id?: string
+          order_id: string
+          shipped_at?: string | null
+          status?: string | null
+          supplier_id: string
+          tracking_number?: string | null
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Update: {
+          carrier?: string | null
+          created_at?: string
+          customs_status?: string | null
+          delivered_at?: string | null
+          dimensions?: string | null
+          id?: string
+          order_id?: string
+          shipped_at?: string | null
+          status?: string | null
+          supplier_id?: string
+          tracking_number?: string | null
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "factory_shipments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "factory_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "factory_shipments_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feed_poll_votes: {
         Row: {
           created_at: string
@@ -10522,7 +10791,9 @@ export type Database = {
           api_endpoint: string | null
           api_key_encrypted: string | null
           city: string | null
+          company_description: string | null
           contact_name: string | null
+          country: string | null
           created_at: string
           email: string | null
           id: string
@@ -10533,17 +10804,25 @@ export type Database = {
           notes: string | null
           payment_terms: string | null
           phone: string | null
+          rating: number | null
           shipping_days: number | null
           supplier_type: string
           tax_id: string | null
+          total_orders: number | null
+          total_products: number | null
           updated_at: string
+          user_id: string | null
+          verification_status: string | null
+          website: string | null
         }
         Insert: {
           address?: string | null
           api_endpoint?: string | null
           api_key_encrypted?: string | null
           city?: string | null
+          company_description?: string | null
           contact_name?: string | null
+          country?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -10554,17 +10833,25 @@ export type Database = {
           notes?: string | null
           payment_terms?: string | null
           phone?: string | null
+          rating?: number | null
           shipping_days?: number | null
           supplier_type?: string
           tax_id?: string | null
+          total_orders?: number | null
+          total_products?: number | null
           updated_at?: string
+          user_id?: string | null
+          verification_status?: string | null
+          website?: string | null
         }
         Update: {
           address?: string | null
           api_endpoint?: string | null
           api_key_encrypted?: string | null
           city?: string | null
+          company_description?: string | null
           contact_name?: string | null
+          country?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -10575,10 +10862,16 @@ export type Database = {
           notes?: string | null
           payment_terms?: string | null
           phone?: string | null
+          rating?: number | null
           shipping_days?: number | null
           supplier_type?: string
           tax_id?: string | null
+          total_orders?: number | null
+          total_products?: number | null
           updated_at?: string
+          user_id?: string | null
+          verification_status?: string | null
+          website?: string | null
         }
         Relationships: []
       }
