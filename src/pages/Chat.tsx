@@ -683,26 +683,29 @@ const ChatContent = () => {
               </motion.div>
             )}
 
-            {/* Typing indicator — WhatsApp style */}
+            {/* Typing indicator — Gemini style */}
             {isTyping && !showInsuranceLoading && (
               <motion.div
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex justify-end mb-2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="py-5 px-4 bg-muted/30"
               >
-                <div className="px-4 py-2.5 bg-[hsl(var(--chat-bubble-ai))] rounded-xl rounded-tl-[4px] shadow-sm">
-                  <div className="flex items-center gap-1">
-                    {[0, 1, 2].map((i) => (
-                      <motion.div
-                        key={i}
-                        className="w-2 h-2 rounded-full bg-muted-foreground/40"
-                        animate={{ 
-                          y: [0, -4, 0],
-                          backgroundColor: ['hsl(210 10% 60%)', 'hsl(204 100% 48%)', 'hsl(210 10% 60%)']
-                        }}
-                        transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15 }}
-                      />
-                    ))}
+                <div className="max-w-2xl mx-auto flex gap-3 items-start">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-3.5 h-3.5 text-primary-foreground" />
+                  </div>
+                  <div className="pt-1">
+                    <p className="text-[12px] font-semibold text-muted-foreground mb-2">Petid AI</p>
+                    <div className="flex items-center gap-1.5">
+                      {[0, 1, 2].map((i) => (
+                        <motion.div
+                          key={i}
+                          className="w-2 h-2 rounded-full bg-primary/40"
+                          animate={{ scale: [1, 1.4, 1], opacity: [0.4, 1, 0.4] }}
+                          transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
               </motion.div>
