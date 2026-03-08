@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Image as ImageIcon, Mic, Sparkles, X, Plus, Camera, MapPin, Calendar, Check, PawPrint } from "lucide-react";
+import { Send, Mic, X, Plus, Camera, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
