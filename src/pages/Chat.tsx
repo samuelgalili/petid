@@ -290,7 +290,7 @@ const ChatContent = () => {
     // Hide categories when user types freely
     setShowCategories(false);
 
-    const userMessage: Message = { role: "user", content: input.trim() };
+    const userMessage: Message = { role: "user", content: input.trim(), timestamp: new Date().toISOString() };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
