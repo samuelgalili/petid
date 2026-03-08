@@ -481,7 +481,7 @@ export const SignupForm = () => {
               dir="ltr"
             />
             {(signupMethod === "email" ? fieldErrors.email : fieldErrors.phone) && (
-              <p className="text-xs text-red-500 mt-1">
+              <p className="text-xs text-destructive mt-1">
                 {signupMethod === "email" ? fieldErrors.email : fieldErrors.phone}
               </p>
             )}
