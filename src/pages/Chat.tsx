@@ -648,10 +648,9 @@ const ChatContent = () => {
                     {message.role === "assistant" && index > 0 && !isTyping && (
                       <MessageFeedback messageContent={message.content} messageIndex={index} />
                     )}
+                  </div>
                 </div>
               </motion.div>
-              </div>
-              );
             })}
 
             {/* Date Picker */}
