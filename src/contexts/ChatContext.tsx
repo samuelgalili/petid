@@ -179,7 +179,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           const petBreed = petData?.breed;
           
           let greeting = `היי ${firstName}! מה שלום ${pets[0].name}? 🐾\n\nאיך אוכל לעזור היום?`;
-          
+          const now = new Date().toISOString();
           // Proactive updates
           const updates: string[] = [];
           
