@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronRight, Sparkles, MessageCircle } from "lucide-react";
+import { ChevronRight, Sparkles, MessageCircle, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import petidIcon from "@/assets/petid-icon.png";
 import BottomNav from "@/components/BottomNav";
