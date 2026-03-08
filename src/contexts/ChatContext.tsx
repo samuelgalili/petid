@@ -432,7 +432,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               if (last?.role === "assistant") {
                 return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantContent } : m);
               }
-              return [...prev, { role: "assistant", content: assistantContent }];
+              return [...prev, { role: "assistant", content: assistantContent, timestamp: new Date().toISOString() }];
             });
           }
         } catch {
