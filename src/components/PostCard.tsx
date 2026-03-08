@@ -97,7 +97,7 @@ const sidebarStagger = {
   }),
 };
 
-export const PostCard = ({
+export const PostCard = memo(({
   post,
   currentUserId,
   currentUserAvatar,
