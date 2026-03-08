@@ -423,6 +423,12 @@ const ChatContent = () => {
                         {cleanAllTags(message.content)}
                       </p>
                     </div>
+                    {/* Timestamp */}
+                    {message.timestamp && (
+                      <span className={`text-[10px] text-muted-foreground/50 mt-0.5 ${message.role === "user" ? "self-start" : "self-end"}`}>
+                        {new Date(message.timestamp).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    )}
                     
                     {/* Action Buttons */}
                     {message.role === "assistant" && extractActionTags(message.content).length > 0 && (
