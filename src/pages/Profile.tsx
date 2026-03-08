@@ -309,46 +309,53 @@ const Profile = () => {
                 exit={{ opacity: 0, y: 60 }}
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
               >
-                {/* Compact Pet Header */}
+                {/* ── Premium Pet Header ── */}
                 {selectedPet && (
                   <motion.div
-                    className="flex items-center gap-3 py-3"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.1 }}
+                    className="flex items-center gap-3.5 py-4 mb-1"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.05, duration: 0.35 }}
                   >
+                    {/* Pet Avatar — Large, clean */}
                     <motion.div
-                      className="w-12 h-12 rounded-full overflow-hidden bg-muted shrink-0 border-2 border-primary/20"
-                      whileTap={{ scale: 0.95 }}
+                      className="relative shrink-0"
+                      whileTap={{ scale: 0.93 }}
                       onClick={triggerHeartRain}
                     >
-                      {selectedPet.avatar_url ? (
-                        <img src={selectedPet.avatar_url} alt={selectedPet.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <img src={selectedPet.type === 'dog' ? dogIcon : catIcon} alt={selectedPet.type} className="w-6 h-6 opacity-60" />
-                        </div>
-                      )}
+                      <div className="w-14 h-14 rounded-2xl overflow-hidden bg-muted shadow-sm">
+                        {selectedPet.avatar_url ? (
+                          <img src={selectedPet.avatar_url} alt={selectedPet.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-muted">
+                            <img src={selectedPet.type === 'dog' ? dogIcon : catIcon} alt={selectedPet.type} className="w-7 h-7 opacity-50" />
+                          </div>
+                        )}
+                      </div>
                     </motion.div>
 
+                    {/* Pet Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-bold text-foreground text-base truncate">{selectedPet.name}</h3>
-                        <PetWeatherAlert petType={selectedPet.type} petName={selectedPet.name} />
-                      </div>
-                      <p className="text-xs text-muted-foreground truncate">
+                      <h2 className="text-lg font-bold text-foreground tracking-tight truncate">
+                        {selectedPet.name}
+                      </h2>
+                      <p className="text-[13px] text-muted-foreground/60 truncate mt-0.5">
                         {selectedPet.breed || (selectedPet.type === 'dog' ? 'כלב' : 'חתול')}
                         {selectedPet.age_years ? ` · ${selectedPet.age_years} שנים` : ''}
                       </p>
                     </div>
 
-                    <button
-                      onClick={() => navigate(`/edit-pet/${selectedPet.id}`)}
-                      className="p-2 rounded-full hover:bg-muted transition-colors"
-                      aria-label="ערוך"
-                    >
-                      <Edit3 className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
-                    </button>
+                    {/* Weather + Edit */}
+                    <div className="flex items-center gap-1">
+                      <PetWeatherAlert petType={selectedPet.type} petName={selectedPet.name} />
+                      <button
+                        onClick={() => navigate(`/edit-pet/${selectedPet.id}`)}
+                        className="p-2.5 rounded-xl hover:bg-muted/50 transition-colors"
+                        aria-label="ערוך"
+                      >
+                        <Edit3 className="w-4 h-4 text-muted-foreground/50" strokeWidth={1.5} />
+                      </button>
+                    </div>
                   </motion.div>
                 )}
 
