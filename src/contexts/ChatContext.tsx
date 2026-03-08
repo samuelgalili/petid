@@ -486,7 +486,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   /** Send a message programmatically */
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim() || isLoading) return;
-    const userMessage: Message = { role: "user", content };
+    const userMessage: Message = { role: "user", content, timestamp: new Date().toISOString() };
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
     try {
