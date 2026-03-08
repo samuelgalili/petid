@@ -1,4 +1,4 @@
-# Petid Robots.txt
+# PetID Robots.txt
 # https://petid.lovable.app
 
 User-agent: Googlebot
@@ -31,15 +31,19 @@ User-agent: *
 Allow: /
 Crawl-delay: 2
 
-# Block admin pages from indexing
+# Block admin & factory pages
 Disallow: /admin/
 Disallow: /admin/*
+Disallow: /factory/
+Disallow: /factory/*
 
 # Block user-specific pages
 Disallow: /messages/
 Disallow: /settings
 Disallow: /edit-profile
+Disallow: /edit-pet/
 Disallow: /privacy-settings
+Disallow: /checkout
+Disallow: /cart
 
-# Sitemap location
 Sitemap: https://petid.lovable.app/sitemap.xml
