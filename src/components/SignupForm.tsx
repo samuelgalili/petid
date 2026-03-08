@@ -348,7 +348,7 @@ export const SignupForm = () => {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg text-center"
+          className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg text-center"
         >
           {generalError}
         </motion.div>
