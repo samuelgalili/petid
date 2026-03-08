@@ -638,7 +638,9 @@ const ChatContent = () => {
                   </div>
                 </div>
               </motion.div>
-            ))}
+              </div>
+              );
+            })}
 
             {/* Date Picker */}
             {showDatePicker && (
