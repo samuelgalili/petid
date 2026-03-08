@@ -413,7 +413,7 @@ export const SignupForm = () => {
               autoComplete="name"
             />
             {fieldErrors.fullName && (
-              <p className="text-xs text-red-500 mt-1">{fieldErrors.fullName}</p>
+              <p className="text-xs text-destructive mt-1">{fieldErrors.fullName}</p>
             )}
           </div>
 
