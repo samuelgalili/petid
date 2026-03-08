@@ -188,7 +188,7 @@ function getStructuredData(props: {
         datePublished: props.publishedTime,
         author: {
           '@type': 'Person',
-          name: props.author || 'Petid',
+          name: props.author || 'PetID',
         },
         publisher: {
           '@type': 'Organization',
