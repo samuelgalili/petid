@@ -220,7 +220,7 @@ function getStructuredData(props: {
         url: props.url,
         isPartOf: {
           '@type': 'WebSite',
-          name: 'Petid',
+          name: 'PetID',
           url: 'https://petid.lovable.app',
         },
       };
