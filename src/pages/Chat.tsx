@@ -330,61 +330,51 @@ const ChatContent = () => {
     <div className="min-h-screen bg-background pb-[calc(5rem+env(safe-area-inset-bottom,0px))]" dir="rtl" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
       <SEO title="צ'אט AI" description="שאלו את העוזר החכם שלנו כל שאלה על חיות מחמד - אילוף, תזונה, בריאות" url="/chat" />
       
-      {/* ═══ WhatsApp Pro Header ═══ */}
-      <div className="sticky top-0 z-50 bg-primary">
-        <div className="flex items-center gap-3 px-3 py-2.5">
+      {/* ═══ Gemini-style minimal header ═══ */}
+      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/40">
+        <div className="flex items-center justify-between px-4 py-3">
           <button 
             onClick={() => navigate("/feed")}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-primary-foreground/10 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted/60 transition-colors"
             aria-label="חזרה"
           >
-            <ChevronRight className="w-5 h-5 text-primary-foreground" />
+            <ChevronRight className="w-5 h-5 text-foreground" />
           </button>
           
-          {/* AI Avatar */}
-          <div className="relative">
-            <div className="w-9 h-9 rounded-full bg-primary-foreground/15 flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-primary-foreground" />
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+              <Sparkles className="w-3.5 h-3.5 text-primary-foreground" />
             </div>
-            <motion.div
-              animate={{ scale: [1, 1.3, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-success border-2 border-primary"
-            />
+            <span className="text-[15px] font-semibold text-foreground">Petid AI</span>
           </div>
           
-          <div className="flex-1 min-w-0">
-            <h1 className="text-[15px] font-bold text-primary-foreground leading-tight">Petid AI</h1>
-            <p className="text-[11px] text-primary-foreground/70 leading-tight">
-              {selectedPet ? `מומחה ל${selectedPet.name}` : "המומחה שלך"}
-            </p>
-          </div>
+          <div className="w-8" />
         </div>
         
-        {/* Tab Switcher — compact, inside header */}
-        <div className="flex px-4 gap-1">
+        {/* Tab Switcher — subtle underline style */}
+        <div className="flex px-6">
           <button
             onClick={() => setActiveHubTab("scientist")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-[13px] font-semibold transition-colors relative ${
-              activeHubTab === "scientist" ? "text-primary-foreground" : "text-primary-foreground/50"
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-[13px] font-medium transition-colors relative ${
+              activeHubTab === "scientist" ? "text-foreground" : "text-muted-foreground"
             }`}
           >
             <Sparkles className="w-3 h-3" />
             המומחה
             {activeHubTab === "scientist" && (
-              <motion.div layoutId="hub-tab-indicator" className="absolute bottom-0 inset-x-6 h-[2.5px] bg-primary-foreground rounded-full" />
+              <motion.div layoutId="hub-tab-indicator" className="absolute bottom-0 inset-x-4 h-[2px] bg-primary rounded-full" />
             )}
           </button>
           <button
             onClick={() => setActiveHubTab("messages")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-[13px] font-semibold transition-colors relative ${
-              activeHubTab === "messages" ? "text-primary-foreground" : "text-primary-foreground/50"
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-[13px] font-medium transition-colors relative ${
+              activeHubTab === "messages" ? "text-foreground" : "text-muted-foreground"
             }`}
           >
             <MessageCircle className="w-3 h-3" />
             הודעות
             {activeHubTab === "messages" && (
-              <motion.div layoutId="hub-tab-indicator" className="absolute bottom-0 inset-x-6 h-[2.5px] bg-primary-foreground rounded-full" />
+              <motion.div layoutId="hub-tab-indicator" className="absolute bottom-0 inset-x-4 h-[2px] bg-primary rounded-full" />
             )}
           </button>
         </div>
@@ -397,60 +387,55 @@ const ChatContent = () => {
         </div>
       )}
 
-      {/* Scientist Tab */}
+      {/* Scientist Tab — ChatGPT/Gemini style */}
       {activeHubTab === "scientist" && (
-      <div className="flex flex-col h-[calc(100dvh-130px-env(safe-area-inset-bottom,0px))]">
-        {/* Messages Container — subtle tinted background */}
+      <div className="flex flex-col h-[calc(100dvh-120px-env(safe-area-inset-bottom,0px))]">
+        {/* Messages Container — clean white/dark bg */}
         <div 
           ref={messagesContainerRef} 
           onScroll={handleMessagesScroll} 
-          className="flex-1 overflow-y-auto px-3 py-3 overflow-x-hidden relative"
-          style={{ 
-            backgroundColor: 'hsl(var(--chat-bg))',
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' width='40' height='40'%3E%3Ctext x='10' y='28' font-size='14' opacity='0.025'%3E🐾%3C/text%3E%3C/svg%3E")`, 
-            backgroundSize: '60px 60px' 
-          }}
+          className="flex-1 overflow-y-auto overflow-x-hidden"
         >
+          <div className="max-w-2xl mx-auto">
           <AnimatePresence>
             {messages.map((message, index) => {
-              // Time separator
-              const showTimeSep = index > 0 && message.role !== messages[index - 1].role && index % 4 === 0;
               const isUser = message.role === "user";
 
               return (
-              <div key={index}>
-                {showTimeSep && (
-                  <div className="flex items-center justify-center my-3">
-                    <span className="text-[11px] text-muted-foreground bg-card/90 px-3 py-1 rounded-lg shadow-sm">
-                      {new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                )}
               <motion.div
-                initial={{ opacity: 0, y: 6 }}
+                key={index}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.15, ease: "easeOut" }}
-                className={`flex mb-1.5 ${isUser ? "justify-start" : "justify-end"}`}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className={`py-5 px-4 ${!isUser ? "bg-muted/30" : ""}`}
               >
-                <div className={`flex flex-col gap-1 min-w-0 overflow-hidden ${hasExpandedContent(message) ? 'max-w-full w-full' : 'max-w-[82%]'}`}>
-                  {/* WhatsApp-style bubble with tail */}
-                  <div
-                    className={`px-3.5 py-2 relative ${
-                      isUser
-                        ? "bg-[hsl(var(--chat-bubble-user))] text-foreground rounded-xl rounded-tr-[4px] shadow-sm"
-                        : "bg-[hsl(var(--chat-bubble-ai))] text-foreground rounded-xl rounded-tl-[4px] shadow-sm"
-                    }`}
-                  >
-                    <p className="text-[14.5px] leading-[1.45] whitespace-pre-wrap break-words">
-                      {cleanAllTags(message.content)}
-                    </p>
-                    {/* Inline timestamp */}
-                    {message.timestamp && (
-                      <span className={`text-[10px] text-muted-foreground/60 float-left ml-1 mt-1 leading-none select-none`}>
-                        {new Date(message.timestamp).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
-                      </span>
+                <div className="flex gap-3 items-start">
+                  {/* Icon */}
+                  <div className="flex-shrink-0 mt-0.5">
+                    {isUser ? (
+                      <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center">
+                        <span className="text-xs font-bold text-primary">
+                          {selectedPet?.name?.charAt(0) || "א"}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                        <Sparkles className="w-3.5 h-3.5 text-primary-foreground" />
+                      </div>
                     )}
                   </div>
+                  
+                  {/* Content */}
+                  <div className={`flex-1 min-w-0 ${hasExpandedContent(message) ? 'max-w-full' : ''}`}>
+                    {/* Role label */}
+                    <p className="text-[12px] font-semibold text-muted-foreground mb-1">
+                      {isUser ? "את/ה" : "Petid AI"}
+                    </p>
+                    
+                    {/* Message text — no bubble, clean prose */}
+                    <div className="text-[15px] leading-[1.7] text-foreground whitespace-pre-wrap break-words">
+                      {cleanAllTags(message.content)}
+                    </div>
                     
                     {/* Action Buttons */}
                     {message.role === "assistant" && extractActionTags(message.content).length > 0 && (
