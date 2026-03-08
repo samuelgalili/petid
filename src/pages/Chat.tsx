@@ -54,7 +54,7 @@ const ChatContent = () => {
   const [showScrollDown, setShowScrollDown] = useState(false);
   const lastScrollTop = useRef(0);
 
-  // Auto-hide header on scroll down, show on scroll up
+  // Auto-hide header on scroll down, show on scroll up + scroll-to-bottom detection
   const handleMessagesScroll = useCallback(() => {
     const el = messagesContainerRef.current;
     if (!el) return;
@@ -64,6 +64,9 @@ const ChatContent = () => {
     } else {
       setHeaderHidden(false);
     }
+    // Show scroll-to-bottom button when not near bottom
+    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    setShowScrollDown(distFromBottom > 200);
     lastScrollTop.current = st;
   }, []);
 
