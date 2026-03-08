@@ -23,8 +23,8 @@ interface SEOProps {
 
 const BASE_URL = 'https://petid.lovable.app';
 const DEFAULT_IMAGE = 'https://petid.lovable.app/pwa-512x512.png';
-const SITE_NAME = 'Petid';
-const DEFAULT_DESCRIPTION = 'Petid — האפליקציה לחיים עם חיית המחמד שלך 🐶✨ שמרו רגעים, עקבו אחר טיפול, קבלו תזכורות וגלו מקומות ידידותיים לחיות מחמד.';
+const SITE_NAME = 'PetID';
+const DEFAULT_DESCRIPTION = 'PetID — האפליקציה לחיים עם חיית המחמד שלך 🐶✨ ניהול בריאות, תזונה מותאמת, קהילה וחנות חכמה.';
 
 export const SEO = ({
   title,
