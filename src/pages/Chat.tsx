@@ -690,6 +690,21 @@ const ChatContent = () => {
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Scroll to bottom FAB */}
+        <AnimatePresence>
+          {showScrollDown && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              onClick={scrollToBottom}
+              className="absolute left-1/2 -translate-x-1/2 bottom-24 z-30 w-9 h-9 rounded-full bg-card/90 backdrop-blur-md border border-border/40 shadow-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+              whileTap={{ scale: 0.9 }}
+            >
+              <ChevronDown className="w-5 h-5" />
+            </motion.button>
+          )}
+        </AnimatePresence>
 
         {/* Input Area */}
         <ChatInputBar
