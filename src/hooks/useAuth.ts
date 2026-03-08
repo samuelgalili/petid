@@ -40,10 +40,34 @@ export const useAuth = () => {
   }, []);
 
   const signIn = async (email: string, password: string, rememberMe: boolean) => {
+    // Rate limiting: max 5 attempts per 60 seconds
+    const now = Date.now();
+    const attemptsKey = "login_attempts";
+    const windowMs = 60000;
+    const maxAttempts = 5;
+    
+    try {
+      const stored = JSON.parse(localStorage.getItem(attemptsKey) || '{"c":0,"t":0}');
+      if (now - stored.t < windowMs && stored.c >= maxAttempts) {
+        const waitSec = Math.ceil((windowMs - (now - stored.t)) / 1000);
+        return { data: { user: null, session: null }, error: { message: `יותר מדי ניסיונות. נסה שוב בעוד ${waitSec} שניות`, status: 429 } as any };
+      }
+      if (now - stored.t >= windowMs) {
+        localStorage.setItem(attemptsKey, JSON.stringify({ c: 1, t: now }));
+      } else {
+        localStorage.setItem(attemptsKey, JSON.stringify({ c: stored.c + 1, t: stored.t }));
+      }
+    } catch { /* ignore localStorage errors */ }
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+
+    // Reset counter on success
+    if (!error && data.session) {
+      localStorage.removeItem(attemptsKey);
+    }
 
     // Store remember me preference
     if (rememberMe && data.session) {
