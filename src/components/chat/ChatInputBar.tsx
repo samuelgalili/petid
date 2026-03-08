@@ -347,7 +347,7 @@ const ChatInputBar = ({
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="mt-2 overflow-hidden"
+              className="mt-2 overflow-hidden max-w-2xl mx-auto"
             >
               <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 px-1">
                 {["🐕 מידע על הכלב שלי", "💉 תזכורת חיסונים", "🍖 המלצות מזון"].map((suggestion, i) => (
