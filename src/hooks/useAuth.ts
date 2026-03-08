@@ -40,7 +40,7 @@ export const useAuth = () => {
   }, []);
 
   const signIn = async (email: string, password: string, rememberMe: boolean) => {
-    // Rate limiting: max 5 attempts per 60 seconds
+    // Client-side rate limiting (first defense layer)
     const now = Date.now();
     const attemptsKey = "login_attempts";
     const windowMs = 60000;
@@ -59,14 +59,40 @@ export const useAuth = () => {
       }
     } catch { /* ignore localStorage errors */ }
 
+    // Server-side rate limiting (second defense layer)
+    try {
+      const guardResp = await supabase.functions.invoke('auth-guard', {
+        body: {
+          action: 'check',
+          ip_address: await getClientIP(),
+        },
+      });
+
+      if (guardResp.data && !guardResp.data.allowed) {
+        const retryAfter = guardResp.data.retry_after || 60;
+        return {
+          data: { user: null, session: null },
+          error: { message: `חשבונך נחסם זמנית. נסה שוב בעוד ${Math.ceil(retryAfter / 60)} דקות.`, status: 429 } as any,
+        };
+      }
+    } catch {
+      // Fail open — don't block on network errors
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    // Reset counter on success
+    // Reset counters on success
     if (!error && data.session) {
       localStorage.removeItem(attemptsKey);
+      // Reset server-side rate limit
+      try {
+        await supabase.functions.invoke('auth-guard', {
+          body: { action: 'reset', ip_address: await getClientIP() },
+        });
+      } catch { /* non-critical */ }
     }
 
     // Store remember me preference
