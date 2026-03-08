@@ -192,7 +192,7 @@ function getStructuredData(props: {
         },
         publisher: {
           '@type': 'Organization',
-          name: 'Petid',
+          name: 'PetID',
           logo: {
             '@type': 'ImageObject',
             url: 'https://petid.lovable.app/pwa-512x512.png',
