@@ -307,12 +307,14 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── Dispatch push notifications for each inserted notification ──
+    // ── Dispatch push + WhatsApp notifications ──
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     let pushSent = 0;
+    let whatsappSent = 0;
 
     for (const target of pushTargets) {
+      // Push notification
       try {
         const resp = await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
           method: 'POST',
@@ -326,15 +328,42 @@ Deno.serve(async (req) => {
           }),
         });
         if (resp.ok) pushSent++;
-        // Consume body to avoid leaks
         await resp.text();
       } catch (e) {
         console.error(`Push dispatch failed for ${target.user_id}:`, e);
       }
+
+      // WhatsApp notification (only for urgent/medical triggers)
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('phone, whatsapp_opt_in')
+          .eq('id', target.user_id)
+          .maybeSingle();
+
+        if (profile?.phone && profile?.whatsapp_opt_in) {
+          const waResp = await fetch(`${supabaseUrl}/functions/v1/whatsapp-webhook`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${serviceKey}`,
+            },
+            body: JSON.stringify({
+              action: 'send',
+              to: profile.phone,
+              text: `${target.title}\n${target.body}`,
+            }),
+          });
+          if (waResp.ok) whatsappSent++;
+          await waResp.text();
+        }
+      } catch (e) {
+        console.error(`WhatsApp dispatch failed for ${target.user_id}:`, e);
+      }
     }
 
     return new Response(
-      JSON.stringify({ success: true, generated: notifications.length, inserted, pushSent }),
+      JSON.stringify({ success: true, generated: notifications.length, inserted, pushSent, whatsappSent }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {

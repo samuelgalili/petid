@@ -496,4 +496,6 @@ export const PostCard = memo(({
       </AlertDialog>
     </article>
   );
-};
+});
+
+PostCard.displayName = 'PostCard';
