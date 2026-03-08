@@ -453,7 +453,7 @@ export const SignupForm = () => {
               </PopoverContent>
             </Popover>
             {fieldErrors.birthdate && (
-              <p className="text-xs text-red-500 mt-1">{fieldErrors.birthdate}</p>
+              <p className="text-xs text-destructive mt-1">{fieldErrors.birthdate}</p>
             )}
             <p className="text-xs text-muted-foreground mt-1">חובה להיות מעל גיל 13</p>
           </div>
