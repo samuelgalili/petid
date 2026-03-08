@@ -474,8 +474,8 @@ export const SignupForm = () => {
                 }
               }}
               disabled={loading}
-              className={`h-10 bg-gray-50 border border-gray-300 rounded-lg text-sm placeholder:text-gray-400 focus:border-gray-400 focus:ring-0 ${
-                (signupMethod === "email" ? fieldErrors.email : fieldErrors.phone) ? "border-red-400" : ""
+              className={`h-10 bg-muted/50 border border-border rounded-lg text-sm placeholder:text-muted-foreground focus:border-primary/50 focus:ring-0 transition-colors ${
+                (signupMethod === "email" ? fieldErrors.email : fieldErrors.phone) ? "border-destructive" : ""
               }`}
               autoComplete={signupMethod === "email" ? "email" : "tel"}
               dir="ltr"
