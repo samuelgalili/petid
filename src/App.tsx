@@ -32,7 +32,6 @@ import { FlyingCartProvider } from "@/components/FlyingCartAnimation";
 
 // Global Components
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { HelmetProvider } from "react-helmet-async";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { OfflineBadge } from "@/components/OfflineBadge";
 import { LoginPromptDialog } from "@/components/LoginPromptDialog";
