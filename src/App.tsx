@@ -149,15 +149,17 @@ const GlobalProviders = ({ children }: { children: React.ReactNode }) => (
  */
 const App = () => {
   return (
-    <ErrorBoundary>
-      <GlobalProviders>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AnimatedRoutes />
-        </BrowserRouter>
-      </GlobalProviders>
-    </ErrorBoundary>
+    <HelmetProvider>
+      <ErrorBoundary>
+        <GlobalProviders>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AnimatedRoutes />
+          </BrowserRouter>
+        </GlobalProviders>
+      </ErrorBoundary>
+    </HelmetProvider>
   );
 };
 
