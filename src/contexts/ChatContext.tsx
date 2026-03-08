@@ -160,16 +160,18 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         if (pets.length === 1) {
           setSelectedPet(pets[0]);
           
-          // Fetch medical context + recent events for proactive greeting
-          const [petDataResult, recentEventsResult, recentDocsResult] = await Promise.all([
+          // Fetch medical context + recent events + unread notifications for proactive greeting
+          const [petDataResult, recentEventsResult, recentDocsResult, unreadNotifsResult] = await Promise.all([
             (supabase as any).from("pets").select("medical_conditions, health_notes, weight, breed, city").eq("id", pets[0].id).maybeSingle(),
             (supabase as any).from("system_events").select("title, description, created_at").order("created_at", { ascending: false }).limit(3),
             (supabase as any).from("admin_data_sources").select("title, extracted_data, created_at").eq("is_processed", true).order("created_at", { ascending: false }).limit(1),
+            supabase.from("notifications").select("id, title, message, type, category, data, created_at").eq("user_id", user.id).eq("is_read", false).order("created_at", { ascending: false }).limit(5),
           ]);
 
           const petData = petDataResult.data;
           const recentEvents = recentEventsResult.data || [];
           const recentDoc = recentDocsResult.data?.[0];
+          const unreadNotifs = (unreadNotifsResult.data || []) as Array<{ id: string; title: string; message: string; type: string; category: string | null; data: any; created_at: string }>;
           
           const conditions = petData?.medical_conditions as string[] | null;
           const petWeight = petData?.weight;
@@ -219,6 +221,58 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           }
           
           setMessages([{ role: "assistant", content: greeting }]);
+
+          // ─── Proactive Agent Notifications (delayed bubble) ───
+          if (unreadNotifs.length > 0) {
+            const NOTIF_ICON_MAP: Record<string, string> = {
+              medical: "💉", insurance: "🛡️", care: "🎉", shop: "🍖",
+            };
+
+            // Build proactive messages grouped by urgency
+            const urgentNotifs = unreadNotifs.filter(n => 
+              n.type === "medical" || (n.data as any)?.trigger === "restock_alert"
+            );
+            const otherNotifs = unreadNotifs.filter(n => 
+              n.type !== "medical" && (n.data as any)?.trigger !== "restock_alert"
+            );
+
+            const buildNotifMessage = (notifs: typeof unreadNotifs, prefix: string): string => {
+              const lines = notifs.map(n => {
+                const icon = NOTIF_ICON_MAP[n.type] || "📌";
+                return `${icon} ${n.message}`;
+              });
+              return `${prefix}\n\n${lines.join("\n")}`;
+            };
+
+            // Show urgent notifications after 1.5s delay
+            if (urgentNotifs.length > 0) {
+              setTimeout(() => {
+                setMessages(prev => [...prev, {
+                  role: "assistant",
+                  content: buildNotifMessage(urgentNotifs, `${firstName}, יש כמה דברים שחשוב שתדע/י:`),
+                  suggestions: urgentNotifs.some(n => n.type === "medical") 
+                    ? ["קבע תור לוטרינר", "הצג פרטים"] 
+                    : urgentNotifs.some(n => (n.data as any)?.trigger === "restock_alert")
+                      ? ["הזמן מזון חדש", "הצג פרטים"]
+                      : undefined,
+                }]);
+              }, 1500);
+            }
+
+            // Show other notifications after 3s delay (only if there are some)
+            if (otherNotifs.length > 0) {
+              setTimeout(() => {
+                setMessages(prev => [...prev, {
+                  role: "assistant",
+                  content: buildNotifMessage(otherNotifs, "ועוד עדכונים:"),
+                }]);
+              }, urgentNotifs.length > 0 ? 3500 : 1500);
+            }
+
+            // Mark displayed notifications as read
+            const notifIds = unreadNotifs.map(n => n.id);
+            supabase.from("notifications").update({ is_read: true } as any).in("id", notifIds).then(() => {});
+          }
         } else {
           setMessages([{
             role: "assistant",
