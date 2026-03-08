@@ -23,8 +23,8 @@ interface SEOProps {
 
 const BASE_URL = 'https://petid.lovable.app';
 const DEFAULT_IMAGE = 'https://petid.lovable.app/pwa-512x512.png';
-const SITE_NAME = 'Petid';
-const DEFAULT_DESCRIPTION = 'Petid — האפליקציה לחיים עם חיית המחמד שלך 🐶✨ שמרו רגעים, עקבו אחר טיפול, קבלו תזכורות וגלו מקומות ידידותיים לחיות מחמד.';
+const SITE_NAME = 'PetID';
+const DEFAULT_DESCRIPTION = 'PetID — האפליקציה לחיים עם חיית המחמד שלך 🐶✨ ניהול בריאות, תזונה מותאמת, קהילה וחנות חכמה.';
 
 export const SEO = ({
   title,
@@ -188,11 +188,11 @@ function getStructuredData(props: {
         datePublished: props.publishedTime,
         author: {
           '@type': 'Person',
-          name: props.author || 'Petid',
+          name: props.author || 'PetID',
         },
         publisher: {
           '@type': 'Organization',
-          name: 'Petid',
+          name: 'PetID',
           logo: {
             '@type': 'ImageObject',
             url: 'https://petid.lovable.app/pwa-512x512.png',
@@ -220,7 +220,7 @@ function getStructuredData(props: {
         url: props.url,
         isPartOf: {
           '@type': 'WebSite',
-          name: 'Petid',
+          name: 'PetID',
           url: 'https://petid.lovable.app',
         },
       };
@@ -231,7 +231,7 @@ function getStructuredData(props: {
 export const SEO_CONFIG: Record<string, SEOProps> = {
   '/': {
     title: 'בית',
-    description: 'נהלו את חיית המחמד שלכם בקלות - ביטוח, טיפוח, אימונים ועוד',
+    description: 'נהלו את חיית המחמד שלכם בקלות — ביטוח, טיפוח, תזונה, קהילה וחנות',
     url: '/',
   },
   '/feed': {
@@ -241,7 +241,7 @@ export const SEO_CONFIG: Record<string, SEOProps> = {
   },
   '/shop': {
     title: 'חנות',
-    description: 'מוצרים איכותיים לחיות מחמד במחירים משתלמים - מזון, צעצועים, ציוד ועוד',
+    description: 'מוצרים איכותיים לחיות מחמד במחירים משתלמים — מזון, צעצועים, ציוד ועוד',
     url: '/shop',
   },
   '/explore': {
@@ -249,35 +249,55 @@ export const SEO_CONFIG: Record<string, SEOProps> = {
     description: 'גלו עסקים, שירותים ומקומות ידידותיים לחיות מחמד באזור שלכם',
     url: '/explore',
   },
-  '/adoption': {
-    title: 'אימוץ',
-    description: 'מצאו חיית מחמד לאימוץ - כלבים, חתולים ועוד מחכים לבית חם',
-    url: '/adoption',
-  },
   '/businesses': {
     title: 'עסקים',
     description: 'מצאו וטרינרים, מאלפים, מספרות כלבים ועוד שירותים לחיות מחמד',
     url: '/businesses',
   },
-  '/parks': {
-    title: 'גינות כלבים',
-    description: 'מצאו גינות כלבים באזור שלכם - מיקום, שעות פתיחה וחוות דעת',
-    url: '/parks',
+  '/breeds': {
+    title: 'אנציקלופדיית גזעים',
+    description: 'מידע מקיף על גזעי כלבים וחתולים — תכונות, בריאות, תזונה והתאמה',
+    url: '/breeds',
   },
-  '/training': {
-    title: 'אימונים',
-    description: 'שירותי אילוף כלבים מקצועיים - משמעת, סוציאליזציה ועוד',
-    url: '/training',
+  '/breed-quiz': {
+    title: 'שאלון התאמת גזע',
+    description: 'גלו איזה גזע כלב או חתול מתאים לכם בעזרת שאלון חכם',
+    url: '/breed-quiz',
   },
-  '/grooming': {
-    title: 'טיפוח',
-    description: 'שירותי טיפוח וספא לחיות מחמד - תספורת, רחצה, טיפול בציפורניים',
-    url: '/grooming',
+  '/breed-detect': {
+    title: 'זיהוי גזע',
+    description: 'העלו תמונה וגלו את הגזע של חיית המחמד שלכם באמצעות AI',
+    url: '/breed-detect',
   },
-  '/insurance': {
-    title: 'ביטוח',
-    description: 'ביטוח בריאות לחיות מחמד - הגנה מפני הוצאות וטרינריות בלתי צפויות',
-    url: '/insurance',
+  '/reels': {
+    title: 'Reels',
+    description: 'סרטונים קצרים ומשעשעים של חיות מחמד מהקהילה',
+    url: '/reels',
+  },
+  '/live': {
+    title: 'שידורים חיים',
+    description: 'צפו בשידורים חיים של חיות מחמד ושדרו בעצמכם',
+    url: '/live',
+  },
+  '/experiences': {
+    title: 'חוויות',
+    description: 'חוויות ופעילויות לבעלי חיות מחמד — טיולים, אירועים ועוד',
+    url: '/experiences',
+  },
+  '/guides': {
+    title: 'מדריכים',
+    description: 'מדריכים מקצועיים לטיפול בחיות מחמד — תזונה, בריאות, אימונים',
+    url: '/guides',
+  },
+  '/science': {
+    title: 'מדע ואמון',
+    description: 'המחקר המדעי מאחורי ההמלצות של PetID — מבוסס NRC 2006',
+    url: '/science',
+  },
+  '/chat': {
+    title: 'צ\'אט',
+    description: 'שוחחו עם הסוכנים החכמים של PetID — שירות, תזונה, ביטוח ועוד',
+    url: '/chat',
   },
 };
 
