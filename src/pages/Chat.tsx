@@ -712,6 +712,7 @@ const ChatContent = () => {
               </motion.div>
             )}
           </AnimatePresence>
+          </div>
           <div ref={messagesEndRef} />
         </div>
 
