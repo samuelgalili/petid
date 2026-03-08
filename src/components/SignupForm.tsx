@@ -537,7 +537,7 @@ export const SignupForm = () => {
                 onKeyDown={(e) => handleOtpKeyDown(index, e)}
                 onPaste={index === 0 ? handleOtpPaste : undefined}
                 disabled={loading}
-                className="w-10 h-12 text-center text-xl font-semibold bg-gray-50 border border-gray-300 rounded-lg focus:border-gray-400 focus:outline-none transition-colors"
+                className="w-10 h-12 text-center text-xl font-semibold bg-muted border border-border rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
               />
             ))}
           </div>
