@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, Share2, Heart, MoreVertical, Flag, Link2, EyeOff, Trash2, User, PawPrint } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, memo } from "react";
 import { haptic } from "@/lib/haptics";
 import { useNavigate } from "react-router-dom";
 import { useFollow } from "@/hooks/useFollow";
@@ -97,7 +97,7 @@ const sidebarStagger = {
   }),
 };
 
-export const PostCard = ({
+export const PostCard = memo(({
   post,
   currentUserId,
   currentUserAvatar,
@@ -496,4 +496,6 @@ export const PostCard = ({
       </AlertDialog>
     </article>
   );
-};
+});
+
+PostCard.displayName = 'PostCard';
