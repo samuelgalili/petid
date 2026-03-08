@@ -319,49 +319,72 @@ const ChatContent = () => {
 
   // Empty state is handled by the initial greeting in ChatProvider
 
+  // Check if message has expanded content (pickers, cards etc.)
+  const hasExpandedContent = (message: Message) => 
+    message.insuranceData || message.insuranceCallback || message.showGroomingPicker || 
+    message.showAppointmentPicker || message.showTrainingPicker || message.trainingSubOptions || 
+    message.showDogParkPicker || message.showDocumentPicker || message.showBoardingPicker || 
+    message.showStorePicker || message.showAdoptionTraits || message.showAdoptionRequirements;
+
   return (
     <div className="min-h-screen bg-background pb-[calc(5rem+env(safe-area-inset-bottom,0px))]" dir="rtl" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
       <SEO title="צ'אט AI" description="שאלו את העוזר החכם שלנו כל שאלה על חיות מחמד - אילוף, תזונה, בריאות" url="/chat" />
-      {/* Glassmorphism Hub Header with Tabs */}
-      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/20">
-        <div className="flex items-center justify-between px-3 py-2">
+      
+      {/* ═══ WhatsApp Pro Header ═══ */}
+      <div className="sticky top-0 z-50 bg-primary">
+        <div className="flex items-center gap-3 px-3 py-2.5">
           <button 
             onClick={() => navigate("/feed")}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
-            aria-label="חזרה לפיד"
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-primary-foreground/10 transition-colors"
+            aria-label="חזרה"
           >
-            <ChevronRight className="w-5 h-5 text-foreground" />
+            <ChevronRight className="w-5 h-5 text-primary-foreground" />
           </button>
-          <div className="flex items-center gap-1">
-            
-            <span className="text-sm font-bold text-foreground">Petid AI</span>
+          
+          {/* AI Avatar */}
+          <div className="relative">
+            <div className="w-9 h-9 rounded-full bg-primary-foreground/15 flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-primary-foreground" />
+            </div>
+            <motion.div
+              animate={{ scale: [1, 1.3, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-success border-2 border-primary"
+            />
           </div>
-          <div className="w-8" />
+          
+          <div className="flex-1 min-w-0">
+            <h1 className="text-[15px] font-bold text-primary-foreground leading-tight">Petid AI</h1>
+            <p className="text-[11px] text-primary-foreground/70 leading-tight">
+              {selectedPet ? `מומחה ל${selectedPet.name}` : "המומחה שלך"}
+            </p>
+          </div>
         </div>
-        {/* Tab Switcher */}
+        
+        {/* Tab Switcher — compact, inside header */}
         <div className="flex px-4 gap-1">
           <button
             onClick={() => setActiveHubTab("scientist")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold transition-colors relative ${
-              activeHubTab === "scientist" ? "text-foreground" : "text-muted-foreground"
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-[13px] font-semibold transition-colors relative ${
+              activeHubTab === "scientist" ? "text-primary-foreground" : "text-primary-foreground/50"
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5" />
+            <Sparkles className="w-3 h-3" />
             המומחה
             {activeHubTab === "scientist" && (
-              <motion.div layoutId="hub-tab-indicator" className="absolute bottom-0 inset-x-4 h-[2px] bg-primary rounded-full" />
+              <motion.div layoutId="hub-tab-indicator" className="absolute bottom-0 inset-x-6 h-[2.5px] bg-primary-foreground rounded-full" />
             )}
           </button>
           <button
             onClick={() => setActiveHubTab("messages")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold transition-colors relative ${
-              activeHubTab === "messages" ? "text-foreground" : "text-muted-foreground"
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-[13px] font-semibold transition-colors relative ${
+              activeHubTab === "messages" ? "text-primary-foreground" : "text-primary-foreground/50"
             }`}
           >
-            <MessageCircle className="w-3.5 h-3.5" />
+            <MessageCircle className="w-3 h-3" />
             הודעות
             {activeHubTab === "messages" && (
-              <motion.div layoutId="hub-tab-indicator" className="absolute bottom-0 inset-x-4 h-[2px] bg-primary rounded-full" />
+              <motion.div layoutId="hub-tab-indicator" className="absolute bottom-0 inset-x-6 h-[2.5px] bg-primary-foreground rounded-full" />
             )}
           </button>
         </div>
@@ -376,59 +399,58 @@ const ChatContent = () => {
 
       {/* Scientist Tab */}
       {activeHubTab === "scientist" && (
-      <div className="flex flex-col h-[calc(100dvh-140px-env(safe-area-inset-bottom,0px))]">
-        {/* Messages Container with Paw Wallpaper */}
-        <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="flex-1 overflow-y-auto px-3 py-4 overflow-x-hidden relative" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' width='40' height='40'%3E%3Ctext x='10' y='28' font-size='14' opacity='0.03'%3E🐾%3C/text%3E%3C/svg%3E")`, backgroundSize: '60px 60px' }}>
+      <div className="flex flex-col h-[calc(100dvh-130px-env(safe-area-inset-bottom,0px))]">
+        {/* Messages Container — subtle tinted background */}
+        <div 
+          ref={messagesContainerRef} 
+          onScroll={handleMessagesScroll} 
+          className="flex-1 overflow-y-auto px-3 py-3 overflow-x-hidden relative"
+          style={{ 
+            backgroundColor: 'hsl(204 30% 96%)',
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' width='40' height='40'%3E%3Ctext x='10' y='28' font-size='14' opacity='0.025'%3E🐾%3C/text%3E%3C/svg%3E")`, 
+            backgroundSize: '60px 60px' 
+          }}
+        >
           <AnimatePresence>
-
             {messages.map((message, index) => {
-              // Time separator between messages > 5 min apart
-              const showTimeSep = index > 0 && (() => {
-                const prevMsg = messages[index - 1];
-                // Only show if we detect a significant gap in rendering order
-                return index > 0 && message.role !== prevMsg.role && index % 4 === 0;
-              })();
+              // Time separator
+              const showTimeSep = index > 0 && message.role !== messages[index - 1].role && index % 4 === 0;
+              const isUser = message.role === "user";
 
               return (
               <div key={index}>
                 {showTimeSep && (
                   <div className="flex items-center justify-center my-3">
-                    <span className="text-[10px] text-muted-foreground/60 bg-background/80 px-3 py-0.5 rounded-full border border-border/20">
+                    <span className="text-[11px] text-muted-foreground bg-card/90 px-3 py-1 rounded-lg shadow-sm">
                       {new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
                 )}
               <motion.div
-                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.2 }}
-                className={`flex mb-4 ${message.role === "user" ? "justify-start" : "justify-end"}`}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.15, ease: "easeOut" }}
+                className={`flex mb-1.5 ${isUser ? "justify-start" : "justify-end"}`}
               >
-                <div className={`flex items-end gap-2 ${message.insuranceData || message.insuranceCallback || message.showGroomingPicker || message.showAppointmentPicker || message.showTrainingPicker || message.trainingSubOptions || message.showDogParkPicker || message.showDocumentPicker || message.showBoardingPicker || message.showStorePicker || message.showAdoptionTraits || message.showAdoptionRequirements ? 'max-w-full w-full' : 'max-w-[85%]'} ${message.role === "user" ? "flex-row" : "flex-row-reverse"}`}>
-                  {message.role === "assistant" && (
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Sparkles className="w-3.5 h-3.5 text-primary" />
-                    </div>
-                  )}
-                  
-                  <div className="flex flex-col gap-2 min-w-0 overflow-hidden">
-                    <div
-                      className={`px-4 py-3 ${
-                        message.role === "user"
-                          ? "bg-gradient-to-l from-primary to-primary/90 text-primary-foreground rounded-2xl rounded-br-md shadow-md shadow-primary/20"
-                          : "bg-card/80 backdrop-blur-md border border-border/30 text-foreground rounded-2xl rounded-bl-md shadow-[0_0_15px_hsla(260,60%,60%,0.12),0_0_30px_hsla(220,70%,50%,0.06)]"
-                      }`}
-                    >
-                      <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
-                        {cleanAllTags(message.content)}
-                      </p>
-                    </div>
-                    {/* Timestamp */}
+                <div className={`flex flex-col gap-1 min-w-0 overflow-hidden ${hasExpandedContent(message) ? 'max-w-full w-full' : 'max-w-[82%]'}`}>
+                  {/* WhatsApp-style bubble with tail */}
+                  <div
+                    className={`px-3.5 py-2 relative ${
+                      isUser
+                        ? "bg-card text-foreground rounded-xl rounded-tr-[4px] shadow-sm"
+                        : "bg-[hsl(152_60%_92%)] text-foreground rounded-xl rounded-tl-[4px] shadow-sm"
+                    }`}
+                  >
+                    <p className="text-[14.5px] leading-[1.45] whitespace-pre-wrap break-words">
+                      {cleanAllTags(message.content)}
+                    </p>
+                    {/* Inline timestamp */}
                     {message.timestamp && (
-                      <span className={`text-[10px] text-muted-foreground/50 mt-0.5 ${message.role === "user" ? "self-start" : "self-end"}`}>
+                      <span className={`text-[10px] text-muted-foreground/60 float-left ml-1 mt-1 leading-none select-none`}>
                         {new Date(message.timestamp).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     )}
+                  </div>
                     
                     {/* Action Buttons */}
                     {message.role === "assistant" && extractActionTags(message.content).length > 0 && (
