@@ -51,6 +51,7 @@ const ChatContent = () => {
   const navigate = useNavigate();
   const [headerHidden, setHeaderHidden] = useState(false);
   const [activeHubTab, setActiveHubTab] = useState<"scientist" | "messages">("scientist");
+  const [showScrollDown, setShowScrollDown] = useState(false);
   const lastScrollTop = useRef(0);
 
   // Auto-hide header on scroll down, show on scroll up
