@@ -68,15 +68,18 @@ Deno.serve(async (req) => {
               const nextVisit = new Date(visit.next_visit_date);
               const daysUntil = Math.ceil((nextVisit.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-              if ([30, 14, 7].includes(daysUntil)) {
-                const timeText = daysUntil === 7 ? 'שבוע' : daysUntil === 14 ? 'שבועיים' : 'חודש';
+              if ([30, 14, 7, 3, 1].includes(daysUntil)) {
+                const timeText = daysUntil === 1 ? 'מחר' : daysUntil === 3 ? '3 ימים' : daysUntil === 7 ? 'שבוע' : daysUntil === 14 ? 'שבועיים' : 'חודש';
+                const urgency = daysUntil <= 3 ? 'urgent' : 'normal';
                 notifications.push({
                   user_id: pet.user_id,
-                  title: 'תזכורת חיסון 💉',
-                  message: `${pet.name}, נשארו רק ${timeText} לחיסון הבא שלך! בואי נקבע תור`,
+                  title: daysUntil <= 3 ? '⚠️ חיסון בקרוב!' : 'תזכורת חיסון 💉',
+                  message: daysUntil <= 3 
+                    ? `שרה מ-PetID: ${pet.name} חייב/ת חיסון בעוד ${timeText}! חשוב לקבוע תור עכשיו`
+                    : `שרה מ-PetID: ל${pet.name} יש חיסון בעוד ${timeText}. נקבע תור?`,
                   type: 'medical',
                   category: 'medical',
-                  data: { pet_id: pet.id, pet_name: pet.name, days_until: daysUntil, trigger: 'vaccine_countdown' },
+                  data: { pet_id: pet.id, pet_name: pet.name, days_until: daysUntil, trigger: 'vaccine_countdown', urgency, agent: 'sarah' },
                 });
               }
             }
@@ -224,7 +227,7 @@ Deno.serve(async (req) => {
               notifications.push({
                 user_id: pet.user_id,
                 title: 'השק עומד להיגמר 🍖',
-                message: `האוכל של ${pet.name} (${pet.current_food}) צפוי להיגמר ${daysLeftText}. להזמין חדש?`,
+                message: `שרה מ-PetID: האוכל של ${pet.name} (${pet.current_food}) צפוי להיגמר ${daysLeftText}. רוצה שאזמין חדש?`,
                 type: 'shop',
                 category: 'shop',
                 data: {
@@ -235,6 +238,7 @@ Deno.serve(async (req) => {
                   bag_weight_kg: bagWeightKg,
                   days_until_empty: daysUntilEmpty,
                   trigger: 'restock_alert',
+                  agent: 'sarah',
                 },
               });
             }
