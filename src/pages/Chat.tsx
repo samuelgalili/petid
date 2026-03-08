@@ -406,7 +406,7 @@ const ChatContent = () => {
           onScroll={handleMessagesScroll} 
           className="flex-1 overflow-y-auto px-3 py-3 overflow-x-hidden relative"
           style={{ 
-            backgroundColor: 'hsl(204 30% 96%)',
+            backgroundColor: 'hsl(var(--chat-bg))',
             backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' width='40' height='40'%3E%3Ctext x='10' y='28' font-size='14' opacity='0.025'%3E🐾%3C/text%3E%3C/svg%3E")`, 
             backgroundSize: '60px 60px' 
           }}
