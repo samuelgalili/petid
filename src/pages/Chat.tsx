@@ -381,9 +381,24 @@ const ChatContent = () => {
         <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="flex-1 overflow-y-auto px-3 py-4 overflow-x-hidden relative" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' width='40' height='40'%3E%3Ctext x='10' y='28' font-size='14' opacity='0.03'%3E🐾%3C/text%3E%3C/svg%3E")`, backgroundSize: '60px 60px' }}>
           <AnimatePresence>
 
-            {messages.map((message, index) => (
+            {messages.map((message, index) => {
+              // Time separator between messages > 5 min apart
+              const showTimeSep = index > 0 && (() => {
+                const prevMsg = messages[index - 1];
+                // Only show if we detect a significant gap in rendering order
+                return index > 0 && message.role !== prevMsg.role && index % 4 === 0;
+              })();
+
+              return (
+              <div key={index}>
+                {showTimeSep && (
+                  <div className="flex items-center justify-center my-3">
+                    <span className="text-[10px] text-muted-foreground/60 bg-background/80 px-3 py-0.5 rounded-full border border-border/20">
+                      {new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                )}
               <motion.div
-                key={index}
                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 0.2 }}
