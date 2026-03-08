@@ -407,8 +407,8 @@ export const SignupForm = () => {
                 setFieldErrors({ ...fieldErrors, fullName: undefined });
               }}
               disabled={loading}
-              className={`h-10 bg-gray-50 border border-gray-300 rounded-lg text-sm placeholder:text-gray-400 focus:border-gray-400 focus:ring-0 ${
-                fieldErrors.fullName ? "border-red-400" : ""
+              className={`h-10 bg-muted/50 border border-border rounded-lg text-sm placeholder:text-muted-foreground focus:border-primary/50 focus:ring-0 transition-colors ${
+                fieldErrors.fullName ? "border-destructive" : ""
               }`}
               autoComplete="name"
             />
