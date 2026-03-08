@@ -395,6 +395,11 @@
     --ig-blue: 204 100% 55%;
     --ig-red: 330 85% 60%;
     --ig-orange: 42 100% 55%;
+
+    /* Chat */
+    --chat-bg: 210 15% 10%;
+    --chat-bubble-ai: 152 30% 18%;
+    --chat-bubble-user: 210 15% 14%;
   }
 
   /* High Contrast Mode */
