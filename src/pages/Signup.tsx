@@ -60,9 +60,21 @@ const Signup = () => {
     <div className="min-h-screen bg-gradient-to-br from-secondary/10 via-background to-primary/5 flex flex-col items-center justify-center px-4 py-8">
       {/* Decorative Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-16 right-12 w-24 h-24 bg-primary/10 rounded-full blur-2xl" />
-        <div className="absolute bottom-24 left-10 w-28 h-28 bg-secondary/15 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-20 w-14 h-14 bg-accent/10 rounded-full blur-xl" />
+        <motion.div
+          className="absolute top-16 right-12 w-24 h-24 bg-primary/10 rounded-full blur-2xl"
+          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute bottom-24 left-10 w-28 h-28 bg-secondary/15 rounded-full blur-3xl"
+          animate={{ scale: [1, 1.15, 1], opacity: [0.2, 0.4, 0.2] }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+        />
+        <motion.div
+          className="absolute top-1/2 left-20 w-14 h-14 bg-accent/10 rounded-full blur-xl"
+          animate={{ y: [0, -10, 0], opacity: [0.2, 0.4, 0.2] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        />
       </div>
 
       {/* Main Card */}
@@ -150,7 +162,7 @@ const Signup = () => {
         <span className="text-border">•</span>
         <Link to="/support" className="hover:text-foreground transition-colors">עזרה</Link>
         <span className="text-border">•</span>
-        <span>© 2024 Petid</span>
+        <span>© 2025 Petid</span>
       </motion.footer>
     </div>
   );

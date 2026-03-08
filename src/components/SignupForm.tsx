@@ -348,7 +348,7 @@ export const SignupForm = () => {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg text-center"
+          className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg text-center"
         >
           {generalError}
         </motion.div>
@@ -407,13 +407,13 @@ export const SignupForm = () => {
                 setFieldErrors({ ...fieldErrors, fullName: undefined });
               }}
               disabled={loading}
-              className={`h-10 bg-gray-50 border border-gray-300 rounded-lg text-sm placeholder:text-gray-400 focus:border-gray-400 focus:ring-0 ${
-                fieldErrors.fullName ? "border-red-400" : ""
+              className={`h-10 bg-muted/50 border border-border rounded-lg text-sm placeholder:text-muted-foreground focus:border-primary/50 focus:ring-0 transition-colors ${
+                fieldErrors.fullName ? "border-destructive" : ""
               }`}
               autoComplete="name"
             />
             {fieldErrors.fullName && (
-              <p className="text-xs text-red-500 mt-1">{fieldErrors.fullName}</p>
+              <p className="text-xs text-destructive mt-1">{fieldErrors.fullName}</p>
             )}
           </div>
 
@@ -424,10 +424,10 @@ export const SignupForm = () => {
                 <Button
                   variant="outline"
                   disabled={loading}
-                  className={cn(
-                    "w-full h-10 justify-start text-right bg-gray-50 border border-gray-300 rounded-lg text-sm hover:bg-gray-100",
-                    !birthdate && "text-gray-400",
-                    fieldErrors.birthdate && "border-red-400"
+                   className={cn(
+                    "w-full h-10 justify-start text-right bg-muted/50 border border-border rounded-lg text-sm hover:bg-muted transition-colors",
+                    !birthdate && "text-muted-foreground",
+                    fieldErrors.birthdate && "border-destructive"
                   )}
                 >
                   <CalendarIcon className="ml-2 h-4 w-4" />
@@ -453,7 +453,7 @@ export const SignupForm = () => {
               </PopoverContent>
             </Popover>
             {fieldErrors.birthdate && (
-              <p className="text-xs text-red-500 mt-1">{fieldErrors.birthdate}</p>
+              <p className="text-xs text-destructive mt-1">{fieldErrors.birthdate}</p>
             )}
             <p className="text-xs text-muted-foreground mt-1">חובה להיות מעל גיל 13</p>
           </div>
@@ -474,14 +474,14 @@ export const SignupForm = () => {
                 }
               }}
               disabled={loading}
-              className={`h-10 bg-gray-50 border border-gray-300 rounded-lg text-sm placeholder:text-gray-400 focus:border-gray-400 focus:ring-0 ${
-                (signupMethod === "email" ? fieldErrors.email : fieldErrors.phone) ? "border-red-400" : ""
+              className={`h-10 bg-muted/50 border border-border rounded-lg text-sm placeholder:text-muted-foreground focus:border-primary/50 focus:ring-0 transition-colors ${
+                (signupMethod === "email" ? fieldErrors.email : fieldErrors.phone) ? "border-destructive" : ""
               }`}
               autoComplete={signupMethod === "email" ? "email" : "tel"}
               dir="ltr"
             />
             {(signupMethod === "email" ? fieldErrors.email : fieldErrors.phone) && (
-              <p className="text-xs text-red-500 mt-1">
+              <p className="text-xs text-destructive mt-1">
                 {signupMethod === "email" ? fieldErrors.email : fieldErrors.phone}
               </p>
             )}
@@ -537,15 +537,15 @@ export const SignupForm = () => {
                 onKeyDown={(e) => handleOtpKeyDown(index, e)}
                 onPaste={index === 0 ? handleOtpPaste : undefined}
                 disabled={loading}
-                className="w-10 h-12 text-center text-xl font-semibold bg-gray-50 border border-gray-300 rounded-lg focus:border-gray-400 focus:outline-none transition-colors"
+                className="w-10 h-12 text-center text-xl font-semibold bg-muted border border-border rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
               />
             ))}
           </div>
 
           {loading && (
             <div className="flex items-center justify-center">
-              <Loader2 className="h-5 w-5 animate-spin text-[#0095F6]" />
-              <span className="mr-2 text-sm text-gray-600">מאמת...</span>
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <span className="mr-2 text-sm text-muted-foreground">מאמת...</span>
             </div>
           )}
 
@@ -569,7 +569,7 @@ export const SignupForm = () => {
                 setGeneralError("");
                 setResendCountdown(0);
               }}
-              className="w-full text-sm text-gray-500 hover:text-gray-700"
+              className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
               disabled={loading}
             >
               שנה {signupMethod === "email" ? "אימייל" : "מספר טלפון"}
