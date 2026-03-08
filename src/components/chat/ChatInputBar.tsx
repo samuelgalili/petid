@@ -249,7 +249,7 @@ const ChatInputBar = ({
       </AnimatePresence>
 
       {/* Smart Input Bar — WhatsApp Pro style */}
-      <div className="px-2 py-2" style={{ backgroundColor: 'hsl(204 30% 96%)' }}>
+      <div className="px-2 py-2" style={{ backgroundColor: 'hsl(var(--chat-bg))' }}>
         <div className="flex items-end gap-2">
           {/* Emoji / Plus toggle */}
           <motion.button

@@ -706,7 +706,7 @@ const ChatContent = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="flex justify-end mb-2"
               >
-                <div className="px-4 py-2.5 bg-[hsl(152_60%_92%)] rounded-xl rounded-tl-[4px] shadow-sm">
+                <div className="px-4 py-2.5 bg-[hsl(var(--chat-bubble-ai))] rounded-xl rounded-tl-[4px] shadow-sm">
                   <div className="flex items-center gap-1">
                     {[0, 1, 2].map((i) => (
                       <motion.div
