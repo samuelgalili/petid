@@ -3,8 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Eye, EyeOff } from "lucide-react";
-import { motion } from "framer-motion";
+import { Loader2, Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 
@@ -19,32 +19,25 @@ interface FieldError {
 }
 
 export const LoginForm = () => {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldError>({});
-  const [generalError, setGeneralError] = useState<string>("");
+  const [generalError, setGeneralError] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const validateForm = (): boolean => {
     const result = loginSchema.safeParse(formData);
-    
     if (result.success) {
       setFieldErrors({});
       setGeneralError("");
       return true;
     }
-    
     const errors: FieldError = {};
     result.error.issues.forEach((issue) => {
       const field = issue.path[0] as keyof FieldError;
-      if (field) {
-        errors[field] = issue.message;
-      }
+      if (field) errors[field] = issue.message;
     });
     setFieldErrors(errors);
     return false;
@@ -53,9 +46,8 @@ export const LoginForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setGeneralError("");
-    
     if (!validateForm()) return;
-    
+
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -86,72 +78,100 @@ export const LoginForm = () => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3" noValidate>
-      {generalError && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg text-center"
-        >
-          {generalError}
-        </motion.div>
-      )}
+      <AnimatePresence mode="wait">
+        {generalError && (
+          <motion.div
+            key="error"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg text-center"
+          >
+            {generalError}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Email Input */}
       <div>
-        <Input
-          type="email"
-          placeholder="אימייל"
-          value={formData.email}
-          onChange={(e) => {
-            setFormData({ ...formData, email: e.target.value });
-            setFieldErrors({ ...fieldErrors, email: undefined });
-          }}
-          disabled={loading}
-          className={`h-10 bg-gray-50 border border-gray-300 rounded-sm text-sm placeholder:text-gray-400 focus:border-gray-400 focus:ring-0 text-right ${
-            fieldErrors.email ? "border-red-400" : ""
-          }`}
-          autoComplete="email"
-          dir="rtl"
-        />
-        {fieldErrors.email && (
-          <p className="text-xs text-red-500 mt-1 text-right">{fieldErrors.email}</p>
-        )}
+        <div className="relative">
+          <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            type="email"
+            placeholder="אימייל"
+            value={formData.email}
+            onChange={(e) => {
+              setFormData({ ...formData, email: e.target.value });
+              setFieldErrors({ ...fieldErrors, email: undefined });
+            }}
+            disabled={loading}
+            className={`h-10 bg-muted/50 border border-border rounded-lg text-sm pr-10 text-right transition-colors ${
+              fieldErrors.email ? "border-destructive" : ""
+            }`}
+            autoComplete="email"
+            dir="rtl"
+          />
+        </div>
+        <AnimatePresence>
+          {fieldErrors.email && (
+            <motion.p
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              className="text-xs text-destructive mt-1 text-right"
+            >
+              {fieldErrors.email}
+            </motion.p>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Password Input */}
-      <div className="relative">
-        <Input
-          type={showPassword ? "text" : "password"}
-          placeholder="סיסמה"
-          value={formData.password}
-          onChange={(e) => {
-            setFormData({ ...formData, password: e.target.value });
-            setFieldErrors({ ...fieldErrors, password: undefined });
-          }}
-          disabled={loading}
-          className={`h-10 bg-gray-50 border border-gray-300 rounded-sm text-sm placeholder:text-gray-400 focus:border-gray-400 focus:ring-0 pl-10 text-right ${
-            fieldErrors.password ? "border-red-400" : ""
-          }`}
-          autoComplete="current-password"
-          dir="rtl"
-        />
-        <button
-          type="button"
-          onClick={() => setShowPassword(!showPassword)}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-          tabIndex={-1}
-        >
-          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-        </button>
-        {fieldErrors.password && (
-          <p className="text-xs text-red-500 mt-1 text-right">{fieldErrors.password}</p>
-        )}
+      <div>
+        <div className="relative">
+          <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            type={showPassword ? "text" : "password"}
+            placeholder="סיסמה"
+            value={formData.password}
+            onChange={(e) => {
+              setFormData({ ...formData, password: e.target.value });
+              setFieldErrors({ ...fieldErrors, password: undefined });
+            }}
+            disabled={loading}
+            className={`h-10 bg-muted/50 border border-border rounded-lg text-sm pr-10 pl-10 text-right transition-colors ${
+              fieldErrors.password ? "border-destructive" : ""
+            }`}
+            autoComplete="current-password"
+            dir="rtl"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            tabIndex={-1}
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
+        <AnimatePresence>
+          {fieldErrors.password && (
+            <motion.p
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              className="text-xs text-destructive mt-1 text-right"
+            >
+              {fieldErrors.password}
+            </motion.p>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Forgot Password Link */}
       <div className="text-left">
-        <Link 
-          to="/forgot-password" 
+        <Link
+          to="/forgot-password"
           className="text-xs text-primary hover:text-primary/80 transition-colors"
         >
           שכחת סיסמה?
