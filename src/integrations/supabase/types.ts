@@ -1133,6 +1133,39 @@ export type Database = {
           },
         ]
       }
+      auth_rate_limits: {
+        Row: {
+          attempt_count: number | null
+          blocked_until: string | null
+          created_at: string | null
+          first_attempt_at: string | null
+          id: string
+          ip_address: string
+          is_blocked: boolean | null
+          last_attempt_at: string | null
+        }
+        Insert: {
+          attempt_count?: number | null
+          blocked_until?: string | null
+          created_at?: string | null
+          first_attempt_at?: string | null
+          id?: string
+          ip_address: string
+          is_blocked?: boolean | null
+          last_attempt_at?: string | null
+        }
+        Update: {
+          attempt_count?: number | null
+          blocked_until?: string | null
+          created_at?: string | null
+          first_attempt_at?: string | null
+          id?: string
+          ip_address?: string
+          is_blocked?: boolean | null
+          last_attempt_at?: string | null
+        }
+        Relationships: []
+      }
       auto_replies: {
         Row: {
           away_enabled: boolean | null
@@ -1361,6 +1394,36 @@ export type Database = {
           name_he?: string
           points_reward?: number
           rarity?: string
+        }
+        Relationships: []
+      }
+      blocked_ips: {
+        Row: {
+          blocked_at: string | null
+          blocked_by: string | null
+          expires_at: string | null
+          id: string
+          ip_address: string
+          is_active: boolean | null
+          reason: string | null
+        }
+        Insert: {
+          blocked_at?: string | null
+          blocked_by?: string | null
+          expires_at?: string | null
+          id?: string
+          ip_address: string
+          is_active?: boolean | null
+          reason?: string | null
+        }
+        Update: {
+          blocked_at?: string | null
+          blocked_by?: string | null
+          expires_at?: string | null
+          id?: string
+          ip_address?: string
+          is_active?: boolean | null
+          reason?: string | null
         }
         Relationships: []
       }
@@ -13118,7 +13181,17 @@ export type Database = {
     }
     Functions: {
       can_user_redeem: { Args: { p_user_id: string }; Returns: boolean }
+      check_login_rate_limit: {
+        Args: {
+          p_block_duration_minutes?: number
+          p_ip_address: string
+          p_max_attempts?: number
+          p_window_minutes?: number
+        }
+        Returns: Json
+      }
       cleanup_expired_whatsapp_otps: { Args: never; Returns: undefined }
+      cleanup_rate_limits: { Args: never; Returns: undefined }
       get_order_status:
         | {
             Args: { p_order_number: string }
