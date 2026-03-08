@@ -221,7 +221,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             greeting = `היי ${firstName}! 🐾\n\n${updates.join("\n")}\n\nבמה נתמקד?`;
           }
           
-          setMessages([{ role: "assistant", content: greeting }]);
+          setMessages([{ role: "assistant", content: greeting, timestamp: now }]);
 
           // ─── Proactive Agent Notifications (delayed bubble) ───
           if (unreadNotifs.length > 0) {
