@@ -700,33 +700,26 @@ const ChatContent = () => {
               </motion.div>
             )}
 
-            {/* "Scientist is thinking..." Pulse Animation */}
+            {/* Typing indicator — WhatsApp style */}
             {isTyping && !showInsuranceLoading && (
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex justify-end mb-3"
+                className="flex justify-end mb-2"
               >
-                <div className="flex items-end gap-2 flex-row-reverse">
-                  <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
-                    <motion.div
-                      animate={{ scale: [1, 1.2, 1], opacity: [0.7, 1, 0.7] }}
-                      transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                    >
-                      <Sparkles className="w-3 h-3 text-primary" />
-                    </motion.div>
-                  </div>
-                  <div className="px-4 py-2.5 bg-card/80 backdrop-blur-md border border-border/30 rounded-2xl rounded-bl-md shadow-[0_0_15px_hsla(260,60%,60%,0.08)]">
-                    <div className="flex items-center gap-1.5">
-                      {[0, 1, 2].map((i) => (
-                        <motion.div
-                          key={i}
-                          className="w-1.5 h-1.5 rounded-full bg-primary/50"
-                          animate={{ opacity: [0.3, 1, 0.3] }}
-                          transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
-                        />
-                      ))}
-                    </div>
+                <div className="px-4 py-2.5 bg-[hsl(152_60%_92%)] rounded-xl rounded-tl-[4px] shadow-sm">
+                  <div className="flex items-center gap-1">
+                    {[0, 1, 2].map((i) => (
+                      <motion.div
+                        key={i}
+                        className="w-2 h-2 rounded-full bg-muted-foreground/40"
+                        animate={{ 
+                          y: [0, -4, 0],
+                          backgroundColor: ['hsl(210 10% 60%)', 'hsl(204 100% 48%)', 'hsl(210 10% 60%)']
+                        }}
+                        transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15 }}
+                      />
+                    ))}
                   </div>
                 </div>
               </motion.div>

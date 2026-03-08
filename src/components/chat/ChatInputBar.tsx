@@ -248,40 +248,25 @@ const ChatInputBar = ({
         )}
       </AnimatePresence>
 
-      {/* Main Input Bar */}
-      <div className="px-4 py-3 bg-card/80 backdrop-blur-xl border-t border-border/50">
-        <motion.div
-          animate={{
-            boxShadow: isFocused 
-              ? "0 0 20px hsl(var(--primary) / 0.12)" 
-              : "0 0 0px transparent",
-          }}
-          className={cn(
-            "flex items-end gap-2 bg-muted/40 rounded-3xl border transition-all duration-300 p-1.5",
-            isFocused ? "border-primary/30 bg-background" : "border-border/50"
-          )}
-        >
-          {/* Paw Icon / Toggle Pills */}
+      {/* Smart Input Bar — WhatsApp Pro style */}
+      <div className="px-2 py-2" style={{ backgroundColor: 'hsl(204 30% 96%)' }}>
+        <div className="flex items-end gap-2">
+          {/* Emoji / Plus toggle */}
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => setShowPills(!showPills)}
-            className={cn(
-              "w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full transition-all",
-              showPills 
-                ? "bg-primary text-primary-foreground" 
-                : "text-muted-foreground hover:text-primary hover:bg-muted/50"
-            )}
+            className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground transition-colors"
           >
-            <motion.div
-              animate={{ rotate: showPills ? 15 : 0, scale: showPills ? 1.1 : 1 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <PawPrint className="w-5 h-5" strokeWidth={1.8} />
+            <motion.div animate={{ rotate: showPills ? 45 : 0 }} transition={{ type: "spring", stiffness: 300 }}>
+              <Plus className="w-5 h-5" strokeWidth={2} />
             </motion.div>
           </motion.button>
 
-          {/* Input Container */}
-          <div className="flex-1 flex items-end">
+          {/* Input field */}
+          <div className={cn(
+            "flex-1 flex items-end bg-card rounded-3xl border transition-all duration-200 px-3 py-1",
+            isFocused ? "border-primary/25 shadow-sm" : "border-border/60"
+          )}>
             <textarea
               ref={inputRef}
               value={value}
@@ -292,88 +277,70 @@ const ChatInputBar = ({
                   onSend();
                 }
               }}
-              onFocus={() => {
-                setIsFocused(true);
-                setShowPills(false);
-              }}
+              onFocus={() => { setIsFocused(true); setShowPills(false); }}
               onBlur={() => setIsFocused(false)}
               placeholder={placeholder}
               rows={1}
-              className="flex-1 bg-transparent border-0 focus:outline-none focus:ring-0 text-[15px] placeholder:text-muted-foreground resize-none py-2 px-2 max-h-[120px] leading-relaxed"
+              className="flex-1 bg-transparent border-0 focus:outline-none focus:ring-0 text-[15px] placeholder:text-muted-foreground/60 resize-none py-1.5 max-h-[120px] leading-relaxed"
               disabled={isLoading || isRecording}
               dir="rtl"
             />
-          </div>
-
-          {/* Right Side Actions */}
-          <div className="flex items-center gap-1 flex-shrink-0">
+            
+            {/* Contextual icons inside input */}
             <AnimatePresence mode="popLayout">
               {!hasContent && !isRecording && (
-                <>
-                  <motion.button
-                    key="image"
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0 }}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={handleImageClick}
-                    className="w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted/50 rounded-full transition-colors"
-                  >
-                    <ImageIcon className="w-5 h-5" />
-                  </motion.button>
-
-                  <motion.button
-                    key="mic"
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0 }}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={handleMicPress}
-                    className="w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted/50 rounded-full transition-colors"
-                  >
-                    <Mic className="w-5 h-5" />
-                  </motion.button>
-                </>
-              )}
-            </AnimatePresence>
-
-            {/* Send Button */}
-            <AnimatePresence mode="wait">
-              {hasContent ? (
                 <motion.button
-                  key="send"
-                  initial={{ scale: 0, rotate: -180 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  exit={{ scale: 0, rotate: 180 }}
-                  whileHover={{ scale: 1.1 }}
+                  key="camera-inline"
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0 }}
                   whileTap={{ scale: 0.9 }}
-                  onClick={onSend}
-                  disabled={isLoading}
-                  className="w-10 h-10 flex items-center justify-center bg-primary rounded-full text-primary-foreground disabled:opacity-50 shadow-sm"
+                  onClick={handleImageClick}
+                  className="w-8 h-8 flex items-center justify-center text-muted-foreground/60 hover:text-muted-foreground rounded-full transition-colors mb-0.5"
                 >
-                  <Send className="w-4 h-4" />
-                </motion.button>
-              ) : (
-                <motion.button
-                  key="sparkle"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  exit={{ scale: 0 }}
-                  whileHover={{ scale: 1.1, rotate: 15 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={handleSparkleClick}
-                  className="w-10 h-10 flex items-center justify-center bg-primary/10 hover:bg-primary/20 rounded-full text-primary transition-colors"
-                >
-                  <Sparkles className="w-5 h-5" />
+                  <Camera className="w-[18px] h-[18px]" />
                 </motion.button>
               )}
             </AnimatePresence>
           </div>
-        </motion.div>
 
-        {/* Focused Suggestions */}
+          {/* Send / Mic button */}
+          <AnimatePresence mode="wait">
+            {hasContent ? (
+              <motion.button
+                key="send"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={onSend}
+                disabled={isLoading}
+                className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-primary rounded-full text-primary-foreground disabled:opacity-50 shadow-sm"
+              >
+                <Send className="w-4 h-4" />
+              </motion.button>
+            ) : (
+              <motion.button
+                key="mic"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={handleMicPress}
+                className={cn(
+                  "w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full transition-colors",
+                  isRecording 
+                    ? "bg-destructive text-destructive-foreground" 
+                    : "bg-primary text-primary-foreground"
+                )}
+              >
+                <Mic className="w-4.5 h-4.5" />
+              </motion.button>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Smart suggestions — appear on focus */}
         <AnimatePresence>
           {isFocused && !hasContent && !isRecording && (
             <motion.div
@@ -382,19 +349,19 @@ const ChatInputBar = ({
               exit={{ opacity: 0, height: 0 }}
               className="mt-2 overflow-hidden"
             >
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 px-1">
                 {["🐕 מידע על הכלב שלי", "💉 תזכורת חיסונים", "🍖 המלצות מזון"].map((suggestion, i) => (
                   <motion.button
                     key={i}
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.1 }}
+                    transition={{ delay: i * 0.08 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => {
                       onChange(suggestion);
                       inputRef.current?.focus();
                     }}
-                    className="flex-shrink-0 px-3 py-1.5 bg-muted/50 hover:bg-muted rounded-full text-xs text-muted-foreground hover:text-foreground transition-colors border border-border/50"
+                    className="flex-shrink-0 px-3 py-1.5 bg-card rounded-full text-xs text-muted-foreground hover:text-foreground transition-colors border border-border/60 shadow-sm"
                   >
                     {suggestion}
                   </motion.button>
