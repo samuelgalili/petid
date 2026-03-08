@@ -248,9 +248,9 @@ const ChatInputBar = ({
         )}
       </AnimatePresence>
 
-      {/* Smart Input Bar — WhatsApp Pro style */}
-      <div className="px-2 py-2" style={{ backgroundColor: 'hsl(var(--chat-bg))' }}>
-        <div className="flex items-end gap-2">
+      {/* Gemini-style Input Bar */}
+      <div className="px-3 py-3 bg-background border-t border-border/40">
+        <div className="max-w-2xl mx-auto flex items-end gap-2">
           {/* Emoji / Plus toggle */}
           <motion.button
             whileTap={{ scale: 0.9 }}
@@ -347,7 +347,7 @@ const ChatInputBar = ({
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="mt-2 overflow-hidden"
+              className="mt-2 overflow-hidden max-w-2xl mx-auto"
             >
               <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 px-1">
                 {["🐕 מידע על הכלב שלי", "💉 תזכורת חיסונים", "🍖 המלצות מזון"].map((suggestion, i) => (
