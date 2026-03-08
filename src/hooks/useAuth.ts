@@ -2,6 +2,20 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 
+// Get client IP via public API (cached per session)
+let cachedIP: string | null = null;
+async function getClientIP(): Promise<string> {
+  if (cachedIP) return cachedIP;
+  try {
+    const resp = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(3000) });
+    const data = await resp.json();
+    cachedIP = data.ip;
+    return data.ip;
+  } catch {
+    return 'unknown';
+  }
+}
+
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
