@@ -14,6 +14,7 @@ export interface Product {
 export interface Message {
   role: "user" | "assistant";
   content: string;
+  timestamp?: string;
   products?: Product[];
   insuranceData?: {
     petName: string;
