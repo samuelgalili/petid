@@ -128,4 +128,6 @@ export const ProductPostCard = memo(({ product }: ProductPostCardProps) => {
       </div>
     </article>
   );
-};
+});
+
+ProductPostCard.displayName = 'ProductPostCard';
