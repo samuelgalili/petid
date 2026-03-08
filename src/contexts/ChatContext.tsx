@@ -267,6 +267,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 setMessages(prev => [...prev, {
                   role: "assistant",
                   content: buildNotifMessage(otherNotifs, "ועוד עדכונים:"),
+                  timestamp: new Date().toISOString(),
                 }]);
               }, urgentNotifs.length > 0 ? 3500 : 1500);
             }
