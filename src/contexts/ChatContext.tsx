@@ -14,6 +14,7 @@ export interface Product {
 export interface Message {
   role: "user" | "assistant";
   content: string;
+  timestamp?: string;
   products?: Product[];
   insuranceData?: {
     petName: string;
@@ -178,7 +179,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           const petBreed = petData?.breed;
           
           let greeting = `היי ${firstName}! מה שלום ${pets[0].name}? 🐾\n\nאיך אוכל לעזור היום?`;
-          
+          const now = new Date().toISOString();
           // Proactive updates
           const updates: string[] = [];
           
@@ -220,7 +221,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             greeting = `היי ${firstName}! 🐾\n\n${updates.join("\n")}\n\nבמה נתמקד?`;
           }
           
-          setMessages([{ role: "assistant", content: greeting }]);
+          setMessages([{ role: "assistant", content: greeting, timestamp: now }]);
 
           // ─── Proactive Agent Notifications (delayed bubble) ───
           if (unreadNotifs.length > 0) {
@@ -250,6 +251,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 setMessages(prev => [...prev, {
                   role: "assistant",
                   content: buildNotifMessage(urgentNotifs, `${firstName}, יש כמה דברים שחשוב שתדע/י:`),
+                  timestamp: new Date().toISOString(),
                   suggestions: urgentNotifs.some(n => n.type === "medical") 
                     ? ["קבע תור לוטרינר", "הצג פרטים"] 
                     : urgentNotifs.some(n => (n.data as any)?.trigger === "restock_alert")
@@ -265,6 +267,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 setMessages(prev => [...prev, {
                   role: "assistant",
                   content: buildNotifMessage(otherNotifs, "ועוד עדכונים:"),
+                  timestamp: new Date().toISOString(),
                 }]);
               }, urgentNotifs.length > 0 ? 3500 : 1500);
             }
@@ -429,7 +432,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               if (last?.role === "assistant") {
                 return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantContent } : m);
               }
-              return [...prev, { role: "assistant", content: assistantContent }];
+              return [...prev, { role: "assistant", content: assistantContent, timestamp: new Date().toISOString() }];
             });
           }
         } catch {
@@ -483,7 +486,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   /** Send a message programmatically */
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim() || isLoading) return;
-    const userMessage: Message = { role: "user", content };
+    const userMessage: Message = { role: "user", content, timestamp: new Date().toISOString() };
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
     try {

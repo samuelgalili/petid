@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronRight, Sparkles, MessageCircle } from "lucide-react";
+import { ChevronRight, Sparkles, MessageCircle, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import petidIcon from "@/assets/petid-icon.png";
 import BottomNav from "@/components/BottomNav";
@@ -51,9 +51,10 @@ const ChatContent = () => {
   const navigate = useNavigate();
   const [headerHidden, setHeaderHidden] = useState(false);
   const [activeHubTab, setActiveHubTab] = useState<"scientist" | "messages">("scientist");
+  const [showScrollDown, setShowScrollDown] = useState(false);
   const lastScrollTop = useRef(0);
 
-  // Auto-hide header on scroll down, show on scroll up
+  // Auto-hide header on scroll down, show on scroll up + scroll-to-bottom detection
   const handleMessagesScroll = useCallback(() => {
     const el = messagesContainerRef.current;
     if (!el) return;
@@ -63,6 +64,9 @@ const ChatContent = () => {
     } else {
       setHeaderHidden(false);
     }
+    // Show scroll-to-bottom button when not near bottom
+    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    setShowScrollDown(distFromBottom > 200);
     lastScrollTop.current = st;
   }, []);
 
@@ -286,7 +290,7 @@ const ChatContent = () => {
     // Hide categories when user types freely
     setShowCategories(false);
 
-    const userMessage: Message = { role: "user", content: input.trim() };
+    const userMessage: Message = { role: "user", content: input.trim(), timestamp: new Date().toISOString() };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
@@ -373,13 +377,28 @@ const ChatContent = () => {
       {/* Scientist Tab */}
       {activeHubTab === "scientist" && (
       <div className="flex flex-col h-[calc(100dvh-140px-env(safe-area-inset-bottom,0px))]">
-        {/* Messages Container */}
-        <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="flex-1 overflow-y-auto px-3 py-4 overflow-x-hidden">
+        {/* Messages Container with Paw Wallpaper */}
+        <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="flex-1 overflow-y-auto px-3 py-4 overflow-x-hidden relative" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' width='40' height='40'%3E%3Ctext x='10' y='28' font-size='14' opacity='0.03'%3E🐾%3C/text%3E%3C/svg%3E")`, backgroundSize: '60px 60px' }}>
           <AnimatePresence>
 
-            {messages.map((message, index) => (
+            {messages.map((message, index) => {
+              // Time separator between messages > 5 min apart
+              const showTimeSep = index > 0 && (() => {
+                const prevMsg = messages[index - 1];
+                // Only show if we detect a significant gap in rendering order
+                return index > 0 && message.role !== prevMsg.role && index % 4 === 0;
+              })();
+
+              return (
+              <div key={index}>
+                {showTimeSep && (
+                  <div className="flex items-center justify-center my-3">
+                    <span className="text-[10px] text-muted-foreground/60 bg-background/80 px-3 py-0.5 rounded-full border border-border/20">
+                      {new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                )}
               <motion.div
-                key={index}
                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 0.2 }}
@@ -404,6 +423,12 @@ const ChatContent = () => {
                         {cleanAllTags(message.content)}
                       </p>
                     </div>
+                    {/* Timestamp */}
+                    {message.timestamp && (
+                      <span className={`text-[10px] text-muted-foreground/50 mt-0.5 ${message.role === "user" ? "self-start" : "self-end"}`}>
+                        {new Date(message.timestamp).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    )}
                     
                     {/* Action Buttons */}
                     {message.role === "assistant" && extractActionTags(message.content).length > 0 && (
@@ -619,7 +644,9 @@ const ChatContent = () => {
                   </div>
                 </div>
               </motion.div>
-            ))}
+              </div>
+              );
+            })}
 
             {/* Date Picker */}
             {showDatePicker && (
@@ -686,6 +713,21 @@ const ChatContent = () => {
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Scroll to bottom FAB */}
+        <AnimatePresence>
+          {showScrollDown && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              onClick={scrollToBottom}
+              className="absolute left-1/2 -translate-x-1/2 bottom-24 z-30 w-9 h-9 rounded-full bg-card/90 backdrop-blur-md border border-border/40 shadow-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+              whileTap={{ scale: 0.9 }}
+            >
+              <ChevronDown className="w-5 h-5" />
+            </motion.button>
+          )}
+        </AnimatePresence>
 
         {/* Input Area */}
         <ChatInputBar
