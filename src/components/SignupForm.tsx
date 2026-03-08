@@ -424,10 +424,10 @@ export const SignupForm = () => {
                 <Button
                   variant="outline"
                   disabled={loading}
-                  className={cn(
-                    "w-full h-10 justify-start text-right bg-gray-50 border border-gray-300 rounded-lg text-sm hover:bg-gray-100",
-                    !birthdate && "text-gray-400",
-                    fieldErrors.birthdate && "border-red-400"
+                   className={cn(
+                    "w-full h-10 justify-start text-right bg-muted/50 border border-border rounded-lg text-sm hover:bg-muted transition-colors",
+                    !birthdate && "text-muted-foreground",
+                    fieldErrors.birthdate && "border-destructive"
                   )}
                 >
                   <CalendarIcon className="ml-2 h-4 w-4" />
