@@ -544,8 +544,8 @@ export const SignupForm = () => {
 
           {loading && (
             <div className="flex items-center justify-center">
-              <Loader2 className="h-5 w-5 animate-spin text-[#0095F6]" />
-              <span className="mr-2 text-sm text-gray-600">מאמת...</span>
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <span className="mr-2 text-sm text-muted-foreground">מאמת...</span>
             </div>
           )}
 
