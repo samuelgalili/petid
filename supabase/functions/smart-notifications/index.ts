@@ -227,7 +227,7 @@ Deno.serve(async (req) => {
               notifications.push({
                 user_id: pet.user_id,
                 title: 'השק עומד להיגמר 🍖',
-                message: `האוכל של ${pet.name} (${pet.current_food}) צפוי להיגמר ${daysLeftText}. להזמין חדש?`,
+                message: `שרה מ-PetID: האוכל של ${pet.name} (${pet.current_food}) צפוי להיגמר ${daysLeftText}. רוצה שאזמין חדש?`,
                 type: 'shop',
                 category: 'shop',
                 data: {
@@ -238,6 +238,7 @@ Deno.serve(async (req) => {
                   bag_weight_kg: bagWeightKg,
                   days_until_empty: daysUntilEmpty,
                   trigger: 'restock_alert',
+                  agent: 'sarah',
                 },
               });
             }
