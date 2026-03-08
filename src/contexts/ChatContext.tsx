@@ -251,6 +251,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 setMessages(prev => [...prev, {
                   role: "assistant",
                   content: buildNotifMessage(urgentNotifs, `${firstName}, יש כמה דברים שחשוב שתדע/י:`),
+                  timestamp: new Date().toISOString(),
                   suggestions: urgentNotifs.some(n => n.type === "medical") 
                     ? ["קבע תור לוטרינר", "הצג פרטים"] 
                     : urgentNotifs.some(n => (n.data as any)?.trigger === "restock_alert")
