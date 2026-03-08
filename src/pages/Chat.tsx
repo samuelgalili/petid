@@ -377,8 +377,8 @@ const ChatContent = () => {
       {/* Scientist Tab */}
       {activeHubTab === "scientist" && (
       <div className="flex flex-col h-[calc(100dvh-140px-env(safe-area-inset-bottom,0px))]">
-        {/* Messages Container */}
-        <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="flex-1 overflow-y-auto px-3 py-4 overflow-x-hidden">
+        {/* Messages Container with Paw Wallpaper */}
+        <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="flex-1 overflow-y-auto px-3 py-4 overflow-x-hidden relative" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' width='40' height='40'%3E%3Ctext x='10' y='28' font-size='14' opacity='0.03'%3E🐾%3C/text%3E%3C/svg%3E")`, backgroundSize: '60px 60px' }}>
           <AnimatePresence>
 
             {messages.map((message, index) => (
