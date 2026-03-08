@@ -569,7 +569,7 @@ export const SignupForm = () => {
                 setGeneralError("");
                 setResendCountdown(0);
               }}
-              className="w-full text-sm text-gray-500 hover:text-gray-700"
+              className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
               disabled={loading}
             >
               שנה {signupMethod === "email" ? "אימייל" : "מספר טלפון"}

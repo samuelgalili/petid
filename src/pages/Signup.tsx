@@ -162,7 +162,7 @@ const Signup = () => {
         <span className="text-border">•</span>
         <Link to="/support" className="hover:text-foreground transition-colors">עזרה</Link>
         <span className="text-border">•</span>
-        <span>© 2024 Petid</span>
+        <span>© 2025 Petid</span>
       </motion.footer>
     </div>
   );
