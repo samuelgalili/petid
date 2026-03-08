@@ -437,8 +437,8 @@ const ChatContent = () => {
                   <div
                     className={`px-3.5 py-2 relative ${
                       isUser
-                        ? "bg-card text-foreground rounded-xl rounded-tr-[4px] shadow-sm"
-                        : "bg-[hsl(152_60%_92%)] text-foreground rounded-xl rounded-tl-[4px] shadow-sm"
+                        ? "bg-[hsl(var(--chat-bubble-user))] text-foreground rounded-xl rounded-tr-[4px] shadow-sm"
+                        : "bg-[hsl(var(--chat-bubble-ai))] text-foreground rounded-xl rounded-tl-[4px] shadow-sm"
                     }`}
                   >
                     <p className="text-[14.5px] leading-[1.45] whitespace-pre-wrap break-words">
