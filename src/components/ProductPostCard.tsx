@@ -29,7 +29,7 @@ const sidebarStagger = {
   }),
 };
 
-export const ProductPostCard = ({ product }: ProductPostCardProps) => {
+export const ProductPostCard = memo(({ product }: ProductPostCardProps) => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const [isLiked, setIsLiked] = useState(false);
