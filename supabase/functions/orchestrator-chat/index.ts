@@ -26,40 +26,83 @@ const TaskSchema = z.object({
   expected_outcome: z.string().max(500).optional()
 });
 
+const ActionSchema = z.object({
+  type: z.enum(["content_update", "design_change", "code_fix", "config_change", "data_update", "feature_toggle"]),
+  target: z.string().max(200),
+  description: z.string().max(2000),
+  changes: z.record(z.any()).optional(),
+  priority: z.enum(["low", "medium", "high", "urgent"]).optional().default("medium"),
+  bot: z.string().max(50).optional().default("brain"),
+});
+
 const MAX_PAYLOAD_SIZE = 1024 * 1024;
 
-// The 9 PetID Fleet Bots
 const BOT_CAPABILITIES = `
-You are the PetID Brain Bot — the central orchestrator of 10 autonomous robots (The Fleet).
+You are the PetID Brain Bot — the central orchestrator of the entire PetID platform.
 Your mission: protect pets by ensuring accurate data, safe products, and proactive care.
+You can manage ALL aspects of the platform — content, design, code, settings, and data — all through admin approval.
 
-## The Fleet — 10 Autonomous Robots:
+## The Fleet — Autonomous Robots:
+1. **Brain Bot** (brain) — YOU. Orchestrate, prioritize, delegate, and execute platform management.
+2. **CRM Bot** (crm) — User/pet profiles, data integrity, duplicate detection.
+3. **Inventory Bot** (inventory) — Stock predictions, reorder alerts, NRC 2006 compliance.
+4. **Marketing Bot** (marketing) — User segmentation, campaigns, push notifications.
+5. **Sales Bot** (sales) — Insurance leads, upsells, product recommendations.
+6. **Support Bot** (support) — 24/7 AI assistance, pet history, medical records.
+7. **Medical Bot** (medical) — Clinic locator, vaccination schedules, health alerts.
+8. **Compliance Bot** (compliance) — Licenses, expiry dates, municipal rules.
+9. **NRC Science Bot** (nrc-science) — Food safety, NRC 2006 verification.
+10. **Content Bot** (content) — Blog posts, social content, pet care tips.
+11. **Ido — Architect** (system-architect) — Code fixes, component optimization, GitHub PRs.
+12. **Ofek — Visual Monitor** (ofek-visual-monitor) — UI/CSS issues, visual quality.
+13. **Maya — UX** (maya) — User experience, flow optimization.
 
-1. **Brain Bot** (brain) — YOU. Orchestrate, prioritize, and delegate tasks to other bots based on KPIs.
-2. **CRM Bot** (crm) — Maintains 100% data integrity in user/pet profiles. Detects duplicates, syncs OCR data, validates owner info.
-3. **Inventory Bot** (inventory) — Predicts stock depletion based on pet weight and NRC 2006 standards. Triggers reorder alerts.
-4. **Marketing Bot** (marketing) — Segments users (e.g., "Doberman owners in Tel Aviv") for targeted campaigns. Creates push notifications.
-5. **Sales Bot** (sales) — Generates leads for Libra Insurance and store products post-scan. Manages upsell logic.
-6. **Support Bot** (support) — 24/7 AI assistance based on pet history, medical records, and vaccination schedules.
-7. **Medical Bot** (medical) — Locates nearby clinics, schedules vaccinations, sends health alerts based on scanned documents.
-8. **Compliance Bot** (compliance) — Tracks licenses, expiry dates, dangerous dog status, and municipal rules.
-9. **NRC Science Bot** (nrc-science) — Verifies food ingredients against NRC 2006 guidelines. Analyzes product images for safety.
-10. **Content Creation Bot** (content-creation) — Generates blog posts, social captions, pet care tips, and infographic briefs. Uses scanned_documents, nrc_standards, and breed_information for fact-based, personalized content. All output requires admin approval.
+## PLATFORM MANAGEMENT CAPABILITIES:
 
-## CORE RULES:
-1. Each bot has a single responsibility — never overlap.
-2. **CRITICAL ACTIONS require approval**: price changes, refunds, notifications to users, deletions, ad spend, insurance lead forwarding.
-3. Non-critical actions (data analysis, report generation, stock checks) execute automatically.
-4. Every action is logged with: timestamp, bot name, reason, expected outcome.
-5. Prioritize by: (a) Pet safety, (b) Data integrity, (c) Revenue.
-6. PetID Core: If doubt — do not recommend. If data missing — ask. Default = inaction.
+### 📝 Content Management
+- Update product descriptions, prices, images
+- Create/edit blog posts and articles
+- Modify FAQ and help content
+- Update business profiles and listings
 
-## SAFETY PROTOCOLS:
-- Kill Switch: Admin can deactivate any bot instantly via is_active flag.
-- Human-in-the-loop: All user-facing messages and financial actions require approval.
-- Never hallucinate data. Only use verified information from the database.
+### 🎨 Design & UI Changes
+- Fix CSS/styling issues (via Ido Architect → GitHub PR)
+- Update color schemes, fonts, spacing
+- Fix responsive/mobile layout problems
+- Improve component visual quality (via Ofek)
 
-## Task Creation Format:
+### 🔧 Code & Logic Fixes
+- Fix bugs and errors (via Ido Architect → GitHub PR)
+- Optimize performance
+- Update Edge Function logic
+- Fix data flow issues
+
+### ⚙️ Configuration & Settings
+- Toggle features on/off
+- Update system settings
+- Manage bot configurations
+- Adjust automation rules
+
+### 📊 Data Management
+- Clean/fix data inconsistencies
+- Bulk update records
+- Import/export data
+- Fix data integrity issues
+
+## ACTION FORMAT:
+For platform changes, use <action> tags:
+<action>
+{
+  "type": "content_update|design_change|code_fix|config_change|data_update|feature_toggle",
+  "target": "What entity/page/component to change",
+  "description": "Detailed description of the change",
+  "changes": { "field": "new_value" },
+  "priority": "low|medium|high|urgent",
+  "bot": "which bot handles this"
+}
+</action>
+
+## TASK FORMAT (for bot delegation):
 <task>
 {
   "bot": "slug",
@@ -72,8 +115,20 @@ Your mission: protect pets by ensuring accurate data, safe products, and proacti
 }
 </task>
 
+## CORE RULES:
+1. **ALL changes require admin approval** — no exceptions.
+2. Every action is logged with: timestamp, bot name, reason, expected outcome.
+3. Prioritize by: (a) Pet safety, (b) Data integrity, (c) Revenue.
+4. PetID Core: If doubt — do not recommend. If data missing — ask.
+5. Kill Switch: Admin can deactivate any bot instantly.
+6. Never hallucinate data. Only use verified information.
+7. When asked to fix bugs — route to Ido (system-architect).
+8. When asked about design — route to Ofek (ofek-visual-monitor) or Maya (maya).
+9. When asked about content — route to Content Bot.
+10. For code changes — always specify file path and what to change.
+
 ## Naming: Always use "PetID" — never "Vet Life".
-Respond in Hebrew.
+Respond in Hebrew. Be concise and actionable.
 `;
 
 serve(async (req) => {
@@ -144,7 +199,7 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    // Fetch context — including pending approvals from automation bots
+    // Fetch context
     const [{ data: recentTasks }, { data: bots }, { data: recentLogs }, { data: pendingApprovals }, { data: automationBots }] = await Promise.all([
       supabase.from('agent_tasks').select('title, status, priority, bot_id, created_at').order('created_at', { ascending: false }).limit(15),
       supabase.from('agent_bots').select('id, name, slug, is_active').order('created_at'),
@@ -156,12 +211,10 @@ serve(async (req) => {
     const activeBots = bots?.filter(b => b.is_active) || [];
     const inactiveBots = bots?.filter(b => !b.is_active) || [];
 
-    // Format pending approvals for the AI
     const pendingApprovalsSummary = (pendingApprovals && pendingApprovals.length > 0)
       ? pendingApprovals.map((a: any) => `  • [${a.category || 'general'}] ${a.title} (${new Date(a.created_at).toLocaleString('he-IL')})\n    תוכן: ${(a.draft_content || '').substring(0, 150)}...`).join('\n')
       : 'אין פריטים ממתינים';
 
-    // Format recent automation bot outputs
     const recentBotOutputs = (automationBots && automationBots.length > 0)
       ? automationBots.filter((b: any) => b.last_run_at).slice(0, 5).map((b: any) => `  • ${b.name} (${b.health_status}): ${(b.last_output || '').substring(0, 100)}...`).join('\n')
       : 'אין דוחות אחרונים';
@@ -182,7 +235,8 @@ ${pendingApprovalsSummary}
 ## 📊 Recent Automation Bot Reports:
 ${recentBotOutputs}
 
-IMPORTANT: When the admin asks about pending approvals, bot status, or recent reports — present the above data clearly. Highlight items that need urgent attention (security, financial, compliance).
+IMPORTANT: When the admin asks about pending approvals, bot status, or recent reports — present the above data clearly. Highlight items that need urgent attention.
+When the admin asks to make changes — always create <action> or <task> tags so changes are tracked and queued for approval.
 `;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -229,7 +283,7 @@ IMPORTANT: When the admin asks about pending approvals, bot status, or recent re
           await writer.write(encoder.encode(chunk));
         }
 
-        // Parse tasks from response
+        // Parse and execute tasks
         if (fullResponse.includes('<task>')) {
           const taskMatches = fullResponse.match(/<task>([\s\S]*?)<\/task>/g);
           if (taskMatches) {
@@ -266,6 +320,57 @@ IMPORTANT: When the admin asks about pending approvals, bot status, or recent re
                 }
               } catch (e) {
                 console.error('Failed to parse task:', e);
+              }
+            }
+          }
+        }
+
+        // Parse and queue actions for admin approval
+        if (fullResponse.includes('<action>')) {
+          const actionMatches = fullResponse.match(/<action>([\s\S]*?)<\/action>/g);
+          if (actionMatches) {
+            for (const match of actionMatches) {
+              try {
+                const jsonStr = match.replace(/<\/?action>/g, '').trim();
+                const rawActionData = JSON.parse(jsonStr);
+                const actionParseResult = ActionSchema.safeParse(rawActionData);
+                if (!actionParseResult.success) continue;
+
+                const actionData = actionParseResult.data;
+
+                // Route to approval queue — ALL actions require admin approval
+                const categoryMap: Record<string, string> = {
+                  content_update: "content",
+                  design_change: "design",
+                  code_fix: "technical",
+                  config_change: "system",
+                  data_update: "data",
+                  feature_toggle: "system",
+                };
+
+                await supabase.from('admin_approval_queue').insert({
+                  title: `[${actionData.type}] ${actionData.target}`,
+                  description: actionData.description,
+                  category: categoryMap[actionData.type] || "general",
+                  status: "pending",
+                  proposed_changes: actionData.changes || {},
+                  draft_content: JSON.stringify(actionData),
+                  target_entity: actionData.target,
+                });
+
+                // Log the action
+                const bot = bots?.find(b => b.slug === (actionData.bot || 'brain'));
+                if (bot) {
+                  await supabase.from('agent_action_logs').insert({
+                    bot_id: bot.id,
+                    action_type: actionData.type,
+                    description: `Queued for approval: ${actionData.description}`.substring(0, 500),
+                    reason: `Admin command → ${actionData.target}`,
+                    expected_outcome: actionData.description,
+                  });
+                }
+              } catch (e) {
+                console.error('Failed to parse action:', e);
               }
             }
           }
