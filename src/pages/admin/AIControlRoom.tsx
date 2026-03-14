@@ -376,8 +376,8 @@ const AIControlRoom = () => {
                   <Badge className="w-5 h-5 p-0 justify-center text-[10px] bg-amber-500">{pendingApprovalTasks.length}</Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="logs" className="text-xs gap-1"><FileText className="w-3.5 h-3.5" />לוגים</TabsTrigger>
-              <TabsTrigger value="queue" className="text-xs gap-1"><Clock className="w-3.5 h-3.5" />תור</TabsTrigger>
+              <TabsTrigger value="logs" className="text-xs gap-1 px-1"><FileText className="w-3.5 h-3.5" /><span className="hidden sm:inline">לוגים</span></TabsTrigger>
+              <TabsTrigger value="queue" className="text-xs gap-1 px-1"><Clock className="w-3.5 h-3.5" /><span className="hidden sm:inline">תור</span></TabsTrigger>
             </TabsList>
 
             {/* Status Tab — Bot Fleet Dashboard */}
