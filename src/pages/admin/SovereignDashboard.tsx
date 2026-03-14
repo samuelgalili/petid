@@ -146,67 +146,13 @@ const AgentLogsPanel = ({ agentSlug, onClose }: { agentSlug: string; onClose: ()
   );
 };
 
-// ─── Swipeable Decision Card ────────────────────────────────
-const DecisionCard = ({
-  item,
-  onApprove,
-  onReject,
-}: {
-  item: any;
-  onApprove: () => void;
-  onReject: () => void;
-}) => {
-  const x = useMotionValue(0);
-  const rotate = useTransform(x, [-200, 200], [-6, 6]);
-  const approveOp = useTransform(x, [0, 100], [0, 1]);
-  const rejectOp = useTransform(x, [-100, 0], [1, 0]);
-
-  const handleDragEnd = (_: any, info: PanInfo) => {
-    if (info.offset.x > 100) { successFeedback(); onApprove(); }
-    else if (info.offset.x < -100) { haptic("error"); onReject(); }
-  };
-
-  const categoryIcon = item.category === "sales" ? DollarSign
-    : item.category === "content" ? Sparkles
-    : item.category === "ethics" ? Shield
-    : item.category === "payment" ? Scale
-    : Zap;
-  const CatIcon = categoryIcon;
-
-  return (
-    <motion.div className="absolute inset-0" style={{ x, rotate }} drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.7} onDragEnd={handleDragEnd} whileTap={{ scale: 0.98 }}>
-      <motion.div className="absolute inset-0 rounded-[20px] border-2 border-emerald-500/40 bg-emerald-500/5 flex items-center justify-start pl-6 pointer-events-none" style={{ opacity: approveOp }}>
-        <CheckCircle2 className="w-10 h-10 text-emerald-400" />
-      </motion.div>
-      <motion.div className="absolute inset-0 rounded-[20px] border-2 border-red-500/40 bg-red-500/5 flex items-center justify-end pr-6 pointer-events-none" style={{ opacity: rejectOp }}>
-        <XCircle className="w-10 h-10 text-red-400" />
-      </motion.div>
-
-      <div className="relative z-10 h-full rounded-[20px] p-5 border border-border/20 backdrop-blur-xl bg-card/90 cursor-grab active:cursor-grabbing"
-        style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.08), 0 0 0 1px rgba(255,255,255,0.04)" }}>
-        <div className="flex items-start justify-between mb-3">
-          <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
-            <CatIcon className="w-5 h-5 text-primary" strokeWidth={1.5} />
-          </div>
-          <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-500 bg-amber-500/5">ממתין לאישור</Badge>
-        </div>
-        <h3 className="text-base font-bold text-foreground mb-1 line-clamp-2">{item.title}</h3>
-        <p className="text-xs text-muted-foreground line-clamp-2 mb-4">{item.description}</p>
-        <div className="flex items-center justify-between">
-          <Badge variant="outline" className="text-[9px]">{item.category}</Badge>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" className="rounded-xl border-red-500/30 text-red-400 hover:bg-red-500/10 h-8 w-8 p-0" onClick={(e) => { e.stopPropagation(); haptic("error"); onReject(); }}>
-              <XCircle className="w-3.5 h-3.5" />
-            </Button>
-            <Button size="sm" className="rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white h-8 w-8 p-0" onClick={(e) => { e.stopPropagation(); successFeedback(); onApprove(); }}>
-              <CheckCircle2 className="w-3.5 h-3.5" />
-            </Button>
-          </div>
-        </div>
-        <p className="text-[9px] text-muted-foreground/50 text-center mt-3">← דחה · גרור · אשר →</p>
-      </div>
-    </motion.div>
-  );
+// ─── Category Icon Helper ───────────────────────────────────
+const getCategoryIcon = (category: string) => {
+  if (category === "sales") return DollarSign;
+  if (category === "content") return Sparkles;
+  if (category === "ethics") return Shield;
+  if (category === "payment") return Scale;
+  return Zap;
 };
 
 // ─── Prometheus Brain Module ────────────────────────────────
