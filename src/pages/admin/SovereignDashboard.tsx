@@ -335,6 +335,170 @@ const FinancialHeartbeat = () => {
   );
 };
 
+// ─── Brain Command Prompt ────────────────────────────────────
+const BrainCommandPrompt = () => {
+  const [input, setInput] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [response, setResponse] = useState("");
+  const [showResponse, setShowResponse] = useState(false);
+  const queryClient = useQueryClient();
+
+  const sendCommand = async () => {
+    if (!input.trim() || isStreaming) return;
+    setIsStreaming(true);
+    setResponse("");
+    setShowResponse(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("נדרשת התחברות");
+        return;
+      }
+
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/orchestrator-chat`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            messages: [{ role: "user", content: input }],
+          }),
+        }
+      );
+
+      if (!resp.ok) {
+        if (resp.status === 429) { toast.error("יותר מדי בקשות, נסה שוב בעוד רגע"); return; }
+        if (resp.status === 402) { toast.error("נדרש תשלום — הוסף קרדיטים"); return; }
+        throw new Error("Failed");
+      }
+
+      const reader = resp.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullContent = "";
+      let buffer = "";
+
+      while (reader) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith("data: ") || trimmed === "data: [DONE]") continue;
+          try {
+            const jsonStr = trimmed.slice(6);
+            if (!jsonStr.startsWith("{")) continue;
+            const data = JSON.parse(jsonStr);
+            const content = data.choices?.[0]?.delta?.content;
+            if (content) {
+              fullContent += content;
+              const display = fullContent.replace(/<task>[\s\S]*?<\/task>/g, "").trim();
+              setResponse(display || "מעבד...");
+            }
+          } catch { /* skip */ }
+        }
+      }
+
+      // Invalidate queries so tasks/logs refresh
+      queryClient.invalidateQueries({ queryKey: ["sovereign-approvals"] });
+      queryClient.invalidateQueries({ queryKey: ["sovereign-agents"] });
+      setInput("");
+      toast.success("המשימה נשלחה ל-Brain Bot");
+    } catch (error) {
+      toast.error("שגיאה בשליחה ל-Brain Bot");
+      console.error(error);
+    } finally {
+      setIsStreaming(false);
+    }
+  };
+
+  return (
+    <Card className="p-4 border-violet-500/20 bg-card/80 backdrop-blur-xl relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent pointer-events-none" />
+      <div className="relative">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center">
+            <Brain className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-foreground">Brain Command</h3>
+            <p className="text-[10px] text-muted-foreground">הזן משימה והמוח יטפל בה</p>
+          </div>
+        </div>
+
+        <div className="flex gap-2">
+          <Textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendCommand(); }
+            }}
+            placeholder="תאר את המשימה... (למשל: בדוק מלאי מוצרי מזון, צור קמפיין לכלבים גדולים...)"
+            className="flex-1 min-h-[44px] max-h-[120px] resize-none bg-muted/30 border-border/30 text-sm"
+            disabled={isStreaming}
+            dir="rtl"
+          />
+          <Button
+            onClick={sendCommand}
+            disabled={isStreaming || !input.trim()}
+            size="icon"
+            className="shrink-0 h-11 w-11 rounded-xl bg-gradient-to-br from-violet-500 to-violet-600 hover:from-violet-600 hover:to-violet-700"
+          >
+            {isStreaming ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          </Button>
+        </div>
+
+        {/* Quick prompts */}
+        <div className="flex gap-1.5 mt-2 flex-wrap">
+          {["בדוק סטטוס כל הרובוטים", "דוח מלאי קריטי", "צור קמפיין שיווקי", "בדוק רישיונות שפגו"].map((s) => (
+            <button
+              key={s}
+              onClick={() => { setInput(s); }}
+              className="text-[10px] px-2.5 py-1 rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 hover:bg-violet-500/20 transition-colors"
+              disabled={isStreaming}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+
+        {/* Response area */}
+        <AnimatePresence>
+          {showResponse && response && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mt-3 overflow-hidden"
+            >
+              <div className="p-3 rounded-xl bg-muted/30 border border-border/20">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <Brain className="w-3.5 h-3.5 text-violet-500" />
+                    <span className="text-[10px] font-medium text-muted-foreground">תגובת Brain Bot</span>
+                  </div>
+                  <button onClick={() => setShowResponse(false)} className="text-muted-foreground hover:text-foreground">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <div className="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed" dir="rtl">
+                  <ReactMarkdown>{response}</ReactMarkdown>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </Card>
+  );
+};
+
 // ─── Main Sovereign Dashboard ───────────────────────────────
 const SovereignDashboard = () => {
   const queryClient = useQueryClient();
