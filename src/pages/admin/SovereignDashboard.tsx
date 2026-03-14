@@ -494,8 +494,8 @@ const BrainCommandPrompt = () => {
 // ─── Main Sovereign Dashboard ───────────────────────────────
 const SovereignDashboard = () => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
-  const [currentCard, setCurrentCard] = useState(0);
   const [showSidebar, setShowSidebar] = useState(false);
 
   // Realtime subscriptions
