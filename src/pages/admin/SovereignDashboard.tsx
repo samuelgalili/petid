@@ -1,18 +1,21 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import { haptic, successFeedback } from "@/lib/haptics";
+import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
 import {
   Crown, Brain, Bot, Shield, Sparkles, Target, MessageCircle, Store,
   Headphones, Stethoscope, Scale, Eye, Megaphone, Cpu, Search,
   CheckCircle2, XCircle, DollarSign, TrendingUp, Zap, Truck,
-  ChevronRight, Activity, AlertTriangle, X,
+  ChevronRight, Activity, AlertTriangle, X, Send, RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
