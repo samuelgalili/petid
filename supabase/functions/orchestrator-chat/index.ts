@@ -116,16 +116,25 @@ For platform changes, use <action> tags:
 </task>
 
 ## CORE RULES:
-1. **ALL changes require admin approval** — no exceptions.
-2. Every action is logged with: timestamp, bot name, reason, expected outcome.
-3. Prioritize by: (a) Pet safety, (b) Data integrity, (c) Revenue.
-4. PetID Core: If doubt — do not recommend. If data missing — ask.
-5. Kill Switch: Admin can deactivate any bot instantly.
-6. Never hallucinate data. Only use verified information.
-7. When asked to fix bugs — route to Ido (system-architect).
-8. When asked about design — route to Ofek (ofek-visual-monitor) or Maya (maya).
-9. When asked about content — route to Content Bot.
-10. For code changes — always specify file path and what to change.
+1. **Internal reports & data operations execute automatically** — no approval needed.
+   Auto-pilot actions: data_update, config_change (internal), feature_toggle (internal), reports, CRM updates, inventory checks, analytics.
+2. **Publishing & code changes ALWAYS require admin approval:**
+   - content_update (publishing to users/public)
+   - design_change (CSS/UI changes)
+   - code_fix (code changes via GitHub PR)
+   - Any external communication (WhatsApp, SMS, email to users)
+   - Price changes
+   - Insurance lead delivery
+3. For auto-pilot tasks, set requires_approval: false. For approval-required tasks, set requires_approval: true.
+4. Every action is logged with: timestamp, bot name, reason, expected outcome.
+5. Prioritize by: (a) Pet safety, (b) Data integrity, (c) Revenue.
+6. PetID Core: If doubt — do not recommend. If data missing — ask.
+7. Kill Switch: Admin can deactivate any bot instantly.
+8. Never hallucinate data. Only use verified information.
+9. When asked to fix bugs — route to Ido (system-architect) with requires_approval: true.
+10. When asked about design — route to Ofek or Maya with requires_approval: true.
+11. When asked about content publishing — route to Content Bot with requires_approval: true.
+12. Internal data reports, status checks, inventory scans — execute immediately (requires_approval: false).
 
 ## Naming: Always use "PetID" — never "Vet Life".
 Respond in Hebrew. Be concise and actionable.
@@ -298,22 +307,28 @@ When the admin asks to make changes — always create <action> or <task> tags so
                 const bot = bots?.find(b => b.slug === taskData.bot);
                 
                 if (bot && bot.is_active) {
+                  // Override requires_approval for publishing/code bots
+                  const APPROVAL_REQUIRED_BOTS = ["system-architect", "content", "marketing"];
+                  const finalRequiresApproval = APPROVAL_REQUIRED_BOTS.includes(taskData.bot) 
+                    ? true 
+                    : taskData.requires_approval;
+
                   await supabase.from('agent_tasks').insert({
                     bot_id: bot.id,
                     title: taskData.title,
                     description: taskData.description,
                     priority: taskData.priority,
                     task_type: taskData.bot,
-                    requires_approval: taskData.requires_approval,
+                    requires_approval: finalRequiresApproval,
                     reason: taskData.reason,
                     expected_outcome: taskData.expected_outcome,
-                    status: taskData.requires_approval ? 'pending_approval' : 'draft'
+                    status: finalRequiresApproval ? 'pending_approval' : 'running'
                   });
 
                   await supabase.from('agent_action_logs').insert({
                     bot_id: bot.id,
                     action_type: 'task_created',
-                    description: `Created task: ${taskData.title}`.substring(0, 500),
+                    description: `${finalRequiresApproval ? 'Queued' : 'Auto-running'}: ${taskData.title}`.substring(0, 500),
                     reason: taskData.reason,
                     expected_outcome: taskData.expected_outcome
                   });
@@ -338,7 +353,6 @@ When the admin asks to make changes — always create <action> or <task> tags so
 
                 const actionData = actionParseResult.data;
 
-                // Route to approval queue — ALL actions require admin approval
                 const categoryMap: Record<string, string> = {
                   content_update: "content",
                   design_change: "design",
@@ -348,15 +362,35 @@ When the admin asks to make changes — always create <action> or <task> tags so
                   feature_toggle: "system",
                 };
 
-                await supabase.from('admin_approval_queue').insert({
-                  title: `[${actionData.type}] ${actionData.target}`,
-                  description: actionData.description,
-                  category: categoryMap[actionData.type] || "general",
-                  status: "pending",
-                  proposed_changes: actionData.changes || {},
-                  draft_content: JSON.stringify(actionData),
-                  target_entity: actionData.target,
-                });
+                // Determine if this action requires approval
+                const REQUIRES_APPROVAL_TYPES = ["content_update", "design_change", "code_fix"];
+                const needsApproval = REQUIRES_APPROVAL_TYPES.includes(actionData.type);
+
+                if (needsApproval) {
+                  // Route to approval queue
+                  await supabase.from('admin_approval_queue').insert({
+                    title: `[${actionData.type}] ${actionData.target}`,
+                    description: actionData.description,
+                    category: categoryMap[actionData.type] || "general",
+                    status: "pending",
+                    proposed_changes: actionData.changes || {},
+                    draft_content: JSON.stringify(actionData),
+                    target_entity: actionData.target,
+                  });
+                } else {
+                  // Auto-execute internal action — log as completed
+                  await supabase.from('admin_approval_queue').insert({
+                    title: `[${actionData.type}] ${actionData.target}`,
+                    description: actionData.description,
+                    category: categoryMap[actionData.type] || "general",
+                    status: "approved",
+                    proposed_changes: actionData.changes || {},
+                    draft_content: JSON.stringify(actionData),
+                    target_entity: actionData.target,
+                    reviewed_at: new Date().toISOString(),
+                    review_notes: "אושר אוטומטית — דוח/פעולה פנימית",
+                  });
+                }
 
                 // Log the action
                 const bot = bots?.find(b => b.slug === (actionData.bot || 'brain'));
@@ -364,7 +398,7 @@ When the admin asks to make changes — always create <action> or <task> tags so
                   await supabase.from('agent_action_logs').insert({
                     bot_id: bot.id,
                     action_type: actionData.type,
-                    description: `Queued for approval: ${actionData.description}`.substring(0, 500),
+                    description: `${needsApproval ? 'Queued for approval' : 'Auto-executed'}: ${actionData.description}`.substring(0, 500),
                     reason: `Admin command → ${actionData.target}`,
                     expected_outcome: actionData.description,
                   });
