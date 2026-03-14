@@ -19,7 +19,10 @@ import {
   RefreshCw,
   Wand2,
   Target,
-  Hash
+  Hash,
+  Image as ImageIcon,
+  Download,
+  Loader2
 } from "lucide-react";
 
 interface GeneratedAd {
