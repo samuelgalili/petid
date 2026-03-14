@@ -535,27 +535,21 @@ const SovereignDashboard = () => {
     },
   });
 
-  const handleApprove = async () => {
-    const item = approvals[currentCard];
-    if (item) {
-      await supabase.from("admin_approval_queue").update({ status: "approved", reviewed_at: new Date().toISOString() }).eq("id", item.id);
-      queryClient.invalidateQueries({ queryKey: ["sovereign-approvals"] });
-    }
-    setCurrentCard(c => c + 1);
+  const handleApprove = async (id: string) => {
+    await supabase.from("admin_approval_queue").update({ status: "approved", reviewed_at: new Date().toISOString() }).eq("id", id);
+    queryClient.invalidateQueries({ queryKey: ["sovereign-approvals"] });
+    successFeedback();
+    toast.success("✅ אושר");
   };
 
-  const handleReject = async () => {
-    const item = approvals[currentCard];
-    if (item) {
-      await supabase.from("admin_approval_queue").update({ status: "rejected", reviewed_at: new Date().toISOString() }).eq("id", item.id);
-      queryClient.invalidateQueries({ queryKey: ["sovereign-approvals"] });
-    }
-    setCurrentCard(c => c + 1);
+  const handleReject = async (id: string) => {
+    await supabase.from("admin_approval_queue").update({ status: "rejected", reviewed_at: new Date().toISOString() }).eq("id", id);
+    queryClient.invalidateQueries({ queryKey: ["sovereign-approvals"] });
+    haptic("error");
+    toast.success("נדחה");
   };
 
-  const visibleApprovals = approvals.slice(currentCard);
   const activeBots = bots.filter((b: any) => b.is_active).length;
-
   const getBotData = (slug: string) => bots.find((b: any) => b.slug === slug);
 
   return (
