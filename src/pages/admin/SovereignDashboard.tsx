@@ -336,42 +336,46 @@ const FinancialHeartbeat = () => {
 };
 
 // ─── Brain Command Prompt ────────────────────────────────────
+interface ChatMsg { id: string; role: "user" | "assistant"; content: string; }
+
 const BrainCommandPrompt = () => {
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
-  const [response, setResponse] = useState("");
-  const [showResponse, setShowResponse] = useState(false);
+  const [messages, setMessages] = useState<ChatMsg[]>([]);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [messages]);
 
   const sendCommand = async () => {
     if (!input.trim() || isStreaming) return;
+    const userMsg: ChatMsg = { id: crypto.randomUUID(), role: "user", content: input };
+    const assistantId = crypto.randomUUID();
+    setMessages(prev => [...prev, userMsg, { id: assistantId, role: "assistant", content: "" }]);
+    setInput("");
     setIsStreaming(true);
-    setResponse("");
-    setShowResponse(true);
+    setIsExpanded(true);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error("נדרשת התחברות");
-        return;
-      }
+      if (!session) { toast.error("נדרשת התחברות"); return; }
+
+      const allMessages = [...messages, userMsg].map(m => ({ role: m.role, content: m.content }));
 
       const resp = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/orchestrator-chat`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            messages: [{ role: "user", content: input }],
-          }),
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ messages: allMessages }),
         }
       );
 
       if (!resp.ok) {
-        if (resp.status === 429) { toast.error("יותר מדי בקשות, נסה שוב בעוד רגע"); return; }
+        if (resp.status === 429) { toast.error("יותר מדי בקשות"); return; }
         if (resp.status === 402) { toast.error("נדרש תשלום — הוסף קרדיטים"); return; }
         throw new Error("Failed");
       }
@@ -398,40 +402,108 @@ const BrainCommandPrompt = () => {
             const content = data.choices?.[0]?.delta?.content;
             if (content) {
               fullContent += content;
-              const display = fullContent.replace(/<task>[\s\S]*?<\/task>/g, "").trim();
-              setResponse(display || "מעבד...");
+              const display = fullContent
+                .replace(/<task>[\s\S]*?<\/task>/g, "")
+                .replace(/<action>[\s\S]*?<\/action>/g, "")
+                .trim();
+              setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: display || "מעבד..." } : m));
             }
           } catch { /* skip */ }
         }
       }
 
-      // Invalidate queries so tasks/logs refresh
+      // Count created actions/tasks
+      const taskCount = (fullContent.match(/<task>/g) || []).length;
+      const actionCount = (fullContent.match(/<action>/g) || []).length;
+      const total = taskCount + actionCount;
+      if (total > 0) {
+        toast.success(`✅ ${total} פעולות נוצרו ונשלחו לאישור`);
+      }
+
       queryClient.invalidateQueries({ queryKey: ["sovereign-approvals"] });
       queryClient.invalidateQueries({ queryKey: ["sovereign-agents"] });
-      setInput("");
-      toast.success("המשימה נשלחה ל-Brain Bot");
     } catch (error) {
+      setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: "שגיאה בתקשורת. נסה שוב." } : m));
       toast.error("שגיאה בשליחה ל-Brain Bot");
-      console.error(error);
     } finally {
       setIsStreaming(false);
     }
   };
 
+  const quickPrompts = [
+    "בדוק סטטוס כל הרובוטים",
+    "תקן באגים באתר",
+    "עדכן תוכן דף הבית",
+    "שפר עיצוב מובייל",
+    "דוח מלאי קריטי",
+    "בדוק רישיונות שפגו",
+  ];
+
   return (
-    <Card className="p-4 border-violet-500/20 bg-card/80 backdrop-blur-xl relative overflow-hidden">
+    <Card className="border-violet-500/20 bg-card/80 backdrop-blur-xl relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent pointer-events-none" />
-      <div className="relative">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center">
-            <Brain className="w-4 h-4 text-white" />
+      <div className="relative p-4">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
+              <Brain className="w-4.5 h-4.5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-foreground">Brain Command</h3>
+              <p className="text-[10px] text-muted-foreground">כתוב פקודה → המוח ידאג לכל השאר</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm font-bold text-foreground">Brain Command</h3>
-            <p className="text-[10px] text-muted-foreground">הזן משימה והמוח יטפל בה</p>
-          </div>
+          {messages.length > 0 && (
+            <Button variant="ghost" size="sm" className="text-[10px] h-7" onClick={() => { setMessages([]); setIsExpanded(false); }}>
+              שיחה חדשה
+            </Button>
+          )}
         </div>
 
+        {/* Chat history */}
+        <AnimatePresence>
+          {isExpanded && messages.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div ref={scrollRef} className="max-h-[300px] overflow-y-auto mb-3 space-y-2.5 scrollbar-hide">
+                {messages.map((msg) => (
+                  <div key={msg.id} className={cn("flex gap-2", msg.role === "user" ? "flex-row-reverse" : "")}>
+                    {msg.role === "assistant" && (
+                      <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center shrink-0 mt-0.5">
+                        <Brain className="w-3 h-3 text-white" />
+                      </div>
+                    )}
+                    <div className={cn(
+                      "rounded-2xl px-3 py-2 max-w-[85%] text-sm",
+                      msg.role === "user"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted/40"
+                    )}>
+                      {msg.role === "assistant" && msg.content ? (
+                        <div className="prose prose-sm dark:prose-invert max-w-none leading-relaxed" dir="rtl">
+                          <ReactMarkdown>{msg.content}</ReactMarkdown>
+                        </div>
+                      ) : msg.role === "assistant" ? (
+                        <span className="flex items-center gap-1.5 text-muted-foreground text-xs">
+                          <RefreshCw className="w-3 h-3 animate-spin" /> חושב...
+                        </span>
+                      ) : (
+                        <p className="whitespace-pre-wrap" dir="rtl">{msg.content}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Input */}
         <div className="flex gap-2">
           <Textarea
             value={input}
@@ -439,8 +511,8 @@ const BrainCommandPrompt = () => {
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendCommand(); }
             }}
-            placeholder="תאר את המשימה... (למשל: בדוק מלאי מוצרי מזון, צור קמפיין לכלבים גדולים...)"
-            className="flex-1 min-h-[44px] max-h-[120px] resize-none bg-muted/30 border-border/30 text-sm"
+            placeholder="תאר מה לעשות... (תיקון באג, עדכון תוכן, שינוי עיצוב, הגדרות...)"
+            className="flex-1 min-h-[44px] max-h-[100px] resize-none bg-muted/30 border-border/30 text-sm"
             disabled={isStreaming}
             dir="rtl"
           />
@@ -455,11 +527,11 @@ const BrainCommandPrompt = () => {
         </div>
 
         {/* Quick prompts */}
-        <div className="flex gap-1.5 mt-2 flex-wrap">
-          {["בדוק סטטוס כל הרובוטים", "דוח מלאי קריטי", "צור קמפיין שיווקי", "בדוק רישיונות שפגו"].map((s) => (
+        <div className="flex gap-1.5 mt-2.5 flex-wrap">
+          {quickPrompts.map((s) => (
             <button
               key={s}
-              onClick={() => { setInput(s); }}
+              onClick={() => setInput(s)}
               className="text-[10px] px-2.5 py-1 rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 hover:bg-violet-500/20 transition-colors"
               disabled={isStreaming}
             >
@@ -467,33 +539,6 @@ const BrainCommandPrompt = () => {
             </button>
           ))}
         </div>
-
-        {/* Response area */}
-        <AnimatePresence>
-          {showResponse && response && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mt-3 overflow-hidden"
-            >
-              <div className="p-3 rounded-xl bg-muted/30 border border-border/20">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-1.5">
-                    <Brain className="w-3.5 h-3.5 text-violet-500" />
-                    <span className="text-[10px] font-medium text-muted-foreground">תגובת Brain Bot</span>
-                  </div>
-                  <button onClick={() => setShowResponse(false)} className="text-muted-foreground hover:text-foreground">
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                <div className="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed" dir="rtl">
-                  <ReactMarkdown>{response}</ReactMarkdown>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
     </Card>
   );
