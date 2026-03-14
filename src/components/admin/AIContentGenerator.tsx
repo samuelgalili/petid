@@ -146,6 +146,57 @@ const AIContentGenerator = () => {
     toast.success("הועתק ללוח!");
   };
 
+  const getPublishCaption = (): string => {
+    if (generatedAds.length > 0) {
+      const ad = generatedAds[0];
+      return `${ad.headline}\n\n${ad.body}\n\n${ad.cta}`;
+    }
+    if (generatedPosts.length > 0) {
+      const post = generatedPosts[0];
+      return `${post.emoji} ${post.content}\n\n${post.hashtags.join(" ")}`;
+    }
+    return context;
+  };
+
+  const handlePublish = async (platform: "facebook" | "instagram" | "both") => {
+    setIsPublishing(true);
+    setPublishResults(null);
+
+    try {
+      const caption = getPublishCaption();
+      const { data, error } = await supabase.functions.invoke("publish-to-social", {
+        body: {
+          platform,
+          message: caption,
+          imageUrl: generatedImageUrl || undefined,
+        },
+      });
+
+      if (error) throw error;
+
+      setPublishResults(data?.results || {});
+
+      const fbOk = data?.results?.facebook?.success;
+      const igOk = data?.results?.instagram?.success;
+
+      if (platform === "both") {
+        if (fbOk && igOk) toast.success("פורסם בהצלחה בפייסבוק ואינסטגרם! 🎉");
+        else if (fbOk) toast.success("פורסם בפייסבוק. שגיאה באינסטגרם.");
+        else if (igOk) toast.success("פורסם באינסטגרם. שגיאה בפייסבוק.");
+        else toast.error("שגיאה בפרסום");
+      } else if (platform === "facebook") {
+        fbOk ? toast.success("פורסם בפייסבוק! 🎉") : toast.error(data?.results?.facebook?.error || "שגיאה");
+      } else {
+        igOk ? toast.success("פורסם באינסטגרם! 🎉") : toast.error(data?.results?.instagram?.error || "שגיאה");
+      }
+    } catch (err) {
+      console.error("Publish error:", err);
+      toast.error("שגיאה בפרסום לרשתות החברתיות");
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Generator Form */}
