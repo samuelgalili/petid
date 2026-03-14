@@ -126,7 +126,7 @@ export const BreedsList = () => {
   return (
     <div className="space-y-4">
       {/* Stats Header */}
-      <div className="flex items-center justify-between bg-muted/30 rounded-xl p-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-muted/30 rounded-xl p-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
             <Dog className="w-5 h-5 text-primary" />
@@ -136,7 +136,7 @@ export const BreedsList = () => {
             <p className="text-sm text-muted-foreground">גזעים במערכת</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Export dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
