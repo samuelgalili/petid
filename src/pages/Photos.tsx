@@ -57,7 +57,7 @@ export default function Photos() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedPosts, setSelectedPosts] = useState<Set<string>>(new Set());
   const [showMultiDeleteDialog, setShowMultiDeleteDialog] = useState(false);
-  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [pressedPostId, setPressedPostId] = useState<string | null>(null);
 
   useEffect(() => {

@@ -24,7 +24,7 @@ export const HighlightsSection = ({ userId, isOwnProfile }: HighlightsSectionPro
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedHighlight, setSelectedHighlight] = useState<Highlight | null>(null);
-  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [pressedHighlightId, setPressedHighlightId] = useState<string | null>(null);
 
   useEffect(() => {

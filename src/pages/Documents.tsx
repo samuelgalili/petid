@@ -49,7 +49,7 @@ export default function Documents() {
   const [sortBy, setSortBy] = useState<string>("date-desc");
   const [pendingDelete, setPendingDelete] = useState<{ id: string; fileUrl: string; doc: any } | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-  const deleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const deleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Upload form state
   const [uploadPetId, setUploadPetId] = useState<string>(preselectedPetId || "");

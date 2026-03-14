@@ -46,7 +46,7 @@ const StoryViewer = () => {
   const [showHighlightDialog, setShowHighlightDialog] = useState(false);
   const [viewersCount, setViewersCount] = useState(0);
   const [replyText, setReplyText] = useState("");
-  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const STORY_DURATION = 5000;
 
   useEffect(() => {

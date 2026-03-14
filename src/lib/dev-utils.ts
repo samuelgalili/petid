@@ -9,7 +9,7 @@
  * Log a warning only in development mode
  */
 export const devWarn = (message: string, ...args: unknown[]) => {
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     console.warn(`[DEV] ${message}`, ...args);
   }
 };
@@ -18,7 +18,7 @@ export const devWarn = (message: string, ...args: unknown[]) => {
  * Log an error only in development mode
  */
 export const devError = (message: string, ...args: unknown[]) => {
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     console.error(`[DEV] ${message}`, ...args);
   }
 };
@@ -27,7 +27,7 @@ export const devError = (message: string, ...args: unknown[]) => {
  * Log info only in development mode
  */
 export const devLog = (message: string, ...args: unknown[]) => {
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     console.log(`[DEV] ${message}`, ...args);
   }
 };
@@ -37,7 +37,7 @@ export const devLog = (message: string, ...args: unknown[]) => {
  * Throws an error if condition is false
  */
 export const devAssert = (condition: boolean, message: string) => {
-  if (process.env.NODE_ENV === 'development' && !condition) {
+  if (import.meta.env.DEV && !condition) {
     throw new Error(`[DEV Assert] ${message}`);
   }
 };
@@ -46,7 +46,7 @@ export const devAssert = (condition: boolean, message: string) => {
  * Validate that required environment variables are set
  */
 export const validateEnvVars = (vars: string[]) => {
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     const missing = vars.filter(v => !import.meta.env[v]);
     if (missing.length > 0) {
       devWarn(`Missing environment variables: ${missing.join(', ')}`);
@@ -58,7 +58,7 @@ export const validateEnvVars = (vars: string[]) => {
  * Performance marker for development
  */
 export const perfMark = (name: string) => {
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     performance.mark(name);
   }
 };
@@ -67,7 +67,7 @@ export const perfMark = (name: string) => {
  * Performance measure for development
  */
 export const perfMeasure = (name: string, startMark: string, endMark?: string) => {
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     try {
       if (endMark) {
         performance.measure(name, startMark, endMark);
@@ -88,7 +88,7 @@ export const perfMeasure = (name: string, startMark: string, endMark?: string) =
  * Check for duplicate React Query keys in cache
  */
 export const checkQueryKeyDuplicates = (queryClient: { getQueryCache: () => { getAll: () => { queryKey: unknown }[] } }) => {
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     const cache = queryClient.getQueryCache();
     const keys = cache.getAll().map(q => JSON.stringify(q.queryKey));
     const seen = new Set<string>();
@@ -111,7 +111,7 @@ export const checkQueryKeyDuplicates = (queryClient: { getQueryCache: () => { ge
  * Create a development-only debug panel data collector
  */
 export const createDebugCollector = () => {
-  if (process.env.NODE_ENV !== 'development') {
+  if (!import.meta.env.DEV) {
     return {
       log: () => {},
       getAll: () => [],

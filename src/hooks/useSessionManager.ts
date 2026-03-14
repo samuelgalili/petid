@@ -23,7 +23,7 @@ export const useSessionManager = (config: Partial<SessionConfig> = {}) => {
   const { toast } = useToast();
   const lastActivityRef = useRef<number>(Date.now());
   const warningShownRef = useRef<boolean>(false);
-  const checkIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const checkIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { timeoutMinutes, warningMinutes, checkIntervalSeconds } = {
     ...DEFAULT_CONFIG,

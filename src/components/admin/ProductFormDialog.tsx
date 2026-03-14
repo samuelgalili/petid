@@ -149,7 +149,7 @@ export const ProductFormDialog = ({
   const [isSearchingImages, setIsSearchingImages] = useState(false);
   const [selectedSearchImages, setSelectedSearchImages] = useState<string[]>([]);
   const [newFlavor, setNewFlavor] = useState("");
-  const enrichTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const enrichTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [productUrl, setProductUrl] = useState("");
   

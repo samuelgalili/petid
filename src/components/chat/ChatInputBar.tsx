@@ -34,7 +34,7 @@ const ChatInputBar = ({
   const [clickedPill, setClickedPill] = useState<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const recordingInterval = useRef<NodeJS.Timeout | null>(null);
+  const recordingInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const { toast } = useToast();
 
   // Dog-first quick action pills
