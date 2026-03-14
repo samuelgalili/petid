@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -18,8 +17,6 @@ import {
   Copy,
   RefreshCw,
   Wand2,
-  Target,
-  Hash,
   Image as ImageIcon,
   Download,
   Loader2
@@ -146,31 +143,31 @@ const AIContentGenerator = () => {
   return (
     <div className="space-y-6">
       {/* Generator Form */}
-      <Card className="border-0 bg-gradient-to-br from-slate-900 to-slate-800">
-        <CardHeader className="border-b border-slate-700/50">
-          <CardTitle className="text-white flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-violet-400" />
+      <Card>
+        <CardHeader className="border-b border-border">
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-primary" strokeWidth={1.5} />
             יצירת תוכן שיווקי עם AI
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6 space-y-6">
           {/* Content Type Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="bg-slate-800/50 grid grid-cols-4 w-full">
+            <TabsList className="grid grid-cols-4 w-full">
               <TabsTrigger value="ad" className="gap-2">
-                <Megaphone className="w-4 h-4" />
+                <Megaphone className="w-4 h-4" strokeWidth={1.5} />
                 מודעות
               </TabsTrigger>
               <TabsTrigger value="social" className="gap-2">
-                <Instagram className="w-4 h-4" />
+                <Instagram className="w-4 h-4" strokeWidth={1.5} />
                 פוסטים
               </TabsTrigger>
               <TabsTrigger value="email" className="gap-2">
-                <Mail className="w-4 h-4" />
+                <Mail className="w-4 h-4" strokeWidth={1.5} />
                 מיילים
               </TabsTrigger>
               <TabsTrigger value="sms" className="gap-2">
-                <MessageSquare className="w-4 h-4" />
+                <MessageSquare className="w-4 h-4" strokeWidth={1.5} />
                 SMS
               </TabsTrigger>
             </TabsList>
@@ -179,19 +176,19 @@ const AIContentGenerator = () => {
           {/* Input Fields */}
           <div className="grid md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <Label className="text-slate-300">נושא / מוצר / מבצע</Label>
+              <Label className="text-muted-foreground">נושא / מוצר / מבצע</Label>
               <Textarea 
                 value={context}
                 onChange={(e) => setContext(e.target.value)}
-                className="bg-slate-800 border-slate-700 text-white mt-1.5"
+                className="mt-1.5"
                 placeholder="לדוגמה: מבצע 20% הנחה על כל מזון הכלבים, או: השקת קולקציית צעצועים חדשה..."
                 rows={3}
               />
             </div>
             <div>
-              <Label className="text-slate-300">טון המותג</Label>
+              <Label className="text-muted-foreground">טון המותג</Label>
               <Select value={brandVoice} onValueChange={setBrandVoice}>
-                <SelectTrigger className="bg-slate-800 border-slate-700 text-white mt-1.5">
+                <SelectTrigger className="mt-1.5">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -202,9 +199,9 @@ const AIContentGenerator = () => {
               </Select>
             </div>
             <div>
-              <Label className="text-slate-300">קהל יעד</Label>
+              <Label className="text-muted-foreground">קהל יעד</Label>
               <Select value={targetAudience} onValueChange={setTargetAudience}>
-                <SelectTrigger className="bg-slate-800 border-slate-700 text-white mt-1.5">
+                <SelectTrigger className="mt-1.5">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -219,7 +216,7 @@ const AIContentGenerator = () => {
           <Button 
             onClick={handleGenerate}
             disabled={isGenerating}
-            className="w-full bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700"
+            className="w-full"
           >
             {isGenerating ? (
               <>
@@ -228,7 +225,7 @@ const AIContentGenerator = () => {
               </>
             ) : (
               <>
-                <Wand2 className="w-4 h-4 ml-2" />
+                <Wand2 className="w-4 h-4 ml-2" strokeWidth={1.5} />
                 צור תוכן
               </>
             )}
@@ -238,35 +235,34 @@ const AIContentGenerator = () => {
 
       {/* Generated Image */}
       {(generatedImageUrl || isImageLoading) && (
-        <Card className="border-0 bg-gradient-to-br from-slate-900 to-slate-800">
-          <CardHeader className="border-b border-slate-700/50">
-            <CardTitle className="text-white flex items-center gap-2 text-base">
-              <ImageIcon className="w-5 h-5 text-emerald-400" />
+        <Card>
+          <CardHeader className="border-b border-border">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ImageIcon className="w-5 h-5 text-primary" strokeWidth={1.5} />
               תמונה שנוצרה לפוסט
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4">
             {isImageLoading && !generatedImageUrl ? (
-              <div className="flex items-center justify-center h-48 bg-slate-800 rounded-lg">
+              <div className="flex items-center justify-center h-48 bg-muted rounded-lg">
                 <div className="text-center space-y-2">
-                  <Loader2 className="w-8 h-8 animate-spin text-violet-400 mx-auto" />
-                  <p className="text-sm text-slate-400">יוצר תמונה...</p>
+                  <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
+                  <p className="text-sm text-muted-foreground">יוצר תמונה...</p>
                 </div>
               </div>
             ) : generatedImageUrl ? (
               <div className="space-y-3">
-                <div className="rounded-lg overflow-hidden border border-slate-700">
+                <div className="rounded-lg overflow-hidden border border-border">
                   <img 
                     src={generatedImageUrl} 
                     alt="AI generated marketing image" 
-                    className="w-full max-h-96 object-contain bg-slate-900"
+                    className="w-full max-h-96 object-contain bg-muted"
                   />
                 </div>
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="border-slate-600 text-slate-300 hover:bg-slate-700"
                     onClick={() => {
                       if (generatedImageUrl) {
                         const link = document.createElement("a");
@@ -277,19 +273,18 @@ const AIContentGenerator = () => {
                       }
                     }}
                   >
-                    <Download className="w-4 h-4 ml-1" />
+                    <Download className="w-4 h-4 ml-1" strokeWidth={1.5} />
                     הורד תמונה
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="border-slate-600 text-slate-300 hover:bg-slate-700"
                     onClick={() => {
                       navigator.clipboard.writeText(generatedImageUrl || "");
                       toast.success("קישור התמונה הועתק!");
                     }}
                   >
-                    <Copy className="w-4 h-4 ml-1" />
+                    <Copy className="w-4 h-4 ml-1" strokeWidth={1.5} />
                     העתק קישור
                   </Button>
                 </div>
@@ -298,40 +293,42 @@ const AIContentGenerator = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Generated Ads */}
       {generatedAds.length > 0 && activeTab === "ad" && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-            <Megaphone className="w-5 h-5 text-violet-400" />
+          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <Megaphone className="w-5 h-5 text-primary" strokeWidth={1.5} />
             מודעות שנוצרו
           </h3>
           <div className="grid md:grid-cols-3 gap-4">
             {generatedAds.map((ad, idx) => (
-              <Card key={idx} className="border-0 bg-gradient-to-br from-slate-800 to-slate-900">
+              <Card key={idx}>
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <Badge className="bg-violet-500/20 text-violet-400">וריאציה {idx + 1}</Badge>
+                    <Badge variant="secondary">וריאציה {idx + 1}</Badge>
                     <Button 
                       size="icon" 
                       variant="ghost" 
                       className="h-8 w-8"
                       onClick={() => copyToClipboard(`${ad.headline}\n\n${ad.body}\n\n${ad.cta}`)}
                     >
-                      <Copy className="w-4 h-4" />
+                      <Copy className="w-4 h-4" strokeWidth={1.5} />
                     </Button>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-400 mb-1">כותרת</p>
-                    <p className="text-white font-bold">{ad.headline}</p>
+                    <p className="text-xs text-muted-foreground mb-1">כותרת</p>
+                    <p className="text-foreground font-bold">{ad.headline}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-400 mb-1">טקסט</p>
-                    <p className="text-slate-300 text-sm">{ad.body}</p>
+                    <p className="text-xs text-muted-foreground mb-1">טקסט</p>
+                    <p className="text-muted-foreground text-sm">{ad.body}</p>
                   </div>
                   <div className="flex items-center justify-between">
-                    <Badge className="bg-emerald-500/20 text-emerald-400">{ad.cta}</Badge>
+                    <Badge variant="outline">{ad.cta}</Badge>
                   </div>
-                  <div className="pt-2 border-t border-slate-700">
-                    <p className="text-xs text-slate-500">💡 רעיון לתמונה: {ad.imageIdea}</p>
+                  <div className="pt-2 border-t border-border">
+                    <p className="text-xs text-muted-foreground">💡 רעיון לתמונה: {ad.imageIdea}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -343,20 +340,16 @@ const AIContentGenerator = () => {
       {/* Generated Posts */}
       {generatedPosts.length > 0 && activeTab === "social" && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-            <Instagram className="w-5 h-5 text-pink-400" />
+          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <Instagram className="w-5 h-5 text-primary" strokeWidth={1.5} />
             פוסטים שנוצרו
           </h3>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {generatedPosts.map((post, idx) => (
-              <Card key={idx} className="border-0 bg-gradient-to-br from-slate-800 to-slate-900">
+              <Card key={idx}>
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <Badge className={
-                      post.platform === "instagram" ? "bg-pink-500/20 text-pink-400" :
-                      post.platform === "facebook" ? "bg-blue-500/20 text-blue-400" :
-                      "bg-slate-500/20 text-slate-400"
-                    }>
+                    <Badge variant="secondary">
                       {post.platform}
                     </Badge>
                     <Button 
@@ -365,13 +358,13 @@ const AIContentGenerator = () => {
                       className="h-8 w-8"
                       onClick={() => copyToClipboard(`${post.content}\n\n${post.hashtags.join(" ")}`)}
                     >
-                      <Copy className="w-4 h-4" />
+                      <Copy className="w-4 h-4" strokeWidth={1.5} />
                     </Button>
                   </div>
-                  <p className="text-white text-sm">{post.emoji} {post.content}</p>
+                  <p className="text-foreground text-sm">{post.emoji} {post.content}</p>
                   <div className="flex flex-wrap gap-1">
                     {post.hashtags.map((tag, i) => (
-                      <span key={i} className="text-xs text-violet-400">{tag}</span>
+                      <span key={i} className="text-xs text-primary">{tag}</span>
                     ))}
                   </div>
                 </CardContent>
@@ -384,39 +377,39 @@ const AIContentGenerator = () => {
       {/* Generated Emails */}
       {generatedEmails.length > 0 && activeTab === "email" && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-            <Mail className="w-5 h-5 text-amber-400" />
+          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <Mail className="w-5 h-5 text-primary" strokeWidth={1.5} />
             רצף מיילים שנוצר
           </h3>
           <div className="space-y-4">
             {generatedEmails.map((email, idx) => (
-              <Card key={idx} className="border-0 bg-gradient-to-br from-slate-800 to-slate-900">
+              <Card key={idx}>
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <Badge className="bg-amber-500/20 text-amber-400">מייל {idx + 1}</Badge>
+                    <Badge variant="secondary">מייל {idx + 1}</Badge>
                     <Button 
                       size="icon" 
                       variant="ghost" 
                       className="h-8 w-8"
                       onClick={() => copyToClipboard(`נושא: ${email.subject}\n\n${email.greeting}\n\n${email.body}\n\n${email.cta}${email.ps ? `\n\nP.S. ${email.ps}` : ""}`)}
                     >
-                      <Copy className="w-4 h-4" />
+                      <Copy className="w-4 h-4" strokeWidth={1.5} />
                     </Button>
                   </div>
-                  <div className="bg-slate-900/50 rounded-lg p-3">
-                    <p className="text-xs text-slate-400 mb-1">נושא המייל</p>
-                    <p className="text-white font-medium">{email.subject}</p>
-                    <p className="text-xs text-slate-500 mt-1">{email.preheader}</p>
+                  <div className="bg-muted/50 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground mb-1">נושא המייל</p>
+                    <p className="text-foreground font-medium">{email.subject}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{email.preheader}</p>
                   </div>
                   <div>
-                    <p className="text-violet-400 font-medium mb-2">{email.greeting}</p>
-                    <p className="text-slate-300 text-sm whitespace-pre-wrap">{email.body}</p>
+                    <p className="text-primary font-medium mb-2">{email.greeting}</p>
+                    <p className="text-muted-foreground text-sm whitespace-pre-wrap">{email.body}</p>
                   </div>
-                  <Button variant="outline" className="w-full border-emerald-500/30 text-emerald-400">
+                  <Button variant="outline" className="w-full">
                     {email.cta}
                   </Button>
                   {email.ps && (
-                    <p className="text-xs text-slate-400 italic">נ.ב. {email.ps}</p>
+                    <p className="text-xs text-muted-foreground italic">נ.ב. {email.ps}</p>
                   )}
                 </CardContent>
               </Card>
@@ -428,16 +421,16 @@ const AIContentGenerator = () => {
       {/* Generated SMS */}
       {generatedSMS.length > 0 && activeTab === "sms" && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-emerald-400" />
+          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-primary" strokeWidth={1.5} />
             הודעות SMS שנוצרו
           </h3>
           <div className="grid md:grid-cols-3 gap-4">
             {generatedSMS.map((sms, idx) => (
-              <Card key={idx} className="border-0 bg-gradient-to-br from-slate-800 to-slate-900">
+              <Card key={idx}>
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <Badge className="bg-emerald-500/20 text-emerald-400">
+                    <Badge variant="secondary">
                       {sms.text.length} תווים
                     </Badge>
                     <Button 
@@ -446,12 +439,12 @@ const AIContentGenerator = () => {
                       className="h-8 w-8"
                       onClick={() => copyToClipboard(sms.text)}
                     >
-                      <Copy className="w-4 h-4" />
+                      <Copy className="w-4 h-4" strokeWidth={1.5} />
                     </Button>
                   </div>
-                  <p className="text-white text-sm">{sms.text}</p>
+                  <p className="text-foreground text-sm">{sms.text}</p>
                   {sms.hasLink && (
-                    <Badge variant="outline" className="border-slate-600 text-slate-400">
+                    <Badge variant="outline">
                       כולל קישור
                     </Badge>
                   )}
