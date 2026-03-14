@@ -19,7 +19,11 @@ import {
   Wand2,
   Image as ImageIcon,
   Download,
-  Loader2
+  Loader2,
+  Facebook,
+  Send,
+  CheckCircle2,
+  XCircle
 } from "lucide-react";
 
 interface GeneratedAd {
@@ -63,6 +67,8 @@ const AIContentGenerator = () => {
   const [generatedSMS, setGeneratedSMS] = useState<GeneratedSMS[]>([]);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [isImageLoading, setIsImageLoading] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishResults, setPublishResults] = useState<Record<string, { success: boolean; error?: string; postId?: string }> | null>(null);
 
   const brandVoiceOptions = [
     { value: "friendly", label: "ידידותי וחם" },
@@ -138,6 +144,57 @@ const AIContentGenerator = () => {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success("הועתק ללוח!");
+  };
+
+  const getPublishCaption = (): string => {
+    if (generatedAds.length > 0) {
+      const ad = generatedAds[0];
+      return `${ad.headline}\n\n${ad.body}\n\n${ad.cta}`;
+    }
+    if (generatedPosts.length > 0) {
+      const post = generatedPosts[0];
+      return `${post.emoji} ${post.content}\n\n${post.hashtags.join(" ")}`;
+    }
+    return context;
+  };
+
+  const handlePublish = async (platform: "facebook" | "instagram" | "both") => {
+    setIsPublishing(true);
+    setPublishResults(null);
+
+    try {
+      const caption = getPublishCaption();
+      const { data, error } = await supabase.functions.invoke("publish-to-social", {
+        body: {
+          platform,
+          message: caption,
+          imageUrl: generatedImageUrl || undefined,
+        },
+      });
+
+      if (error) throw error;
+
+      setPublishResults(data?.results || {});
+
+      const fbOk = data?.results?.facebook?.success;
+      const igOk = data?.results?.instagram?.success;
+
+      if (platform === "both") {
+        if (fbOk && igOk) toast.success("פורסם בהצלחה בפייסבוק ואינסטגרם! 🎉");
+        else if (fbOk) toast.success("פורסם בפייסבוק. שגיאה באינסטגרם.");
+        else if (igOk) toast.success("פורסם באינסטגרם. שגיאה בפייסבוק.");
+        else toast.error("שגיאה בפרסום");
+      } else if (platform === "facebook") {
+        fbOk ? toast.success("פורסם בפייסבוק! 🎉") : toast.error(data?.results?.facebook?.error || "שגיאה");
+      } else {
+        igOk ? toast.success("פורסם באינסטגרם! 🎉") : toast.error(data?.results?.instagram?.error || "שגיאה");
+      }
+    } catch (err) {
+      console.error("Publish error:", err);
+      toast.error("שגיאה בפרסום לרשתות החברתיות");
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   return (
@@ -294,7 +351,91 @@ const AIContentGenerator = () => {
         </Card>
       )}
 
-      {/* Generated Ads */}
+      {/* Publish to Social Media */}
+      {(generatedAds.length > 0 || generatedPosts.length > 0 || generatedImageUrl) && (
+        <Card>
+          <CardHeader className="border-b border-border">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Send className="w-5 h-5 text-primary" strokeWidth={1.5} />
+              פרסם לרשתות החברתיות
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 space-y-4">
+            <p className="text-sm text-muted-foreground">
+              פרסם את התוכן שנוצר ישירות לדפים החברתיים של PetID
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                onClick={() => handlePublish("both")}
+                disabled={isPublishing}
+                className="gap-2"
+              >
+                {isPublishing ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" strokeWidth={1.5} />
+                )}
+                פרסם בשניהם
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handlePublish("facebook")}
+                disabled={isPublishing}
+                className="gap-2"
+              >
+                <Facebook className="w-4 h-4" strokeWidth={1.5} />
+                פייסבוק בלבד
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handlePublish("instagram")}
+                disabled={isPublishing}
+                className="gap-2"
+              >
+                <Instagram className="w-4 h-4" strokeWidth={1.5} />
+                אינסטגרם בלבד
+              </Button>
+            </div>
+
+            {/* Publish Results */}
+            {publishResults && (
+              <div className="space-y-2 pt-3 border-t border-border">
+                {publishResults.facebook && (
+                  <div className="flex items-center gap-2 text-sm">
+                    {publishResults.facebook.success ? (
+                      <CheckCircle2 className="w-4 h-4 text-green-500" strokeWidth={1.5} />
+                    ) : (
+                      <XCircle className="w-4 h-4 text-destructive" strokeWidth={1.5} />
+                    )}
+                    <span className="text-foreground font-medium">Facebook:</span>
+                    <span className="text-muted-foreground">
+                      {publishResults.facebook.success 
+                        ? `פורסם בהצלחה (ID: ${publishResults.facebook.postId})` 
+                        : publishResults.facebook.error}
+                    </span>
+                  </div>
+                )}
+                {publishResults.instagram && (
+                  <div className="flex items-center gap-2 text-sm">
+                    {publishResults.instagram.success ? (
+                      <CheckCircle2 className="w-4 h-4 text-green-500" strokeWidth={1.5} />
+                    ) : (
+                      <XCircle className="w-4 h-4 text-destructive" strokeWidth={1.5} />
+                    )}
+                    <span className="text-foreground font-medium">Instagram:</span>
+                    <span className="text-muted-foreground">
+                      {publishResults.instagram.success 
+                        ? `פורסם בהצלחה (ID: ${publishResults.instagram.postId})` 
+                        : publishResults.instagram.error}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {generatedAds.length > 0 && activeTab === "ad" && (
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
