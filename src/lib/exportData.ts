@@ -68,7 +68,7 @@ export function exportData<T extends Record<string, any>>(
 /**
  * Share file via Web Share API (mobile) or fallback to download
  */
-export async function shareFile(
+export async function shareFile<T extends Record<string, any>>(
   data: T[] | string,
   options: ExportOptions & { title?: string; text?: string }
 ) {
