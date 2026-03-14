@@ -367,9 +367,9 @@ const AIControlRoom = () => {
         {/* Right Sidebar */}
         <div className="flex flex-col min-h-0 overflow-auto">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-4 w-full">
-              <TabsTrigger value="status" className="text-xs gap-1"><Activity className="w-3.5 h-3.5" />סטטוס</TabsTrigger>
-              <TabsTrigger value="approvals" className="text-xs gap-1">
+            <TabsList className="grid grid-cols-4 w-full shrink-0">
+              <TabsTrigger value="status" className="text-xs gap-1 px-1"><Activity className="w-3.5 h-3.5" /><span className="hidden sm:inline">סטטוס</span></TabsTrigger>
+              <TabsTrigger value="approvals" className="text-xs gap-1 px-1">
                 <AlertTriangle className="w-3.5 h-3.5" />
                 אישורים
                 {pendingApprovalTasks.length > 0 && (
