@@ -5,10 +5,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
-import { Dog, Heart, Baby, Users, Scissors, Droplets, Zap, Brain, Volume2, Shield, Sparkles } from "lucide-react";
+import { Dog, Heart, Baby, Users, Scissors, Droplets, Zap, Brain, Volume2, Shield, Sparkles, Download, Share2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { exportData, shareFile } from "@/lib/exportData";
+import { toast } from "sonner";
 
 interface BreedInfo {
   id: string;
