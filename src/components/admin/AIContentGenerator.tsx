@@ -351,7 +351,91 @@ const AIContentGenerator = () => {
         </Card>
       )}
 
-      {/* Generated Ads */}
+      {/* Publish to Social Media */}
+      {(generatedAds.length > 0 || generatedPosts.length > 0 || generatedImageUrl) && (
+        <Card>
+          <CardHeader className="border-b border-border">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Send className="w-5 h-5 text-primary" strokeWidth={1.5} />
+              פרסם לרשתות החברתיות
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 space-y-4">
+            <p className="text-sm text-muted-foreground">
+              פרסם את התוכן שנוצר ישירות לדפים החברתיים של PetID
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                onClick={() => handlePublish("both")}
+                disabled={isPublishing}
+                className="gap-2"
+              >
+                {isPublishing ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" strokeWidth={1.5} />
+                )}
+                פרסם בשניהם
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handlePublish("facebook")}
+                disabled={isPublishing}
+                className="gap-2"
+              >
+                <Facebook className="w-4 h-4" strokeWidth={1.5} />
+                פייסבוק בלבד
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handlePublish("instagram")}
+                disabled={isPublishing}
+                className="gap-2"
+              >
+                <Instagram className="w-4 h-4" strokeWidth={1.5} />
+                אינסטגרם בלבד
+              </Button>
+            </div>
+
+            {/* Publish Results */}
+            {publishResults && (
+              <div className="space-y-2 pt-3 border-t border-border">
+                {publishResults.facebook && (
+                  <div className="flex items-center gap-2 text-sm">
+                    {publishResults.facebook.success ? (
+                      <CheckCircle2 className="w-4 h-4 text-green-500" strokeWidth={1.5} />
+                    ) : (
+                      <XCircle className="w-4 h-4 text-destructive" strokeWidth={1.5} />
+                    )}
+                    <span className="text-foreground font-medium">Facebook:</span>
+                    <span className="text-muted-foreground">
+                      {publishResults.facebook.success 
+                        ? `פורסם בהצלחה (ID: ${publishResults.facebook.postId})` 
+                        : publishResults.facebook.error}
+                    </span>
+                  </div>
+                )}
+                {publishResults.instagram && (
+                  <div className="flex items-center gap-2 text-sm">
+                    {publishResults.instagram.success ? (
+                      <CheckCircle2 className="w-4 h-4 text-green-500" strokeWidth={1.5} />
+                    ) : (
+                      <XCircle className="w-4 h-4 text-destructive" strokeWidth={1.5} />
+                    )}
+                    <span className="text-foreground font-medium">Instagram:</span>
+                    <span className="text-muted-foreground">
+                      {publishResults.instagram.success 
+                        ? `פורסם בהצלחה (ID: ${publishResults.instagram.postId})` 
+                        : publishResults.instagram.error}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {generatedAds.length > 0 && activeTab === "ad" && (
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
