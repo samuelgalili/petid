@@ -67,6 +67,8 @@ const AIContentGenerator = () => {
   const [generatedSMS, setGeneratedSMS] = useState<GeneratedSMS[]>([]);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [isImageLoading, setIsImageLoading] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishResults, setPublishResults] = useState<Record<string, { success: boolean; error?: string; postId?: string }> | null>(null);
 
   const brandVoiceOptions = [
     { value: "friendly", label: "ידידותי וחם" },
