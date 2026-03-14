@@ -252,12 +252,12 @@ const AIControlRoom = () => {
 
   return (
     <AdminLayout title="AI Control Room" icon={Crown}>
-      <div className="grid lg:grid-cols-[1fr_400px] gap-6 h-[calc(100vh-180px)]">
-        {/* Main Column — fixed layout, no overflow push */}
-        <div className="flex flex-col gap-4 min-h-0">
-          {/* Global Kill Switch Bar — always visible */}
+      <div className="flex flex-col lg:grid lg:grid-cols-[1fr_380px] gap-4 lg:gap-6 min-h-0" style={{ height: 'calc(100vh - 180px)', maxHeight: 'calc(100vh - 180px)' }}>
+        {/* Main Column */}
+        <div className="flex flex-col gap-4 min-h-0 overflow-hidden">
+          {/* Global Kill Switch Bar */}
           <Card className={cn(
-            "p-4 flex items-center justify-between border-2 transition-colors shrink-0",
+            "p-3 lg:p-4 flex items-center justify-between border-2 transition-colors shrink-0",
             globalKillSwitch ? "border-red-500/50 bg-red-500/5" : "border-emerald-500/30 bg-emerald-500/5"
           )}>
             <div className="flex items-center gap-3">
