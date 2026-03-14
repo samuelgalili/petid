@@ -347,7 +347,6 @@ When the admin asks to make changes — always create <action> or <task> tags so
 
                 const actionData = actionParseResult.data;
 
-                // Route to approval queue — ALL actions require admin approval
                 const categoryMap: Record<string, string> = {
                   content_update: "content",
                   design_change: "design",
@@ -357,15 +356,35 @@ When the admin asks to make changes — always create <action> or <task> tags so
                   feature_toggle: "system",
                 };
 
-                await supabase.from('admin_approval_queue').insert({
-                  title: `[${actionData.type}] ${actionData.target}`,
-                  description: actionData.description,
-                  category: categoryMap[actionData.type] || "general",
-                  status: "pending",
-                  proposed_changes: actionData.changes || {},
-                  draft_content: JSON.stringify(actionData),
-                  target_entity: actionData.target,
-                });
+                // Determine if this action requires approval
+                const REQUIRES_APPROVAL_TYPES = ["content_update", "design_change", "code_fix"];
+                const needsApproval = REQUIRES_APPROVAL_TYPES.includes(actionData.type);
+
+                if (needsApproval) {
+                  // Route to approval queue
+                  await supabase.from('admin_approval_queue').insert({
+                    title: `[${actionData.type}] ${actionData.target}`,
+                    description: actionData.description,
+                    category: categoryMap[actionData.type] || "general",
+                    status: "pending",
+                    proposed_changes: actionData.changes || {},
+                    draft_content: JSON.stringify(actionData),
+                    target_entity: actionData.target,
+                  });
+                } else {
+                  // Auto-execute internal action — log as completed
+                  await supabase.from('admin_approval_queue').insert({
+                    title: `[${actionData.type}] ${actionData.target}`,
+                    description: actionData.description,
+                    category: categoryMap[actionData.type] || "general",
+                    status: "approved",
+                    proposed_changes: actionData.changes || {},
+                    draft_content: JSON.stringify(actionData),
+                    target_entity: actionData.target,
+                    reviewed_at: new Date().toISOString(),
+                    review_notes: "אושר אוטומטית — דוח/פעולה פנימית",
+                  });
+                }
 
                 // Log the action
                 const bot = bots?.find(b => b.slug === (actionData.bot || 'brain'));
@@ -373,7 +392,7 @@ When the admin asks to make changes — always create <action> or <task> tags so
                   await supabase.from('agent_action_logs').insert({
                     bot_id: bot.id,
                     action_type: actionData.type,
-                    description: `Queued for approval: ${actionData.description}`.substring(0, 500),
+                    description: `${needsApproval ? 'Queued for approval' : 'Auto-executed'}: ${actionData.description}`.substring(0, 500),
                     reason: `Admin command → ${actionData.target}`,
                     expected_outcome: actionData.description,
                   });
