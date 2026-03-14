@@ -399,7 +399,7 @@ const AIControlRoom = () => {
 
               <div className="space-y-2">
                 <h3 className="text-sm font-medium flex items-center gap-2"><Bot className="w-4 h-4" />The Fleet — 9 רובוטים</h3>
-                <ScrollArea className="h-[400px]">
+                <ScrollArea className="h-[300px] lg:h-[400px]">
                   <div className="space-y-2">
                     {fleetBots.map((bot) => {
                       const Icon = iconMap[bot.icon] || Bot;
