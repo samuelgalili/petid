@@ -468,6 +468,8 @@ const SovereignDashboard = () => {
               )}
             </AnimatePresence>
 
+            {/* ─── Brain Command Prompt ─────────────────── */}
+            <BrainCommandPrompt />
             {/* ─── Decision Cards (Tinder-style) ──────── */}
             <div>
               <div className="flex items-center justify-between mb-3">
