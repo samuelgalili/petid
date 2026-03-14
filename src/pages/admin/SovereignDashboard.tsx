@@ -502,6 +502,12 @@ const SovereignDashboard = () => {
   const navigate = useNavigate();
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [showSidebar, setShowSidebar] = useState(false);
+  const [expandedCard, setExpandedCard] = useState<string | null>(null);
+  const [editItem, setEditItem] = useState<any | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editNotes, setEditNotes] = useState("");
+  const [showSidebar, setShowSidebar] = useState(false);
 
   // Realtime subscriptions
   useEffect(() => {
