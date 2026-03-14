@@ -620,48 +620,106 @@ const SovereignDashboard = () => {
 
             {/* ─── Brain Command Prompt ─────────────────── */}
             <BrainCommandPrompt />
-            {/* ─── Decision Cards (Tinder-style) ──────── */}
+
+            {/* ─── Decision Queue (Uniform List) ──────── */}
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
                   <Zap className="w-4 h-4 text-amber-500" strokeWidth={1.5} />
                   תור החלטות CEO
                 </h2>
-                <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-500">
-                  {Math.max(0, approvals.length - currentCard)} ממתינים
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-500">
+                    {approvals.length} ממתינים
+                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-[10px] h-7 text-muted-foreground gap-1"
+                    onClick={() => navigate("/admin/approval-queue")}
+                  >
+                    רשימה מלאה
+                    <ChevronRight className="w-3 h-3" />
+                  </Button>
+                </div>
               </div>
-              <div className="relative h-[200px]">
-                <AnimatePresence>
-                  {visibleApprovals.slice(0, 3).map((item, idx) => (
-                    <motion.div
-                      key={item.id}
-                      className="absolute inset-0"
-                      style={{
-                        zIndex: 3 - idx,
-                        transform: `scale(${1 - idx * 0.04}) translateY(${idx * 8}px)`,
-                      }}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1 - idx * 0.2, scale: 1 - idx * 0.04, y: idx * 8 }}
-                      exit={{ opacity: 0, x: 300 }}
-                    >
-                      {idx === 0 ? (
-                        <DecisionCard item={item} onApprove={handleApprove} onReject={handleReject} />
-                      ) : (
-                        <div className="h-full rounded-[20px] border border-border/10 bg-card/40 backdrop-blur-sm" />
-                      )}
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-                {visibleApprovals.length === 0 && (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center">
-                      <CheckCircle2 className="w-10 h-10 mx-auto mb-2 text-emerald-500/30" />
-                      <p className="text-xs text-muted-foreground">כל ההחלטות טופלו ✓</p>
-                    </div>
+
+              {approvals.length === 0 ? (
+                <div className="flex items-center justify-center py-10 rounded-2xl border border-border/10 bg-card/40">
+                  <div className="text-center">
+                    <CheckCircle2 className="w-10 h-10 mx-auto mb-2 text-emerald-500/30" />
+                    <p className="text-xs text-muted-foreground">כל ההחלטות טופלו ✓</p>
                   </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <ScrollArea className="max-h-[400px]">
+                  <div className="space-y-2">
+                    <AnimatePresence mode="popLayout">
+                      {approvals.map((item: any, idx: number) => {
+                        const CatIcon = getCategoryIcon(item.category);
+                        return (
+                          <motion.div
+                            key={item.id}
+                            layout
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, x: -60 }}
+                            transition={{ delay: idx * 0.03 }}
+                            className="rounded-2xl p-4 border border-border/20 bg-card/70 backdrop-blur-xl transition-all hover:bg-card/90"
+                          >
+                            <div className="flex items-start gap-3">
+                              {/* Icon */}
+                              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                                <CatIcon className="w-4 h-4 text-primary" strokeWidth={1.5} />
+                              </div>
+
+                              {/* Content */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Badge variant="outline" className="text-[9px] border-amber-500/30 text-amber-500 bg-amber-500/5 shrink-0">
+                                    ממתין
+                                  </Badge>
+                                  {item.category && (
+                                    <Badge variant="outline" className="text-[9px] shrink-0">{item.category}</Badge>
+                                  )}
+                                  <span className="text-[9px] text-muted-foreground/50 mr-auto">
+                                    {new Date(item.created_at).toLocaleString("he-IL", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                                  </span>
+                                </div>
+                                <h4 className="text-sm font-bold text-foreground mb-0.5 line-clamp-1">{item.title}</h4>
+                                {item.description && (
+                                  <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{item.description}</p>
+                                )}
+
+                                {/* Actions */}
+                                <div className="flex items-center gap-2 justify-end">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="rounded-xl border-red-500/30 text-red-400 hover:bg-red-500/10 h-7 text-[10px] px-3 gap-1"
+                                    onClick={() => handleReject(item.id)}
+                                  >
+                                    <XCircle className="w-3 h-3" />
+                                    דחה
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    className="rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white h-7 text-[10px] px-3 gap-1"
+                                    onClick={() => handleApprove(item.id)}
+                                  >
+                                    <CheckCircle2 className="w-3 h-3" />
+                                    אשר
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
+                  </div>
+                </ScrollArea>
+              )}
             </div>
 
             {/* ─── Financial Heartbeat ─────────────────── */}
