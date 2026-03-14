@@ -559,6 +559,26 @@ const SovereignDashboard = () => {
     toast.success("נדחה");
   };
 
+  const openEdit = (item: any) => {
+    setEditItem(item);
+    setEditTitle(item.title || "");
+    setEditDescription(item.description || "");
+    setEditNotes(item.review_notes || "");
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editItem) return;
+    await supabase.from("admin_approval_queue").update({
+      title: editTitle,
+      description: editDescription,
+      review_notes: editNotes,
+      updated_at: new Date().toISOString(),
+    }).eq("id", editItem.id);
+    queryClient.invalidateQueries({ queryKey: ["sovereign-approvals"] });
+    setEditItem(null);
+    toast.success("✅ עודכן בהצלחה");
+  };
+
   const activeBots = bots.filter((b: any) => b.is_active).length;
   const getBotData = (slug: string) => bots.find((b: any) => b.slug === slug);
 
