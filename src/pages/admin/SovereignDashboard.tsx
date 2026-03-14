@@ -16,8 +16,13 @@ import {
   Crown, Brain, Bot, Shield, Sparkles, Target, MessageCircle, Store,
   Headphones, Stethoscope, Scale, Eye, Megaphone, Cpu, Search,
   CheckCircle2, XCircle, DollarSign, TrendingUp, Zap, Truck,
-  ChevronRight, Activity, AlertTriangle, X, Send, RefreshCw,
+  ChevronRight, ChevronDown, Activity, AlertTriangle, X, Send, RefreshCw,
+  Pencil, FileText,
 } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 // ─── Agent Config ───────────────────────────────────────────
