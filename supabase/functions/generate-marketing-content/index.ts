@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 serve(async (req) => {
@@ -9,7 +10,7 @@ serve(async (req) => {
   const corsHeaders = getCorsHeaders(origin);
 
   try {
-    const { type, context, brandVoice, targetAudience, language } = await req.json();
+    const { type, context, brandVoice, targetAudience, language, generateImage } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
@@ -122,6 +123,7 @@ serve(async (req) => {
         userPrompt = `צור תוכן שיווקי כללי על הנושא: ${context}`;
     }
 
+    // Generate text content
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -141,21 +143,18 @@ serve(async (req) => {
     if (!response.ok) {
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "חרגת ממכסת הבקשות, אנא נסה שוב מאוחר יותר" }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (response.status === 402) {
         return new Response(JSON.stringify({ error: "נדרש תשלום" }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       const t = await response.text();
       console.error("AI gateway error:", response.status, t);
       return new Response(JSON.stringify({ error: "שגיאה בשרת AI" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -169,14 +168,75 @@ serve(async (req) => {
       parsed = { raw: content };
     }
 
-    return new Response(JSON.stringify({ success: true, content: parsed }), {
+    // Generate image if requested
+    let imageUrl: string | null = null;
+    if (generateImage !== false) {
+      try {
+        const imagePrompt = `Create a clean, professional marketing image for a pet care brand called PetID.
+Topic: ${context}
+Style: Modern, minimalist, warm colors, professional photography style.
+The image should be suitable for social media marketing (Instagram/Facebook).
+Include cute pets (dogs or cats) in a natural, appealing setting.
+No text overlay. Clean composition. High quality.`;
+
+        const imgResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash-image",
+            messages: [
+              { role: "user", content: imagePrompt }
+            ],
+            modalities: ["image", "text"]
+          }),
+        });
+
+        if (imgResponse.ok) {
+          const imgData = await imgResponse.json();
+          const generatedImage = imgData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+          
+          if (generatedImage) {
+            // Upload base64 image to Supabase Storage
+            const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+            const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+            const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+            const base64Data = generatedImage.replace(/^data:image\/\w+;base64,/, "");
+            const imageBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+            const fileName = `marketing/ai-generated-${Date.now()}.png`;
+
+            const { error: uploadError } = await supabase.storage
+              .from("media")
+              .upload(fileName, imageBytes, { contentType: "image/png", upsert: true });
+
+            if (!uploadError) {
+              const { data: urlData } = supabase.storage.from("media").getPublicUrl(fileName);
+              imageUrl = urlData.publicUrl;
+            } else {
+              console.error("Image upload error:", uploadError);
+              // Still return base64 as fallback
+              imageUrl = generatedImage;
+            }
+          }
+        } else {
+          console.error("Image generation failed:", imgResponse.status);
+        }
+      } catch (imgErr) {
+        console.error("Image generation error:", imgErr);
+        // Continue without image - don't fail the whole request
+      }
+    }
+
+    return new Response(JSON.stringify({ success: true, content: parsed, imageUrl }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("generate-marketing-content error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "שגיאה לא ידועה" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
