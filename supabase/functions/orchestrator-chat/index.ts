@@ -307,22 +307,28 @@ When the admin asks to make changes — always create <action> or <task> tags so
                 const bot = bots?.find(b => b.slug === taskData.bot);
                 
                 if (bot && bot.is_active) {
+                  // Override requires_approval for publishing/code bots
+                  const APPROVAL_REQUIRED_BOTS = ["system-architect", "content", "marketing"];
+                  const finalRequiresApproval = APPROVAL_REQUIRED_BOTS.includes(taskData.bot) 
+                    ? true 
+                    : taskData.requires_approval;
+
                   await supabase.from('agent_tasks').insert({
                     bot_id: bot.id,
                     title: taskData.title,
                     description: taskData.description,
                     priority: taskData.priority,
                     task_type: taskData.bot,
-                    requires_approval: taskData.requires_approval,
+                    requires_approval: finalRequiresApproval,
                     reason: taskData.reason,
                     expected_outcome: taskData.expected_outcome,
-                    status: taskData.requires_approval ? 'pending_approval' : 'draft'
+                    status: finalRequiresApproval ? 'pending_approval' : 'running'
                   });
 
                   await supabase.from('agent_action_logs').insert({
                     bot_id: bot.id,
                     action_type: 'task_created',
-                    description: `Created task: ${taskData.title}`.substring(0, 500),
+                    description: `${finalRequiresApproval ? 'Queued' : 'Auto-running'}: ${taskData.title}`.substring(0, 500),
                     reason: taskData.reason,
                     expected_outcome: taskData.expected_outcome
                   });
