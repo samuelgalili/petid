@@ -236,7 +236,68 @@ const AIContentGenerator = () => {
         </CardContent>
       </Card>
 
-      {/* Generated Ads */}
+      {/* Generated Image */}
+      {(generatedImageUrl || isImageLoading) && (
+        <Card className="border-0 bg-gradient-to-br from-slate-900 to-slate-800">
+          <CardHeader className="border-b border-slate-700/50">
+            <CardTitle className="text-white flex items-center gap-2 text-base">
+              <ImageIcon className="w-5 h-5 text-emerald-400" />
+              תמונה שנוצרה לפוסט
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
+            {isImageLoading && !generatedImageUrl ? (
+              <div className="flex items-center justify-center h-48 bg-slate-800 rounded-lg">
+                <div className="text-center space-y-2">
+                  <Loader2 className="w-8 h-8 animate-spin text-violet-400 mx-auto" />
+                  <p className="text-sm text-slate-400">יוצר תמונה...</p>
+                </div>
+              </div>
+            ) : generatedImageUrl ? (
+              <div className="space-y-3">
+                <div className="rounded-lg overflow-hidden border border-slate-700">
+                  <img 
+                    src={generatedImageUrl} 
+                    alt="AI generated marketing image" 
+                    className="w-full max-h-96 object-contain bg-slate-900"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                    onClick={() => {
+                      if (generatedImageUrl) {
+                        const link = document.createElement("a");
+                        link.href = generatedImageUrl;
+                        link.download = `petid-marketing-${Date.now()}.png`;
+                        link.target = "_blank";
+                        link.click();
+                      }
+                    }}
+                  >
+                    <Download className="w-4 h-4 ml-1" />
+                    הורד תמונה
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                    onClick={() => {
+                      navigator.clipboard.writeText(generatedImageUrl || "");
+                      toast.success("קישור התמונה הועתק!");
+                    }}
+                  >
+                    <Copy className="w-4 h-4 ml-1" />
+                    העתק קישור
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
+      )}
       {generatedAds.length > 0 && activeTab === "ad" && (
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-white flex items-center gap-2">
