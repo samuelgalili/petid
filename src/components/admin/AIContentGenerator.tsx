@@ -61,6 +61,8 @@ const AIContentGenerator = () => {
   const [generatedPosts, setGeneratedPosts] = useState<GeneratedPost[]>([]);
   const [generatedEmails, setGeneratedEmails] = useState<GeneratedEmail[]>([]);
   const [generatedSMS, setGeneratedSMS] = useState<GeneratedSMS[]>([]);
+  const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
+  const [isImageLoading, setIsImageLoading] = useState(false);
 
   const brandVoiceOptions = [
     { value: "friendly", label: "ידידותי וחם" },
