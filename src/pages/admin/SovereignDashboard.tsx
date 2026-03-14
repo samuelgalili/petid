@@ -507,7 +507,6 @@ const SovereignDashboard = () => {
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editNotes, setEditNotes] = useState("");
-  const [showSidebar, setShowSidebar] = useState(false);
 
   // Realtime subscriptions
   useEffect(() => {
