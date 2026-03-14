@@ -252,12 +252,12 @@ const AIControlRoom = () => {
 
   return (
     <AdminLayout title="AI Control Room" icon={Crown}>
-      <div className="grid lg:grid-cols-[1fr_400px] gap-6 h-[calc(100vh-180px)]">
-        {/* Main Column — fixed layout, no overflow push */}
-        <div className="flex flex-col gap-4 min-h-0">
-          {/* Global Kill Switch Bar — always visible */}
+      <div className="flex flex-col lg:grid lg:grid-cols-[1fr_380px] gap-4 lg:gap-6 min-h-0" style={{ height: 'calc(100vh - 180px)', maxHeight: 'calc(100vh - 180px)' }}>
+        {/* Main Column */}
+        <div className="flex flex-col gap-4 min-h-0 overflow-hidden">
+          {/* Global Kill Switch Bar */}
           <Card className={cn(
-            "p-4 flex items-center justify-between border-2 transition-colors shrink-0",
+            "p-3 lg:p-4 flex items-center justify-between border-2 transition-colors shrink-0",
             globalKillSwitch ? "border-red-500/50 bg-red-500/5" : "border-emerald-500/30 bg-emerald-500/5"
           )}>
             <div className="flex items-center gap-3">
@@ -285,8 +285,8 @@ const AIControlRoom = () => {
             </div>
           </Card>
 
-          {/* AI Insights — collapsible, never pushes chat out */}
-          <div className="shrink-0 max-h-[200px] overflow-y-auto rounded-xl">
+          {/* AI Insights — hidden on mobile to save space */}
+          <div className="hidden lg:block shrink-0 max-h-[160px] overflow-y-auto rounded-xl">
             <AIInsightsPanel />
           </div>
           
@@ -365,19 +365,19 @@ const AIControlRoom = () => {
         </div>
 
         {/* Right Sidebar */}
-        <div className="space-y-4 overflow-auto">
+        <div className="flex flex-col min-h-0 overflow-auto">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-4 w-full">
-              <TabsTrigger value="status" className="text-xs gap-1"><Activity className="w-3.5 h-3.5" />סטטוס</TabsTrigger>
-              <TabsTrigger value="approvals" className="text-xs gap-1">
+            <TabsList className="grid grid-cols-4 w-full shrink-0">
+              <TabsTrigger value="status" className="text-xs gap-1 px-1"><Activity className="w-3.5 h-3.5" /><span className="hidden sm:inline">סטטוס</span></TabsTrigger>
+              <TabsTrigger value="approvals" className="text-xs gap-1 px-1">
                 <AlertTriangle className="w-3.5 h-3.5" />
                 אישורים
                 {pendingApprovalTasks.length > 0 && (
                   <Badge className="w-5 h-5 p-0 justify-center text-[10px] bg-amber-500">{pendingApprovalTasks.length}</Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="logs" className="text-xs gap-1"><FileText className="w-3.5 h-3.5" />לוגים</TabsTrigger>
-              <TabsTrigger value="queue" className="text-xs gap-1"><Clock className="w-3.5 h-3.5" />תור</TabsTrigger>
+              <TabsTrigger value="logs" className="text-xs gap-1 px-1"><FileText className="w-3.5 h-3.5" /><span className="hidden sm:inline">לוגים</span></TabsTrigger>
+              <TabsTrigger value="queue" className="text-xs gap-1 px-1"><Clock className="w-3.5 h-3.5" /><span className="hidden sm:inline">תור</span></TabsTrigger>
             </TabsList>
 
             {/* Status Tab — Bot Fleet Dashboard */}
@@ -399,7 +399,7 @@ const AIControlRoom = () => {
 
               <div className="space-y-2">
                 <h3 className="text-sm font-medium flex items-center gap-2"><Bot className="w-4 h-4" />The Fleet — 9 רובוטים</h3>
-                <ScrollArea className="h-[400px]">
+                <ScrollArea className="h-[300px] lg:h-[400px]">
                   <div className="space-y-2">
                     {fleetBots.map((bot) => {
                       const Icon = iconMap[bot.icon] || Bot;
