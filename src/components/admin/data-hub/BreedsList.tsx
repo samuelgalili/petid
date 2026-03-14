@@ -83,6 +83,46 @@ export const BreedsList = () => {
     );
   }
 
+  const breedColumns = [
+    { key: "breed_name", label: "Breed Name" },
+    { key: "breed_name_he", label: "שם גזע" },
+    { key: "pet_type", label: "סוג" },
+    { key: "life_expectancy_years", label: "תוחלת חיים" },
+    { key: "affection_family", label: "חיבה למשפחה" },
+    { key: "kids_friendly", label: "ידידותי לילדים" },
+    { key: "dog_friendly", label: "ידידותי לכלבים" },
+    { key: "energy_level", label: "רמת אנרגיה" },
+    { key: "trainability", label: "אילוף" },
+    { key: "grooming_freq", label: "טיפוח" },
+    { key: "barking_level", label: "נביחות" },
+    { key: "shedding_level", label: "נשירה" },
+    { key: "watchdog_nature", label: "שמירה" },
+    { key: "mental_needs", label: "צרכים מנטליים" },
+    { key: "description_he", label: "תיאור" },
+  ];
+
+  const handleExport = (format: "csv" | "json") => {
+    if (!breeds?.length) return;
+    exportData(breeds, {
+      filename: `petid-breeds-${new Date().toISOString().slice(0, 10)}`,
+      format,
+      columns: breedColumns,
+    });
+    toast.success(format === "csv" ? "קובץ CSV הורד בהצלחה" : "קובץ JSON הורד בהצלחה");
+  };
+
+  const handleShare = async (format: "csv" | "json") => {
+    if (!breeds?.length) return;
+    const shared = await shareFile(breeds, {
+      filename: `petid-breeds-${new Date().toISOString().slice(0, 10)}`,
+      format,
+      columns: breedColumns,
+      title: "PetID — נתוני גזעים",
+      text: `רשימת ${breeds.length} גזעים ממערכת PetID`,
+    });
+    if (shared) toast.success("הקובץ מוכן לשיתוף");
+  };
+
   return (
     <div className="space-y-4">
       {/* Stats Header */}
@@ -96,10 +136,48 @@ export const BreedsList = () => {
             <p className="text-sm text-muted-foreground">גזעים במערכת</p>
           </div>
         </div>
-        <Badge variant="secondary" className="gap-1">
-          <Sparkles className="w-3 h-3" />
-          נתונים מדויקים
-        </Badge>
+        <div className="flex items-center gap-2">
+          {/* Export dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <Download className="w-4 h-4" />
+                ייצוא
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleExport("csv")}>
+                📊 הורד כ-CSV (Excel)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("json")}>
+                📋 הורד כ-JSON
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Share dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <Share2 className="w-4 h-4" />
+                שתף
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleShare("csv")}>
+                📊 שתף כ-CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleShare("json")}>
+                📋 שתף כ-JSON
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Badge variant="secondary" className="gap-1">
+            <Sparkles className="w-3 h-3" />
+            נתונים מדויקים
+          </Badge>
+        </div>
       </div>
 
       {/* Breeds Grid */}
