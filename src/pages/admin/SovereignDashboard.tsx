@@ -16,8 +16,13 @@ import {
   Crown, Brain, Bot, Shield, Sparkles, Target, MessageCircle, Store,
   Headphones, Stethoscope, Scale, Eye, Megaphone, Cpu, Search,
   CheckCircle2, XCircle, DollarSign, TrendingUp, Zap, Truck,
-  ChevronRight, Activity, AlertTriangle, X, Send, RefreshCw,
+  ChevronRight, ChevronDown, Activity, AlertTriangle, X, Send, RefreshCw,
+  Pencil, FileText,
 } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 // ─── Agent Config ───────────────────────────────────────────
@@ -497,6 +502,11 @@ const SovereignDashboard = () => {
   const navigate = useNavigate();
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [showSidebar, setShowSidebar] = useState(false);
+  const [expandedCard, setExpandedCard] = useState<string | null>(null);
+  const [editItem, setEditItem] = useState<any | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editNotes, setEditNotes] = useState("");
 
   // Realtime subscriptions
   useEffect(() => {
@@ -547,6 +557,26 @@ const SovereignDashboard = () => {
     queryClient.invalidateQueries({ queryKey: ["sovereign-approvals"] });
     haptic("error");
     toast.success("נדחה");
+  };
+
+  const openEdit = (item: any) => {
+    setEditItem(item);
+    setEditTitle(item.title || "");
+    setEditDescription(item.description || "");
+    setEditNotes(item.review_notes || "");
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editItem) return;
+    await supabase.from("admin_approval_queue").update({
+      title: editTitle,
+      description: editDescription,
+      review_notes: editNotes,
+      updated_at: new Date().toISOString(),
+    }).eq("id", editItem.id);
+    queryClient.invalidateQueries({ queryKey: ["sovereign-approvals"] });
+    setEditItem(null);
+    toast.success("✅ עודכן בהצלחה");
   };
 
   const activeBots = bots.filter((b: any) => b.is_active).length;
@@ -657,6 +687,9 @@ const SovereignDashboard = () => {
                     <AnimatePresence mode="popLayout">
                       {approvals.map((item: any, idx: number) => {
                         const CatIcon = getCategoryIcon(item.category);
+                        const isExpanded = expandedCard === item.id;
+                        const proposedChanges = item.proposed_changes ? (typeof item.proposed_changes === "string" ? JSON.parse(item.proposed_changes) : item.proposed_changes) : null;
+
                         return (
                           <motion.div
                             key={item.id}
@@ -665,54 +698,124 @@ const SovereignDashboard = () => {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, x: -60 }}
                             transition={{ delay: idx * 0.03 }}
-                            className="rounded-2xl p-4 border border-border/20 bg-card/70 backdrop-blur-xl transition-all hover:bg-card/90"
+                            className="rounded-2xl border border-border/20 bg-card/70 backdrop-blur-xl transition-all hover:bg-card/90 overflow-hidden"
                           >
-                            <div className="flex items-start gap-3">
-                              {/* Icon */}
-                              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                                <CatIcon className="w-4 h-4 text-primary" strokeWidth={1.5} />
-                              </div>
-
-                              {/* Content */}
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <Badge variant="outline" className="text-[9px] border-amber-500/30 text-amber-500 bg-amber-500/5 shrink-0">
-                                    ממתין
-                                  </Badge>
-                                  {item.category && (
-                                    <Badge variant="outline" className="text-[9px] shrink-0">{item.category}</Badge>
+                            {/* Collapsed header — always visible */}
+                            <button
+                              onClick={() => setExpandedCard(isExpanded ? null : item.id)}
+                              className="w-full p-4 text-right"
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                                  <CatIcon className="w-4 h-4 text-primary" strokeWidth={1.5} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <Badge variant="outline" className="text-[9px] border-amber-500/30 text-amber-500 bg-amber-500/5 shrink-0">ממתין</Badge>
+                                    {item.category && <Badge variant="outline" className="text-[9px] shrink-0">{item.category}</Badge>}
+                                    <span className="text-[9px] text-muted-foreground/50 mr-auto">
+                                      {new Date(item.created_at).toLocaleString("he-IL", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                                    </span>
+                                    <ChevronDown className={cn("w-3.5 h-3.5 text-muted-foreground transition-transform", isExpanded && "rotate-180")} />
+                                  </div>
+                                  <h4 className="text-sm font-bold text-foreground mb-0.5 line-clamp-1">{item.title}</h4>
+                                  {!isExpanded && item.description && (
+                                    <p className="text-xs text-muted-foreground line-clamp-1">{item.description}</p>
                                   )}
-                                  <span className="text-[9px] text-muted-foreground/50 mr-auto">
-                                    {new Date(item.created_at).toLocaleString("he-IL", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
-                                  </span>
-                                </div>
-                                <h4 className="text-sm font-bold text-foreground mb-0.5 line-clamp-1">{item.title}</h4>
-                                {item.description && (
-                                  <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{item.description}</p>
-                                )}
-
-                                {/* Actions */}
-                                <div className="flex items-center gap-2 justify-end">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="rounded-xl border-red-500/30 text-red-400 hover:bg-red-500/10 h-7 text-[10px] px-3 gap-1"
-                                    onClick={() => handleReject(item.id)}
-                                  >
-                                    <XCircle className="w-3 h-3" />
-                                    דחה
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    className="rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white h-7 text-[10px] px-3 gap-1"
-                                    onClick={() => handleApprove(item.id)}
-                                  >
-                                    <CheckCircle2 className="w-3 h-3" />
-                                    אשר
-                                  </Button>
                                 </div>
                               </div>
-                            </div>
+                            </button>
+
+                            {/* Expanded detail */}
+                            <AnimatePresence>
+                              {isExpanded && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: "auto", opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  className="overflow-hidden"
+                                >
+                                  <div className="px-4 pb-4 space-y-3 border-t border-border/10 pt-3">
+                                    {/* Full description */}
+                                    {item.description && (
+                                      <div>
+                                        <p className="text-[10px] font-semibold text-muted-foreground mb-1">תיאור</p>
+                                        <p className="text-xs text-foreground/80 leading-relaxed">{item.description}</p>
+                                      </div>
+                                    )}
+
+                                    {/* Draft content */}
+                                    {item.draft_content && (
+                                      <div>
+                                        <p className="text-[10px] font-semibold text-muted-foreground mb-1">טיוטה</p>
+                                        <div className="p-3 rounded-xl bg-muted/30 border border-border/10 text-xs text-foreground/80 whitespace-pre-wrap leading-relaxed">
+                                          {item.draft_content}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Proposed changes */}
+                                    {proposedChanges && (
+                                      <div>
+                                        <p className="text-[10px] font-semibold text-muted-foreground mb-1">שינויים מוצעים</p>
+                                        <div className="p-3 rounded-xl bg-muted/30 border border-border/10 text-xs text-foreground/80 space-y-1">
+                                          {Object.entries(proposedChanges).map(([key, val]) => (
+                                            <div key={key} className="flex gap-2">
+                                              <span className="text-muted-foreground font-medium shrink-0">{key}:</span>
+                                              <span>{String(val)}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Meta info */}
+                                    <div className="flex flex-wrap gap-3 text-[10px] text-muted-foreground/60">
+                                      {item.pet_name && <span>🐾 {item.pet_name}</span>}
+                                      {item.target_entity && <span>🎯 {item.target_entity}</span>}
+                                      {item.bot_id && <span>🤖 בוט: {item.bot_id.slice(0, 8)}</span>}
+                                    </div>
+
+                                    {/* Review notes */}
+                                    {item.review_notes && (
+                                      <div className="p-2.5 rounded-xl bg-amber-500/5 border border-amber-500/10 text-xs text-amber-600 dark:text-amber-400">
+                                        📝 {item.review_notes}
+                                      </div>
+                                    )}
+
+                                    {/* Action buttons */}
+                                    <div className="flex items-center gap-2 justify-end pt-1">
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="rounded-xl h-7 text-[10px] px-3 gap-1"
+                                        onClick={() => openEdit(item)}
+                                      >
+                                        <Pencil className="w-3 h-3" />
+                                        ערוך
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="rounded-xl border-red-500/30 text-red-400 hover:bg-red-500/10 h-7 text-[10px] px-3 gap-1"
+                                        onClick={() => handleReject(item.id)}
+                                      >
+                                        <XCircle className="w-3 h-3" />
+                                        דחה
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        className="rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white h-7 text-[10px] px-3 gap-1"
+                                        onClick={() => handleApprove(item.id)}
+                                      >
+                                        <CheckCircle2 className="w-3 h-3" />
+                                        אשר
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
                           </motion.div>
                         );
                       })}
@@ -721,6 +824,39 @@ const SovereignDashboard = () => {
                 </ScrollArea>
               )}
             </div>
+
+            {/* Edit Dialog */}
+            <Dialog open={!!editItem} onOpenChange={(open) => !open && setEditItem(null)}>
+              <DialogContent className="max-w-md" dir="rtl">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Pencil className="w-4 h-4" />
+                    עריכת משימה לפני אישור
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">כותרת</label>
+                    <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">תיאור</label>
+                    <Textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className="text-sm min-h-[80px]" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">הערות אדמין</label>
+                    <Textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} placeholder="הוסף הערות או תיקונים..." className="text-sm min-h-[60px]" />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setEditItem(null)}>ביטול</Button>
+                  <Button onClick={handleSaveEdit} className="bg-emerald-500 hover:bg-emerald-600 text-white gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    שמור שינויים
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
             {/* ─── Financial Heartbeat ─────────────────── */}
             <div>
