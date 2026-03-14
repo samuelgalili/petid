@@ -87,6 +87,8 @@ const AIContentGenerator = () => {
     }
 
     setIsGenerating(true);
+    setIsImageLoading(true);
+    setGeneratedImageUrl(null);
     
     try {
       const { data, error } = await supabase.functions.invoke("generate-marketing-content", {
@@ -95,7 +97,8 @@ const AIContentGenerator = () => {
           context,
           brandVoice: brandVoiceOptions.find(o => o.value === brandVoice)?.label,
           targetAudience: audienceOptions.find(o => o.value === targetAudience)?.label,
-          language: "עברית"
+          language: "עברית",
+          generateImage: true
         }
       });
 
@@ -116,6 +119,11 @@ const AIContentGenerator = () => {
             setGeneratedSMS(data.content.messages || []);
             break;
         }
+        
+        if (data?.imageUrl) {
+          setGeneratedImageUrl(data.imageUrl);
+        }
+        
         toast.success("התוכן נוצר בהצלחה!");
       }
     } catch (err) {
@@ -123,6 +131,7 @@ const AIContentGenerator = () => {
       toast.error("שגיאה ביצירת התוכן");
     } finally {
       setIsGenerating(false);
+      setIsImageLoading(false);
     }
   };
 
