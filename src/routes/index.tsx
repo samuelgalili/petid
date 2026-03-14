@@ -502,7 +502,7 @@ export const allRoutes: RouteObject[] = [
 ];
 
 // Route validation for development
-if (process.env.NODE_ENV === 'development') {
+if (import.meta.env.DEV) {
   const paths = allRoutes.map(r => r.path).filter(Boolean);
   const duplicates = paths.filter((path, index) => paths.indexOf(path) !== index);
   if (duplicates.length > 0) {

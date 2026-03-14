@@ -74,7 +74,7 @@ const AdminTimeTracking = () => {
   }, []);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (activeTimer) {
       interval = setInterval(() => {
         setElapsedSeconds(Math.floor((Date.now() - activeTimer.startTime.getTime()) / 1000));

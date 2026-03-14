@@ -93,7 +93,7 @@ export class ComponentErrorBoundary extends Component<Props, State> {
           נתקלנו בשגיאה. אנא נסו שוב.
         </p>
 
-        {process.env.NODE_ENV === "development" && error && (
+        {import.meta.env.DEV && error && (
           <div className="w-full bg-muted/50 rounded-lg p-3 mb-4 text-right">
             <p className="text-xs font-mono text-destructive break-words">
               {error.message}
