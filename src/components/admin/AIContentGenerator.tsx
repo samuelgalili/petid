@@ -19,7 +19,11 @@ import {
   Wand2,
   Image as ImageIcon,
   Download,
-  Loader2
+  Loader2,
+  Facebook,
+  Send,
+  CheckCircle2,
+  XCircle
 } from "lucide-react";
 
 interface GeneratedAd {
