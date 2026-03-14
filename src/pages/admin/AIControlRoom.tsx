@@ -285,8 +285,8 @@ const AIControlRoom = () => {
             </div>
           </Card>
 
-          {/* AI Insights — collapsible, never pushes chat out */}
-          <div className="shrink-0 max-h-[200px] overflow-y-auto rounded-xl">
+          {/* AI Insights — hidden on mobile to save space */}
+          <div className="hidden lg:block shrink-0 max-h-[160px] overflow-y-auto rounded-xl">
             <AIInsightsPanel />
           </div>
           
