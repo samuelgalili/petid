@@ -365,7 +365,7 @@ const AIControlRoom = () => {
         </div>
 
         {/* Right Sidebar */}
-        <div className="space-y-4 overflow-auto">
+        <div className="flex flex-col min-h-0 overflow-auto">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid grid-cols-4 w-full">
               <TabsTrigger value="status" className="text-xs gap-1"><Activity className="w-3.5 h-3.5" />סטטוס</TabsTrigger>
