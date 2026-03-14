@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { haptic, successFeedback } from "@/lib/haptics";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
@@ -146,67 +147,13 @@ const AgentLogsPanel = ({ agentSlug, onClose }: { agentSlug: string; onClose: ()
   );
 };
 
-// ─── Swipeable Decision Card ────────────────────────────────
-const DecisionCard = ({
-  item,
-  onApprove,
-  onReject,
-}: {
-  item: any;
-  onApprove: () => void;
-  onReject: () => void;
-}) => {
-  const x = useMotionValue(0);
-  const rotate = useTransform(x, [-200, 200], [-6, 6]);
-  const approveOp = useTransform(x, [0, 100], [0, 1]);
-  const rejectOp = useTransform(x, [-100, 0], [1, 0]);
-
-  const handleDragEnd = (_: any, info: PanInfo) => {
-    if (info.offset.x > 100) { successFeedback(); onApprove(); }
-    else if (info.offset.x < -100) { haptic("error"); onReject(); }
-  };
-
-  const categoryIcon = item.category === "sales" ? DollarSign
-    : item.category === "content" ? Sparkles
-    : item.category === "ethics" ? Shield
-    : item.category === "payment" ? Scale
-    : Zap;
-  const CatIcon = categoryIcon;
-
-  return (
-    <motion.div className="absolute inset-0" style={{ x, rotate }} drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.7} onDragEnd={handleDragEnd} whileTap={{ scale: 0.98 }}>
-      <motion.div className="absolute inset-0 rounded-[20px] border-2 border-emerald-500/40 bg-emerald-500/5 flex items-center justify-start pl-6 pointer-events-none" style={{ opacity: approveOp }}>
-        <CheckCircle2 className="w-10 h-10 text-emerald-400" />
-      </motion.div>
-      <motion.div className="absolute inset-0 rounded-[20px] border-2 border-red-500/40 bg-red-500/5 flex items-center justify-end pr-6 pointer-events-none" style={{ opacity: rejectOp }}>
-        <XCircle className="w-10 h-10 text-red-400" />
-      </motion.div>
-
-      <div className="relative z-10 h-full rounded-[20px] p-5 border border-border/20 backdrop-blur-xl bg-card/90 cursor-grab active:cursor-grabbing"
-        style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.08), 0 0 0 1px rgba(255,255,255,0.04)" }}>
-        <div className="flex items-start justify-between mb-3">
-          <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
-            <CatIcon className="w-5 h-5 text-primary" strokeWidth={1.5} />
-          </div>
-          <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-500 bg-amber-500/5">ממתין לאישור</Badge>
-        </div>
-        <h3 className="text-base font-bold text-foreground mb-1 line-clamp-2">{item.title}</h3>
-        <p className="text-xs text-muted-foreground line-clamp-2 mb-4">{item.description}</p>
-        <div className="flex items-center justify-between">
-          <Badge variant="outline" className="text-[9px]">{item.category}</Badge>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" className="rounded-xl border-red-500/30 text-red-400 hover:bg-red-500/10 h-8 w-8 p-0" onClick={(e) => { e.stopPropagation(); haptic("error"); onReject(); }}>
-              <XCircle className="w-3.5 h-3.5" />
-            </Button>
-            <Button size="sm" className="rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white h-8 w-8 p-0" onClick={(e) => { e.stopPropagation(); successFeedback(); onApprove(); }}>
-              <CheckCircle2 className="w-3.5 h-3.5" />
-            </Button>
-          </div>
-        </div>
-        <p className="text-[9px] text-muted-foreground/50 text-center mt-3">← דחה · גרור · אשר →</p>
-      </div>
-    </motion.div>
-  );
+// ─── Category Icon Helper ───────────────────────────────────
+const getCategoryIcon = (category: string) => {
+  if (category === "sales") return DollarSign;
+  if (category === "content") return Sparkles;
+  if (category === "ethics") return Shield;
+  if (category === "payment") return Scale;
+  return Zap;
 };
 
 // ─── Prometheus Brain Module ────────────────────────────────
@@ -547,8 +494,8 @@ const BrainCommandPrompt = () => {
 // ─── Main Sovereign Dashboard ───────────────────────────────
 const SovereignDashboard = () => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
-  const [currentCard, setCurrentCard] = useState(0);
   const [showSidebar, setShowSidebar] = useState(false);
 
   // Realtime subscriptions
@@ -588,27 +535,21 @@ const SovereignDashboard = () => {
     },
   });
 
-  const handleApprove = async () => {
-    const item = approvals[currentCard];
-    if (item) {
-      await supabase.from("admin_approval_queue").update({ status: "approved", reviewed_at: new Date().toISOString() }).eq("id", item.id);
-      queryClient.invalidateQueries({ queryKey: ["sovereign-approvals"] });
-    }
-    setCurrentCard(c => c + 1);
+  const handleApprove = async (id: string) => {
+    await supabase.from("admin_approval_queue").update({ status: "approved", reviewed_at: new Date().toISOString() }).eq("id", id);
+    queryClient.invalidateQueries({ queryKey: ["sovereign-approvals"] });
+    successFeedback();
+    toast.success("✅ אושר");
   };
 
-  const handleReject = async () => {
-    const item = approvals[currentCard];
-    if (item) {
-      await supabase.from("admin_approval_queue").update({ status: "rejected", reviewed_at: new Date().toISOString() }).eq("id", item.id);
-      queryClient.invalidateQueries({ queryKey: ["sovereign-approvals"] });
-    }
-    setCurrentCard(c => c + 1);
+  const handleReject = async (id: string) => {
+    await supabase.from("admin_approval_queue").update({ status: "rejected", reviewed_at: new Date().toISOString() }).eq("id", id);
+    queryClient.invalidateQueries({ queryKey: ["sovereign-approvals"] });
+    haptic("error");
+    toast.success("נדחה");
   };
 
-  const visibleApprovals = approvals.slice(currentCard);
   const activeBots = bots.filter((b: any) => b.is_active).length;
-
   const getBotData = (slug: string) => bots.find((b: any) => b.slug === slug);
 
   return (
@@ -679,48 +620,106 @@ const SovereignDashboard = () => {
 
             {/* ─── Brain Command Prompt ─────────────────── */}
             <BrainCommandPrompt />
-            {/* ─── Decision Cards (Tinder-style) ──────── */}
+
+            {/* ─── Decision Queue (Uniform List) ──────── */}
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
                   <Zap className="w-4 h-4 text-amber-500" strokeWidth={1.5} />
                   תור החלטות CEO
                 </h2>
-                <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-500">
-                  {Math.max(0, approvals.length - currentCard)} ממתינים
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-500">
+                    {approvals.length} ממתינים
+                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-[10px] h-7 text-muted-foreground gap-1"
+                    onClick={() => navigate("/admin/approval-queue")}
+                  >
+                    רשימה מלאה
+                    <ChevronRight className="w-3 h-3" />
+                  </Button>
+                </div>
               </div>
-              <div className="relative h-[200px]">
-                <AnimatePresence>
-                  {visibleApprovals.slice(0, 3).map((item, idx) => (
-                    <motion.div
-                      key={item.id}
-                      className="absolute inset-0"
-                      style={{
-                        zIndex: 3 - idx,
-                        transform: `scale(${1 - idx * 0.04}) translateY(${idx * 8}px)`,
-                      }}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1 - idx * 0.2, scale: 1 - idx * 0.04, y: idx * 8 }}
-                      exit={{ opacity: 0, x: 300 }}
-                    >
-                      {idx === 0 ? (
-                        <DecisionCard item={item} onApprove={handleApprove} onReject={handleReject} />
-                      ) : (
-                        <div className="h-full rounded-[20px] border border-border/10 bg-card/40 backdrop-blur-sm" />
-                      )}
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-                {visibleApprovals.length === 0 && (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center">
-                      <CheckCircle2 className="w-10 h-10 mx-auto mb-2 text-emerald-500/30" />
-                      <p className="text-xs text-muted-foreground">כל ההחלטות טופלו ✓</p>
-                    </div>
+
+              {approvals.length === 0 ? (
+                <div className="flex items-center justify-center py-10 rounded-2xl border border-border/10 bg-card/40">
+                  <div className="text-center">
+                    <CheckCircle2 className="w-10 h-10 mx-auto mb-2 text-emerald-500/30" />
+                    <p className="text-xs text-muted-foreground">כל ההחלטות טופלו ✓</p>
                   </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <ScrollArea className="max-h-[400px]">
+                  <div className="space-y-2">
+                    <AnimatePresence mode="popLayout">
+                      {approvals.map((item: any, idx: number) => {
+                        const CatIcon = getCategoryIcon(item.category);
+                        return (
+                          <motion.div
+                            key={item.id}
+                            layout
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, x: -60 }}
+                            transition={{ delay: idx * 0.03 }}
+                            className="rounded-2xl p-4 border border-border/20 bg-card/70 backdrop-blur-xl transition-all hover:bg-card/90"
+                          >
+                            <div className="flex items-start gap-3">
+                              {/* Icon */}
+                              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                                <CatIcon className="w-4 h-4 text-primary" strokeWidth={1.5} />
+                              </div>
+
+                              {/* Content */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Badge variant="outline" className="text-[9px] border-amber-500/30 text-amber-500 bg-amber-500/5 shrink-0">
+                                    ממתין
+                                  </Badge>
+                                  {item.category && (
+                                    <Badge variant="outline" className="text-[9px] shrink-0">{item.category}</Badge>
+                                  )}
+                                  <span className="text-[9px] text-muted-foreground/50 mr-auto">
+                                    {new Date(item.created_at).toLocaleString("he-IL", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                                  </span>
+                                </div>
+                                <h4 className="text-sm font-bold text-foreground mb-0.5 line-clamp-1">{item.title}</h4>
+                                {item.description && (
+                                  <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{item.description}</p>
+                                )}
+
+                                {/* Actions */}
+                                <div className="flex items-center gap-2 justify-end">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="rounded-xl border-red-500/30 text-red-400 hover:bg-red-500/10 h-7 text-[10px] px-3 gap-1"
+                                    onClick={() => handleReject(item.id)}
+                                  >
+                                    <XCircle className="w-3 h-3" />
+                                    דחה
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    className="rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white h-7 text-[10px] px-3 gap-1"
+                                    onClick={() => handleApprove(item.id)}
+                                  >
+                                    <CheckCircle2 className="w-3 h-3" />
+                                    אשר
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
+                  </div>
+                </ScrollArea>
+              )}
             </div>
 
             {/* ─── Financial Heartbeat ─────────────────── */}
