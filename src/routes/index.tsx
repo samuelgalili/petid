@@ -475,6 +475,8 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/architect", element: <AdminPage component={AdminArchitectConsole} pageName="Architect Console" /> },
   { path: "/admin/prometheus", element: <AdminPage component={AdminPrometheus} pageName="Prometheus — מאמן הסוכנים" /> },
   { path: "/admin/sovereign", element: <AdminPage component={SovereignDashboard} pageName="Sovereign Dashboard" /> },
+  { path: "/admin/ai-os", element: <AdminPage component={AiOsConsole} pageName="AI OS Console" /> },
+  { path: "/admin/ai-os-admin", element: <AdminPage component={AiOsAdmin} pageName="AI OS Admin" /> },
 ];
 
 // ==========================================
