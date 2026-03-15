@@ -384,6 +384,8 @@ const CEODashboard = lazy(() => import("@/pages/admin/CEODashboard"));
 const AdminArchitectConsole = lazy(() => import("@/pages/admin/AdminArchitectConsole"));
 const AdminPrometheus = lazy(() => import("@/pages/admin/AdminPrometheus"));
 const SovereignDashboard = lazy(() => import("@/pages/admin/SovereignDashboard"));
+const AiOsConsole = lazy(() => import("@/pages/admin/AiOsConsole"));
+const AiOsAdmin = lazy(() => import("@/pages/admin/AiOsAdmin"));
 
 // Helper for admin routes
 const AdminPage = ({ component: Component, pageName }: { component: ComponentType; pageName: string }) => (
