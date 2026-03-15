@@ -132,7 +132,7 @@ const ToolsTab = () => {
               <p className="text-xs text-muted-foreground truncate">{tool.description || tool.name}</p>
             </div>
             <div className="flex items-center gap-2">
-              {tool.requires_approval && <Lock className="w-3.5 h-3.5 text-amber-500" title="דורש אישור" />}
+              {tool.requires_approval && <Lock className="w-3.5 h-3.5 text-amber-500" />}
               {tool.is_active ? (
                 <span className="w-2 h-2 rounded-full bg-emerald-500" />
               ) : (
