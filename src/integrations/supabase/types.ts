@@ -1020,6 +1020,473 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_os_agent_memory: {
+        Row: {
+          agent_slug: string | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          is_protected: boolean | null
+          key: string
+          memory_type: string
+          scope: string | null
+          scope_id: string | null
+          source: string | null
+          trust_score: number | null
+          updated_at: string | null
+          value: Json
+        }
+        Insert: {
+          agent_slug?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_protected?: boolean | null
+          key: string
+          memory_type: string
+          scope?: string | null
+          scope_id?: string | null
+          source?: string | null
+          trust_score?: number | null
+          updated_at?: string | null
+          value: Json
+        }
+        Update: {
+          agent_slug?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_protected?: boolean | null
+          key?: string
+          memory_type?: string
+          scope?: string | null
+          scope_id?: string | null
+          source?: string | null
+          trust_score?: number | null
+          updated_at?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
+      ai_os_agent_permissions: {
+        Row: {
+          agent_slug: string
+          allowed_actions: string[] | null
+          created_at: string | null
+          data_scopes: Json | null
+          execution_limit_per_hour: number | null
+          id: string
+          is_active: boolean | null
+          max_risk_level: string | null
+          requires_approval: boolean | null
+          tool_name: string | null
+        }
+        Insert: {
+          agent_slug: string
+          allowed_actions?: string[] | null
+          created_at?: string | null
+          data_scopes?: Json | null
+          execution_limit_per_hour?: number | null
+          id?: string
+          is_active?: boolean | null
+          max_risk_level?: string | null
+          requires_approval?: boolean | null
+          tool_name?: string | null
+        }
+        Update: {
+          agent_slug?: string
+          allowed_actions?: string[] | null
+          created_at?: string | null
+          data_scopes?: Json | null
+          execution_limit_per_hour?: number | null
+          id?: string
+          is_active?: boolean | null
+          max_risk_level?: string | null
+          requires_approval?: boolean | null
+          tool_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_os_agent_permissions_tool_name_fkey"
+            columns: ["tool_name"]
+            isOneToOne: false
+            referencedRelation: "ai_os_tool_registry"
+            referencedColumns: ["name"]
+          },
+        ]
+      }
+      ai_os_conversations: {
+        Row: {
+          agent_slugs: string[] | null
+          created_at: string | null
+          id: string
+          last_message_at: string | null
+          message_count: number | null
+          metadata: Json | null
+          status: string | null
+          title: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          agent_slugs?: string[] | null
+          created_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          message_count?: number | null
+          metadata?: Json | null
+          status?: string | null
+          title?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          agent_slugs?: string[] | null
+          created_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          message_count?: number | null
+          metadata?: Json | null
+          status?: string | null
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_os_messages: {
+        Row: {
+          agent_slug: string | null
+          content: string
+          content_type: string | null
+          conversation_id: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          role: string
+          structured_data: Json | null
+          tool_calls: Json | null
+        }
+        Insert: {
+          agent_slug?: string | null
+          content: string
+          content_type?: string | null
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          role: string
+          structured_data?: Json | null
+          tool_calls?: Json | null
+        }
+        Update: {
+          agent_slug?: string | null
+          content?: string
+          content_type?: string | null
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          role?: string
+          structured_data?: Json | null
+          tool_calls?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_os_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_os_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_os_risk_assessments: {
+        Row: {
+          autonomy_score: number | null
+          confidence_score: number | null
+          created_at: string | null
+          customer_impact_score: number | null
+          data_sensitivity_score: number | null
+          decision: string
+          execution_id: string | null
+          financial_impact_score: number | null
+          id: string
+          overall_score: number
+          propagation_score: number | null
+          reasoning: string | null
+          reversibility_score: number | null
+        }
+        Insert: {
+          autonomy_score?: number | null
+          confidence_score?: number | null
+          created_at?: string | null
+          customer_impact_score?: number | null
+          data_sensitivity_score?: number | null
+          decision?: string
+          execution_id?: string | null
+          financial_impact_score?: number | null
+          id?: string
+          overall_score?: number
+          propagation_score?: number | null
+          reasoning?: string | null
+          reversibility_score?: number | null
+        }
+        Update: {
+          autonomy_score?: number | null
+          confidence_score?: number | null
+          created_at?: string | null
+          customer_impact_score?: number | null
+          data_sensitivity_score?: number | null
+          decision?: string
+          execution_id?: string | null
+          financial_impact_score?: number | null
+          id?: string
+          overall_score?: number
+          propagation_score?: number | null
+          reasoning?: string | null
+          reversibility_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_os_risk_assessments_execution_id_fkey"
+            columns: ["execution_id"]
+            isOneToOne: false
+            referencedRelation: "ai_os_tool_executions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_os_security_incidents: {
+        Row: {
+          action_taken: string | null
+          agent_slug: string | null
+          created_at: string | null
+          description: string
+          evidence: Json | null
+          execution_id: string | null
+          id: string
+          incident_type: string
+          is_resolved: boolean | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          tool_name: string | null
+        }
+        Insert: {
+          action_taken?: string | null
+          agent_slug?: string | null
+          created_at?: string | null
+          description: string
+          evidence?: Json | null
+          execution_id?: string | null
+          id?: string
+          incident_type: string
+          is_resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          tool_name?: string | null
+        }
+        Update: {
+          action_taken?: string | null
+          agent_slug?: string | null
+          created_at?: string | null
+          description?: string
+          evidence?: Json | null
+          execution_id?: string | null
+          id?: string
+          incident_type?: string
+          is_resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          tool_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_os_security_incidents_execution_id_fkey"
+            columns: ["execution_id"]
+            isOneToOne: false
+            referencedRelation: "ai_os_tool_executions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_os_tool_executions: {
+        Row: {
+          agent_slug: string
+          approval_required: boolean | null
+          approved_at: string | null
+          approved_by: string | null
+          completed_at: string | null
+          conversation_id: string | null
+          created_at: string | null
+          error_message: string | null
+          execution_time_ms: number | null
+          id: string
+          input_params: Json | null
+          output_result: Json | null
+          risk_factors: Json | null
+          risk_score: number | null
+          started_at: string | null
+          status: string
+          tool_name: string
+        }
+        Insert: {
+          agent_slug: string
+          approval_required?: boolean | null
+          approved_at?: string | null
+          approved_by?: string | null
+          completed_at?: string | null
+          conversation_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          input_params?: Json | null
+          output_result?: Json | null
+          risk_factors?: Json | null
+          risk_score?: number | null
+          started_at?: string | null
+          status?: string
+          tool_name: string
+        }
+        Update: {
+          agent_slug?: string
+          approval_required?: boolean | null
+          approved_at?: string | null
+          approved_by?: string | null
+          completed_at?: string | null
+          conversation_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          input_params?: Json | null
+          output_result?: Json | null
+          risk_factors?: Json | null
+          risk_score?: number | null
+          started_at?: string | null
+          status?: string
+          tool_name?: string
+        }
+        Relationships: []
+      }
+      ai_os_tool_registry: {
+        Row: {
+          allowed_roles: string[] | null
+          category: string
+          created_at: string | null
+          description: string | null
+          display_name: string
+          endpoint_config: Json | null
+          endpoint_type: string
+          id: string
+          input_schema: Json | null
+          is_active: boolean | null
+          name: string
+          output_schema: Json | null
+          rate_limit_per_minute: number | null
+          requires_approval: boolean | null
+          risk_level: string
+          updated_at: string | null
+        }
+        Insert: {
+          allowed_roles?: string[] | null
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          display_name: string
+          endpoint_config?: Json | null
+          endpoint_type?: string
+          id?: string
+          input_schema?: Json | null
+          is_active?: boolean | null
+          name: string
+          output_schema?: Json | null
+          rate_limit_per_minute?: number | null
+          requires_approval?: boolean | null
+          risk_level?: string
+          updated_at?: string | null
+        }
+        Update: {
+          allowed_roles?: string[] | null
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          display_name?: string
+          endpoint_config?: Json | null
+          endpoint_type?: string
+          id?: string
+          input_schema?: Json | null
+          is_active?: boolean | null
+          name?: string
+          output_schema?: Json | null
+          rate_limit_per_minute?: number | null
+          requires_approval?: boolean | null
+          risk_level?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      ai_os_workflow_runs: {
+        Row: {
+          completed_at: string | null
+          conversation_id: string | null
+          created_at: string | null
+          current_step: number | null
+          error_log: Json | null
+          id: string
+          metadata: Json | null
+          started_at: string | null
+          started_by: string | null
+          status: string
+          steps: Json | null
+          total_steps: number | null
+          trigger_source: string | null
+          trigger_type: string
+          updated_at: string | null
+          workflow_name: string
+        }
+        Insert: {
+          completed_at?: string | null
+          conversation_id?: string | null
+          created_at?: string | null
+          current_step?: number | null
+          error_log?: Json | null
+          id?: string
+          metadata?: Json | null
+          started_at?: string | null
+          started_by?: string | null
+          status?: string
+          steps?: Json | null
+          total_steps?: number | null
+          trigger_source?: string | null
+          trigger_type?: string
+          updated_at?: string | null
+          workflow_name: string
+        }
+        Update: {
+          completed_at?: string | null
+          conversation_id?: string | null
+          created_at?: string | null
+          current_step?: number | null
+          error_log?: Json | null
+          id?: string
+          metadata?: Json | null
+          started_at?: string | null
+          started_by?: string | null
+          status?: string
+          steps?: Json | null
+          total_steps?: number | null
+          trigger_source?: string | null
+          trigger_type?: string
+          updated_at?: string | null
+          workflow_name?: string
+        }
+        Relationships: []
+      }
       api_keys: {
         Row: {
           created_at: string

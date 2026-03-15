@@ -384,6 +384,8 @@ const CEODashboard = lazy(() => import("@/pages/admin/CEODashboard"));
 const AdminArchitectConsole = lazy(() => import("@/pages/admin/AdminArchitectConsole"));
 const AdminPrometheus = lazy(() => import("@/pages/admin/AdminPrometheus"));
 const SovereignDashboard = lazy(() => import("@/pages/admin/SovereignDashboard"));
+const AiOsConsole = lazy(() => import("@/pages/admin/AiOsConsole"));
+const AiOsAdmin = lazy(() => import("@/pages/admin/AiOsAdmin"));
 
 // Helper for admin routes
 const AdminPage = ({ component: Component, pageName }: { component: ComponentType; pageName: string }) => (
@@ -473,6 +475,8 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/architect", element: <AdminPage component={AdminArchitectConsole} pageName="Architect Console" /> },
   { path: "/admin/prometheus", element: <AdminPage component={AdminPrometheus} pageName="Prometheus — מאמן הסוכנים" /> },
   { path: "/admin/sovereign", element: <AdminPage component={SovereignDashboard} pageName="Sovereign Dashboard" /> },
+  { path: "/admin/ai-os", element: <AdminPage component={AiOsConsole} pageName="AI OS Console" /> },
+  { path: "/admin/ai-os-admin", element: <AdminPage component={AiOsAdmin} pageName="AI OS Admin" /> },
 ];
 
 // ==========================================
