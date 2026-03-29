@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { chatCompletion } from "../_shared/ai.ts";
 
 /**
  * scan-vet-document - V25 AI-powered OCR with Smart Sync
@@ -55,21 +56,12 @@ serve(async (req) => {
     if (cachedResult && shouldSave) {
       scanResult = cachedResult;
     } else if (imageBase64) {
-      const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
-      if (!lovableApiKey) throw new Error("LOVABLE_API_KEY not configured");
-
-      const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${lovableApiKey}`,
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            {
-              role: "system",
-              content: `You are a veterinary document analyzer. Extract ALL structured data from vet reports, invoices, receipts, license documents, and pet-related contracts.
+      const aiData = await chatCompletion({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "system",
+            content: `You are a veterinary document analyzer. Extract ALL structured data from vet reports, invoices, receipts, license documents, and pet-related contracts.
 Return ONLY valid JSON with this exact structure:
 {
   "clinicName": "string or null",
@@ -125,28 +117,20 @@ Neutered keywords: מעוקר, מסורס, neutered, spayed, עיקור, סיר�
 License keywords: תנאי רישיון, רישיון, license, מספר רישיון, תוקף, חידוש, renewal, expiry.
 Dangerous dog keywords: כלב מסוכן, dangerous dog, כלב אגרסיבי.
 Age keywords: גיל, age, שנים, years, חודשים, months.`
-            },
-            {
-              role: "user",
-              content: [
-                { type: "image_url", image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },
-                { type: "text", text: "Extract ALL veterinary and pet identity data from this document image. Return JSON only." },
-              ],
-            },
-          ],
-          max_tokens: 1500,
-          temperature: 0.1,
-        }),
+          },
+          {
+            role: "user",
+            content: [
+              { type: "image_url", image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },
+              { type: "text", text: "Extract ALL veterinary and pet identity data from this document image. Return JSON only." },
+            ],
+          },
+        ],
+        max_tokens: 1500,
+        temperature: 0.1,
       });
 
-      if (!aiResponse.ok) {
-        const errorText = await aiResponse.text();
-        console.error("AI API error:", errorText);
-        throw new Error("AI analysis failed");
-      }
-
-      const aiData = await aiResponse.json();
-      const content = aiData.choices?.[0]?.message?.content || "{}";
+      const content = (aiData as any).choices?.[0]?.message?.content || "{}";
 
       try {
         const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();

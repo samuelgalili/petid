@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { chatCompletion } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -293,7 +294,7 @@ function semanticChunk(
 // ─── AI HELPER ───────────────────────────────────────────────────────────────
 
 async function callAI(
-  apiKey: string,
+  _apiKey: string,
   model: string,
   messages: any[],
   tools?: any[],
@@ -303,22 +304,7 @@ async function callAI(
   if (tools) body.tools = tools;
   if (toolChoice) body.tool_choice = toolChoice;
 
-  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!resp.ok) {
-    const status = resp.status;
-    const text = await resp.text();
-    throw new Error(`AI Gateway ${status}: ${text.substring(0, 200)}`);
-  }
-
-  return await resp.json();
+  return await chatCompletion(body);
 }
 
 // ─── MAIN PIPELINE ───────────────────────────────────────────────────────────
@@ -359,7 +345,6 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const { sourceId, fileUrl, textContent, documentTitle }: ProcessRequest = await req.json();
@@ -405,7 +390,7 @@ Deno.serve(async (req) => {
             ocrApplied = true;
             console.log("[RAG] Stage 1: PDF detected (base64), will use AI extraction");
 
-            const ocrResult = await callAI(lovableApiKey, "google/gemini-2.5-flash", [
+            const ocrResult = await callAI("", "google/gemini-2.5-flash", [
               {
                 role: "system",
                 content: `You are a precision document extraction agent. Extract ALL text from this PDF.
@@ -455,7 +440,7 @@ Rules:
             const pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(limitedBytes)));
             ocrApplied = true;
 
-            const ocrResult = await callAI(lovableApiKey, "google/gemini-2.5-flash", [
+            const ocrResult = await callAI("", "google/gemini-2.5-flash", [
               {
                 role: "system",
                 content: `You are a precision document extraction agent. Extract ALL text from this PDF.

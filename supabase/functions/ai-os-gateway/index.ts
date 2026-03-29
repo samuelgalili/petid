@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { chatCompletion, chatCompletionStream } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -329,9 +330,6 @@ serve(async (req) => {
 
       case "chat": {
         // AI OS Chat - route to Brain Orchestrator
-        const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-        if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
-
         const { messages, stream = true } = body;
 
         const systemPrompt = `You are the PetID AI Operating System — a central brain orchestrator managing a fleet of specialized AI agents.
@@ -358,35 +356,18 @@ RULES:
 Format structured outputs as JSON when appropriate (charts, tables, action cards).
 When suggesting actions, include a risk assessment.`;
 
-        const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
+        if (stream) {
+          const aiStream = await chatCompletionStream({
             model: "google/gemini-3-flash-preview",
             messages: [{ role: "system", content: systemPrompt }, ...messages],
-            stream,
-          }),
+          });
+          return new Response(aiStream, { headers: { ...corsHeaders, "Content-Type": "text/event-stream" } });
+        }
+
+        const aiResult = await chatCompletion({
+          model: "google/gemini-3-flash-preview",
+          messages: [{ role: "system", content: systemPrompt }, ...messages],
         });
-
-        if (!response.ok) {
-          const status = response.status;
-          if (status === 429) {
-            return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-          }
-          if (status === 402) {
-            return new Response(JSON.stringify({ error: "AI credits depleted. Please add funds." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-          }
-          throw new Error(`AI gateway error: ${status}`);
-        }
-
-        if (stream) {
-          return new Response(response.body, { headers: { ...corsHeaders, "Content-Type": "text/event-stream" } });
-        }
-
-        const aiResult = await response.json();
         return new Response(JSON.stringify(aiResult), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 

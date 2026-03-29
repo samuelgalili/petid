@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { chatCompletion } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -185,7 +186,6 @@ async function fetchAgentContext(supabase: any, slug: string): Promise<string> {
 
 // ─── Brain Orchestrator ───
 async function brainOrchestrate(
-  apiKey: string,
   supabase: any,
   command: string,
   availableBots: any[]
@@ -213,7 +213,7 @@ OUTPUT FORMAT (strict JSON):
   "conflicts": ["Any detected conflicts and how you resolved them, in Hebrew"]
 }`;
 
-  const output = await callAI(apiKey, "google/gemini-2.5-flash", [
+  const output = await callAI("", "google/gemini-2.5-flash", [
     { role: "system", content: brainPrompt },
     { role: "user", content: `פקודת אדמין: "${command}"` },
   ]);
@@ -232,24 +232,14 @@ OUTPUT FORMAT (strict JSON):
   };
 }
 
-// ─── Call AI Gateway ───
-async function callAI(apiKey: string, model: string, messages: Array<{ role: string; content: string }>) {
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model, messages }),
-  });
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`AI gateway ${res.status}: ${errText}`);
-  }
-  const data = await res.json();
+// ─── Call AI ───
+async function callAI(_apiKey: string, model: string, messages: Array<{ role: string; content: string }>) {
+  const data = await chatCompletion({ model, messages }) as any;
   return data.choices?.[0]?.message?.content || "";
 }
 
 // ─── Prometheus Self-Heal ───
 async function prometheusHeal(
-  apiKey: string,
   supabase: any,
   bot: any,
   originalPrompt: string,
@@ -274,7 +264,7 @@ Rules:
 - Make it more resilient to errors
 - Preserve Hebrew language instructions if present`;
 
-    const newPrompt = await callAI(apiKey, "google/gemini-2.5-flash", [
+    const newPrompt = await callAI("", "google/gemini-2.5-flash", [
       { role: "system", content: healPrompt },
       { role: "user", content: "Rewrite the prompt now." },
     ]);
@@ -293,7 +283,7 @@ Rules:
       ? `\n\nIMPORTANT: Use approximation language: "כ-", "הערכה", "בסביבות". End with: "המידע הוא להעשרה בלבד ואינו מהווה המלצה רפואית או מקצועית."`
       : "";
 
-    const output = await callAI(apiKey, "google/gemini-2.5-flash-lite", [
+    const output = await callAI("", "google/gemini-2.5-flash-lite", [
       { role: "system", content: newPrompt + approxSuffix },
       { role: "user", content: `Run your scheduled check. Current time: ${new Date().toISOString()}. Provide a brief status report (max 200 words). Respond in Hebrew.` },
     ]);
@@ -318,11 +308,9 @@ serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) throw new Error("Supabase credentials missing");
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -366,7 +354,7 @@ serve(async (req) => {
 
     if (brainDirective) {
       console.log(`🧠 Brain analyzing directive and delegating to agents...`);
-      const orchestration = await brainOrchestrate(LOVABLE_API_KEY, supabase, brainDirective, bots);
+      const orchestration = await brainOrchestrate(supabase, brainDirective, bots);
       brainReport = { reasoning: orchestration.reasoning, conflicts: orchestration.conflicts };
       brainDelegations = new Map(orchestration.delegations.map(d => [d.slug, d.subCommand]));
 
@@ -424,7 +412,7 @@ serve(async (req) => {
 
         // ─── Try running the bot ───
         try {
-          aiOutput = await callAI(LOVABLE_API_KEY, useStrongerModel ? "google/gemini-2.5-flash" : "google/gemini-2.5-flash-lite", [
+          aiOutput = await callAI("", useStrongerModel ? "google/gemini-2.5-flash" : "google/gemini-2.5-flash-lite", [
             { role: "system", content: prompt + approxInstruction },
             { role: "user", content: userMessage },
           ]);
@@ -434,7 +422,7 @@ serve(async (req) => {
 
           for (let attempt = 1; attempt <= MAX_SELF_HEAL_ATTEMPTS; attempt++) {
             healAttempts = attempt;
-            const healResult = await prometheusHeal(LOVABLE_API_KEY, supabase, bot, prompt, errorMsg, attempt);
+            const healResult = await prometheusHeal(supabase, bot, prompt, errorMsg, attempt);
             if (healResult) { aiOutput = healResult.output; healed = true; break; }
           }
 

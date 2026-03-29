@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { chatCompletion } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -89,67 +90,32 @@ Deno.serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
-
     const imageSource = imageBase64 || imageUrl;
     const animalType = petType === "cat" ? "cat" : "dog";
     const animalTypeHe = petType === "cat" ? "חתול" : "כלב";
 
-    const geminiResponse = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
+    const geminiData = await chatCompletion({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        {
+          role: "user",
+          content: [
             {
-              role: "user",
-              content: [
-                {
-                  type: "image_url",
-                  image_url: { url: imageSource }
-                },
-                {
-                  type: "text",
-                  text: EXPERT_PROMPT(animalType, animalTypeHe)
-                }
-              ]
+              type: "image_url",
+              image_url: { url: imageSource }
+            },
+            {
+              type: "text",
+              text: EXPERT_PROMPT(animalType, animalTypeHe)
             }
-          ],
-          max_tokens: 1000,
-          temperature: 0.2
-        }),
-      }
-    );
+          ]
+        }
+      ],
+      max_tokens: 1000,
+      temperature: 0.2
+    });
 
-    if (!geminiResponse.ok) {
-      const errorText = await geminiResponse.text();
-      console.error("AI gateway error:", geminiResponse.status, errorText);
-      
-      if (geminiResponse.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limit exceeded, please try again later." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (geminiResponse.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Payment required." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      throw new Error(`AI gateway error: ${errorText}`);
-    }
-
-    const geminiData = await geminiResponse.json();
-    const content = geminiData.choices?.[0]?.message?.content || "";
+    const content = (geminiData as any).choices?.[0]?.message?.content || "";
     
     let detectionResult;
     try {

@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { detectCategory, getKnowledgeForCategory, getFlowForCategory } from "./knowledge-base.ts";
+import { chatCompletion, chatCompletionStream } from "../_shared/ai.ts";
 
 // ============= Types =============
 type Pet = {
@@ -802,9 +803,6 @@ serve(async (req) => {
 
     const { messages, userContext, channel } = parseResult.data;
     const isWhatsApp = channel === "whatsapp";
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -1408,43 +1406,17 @@ ${channelInstructions}`;
     // ============= AI Request =============
     const shouldStream = !productIntent || isWhatsApp;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages.slice(-8), // Limit context to last 8 messages for token efficiency
-        ],
-        stream: shouldStream,
-      }),
-    });
-
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "חרגת ממכסת הבקשות, אנא נסה שוב מאוחר יותר" }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "נדרש תשלום, אנא הוסף כספים לחשבון" }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
-      return new Response(JSON.stringify({ error: "שגיאה בשרת AI" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const aiRequestParams = {
+      model: "google/gemini-3-flash-preview",
+      messages: [
+        { role: "system" as const, content: systemPrompt },
+        ...messages.slice(-8), // Limit context to last 8 messages for token efficiency
+      ],
+    };
 
     // ============= Non-Streaming Response (with PRODUCTS validation) =============
     if (!shouldStream) {
-      const json = await response.json();
+      const json = await chatCompletion(aiRequestParams);
       let text = json?.choices?.[0]?.message?.content ?? "";
       text = cleanProse(text); // Apply Clean Prose mode
       
@@ -1463,8 +1435,9 @@ ${channelInstructions}`;
     }
 
     // ============= Streaming Response =============
-    return new Response(response.body, { 
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" } 
+    const stream = await chatCompletionStream(aiRequestParams);
+    return new Response(stream, {
+      headers: { ...corsHeaders, "Content-Type": "text/event-stream" }
     });
   } catch (e) {
     console.error("chat error:", e);

@@ -10,7 +10,11 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+.env
+.env.*
+!.env.example
 *.local
+supabase/.temp/
 
 # Editor directories and files
 .vscode/*
@@ -22,3 +26,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Claude Code
+CLAUDE.md

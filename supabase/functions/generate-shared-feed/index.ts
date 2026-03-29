@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { chatCompletion } from "../_shared/ai.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -94,8 +95,7 @@ serve(async (req) => {
     }
 
     // Use AI to rank/curate if we have enough data
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (LOVABLE_API_KEY && postIds.length > 5) {
+    if (postIds.length > 5) {
       // Fetch post details for AI ranking
       const { data: postDetails } = await supabase
         .from("posts")
@@ -113,33 +113,23 @@ Posts:
 ${postDetails.map(p => `ID: ${p.id} | Caption: ${(p.caption || "").substring(0, 100)} | Type: ${p.media_type}`).join("\n")}`;
 
         try {
-          const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${LOVABLE_API_KEY}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: "google/gemini-2.5-flash-lite",
-              messages: [
-                { role: "system", content: "You rank content for pet owners. Return ONLY a valid JSON array of UUIDs, no other text." },
-                { role: "user", content: prompt },
-              ],
-            }),
+          const aiData = await chatCompletion({
+            model: "google/gemini-2.5-flash-lite",
+            messages: [
+              { role: "system", content: "You rank content for pet owners. Return ONLY a valid JSON array of UUIDs, no other text." },
+              { role: "user", content: prompt },
+            ],
           });
 
-          if (aiResp.ok) {
-            const aiData = await aiResp.json();
-            const aiContent = aiData.choices?.[0]?.message?.content || "";
-            const match = aiContent.match(/\[[\s\S]*?\]/);
-            if (match) {
-              try {
-                const rankedIds = JSON.parse(match[0]);
-                if (Array.isArray(rankedIds) && rankedIds.length > 0) {
-                  postIds = rankedIds.filter((id: string) => postIds.includes(id));
-                }
-              } catch { /* keep original order */ }
-            }
+          const aiContent = aiData.choices?.[0]?.message?.content || "";
+          const match = aiContent.match(/\[[\s\S]*?\]/);
+          if (match) {
+            try {
+              const rankedIds = JSON.parse(match[0]);
+              if (Array.isArray(rankedIds) && rankedIds.length > 0) {
+                postIds = rankedIds.filter((id: string) => postIds.includes(id));
+              }
+            } catch { /* keep original order */ }
           }
         } catch (e) {
           console.error("AI ranking failed, using default order:", e);

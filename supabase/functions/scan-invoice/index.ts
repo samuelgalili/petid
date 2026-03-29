@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { chatCompletion } from "../_shared/ai.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,24 +23,15 @@ serve(async (req) => {
 
     console.log('Scanning invoice image with line-item extraction...');
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY is not configured');
-
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: `You are an expert invoice parser. Analyze this invoice/receipt image and extract EVERY line item with full detail.
+    const data = await chatCompletion({
+      model: 'google/gemini-2.5-flash',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: `You are an expert invoice parser. Analyze this invoice/receipt image and extract EVERY line item with full detail.
 
 Return ONLY valid JSON in this exact structure:
 {
@@ -76,38 +68,20 @@ Rules:
 - If shipping/delivery cost is listed separately, put it in shippingCost.
 - If discount is listed, put it in discount.
 - Respond ONLY with valid JSON, no additional text.`
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:image/jpeg;base64,${image}`
-                }
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:image/jpeg;base64,${image}`
               }
-            ]
-          }
-        ],
-        max_tokens: 4000,
-      }),
+            }
+          ]
+        }
+      ],
+      max_tokens: 4000,
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('AI API error:', response.status, errorText);
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: 'Rate limit exceeded, please try again later.' }), {
-          status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: 'Payment required, please add credits.' }), {
-          status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      throw new Error(`AI API error: ${response.status}`);
-    }
-
-    const aiResponse = await response.json();
-    const content = aiResponse.choices?.[0]?.message?.content || '';
+    const content = (data as any).choices?.[0]?.message?.content || '';
     
     console.log('AI Response:', content);
 

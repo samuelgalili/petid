@@ -1,5 +1,5 @@
 # PetID Robots.txt
-# https://petid.lovable.app
+# https://petid-swart.vercel.app
 
 User-agent: Googlebot
 Allow: /
@@ -46,4 +46,4 @@ Disallow: /privacy-settings
 Disallow: /checkout
 Disallow: /cart
 
-Sitemap: https://petid.lovable.app/sitemap.xml
+Sitemap: https://petid-swart.vercel.app/sitemap.xml

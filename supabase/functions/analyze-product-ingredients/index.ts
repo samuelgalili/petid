@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { chatCompletion } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -90,12 +91,10 @@ serve(async (req) => {
     }
 
     // ── AI Deep Analysis ──
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     let aiAnalysis = null;
 
-    if (LOVABLE_API_KEY) {
-      try {
-        const prompt = `You are a veterinary nutrition scientist. Analyze these pet food ingredients for a ${petType || "pet"} product named "${productName || "Unknown"}".
+    try {
+      const prompt = `You are a veterinary nutrition scientist. Analyze these pet food ingredients for a ${petType || "pet"} product named "${productName || "Unknown"}".
 
 INGREDIENTS:
 ${ingredients}
@@ -130,32 +129,19 @@ RULES:
 - If ingredients appear to be in Hebrew, analyze them in Hebrew context
 - Only flag ingredients with SCIENTIFIC EVIDENCE of harm – no speculation`;
 
-        const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "google/gemini-2.5-flash",
-            messages: [{ role: "user", content: prompt }],
-          }),
-        });
+      const aiData = await chatCompletion({
+        model: "google/gemini-2.5-flash",
+        messages: [{ role: "user", content: prompt }],
+      });
 
-        if (aiRes.ok) {
-          const aiData = await aiRes.json();
-          const content = aiData.choices?.[0]?.message?.content || "";
-          // Extract JSON from response
-          const jsonMatch = content.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            aiAnalysis = JSON.parse(jsonMatch[0]);
-          }
-        } else {
-          console.error("AI analysis failed:", aiRes.status);
-        }
-      } catch (aiErr) {
-        console.error("AI analysis error:", aiErr);
+      const content = aiData.choices?.[0]?.message?.content || "";
+      // Extract JSON from response
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        aiAnalysis = JSON.parse(jsonMatch[0]);
       }
+    } catch (aiErr) {
+      console.error("AI analysis error:", aiErr);
     }
 
     // ── Merge results ──

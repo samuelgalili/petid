@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { chatCompletion } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,46 +31,25 @@ serve(async (req) => {
         .limit(50);
 
       // Use AI for health prediction
-      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-      if (!LOVABLE_API_KEY) {
-        return new Response(JSON.stringify({ error: "LOVABLE_API_KEY not configured" }), {
-          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            {
-              role: "system",
-              content: `You are Einstein, a veterinary health prediction AI. Use a multi-standard scientific framework:
+      const result = await chatCompletion({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "system",
+            content: `You are Einstein, a veterinary health prediction AI. Use a multi-standard scientific framework:
 1. NRC 2006 as primary baseline for all nutritional risk assessments.
 2. FEDIAF 2024 guidelines for breed-specific upper safe limits and life-stage tolerances.
 3. Peer-reviewed veterinary research (2021-2026) for breed-predisposed conditions (DCM, hip dysplasia diets, renal sensitivity).
 If standards conflict, recommend the more conservative value. Flag uncertainty clearly. Never speculate beyond available data.
 Return JSON: { risks: [{ risk: string, level: 'low'|'medium'|'high', standard_source: 'NRC'|'FEDIAF'|'research', recommendation: string }], overall_score: number, research_notes: string }. Respond in Hebrew.`,
-            },
-            {
-              role: "user",
-              content: JSON.stringify({ pet, diseaseRules: diseaseRules?.slice(0, 10) }),
-            },
-          ],
-        }),
+          },
+          {
+            role: "user",
+            content: JSON.stringify({ pet, diseaseRules: diseaseRules?.slice(0, 10) }),
+          },
+        ],
       });
 
-      if (!aiResponse.ok) {
-        const status = aiResponse.status;
-        if (status === 429) return new Response(JSON.stringify({ error: "Rate limited" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        if (status === 402) return new Response(JSON.stringify({ error: "Payment required" }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-
-      const result = await aiResponse.json();
       const content = result.choices?.[0]?.message?.content || "{}";
 
       await supabase.from("agent_action_logs").insert({

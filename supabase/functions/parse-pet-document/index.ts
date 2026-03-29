@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.0";
+import { chatCompletion } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -89,41 +90,14 @@ async function extractDataFromDocument(
 החזר רק JSON תקני, ללא טקסט נוסף. השאר null את השדות שלא מופיעים.`;
 
   try {
-    const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": Deno.env.get("GOOGLE_API_KEY") || "",
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: extractionPrompt,
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.3,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 1024,
-          },
-        }),
-      }
-    );
+    const data = await chatCompletion({
+      model: "google/gemini-2.5-flash",
+      messages: [{ role: "user", content: extractionPrompt }],
+      temperature: 0.3,
+      max_tokens: 1024,
+    });
 
-    if (!response.ok) {
-      console.error("Gemini API error:", await response.text());
-      return { extraction_confidence: 0 };
-    }
-
-    const data = await response.json();
-    const textContent = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+    const textContent = data.choices?.[0]?.message?.content || "{}";
 
     // Parse JSON from response
     const jsonMatch = textContent.match(/\{[\s\S]*\}/);

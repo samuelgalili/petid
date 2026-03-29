@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { chatCompletion } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -111,13 +112,6 @@ serve(async (req) => {
 
     if (action === "hallucination-check") {
       // Use AI to verify NRC medical outputs against known data
-      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-      if (!LOVABLE_API_KEY) {
-        return new Response(
-          JSON.stringify({ success: false, error: "LOVABLE_API_KEY not configured" }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
 
       // Get recent NRC-related logs
       const { data: nrcLogs } = await supabase
@@ -127,42 +121,20 @@ serve(async (req) => {
         .order("created_at", { ascending: false })
         .limit(10);
 
-      const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            {
-              role: "system",
-              content: "You are Ethi, a veterinary safety auditor. Review the following NRC agent logs and identify any potential hallucinations, inaccurate medical claims, or dangerous advice. Respond in Hebrew with a JSON object: { safe: boolean, issues: string[] }",
-            },
-            {
-              role: "user",
-              content: JSON.stringify(nrcLogs),
-            },
-          ],
-        }),
+      const result = await chatCompletion({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "system",
+            content: "You are Ethi, a veterinary safety auditor. Review the following NRC agent logs and identify any potential hallucinations, inaccurate medical claims, or dangerous advice. Respond in Hebrew with a JSON object: { safe: boolean, issues: string[] }",
+          },
+          {
+            role: "user",
+            content: JSON.stringify(nrcLogs),
+          },
+        ],
       });
 
-      if (!aiResponse.ok) {
-        const status = aiResponse.status;
-        if (status === 429) {
-          return new Response(JSON.stringify({ error: "Rate limited, try again later" }), {
-            status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        if (status === 402) {
-          return new Response(JSON.stringify({ error: "Payment required" }), {
-            status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-      }
-
-      const result = await aiResponse.json();
       const content = result.choices?.[0]?.message?.content || "{}";
 
       await supabase.from("agent_action_logs").insert({

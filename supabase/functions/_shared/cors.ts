@@ -4,29 +4,24 @@
 const ALLOWED_ORIGINS = [
   "http://localhost:8080",
   "http://localhost:5173",
-  "https://lovable.dev",
 ];
-
-// Get the Supabase URL to allow it as an origin
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-if (SUPABASE_URL) {
-  ALLOWED_ORIGINS.push(SUPABASE_URL);
-}
 
 // Add the app's production URL if configured
 const APP_URL = Deno.env.get("APP_URL");
 if (APP_URL) {
-  ALLOWED_ORIGINS.push(APP_URL);
+  ALLOWED_ORIGINS.push(APP_URL.replace(/\/+$/, ""));
 }
+
+const APP_PREVIEW_URLS = (Deno.env.get("APP_PREVIEW_URLS") ?? "")
+  .split(",")
+  .map((value) => value.trim().replace(/\/+$/, ""))
+  .filter(Boolean);
+
+ALLOWED_ORIGINS.push(...APP_PREVIEW_URLS);
 
 export function getCorsHeaders(origin?: string | null): Record<string, string> {
   // Check if origin is allowed
-  const isAllowed = origin && (
-    ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed)) ||
-    origin.endsWith(".lovable.app") ||
-    origin.endsWith(".lovable.dev") ||
-    origin.endsWith(".lovableproject.com")
-  );
+  const isAllowed = origin && ALLOWED_ORIGINS.includes(origin);
 
   return {
     "Access-Control-Allow-Origin": isAllowed ? origin : ALLOWED_ORIGINS[0],

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { chatCompletionStream } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -205,8 +206,6 @@ serve(async (req) => {
     }
 
     const { messages } = parseResult.data;
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     // Fetch context
     const [{ data: recentTasks }, { data: bots }, { data: recentLogs }, { data: pendingApprovals }, { data: automationBots }] = await Promise.all([
@@ -248,31 +247,13 @@ IMPORTANT: When the admin asks about pending approvals, bot status, or recent re
 When the admin asks to make changes — always create <action> or <task> tags so changes are tracked and queued for approval.
 `;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: BOT_CAPABILITIES + contextInfo },
-          ...messages,
-        ],
-        stream: true,
-      }),
+    const stream = await chatCompletionStream({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: BOT_CAPABILITIES + contextInfo },
+        ...messages,
+      ],
     });
-
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Payment required" }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-      throw new Error(`AI gateway error: ${response.status}`);
-    }
 
     const { readable, writable } = new TransformStream();
     const writer = writable.getWriter();
@@ -280,7 +261,7 @@ When the admin asks to make changes — always create <action> or <task> tags so
     let fullResponse = '';
 
     const processStream = async () => {
-      const reader = response.body!.getReader();
+      const reader = stream.getReader();
       const decoder = new TextDecoder();
 
       try {

@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { chatCompletion } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,14 +24,6 @@ serve(async (req) => {
     const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
     if (!FIRECRAWL_API_KEY) {
       return new Response(JSON.stringify({ success: false, error: "Firecrawl not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ success: false, error: "AI key not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -230,40 +223,14 @@ PAGE CONTENT:
 ${markdown.slice(0, 24000)}`;
 
     console.log("Sending to AI for extraction...");
-    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "user", content: extractionPrompt },
-        ],
-        temperature: 0.1,
-      }),
+    const aiData = await chatCompletion({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "user", content: extractionPrompt },
+      ],
+      temperature: 0.1,
     });
 
-    if (!aiRes.ok) {
-      const errText = await aiRes.text();
-      console.error("AI error:", aiRes.status, errText);
-      if (aiRes.status === 429) {
-        return new Response(JSON.stringify({ success: false, error: "Rate limit exceeded, try again shortly" }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (aiRes.status === 402) {
-        return new Response(JSON.stringify({ success: false, error: "AI credits exhausted" }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      return new Response(JSON.stringify({ success: false, error: "AI extraction failed" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const aiData = await aiRes.json();
     const rawContent = aiData.choices?.[0]?.message?.content || "";
 
     // Parse the JSON from LLM response (strip markdown fences if any)

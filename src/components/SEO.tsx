@@ -4,6 +4,7 @@
  */
 
 import { useEffect } from 'react';
+import { APP_URL, appUrl } from '@/lib/app-url';
 
 interface SEOProps {
   title?: string;
@@ -21,10 +22,9 @@ interface SEOProps {
   author?: string;
 }
 
-const BASE_URL = 'https://petid.lovable.app';
-const DEFAULT_IMAGE = 'https://petid.lovable.app/pwa-512x512.png';
-const SITE_NAME = 'PetID';
-const DEFAULT_DESCRIPTION = 'PetID — האפליקציה לחיים עם חיית המחמד שלך 🐶✨ ניהול בריאות, תזונה מותאמת, קהילה וחנות חכמה.';
+const DEFAULT_IMAGE = appUrl('/pwa-512x512.png');
+const SITE_NAME = 'Petid';
+const DEFAULT_DESCRIPTION = 'Petid — האפליקציה לחיים עם חיית המחמד שלך 🐶✨ שמרו רגעים, עקבו אחר טיפול, קבלו תזכורות וגלו מקומות ידידותיים לחיות מחמד.';
 
 export const SEO = ({
   title,
@@ -40,8 +40,8 @@ export const SEO = ({
   author,
 }: SEOProps) => {
   const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} — האפליקציה לחיים עם חיית המחמד שלך`;
-  const fullUrl = url ? `${BASE_URL}${url}` : BASE_URL;
-  const fullImage = image.startsWith('http') ? image : `${BASE_URL}${image}`;
+  const fullUrl = url ? appUrl(url) : APP_URL;
+  const fullImage = image.startsWith('http') ? image : appUrl(image);
 
   useEffect(() => {
     // Update document title
@@ -195,7 +195,7 @@ function getStructuredData(props: {
           name: 'PetID',
           logo: {
             '@type': 'ImageObject',
-            url: 'https://petid.lovable.app/pwa-512x512.png',
+            url: appUrl('/pwa-512x512.png'),
           },
         },
       };
@@ -220,8 +220,8 @@ function getStructuredData(props: {
         url: props.url,
         isPartOf: {
           '@type': 'WebSite',
-          name: 'PetID',
-          url: 'https://petid.lovable.app',
+          name: 'Petid',
+          url: APP_URL,
         },
       };
   }

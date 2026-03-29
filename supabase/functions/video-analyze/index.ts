@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { chatCompletion } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,9 +14,6 @@ serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -143,53 +141,27 @@ RESPONSE FORMAT (JSON):
 
 Respond ONLY with valid JSON, no markdown.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          {
-            role: "user",
-            content: [
-              {
-                type: "image_url",
-                image_url: { url: `data:image/jpeg;base64,${frame_base64}` },
-              },
-              {
-                type: "text",
-                text: "Analyze this video frame for products, breed, and safety issues.",
-              },
-            ],
-          },
-        ],
-      }),
+    const aiData = await chatCompletion({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: systemPrompt },
+        {
+          role: "user",
+          content: [
+            {
+              type: "image_url",
+              image_url: { url: `data:image/jpeg;base64,${frame_base64}` },
+            },
+            {
+              type: "text",
+              text: "Analyze this video frame for products, breed, and safety issues.",
+            },
+          ],
+        },
+      ],
     });
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limited, try again shortly" }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "AI credits exhausted" }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      throw new Error("AI analysis failed");
-    }
-
-    const aiData = await response.json();
-    const rawContent = aiData.choices?.[0]?.message?.content || "{}";
+    const rawContent = (aiData as any).choices?.[0]?.message?.content || "{}";
 
     // Clean and parse JSON
     let analysisResult;

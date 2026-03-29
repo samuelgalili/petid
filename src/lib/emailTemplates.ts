@@ -1,10 +1,14 @@
 // Email template generator for transactional emails
 // These templates are used by edge functions to send formatted emails
 
+import { APP_URL, appUrl } from "@/lib/app-url";
+
 export interface EmailTemplateData {
   recipientName?: string;
   [key: string]: any;
 }
+
+const APP_HOST = new URL(APP_URL).host;
 
 // Base template wrapper with consistent styling
 const baseTemplate = (content: string, title: string) => `
@@ -112,14 +116,14 @@ const baseTemplate = (content: string, title: string) => `
   <div class="container">
     <div class="card">
       <div class="header">
-        <img src="https://petid.lovable.app/petid-icon.png" alt="PetID" class="logo">
+        <img src="${appUrl("/petid-icon.png")}" alt="PetID" class="logo">
         <h1 class="title">${title}</h1>
       </div>
       ${content}
       <div class="footer">
         <p>PetID - המקום לכל מה שחיית המחמד שלך צריכה 🐾</p>
         <p style="margin-top: 8px;">
-          <a href="https://petid.lovable.app" style="color: #d4a574;">petid.lovable.app</a>
+          <a href="${APP_URL}" style="color: #d4a574;">${APP_HOST}</a>
         </p>
       </div>
     </div>
@@ -174,7 +178,7 @@ export const orderConfirmationEmail = (data: {
       </div>
       
       <div style="text-align: center; margin-top: 32px;">
-        <a href="https://petid.lovable.app/orders" class="button">צפה בהזמנה</a>
+        <a href="${appUrl("/orders")}" class="button">צפה בהזמנה</a>
       </div>
     </div>
   `;
@@ -225,7 +229,7 @@ export const orderShippedEmail = (data: {
       </div>
       
       <div style="text-align: center; margin-top: 32px;">
-        <a href="https://petid.lovable.app/orders" class="button">עקוב אחרי המשלוח</a>
+        <a href="${appUrl("/orders")}" class="button">עקוב אחרי המשלוח</a>
       </div>
     </div>
   `;
@@ -258,7 +262,7 @@ export const orderDeliveredEmail = (data: {
       <p>נשמח לשמוע מה דעתך - השאירו ביקורת ועזרו לאחרים לבחור.</p>
       
       <div style="text-align: center; margin-top: 32px;">
-        <a href="https://petid.lovable.app/orders" class="button">השאר ביקורת ⭐</a>
+        <a href="${appUrl("/orders")}" class="button">השאר ביקורת ⭐</a>
       </div>
     </div>
   `;
@@ -286,7 +290,7 @@ export const welcomeEmail = (data: {
       </div>
       
       <div style="text-align: center; margin-top: 32px;">
-        <a href="https://petid.lovable.app/add-pet" class="button">הוסף את חיית המחמד הראשונה</a>
+        <a href="${appUrl("/add-pet")}" class="button">הוסף את חיית המחמד הראשונה</a>
       </div>
     </div>
   `;
@@ -341,7 +345,7 @@ export const lowStockAlertEmail = (data: {
       </div>
       
       <div style="text-align: center; margin-top: 32px;">
-        <a href="https://petid.lovable.app/admin/inventory" class="button">נהל מלאי</a>
+        <a href="${appUrl("/admin/inventory")}" class="button">נהל מלאי</a>
       </div>
     </div>
   `;

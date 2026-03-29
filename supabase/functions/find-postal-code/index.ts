@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { chatCompletion } from "../_shared/ai.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,52 +21,21 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
-    }
-
-    const prompt = address 
+    const prompt = address
       ? `מצא את המיקוד (postal code) המדויק בישראל עבור הכתובת: ${address}, ${city}. החזר רק את המיקוד בפורמט של 7 ספרות, בלי שום טקסט נוסף.`
       : `מצא את המיקוד (postal code) הראשי בישראל עבור העיר: ${city}. החזר רק את המיקוד בפורמט של 7 ספרות, בלי שום טקסט נוסף.`;
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { 
-            role: 'system', 
-            content: 'אתה מומחה למיקודים בישראל. החזר רק את המיקוד בפורמט של 7 ספרות. אל תוסיף הסברים או טקסט נוסף.' 
-          },
-          { role: 'user', content: prompt }
-        ],
-      }),
+    const data = await chatCompletion({
+      model: 'google/gemini-2.5-flash',
+      messages: [
+        {
+          role: 'system',
+          content: 'אתה מומחה למיקודים בישראל. החזר רק את המיקוד בפורמט של 7 ספרות. אל תוסיף הסברים או טקסט נוסף.'
+        },
+        { role: 'user', content: prompt }
+      ],
     });
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: 'Rate limit exceeded, please try again later' }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: 'Payment required' }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      const errorText = await response.text();
-      console.error('AI gateway error:', response.status, errorText);
-      throw new Error('AI gateway error');
-    }
-
-    const data = await response.json();
     const postalCode = data.choices?.[0]?.message?.content?.trim();
     
     // Validate that we got a 7-digit number

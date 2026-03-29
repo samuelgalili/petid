@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { chatCompletion } from "../_shared/ai.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,9 +13,6 @@ Deno.serve(async (req) => {
 
   try {
     const { feedback_id, rating, message } = await req.json();
-    
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY not configured');
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -28,33 +26,23 @@ Deno.serve(async (req) => {
     // AI analysis for messages with text
     if (message && message.trim().length > 0) {
       try {
-        const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'google/gemini-2.5-flash-lite',
-            messages: [
-              {
-                role: 'system',
-                content: 'You are a sentiment classifier. Classify the user feedback into exactly one of: happy, neutral, angry. Respond with ONLY the single word.',
-              },
-              {
-                role: 'user',
-                content: `Rating: ${rating}/5\nFeedback: "${message}"`,
-              },
-            ],
-          }),
+        const aiData = await chatCompletion({
+          model: 'google/gemini-2.5-flash-lite',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a sentiment classifier. Classify the user feedback into exactly one of: happy, neutral, angry. Respond with ONLY the single word.',
+            },
+            {
+              role: 'user',
+              content: `Rating: ${rating}/5\nFeedback: "${message}"`,
+            },
+          ],
         });
 
-        if (aiRes.ok) {
-          const aiData = await aiRes.json();
-          const result = (aiData.choices?.[0]?.message?.content || '').trim().toLowerCase();
-          if (['happy', 'neutral', 'angry'].includes(result)) {
-            sentiment = result as typeof sentiment;
-          }
+        const result = (aiData.choices?.[0]?.message?.content || '').trim().toLowerCase();
+        if (['happy', 'neutral', 'angry'].includes(result)) {
+          sentiment = result as typeof sentiment;
         }
       } catch (e) {
         console.error('[Sentiment] AI analysis failed, using heuristic:', e);

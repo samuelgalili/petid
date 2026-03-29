@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { chatCompletion } from "../_shared/ai.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -60,7 +61,6 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     const supabase = createClient(supabaseUrl, serviceKey);
 
     console.log('[Ofek] Starting Visual UI Audit...');
@@ -244,51 +244,41 @@ Deno.serve(async (req) => {
     }
 
     // ─── 4. Auto-Fix: Link with Ido for CSS fixes ─────────────
-    if (LOVABLE_API_KEY && issues.length > 0) {
+    if (issues.length > 0) {
       try {
         const issuesSummary = issues.map(i =>
           `[${i.severity}] ${i.route} | ${i.element_type} "${i.element_label}" | ${i.issue_type}: ${i.description}`
         ).join('\n');
 
-        const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'google/gemini-2.5-flash-lite',
-            messages: [
-              {
-                role: 'system',
-                content: 'You are Ido, the PetID System Architect. Given UI issues found by Ofek (Visual Monitor), generate concise Evolution Cards. For each fixable issue, provide: insight, solution, code_before (the broken pattern), code_after (the fix), category (always "ui"), confidence (0-1). Return JSON array. Max 3 cards.',
-              },
-              {
-                role: 'user',
-                content: `Ofek found these UI issues:\n\n${issuesSummary}\n\nGenerate Evolution Cards for the most impactful fixes.`,
-              },
-            ],
-          }),
+        const aiData = await chatCompletion({
+          model: 'google/gemini-2.5-flash-lite',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are Ido, the PetID System Architect. Given UI issues found by Ofek (Visual Monitor), generate concise Evolution Cards. For each fixable issue, provide: insight, solution, code_before (the broken pattern), code_after (the fix), category (always "ui"), confidence (0-1). Return JSON array. Max 3 cards.',
+            },
+            {
+              role: 'user',
+              content: `Ofek found these UI issues:\n\n${issuesSummary}\n\nGenerate Evolution Cards for the most impactful fixes.`,
+            },
+          ],
         });
 
-        if (aiRes.ok) {
-          const aiData = await aiRes.json();
-          const content = aiData.choices?.[0]?.message?.content || '';
-          // Try to parse JSON from response
-          const jsonMatch = content.match(/\[[\s\S]*\]/);
-          if (jsonMatch) {
-            const cards = JSON.parse(jsonMatch[0]);
-            for (const card of cards.slice(0, 3)) {
-              await supabase.from('architect_evolution_cards').insert({
-                insight: card.insight || 'UI issue detected by Ofek',
-                solution: card.solution || 'Auto-fix pending review',
-                code_before: card.code_before || '',
-                code_after: card.code_after || '',
-                category: 'ui',
-                confidence: card.confidence || 0.7,
-                status: 'draft',
-              });
-            }
+        const content = (aiData as any).choices?.[0]?.message?.content || '';
+        // Try to parse JSON from response
+        const jsonMatch = content.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          const cards = JSON.parse(jsonMatch[0]);
+          for (const card of cards.slice(0, 3)) {
+            await supabase.from('architect_evolution_cards').insert({
+              insight: card.insight || 'UI issue detected by Ofek',
+              solution: card.solution || 'Auto-fix pending review',
+              code_before: card.code_before || '',
+              code_after: card.code_after || '',
+              category: 'ui',
+              confidence: card.confidence || 0.7,
+              status: 'draft',
+            });
           }
         }
       } catch (e) {

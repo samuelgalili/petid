@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { chatCompletion } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,7 +13,6 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const lovableKey = Deno.env.get("LOVABLE_API_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
     const { action, agent_slug } = await req.json();
@@ -48,40 +48,27 @@ Return a JSON with this structure:
   "performance_summary": {"overall_score": 78, "empathy_avg": 80, "accuracy_avg": 85, "conversion_avg": 65}
 }`;
 
-      const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          messages: [{ role: "user", content: analysisPrompt }],
-          tools: [{
-            type: "function",
-            function: {
-              name: "return_analysis",
-              description: "Return the agent performance analysis",
-              parameters: {
-                type: "object",
-                properties: {
-                  logic_gaps: { type: "array", items: { type: "object", properties: { agent: { type: "string" }, issue: { type: "string" }, severity: { type: "string" } }, required: ["agent", "issue", "severity"] } },
-                  prompt_improvements: { type: "array", items: { type: "object", properties: { agent: { type: "string" }, current_weakness: { type: "string" }, suggested_change: { type: "string" }, expected_improvement_pct: { type: "number" } }, required: ["agent", "current_weakness", "suggested_change", "expected_improvement_pct"] } },
-                  performance_summary: { type: "object", properties: { overall_score: { type: "number" }, empathy_avg: { type: "number" }, accuracy_avg: { type: "number" }, conversion_avg: { type: "number" } }, required: ["overall_score", "empathy_avg", "accuracy_avg", "conversion_avg"] }
-                },
-                required: ["logic_gaps", "prompt_improvements", "performance_summary"],
-                additionalProperties: false,
+      const aiData = await chatCompletion({
+        model: "google/gemini-3-flash-preview",
+        messages: [{ role: "user", content: analysisPrompt }],
+        tools: [{
+          type: "function",
+          function: {
+            name: "return_analysis",
+            description: "Return the agent performance analysis",
+            parameters: {
+              type: "object",
+              properties: {
+                logic_gaps: { type: "array", items: { type: "object", properties: { agent: { type: "string" }, issue: { type: "string" }, severity: { type: "string" } }, required: ["agent", "issue", "severity"] } },
+                prompt_improvements: { type: "array", items: { type: "object", properties: { agent: { type: "string" }, current_weakness: { type: "string" }, suggested_change: { type: "string" }, expected_improvement_pct: { type: "number" } }, required: ["agent", "current_weakness", "suggested_change", "expected_improvement_pct"] } },
+                performance_summary: { type: "object", properties: { overall_score: { type: "number" }, empathy_avg: { type: "number" }, accuracy_avg: { type: "number" }, conversion_avg: { type: "number" } }, required: ["overall_score", "empathy_avg", "accuracy_avg", "conversion_avg"] }
               },
+              required: ["logic_gaps", "prompt_improvements", "performance_summary"],
+              additionalProperties: false,
             },
-          }],
-          tool_choice: { type: "function", function: { name: "return_analysis" } },
-        }),
-      });
-
-      if (!aiResponse.ok) {
-        const errText = await aiResponse.text();
-        console.error("AI error:", errText);
-        return new Response(JSON.stringify({ error: "AI analysis failed" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-
-      const aiData = await aiResponse.json();
+          },
+        }],
+      }) as any;
       const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
       const analysis = toolCall ? JSON.parse(toolCall.function.arguments) : null;
 
@@ -143,16 +130,10 @@ Guidelines:
 
 Return ONLY the improved system prompt as plain text.`;
 
-      const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [{ role: "user", content: rewritePrompt }],
-        }),
-      });
-
-      const aiData = await aiResponse.json();
+      const aiData = await chatCompletion({
+        model: "google/gemini-2.5-flash",
+        messages: [{ role: "user", content: rewritePrompt }],
+      }) as any;
       const newPrompt = aiData.choices?.[0]?.message?.content;
 
       if (newPrompt) {
@@ -235,68 +216,52 @@ Return ONLY the improved system prompt as plain text.`;
       let variantBScore = 0;
 
       for (const scenario of testScenarios) {
-        const [responseA, responseB] = await Promise.all([
-          fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-            method: "POST",
-            headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
-            body: JSON.stringify({
-              model: "google/gemini-2.5-flash-lite",
-              messages: [
-                { role: "system", content: activePrompt.system_prompt },
-                { role: "user", content: scenario },
-              ],
-            }),
-          }),
-          fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-            method: "POST",
-            headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
-            body: JSON.stringify({
-              model: "google/gemini-2.5-flash-lite",
-              messages: [
-                { role: "system", content: candidatePrompt.system_prompt },
-                { role: "user", content: scenario },
-              ],
-            }),
-          }),
+        const [dataA, dataB] = await Promise.all([
+          chatCompletion({
+            model: "google/gemini-2.5-flash-lite",
+            messages: [
+              { role: "system", content: activePrompt.system_prompt },
+              { role: "user", content: scenario },
+            ],
+          }) as any,
+          chatCompletion({
+            model: "google/gemini-2.5-flash-lite",
+            messages: [
+              { role: "system", content: candidatePrompt.system_prompt },
+              { role: "user", content: scenario },
+            ],
+          }) as any,
         ]);
 
-        const dataA = await responseA.json();
-        const dataB = await responseB.json();
         const contentA = dataA.choices?.[0]?.message?.content || "";
         const contentB = dataB.choices?.[0]?.message?.content || "";
 
         // Score using AI judge
-        const judgeResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: "google/gemini-2.5-flash",
-            messages: [{
-              role: "user",
-              content: `Score these two AI responses (1-100) on empathy, accuracy, and conversion potential.
+        const judgeData = await chatCompletion({
+          model: "google/gemini-2.5-flash",
+          messages: [{
+            role: "user",
+            content: `Score these two AI responses (1-100) on empathy, accuracy, and conversion potential.
 User query: "${scenario}"
 Response A: "${contentA.slice(0, 500)}"
 Response B: "${contentB.slice(0, 500)}"
 Return JSON: {"score_a": number, "score_b": number}`,
-            }],
-            tools: [{
-              type: "function",
-              function: {
-                name: "return_scores",
-                description: "Return the scores",
-                parameters: {
-                  type: "object",
-                  properties: { score_a: { type: "number" }, score_b: { type: "number" } },
-                  required: ["score_a", "score_b"],
-                  additionalProperties: false,
-                },
+          }],
+          tools: [{
+            type: "function",
+            function: {
+              name: "return_scores",
+              description: "Return the scores",
+              parameters: {
+                type: "object",
+                properties: { score_a: { type: "number" }, score_b: { type: "number" } },
+                required: ["score_a", "score_b"],
+                additionalProperties: false,
               },
-            }],
-            tool_choice: { type: "function", function: { name: "return_scores" } },
-          }),
-        });
+            },
+          }],
+        }) as any;
 
-        const judgeData = await judgeResponse.json();
         const scores = JSON.parse(judgeData.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments || '{"score_a":50,"score_b":50}');
         variantAScore += scores.score_a;
         variantBScore += scores.score_b;

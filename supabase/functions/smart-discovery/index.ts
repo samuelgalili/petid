@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { chatCompletion } from "../_shared/ai.ts";
 
 serve(async (req) => {
   const corsResponse = handleCorsPreflightRequest(req);
@@ -11,11 +12,6 @@ serve(async (req) => {
 
   try {
     const { userId, type } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -110,55 +106,17 @@ ${JSON.stringify(contextData, null, 2)}
 סוג הבקשה: ${type}
 ${userId ? `מזהה משתמש: ${userId}` : "משתמש אנונימי"}`;
 
-    console.log("Calling Lovable AI for smart discovery analysis...");
+    console.log("Calling AI for smart discovery analysis...");
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        response_format: { type: "json_object" },
-      }),
+    const aiResponse = await chatCompletion({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      response_format: { type: "json_object" },
     });
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ 
-          error: "Rate limits exceeded", 
-          data: contextData 
-        }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ 
-          error: "Payment required", 
-          data: contextData 
-        }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      // Return data without AI insights on error
-      return new Response(JSON.stringify({ 
-        data: contextData,
-        ai_insights: null 
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const aiResponse = await response.json();
     const aiContent = aiResponse.choices?.[0]?.message?.content;
     
     let aiInsights = null;

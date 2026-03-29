@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { chatCompletion } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,9 +11,6 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
@@ -36,18 +34,12 @@ serve(async (req) => {
       `[${e.severity}] ${e.error_source} | ${e.component || "unknown"} | ${e.route || "/"} | "${e.message}" (×${e.occurrence_count})`
     ).join("\n");
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          {
-            role: "system",
-            content: `You are Ido, The System Architect bot for PetID — a React/TypeScript/Supabase pet-tech platform.
+    const aiResult = await chatCompletion({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        {
+          role: "system",
+          content: `You are Ido, The System Architect bot for PetID — a React/TypeScript/Supabase pet-tech platform.
 Your job: analyze production errors and propose concrete code fixes.
 For EACH error pattern, produce an Evolution Card with:
 - insight: 1-sentence describing what users/system are struggling with
@@ -60,65 +52,44 @@ For EACH error pattern, produce an Evolution Card with:
 - confidence: 0.0 to 1.0
 
 Return JSON array of cards. Max 5 cards. Be specific and actionable.`
-          },
-          {
-            role: "user",
-            content: `Analyze these production errors and generate Evolution Cards:\n\n${errorSummary}`
-          }
-        ],
-        tools: [{
-          type: "function",
-          function: {
-            name: "generate_evolution_cards",
-            description: "Generate evolution cards from error analysis",
-            parameters: {
-              type: "object",
-              properties: {
-                cards: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      insight: { type: "string" },
-                      solution: { type: "string" },
-                      code_before: { type: "string" },
-                      code_after: { type: "string" },
-                      file_path: { type: "string" },
-                      component: { type: "string" },
-                      category: { type: "string", enum: ["ui", "performance", "security", "ux", "data"] },
-                      confidence: { type: "number" },
-                      error_id: { type: "string" },
-                    },
-                    required: ["insight", "solution", "code_before", "code_after", "category", "confidence"],
+        },
+        {
+          role: "user",
+          content: `Analyze these production errors and generate Evolution Cards:\n\n${errorSummary}`
+        }
+      ],
+      tools: [{
+        type: "function",
+        function: {
+          name: "generate_evolution_cards",
+          description: "Generate evolution cards from error analysis",
+          parameters: {
+            type: "object",
+            properties: {
+              cards: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    insight: { type: "string" },
+                    solution: { type: "string" },
+                    code_before: { type: "string" },
+                    code_after: { type: "string" },
+                    file_path: { type: "string" },
+                    component: { type: "string" },
+                    category: { type: "string", enum: ["ui", "performance", "security", "ux", "data"] },
+                    confidence: { type: "number" },
+                    error_id: { type: "string" },
                   },
+                  required: ["insight", "solution", "code_before", "code_after", "category", "confidence"],
                 },
               },
-              required: ["cards"],
             },
+            required: ["cards"],
           },
-        }],
-        tool_choice: { type: "function", function: { name: "generate_evolution_cards" } },
-      }),
+        },
+      }],
     });
-
-    if (!response.ok) {
-      const status = response.status;
-      const body = await response.text();
-      if (status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limited — try again shortly" }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (status === 402) {
-        return new Response(JSON.stringify({ error: "Credits required — please top up" }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      console.error("AI gateway error:", status, body);
-      throw new Error(`AI error: ${status}`);
-    }
-
-    const aiResult = await response.json();
     const toolCall = aiResult.choices?.[0]?.message?.tool_calls?.[0];
     let cards: any[] = [];
 

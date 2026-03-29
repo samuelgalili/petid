@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { chatCompletion } from "../_shared/ai.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -50,52 +51,39 @@ Deno.serve(async (req) => {
     let scientificFact = '';
 
     try {
-      const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-      if (LOVABLE_API_KEY) {
-        // Get latest NRC data for context
-        const { data: nrcRules } = await supabase
-          .from('breed_disease_diet_rules')
-          .select('disease, diet, required_nutrients')
-          .order('created_at', { ascending: false })
-          .limit(5);
+      // Get latest NRC data for context
+      const { data: nrcRules } = await supabase
+        .from('breed_disease_diet_rules')
+        .select('disease, diet, required_nutrients')
+        .order('created_at', { ascending: false })
+        .limit(5);
 
-        const { data: recentBreeds } = await supabase
-          .from('breed_information')
-          .select('breed_name, health_issues, dietary_notes')
-          .order('updated_at', { ascending: false })
-          .limit(3);
+      const { data: recentBreeds } = await supabase
+        .from('breed_information')
+        .select('breed_name, health_issues, dietary_notes')
+        .order('updated_at', { ascending: false })
+        .limit(3);
 
-        const context = JSON.stringify({ nrcRules, recentBreeds });
+      const context = JSON.stringify({ nrcRules, recentBreeds });
 
-        const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-            'Content-Type': 'application/json',
+      const aiData = await chatCompletion({
+        model: 'google/gemini-2.5-flash-lite',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are Dr. NRC, a veterinary nutrition expert for PetID. Respond in Hebrew. Be concise — one sentence only.'
           },
-          body: JSON.stringify({
-            model: 'google/gemini-2.5-flash-lite',
-            messages: [
-              {
-                role: 'system',
-                content: 'You are Dr. NRC, a veterinary nutrition expert for PetID. Respond in Hebrew. Be concise — one sentence only.'
-              },
-              {
-                role: 'user',
-                content: `Based on the latest research data: ${context}\n\nGenerate exactly TWO lines:\nLine 1: A one-sentence executive insight about the most important business trend from the last 24 hours (revenue: ₪${grossRevenue.toFixed(0)}, costs: ₪${totalCosts.toFixed(0)}, orders: ${orders.length}).\nLine 2: The most important scientific fact Dr. NRC learned yesterday from the data.`
-              }
-            ],
-          }),
-        });
+          {
+            role: 'user',
+            content: `Based on the latest research data: ${context}\n\nGenerate exactly TWO lines:\nLine 1: A one-sentence executive insight about the most important business trend from the last 24 hours (revenue: ₪${grossRevenue.toFixed(0)}, costs: ₪${totalCosts.toFixed(0)}, orders: ${orders.length}).\nLine 2: The most important scientific fact Dr. NRC learned yesterday from the data.`
+          }
+        ],
+      });
 
-        if (aiResponse.ok) {
-          const aiData = await aiResponse.json();
-          const content = aiData.choices?.[0]?.message?.content || '';
-          const lines = content.split('\n').filter((l: string) => l.trim());
-          aiInsight = lines[0] || `רווח נקי של ₪${netProfit.toFixed(0)} ב-24 השעות האחרונות עם ${orders.length} הזמנות.`;
-          scientificFact = lines[1] || 'Dr. NRC עדכן את בסיס הידע עם מחקרים חדשים מ-AAFCO 2026.';
-        }
-      }
+      const content = aiData.choices?.[0]?.message?.content || '';
+      const lines = content.split('\n').filter((l: string) => l.trim());
+      aiInsight = lines[0] || `רווח נקי של ₪${netProfit.toFixed(0)} ב-24 השעות האחרונות עם ${orders.length} הזמנות.`;
+      scientificFact = lines[1] || 'Dr. NRC עדכן את בסיס הידע עם מחקרים חדשים מ-AAFCO 2026.';
     } catch (e) {
       console.error('[DailyBrief] AI insight generation failed:', e);
     }

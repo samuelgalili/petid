@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Printer, X, Package, Sparkles } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { appUrl } from "@/lib/app-url";
 import { cn } from "@/lib/utils";
 
 interface OrderItem {
@@ -36,8 +37,6 @@ interface OrderLabelGeneratorProps {
   onClose: () => void;
   initialFormat?: LabelFormat;
 }
-
-const APP_URL = "https://petid.lovable.app";
 
 // ─── Shared Helpers ──────────────────────────────────────────
 const formatAddress = (addr: any): string => {
@@ -114,7 +113,7 @@ const LiteLabel = ({ order }: { order: LabelOrder }) => (
         </div>
       </div>
       <QRCodeSVG
-        value={`${APP_URL}/order/${order.order_number}`}
+        value={appUrl(`/order/${order.order_number}`)}
         size={40}
         level="L"
         bgColor="#ffffff"
@@ -218,7 +217,7 @@ const PremiumLabel = ({ order }: { order: LabelOrder }) => (
       {/* Large QR to pet health dashboard */}
       <div style={{ display: "flex", alignItems: "center", gap: "4mm" }}>
         <QRCodeSVG
-          value={`${APP_URL}/pet/${order.user_id}`}
+          value={appUrl(`/pet/${order.user_id}`)}
           size={72}
           level="H"
           bgColor="#ffffff"

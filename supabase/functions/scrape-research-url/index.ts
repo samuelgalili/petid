@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { chatCompletion } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,7 +22,6 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const firecrawlKey = Deno.env.get("FIRECRAWL_API_KEY");
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { url, dataType, sourceId }: ScrapeRequest = await req.json();
@@ -36,13 +36,6 @@ Deno.serve(async (req) => {
     if (!firecrawlKey) {
       return new Response(
         JSON.stringify({ success: false, error: "Firecrawl is not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    if (!lovableApiKey) {
-      return new Response(
-        JSON.stringify({ success: false, error: "LOVABLE_API_KEY is not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -145,61 +138,40 @@ IMPORTANT: Include the FULL content.`,
     let isProcessed = false;
 
     try {
-      console.log("Calling Lovable AI Gateway for extraction...");
-      const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${lovableApiKey}`,
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            {
-              role: "system",
-              content: extractionPrompt,
-            },
-            {
-              role: "user",
-              content: `Extract the full article from this web page:\n\nURL: ${formattedUrl}\nPage Title: ${metadata.title || "Unknown"}\n\nContent:\n${scrapedContent.substring(0, 30000)}`,
-            },
-          ],
-        }),
+      console.log("Calling AI for extraction...");
+      const aiResult = await chatCompletion({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "system",
+            content: extractionPrompt,
+          },
+          {
+            role: "user",
+            content: `Extract the full article from this web page:\n\nURL: ${formattedUrl}\nPage Title: ${metadata.title || "Unknown"}\n\nContent:\n${scrapedContent.substring(0, 30000)}`,
+          },
+        ],
       });
 
-      console.log(`AI response status: ${aiResponse.status}`);
+      const content = aiResult.choices?.[0]?.message?.content || "";
+      console.log(`AI response content length: ${content.length}`);
 
-      if (aiResponse.ok) {
-        const aiResult = await aiResponse.json();
-        const content = aiResult.choices?.[0]?.message?.content || "";
-        console.log(`AI response content length: ${content.length}`);
-
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          extractedData = JSON.parse(jsonMatch[0]);
-          extractedData.source_url = formattedUrl;
-          extractedData.scraped_at = new Date().toISOString();
-          extractedData.page_metadata = metadata;
-          extractedData.raw_content_length = scrapedContent.length;
-          isProcessed = true;
-          console.log("AI extraction successful, keys:", Object.keys(extractedData).join(", "));
-        } else {
-          console.error("No JSON found in AI response. Content preview:", content.substring(0, 200));
-          extractedData = {
-            raw_content: scrapedContent,
-            source_url: formattedUrl,
-            page_metadata: metadata,
-            ai_error: "Could not parse structured data from AI response",
-          };
-        }
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        extractedData = JSON.parse(jsonMatch[0]);
+        extractedData.source_url = formattedUrl;
+        extractedData.scraped_at = new Date().toISOString();
+        extractedData.page_metadata = metadata;
+        extractedData.raw_content_length = scrapedContent.length;
+        isProcessed = true;
+        console.log("AI extraction successful, keys:", Object.keys(extractedData).join(", "));
       } else {
-        const errorText = await aiResponse.text();
-        console.error(`AI Gateway error (${aiResponse.status}):`, errorText);
+        console.error("No JSON found in AI response. Content preview:", content.substring(0, 200));
         extractedData = {
           raw_content: scrapedContent,
           source_url: formattedUrl,
           page_metadata: metadata,
-          ai_error: `AI Gateway returned ${aiResponse.status}`,
+          ai_error: "Could not parse structured data from AI response",
         };
       }
     } catch (aiError) {
