@@ -1,5 +1,5 @@
 # PetID Robots.txt
-# https://petid-swart.vercel.app
+# https://www.petid.co.il
 
 User-agent: Googlebot
 Allow: /
@@ -46,4 +46,4 @@ Disallow: /privacy-settings
 Disallow: /checkout
 Disallow: /cart
 
-Sitemap: https://petid-swart.vercel.app/sitemap.xml
+Sitemap: https://www.petid.co.il/sitemap.xml
