@@ -26,7 +26,6 @@ export interface OcrRecord {
   diagnosis: string | null;
   chip_number: string | null;
   provider_name: string | null;
-  next_appointment: string | null;
 }
 
 export interface VetVisit {
@@ -163,7 +162,7 @@ export const CentralBrainProvider: React.FC<{ children: React.ReactNode }> = ({ 
         // OCR extracted data
         (supabase as any)
           .from("pet_document_extracted_data")
-          .select("vaccination_type, vaccination_date, vaccination_expiry, treatment_type, treatment_date, diagnosis, chip_number, provider_name, next_appointment")
+          .select("vaccination_type, vaccination_date, vaccination_expiry, treatment_type, treatment_date, diagnosis, chip_number, provider_name")
           .eq("pet_id", petId)
           .order("created_at", { ascending: false })
           .limit(20),

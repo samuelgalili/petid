@@ -75,6 +75,28 @@ const CAT_ACTIVITIES = [
 
 const TOTAL_STEPS = 7;
 
+const fileExtension = (file: File) => {
+  const fromName = file.name.split(".").pop();
+  if (fromName) return fromName.toLowerCase();
+  const fromType = file.type.split("/")[1];
+  return fromType || "jpg";
+};
+
+const uploadPetAvatar = async (userId: string, file: File): Promise<string> => {
+  const id = crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const path = `${userId}/${id}.${fileExtension(file)}`;
+  const { error } = await supabase.storage.from("pet-avatars").upload(path, file, {
+    cacheControl: "3600",
+    contentType: file.type || "image/jpeg",
+    upsert: false,
+  });
+
+  if (error) throw error;
+
+  const { data } = supabase.storage.from("pet-avatars").getPublicUrl(path);
+  return data.publicUrl;
+};
+
 const AddPet = () => {
   const [searchParams] = useSearchParams();
   const isOnboarding = searchParams.get("onboarding") === "true";
@@ -117,7 +139,7 @@ const AddPet = () => {
 
   const minSwipeDistance = 50;
   
-  const { petType, setPetType } = usePetPreference();
+  const { petType, setPetType, refresh: refreshPets } = usePetPreference();
   const { isGuest } = useGuest();
   const { awardBadge, updateStreak } = useGame();
   const navigate = useNavigate();
@@ -259,25 +281,14 @@ const AddPet = () => {
     setPhotoQualityFeedback(null);
     setDetectedHealthRisks([]);
     try {
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/detect-breed`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke("detect-breed", {
+        body: {
           imageBase64: base64Image,
           petType: petType
-        })
+        }
       });
 
-      if (response.status === 429) {
-        toast({ title: "נסה שוב מאוחר יותר", description: "יותר מדי בקשות, אנא המתן.", variant: "destructive" });
-        setBreedDetectionFailed(true);
-        return;
-      }
-
-      const data = await response.json();
+      if (error) throw error;
       
       if (data.error) {
         console.error('Breed detection error:', data.error);
@@ -360,8 +371,7 @@ const AddPet = () => {
     setBreedDetecting(false);
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const previewAndDetectBreed = (file: File) => {
     if (file) {
       setImageFile(file);
       const reader = new FileReader();
@@ -374,24 +384,31 @@ const AddPet = () => {
     }
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      previewAndDetectBreed(file);
+      e.target.value = "";
+    }
+  };
+
   const handleCameraCapture = () => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
     input.capture = 'environment';
+    input.style.display = 'none';
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
-        setImageFile(file);
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const result = reader.result as string;
-          setImagePreview(result);
-          detectBreed(result);
-        };
-        reader.readAsDataURL(file);
+        previewAndDetectBreed(file);
       }
+      document.body.removeChild(input);
     };
+    input.oncancel = () => {
+      document.body.removeChild(input);
+    };
+    document.body.appendChild(input);
     input.click();
   };
 
@@ -423,7 +440,12 @@ const AddPet = () => {
         return;
       }
       
-      let avatarUrl = imagePreview || "";
+      let avatarUrl = "";
+      if (imageFile) {
+        avatarUrl = await uploadPetAvatar(user.id, imageFile);
+      } else if (imagePreview && imagePreview.startsWith("http")) {
+        avatarUrl = imagePreview;
+      }
 
       const breedValue = formData.is_mixed && formData.secondary_breed 
         ? `${formData.breed} + ${formData.secondary_breed}` 
@@ -486,6 +508,11 @@ const AddPet = () => {
           : `${formData.name} נוסף בהצלחה!`
       });
       
+      if (petData?.id) {
+        localStorage.setItem("activePetId", petData.id);
+        await refreshPets();
+      }
+
       localStorage.removeItem('addPetDraft');
       
       setTimeout(() => navigate("/"), 1500);
@@ -537,8 +564,9 @@ const AddPet = () => {
       const goingToStep = currentStep - 1;
       // Reset image and breed when going back to pet type selection
       if (goingToStep === 1) {
-        setImagePreview(null);
-        setFormData(prev => ({ ...prev, breed: '', avatar_url: '' }));
+        setImagePreview("");
+        setImageFile(null);
+        setFormData(prev => ({ ...prev, breed: '' }));
         setBreedSource(null);
         setBreedConfidence(null);
         setActivities([]);

@@ -190,7 +190,10 @@ export const PetVaultDrawer = ({ isOpen, onClose, pet }: PetVaultDrawerProps) =>
             petId: pet.id,
             userId: user.id,
             imageBase64: base64,
+            imageBase64ForSave: base64,
             fileName: file.name,
+            documentId: docData.id,
+            saveToDb: true,
           },
         });
 

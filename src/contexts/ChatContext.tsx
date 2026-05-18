@@ -313,9 +313,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Process intent once pets are loaded
+  // Process intent once the chat is ready
   useEffect(() => {
-    if (!pendingIntent || isLoading || userPets.length === 0) return;
+    if (!pendingIntent || isLoading) return;
     const timer = setTimeout(() => {
       sendMessage(pendingIntent);
       setPendingIntent(null);
@@ -344,6 +344,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   /** Stream chat with AI */
   const streamChat = useCallback(async (messagesToSend: Message[]) => {
+    const fallbackAssistantMessage: Message = {
+      role: "assistant",
+      content: "לא הצלחתי לקבל תשובה מלאה כרגע. אפשר לנסות שוב, או לבחור פעולה כמו סריקת מסמך, צילום תמונה או שאלה על תזונה ובריאות.",
+      timestamp: new Date().toISOString(),
+      suggestions: ["סריקת מסמך", "צילום תמונה", "שאלה על תזונה"],
+    };
     const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
     setIsTyping(true);
 
@@ -392,7 +398,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         try { products = JSON.parse(decodeURIComponent(productsHeader)); } catch { /* ignore */ }
       }
 
-      const assistantMessage: Message = { role: "assistant", content, products };
+      const assistantMessage: Message = content.trim()
+        ? { role: "assistant", content, products }
+        : { ...fallbackAssistantMessage, products };
       setMessages((prev) => [...prev, assistantMessage]);
       return;
     }
@@ -469,6 +477,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
     setIsTyping(false);
 
+    if (!assistantContent.trim()) {
+      setMessages((prev) => [...prev, fallbackAssistantMessage]);
+      return;
+    }
+
     // Extract suggestions and add to last assistant message
     const suggestions = extractSuggestions(assistantContent);
     if (suggestions.length > 0) {
@@ -493,6 +506,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       await streamChat([...messagesRef.current, userMessage]);
     } catch (error) {
       console.error("Error:", error);
+      setIsTyping(false);
+      setMessages((prev) => [...prev, {
+        role: "assistant",
+        content: error instanceof Error
+          ? `לא הצלחתי לשלוח את ההודעה: ${error.message}`
+          : "לא הצלחתי לשלוח את ההודעה כרגע. נסה שוב בעוד רגע.",
+        timestamp: new Date().toISOString(),
+        suggestions: ["נסה שוב", "סריקת מסמך", "צילום תמונה"],
+      }]);
     } finally {
       setIsLoading(false);
     }

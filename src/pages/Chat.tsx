@@ -54,6 +54,14 @@ const ChatContent = () => {
   const [showScrollDown, setShowScrollDown] = useState(false);
   const lastScrollTop = useRef(0);
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/feed");
+    }
+  };
+
   // Auto-hide header on scroll down, show on scroll up + scroll-to-bottom detection
   const handleMessagesScroll = useCallback(() => {
     const el = messagesContainerRef.current;
@@ -333,11 +341,11 @@ const ChatContent = () => {
       {/* ═══ Gemini-style minimal header ═══ */}
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/40">
         <div className="flex items-center justify-between px-4 py-3">
-          <button 
-            onClick={() => navigate("/feed")}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted/60 transition-colors"
-            aria-label="חזרה"
-          >
+	          <button
+	            onClick={handleBack}
+	            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted/60 transition-colors"
+	            aria-label="חזרה"
+	          >
             <ChevronRight className="w-5 h-5 text-foreground" />
           </button>
           

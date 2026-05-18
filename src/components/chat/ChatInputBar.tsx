@@ -33,7 +33,6 @@ const ChatInputBar = ({
   const [recordingTime, setRecordingTime] = useState(0);
   const [clickedPill, setClickedPill] = useState<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const recordingInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const { toast } = useToast();
 
@@ -96,19 +95,7 @@ const ChatInputBar = ({
   };
 
   const handleImageClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      toast({
-        title: "תמונה נבחרה",
-        description: file.name,
-      });
-      onChange(`📷 תמונה: ${file.name}`);
-      e.target.value = "";
-    }
+    onAttachment?.("gallery");
   };
 
   const handlePillClick = (pill: typeof dogPills[0]) => {
@@ -139,15 +126,6 @@ const ChatInputBar = ({
 
   return (
     <div className="relative">
-      {/* Hidden file input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleFileChange}
-      />
-
       {/* Dog-First Quick Action Pills */}
       <AnimatePresence>
         {showPills && !isFocused && (

@@ -32,7 +32,7 @@ interface PetPreferenceContextType {
   /** Loading state */
   loading: boolean;
   /** Force refresh from DB */
-  refresh: () => void;
+  refresh: () => Promise<void>;
 }
 
 const PetPreferenceContext = createContext<PetPreferenceContextType | undefined>(undefined);
@@ -46,21 +46,35 @@ const PET_COLORS = [
   "hsl(340, 75%, 55%)",  // pink
 ];
 
+const normalizePetType = (type?: string | null): "dog" | "cat" | null => {
+  if (type === "cat") return "cat";
+  if (type === "dog") return "dog";
+  return null;
+};
+
 export const PetPreferenceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [pets, setPets] = useState<PetProfile[]>([]);
   const [activePet, setActivePet] = useState<PetProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedPetType, setSelectedPetType] = useState<"dog" | "cat" | null>(null);
 
-  const petType = activePet?.pet_type === "cat" ? "cat" : activePet?.pet_type === "dog" ? "dog" : null;
+  const petType = selectedPetType ?? normalizePetType(activePet?.pet_type);
 
   const setPetType = (type: "dog" | "cat" | null) => {
+    setSelectedPetType(type);
     if (type) localStorage.setItem("petPreference", type);
     else localStorage.removeItem("petPreference");
   };
 
   const fetchPets = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setLoading(false); return; }
+    if (!user) {
+      setPets([]);
+      setActivePet(null);
+      setSelectedPetType(null);
+      setLoading(false);
+      return;
+    }
 
     const { data } = await supabase
       .from("pets")
@@ -86,7 +100,12 @@ export const PetPreferenceProvider: React.FC<{ children: React.ReactNode }> = ({
     // Restore last active pet from localStorage, or default to first
     const savedId = localStorage.getItem("activePetId");
     const match = list.find((p) => p.id === savedId);
-    setActivePet(match || list[0] || null);
+    const nextActivePet = match || list[0] || null;
+    setActivePet(nextActivePet);
+    if (nextActivePet) {
+      localStorage.setItem("activePetId", nextActivePet.id);
+      setSelectedPetType((current) => current ?? normalizePetType(nextActivePet.pet_type));
+    }
     setLoading(false);
   }, []);
 
@@ -104,6 +123,7 @@ export const PetPreferenceProvider: React.FC<{ children: React.ReactNode }> = ({
     const pet = pets.find((p) => p.id === petId);
     if (pet) {
       setActivePet(pet);
+      setSelectedPetType(normalizePetType(pet.pet_type));
       localStorage.setItem("activePetId", petId);
       if (pet.pet_type) {
         localStorage.setItem("petPreference", pet.pet_type);

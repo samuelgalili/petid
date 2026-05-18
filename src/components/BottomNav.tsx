@@ -30,19 +30,19 @@ const navLabels = {
 
 const quickActions = {
   he: [
-    { key: "scan-food", icon: ScanLine, label: "סריקת מזון", path: "/chat", color: "#4ECDC4" },
-    { key: "scan-doc", icon: FileText, label: "סריקת מסמך", path: "/chat", color: "#7C5CFC" },
-    { key: "post", icon: Camera, label: "פוסט", path: "/feed", color: "#FF6B8A" },
+    { key: "scan-food", icon: ScanLine, label: "סריקת מזון", path: "/chat", color: "#4ECDC4", intent: "אני רוצה לסרוק מזון ולבדוק אם הוא מתאים לחיית המחמד שלי" },
+    { key: "scan-doc", icon: FileText, label: "סריקת מסמך", path: "/chat", color: "#7C5CFC", intent: "אני רוצה לסרוק מסמך רפואי ולעדכן את הנתונים של חיית המחמד שלי" },
+    { key: "post", icon: Camera, label: "פוסט", path: "/feed", color: "#FF6B8A", intent: undefined },
   ],
   en: [
-    { key: "scan-food", icon: ScanLine, label: "Scan Food", path: "/chat", color: "#4ECDC4" },
-    { key: "scan-doc", icon: FileText, label: "Scan Doc", path: "/chat", color: "#7C5CFC" },
-    { key: "post", icon: Camera, label: "Post", path: "/feed", color: "#FF6B8A" },
+    { key: "scan-food", icon: ScanLine, label: "Scan Food", path: "/chat", color: "#4ECDC4", intent: "I want to scan food and check if it fits my pet" },
+    { key: "scan-doc", icon: FileText, label: "Scan Doc", path: "/chat", color: "#7C5CFC", intent: "I want to scan a medical document and update my pet data" },
+    { key: "post", icon: Camera, label: "Post", path: "/feed", color: "#FF6B8A", intent: undefined },
   ],
   ar: [
-    { key: "scan-food", icon: ScanLine, label: "مسح طعام", path: "/chat", color: "#4ECDC4" },
-    { key: "scan-doc", icon: FileText, label: "مسح مستند", path: "/chat", color: "#7C5CFC" },
-    { key: "post", icon: Camera, label: "نشر", path: "/feed", color: "#FF6B8A" },
+    { key: "scan-food", icon: ScanLine, label: "مسح طعام", path: "/chat", color: "#4ECDC4", intent: "أريد فحص طعام ومعرفة إذا كان مناسبًا لحيواني الأليف" },
+    { key: "scan-doc", icon: FileText, label: "مسح مستند", path: "/chat", color: "#7C5CFC", intent: "أريد فحص مستند طبي وتحديث بيانات حيواني الأليف" },
+    { key: "post", icon: Camera, label: "نشر", path: "/feed", color: "#FF6B8A", intent: undefined },
   ],
 };
 
@@ -104,6 +104,7 @@ const BottomNav = () => {
   const hiddenRoutes = ["/auth", "/signup", "/forgot-password", "/reset-password", "/splash", "/add-pet", "/onboarding", "/stories", "/story"];
   const isHiddenPage = hiddenRoutes.some((r) => location.pathname.startsWith(r));
   if (isHiddenPage) return null;
+  const hideQuickFab = location.pathname === "/chat";
 
   const isActive = (path: string) => {
     const p = location.pathname;
@@ -184,6 +185,9 @@ const BottomNav = () => {
                     whileTap={{ scale: 0.85 }}
                     onClick={() => {
                       setShowQuickActions(false);
+                      if (action.intent) {
+                        localStorage.setItem("chat_pending_intent", action.intent);
+                      }
                       navigate(action.path);
                     }}
                     className="flex flex-col items-center gap-2"
@@ -281,7 +285,7 @@ const BottomNav = () => {
       </AnimatePresence>
 
       {/* Floating FAB — Intelligence Hub: transforms + → Brain on expand */}
-      {!dashboardOpen && (
+      {!dashboardOpen && !hideQuickFab && (
         <motion.button
           whileTap={{ scale: 0.85 }}
           onClick={() => setShowQuickActions((v) => !v)}

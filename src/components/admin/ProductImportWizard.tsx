@@ -218,7 +218,11 @@ export const ProductImportWizard = ({
       if (error) throw new Error(error.message);
 
       if (!data?.success || !data?.data?.products?.length) {
-        toast({ title: "לא נמצא מוצר", description: "וודא שזה דף מוצר ספציפי", variant: "destructive" });
+        toast({
+          title: "לא נמצא מוצר",
+          description: data?.error || "וודא שזה דף מוצר ספציפי",
+          variant: "destructive",
+        });
         setLoading(false);
         return;
       }
