@@ -27,6 +27,26 @@ function isDangerousBreed(breed: string | null): boolean {
   return DANGEROUS_BREEDS.some(d => lower.includes(d.toLowerCase()));
 }
 
+function safeDate(value: unknown): string | null {
+  if (!value || typeof value !== 'string') return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString().split('T')[0];
+}
+
+function joinList(value: unknown): string | null {
+  if (Array.isArray(value)) return value.filter(Boolean).join(', ') || null;
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function vaccinationExpiryFromVisit(scanResult: any): string | null {
+  if (!Array.isArray(scanResult.vaccines) || scanResult.vaccines.length === 0 || !scanResult.visitDate) return null;
+  const date = new Date(scanResult.visitDate);
+  if (Number.isNaN(date.getTime())) return null;
+  date.setFullYear(date.getFullYear() + 1);
+  return date.toISOString().split('T')[0];
+}
+
 serve(async (req) => {
   const corsResponse = handleCorsPreflightRequest(req);
   if (corsResponse) return corsResponse;
@@ -38,7 +58,7 @@ serve(async (req) => {
     const {
       petId, userId, imageBase64, fileName,
       saveToDb, cachedResult, imageBase64ForSave,
-      selectedFields, triggerCarePlans,
+      selectedFields, triggerCarePlans, documentId,
     } = await req.json();
 
     if (!petId || !userId) {
@@ -335,6 +355,7 @@ Age keywords: גיל, age, שנים, years, חודשים, months.`
 
       // Save scanned image as pet_document with smart naming & auto-categorization
       let savedDocumentId: string | null = null;
+      let extractedDocumentId: string | null = typeof documentId === "string" ? documentId : null;
       if (imageBase64ForStorage) {
         try {
           // Fetch pet name for smart naming
@@ -363,7 +384,7 @@ Age keywords: גיל, age, שנים, years, חודשים, months.`
           
           // Smart naming: [Date]_[Category]_[PetName].jpg
           const smartFileName = `${visitDate}_${categoryLabel}_${safePetName}.jpg`;
-          const storagePath = `${petId}/${Date.now()}-${smartFileName}`;
+          const storagePath = `${userId}/${petId}/${Date.now()}-${smartFileName}`;
           
           const binaryData = Uint8Array.from(atob(imageBase64ForStorage), c => c.charCodeAt(0));
           const { data: uploadData } = await supabase.storage
@@ -387,9 +408,53 @@ Age keywords: גיל, age, שנים, years, חודשים, months.`
             }).select('id').single();
             
             savedDocumentId = insertedDoc?.id || null;
+
+            if (!extractedDocumentId) {
+              const { data: serviceDoc } = await supabase.from("pet_service_documents").insert({
+                user_id: userId,
+                pet_id: petId,
+                category: "health",
+                document_name: smartFileName,
+                document_url: `data:image/jpeg;base64,${imageBase64ForStorage}`,
+                document_type: "image/jpeg",
+                file_size: binaryData.length,
+              }).select('id').single();
+
+              extractedDocumentId = serviceDoc?.id || null;
+            }
           }
         } catch (docErr) {
           console.error("Failed to save document:", docErr);
+        }
+      }
+
+      // Persist normalized OCR facts for chat, dashboards, and verification badges.
+      if (extractedDocumentId) {
+        try {
+          await supabase.from("pet_document_extracted_data").insert({
+            document_id: extractedDocumentId,
+            pet_id: petId,
+            user_id: userId,
+            chip_number: scanResult.microchipNumber || null,
+            vaccination_type: joinList(scanResult.vaccines),
+            vaccination_date: safeDate(scanResult.visitDate),
+            vaccination_expiry: vaccinationExpiryFromVisit(scanResult),
+            vet_clinic: scanResult.clinicName || null,
+            provider_name: scanResult.clinicName || null,
+            provider_type: scanResult.clinicName ? "vet" : null,
+            provider_phone: scanResult.clinicPhone || null,
+            provider_address: scanResult.clinicAddress || null,
+            treatment_type: scanResult.nextTreatmentDescription || scanResult.documentCategory || null,
+            treatment_date: safeDate(scanResult.visitDate),
+            diagnosis: joinList(scanResult.diagnoses),
+            medications: Array.isArray(scanResult.medications) ? scanResult.medications : null,
+            total_cost: typeof scanResult.cost === "number" ? scanResult.cost : null,
+            currency: "ILS",
+            raw_extracted_data: scanResult,
+            extraction_confidence: 0.85,
+          });
+        } catch (extractErr) {
+          console.error("Failed to save extracted document data:", extractErr);
         }
       }
 

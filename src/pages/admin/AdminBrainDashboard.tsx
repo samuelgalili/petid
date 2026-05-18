@@ -118,7 +118,7 @@ const AdminBrainDashboard = () => {
       const [petResult, ocrResult, vetResult, docResult] = await Promise.all([
         (supabase as any).from("pets").select("*").eq("id", petId).maybeSingle(),
         (supabase as any).from("pet_document_extracted_data")
-          .select("vaccination_type, vaccination_date, vaccination_expiry, treatment_type, treatment_date, diagnosis, chip_number, provider_name, next_appointment, created_at")
+          .select("vaccination_type, vaccination_date, vaccination_expiry, treatment_type, treatment_date, diagnosis, chip_number, provider_name, created_at")
           .eq("pet_id", petId).order("created_at", { ascending: false }).limit(20),
         (supabase as any).from("pet_vet_visits")
           .select("visit_date, visit_type, clinic_name, vet_name, diagnosis, treatment, vaccines, medications, is_recovery_mode, next_visit_date")

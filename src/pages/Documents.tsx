@@ -343,9 +343,24 @@ export default function Documents() {
     }
   };
 
+  const resolveDocumentUrl = async (fileUrl: string) => {
+    if (fileUrl.startsWith("data:")) return fileUrl;
+    const urlParts = fileUrl.split("/pet-documents/");
+    if (urlParts.length <= 1) return fileUrl;
+
+    const filePath = decodeURIComponent(urlParts[1].split("?")[0]);
+    const { data, error } = await supabase.storage
+      .from("pet-documents")
+      .createSignedUrl(filePath, 60);
+
+    if (error || !data?.signedUrl) throw error || new Error("Could not create signed URL");
+    return data.signedUrl;
+  };
+
   const handleDownload = async (fileUrl: string, fileName: string) => {
     try {
-      const response = await fetch(fileUrl);
+      const resolvedUrl = await resolveDocumentUrl(fileUrl);
+      const response = await fetch(resolvedUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -748,9 +763,18 @@ export default function Documents() {
                       documentTypeLabel={getDocumentTypeLabel(doc.document_type)}
                       onDelete={handleDelete}
                       onDownload={handleDownload}
-                      onView={(fileUrl, fileName) => {
-                        // For base64 data URLs, open in new tab; for regular URLs too
-                        window.open(fileUrl, '_blank');
+                      onView={async (fileUrl) => {
+                        try {
+                          const resolvedUrl = await resolveDocumentUrl(fileUrl);
+                          window.open(resolvedUrl, '_blank');
+                        } catch (error) {
+                          console.error("Error opening document:", error);
+                          toast({
+                            title: "שגיאה",
+                            description: "לא ניתן לפתוח את המסמך",
+                            variant: "destructive",
+                          });
+                        }
                       }}
                       index={index}
                     />

@@ -75,6 +75,12 @@ If no animal is detected:
   "notes": "reason why no animal detected"
 }`;
 
+function extractJsonObject(content: string): string {
+  const withoutFence = content.replace(/```json\n?|\n?```/g, "").trim();
+  const match = withoutFence.match(/\{[\s\S]*\}/);
+  return match ? match[0] : withoutFence;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -119,7 +125,7 @@ Deno.serve(async (req) => {
     
     let detectionResult;
     try {
-      const jsonStr = content.replace(/```json\n?|\n?```/g, "").trim();
+      const jsonStr = extractJsonObject(content);
       detectionResult = JSON.parse(jsonStr);
     } catch {
       console.error("Failed to parse AI response:", content);

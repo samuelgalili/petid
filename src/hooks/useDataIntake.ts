@@ -36,9 +36,9 @@ function generateId() {
   return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-async function uploadToStorage(file: File, petId: string): Promise<string | null> {
+async function uploadToStorage(file: File, userId: string, petId: string): Promise<string | null> {
   const ext = file.name.split(".").pop() || "jpg";
-  const path = `${petId}/${generateId()}.${ext}`;
+  const path = `${userId}/${petId}/${generateId()}.${ext}`;
   const bucket = "pet-documents";
 
   const { error } = await supabase.storage.from(bucket).upload(path, file, {
@@ -53,6 +53,19 @@ async function uploadToStorage(file: File, petId: string): Promise<string | null
 
   const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path);
   return urlData?.publicUrl ?? null;
+}
+
+function readAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+function base64FromDataUrl(dataUrl: string): string {
+  return dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl;
 }
 
 /** Classify file by MIME type */
@@ -83,25 +96,60 @@ export function useDataIntake({ petId, petName, isSOSActive = false }: UseDataIn
 
     toast({ title: "🔍 סורק מסמך...", description: `מעבד את הקובץ עבור ${petName}` });
 
-    const fileUrl = await uploadToStorage(file, petId);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({ title: "נדרשת התחברות", description: "התחבר כדי לשמור מסמכים", variant: "destructive" });
+      return { type: "scan", userMessage: "", aiPrompt: "" };
+    }
+
+    const dataUrl = await readAsDataUrl(file);
+    const fileUrl = await uploadToStorage(file, user.id, petId);
     if (!fileUrl) {
       toast({ title: "שגיאה בהעלאה", description: "נסה שוב", variant: "destructive" });
       return { type: "scan", userMessage: "", aiPrompt: "" };
     }
 
-    // Auto-save to documents
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { autoSaveToDocuments } = await import("@/lib/autoSaveUpload");
-      await autoSaveToDocuments({
-        userId: user.id,
-        petId,
-        fileUrl,
-        fileName: file.name,
-        fileSize: file.size,
-        documentType: "vet_report",
-        title: `סריקת מסמך - ${file.name}`,
+    const { data: serviceDoc } = await supabase
+      .from("pet_service_documents")
+      .insert({
+        user_id: user.id,
+        pet_id: petId,
+        category: "health",
+        document_name: `סריקת מסמך - ${file.name}`,
+        document_url: dataUrl,
+        document_type: file.type || "application/octet-stream",
+        file_size: file.size,
+      })
+      .select("id")
+      .single();
+
+    const { autoSaveToDocuments } = await import("@/lib/autoSaveUpload");
+    await autoSaveToDocuments({
+      userId: user.id,
+      petId,
+      fileUrl,
+      fileName: file.name,
+      fileSize: file.size,
+      documentType: "vet_report",
+      title: `סריקת מסמך - ${file.name}`,
+    });
+
+    if (file.type.startsWith("image/")) {
+      const { error: scanError } = await supabase.functions.invoke("scan-vet-document", {
+        body: {
+          petId,
+          userId: user.id,
+          imageBase64: base64FromDataUrl(dataUrl),
+          imageBase64ForSave: base64FromDataUrl(dataUrl),
+          fileName: file.name,
+          documentId: serviceDoc?.id,
+          saveToDb: true,
+        },
       });
+
+      if (scanError) {
+        console.error("OCR scan error:", scanError);
+      }
     }
 
     toast({
@@ -113,7 +161,7 @@ export function useDataIntake({ petId, petName, isSOSActive = false }: UseDataIn
       type: "scan",
       fileUrl,
       userMessage: `📄 סרקתי מסמך רפואי חדש עבור ${petName}`,
-      aiPrompt: `[DOCUMENT_UPLOADED: url=${fileUrl}, pet=${petName}, petId=${petId}]\nהמשתמש העלה מסמך רפואי חדש. הפעל את מנוע ה-OCR, נתח את המסמך, ושאל: "זיהיתי רשומה רפואית חדשה. האם לעדכן את ציון הבריאות של ${petName}?"`,
+      aiPrompt: `[DOCUMENT_UPLOADED: url=${fileUrl}, pet=${petName}, petId=${petId}]\nהמשתמש העלה מסמך רפואי חדש. המסמך נשמר בכספת ועיבוד OCR הופעל אם זהו קובץ תמונה. סכם למשתמש מה לעשות בהמשך ושאל אם לעבור על הנתונים שחולצו.`,
     };
   }, [petId, petName, toast]);
 
@@ -128,54 +176,43 @@ export function useDataIntake({ petId, petName, isSOSActive = false }: UseDataIn
 
     const fileType = triageFile(file);
 
-    toast({ title: fileType === "document" ? "🔍 סורק מסמך..." : "📸 מעלה תמונה...", description: `מעבד עבור ${petName}` });
+    if (fileType === "document") {
+      const result = await handleScan(file);
+      return {
+        ...result,
+        type: source,
+        userMessage: result.userMessage || `📄 העליתי מסמך עבור ${petName}`,
+      };
+    }
 
-    const fileUrl = await uploadToStorage(file, petId);
+    toast({ title: "📸 מעלה תמונה...", description: `מעבד עבור ${petName}` });
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({ title: "נדרשת התחברות", description: "התחבר כדי לשמור קבצים", variant: "destructive" });
+      return { type: source, userMessage: "", aiPrompt: "" };
+    }
+
+    const fileUrl = await uploadToStorage(file, user.id, petId);
     if (!fileUrl) {
       toast({ title: "שגיאה בהעלאה", description: "נסה שוב", variant: "destructive" });
       return { type: source, userMessage: "", aiPrompt: "" };
     }
 
     // Auto-save to album or documents
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      if (fileType === "document") {
-        const { autoSaveToDocuments } = await import("@/lib/autoSaveUpload");
-        await autoSaveToDocuments({
-          userId: user.id,
-          petId,
-          fileUrl,
-          fileName: file.name,
-          fileSize: file.size,
-          documentType: "general",
-          title: file.name,
-        });
-      } else {
-        const { autoSaveToAlbum } = await import("@/lib/autoSaveUpload");
-        await autoSaveToAlbum({
-          userId: user.id,
-          petId,
-          mediaUrl: fileUrl,
-          caption: null,
-          mediaType: fileType === "video" ? "video" : "image",
-        });
-      }
-    }
+    const { autoSaveToAlbum } = await import("@/lib/autoSaveUpload");
+    await autoSaveToAlbum({
+      userId: user.id,
+      petId,
+      mediaUrl: fileUrl,
+      caption: null,
+      mediaType: fileType === "video" ? "video" : "image",
+    });
 
     toast({
       title: "🔒 הקובץ נשמר בצורה מאובטחת",
       description: `נשמר בכספת של ${petName}`,
     });
-
-    // If the user uploaded a document via gallery, redirect to OCR
-    if (fileType === "document") {
-      return {
-        type: source,
-        fileUrl,
-        userMessage: `📄 העליתי מסמך עבור ${petName}`,
-        aiPrompt: `[DOCUMENT_UPLOADED: url=${fileUrl}, pet=${petName}, petId=${petId}]\nהמשתמש העלה מסמך דרך הגלריה. הפעל OCR ושאל אם לעדכן את ציון הבריאות.`,
-      };
-    }
 
     // Photo/video → visual analysis
     const isVideo = fileType === "video";
@@ -187,7 +224,7 @@ export function useDataIntake({ petId, petName, isSOSActive = false }: UseDataIn
         : `📸 שלחתי תמונה של ${petName} לבדיקה`,
       aiPrompt: `[VISUAL_UPLOADED: url=${fileUrl}, pet=${petName}, petId=${petId}, type=${fileType}]\nהמשתמש העלה ${isVideo ? "וידאו" : "תמונה"}. נתח ויזואלית וחפש תסמינים (אדמומיות, צליעה, פצעים). תמיד הוסף הסתייגות: "⚕️ אני AI, לא וטרינר. למצבי חירום, השתמש בכפתור SOS."`,
     };
-  }, [petId, petName, toast]);
+  }, [petId, petName, toast, handleScan]);
 
   /**
    * Handle location sharing — emergency detection

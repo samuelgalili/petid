@@ -545,7 +545,7 @@ async function fetchOCRDocumentData(supabase: any, petId: string): Promise<strin
 
   const { data: docs } = await supabase
     .from("pet_document_extracted_data")
-    .select("vaccination_type, vaccination_date, vaccination_expiry, treatment_type, treatment_date, diagnosis, chip_number, provider_name, cost, next_appointment")
+    .select("vaccination_type, vaccination_date, vaccination_expiry, treatment_type, treatment_date, diagnosis, chip_number, provider_name, total_cost")
     .eq("pet_id", petId)
     .order("created_at", { ascending: false })
     .limit(20);
@@ -588,12 +588,12 @@ async function fetchOCRDocumentData(supabase: any, petId: string): Promise<strin
 
   const now = new Date();
   const upcoming = (docs as any[]).filter((d: any) => {
-    if (!d.next_appointment) return false;
-    const daysUntil = Math.floor((new Date(d.next_appointment).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    if (!d.treatment_date) return false;
+    const daysUntil = Math.floor((new Date(d.treatment_date).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     return daysUntil >= 0 && daysUntil <= 14;
   });
   if (upcoming.length > 0) {
-    result += `\n📅 תורים קרובים: ${upcoming.map((u: any) => `${u.treatment_type || u.vaccination_type} ב-${new Date(u.next_appointment).toLocaleDateString("he-IL")}`).join(", ")}`;
+    result += `\n📅 תורים קרובים: ${upcoming.map((u: any) => `${u.treatment_type || u.vaccination_type} ב-${new Date(u.treatment_date).toLocaleDateString("he-IL")}`).join(", ")}`;
   }
 
   result += "\n[/OCR_MEDICAL_RECORDS]";
