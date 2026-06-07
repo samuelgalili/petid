@@ -18,12 +18,14 @@ import {
   Brush,
   Check,
   X,
+  Zap,
 } from "lucide-react";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
 import dobermanAsset from "@/assets/doberman.jpg.asset.json";
 import { HeroInsight } from "./HeroInsight";
 import { BreedTraitCircles } from "./BreedTraitCircles";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PetLike {
   id: string;
@@ -533,6 +535,20 @@ export const PetCenterDashboard = ({
   const dailyColor = scoreColor(daily.pct);
   const [tasksOpen, setTasksOpen] = useState(false);
   const [infoKey, setInfoKey] = useState<null | "kcal" | "protein" | "carbs" | "fat">(null);
+  const [energyLevel, setEnergyLevel] = useState<number | null>(null);
+  useEffect(() => {
+    if (!pet.breed) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("breed_information")
+        .select("energy_level")
+        .or(`breed_name.ilike.%${pet.breed}%,breed_name_he.ilike.%${pet.breed}%`)
+        .maybeSingle();
+      if (!cancelled && data) setEnergyLevel((data as { energy_level: number | null }).energy_level ?? null);
+    })();
+    return () => { cancelled = true; };
+  }, [pet.breed]);
 
   // ── Placeholder "eaten today" (until live feeding log wired) ──
   // Conservative: show 0 of target when no log exists, never invent meals.
@@ -877,6 +893,28 @@ export const PetCenterDashboard = ({
 
             {/* ── Weight + Vaccinations vertical column (left side of avatar) ── */}
             <div className="flex flex-col items-center gap-2 overflow-y-auto no-scrollbar py-1" style={{ scrollbarWidth: 'none', maxHeight: 280 }}>
+              {/* Energy (breed) */}
+              <button
+                type="button"
+                onClick={() => openSheet('activity')}
+                className="flex flex-col items-center shrink-0"
+                style={{ width: 62 }}
+              >
+                <div className="relative" style={{ width: 48, height: 48 }}>
+                  <svg width={48} height={48} viewBox="0 0 48 48" className="-rotate-90" aria-hidden>
+                    <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(var(--muted))" strokeWidth={4} />
+                    <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(35 88% 58%)" strokeWidth={4} strokeLinecap="round" strokeDasharray={125.6} strokeDashoffset={125.6 - ((energyLevel ?? 0) / 5) * 125.6} />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Zap style={{ color: 'hsl(35 88% 58%)', width: 14, height: 14 }} strokeWidth={2} />
+                  </div>
+                </div>
+                <div className="mt-1 text-[10px] font-semibold text-foreground leading-tight text-center">
+                  {energyLevel == null || energyLevel === 0 ? '—' : energyLevel <= 2 ? 'נמוך' : energyLevel <= 3 ? 'בינוני' : 'גבוה'}
+                </div>
+                <div className="text-[9px] text-muted-foreground/70 leading-tight text-center">אנרגיה</div>
+              </button>
+
               {/* Weight */}
               <button
                 type="button"
