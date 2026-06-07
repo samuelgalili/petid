@@ -308,6 +308,7 @@ const MacroCard = ({
   color,
   icon: Icon,
   delay,
+  onInfo,
 }: {
   eaten: number | null;
   target: number | null;
@@ -316,6 +317,7 @@ const MacroCard = ({
   color: string;
   icon: typeof Drumstick;
   delay: number;
+  onInfo: () => void;
 }) => {
   const pct =
     eaten != null && target != null && target > 0
@@ -326,24 +328,25 @@ const MacroCard = ({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4, ease: "easeOut" }}
-      className="flex-1 rounded-2xl bg-card border border-border/40 px-3 pt-3 pb-3 flex flex-col items-center"
+      className="flex-1 rounded-2xl bg-card border border-border/40 px-2 pt-3 pb-3 flex flex-col items-center gap-2"
     >
-      <div className="flex items-baseline gap-0.5 leading-none">
-        <span className="text-[18px] font-bold text-foreground">
-          {eaten ?? "—"}
-        </span>
-        <span className="text-[11px] text-muted-foreground/70">
-          /{target ?? "—"}
-          {unit}
-        </span>
-      </div>
-      <div className="text-[10px] text-muted-foreground/70 mt-0.5">
+      <FlipGauge
+        pct={pct}
+        size={64}
+        stroke={4}
+        color={color}
+        icon={Icon}
+        eaten={eaten}
+        target={target}
+        unit={unit}
+        iconSize={18}
+        numberClass="text-[13px] font-bold"
+        unitClass="text-[8px] text-muted-foreground/70"
+        onClick={onInfo}
+        ariaLabel={label}
+      />
+      <div className="text-[10px] text-muted-foreground/70">
         {label}
-      </div>
-      <div className="mt-2.5">
-        <ArcGauge pct={pct} size={52} stroke={4} color={color}>
-          <Icon className="w-4 h-4" style={{ color }} strokeWidth={2} />
-        </ArcGauge>
       </div>
     </motion.div>
   );
