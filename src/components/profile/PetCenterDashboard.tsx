@@ -715,125 +715,98 @@ export const PetCenterDashboard = ({
         )}
       </AnimatePresence>
 
-      {/* ── Orbit: pet avatar centered with nutrient gauges + breed traits around ── */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.96 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.1, duration: 0.5, ease: "easeOut" }}
-        className="relative mx-auto"
-        style={{ width: 360, height: 360 }}
-      >
-        {/* Breed traits orbiting outside the nutrient gauges */}
-        <BreedTraitCircles
-          breed={pet.breed}
-          weight={weight}
-          kcalTarget={targets.kcal}
-          accent={accent}
-          orbit={{ radius: 188, size: 40 }}
-        />
-        {/* Glow behind avatar */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          aria-hidden
-          style={{
-            background: `radial-gradient(circle at 50% 50%, ${accent}33 0%, ${accent}10 28%, transparent 55%)`,
-            filter: "blur(2px)",
-          }}
-        />
-        {/* Soft orbit ring */}
-        <div
-          className="absolute rounded-full border border-border/30 pointer-events-none"
-          aria-hidden
-          style={{
-            inset: 22,
-            borderStyle: "dashed",
-          }}
-        />
-        {/* Pet avatar centered */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }}
-            className="rounded-full p-[3px]"
-            style={{
-              background: accent,
-              boxShadow: `0 0 0 6px ${accent}1f, 0 10px 32px ${accent}40`,
-            }}
-          >
-            <img
-              src={dobermanAsset.url}
-              alt={pet.name}
-              className="w-[240px] h-[240px] rounded-full object-contain bg-muted block"
-            />
-          </motion.div>
-        </div>
-
-        {/* Top — Kcal */}
-        <div className="absolute left-1/2 -translate-x-1/2" style={{ top: 0 }}>
-          <OrbitGauge
-            pct={kcalPct}
-            color="hsl(var(--foreground))"
-            icon={Flame}
-            eaten={eaten.kcal}
-            target={targets.kcal}
-            unit=""
-            label="קלוריות"
+      {/* ── Hero: avatar centered with a single Daily Goal ring ── */}
+      {(() => {
+        const SIZE = 300;
+        const STROKE = 10;
+        const R = (SIZE - STROKE) / 2;
+        const C = 2 * Math.PI * R;
+        // Overall daily target: average of kcal % and daily-tasks completion
+        const overall = Math.round(
+          Math.min(100, (Math.min(100, kcalPct) + daily.pct) / 2)
+        );
+        const offset = C - (overall / 100) * C;
+        const ringColor = scoreColor(overall);
+        return (
+          <motion.button
+            type="button"
             onClick={() => setInfoKey("kcal")}
-          />
-        </div>
-        {/* Right — Protein */}
-        <div className="absolute top-1/2 -translate-y-1/2" style={{ right: 0 }}>
-          <OrbitGauge
-            pct={
-              eaten.protein_g != null && targets.protein_g
-                ? (eaten.protein_g / targets.protein_g) * 100
-                : 0
-            }
-            color={C_PROTEIN}
-            icon={Drumstick}
-            eaten={eaten.protein_g}
-            target={targets.protein_g}
-            unit="g"
-            label="חלבון"
-            onClick={() => setInfoKey("protein")}
-          />
-        </div>
-        {/* Bottom — Carbs */}
-        <div className="absolute left-1/2 -translate-x-1/2" style={{ bottom: 0 }}>
-          <OrbitGauge
-            pct={
-              eaten.carbs_g != null && targets.carbs_g
-                ? (eaten.carbs_g / targets.carbs_g) * 100
-                : 0
-            }
-            color={C_CARBS}
-            icon={Wheat}
-            eaten={eaten.carbs_g}
-            target={targets.carbs_g}
-            unit="g"
-            label="פחמימות"
-            onClick={() => setInfoKey("carbs")}
-          />
-        </div>
-        {/* Left — Fat */}
-        <div className="absolute top-1/2 -translate-y-1/2" style={{ left: 0 }}>
-          <OrbitGauge
-            pct={
-              eaten.fat_g != null && targets.fat_g
-                ? (eaten.fat_g / targets.fat_g) * 100
-                : 0
-            }
-            color={C_FATS}
-            icon={Droplet}
-            eaten={eaten.fat_g}
-            target={targets.fat_g}
-            unit="g"
-            label="שומן"
-            onClick={() => setInfoKey("fat")}
-          />
-        </div>
-      </motion.div>
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1, duration: 0.5, ease: "easeOut" }}
+            className="relative mx-auto block"
+            style={{ width: SIZE, height: SIZE }}
+            aria-label={`יעד יומי ${overall}%`}
+          >
+            {/* Soft glow */}
+            <div
+              className="absolute inset-0 pointer-events-none rounded-full"
+              aria-hidden
+              style={{
+                background: `radial-gradient(circle at 50% 50%, ${accent}26 0%, transparent 60%)`,
+                filter: "blur(4px)",
+              }}
+            />
+            {/* Single daily-goal ring */}
+            <svg
+              width={SIZE}
+              height={SIZE}
+              viewBox={`0 0 ${SIZE} ${SIZE}`}
+              className="absolute inset-0 -rotate-90"
+              aria-hidden
+            >
+              <circle
+                cx={SIZE / 2}
+                cy={SIZE / 2}
+                r={R}
+                fill="none"
+                stroke="hsl(var(--muted) / 0.5)"
+                strokeWidth={STROKE}
+              />
+              <motion.circle
+                cx={SIZE / 2}
+                cy={SIZE / 2}
+                r={R}
+                fill="none"
+                stroke={ringColor}
+                strokeWidth={STROKE}
+                strokeLinecap="round"
+                strokeDasharray={C}
+                initial={{ strokeDashoffset: C }}
+                animate={{ strokeDashoffset: offset }}
+                transition={{ duration: 0.9, ease: "easeOut" }}
+              />
+            </svg>
+            {/* Avatar inside the ring */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <img
+                src={dobermanAsset.url}
+                alt={pet.name}
+                className="w-[252px] h-[252px] rounded-full object-contain bg-muted block"
+              />
+            </div>
+            {/* Goal % badge */}
+            <div
+              className="absolute left-1/2 -translate-x-1/2 -bottom-3 px-3 py-1 rounded-full text-[12px] font-bold shadow-md"
+              style={{
+                background: "hsl(var(--card))",
+                color: ringColor,
+                border: `1px solid ${ringColor}55`,
+              }}
+            >
+              {overall}% יעד יומי
+            </div>
+          </motion.button>
+        );
+      })()}
+
+      {/* ── Breed traits — horizontal scroll strip below ── */}
+      <BreedTraitCircles
+        breed={pet.breed}
+        weight={weight}
+        kcalTarget={targets.kcal}
+        accent={accent}
+      />
 
       {/* ── NRC source line ── */}
       <div className="text-[10px] text-muted-foreground/60 text-center -mt-1">
