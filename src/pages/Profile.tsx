@@ -5,7 +5,7 @@ import { SEO } from "@/components/SEO";
 import { PageTransition } from "@/components/PageTransition";
 import BottomNav from "@/components/BottomNav";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, Plus, Edit3, MessageCircle } from "lucide-react";
+import { ChevronRight, Plus, Edit3, MessageCircle, Bell } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -179,13 +179,30 @@ const Profile = () => {
             </motion.span>
           )}
 
-          <button
-            onClick={() => navigate('/messages')}
-            className="p-2 relative"
-            aria-label="הודעות"
-          >
-            <MessageCircle className="w-5 h-5 text-foreground" strokeWidth={1.5} />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById('recent-logs');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              className="p-2 relative"
+              aria-label="תזכורות"
+            >
+              <Bell className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+              <span
+                className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-primary"
+                aria-hidden
+              />
+            </button>
+            <button
+              onClick={() => navigate('/messages')}
+              className="p-2 relative"
+              aria-label="הודעות"
+            >
+              <MessageCircle className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+            </button>
+          </div>
         </motion.div>
 
         {/* ── Main Content ── */}
