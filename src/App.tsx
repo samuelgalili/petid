@@ -8,7 +8,7 @@
  * - Splash screen on initial load
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -45,7 +45,6 @@ import { SarahCrashPopup } from "@/components/SarahCrashPopup";
 import { PrivacyConsentPopup } from "@/components/PrivacyConsentPopup";
 import MipoOnboarding from "@/components/onboarding/mipo/MipoOnboarding";
 import AvatarCompanion from "@/components/mipo/AvatarCompanion";
-import { useEffect, useState } from "react";
 
 // Route configuration - modular lazy-loaded routes
 import { allRoutes } from "@/routes";
