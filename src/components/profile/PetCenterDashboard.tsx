@@ -420,13 +420,7 @@ export const PetCenterDashboard = ({
 
       {/* ── Pet header: centered avatar + name ── */}
       <div className="flex flex-col items-center justify-center gap-2.5 px-1">
-        <button
-          type="button"
-          onClick={() => setTasksOpen(true)}
-          aria-label="פתח משימות יומיות"
-          className="relative outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-full"
-          style={{ ['--tw-ring-color' as any]: dailyColor }}
-        >
+        <div className="relative">
           <motion.div
             key={daily.pct}
             initial={{ scale: 0.96 }}
@@ -444,27 +438,10 @@ export const PetCenterDashboard = ({
               className="w-16 h-16 rounded-full object-cover bg-muted block"
             />
           </motion.div>
-          <div
-            className="absolute -bottom-1 -right-1 flex items-center gap-1 px-1.5 py-0.5 rounded-full border bg-card"
-            style={{ borderColor: `${dailyColor}66` }}
-          >
-            <Flame className="w-3 h-3" style={{ color: dailyColor }} />
-            <span className="text-[10px] font-semibold text-foreground">
-              {daily.pct}%
-            </span>
-          </div>
-        </button>
+        </div>
         <div className="text-[17px] font-bold text-foreground tracking-tight">
           {pet.name}
         </div>
-        <button
-          type="button"
-          onClick={() => setTasksOpen(true)}
-          className="text-[11px] font-medium hover:underline"
-          style={{ color: dailyColor }}
-        >
-          דירוג יומי · {scoreLabel(daily.pct)} ({daily.completed}/{daily.total})
-        </button>
       </div>
 
       {/* ── Week strip ── */}
