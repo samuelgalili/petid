@@ -873,41 +873,6 @@ export const PetCenterDashboard = ({
         </div>
       </div>
 
-      {/* ── Action row ── */}
-      <div className="grid grid-cols-3 gap-2 mt-1">
-        <button
-          type="button"
-          onClick={() => setTasksOpen(true)}
-          className="flex items-center justify-center gap-1.5 h-11 rounded-2xl text-[12px] font-semibold border bg-card"
-          style={{
-            color: dailyColor,
-            borderColor: `${dailyColor}55`,
-            background: `${dailyColor}0d`,
-          }}
-          aria-label="משימות יומיות"
-        >
-          <Flame className="w-4 h-4" strokeWidth={2} />
-          דירוג {daily.pct}%
-        </button>
-        <button
-          type="button"
-          onClick={() => openSheet("chat")}
-          className="flex items-center justify-center gap-1.5 h-11 rounded-2xl text-[12px] font-semibold text-primary-foreground"
-          style={{ background: accent }}
-        >
-          <Sparkles className="w-4 h-4" strokeWidth={2} />
-          שאל את MIPO
-        </button>
-        <button
-          type="button"
-          onClick={() => openSheet("add-record")}
-          className="flex items-center justify-center gap-1.5 h-11 rounded-2xl text-[12px] font-semibold text-foreground border border-border/50 bg-card"
-        >
-          <Plus className="w-4 h-4" strokeWidth={2} />
-          הוסף רישום
-        </button>
-      </div>
-
       {/* ── Metric Info Sheet ── */}
       <AnimatePresence>
         {infoKey && (() => {
