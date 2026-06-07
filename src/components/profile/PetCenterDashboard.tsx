@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Flame,
@@ -11,6 +11,12 @@ import {
   Stethoscope,
   Weight,
   Bell,
+  Footprints,
+  UtensilsCrossed,
+  GlassWater,
+  HeartPulse,
+  Brush,
+  Check,
 } from "lucide-react";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
