@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   Weight,
@@ -6,12 +7,14 @@ import {
   ShieldCheck,
   HeartPulse,
   UtensilsCrossed,
-  ImageIcon,
   Sparkles,
   Plus,
-  ChevronLeft,
   Bell,
   Stethoscope,
+  Drumstick,
+  Wheat,
+  Droplet,
+  Bone,
 } from "lucide-react";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
