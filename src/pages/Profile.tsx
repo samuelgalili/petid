@@ -184,10 +184,7 @@ const Profile = () => {
           <div className="flex items-center gap-1">
             <button
               type="button"
-              onClick={() => {
-                const el = document.getElementById('recent-logs');
-                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }}
+              onClick={() => setNotificationsOpen(true)}
               className="p-2 relative"
               aria-label="תזכורות"
             >
