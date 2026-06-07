@@ -742,6 +742,52 @@ export const PetCenterDashboard = ({
               accent={accent}
               vertical
             />
+
+            {/* ── Weight + Vaccinations vertical column (other side of avatar) ── */}
+            <div className="flex flex-col items-center gap-2 overflow-y-auto no-scrollbar py-1" style={{ scrollbarWidth: 'none', maxHeight: 280 }}>
+              {/* Weight */}
+              <button
+                type="button"
+                onClick={() => openSheet('weight')}
+                className="flex flex-col items-center shrink-0"
+                style={{ width: 62 }}
+              >
+                <div className="relative" style={{ width: 48, height: 48 }}>
+                  <svg width={48} height={48} viewBox="0 0 48 48" className="-rotate-90" aria-hidden>
+                    <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(var(--muted))" strokeWidth={4} />
+                    <circle cx={24} cy={24} r={20} fill="none" stroke={accent} strokeWidth={4} strokeLinecap="round" strokeDasharray={125.6} strokeDashoffset={weight ? 125.6 - ((Math.min(100, weight / 50 * 100)) / 100) * 125.6 : 125.6} />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Weight style={{ color: accent, width: 14, height: 14 }} strokeWidth={2} />
+                  </div>
+                </div>
+                <div className="mt-1 text-[10px] font-semibold text-foreground leading-tight text-center" dir="auto" style={{ unicodeBidi: 'plaintext' }}>
+                  {weight ? `${weight} ק״ג` : '—'}
+                </div>
+                <div className="text-[9px] text-muted-foreground/70 leading-tight text-center">משקל</div>
+              </button>
+
+              {/* Vaccinations */}
+              <button
+                type="button"
+                onClick={() => openSheet('vaccines')}
+                className="flex flex-col items-center shrink-0"
+                style={{ width: 62 }}
+              >
+                <div className="relative" style={{ width: 48, height: 48 }}>
+                  <svg width={48} height={48} viewBox="0 0 48 48" className="-rotate-90" aria-hidden>
+                    <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(var(--muted))" strokeWidth={4} />
+                    <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(150 55% 50%)" strokeWidth={4} strokeLinecap="round" strokeDasharray={125.6} strokeDashoffset={31.4} />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Syringe style={{ color: 'hsl(150 55% 50%)', width: 14, height: 14 }} strokeWidth={2} />
+                  </div>
+                </div>
+                <div className="mt-1 text-[10px] font-semibold text-foreground leading-tight text-center">עדכניים</div>
+                <div className="text-[9px] text-muted-foreground/70 leading-tight text-center">חיסונים</div>
+              </button>
+            </div>
+
           <motion.button
             type="button"
             onClick={() => setInfoKey("kcal")}
