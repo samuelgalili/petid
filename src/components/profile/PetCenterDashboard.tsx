@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
+import { HeroInsight } from "./HeroInsight";
 
 interface PetLike {
   id: string;
@@ -260,6 +261,9 @@ export const PetCenterDashboard = ({ pet, accent = "hsl(var(--primary))" }: Prop
 
   return (
     <div className="flex flex-col gap-5 pb-8">
+      {/* ── Hero Insight (Tier 1-5 ranked, server-driven) ── */}
+      <HeroInsight petId={pet.id} />
+
       {/* ── Hero: Aurora Ring + Health Score ring + transparent pet avatar ── */}
       <div className="relative w-full flex items-center justify-center pt-4 pb-2">
         <div className="relative w-[220px] h-[220px] flex items-center justify-center">
