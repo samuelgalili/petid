@@ -19,7 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import mipoLogo from "@/assets/mipo-logo.svg";
 import { cn } from "@/lib/utils";
 
-type Step = "splash" | "photo" | "analyzing" | "avatar" | "details" | "complete";
+type Step = "splash" | "photo" | "analyzing" | "avatar" | "details" | "auth" | "complete";
 
 interface PetDraft {
   name: string;
@@ -419,6 +419,135 @@ const CompleteStep: React.FC<{ avatarUrl: string; onGo: () => void }> = ({ avata
 );
 
 /* ============================================================
+ * Auth (MIPO-branded gate before entering the feed)
+ * ============================================================ */
+const AuthStep: React.FC<{
+  avatarUrl: string;
+  petName: string;
+  onAuthed: () => void;
+  onBack: () => void;
+}> = ({ avatarUrl, petName, onAuthed, onBack }) => {
+  const [mode, setMode] = useState<"signup" | "signin">("signup");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string>("");
+
+  const submit = async () => {
+    setErr("");
+    if (!email || password.length < 6) {
+      setErr("Email and a password of at least 6 characters are required.");
+      return;
+    }
+    setBusy(true);
+    try {
+      if (mode === "signup") {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: `${window.location.origin}/feed` },
+        });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      }
+      onAuthed();
+    } catch (e: any) {
+      setErr(e?.message || "Authentication failed.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const google = async () => {
+    setErr("");
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/feed` },
+      });
+      if (error) throw error;
+    } catch (e: any) {
+      setErr(e?.message || "Google sign-in failed.");
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Shell>
+      <div className="flex-1 flex flex-col items-center text-center gap-5 pt-6">
+        <div className="relative w-[120px] h-[120px] flex items-center justify-center">
+          <AuroraRing size={140} />
+          {avatarUrl && (
+            <img
+              src={avatarUrl}
+              alt="pet"
+              className="relative z-10 w-[100px] h-[100px] object-contain drop-shadow-[0_12px_18px_rgba(0,0,0,0.15)]"
+            />
+          )}
+        </div>
+
+        <div className="space-y-1">
+          <h1 className="text-[22px] font-bold text-slate-900 tracking-tight">
+            {mode === "signup" ? "Create your MIPO account" : "Welcome back to MIPO"}
+          </h1>
+          <p className="text-slate-500 text-[14px]">
+            {petName
+              ? `Secure ${petName}'s profile and sync across devices.`
+              : "Secure your pet's profile and sync across devices."}
+          </p>
+        </div>
+
+        <div className="w-full space-y-3">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
+            className="w-full h-12 px-4 rounded-full border border-slate-200 text-[14px] text-slate-700 placeholder:text-slate-300 focus:outline-none focus:border-slate-400"
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            className="w-full h-12 px-4 rounded-full border border-slate-200 text-[14px] text-slate-700 placeholder:text-slate-300 focus:outline-none focus:border-slate-400"
+          />
+          {err && <div className="text-[12px] text-rose-500">{err}</div>}
+
+          <MipoButton onClick={submit} disabled={busy} className="w-full">
+            {busy ? "Please wait…" : mode === "signup" ? "Create Account" : "Sign In"}
+          </MipoButton>
+
+          <button
+            onClick={google}
+            disabled={busy}
+            className="w-full h-12 rounded-full border border-slate-200 text-[14px] font-medium text-slate-700 bg-white hover:bg-slate-50 transition disabled:opacity-50"
+          >
+            Continue with Google
+          </button>
+
+          <button
+            onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
+            className="w-full text-[13px] text-slate-500 pt-1"
+          >
+            {mode === "signup"
+              ? "Already have an account? Sign in"
+              : "New to MIPO? Create account"}
+          </button>
+        </div>
+      </div>
+
+      <div className="flex justify-start pt-4">
+        <MipoButton variant="ghost" onClick={onBack}>Back</MipoButton>
+      </div>
+    </Shell>
+  );
+};
+
+/* ============================================================
  * Root state machine
  * ============================================================ */
 export const MipoOnboarding: React.FC<{ onComplete?: () => void }> = ({ onComplete }) => {
@@ -430,6 +559,7 @@ export const MipoOnboarding: React.FC<{ onComplete?: () => void }> = ({ onComple
   const [petType, setPetType] = useState<"dog" | "cat">("dog");
   const [generating, setGenerating] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string>("");
+  const [petName, setPetName] = useState<string>("");
 
   /* ── detect breed via edge function ── */
   const detectBreed = useCallback(async (dataUrl: string) => {
@@ -499,7 +629,8 @@ export const MipoOnboarding: React.FC<{ onComplete?: () => void }> = ({ onComple
     try {
       localStorage.setItem("mipo-pet-draft", JSON.stringify(draft));
     } catch {}
-    setStep("complete");
+    setPetName(form.name);
+    setStep("auth");
   };
 
   const finish = () => {
@@ -546,6 +677,14 @@ export const MipoOnboarding: React.FC<{ onComplete?: () => void }> = ({ onComple
             initial={{ breed, petType }}
             onSave={handleDetailsSave}
             onBack={() => setStep("avatar")}
+          />
+        )}
+        {step === "auth" && (
+          <AuthStep
+            avatarUrl={avatarUrl}
+            petName={petName}
+            onAuthed={() => setStep("complete")}
+            onBack={() => setStep("details")}
           />
         )}
         {step === "complete" && (
