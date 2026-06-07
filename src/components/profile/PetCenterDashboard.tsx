@@ -664,35 +664,31 @@ export const PetCenterDashboard = ({
       </AnimatePresence>
 
       {/* ── Hero card: kcal eaten / target ── */}
-      <motion.button
-        type="button"
-        onClick={() => openSheet("feeding")}
+      <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.4 }}
-        className="rounded-2xl bg-card border border-border/40 px-4 py-4 flex items-center justify-between text-right"
+        className="rounded-2xl bg-card border border-border/40 px-4 py-5 flex flex-col items-center gap-2"
       >
-        <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-1">
-            <span className="text-[34px] font-bold text-foreground leading-none tracking-tight">
-              {eaten.kcal ?? "—"}
-            </span>
-            <span className="text-[14px] text-muted-foreground/70">
-              /{targets.kcal ?? "—"}
-            </span>
-          </div>
-          <div className="text-[12px] text-muted-foreground/80 mt-1.5">
-            קלוריות נצרכו היום
-          </div>
+        <FlipGauge
+          pct={kcalPct}
+          size={120}
+          stroke={7}
+          color="hsl(var(--foreground))"
+          icon={Flame}
+          eaten={eaten.kcal}
+          target={targets.kcal}
+          unit=""
+          iconSize={34}
+          numberClass="text-[24px] font-bold"
+          unitClass="text-[11px] text-muted-foreground/70"
+          onClick={() => setInfoKey("kcal")}
+          ariaLabel="קלוריות"
+        />
+        <div className="text-[12px] text-muted-foreground/80">
+          קלוריות נצרכו היום
         </div>
-        <ArcGauge pct={kcalPct} size={72} stroke={5} color="hsl(var(--foreground))">
-          <Flame
-            className="w-5 h-5"
-            style={{ color: "hsl(var(--foreground))" }}
-            strokeWidth={2}
-          />
-        </ArcGauge>
-      </motion.button>
+      </motion.div>
 
       {/* ── 3 Macro cards ── */}
       <div className="flex gap-2.5">
@@ -704,6 +700,7 @@ export const PetCenterDashboard = ({
           color={C_PROTEIN}
           icon={Drumstick}
           delay={0.18}
+          onInfo={() => setInfoKey("protein")}
         />
         <MacroCard
           eaten={eaten.carbs_g}
@@ -713,6 +710,7 @@ export const PetCenterDashboard = ({
           color={C_CARBS}
           icon={Wheat}
           delay={0.24}
+          onInfo={() => setInfoKey("carbs")}
         />
         <MacroCard
           eaten={eaten.fat_g}
@@ -722,6 +720,7 @@ export const PetCenterDashboard = ({
           color={C_FATS}
           icon={Droplet}
           delay={0.3}
+          onInfo={() => setInfoKey("fat")}
         />
       </div>
 
