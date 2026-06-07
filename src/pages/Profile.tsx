@@ -311,7 +311,6 @@ const Profile = () => {
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
               >
                 {/* Pet header removed — avatar is rendered inside PetCenterDashboard */}
-                )}
 
                 {/* Dashboard Tabs */}
                 {selectedPet && (
