@@ -2108,6 +2108,7 @@ export type Database = {
           affection_family: number | null
           apartment_friendly: boolean | null
           barking_level: number | null
+          bloodline_variants: string | null
           breed_name: string
           breed_name_he: string | null
           created_at: string
@@ -2132,10 +2133,12 @@ export type Database = {
           life_expectancy_years: string | null
           mental_needs: number | null
           origin_country: string | null
+          owner_experience_required: string | null
           pet_type: string
           playfulness: number | null
           shedding_level: number | null
           size_category: string | null
+          solitude_tolerance: string | null
           source_references: string[] | null
           stranger_openness: number | null
           temperament: string[] | null
@@ -2150,6 +2153,7 @@ export type Database = {
           affection_family?: number | null
           apartment_friendly?: boolean | null
           barking_level?: number | null
+          bloodline_variants?: string | null
           breed_name: string
           breed_name_he?: string | null
           created_at?: string
@@ -2174,10 +2178,12 @@ export type Database = {
           life_expectancy_years?: string | null
           mental_needs?: number | null
           origin_country?: string | null
+          owner_experience_required?: string | null
           pet_type?: string
           playfulness?: number | null
           shedding_level?: number | null
           size_category?: string | null
+          solitude_tolerance?: string | null
           source_references?: string[] | null
           stranger_openness?: number | null
           temperament?: string[] | null
@@ -2192,6 +2198,7 @@ export type Database = {
           affection_family?: number | null
           apartment_friendly?: boolean | null
           barking_level?: number | null
+          bloodline_variants?: string | null
           breed_name?: string
           breed_name_he?: string | null
           created_at?: string
@@ -2216,10 +2223,12 @@ export type Database = {
           life_expectancy_years?: string | null
           mental_needs?: number | null
           origin_country?: string | null
+          owner_experience_required?: string | null
           pet_type?: string
           playfulness?: number | null
           shedding_level?: number | null
           size_category?: string | null
+          solitude_tolerance?: string | null
           source_references?: string[] | null
           stranger_openness?: number | null
           temperament?: string[] | null
