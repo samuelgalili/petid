@@ -5388,6 +5388,38 @@ export type Database = {
           },
         ]
       }
+      insight_surface_log: {
+        Row: {
+          id: string
+          insight_id: string
+          shown_at: string
+          surface: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          insight_id: string
+          shown_at?: string
+          surface: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          insight_id?: string
+          shown_at?: string
+          surface?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insight_surface_log_insight_id_fkey"
+            columns: ["insight_id"]
+            isOneToOne: false
+            referencedRelation: "pet_insights"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       insurance_claims: {
         Row: {
           clinic_name: string | null
@@ -7979,6 +8011,69 @@ export type Database = {
           suitable_breeds?: string[] | null
           suitable_pet_types?: string[] | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      pet_insights: {
+        Row: {
+          acted_at: string | null
+          category: string
+          confidence: number
+          created_at: string
+          cta_action: string | null
+          cta_label: string | null
+          dismissed_at: string | null
+          hero_subtext: string | null
+          hero_text: string
+          icon_name: string | null
+          id: string
+          insight_key: string
+          payload: Json | null
+          pet_id: string
+          tier: number
+          updated_at: string
+          user_id: string
+          valid_until: string
+        }
+        Insert: {
+          acted_at?: string | null
+          category: string
+          confidence: number
+          created_at?: string
+          cta_action?: string | null
+          cta_label?: string | null
+          dismissed_at?: string | null
+          hero_subtext?: string | null
+          hero_text: string
+          icon_name?: string | null
+          id?: string
+          insight_key: string
+          payload?: Json | null
+          pet_id: string
+          tier: number
+          updated_at?: string
+          user_id: string
+          valid_until?: string
+        }
+        Update: {
+          acted_at?: string | null
+          category?: string
+          confidence?: number
+          created_at?: string
+          cta_action?: string | null
+          cta_label?: string | null
+          dismissed_at?: string | null
+          hero_subtext?: string | null
+          hero_text?: string
+          icon_name?: string | null
+          id?: string
+          insight_key?: string
+          payload?: Json | null
+          pet_id?: string
+          tier?: number
+          updated_at?: string
+          user_id?: string
+          valid_until?: string
         }
         Relationships: []
       }
