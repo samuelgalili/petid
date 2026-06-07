@@ -807,6 +807,97 @@ export const PetCenterDashboard = ({
           הוסף רישום
         </button>
       </div>
+
+      {/* ── Metric Info Sheet ── */}
+      <AnimatePresence>
+        {infoKey && (() => {
+          const META = {
+            kcal:    { title: "קלוריות",   color: "hsl(var(--foreground))", eaten: eaten.kcal,      target: targets.kcal,      unit: "קק״ל", desc: "סך האנרגיה היומית הנדרשת לפי NRC 2006, מחושבת לפי משקל הגוף (MER = 1.6 × 70 × kg^0.75). נצרך / יעד יומי." },
+            protein: { title: "חלבון",     color: C_PROTEIN,                eaten: eaten.protein_g, target: targets.protein_g, unit: "גרם",   desc: "בונה שריר, מערכת חיסון ורקמות. כ-25% מסך הקלוריות, מחושב לפי 4 קק״ל לגרם. חוסר ארוך-טווח עלול לפגוע בריפוי ובמסת השריר." },
+            carbs:   { title: "פחמימות",  color: C_CARBS,                  eaten: eaten.carbs_g,   target: targets.carbs_g,   unit: "גרם",   desc: "מקור אנרגיה זמין. כ-55% מהקלוריות, 4 קק״ל לגרם. עודף הופך לשומן — להתאים לפעילות בפועל." },
+            fat:     { title: "שומן",     color: C_FATS,                   eaten: eaten.fat_g,     target: targets.fat_g,     unit: "גרם",   desc: "אנרגיה דחוסה וויטמינים מסיסים. כ-20% מהקלוריות, 9 קק״ל לגרם. חיוני לעור ופרווה — אך לא להגזים." },
+          } as const;
+          const m = META[infoKey];
+          const pct = m.eaten != null && m.target != null && m.target > 0
+            ? Math.round((m.eaten / m.target) * 100) : 0;
+          return (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 z-[80] bg-background/70 backdrop-blur-sm"
+                onClick={() => setInfoKey(null)}
+              />
+              <motion.div
+                role="dialog"
+                aria-modal="true"
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{ type: "spring", damping: 32, stiffness: 320 }}
+                className="fixed inset-x-0 bottom-0 z-[81] rounded-t-3xl bg-card border-t border-border/50 px-4 pt-3 pb-7 max-h-[80vh] overflow-y-auto"
+              >
+                <div className="flex justify-center mb-3">
+                  <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+                </div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-9 h-9 rounded-xl flex items-center justify-center"
+                      style={{ background: `${m.color}1a` }}
+                    >
+                      <Flame className="w-4 h-4" style={{ color: m.color }} />
+                    </div>
+                    <div>
+                      <div className="text-[16px] font-bold text-foreground">{m.title}</div>
+                      <div className="text-[11px] text-muted-foreground">נתונים יומיים</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setInfoKey(null)}
+                    className="w-8 h-8 rounded-full flex items-center justify-center border border-border/50 text-muted-foreground"
+                    aria-label="סגור"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="rounded-2xl border border-border/40 px-4 py-3 mb-3 flex items-baseline justify-between" dir="ltr">
+                  <span className="text-[12px] text-muted-foreground/70">{m.unit}</span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-[28px] font-bold" style={{ color: m.color }}>
+                      {m.eaten ?? "—"}
+                    </span>
+                    <span className="text-[13px] text-muted-foreground/70">
+                      / {m.target ?? "—"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="h-1.5 w-full rounded-full bg-muted/40 overflow-hidden mb-4">
+                  <motion.div
+                    className="h-full rounded-full"
+                    style={{ background: m.color }}
+                    initial={false}
+                    animate={{ width: `${Math.min(100, pct)}%` }}
+                    transition={{ duration: 0.4 }}
+                  />
+                </div>
+
+                <p className="text-[13px] leading-[1.6] text-foreground/85 mb-2" dir="auto">
+                  {m.desc}
+                </p>
+                <p className="text-[10px] text-muted-foreground/60">
+                  יעדים מבוססי NRC 2006 · ערך שמרני, אינו תחליף לייעוץ וטרינרי.
+                </p>
+              </motion.div>
+            </>
+          );
+        })()}
+      </AnimatePresence>
     </div>
   );
 };
