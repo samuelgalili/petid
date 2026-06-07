@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 140" fill="none">
   <defs>
     <linearGradient id="mipoGrad" x1="0%" y1="50%" x2="100%" y2="50%">
-      <stop offset="0%" stop-color="#F4A86C"/>
-      <stop offset="35%" stop-color="#E07A9E"/>
-      <stop offset="65%" stop-color="#A07BC9"/>
-      <stop offset="100%" stop-color="#5BA8D9"/>
+      <stop offset="0%" stop-color="#FFB088"/>
+      <stop offset="28%" stop-color="#FF7AA8"/>
+      <stop offset="60%" stop-color="#C68BFF"/>
+      <stop offset="100%" stop-color="#5BD0F0"/>
     </linearGradient>
   </defs>
   <!-- M shape -->
@@ -12,7 +12,7 @@
         stroke="url(#mipoGrad)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
   <!-- Smile/arc under M -->
   <path d="M30 105 Q110 145 190 105"
-        stroke="url(#mipoGrad)" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.9"/>
+        stroke="url(#mipoGrad)" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.95"/>
   <!-- Dot (the "i" of MIPO mark) -->
-  <circle cx="195" cy="62" r="9" fill="url(#mipoGrad)"/>
+  <circle cx="195" cy="62" r="9" fill="#5BD0F0"/>
 </svg>
