@@ -168,26 +168,11 @@ const AnalyzingStep: React.FC<{
         {analyzing ? "Analyzing your pet…" : "We found a perfect match"}
       </p>
 
-      <div className="relative w-[260px] h-[260px] flex items-center justify-center">
-        {/* Soft aura hugging the pet silhouette */}
-        <div
-          aria-hidden
-          className="absolute inset-0 rounded-full"
-          style={{
-            background:
-              "radial-gradient(circle at 50% 55%, rgba(244,168,108,0.55) 0%, rgba(224,122,158,0.40) 25%, rgba(160,123,201,0.30) 45%, rgba(91,168,217,0.20) 65%, transparent 78%)",
-            filter: "blur(22px)",
-          }}
-        />
-        <img
-          src={photoUrl}
-          alt="your pet"
-          className="relative z-10 w-[230px] h-[230px] object-contain"
-          style={{
-            filter:
-              "drop-shadow(0 0 12px rgba(244,168,108,0.55)) drop-shadow(0 0 24px rgba(160,123,201,0.45)) drop-shadow(0 14px 18px rgba(0,0,0,0.18))",
-          }}
-        />
+      <div className="relative w-[240px] h-[240px] flex items-center justify-center">
+        <AuroraRing size={260} />
+        <div className="relative z-10 w-[210px] h-[210px] rounded-3xl overflow-hidden bg-slate-50 shadow-[0_8px_30px_-8px_rgba(0,0,0,0.12)]">
+          <img src={photoUrl} alt="your pet" className="w-full h-full object-cover" />
+        </div>
       </div>
 
       <div className="mt-2 space-y-1">
@@ -280,7 +265,7 @@ const DetailsStep: React.FC<{
           Tell us about your pet
         </h1>
 
-        <div className="grid grid-cols-[1fr,1fr] gap-4 items-center">
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr,0.9fr] gap-6 items-center">
           {/* Form */}
           <div className="space-y-4">
             <Field label="Name">
@@ -336,16 +321,12 @@ const DetailsStep: React.FC<{
             </Field>
           </div>
 
-          {/* Avatar preview — large, soft shadow only (like reference) */}
+          {/* Avatar preview */}
           <div className="flex items-center justify-center">
             <img
               src={avatarUrl}
               alt="pet"
-              className="w-full max-w-[280px] h-auto object-contain"
-              style={{
-                filter:
-                  "drop-shadow(0 24px 28px rgba(0,0,0,0.10)) drop-shadow(0 6px 10px rgba(0,0,0,0.06))",
-              }}
+              className="w-44 h-44 object-contain drop-shadow-[0_18px_24px_rgba(0,0,0,0.12)]"
             />
           </div>
         </div>
