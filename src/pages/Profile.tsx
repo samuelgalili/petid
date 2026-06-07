@@ -179,13 +179,30 @@ const Profile = () => {
             </motion.span>
           )}
 
-          <button
-            onClick={() => navigate('/messages')}
-            className="p-2 relative"
-            aria-label="הודעות"
-          >
-            <MessageCircle className="w-5 h-5 text-foreground" strokeWidth={1.5} />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById('recent-logs');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              className="p-2 relative"
+              aria-label="תזכורות"
+            >
+              <Bell className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+              <span
+                className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-primary"
+                aria-hidden
+              />
+            </button>
+            <button
+              onClick={() => navigate('/messages')}
+              className="p-2 relative"
+              aria-label="הודעות"
+            >
+              <MessageCircle className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+            </button>
+          </div>
         </motion.div>
 
         {/* ── Main Content ── */}
