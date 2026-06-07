@@ -709,11 +709,25 @@ export const PetCenterDashboard = ({
       </div>
 
       {/* ── Action row ── */}
-      <div className="grid grid-cols-2 gap-2.5 mt-1">
+      <div className="grid grid-cols-3 gap-2 mt-1">
+        <button
+          type="button"
+          onClick={() => setTasksOpen(true)}
+          className="flex items-center justify-center gap-1.5 h-11 rounded-2xl text-[12px] font-semibold border bg-card"
+          style={{
+            color: dailyColor,
+            borderColor: `${dailyColor}55`,
+            background: `${dailyColor}0d`,
+          }}
+          aria-label="משימות יומיות"
+        >
+          <Flame className="w-4 h-4" strokeWidth={2} />
+          דירוג {daily.pct}%
+        </button>
         <button
           type="button"
           onClick={() => openSheet("chat")}
-          className="flex items-center justify-center gap-2 h-11 rounded-2xl text-[13px] font-semibold text-primary-foreground"
+          className="flex items-center justify-center gap-1.5 h-11 rounded-2xl text-[12px] font-semibold text-primary-foreground"
           style={{ background: accent }}
         >
           <Sparkles className="w-4 h-4" strokeWidth={2} />
@@ -722,7 +736,7 @@ export const PetCenterDashboard = ({
         <button
           type="button"
           onClick={() => openSheet("add-record")}
-          className="flex items-center justify-center gap-2 h-11 rounded-2xl text-[13px] font-semibold text-foreground border border-border/50 bg-card"
+          className="flex items-center justify-center gap-1.5 h-11 rounded-2xl text-[12px] font-semibold text-foreground border border-border/50 bg-card"
         >
           <Plus className="w-4 h-4" strokeWidth={2} />
           הוסף רישום
