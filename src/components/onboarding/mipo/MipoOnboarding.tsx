@@ -610,7 +610,8 @@ export const MipoOnboarding: React.FC<{ onComplete?: () => void }> = ({ onComple
       if (error) throw error;
       const url = (data as any)?.imageBase64;
       if (!url) throw new Error("No avatar returned");
-      setAvatarUrl(url);
+      const cleaned = await removeWhiteBackground(url).catch(() => url);
+      setAvatarUrl(cleaned);
     } catch (e) {
       console.error("generate-pet-avatar failed:", e);
       // graceful fallback — reuse the user's own photo
