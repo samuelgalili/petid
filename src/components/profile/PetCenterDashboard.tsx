@@ -808,29 +808,15 @@ export const PetCenterDashboard = ({
             style={{ width: SIZE, height: SIZE }}
             aria-label={`יעד יומי ${overall}%`}
           >
-            {/* MIPO brand glow halo */}
+            {/* Subtle brand halo behind the ring */}
             <div
               className="absolute inset-0 pointer-events-none rounded-full"
               aria-hidden
               style={{
                 background:
-                  "conic-gradient(from 0deg, #FF9A6C, #FF7BAC, #C58BFA, #6BB8FF, #6BE0E0, #FF9A6C)",
-                filter: "blur(22px)",
-                opacity: 0.55,
-              }}
-            />
-            {/* Slow shimmer rotation */}
-            <motion.div
-              className="absolute inset-0 pointer-events-none rounded-full"
-              aria-hidden
-              animate={{ rotate: 360 }}
-              transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
-              style={{
-                background:
-                  "conic-gradient(from 0deg, transparent 0deg, rgba(255,255,255,0.35) 60deg, transparent 140deg, rgba(255,255,255,0.25) 220deg, transparent 360deg)",
-                filter: "blur(10px)",
-                mixBlendMode: "screen",
-                opacity: 0.7,
+                  "conic-gradient(from 0deg, #FF9A6C, #FF7BAC, #C58BFA, #6BB8FF, #FF9A6C)",
+                filter: "blur(28px)",
+                opacity: 0.28,
               }}
             />
             {/* Single daily-goal ring with MIPO gradient */}
