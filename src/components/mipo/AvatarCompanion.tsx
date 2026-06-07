@@ -27,26 +27,10 @@ const HIDDEN_PREFIXES = [
   "/story",
 ];
 
-function readDraftAvatar(): string | null {
-  try {
-    const raw = localStorage.getItem("mipo-pet-draft");
-    if (!raw) return null;
-    return JSON.parse(raw)?.avatarUrl || null;
-  } catch {
-    return null;
-  }
-}
-
 export const AvatarCompanion = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { activePet } = usePetPreference();
-
-  // Re-check the draft when the route changes (cheap)
-  const [draftAvatar, setDraftAvatar] = useState<string | null>(() => readDraftAvatar());
-  useEffect(() => {
-    setDraftAvatar(readDraftAvatar());
-  }, [location.pathname]);
 
   const name = activePet?.name || (() => {
     try { return JSON.parse(localStorage.getItem("mipo-pet-draft") || "{}")?.name; } catch { return null; }
