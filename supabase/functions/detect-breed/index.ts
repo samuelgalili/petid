@@ -94,26 +94,51 @@ Deno.serve(async (req) => {
     const animalType = petType === "cat" ? "cat" : "dog";
     const animalTypeHe = petType === "cat" ? "חתול" : "כלב";
 
-    const geminiData = await chatCompletion({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image_url",
-              image_url: { url: imageSource }
-            },
-            {
-              type: "text",
-              text: EXPERT_PROMPT(animalType, animalTypeHe)
-            }
-          ]
-        }
-      ],
-      max_tokens: 1000,
-      temperature: 0.2
-    });
+    let geminiData;
+    try {
+      geminiData = await chatCompletion({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "image_url", image_url: { url: imageSource } },
+              { type: "text", text: EXPERT_PROMPT(animalType, animalTypeHe) },
+            ],
+          },
+        ],
+        max_tokens: 1000,
+        temperature: 0.2,
+      });
+    } catch (aiError: any) {
+      const msg = String(aiError?.message || aiError);
+      console.error("AI gateway error:", msg);
+      const isPayment = msg.includes("402") || msg.includes("payment_required") || msg.toLowerCase().includes("not enough credits");
+      const isRateLimit = msg.includes("429");
+      // Graceful fallback so onboarding can continue
+      return new Response(
+        JSON.stringify({
+          breed: null,
+          breed_he: null,
+          confidence: 0,
+          detectedType: animalType,
+          [`is_${animalType}`]: false,
+          mixed_breeds: null,
+          photo_quality: "good",
+          photo_feedback: null,
+          features_detected: null,
+          health_risks: [],
+          found_in_database: false,
+          ai_unavailable: true,
+          fallback: true,
+          reason: isPayment ? "ai_credits_exhausted" : isRateLimit ? "ai_rate_limited" : "ai_error",
+          notes: isPayment
+            ? "AI breed detection is temporarily unavailable. Please enter the breed manually."
+            : "AI breed detection is temporarily unavailable. Please try again or enter the breed manually.",
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const content = (geminiData as any).choices?.[0]?.message?.content || "";
     
