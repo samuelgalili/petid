@@ -352,9 +352,9 @@ const DayPill = ({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.85 }}
             transition={{ duration: 0.28, ease: "easeOut" }}
-            className={`absolute font-semibold tabular-nums ${
+            className={`absolute font-bold tabular-nums z-10 ${
               showDow ? "text-[11px]" : "text-[13px]"
-            } ${isToday ? "text-foreground" : "text-muted-foreground"}`}
+            } ${isToday ? "text-white drop-shadow" : isFuture ? "text-muted-foreground/50" : "text-muted-foreground"}`}
           >
             {showDow ? dow : date}
           </motion.span>
