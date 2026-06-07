@@ -14,7 +14,17 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 
-const HIDDEN_PREFIXES = ["/auth", "/signup", "/forgot-password", "/reset-password", "/splash", "/onboarding"];
+const HIDDEN_PREFIXES = [
+  "/auth",
+  "/signup",
+  "/forgot-password",
+  "/reset-password",
+  "/splash",
+  "/onboarding",
+  "/add-pet",
+  "/stories",
+  "/story",
+];
 
 function readDraftAvatar(): string | null {
   try {
@@ -42,9 +52,19 @@ export const AvatarCompanion = () => {
     try { return JSON.parse(localStorage.getItem("mipo-pet-draft") || "{}")?.name; } catch { return null; }
   })();
 
+  // Also hide while the MIPO onboarding gate is still active — it overlays the
+  // whole screen and the floating avatar would punch through it.
+  const onboardingActive = (() => {
+    try { return localStorage.getItem("mipo-onboarding-complete") !== "true"; }
+    catch { return false; }
+  })();
+
   const hidden = useMemo(
-    () => HIDDEN_PREFIXES.some((p) => location.pathname.startsWith(p)) || location.pathname === "/chat",
-    [location.pathname],
+    () =>
+      onboardingActive ||
+      HIDDEN_PREFIXES.some((p) => location.pathname.startsWith(p)) ||
+      location.pathname === "/chat",
+    [location.pathname, onboardingActive],
   );
 
   if (hidden || !avatarUrl) return null;
