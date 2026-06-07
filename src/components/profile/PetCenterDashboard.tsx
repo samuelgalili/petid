@@ -750,7 +750,7 @@ export const PetCenterDashboard = ({
         const offset = C - (overall / 100) * C;
         const ringColor = scoreColor(overall);
         return (
-          <div className="flex items-center justify-center gap-1.5" dir="rtl">
+          <div className="flex items-center justify-between gap-2 w-full px-2" dir="rtl">
             <BreedTraitCircles
               breed={pet.breed}
               weight={weight}
