@@ -721,7 +721,7 @@ export const PetCenterDashboard = ({
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.1, duration: 0.5, ease: "easeOut" }}
         className="relative mx-auto"
-        style={{ width: 320, height: 320 }}
+        style={{ width: 360, height: 360 }}
       >
         {/* Breed traits orbiting outside the nutrient gauges */}
         <BreedTraitCircles
@@ -729,7 +729,7 @@ export const PetCenterDashboard = ({
           weight={weight}
           kcalTarget={targets.kcal}
           accent={accent}
-          orbit={{ radius: 168, size: 44 }}
+          orbit={{ radius: 188, size: 40 }}
         />
         {/* Glow behind avatar */}
         <div
@@ -764,7 +764,7 @@ export const PetCenterDashboard = ({
             <img
               src={dobermanAsset.url}
               alt={pet.name}
-              className="w-[132px] h-[132px] rounded-full object-contain bg-muted block"
+              className="w-[240px] h-[240px] rounded-full object-contain bg-muted block"
             />
           </motion.div>
         </div>
@@ -840,6 +840,87 @@ export const PetCenterDashboard = ({
         {weight
           ? `יעדים מבוססי NRC 2006 · משקל ${weight}kg`
           : "הוסיפו משקל כדי לקבל יעדים מדויקים"}
+      </div>
+
+      {/* ── Quick info tiles: Weight + Vaccinations ── */}
+      <div className="grid grid-cols-2 gap-2 mt-2">
+        <button
+          type="button"
+          onClick={() => openSheet("weight")}
+          className="flex items-center gap-3 rounded-2xl border border-border/40 bg-card px-3 py-3 text-right hover:border-border/70 transition-colors"
+        >
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: `${accent}1a`, color: accent }}
+          >
+            <Weight className="w-5 h-5" strokeWidth={2} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[11px] text-muted-foreground/70">משקל</div>
+            <div className="text-[15px] font-bold text-foreground leading-tight" dir="auto">
+              {weight ? `${weight} ק״ג` : "הוסיפו"}
+            </div>
+          </div>
+        </button>
+        <button
+          type="button"
+          onClick={() => openSheet("vaccines")}
+          className="flex items-center gap-3 rounded-2xl border border-border/40 bg-card px-3 py-3 text-right hover:border-border/70 transition-colors"
+        >
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: "hsl(150 55% 50% / 0.14)", color: "hsl(150 55% 45%)" }}
+          >
+            <Syringe className="w-5 h-5" strokeWidth={2} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[11px] text-muted-foreground/70">חיסונים</div>
+            <div className="text-[15px] font-bold text-foreground leading-tight">
+              עדכניים
+            </div>
+          </div>
+        </button>
+      </div>
+
+      {/* ── Floating Action Dock — 4 ghost icons + 1 CTA ── */}
+      <div className="mt-3 flex items-center justify-between gap-2 rounded-full border border-border/40 bg-card/80 backdrop-blur px-2 py-2">
+        {[
+          { key: "water", icon: GlassWater, label: "מים" },
+          { key: "activity", icon: Footprints, label: "פעילות" },
+        ].map((b) => (
+          <button
+            key={b.key}
+            type="button"
+            onClick={() => openSheet(b.key)}
+            aria-label={b.label}
+            className="w-11 h-11 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+          >
+            <b.icon className="w-5 h-5" strokeWidth={2} />
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => openSheet("feed")}
+          className="flex-1 mx-1 h-12 rounded-full flex items-center justify-center gap-2 text-[14px] font-semibold text-primary-foreground shadow-lg"
+          style={{ background: accent, boxShadow: `0 8px 24px ${accent}55` }}
+        >
+          <Plus className="w-4 h-4" strokeWidth={2.5} />
+          האכלה
+        </button>
+        {[
+          { key: "health", icon: HeartPulse, label: "בריאות" },
+          { key: "grooming", icon: Brush, label: "טיפוח" },
+        ].map((b) => (
+          <button
+            key={b.key}
+            type="button"
+            onClick={() => openSheet(b.key)}
+            aria-label={b.label}
+            className="w-11 h-11 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+          >
+            <b.icon className="w-5 h-5" strokeWidth={2} />
+          </button>
+        ))}
       </div>
 
 
