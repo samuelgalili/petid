@@ -18,12 +18,14 @@ import {
   Brush,
   Check,
   X,
+  Zap,
 } from "lucide-react";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
 import dobermanAsset from "@/assets/doberman.jpg.asset.json";
 import { HeroInsight } from "./HeroInsight";
 import { BreedTraitCircles } from "./BreedTraitCircles";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PetLike {
   id: string;
