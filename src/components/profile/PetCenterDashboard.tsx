@@ -311,9 +311,16 @@ const DayPill = ({
   return (
     <div className="flex flex-col items-center flex-1 min-w-0">
       <div
-        className="relative flex items-center justify-center"
+        className={`relative flex items-center justify-center rounded-full ${isToday ? 'shadow-[0_4px_20px_-4px_hsl(var(--primary)/0.6)]' : ''}`}
         style={{ width: size, height: size }}
       >
+        {isToday && (
+          <div
+            className="absolute inset-1 rounded-full opacity-90"
+            style={{ background: 'conic-gradient(from 140deg, #FF9A6C, #FF7BAC, #C58BFA, #6BB8FF, #FF9A6C)' }}
+            aria-hidden
+          />
+        )}
         <svg width={size} height={size} className="-rotate-90" aria-hidden>
           <circle
             cx={size / 2}
