@@ -115,17 +115,34 @@ export const PetCenterDashboard = ({ pet, accent = "hsl(var(--primary))" }: Prop
         ))}
       </div>
 
-      {/* ── Centered Pet Image ── */}
+      {/* ── Centered Pet with Aura ── */}
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.25, type: "spring", damping: 18, stiffness: 200 }}
-        className="flex flex-col items-center justify-center py-4"
+        className="relative flex items-center justify-center py-6"
       >
+        {/* Soft radial aura hugging the pet silhouette */}
+        <motion.div
+          aria-hidden
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: [0.55, 0.85, 0.55], scale: [1, 1.04, 1] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute inset-0 mx-auto pointer-events-none"
+          style={{
+            width: "70%",
+            margin: "auto",
+            background: `radial-gradient(circle at 50% 55%, ${accent}55 0%, ${accent}22 35%, transparent 70%)`,
+            filter: "blur(18px)",
+          }}
+        />
         <img
           src={pet.avatar_url || fallback}
           alt={pet.name}
-          className="h-56 w-auto object-contain drop-shadow-[0_18px_24px_rgba(0,0,0,0.18)]"
+          className="relative h-56 w-auto object-contain"
+          style={{
+            filter: `drop-shadow(0 0 14px ${accent}88) drop-shadow(0 0 28px ${accent}55) drop-shadow(0 14px 18px rgba(0,0,0,0.25))`,
+          }}
         />
       </motion.div>
 
