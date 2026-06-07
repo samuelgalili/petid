@@ -1,13 +1,9 @@
 import {
-  ShoppingBag,
   Sparkles,
   Plus,
+  Home,
   Dog,
   Cat,
-  Camera,
-  ScanLine,
-  FileText,
-  Brain,
   X,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -20,30 +16,11 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { usePetButtonAnimation, PetButtonOverlay } from "@/components/ui/PetButtonAnimations";
 import { useOverlayNav } from "@/contexts/OverlayNavContext";
-import { PetGuardianPanel } from "@/components/PetGuardianPanel";
 
 const navLabels = {
-  he: { feed: "פיד", shop: "חנות", chat: "AI", addPet: "הוסף חיית מחמד" },
-  en: { feed: "Feed", shop: "Shop", chat: "AI", addPet: "Add Pet" },
-  ar: { feed: "فيد", shop: "متجر", chat: "AI", addPet: "إضافة حيوان" },
-};
-
-const quickActions = {
-  he: [
-    { key: "scan-food", icon: ScanLine, label: "סריקת מזון", path: "/chat", color: "#4ECDC4" },
-    { key: "scan-doc", icon: FileText, label: "סריקת מסמך", path: "/chat", color: "#7C5CFC" },
-    { key: "post", icon: Camera, label: "פוסט", path: "/feed", color: "#FF6B8A" },
-  ],
-  en: [
-    { key: "scan-food", icon: ScanLine, label: "Scan Food", path: "/chat", color: "#4ECDC4" },
-    { key: "scan-doc", icon: FileText, label: "Scan Doc", path: "/chat", color: "#7C5CFC" },
-    { key: "post", icon: Camera, label: "Post", path: "/feed", color: "#FF6B8A" },
-  ],
-  ar: [
-    { key: "scan-food", icon: ScanLine, label: "مسح طعام", path: "/chat", color: "#4ECDC4" },
-    { key: "scan-doc", icon: FileText, label: "مسح مستند", path: "/chat", color: "#7C5CFC" },
-    { key: "post", icon: Camera, label: "نشر", path: "/feed", color: "#FF6B8A" },
-  ],
+  he: { feed: "פיד", chat: "שיחה", addPet: "הוסף חיית מחמד" },
+  en: { feed: "Feed", chat: "Chat", addPet: "Add Pet" },
+  ar: { feed: "فيد", chat: "محادثة", addPet: "إضافة حيوان" },
 };
 
 const BottomNav = () => {
@@ -52,14 +29,11 @@ const BottomNav = () => {
   const { language, direction } = useLanguage();
   const isRtl = direction === "rtl";
   const labels = navLabels[language] || navLabels.he;
-  const actions = quickActions[language] || quickActions.he;
   const { activePet, pets, switchPet: contextSwitchPet } = usePetPreference();
 
   const { openDashboard, closeDashboard, dashboardOpen } = useOverlayNav();
 
   const [showPetSwitcher, setShowPetSwitcher] = useState(false);
-  const [showQuickActions, setShowQuickActions] = useState(false);
-  const [showGuardian, setShowGuardian] = useState(false);
   const { activeAnim, triggerRandom } = usePetButtonAnimation();
 
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
