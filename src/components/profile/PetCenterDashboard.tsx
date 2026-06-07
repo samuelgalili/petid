@@ -226,6 +226,54 @@ const FlipGauge = ({
 };
 
 /* ─── Day pill with ring around the number ─── */
+
+/* ─── Orbit Gauge: borderless flipping ring used around the avatar ─── */
+const OrbitGauge = ({
+  pct,
+  color,
+  icon,
+  eaten,
+  target,
+  unit,
+  label,
+  onClick,
+}: {
+  pct: number;
+  color: string;
+  icon: typeof Drumstick;
+  eaten: number | null;
+  target: number | null;
+  unit: string;
+  label: string;
+  onClick: () => void;
+}) => {
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <FlipGauge
+        pct={pct}
+        size={64}
+        stroke={4}
+        color={color}
+        icon={icon}
+        eaten={eaten}
+        target={target}
+        unit={unit}
+        iconSize={20}
+        numberClass="text-[13px] font-bold"
+        unitClass="text-[8px] text-muted-foreground/70"
+        onClick={onClick}
+        ariaLabel={label}
+      />
+      <span
+        className="text-[10px] font-medium"
+        style={{ color }}
+      >
+        {label}
+      </span>
+    </div>
+  );
+};
+
 const DayPill = ({
   dow,
   date,
@@ -664,66 +712,117 @@ export const PetCenterDashboard = ({
         )}
       </AnimatePresence>
 
-      {/* ── Hero card: kcal eaten / target ── */}
+      {/* ── Orbit: pet avatar centered with 4 gauges around ── */}
       <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.4 }}
-        className="rounded-2xl bg-card border border-border/40 px-4 py-5 flex flex-col items-center gap-2"
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.1, duration: 0.5, ease: "easeOut" }}
+        className="relative mx-auto"
+        style={{ width: 320, height: 320 }}
       >
-        <FlipGauge
-          pct={kcalPct}
-          size={120}
-          stroke={7}
-          color="hsl(var(--foreground))"
-          icon={Flame}
-          eaten={eaten.kcal}
-          target={targets.kcal}
-          unit=""
-          iconSize={34}
-          numberClass="text-[24px] font-bold"
-          unitClass="text-[11px] text-muted-foreground/70"
-          onClick={() => setInfoKey("kcal")}
-          ariaLabel="קלוריות"
+        {/* Glow behind avatar */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          aria-hidden
+          style={{
+            background: `radial-gradient(circle at 50% 50%, ${accent}33 0%, ${accent}10 28%, transparent 55%)`,
+            filter: "blur(2px)",
+          }}
         />
-        <div className="text-[12px] text-muted-foreground/80">
-          קלוריות נצרכו היום
+        {/* Soft orbit ring */}
+        <div
+          className="absolute rounded-full border border-border/30 pointer-events-none"
+          aria-hidden
+          style={{
+            inset: 22,
+            borderStyle: "dashed",
+          }}
+        />
+        {/* Pet avatar centered */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }}
+            className="rounded-full p-[3px]"
+            style={{
+              background: accent,
+              boxShadow: `0 0 0 6px ${accent}1f, 0 10px 32px ${accent}40`,
+            }}
+          >
+            <img
+              src={pet.avatar_url || fallback}
+              alt={pet.name}
+              className="w-[132px] h-[132px] rounded-full object-cover bg-muted block"
+            />
+          </motion.div>
+        </div>
+
+        {/* Top — Kcal */}
+        <div className="absolute left-1/2 -translate-x-1/2" style={{ top: 0 }}>
+          <OrbitGauge
+            pct={kcalPct}
+            color="hsl(var(--foreground))"
+            icon={Flame}
+            eaten={eaten.kcal}
+            target={targets.kcal}
+            unit=""
+            label="קלוריות"
+            onClick={() => setInfoKey("kcal")}
+          />
+        </div>
+        {/* Right — Protein */}
+        <div className="absolute top-1/2 -translate-y-1/2" style={{ right: 0 }}>
+          <OrbitGauge
+            pct={
+              eaten.protein_g != null && targets.protein_g
+                ? (eaten.protein_g / targets.protein_g) * 100
+                : 0
+            }
+            color={C_PROTEIN}
+            icon={Drumstick}
+            eaten={eaten.protein_g}
+            target={targets.protein_g}
+            unit="g"
+            label="חלבון"
+            onClick={() => setInfoKey("protein")}
+          />
+        </div>
+        {/* Bottom — Carbs */}
+        <div className="absolute left-1/2 -translate-x-1/2" style={{ bottom: 0 }}>
+          <OrbitGauge
+            pct={
+              eaten.carbs_g != null && targets.carbs_g
+                ? (eaten.carbs_g / targets.carbs_g) * 100
+                : 0
+            }
+            color={C_CARBS}
+            icon={Wheat}
+            eaten={eaten.carbs_g}
+            target={targets.carbs_g}
+            unit="g"
+            label="פחמימות"
+            onClick={() => setInfoKey("carbs")}
+          />
+        </div>
+        {/* Left — Fat */}
+        <div className="absolute top-1/2 -translate-y-1/2" style={{ left: 0 }}>
+          <OrbitGauge
+            pct={
+              eaten.fat_g != null && targets.fat_g
+                ? (eaten.fat_g / targets.fat_g) * 100
+                : 0
+            }
+            color={C_FATS}
+            icon={Droplet}
+            eaten={eaten.fat_g}
+            target={targets.fat_g}
+            unit="g"
+            label="שומן"
+            onClick={() => setInfoKey("fat")}
+          />
         </div>
       </motion.div>
-
-      {/* ── 3 Macro cards ── */}
-      <div className="flex gap-2.5">
-        <MacroCard
-          eaten={eaten.protein_g}
-          target={targets.protein_g}
-          unit="g"
-          label="חלבון"
-          color={C_PROTEIN}
-          icon={Drumstick}
-          delay={0.18}
-          onInfo={() => setInfoKey("protein")}
-        />
-        <MacroCard
-          eaten={eaten.carbs_g}
-          target={targets.carbs_g}
-          unit="g"
-          label="פחמימות"
-          color={C_CARBS}
-          icon={Wheat}
-          delay={0.24}
-          onInfo={() => setInfoKey("carbs")}
-        />
-        <MacroCard
-          eaten={eaten.fat_g}
-          target={targets.fat_g}
-          unit="g"
-          label="שומן"
-          color={C_FATS}
-          icon={Droplet}
-          delay={0.3}
-          onInfo={() => setInfoKey("fat")}
-        />
-      </div>
 
       {/* ── NRC source line ── */}
       <div className="text-[10px] text-muted-foreground/60 text-center -mt-1">
