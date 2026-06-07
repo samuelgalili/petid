@@ -134,6 +134,7 @@ const MainShell = () => {
 
       {/* ═══ Bottom Navigation (always visible) ═══ */}
       <BottomNav />
+      <DailyTasksSheet />
     </div>
   );
 };
