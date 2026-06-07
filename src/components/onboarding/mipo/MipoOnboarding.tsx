@@ -19,6 +19,46 @@ import { supabase } from "@/integrations/supabase/client";
 import mipoLogo from "@/assets/mipo-logo.svg";
 import { cn } from "@/lib/utils";
 
+/**
+ * Remove near-white background from a generated avatar by alpha-keying
+ * white pixels via canvas. Returns a transparent PNG data URL.
+ * Uses a soft threshold + edge feather to avoid hard cutouts.
+ */
+async function removeWhiteBackground(src: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return reject(new Error("no ctx"));
+        ctx.drawImage(img, 0, 0);
+        const id = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const d = id.data;
+        for (let i = 0; i < d.length; i += 4) {
+          const r = d[i], g = d[i + 1], b = d[i + 2];
+          const min = Math.min(r, g, b);
+          // Treat near-white as background, feather edges between 230–250.
+          if (min >= 250) {
+            d[i + 3] = 0;
+          } else if (min >= 230) {
+            d[i + 3] = Math.round(((250 - min) / 20) * 255);
+          }
+        }
+        ctx.putImageData(id, 0, 0);
+        resolve(canvas.toDataURL("image/png"));
+      } catch (e) {
+        reject(e);
+      }
+    };
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
 type Step = "splash" | "photo" | "analyzing" | "avatar" | "details" | "auth" | "complete";
 
 interface PetDraft {
@@ -610,7 +650,8 @@ export const MipoOnboarding: React.FC<{ onComplete?: () => void }> = ({ onComple
       if (error) throw error;
       const url = (data as any)?.imageBase64;
       if (!url) throw new Error("No avatar returned");
-      setAvatarUrl(url);
+      const cleaned = await removeWhiteBackground(url).catch(() => url);
+      setAvatarUrl(cleaned);
     } catch (e) {
       console.error("generate-pet-avatar failed:", e);
       // graceful fallback — reuse the user's own photo
