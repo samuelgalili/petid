@@ -74,8 +74,8 @@ const AuroraRing: React.FC<{ size?: number }> = ({ size = 220 }) => (
       width: size,
       height: size,
       background:
-        "conic-gradient(from 0deg, rgba(255,176,136,0.0) 0deg, rgba(255,176,136,0.6) 60deg, rgba(255,122,168,0.6) 140deg, rgba(198,139,255,0.6) 220deg, rgba(91,208,240,0.6) 300deg, rgba(255,176,136,0.0) 360deg)",
-      filter: "blur(14px)",
+        "conic-gradient(from 0deg, rgba(255,176,136,0.0) 0deg, rgba(255,176,136,0.78) 60deg, rgba(255,122,168,0.78) 140deg, rgba(198,139,255,0.78) 220deg, rgba(91,208,240,0.78) 300deg, rgba(255,176,136,0.0) 360deg)",
+      filter: "blur(8px)",
     }}
   />
 );
