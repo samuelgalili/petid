@@ -757,7 +757,11 @@ export const PetCenterDashboard = ({
         const offset = C - (overall / 100) * C;
         const ringColor = scoreColor(overall);
         return (
-          <div className="flex items-center justify-between gap-2 w-full px-2" dir="rtl">
+          <div className="relative flex items-center justify-between gap-2 w-full px-2" dir="rtl">
+            {/* Aurora ambient glows */}
+            <div className="pointer-events-none absolute -top-10 -right-16 w-56 h-56 rounded-full opacity-30 blur-3xl" style={{ background: 'hsl(20 90% 60%)' }} aria-hidden />
+            <div className="pointer-events-none absolute top-1/3 -left-20 w-60 h-60 rounded-full opacity-25 blur-3xl" style={{ background: 'hsl(280 70% 60%)' }} aria-hidden />
+            <div className="pointer-events-none absolute -bottom-12 left-1/3 w-64 h-64 rounded-full opacity-20 blur-3xl" style={{ background: 'hsl(210 80% 60%)' }} aria-hidden />
             <BreedTraitCircles
               breed={pet.breed}
               weight={weight}
