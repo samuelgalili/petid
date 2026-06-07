@@ -65,8 +65,8 @@ const campaigns: AdCampaign[] = [
       en: 'Pet Insurance.\nReal coverage, accessible price.\nTap for a quote.'
     },
     feedCaption: {
-      he: 'הכי כואב זה לוותר על טיפול בגלל העלויות.\nעם PetID Insurance — חיית המחמד שלכם מקבלת כיסוי אמיתי.\nלחצו לקבלת הצעת מחיר מותאמת אישית.',
-      en: 'PetID Insurance — real protection for your pet.\nTap to get a personalized quote.'
+      he: 'הכי כואב זה לוותר על טיפול בגלל העלויות.\nעם Mipo Insurance — חיית המחמד שלכם מקבלת כיסוי אמיתי.\nלחצו לקבלת הצעת מחיר מותאמת אישית.',
+      en: 'Mipo Insurance — real protection for your pet.\nTap to get a personalized quote.'
     },
     imagePrompt: 'Cute golden retriever puppy sitting on pure white background, soft studio lighting, minimalistic premium aesthetic, professional pet photography'
   },
@@ -121,14 +121,14 @@ const campaigns: AdCampaign[] = [
       en: "Photo your dog → Exact breed in seconds."
     },
     feedCaption: {
-      he: 'לא בטוחים מה הגזע?\nעם PetID AI — תמונה אחת וזהו.\nנסו עכשיו.',
+      he: 'לא בטוחים מה הגזע?\nעם Mipo AI — תמונה אחת וזהו.\nנסו עכשיו.',
       en: "Upload a photo → Instantly get your dog's exact breed."
     },
     imagePrompt: 'Beautiful husky dog portrait on pure white background, majestic pose, soft studio lighting, minimalistic premium aesthetic'
   },
   {
     id: 'shop',
-    name: 'PetID Shop',
+    name: 'Mipo Shop',
     nameHe: 'חנות מוצרים לחיות מחמד',
     color: '#EF4444',
     image: petShopCat,
@@ -149,7 +149,7 @@ const campaigns: AdCampaign[] = [
       en: 'New deals + Fast delivery\nEarn points on every purchase.'
     },
     feedCaption: {
-      he: 'PetID Shop — החנות הרשמית למוצרים איכותיים לכלבים וחתולים.\nרק מוצרים מומלצים באמת.\nלחצו לרכישה.',
+      he: 'Mipo Shop — החנות הרשמית למוצרים איכותיים לכלבים וחתולים.\nרק מוצרים מומלצים באמת.\nלחצו לרכישה.',
       en: 'Premium pet shop.\nFast delivery + earn loyalty points on every order.'
     },
     imagePrompt: 'Cute British shorthair cat with premium pet accessories on pure white background, elegant pose, soft studio lighting'
@@ -161,8 +161,8 @@ const campaigns: AdCampaign[] = [
     color: '#EAB308',
     image: loyaltyClub,
     headline: {
-      he: 'מועדון הלקוחות של PetID — צוברים נקודות בכל קנייה',
-      en: 'PetID Loyalty Club — Earn points on every purchase'
+      he: 'מועדון הלקוחות של Mipo — צוברים נקודות בכל קנייה',
+      en: 'Mipo Loyalty Club — Earn points on every purchase'
     },
     subHeadline: {
       he: 'הנחות, קופונים, הטבות ומבצעים בלעדיים.',
@@ -173,18 +173,18 @@ const campaigns: AdCampaign[] = [
       en: 'Join Now'
     },
     storyText: {
-      he: 'מועדון PetID\nצברו נקודות בכל קנייה.\nהצטרפו עכשיו.',
-      en: 'PetID Club\nEarn points every purchase.\nJoin now.'
+      he: 'מועדון Mipo\nצברו נקודות בכל קנייה.\nהצטרפו עכשיו.',
+      en: 'Mipo Club\nEarn points every purchase.\nJoin now.'
     },
     feedCaption: {
-      he: 'מועדון הלקוחות הרשמי של PetID:\nצברו נקודות בכל קנייה, קופונים ייחודיים והפתעות חודשיות.\nהצטרפו עכשיו בלחיצה.',
-      en: 'Join the PetID Loyalty Club.\nEarn points on every purchase + exclusive rewards.'
+      he: 'מועדון הלקוחות הרשמי של Mipo:\nצברו נקודות בכל קנייה, קופונים ייחודיים והפתעות חודשיות.\nהצטרפו עכשיו בלחיצה.',
+      en: 'Join the Mipo Loyalty Club.\nEarn points on every purchase + exclusive rewards.'
     },
     imagePrompt: 'Happy corgi dog with joyful expression on pure white background, celebrating pose, soft studio lighting'
   }
 ];
 
-// PetID brand colors
+// Mipo brand colors
 const PETID_BLUE = '#1D4E89';
 const PETID_GOLD = '#F7BF00';
 
@@ -210,7 +210,7 @@ const AdCampaigns = () => {
   const downloadImage = () => {
     const link = document.createElement('a');
     link.href = campaign.image;
-    link.download = `petid-${campaign.id}-${format}-${language}.png`;
+    link.download = `mipo-${campaign.id}-${format}-${language}.png`;
     link.click();
     toast({
       title: language === 'he' ? 'התמונה הורדה!' : 'Image Downloaded!',
@@ -248,7 +248,7 @@ const AdCampaigns = () => {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold text-foreground">
-              PetID Ad Campaigns
+              Mipo Ad Campaigns
             </h1>
             <div className="flex items-center gap-2">
               <Button
@@ -346,8 +346,8 @@ const AdCampaigns = () => {
                   {/* Logo */}
                   <div className="flex justify-center mb-4">
                     <div className="flex items-center gap-1">
-                      <span className="text-2xl font-black" style={{ color: PETID_BLUE }}>Pet</span>
-                      <span className="text-2xl font-black" style={{ color: PETID_GOLD }}>ID</span>
+                      <span className="text-2xl font-black" style={{ color: PETID_BLUE }}>Mi</span>
+                      <span className="text-2xl font-black" style={{ color: PETID_GOLD }}>po</span>
                     </div>
                   </div>
 
