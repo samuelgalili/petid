@@ -19,7 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import mipoLogo from "@/assets/mipo-logo.svg";
 import { cn } from "@/lib/utils";
 
-type Step = "splash" | "photo" | "analyzing" | "avatar" | "details" | "complete";
+type Step = "splash" | "photo" | "analyzing" | "avatar" | "details" | "auth" | "complete";
 
 interface PetDraft {
   name: string;
