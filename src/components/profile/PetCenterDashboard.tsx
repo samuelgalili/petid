@@ -841,46 +841,6 @@ export const PetCenterDashboard = ({
           : "הוסיפו משקל כדי לקבל יעדים מדויקים"}
       </div>
 
-      {/* ── Recently logged ── */}
-      <div className="mt-2" id="recent-logs">
-        <div className="flex items-baseline justify-between mb-2 px-1">
-          <div className="text-[13px] font-bold text-foreground tracking-tight">
-            רישומים אחרונים
-          </div>
-          <button
-            type="button"
-            onClick={() => openSheet("timeline")}
-            className="text-[11px] text-muted-foreground/60 hover:text-foreground transition-colors"
-          >
-            הצג הכל
-          </button>
-        </div>
-        <div className="rounded-2xl bg-card border border-border/40 px-4 py-4 space-y-0">
-          <TimelineRow
-            kind="reminder"
-            title="האכלה — היום 09:00"
-            meta={
-              targets.kcal != null
-                ? `~${Math.round(targets.kcal / 2)} קק״ל`
-                : "ללא נתון"
-            }
-            accent={accent}
-          />
-          <TimelineRow
-            kind="vaccine"
-            title="חיסון משולש"
-            meta="בעוד 14 ימים"
-            accent={accent}
-          />
-          <TimelineRow
-            kind="weight"
-            title="שקילה חודשית"
-            meta="לפני שבוע · יציב"
-            accent={accent}
-            last
-          />
-        </div>
-      </div>
 
       {/* ── Metric Info Sheet ── */}
       <AnimatePresence>
