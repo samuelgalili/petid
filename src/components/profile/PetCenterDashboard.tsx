@@ -758,10 +758,8 @@ export const PetCenterDashboard = ({
         const ringColor = scoreColor(overall);
         return (
           <div className="relative flex items-center justify-between gap-2 w-full px-2" dir="rtl">
-            {/* Aurora ambient glows */}
-            <div className="pointer-events-none absolute -top-10 -right-16 w-56 h-56 rounded-full opacity-30 blur-3xl" style={{ background: 'hsl(20 90% 60%)' }} aria-hidden />
-            <div className="pointer-events-none absolute top-1/3 -left-20 w-60 h-60 rounded-full opacity-25 blur-3xl" style={{ background: 'hsl(280 70% 60%)' }} aria-hidden />
-            <div className="pointer-events-none absolute -bottom-12 left-1/3 w-64 h-64 rounded-full opacity-20 blur-3xl" style={{ background: 'hsl(210 80% 60%)' }} aria-hidden />
+            {/* Single soft aurora glow behind the avatar — keeps focus on the pet */}
+            <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full opacity-20 blur-3xl" style={{ background: 'radial-gradient(circle, hsl(20 90% 60%) 0%, hsl(280 70% 60%) 60%, transparent 100%)' }} aria-hidden />
             <BreedTraitCircles
               breed={pet.breed}
               weight={weight}
