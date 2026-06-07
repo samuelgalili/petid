@@ -1,18 +1,19 @@
 /**
- * Shared AI client — translates OpenAI-style requests to Google Gemini API.
- * Returns OpenAI-compatible responses so existing parsing code keeps working.
+ * Shared AI client — routes OpenAI-style requests through the
+ * Lovable AI Gateway (OpenAI-compatible). Uses LOVABLE_API_KEY.
+ * Returns OpenAI-shaped responses so existing parsing code keeps working.
  */
 
-const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 const MODEL_MAP: Record<string, string> = {
-  "google/gemini-2.5-flash": "gemini-2.5-flash",
-  "google/gemini-2.5-flash-lite": "gemini-2.0-flash-lite",
-  "google/gemini-3-flash-preview": "gemini-2.5-flash",
-  "google/gemini-3-pro-image-preview": "gemini-2.5-flash",
-  "gpt-4o": "gemini-2.5-flash",
-  "gpt-4o-mini": "gemini-2.0-flash-lite",
+  "gpt-4o": "google/gemini-2.5-flash",
+  "gpt-4o-mini": "google/gemini-2.5-flash-lite",
 };
+
+function mapModel(model: string): string {
+  return MODEL_MAP[model] || model;
+}
 
 interface OpenAIMessage {
   role: "system" | "user" | "assistant";
