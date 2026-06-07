@@ -29,6 +29,8 @@ interface Props {
   accent?: string;
   /** When set, renders the 8 traits as an absolute orbit ring around a parent (no card wrapper). */
   orbit?: { radius: number; size?: number };
+  /** When true, renders a compact vertical column (used beside the avatar). */
+  vertical?: boolean;
 }
 
 const SIZE_HE: Record<string, string> = {
@@ -151,6 +153,7 @@ export const BreedTraitCircles = ({
   kcalTarget,
   accent = "hsl(var(--primary))",
   orbit,
+  vertical,
 }: Props) => {
   const [info, setInfo] = useState<BreedRow | null>(null);
 
@@ -260,6 +263,20 @@ export const BreedTraitCircles = ({
           );
         })}
       </>
+    );
+  }
+
+  if (vertical) {
+    return (
+      <div
+        dir="rtl"
+        className="flex flex-col items-center gap-2 overflow-y-auto no-scrollbar py-1"
+        style={{ scrollbarWidth: "none", maxHeight: 280 }}
+      >
+        {items.map((it) => (
+          <Circle key={it.label} {...it} size={48} />
+        ))}
+      </div>
     );
   }
 
