@@ -734,7 +734,7 @@ export const PetCenterDashboard = ({
         const offset = C - (overall / 100) * C;
         const ringColor = scoreColor(overall);
         return (
-          <div className="flex items-center justify-center gap-2" dir="rtl">
+          <div className="flex items-center justify-center gap-1.5" dir="rtl">
             <BreedTraitCircles
               breed={pet.breed}
               weight={weight}
@@ -742,6 +742,36 @@ export const PetCenterDashboard = ({
               accent={accent}
               vertical
             />
+
+            {/* ── Breed-recommended actions vertical column ── */}
+            <div className="flex flex-col items-center gap-2 overflow-y-auto no-scrollbar py-1" style={{ scrollbarWidth: 'none', maxHeight: 280 }} aria-label="פעולות מומלצות לגזע">
+              {[
+                { key: "water", icon: GlassWater, label: "מים", color: "hsl(200 70% 55%)" },
+                { key: "activity", icon: Footprints, label: "פעילות", color: "hsl(30 80% 55%)" },
+                { key: "health", icon: HeartPulse, label: "בריאות", color: "hsl(0 70% 60%)" },
+                { key: "grooming", icon: Brush, label: "טיפוח", color: "hsl(280 60% 60%)" },
+              ].map((b) => (
+                <button
+                  key={b.key}
+                  type="button"
+                  onClick={() => openSheet(b.key)}
+                  aria-label={b.label}
+                  className="flex flex-col items-center shrink-0"
+                  style={{ width: 56 }}
+                >
+                  <div className="relative" style={{ width: 44, height: 44 }}>
+                    <svg width={44} height={44} viewBox="0 0 44 44" className="-rotate-90" aria-hidden>
+                      <circle cx={22} cy={22} r={18} fill="none" stroke="hsl(var(--muted))" strokeWidth={3} />
+                      <circle cx={22} cy={22} r={18} fill="none" stroke={b.color} strokeWidth={3} strokeLinecap="round" strokeDasharray={113} strokeDashoffset={28} />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <b.icon style={{ color: b.color, width: 14, height: 14 }} strokeWidth={2} />
+                    </div>
+                  </div>
+                  <div className="mt-1 text-[9px] text-muted-foreground/80 leading-tight text-center">{b.label}</div>
+                </button>
+              ))}
+            </div>
 
             {/* ── Weight + Vaccinations vertical column (other side of avatar) ── */}
             <div className="flex flex-col items-center gap-2 overflow-y-auto no-scrollbar py-1" style={{ scrollbarWidth: 'none', maxHeight: 280 }}>
@@ -901,46 +931,16 @@ export const PetCenterDashboard = ({
       </div>
 
 
-      {/* ── Floating Action Dock — 4 ghost icons + 1 CTA ── */}
-      <div className="mt-3 flex items-center justify-between gap-2 rounded-full border border-border/40 bg-card/80 backdrop-blur px-2 py-2">
-        {[
-          { key: "water", icon: GlassWater, label: "מים" },
-          { key: "activity", icon: Footprints, label: "פעילות" },
-        ].map((b) => (
-          <button
-            key={b.key}
-            type="button"
-            onClick={() => openSheet(b.key)}
-            aria-label={b.label}
-            className="w-11 h-11 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
-          >
-            <b.icon className="w-5 h-5" strokeWidth={2} />
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={() => openSheet("feed")}
-          className="flex-1 mx-1 h-12 rounded-full flex items-center justify-center gap-2 text-[14px] font-semibold text-primary-foreground shadow-lg"
-          style={{ background: accent, boxShadow: `0 8px 24px ${accent}55` }}
-        >
-          <Plus className="w-4 h-4" strokeWidth={2.5} />
-          האכלה
-        </button>
-        {[
-          { key: "health", icon: HeartPulse, label: "בריאות" },
-          { key: "grooming", icon: Brush, label: "טיפוח" },
-        ].map((b) => (
-          <button
-            key={b.key}
-            type="button"
-            onClick={() => openSheet(b.key)}
-            aria-label={b.label}
-            className="w-11 h-11 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
-          >
-            <b.icon className="w-5 h-5" strokeWidth={2} />
-          </button>
-        ))}
-      </div>
+      {/* ── Primary feeding CTA ── */}
+      <button
+        type="button"
+        onClick={() => openSheet("feed")}
+        className="mt-3 w-full h-12 rounded-full flex items-center justify-center gap-2 text-[14px] font-semibold text-primary-foreground shadow-lg"
+        style={{ background: accent, boxShadow: `0 8px 24px ${accent}55` }}
+      >
+        <Plus className="w-4 h-4" strokeWidth={2.5} />
+        האכלה
+      </button>
 
 
       {/* ── Metric Info Sheet ── */}
