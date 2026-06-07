@@ -12,6 +12,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { Plus } from "lucide-react";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 
 const HIDDEN_PREFIXES = [
@@ -47,7 +48,6 @@ export const AvatarCompanion = () => {
     setDraftAvatar(readDraftAvatar());
   }, [location.pathname]);
 
-  const avatarUrl = activePet?.avatar_url || draftAvatar;
   const name = activePet?.name || (() => {
     try { return JSON.parse(localStorage.getItem("mipo-pet-draft") || "{}")?.name; } catch { return null; }
   })();
@@ -67,11 +67,11 @@ export const AvatarCompanion = () => {
     [location.pathname, onboardingActive],
   );
 
-  if (hidden || !avatarUrl) return null;
+  if (hidden) return null;
 
   return (
     <motion.button
-      aria-label={name ? `Open chat with ${name}` : "Open chat"}
+      aria-label="הוסף"
       onClick={() => navigate("/chat")}
       initial={{ opacity: 0, y: 16, scale: 0.85 }}
       animate={{
@@ -85,13 +85,14 @@ export const AvatarCompanion = () => {
         y: { duration: 3.2, repeat: Infinity, ease: "easeInOut" },
       }}
       whileTap={{ scale: 0.92 }}
-      className="fixed z-[9997] right-4 bottom-[88px] w-14 h-14 rounded-full overflow-hidden bg-white"
+      className="fixed z-[9997] left-4 bottom-[88px] w-14 h-14 rounded-full flex items-center justify-center"
       style={{
+        background: "linear-gradient(135deg, #E77B6C 0%, #F3A85C 50%, #5BA8D9 100%)",
         boxShadow:
           "0 8px 20px -8px rgba(231,123,108,0.55), 0 10px 30px -10px rgba(91,168,217,0.45)",
       }}
     >
-      <img src={avatarUrl} alt={name || "pet"} className="w-full h-full object-cover" />
+      <Plus className="w-7 h-7 text-white" strokeWidth={2.6} />
     </motion.button>
   );
 };
