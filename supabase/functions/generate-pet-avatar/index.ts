@@ -6,6 +6,22 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+const jsonResponse = (payload: Record<string, unknown>, status = 200) =>
+  new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+const fallbackResponse = (reason: string, message = "Avatar generation is temporarily unavailable.") =>
+  jsonResponse({
+    success: true,
+    fallback: true,
+    ai_unavailable: true,
+    reason,
+    message,
+    imageBase64: null,
+  });
+
 /**
  * generate-pet-avatar
  * Input:  { imageBase64?: string, imageUrl?: string, breed?: string, petType?: 'dog'|'cat', name?: string }
@@ -51,7 +67,7 @@ Aspect 3:4 portrait, centered composition.`;
     const res = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        "Lovable-API-Key": apiKey,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
@@ -60,10 +76,21 @@ Aspect 3:4 portrait, centered composition.`;
     if (!res.ok) {
       const errTxt = await res.text();
       console.error("Gateway error:", res.status, errTxt);
-      return new Response(
-        JSON.stringify({ success: false, error: `Gateway ${res.status}: ${errTxt}` }),
-        { status: res.status, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+
+      const normalized = errTxt.toLowerCase();
+      if (res.status === 402 || normalized.includes("payment_required") || normalized.includes("not enough credits")) {
+        return fallbackResponse("payment_required", "AI credits are unavailable, using the uploaded photo instead.");
+      }
+
+      if (res.status === 429) {
+        return fallbackResponse("rate_limited", "Avatar generation is rate limited, using the uploaded photo instead.");
+      }
+
+      if (res.status >= 500) {
+        return fallbackResponse("gateway_unavailable", "Avatar generation is unavailable, using the uploaded photo instead.");
+      }
+
+      return jsonResponse({ success: false, error: `Gateway ${res.status}: ${errTxt}` }, res.status);
     }
 
     const data = await res.json();
@@ -79,9 +106,6 @@ Aspect 3:4 portrait, centered composition.`;
     );
   } catch (err: any) {
     console.error("generate-pet-avatar error:", err);
-    return new Response(
-      JSON.stringify({ success: false, error: err?.message || String(err) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return fallbackResponse("service_failed", err?.message || "Avatar generation failed, using the uploaded photo instead.");
   }
 });
