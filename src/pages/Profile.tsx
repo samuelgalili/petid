@@ -310,55 +310,7 @@ const Profile = () => {
                 exit={{ opacity: 0, y: 60 }}
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
               >
-                {/* ── Premium Pet Header ── */}
-                {selectedPet && (
-                  <motion.div
-                    className="flex items-center gap-3.5 py-4 mb-1"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.05, duration: 0.35 }}
-                  >
-                    {/* Pet Avatar — Large, clean */}
-                    <motion.div
-                      className="relative shrink-0"
-                      whileTap={{ scale: 0.93 }}
-                      onClick={triggerHeartRain}
-                    >
-                      <div className="w-14 h-14 rounded-2xl overflow-hidden bg-muted shadow-sm">
-                        {selectedPet.avatar_url ? (
-                          <img src={selectedPet.avatar_url} alt={selectedPet.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-muted">
-                            <img src={selectedPet.type === 'dog' ? dogIcon : catIcon} alt={selectedPet.type} className="w-7 h-7 opacity-50" />
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-
-                    {/* Pet Info */}
-                    <div className="flex-1 min-w-0">
-                      <h2 className="text-lg font-bold text-foreground tracking-tight truncate">
-                        {selectedPet.name}
-                      </h2>
-                      <p className="text-[13px] text-muted-foreground/60 truncate mt-0.5">
-                        {selectedPet.breed || (selectedPet.type === 'dog' ? 'כלב' : 'חתול')}
-                        {selectedPet.age_years ? ` · ${selectedPet.age_years} שנים` : ''}
-                      </p>
-                    </div>
-
-                    {/* Weather + Edit */}
-                    <div className="flex items-center gap-1">
-                      <PetWeatherAlert petType={selectedPet.type} petName={selectedPet.name} />
-                      <button
-                        onClick={() => navigate(`/edit-pet/${selectedPet.id}`)}
-                        className="p-2.5 rounded-xl hover:bg-muted/50 transition-colors"
-                        aria-label="ערוך"
-                      >
-                        <Edit3 className="w-4 h-4 text-muted-foreground/50" strokeWidth={1.5} />
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
+                {/* Pet header removed — avatar is rendered inside PetCenterDashboard */}
 
                 {/* Dashboard Tabs */}
                 {selectedPet && (
