@@ -347,23 +347,23 @@ export const PetCenterDashboard = ({
       {/* ── Hero Insight (Tier 1–5 ranked) ── */}
       <HeroInsight petId={pet.id} />
 
-      {/* ── Pet header: avatar + name + streak ── */}
-      <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-2.5">
+      {/* ── Pet header: centered avatar + name ── */}
+      <div className="flex flex-col items-center justify-center gap-2.5 px-1">
+        <div className="relative">
           <img
             src={pet.avatar_url || fallback}
             alt={pet.name}
-            className="w-9 h-9 rounded-full object-cover bg-muted"
+            className="w-16 h-16 rounded-full object-cover bg-muted border-2 border-border/40"
           />
-          <div className="text-[17px] font-bold text-foreground tracking-tight">
-            {pet.name}
+          <div className="absolute -bottom-1 -right-1 flex items-center gap-1 px-1.5 py-0.5 rounded-full border border-border/50 bg-card">
+            <Flame className="w-3 h-3" style={{ color: accent }} />
+            <span className="text-[10px] font-semibold text-foreground">
+              {targets.kcal != null ? Math.round(kcalPct) : 0}%
+            </span>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border/50 bg-card">
-          <Flame className="w-3.5 h-3.5" style={{ color: accent }} />
-          <span className="text-[12px] font-semibold text-foreground">
-            {targets.kcal != null ? Math.round(kcalPct) : 0}%
-          </span>
+        <div className="text-[17px] font-bold text-foreground tracking-tight">
+          {pet.name}
         </div>
       </div>
 
