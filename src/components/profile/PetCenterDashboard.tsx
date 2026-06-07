@@ -311,6 +311,66 @@ const TimelineRow = ({
 };
 
 /* ─────────────────────────────────────────────────────────── */
+/* ─── Daily care tasks ─── */
+type DailyTaskKey =
+  | "walk_morning"
+  | "walk_evening"
+  | "feed_morning"
+  | "feed_evening"
+  | "water"
+  | "health_check"
+  | "grooming"
+  | "play";
+
+const DAILY_TASKS: { key: DailyTaskKey; label: string; icon: typeof Footprints }[] = [
+  { key: "walk_morning", label: "הליכת בוקר", icon: Footprints },
+  { key: "feed_morning", label: "ארוחת בוקר", icon: UtensilsCrossed },
+  { key: "water", label: "מים נקיים", icon: GlassWater },
+  { key: "play", label: "משחק", icon: Sparkles },
+  { key: "walk_evening", label: "הליכת ערב", icon: Footprints },
+  { key: "feed_evening", label: "ארוחת ערב", icon: UtensilsCrossed },
+  { key: "grooming", label: "טיפוח / מברשת", icon: Brush },
+  { key: "health_check", label: "בדיקת בריאות", icon: HeartPulse },
+];
+
+/* MIPO score color: red <40, orange <75, green ≥75 */
+const scoreColor = (pct: number) => {
+  if (pct >= 75) return "hsl(142 70% 45%)";
+  if (pct >= 40) return "hsl(30 92% 55%)";
+  return "hsl(0 78% 58%)";
+};
+const scoreLabel = (pct: number) =>
+  pct >= 75 ? "מצוין" : pct >= 40 ? "בסדר" : "נמוך";
+
+const todayKey = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
+const useDailyTasks = (petId: string) => {
+  const storageKey = `petid:daily:${petId}:${todayKey()}`;
+  const [done, setDone] = useState<Record<string, boolean>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const raw = localStorage.getItem(storageKey);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(done));
+    } catch {}
+  }, [storageKey, done]);
+  const toggle = useCallback((key: string) => {
+    setDone((prev) => ({ ...prev, [key]: !prev[key] }));
+  }, []);
+  const completed = DAILY_TASKS.filter((t) => done[t.key]).length;
+  const pct = Math.round((completed / DAILY_TASKS.length) * 100);
+  return { done, toggle, completed, total: DAILY_TASKS.length, pct };
+};
+
 export const PetCenterDashboard = ({
   pet,
   accent = "hsl(var(--primary))",
