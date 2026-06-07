@@ -1,13 +1,9 @@
 import {
-  ShoppingBag,
   Sparkles,
   Plus,
+  Home,
   Dog,
   Cat,
-  Camera,
-  ScanLine,
-  FileText,
-  Brain,
   X,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -20,30 +16,11 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { usePetButtonAnimation, PetButtonOverlay } from "@/components/ui/PetButtonAnimations";
 import { useOverlayNav } from "@/contexts/OverlayNavContext";
-import { PetGuardianPanel } from "@/components/PetGuardianPanel";
 
 const navLabels = {
-  he: { feed: "פיד", shop: "חנות", chat: "AI", addPet: "הוסף חיית מחמד" },
-  en: { feed: "Feed", shop: "Shop", chat: "AI", addPet: "Add Pet" },
-  ar: { feed: "فيد", shop: "متجر", chat: "AI", addPet: "إضافة حيوان" },
-};
-
-const quickActions = {
-  he: [
-    { key: "scan-food", icon: ScanLine, label: "סריקת מזון", path: "/chat", color: "#4ECDC4" },
-    { key: "scan-doc", icon: FileText, label: "סריקת מסמך", path: "/chat", color: "#7C5CFC" },
-    { key: "post", icon: Camera, label: "פוסט", path: "/feed", color: "#FF6B8A" },
-  ],
-  en: [
-    { key: "scan-food", icon: ScanLine, label: "Scan Food", path: "/chat", color: "#4ECDC4" },
-    { key: "scan-doc", icon: FileText, label: "Scan Doc", path: "/chat", color: "#7C5CFC" },
-    { key: "post", icon: Camera, label: "Post", path: "/feed", color: "#FF6B8A" },
-  ],
-  ar: [
-    { key: "scan-food", icon: ScanLine, label: "مسح طعام", path: "/chat", color: "#4ECDC4" },
-    { key: "scan-doc", icon: FileText, label: "مسح مستند", path: "/chat", color: "#7C5CFC" },
-    { key: "post", icon: Camera, label: "نشر", path: "/feed", color: "#FF6B8A" },
-  ],
+  he: { feed: "פיד", chat: "שיחה", addPet: "הוסף חיית מחמד" },
+  en: { feed: "Feed", chat: "Chat", addPet: "Add Pet" },
+  ar: { feed: "فيد", chat: "محادثة", addPet: "إضافة حيوان" },
 };
 
 const BottomNav = () => {
@@ -52,14 +29,11 @@ const BottomNav = () => {
   const { language, direction } = useLanguage();
   const isRtl = direction === "rtl";
   const labels = navLabels[language] || navLabels.he;
-  const actions = quickActions[language] || quickActions.he;
   const { activePet, pets, switchPet: contextSwitchPet } = usePetPreference();
 
   const { openDashboard, closeDashboard, dashboardOpen } = useOverlayNav();
 
   const [showPetSwitcher, setShowPetSwitcher] = useState(false);
-  const [showQuickActions, setShowQuickActions] = useState(false);
-  const [showGuardian, setShowGuardian] = useState(false);
   const { activeAnim, triggerRandom } = usePetButtonAnimation();
 
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -126,89 +100,6 @@ const BottomNav = () => {
 
   return (
     <>
-      {/* ── Quick Actions Radial Menu ── */}
-      <AnimatePresence>
-        {showQuickActions && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[9997] bg-black/30 backdrop-blur-sm"
-              onClick={() => setShowQuickActions(false)}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.5, y: 30 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.5, y: 30 }}
-              transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              className="fixed bottom-[80px] inset-x-0 mx-auto w-fit z-[9999] flex items-end gap-4 px-6 py-4"
-            >
-              {/* Guardian button — first in the row */}
-              <motion.button
-                initial={{ opacity: 0, y: 20, scale: 0.7 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 20, scale: 0.7 }}
-                transition={{ delay: 0, type: "spring", stiffness: 500, damping: 25 }}
-                whileTap={{ scale: 0.85 }}
-                onClick={() => {
-                  setShowQuickActions(false);
-                  setShowGuardian(true);
-                }}
-                className="flex flex-col items-center gap-2"
-              >
-                <div
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg"
-                  style={{
-                    background: "linear-gradient(135deg, hsl(var(--primary) / 0.2), hsl(var(--primary) / 0.08))",
-                    border: "1.5px solid hsl(var(--primary) / 0.3)",
-                    backdropFilter: "blur(12px)",
-                  }}
-                >
-                  <Brain className="w-6 h-6 text-primary" strokeWidth={1.5} />
-                </div>
-                <span className="text-[11px] font-semibold text-white drop-shadow-md">
-                  {(language === "he" || language === "ar") ? "שומר" : "Guardian"}
-                </span>
-              </motion.button>
-
-              {actions.map((action, i) => {
-                const Icon = action.icon;
-                return (
-                  <motion.button
-                    key={action.key}
-                    initial={{ opacity: 0, y: 20, scale: 0.7 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 20, scale: 0.7 }}
-                    transition={{ delay: (i + 1) * 0.06, type: "spring", stiffness: 500, damping: 25 }}
-                    whileTap={{ scale: 0.85 }}
-                    onClick={() => {
-                      setShowQuickActions(false);
-                      navigate(action.path);
-                    }}
-                    className="flex flex-col items-center gap-2"
-                  >
-                    <div
-                      className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg"
-                      style={{
-                        background: `linear-gradient(135deg, ${action.color}30, ${action.color}15)`,
-                        border: `1.5px solid ${action.color}40`,
-                        backdropFilter: "blur(12px)",
-                      }}
-                    >
-                      <Icon className="w-6 h-6" style={{ color: action.color }} strokeWidth={1.5} />
-                    </div>
-                    <span className="text-[11px] font-semibold text-white drop-shadow-md">
-                      {action.label}
-                    </span>
-                  </motion.button>
-                );
-              })}
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
       {/* ── Pet Switcher (Long Press only) ── */}
       <AnimatePresence>
         {showPetSwitcher && (
@@ -280,54 +171,6 @@ const BottomNav = () => {
         )}
       </AnimatePresence>
 
-      {/* Floating FAB — Intelligence Hub: transforms + → Brain on expand */}
-      {!dashboardOpen && (
-        <motion.button
-          whileTap={{ scale: 0.85 }}
-          onClick={() => setShowQuickActions((v) => !v)}
-          className={cn(
-            "fixed z-[10000] w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md left-4 transition-all duration-300",
-            showQuickActions
-              ? "bg-primary/15 border-[1.5px] border-primary/40 shadow-[0_0_20px_hsl(var(--primary)/0.3)]"
-              : "bg-primary/10 border-[1.5px] border-primary/30"
-          )}
-          style={{ bottom: `calc(72px + env(safe-area-inset-bottom))` }}
-          aria-label="Intelligence Hub"
-        >
-          <AnimatePresence mode="wait">
-            {showQuickActions ? (
-              <motion.div
-                key="brain"
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                exit={{ scale: 0, rotate: 180 }}
-                transition={{ type: "spring", stiffness: 500, damping: 25 }}
-              >
-                <Brain className="w-5 h-5 text-primary" strokeWidth={2} />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="plus"
-                initial={{ scale: 0, rotate: 180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                exit={{ scale: 0, rotate: -180 }}
-                transition={{ type: "spring", stiffness: 500, damping: 25 }}
-              >
-                <Plus className="w-5 h-5 text-primary" strokeWidth={2} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-          {/* Subtle pulse ring when closed */}
-          {!showQuickActions && (
-            <motion.div
-              className="absolute inset-0 rounded-full border border-primary/20"
-              animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
-              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-            />
-          )}
-        </motion.button>
-      )}
-
       {/* ── Bottom Navigation Bar ── */}
       <nav
         className={cn(
@@ -395,24 +238,21 @@ const BottomNav = () => {
             </span>
           </div>
 
-          {/* Shop */}
+          {/* Feed */}
           <NavButton
-            onClick={() => handleNavClick("/shop")}
-            active={isActive("/shop")}
-            label={labels.shop}
+            onClick={() => handleNavClick("/feed")}
+            active={isActive("/feed")}
+            label={labels.feed}
             accent={petAccent}
           >
-            <ShoppingBag
-              className={cn("w-[22px] h-[22px] transition-colors", !isActive("/shop") && "text-muted-foreground")}
-              style={isActive("/shop") ? { color: petAccent || "hsl(var(--primary))" } : undefined}
-              strokeWidth={isActive("/shop") ? 2.2 : 1.5}
+            <Home
+              className={cn("w-[22px] h-[22px] transition-colors", !isActive("/feed") && "text-muted-foreground")}
+              style={isActive("/feed") ? { color: petAccent || "hsl(var(--primary))" } : undefined}
+              strokeWidth={isActive("/feed") ? 2.2 : 1.5}
             />
           </NavButton>
         </div>
       </nav>
-
-      {/* Pet Guardian Panel */}
-      <PetGuardianPanel isOpen={showGuardian} onClose={() => setShowGuardian(false)} />
     </>
   );
 };
