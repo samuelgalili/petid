@@ -418,32 +418,6 @@ export const PetCenterDashboard = ({
       {/* ── Hero Insight (Tier 1–5 ranked) ── */}
       <HeroInsight petId={pet.id} />
 
-      {/* ── Pet header: centered avatar + name ── */}
-      <div className="flex flex-col items-center justify-center gap-2.5 px-1">
-        <div className="relative">
-          <motion.div
-            key={daily.pct}
-            initial={{ scale: 0.96 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.35, ease: "easeOut" }}
-            className="rounded-full p-[3px]"
-            style={{
-              background: dailyColor,
-              boxShadow: `0 0 0 4px ${dailyColor}22, 0 6px 18px ${dailyColor}33`,
-            }}
-          >
-            <img
-              src={pet.avatar_url || fallback}
-              alt={pet.name}
-              className="w-16 h-16 rounded-full object-cover bg-muted block"
-            />
-          </motion.div>
-        </div>
-        <div className="text-[17px] font-bold text-foreground tracking-tight">
-          {pet.name}
-        </div>
-      </div>
-
       {/* ── Week strip ── */}
       <div className="flex items-center justify-between rounded-2xl bg-card border border-border/40 px-2 py-2.5">
         {week.map((d, i) => (
