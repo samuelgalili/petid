@@ -559,6 +559,7 @@ export const MipoOnboarding: React.FC<{ onComplete?: () => void }> = ({ onComple
   const [petType, setPetType] = useState<"dog" | "cat">("dog");
   const [generating, setGenerating] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string>("");
+  const [petName, setPetName] = useState<string>("");
 
   /* ── detect breed via edge function ── */
   const detectBreed = useCallback(async (dataUrl: string) => {
@@ -628,7 +629,8 @@ export const MipoOnboarding: React.FC<{ onComplete?: () => void }> = ({ onComple
     try {
       localStorage.setItem("mipo-pet-draft", JSON.stringify(draft));
     } catch {}
-    setStep("complete");
+    setPetName(form.name);
+    setStep("auth");
   };
 
   const finish = () => {
@@ -675,6 +677,14 @@ export const MipoOnboarding: React.FC<{ onComplete?: () => void }> = ({ onComple
             initial={{ breed, petType }}
             onSave={handleDetailsSave}
             onBack={() => setStep("avatar")}
+          />
+        )}
+        {step === "auth" && (
+          <AuthStep
+            avatarUrl={avatarUrl}
+            petName={petName}
+            onAuthed={() => setStep("complete")}
+            onBack={() => setStep("details")}
           />
         )}
         {step === "complete" && (
