@@ -784,7 +784,7 @@ export const PetCenterDashboard = ({
                   className="flex flex-col items-center shrink-0"
                   style={{ width: 56 }}
                 >
-                  <div className="relative rounded-full bg-card/50 backdrop-blur-xl border border-border/40 shadow-sm" style={{ width: 44, height: 44 }}>
+                  <div className="relative rounded-full bg-card/30 border border-border/20" style={{ width: 44, height: 44 }}>
                     <svg width={44} height={44} viewBox="0 0 44 44" className="-rotate-90" aria-hidden>
                       <circle cx={22} cy={22} r={18} fill="none" stroke="hsl(var(--muted))" strokeWidth={3} />
                       <circle cx={22} cy={22} r={18} fill="none" stroke={b.color} strokeWidth={3} strokeLinecap="round" strokeDasharray={113} strokeDashoffset={28} />
@@ -895,7 +895,7 @@ export const PetCenterDashboard = ({
                 className="flex flex-col items-center shrink-0"
                 style={{ width: 62 }}
               >
-                <div className="relative rounded-full bg-card/50 backdrop-blur-xl border border-border/40 shadow-sm" style={{ width: 48, height: 48 }}>
+                <div className="relative rounded-full bg-card/30 border border-border/20" style={{ width: 48, height: 48 }}>
                   <svg width={48} height={48} viewBox="0 0 48 48" className="-rotate-90" aria-hidden>
                     <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(var(--muted))" strokeWidth={4} />
                     <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(35 88% 58%)" strokeWidth={4} strokeLinecap="round" strokeDasharray={125.6} strokeDashoffset={125.6 - ((energyLevel ?? 0) / 5) * 125.6} />
@@ -917,7 +917,7 @@ export const PetCenterDashboard = ({
                 className="flex flex-col items-center shrink-0"
                 style={{ width: 62 }}
               >
-                <div className="relative rounded-full bg-card/50 backdrop-blur-xl border border-border/40 shadow-sm" style={{ width: 48, height: 48 }}>
+                <div className="relative rounded-full bg-card/30 border border-border/20" style={{ width: 48, height: 48 }}>
                   <svg width={48} height={48} viewBox="0 0 48 48" className="-rotate-90" aria-hidden>
                     <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(var(--muted))" strokeWidth={4} />
                     <circle cx={24} cy={24} r={20} fill="none" stroke={accent} strokeWidth={4} strokeLinecap="round" strokeDasharray={125.6} strokeDashoffset={weight ? 125.6 - ((Math.min(100, weight / 50 * 100)) / 100) * 125.6 : 125.6} />
@@ -939,7 +939,7 @@ export const PetCenterDashboard = ({
                 className="flex flex-col items-center shrink-0"
                 style={{ width: 62 }}
               >
-                <div className="relative rounded-full bg-card/50 backdrop-blur-xl border border-border/40 shadow-sm" style={{ width: 48, height: 48 }}>
+                <div className="relative rounded-full bg-card/30 border border-border/20" style={{ width: 48, height: 48 }}>
                   <svg width={48} height={48} viewBox="0 0 48 48" className="-rotate-90" aria-hidden>
                     <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(var(--muted))" strokeWidth={4} />
                     <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(150 55% 50%)" strokeWidth={4} strokeLinecap="round" strokeDasharray={125.6} strokeDashoffset={31.4} />
