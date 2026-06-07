@@ -721,7 +721,7 @@ export const PetCenterDashboard = ({
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.1, duration: 0.5, ease: "easeOut" }}
         className="relative mx-auto"
-        style={{ width: 320, height: 320 }}
+        style={{ width: 360, height: 360 }}
       >
         {/* Breed traits orbiting outside the nutrient gauges */}
         <BreedTraitCircles
@@ -729,7 +729,7 @@ export const PetCenterDashboard = ({
           weight={weight}
           kcalTarget={targets.kcal}
           accent={accent}
-          orbit={{ radius: 168, size: 44 }}
+          orbit={{ radius: 188, size: 40 }}
         />
         {/* Glow behind avatar */}
         <div
@@ -764,7 +764,7 @@ export const PetCenterDashboard = ({
             <img
               src={dobermanAsset.url}
               alt={pet.name}
-              className="w-[132px] h-[132px] rounded-full object-contain bg-muted block"
+              className="w-[240px] h-[240px] rounded-full object-contain bg-muted block"
             />
           </motion.div>
         </div>
