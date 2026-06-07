@@ -786,7 +786,7 @@ export const PetCenterDashboard = ({
                   className="flex flex-col items-center shrink-0"
                   style={{ width: 56 }}
                 >
-                  <div className="relative" style={{ width: 44, height: 44 }}>
+                  <div className="relative rounded-full bg-card/50 backdrop-blur-xl border border-border/40 shadow-sm" style={{ width: 44, height: 44 }}>
                     <svg width={44} height={44} viewBox="0 0 44 44" className="-rotate-90" aria-hidden>
                       <circle cx={22} cy={22} r={18} fill="none" stroke="hsl(var(--muted))" strokeWidth={3} />
                       <circle cx={22} cy={22} r={18} fill="none" stroke={b.color} strokeWidth={3} strokeLinecap="round" strokeDasharray={113} strokeDashoffset={28} />
