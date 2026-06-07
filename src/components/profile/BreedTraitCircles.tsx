@@ -181,13 +181,6 @@ export const BreedTraitCircles = ({
 
   const items = [
     {
-      icon: Weight,
-      label: "משקל",
-      value: weight != null ? `${weight} ק״ג` : "—",
-      pct: weight ? Math.min(100, (weight / 50) * 100) : 0,
-      color: "hsl(205 80% 58%)",
-    },
-    {
       icon: Zap,
       label: "אנרגיה",
       value: lvl(info?.energy_level),
