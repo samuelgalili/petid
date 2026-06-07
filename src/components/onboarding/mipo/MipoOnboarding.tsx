@@ -228,9 +228,11 @@ const AvatarStep: React.FC<{
               initial={{ opacity: 0, scale: 0.6 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 1.1, duration: 0.6, ease: "easeOut" }}
-              className="absolute inset-0 flex items-center justify-center"
+              className="absolute inset-0 flex items-center justify-center pointer-events-none"
             >
-              <AuroraRing size={280} />
+              <div className="relative w-[210px] h-[210px]">
+                <AuroraRing size={210} />
+              </div>
             </motion.div>
             <motion.img
               initial={{ x: -220, y: 6, opacity: 0, scale: 0.85, rotate: -4 }}
