@@ -291,7 +291,7 @@ const DayPill = ({
   pct: number;
   accent: string;
 }) => {
-  const size = 36;
+  const size = 40;
   const stroke = 2.5;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
@@ -300,15 +300,14 @@ const DayPill = ({
   const ringColor = isFuture
     ? "hsl(var(--muted-foreground) / 0.25)"
     : accent;
+  // Alternate between day-of-week and date number inside the circle
+  const [showDow, setShowDow] = useState(true);
+  useEffect(() => {
+    const id = setInterval(() => setShowDow((v) => !v), 2200);
+    return () => clearInterval(id);
+  }, []);
   return (
-    <div className="flex flex-col items-center gap-1 flex-1 min-w-0">
-      <span
-        className={`text-[10px] font-medium ${
-          isToday ? "text-foreground" : "text-muted-foreground/70"
-        }`}
-      >
-        {dow}
-      </span>
+    <div className="flex flex-col items-center flex-1 min-w-0">
       <div
         className="relative flex items-center justify-center"
         style={{ width: size, height: size }}
@@ -337,13 +336,20 @@ const DayPill = ({
             />
           )}
         </svg>
-        <span
-          className={`absolute text-[12px] font-semibold ${
-            isToday ? "text-foreground" : "text-muted-foreground"
-          }`}
-        >
-          {date}
-        </span>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.span
+            key={showDow ? `dow-${dow}` : `date-${date}`}
+            initial={{ opacity: 0, y: 6, scale: 0.85 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.85 }}
+            transition={{ duration: 0.28, ease: "easeOut" }}
+            className={`absolute font-semibold tabular-nums ${
+              showDow ? "text-[11px]" : "text-[13px]"
+            } ${isToday ? "text-foreground" : "text-muted-foreground"}`}
+          >
+            {showDow ? dow : date}
+          </motion.span>
+        </AnimatePresence>
       </div>
     </div>
   );
