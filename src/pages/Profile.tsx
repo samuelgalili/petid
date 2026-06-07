@@ -61,6 +61,7 @@ const Profile = () => {
   const [healthBreakdownOpen, setHealthBreakdownOpen] = useState(false);
   const [showEmergencyHub, setShowEmergencyHub] = useState(false);
   const [heartRainActive, setHeartRainActive] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
