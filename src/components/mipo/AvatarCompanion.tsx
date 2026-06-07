@@ -69,14 +69,18 @@ export const AvatarCompanion = () => {
         y: { duration: 3.2, repeat: Infinity, ease: "easeInOut" },
       }}
       whileTap={{ scale: 0.92 }}
-      className="fixed z-[9997] left-4 bottom-[88px] w-14 h-14 rounded-full flex items-center justify-center border-2 border-white/60"
-      style={{
-        background: "linear-gradient(135deg, #E77B6C 0%, #F3A85C 50%, #5BA8D9 100%)",
-        boxShadow:
-          "0 8px 20px -8px rgba(231,123,108,0.55), 0 10px 30px -10px rgba(91,168,217,0.45)",
-      }}
+      className="fixed z-[9997] left-4 bottom-[88px] w-14 h-14 rounded-full flex items-center justify-center border-2 border-white/20 bg-white/90 backdrop-blur-sm"
     >
-      <Plus className="w-7 h-7 text-white" strokeWidth={2.6} />
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="plusGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#E77B6C" />
+            <stop offset="50%" stopColor="#F3A85C" />
+            <stop offset="100%" stopColor="#5BA8D9" />
+          </linearGradient>
+        </defs>
+        <path d="M12 5v14M5 12h14" stroke="url(#plusGradient)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
     </motion.button>
   );
 };
