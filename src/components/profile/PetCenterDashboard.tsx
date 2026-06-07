@@ -973,10 +973,14 @@ export const PetCenterDashboard = ({
       })()}
 
       {/* ── NRC source line ── */}
-      <div className="text-[10px] text-muted-foreground/60 text-center -mt-1">
-        {weight
-          ? `יעדים מבוססי NRC 2006 · משקל ${weight}kg`
-          : "הוסיפו משקל כדי לקבל יעדים מדויקים"}
+      <div className="mt-2 flex justify-center">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-card/40 border border-border/30 backdrop-blur-md">
+          <span className="h-[1px] w-4 bg-gradient-to-r from-transparent via-foreground/40 to-transparent" />
+          <span className="text-[10px] tracking-[0.15em] text-muted-foreground/80 font-medium" dir="auto" style={{ unicodeBidi: 'plaintext' }}>
+            {weight ? `NRC 2006 · ${weight}KG` : 'הוסיפו משקל ליעדים מדויקים'}
+          </span>
+          <span className="h-[1px] w-4 bg-gradient-to-r from-transparent via-foreground/40 to-transparent" />
+        </div>
       </div>
 
 
