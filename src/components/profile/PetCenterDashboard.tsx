@@ -900,45 +900,6 @@ export const PetCenterDashboard = ({
           : "הוסיפו משקל כדי לקבל יעדים מדויקים"}
       </div>
 
-      {/* ── Quick info tiles: Weight + Vaccinations ── */}
-      <div className="grid grid-cols-2 gap-2 mt-2">
-        <button
-          type="button"
-          onClick={() => openSheet("weight")}
-          className="flex items-center gap-3 rounded-2xl border border-border/40 bg-card px-3 py-3 text-right hover:border-border/70 transition-colors"
-        >
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: `${accent}1a`, color: accent }}
-          >
-            <Weight className="w-5 h-5" strokeWidth={2} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[11px] text-muted-foreground/70">משקל</div>
-            <div className="text-[15px] font-bold text-foreground leading-tight" dir="auto">
-              {weight ? `${weight} ק״ג` : "הוסיפו"}
-            </div>
-          </div>
-        </button>
-        <button
-          type="button"
-          onClick={() => openSheet("vaccines")}
-          className="flex items-center gap-3 rounded-2xl border border-border/40 bg-card px-3 py-3 text-right hover:border-border/70 transition-colors"
-        >
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: "hsl(150 55% 50% / 0.14)", color: "hsl(150 55% 45%)" }}
-          >
-            <Syringe className="w-5 h-5" strokeWidth={2} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[11px] text-muted-foreground/70">חיסונים</div>
-            <div className="text-[15px] font-bold text-foreground leading-tight">
-              עדכניים
-            </div>
-          </div>
-        </button>
-      </div>
 
       {/* ── Floating Action Dock — 4 ghost icons + 1 CTA ── */}
       <div className="mt-3 flex items-center justify-between gap-2 rounded-full border border-border/40 bg-card/80 backdrop-blur px-2 py-2">
