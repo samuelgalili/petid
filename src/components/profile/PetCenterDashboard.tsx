@@ -311,9 +311,16 @@ const DayPill = ({
   return (
     <div className="flex flex-col items-center flex-1 min-w-0">
       <div
-        className="relative flex items-center justify-center"
+        className={`relative flex items-center justify-center rounded-full ${isToday ? 'shadow-[0_4px_20px_-4px_hsl(var(--primary)/0.6)]' : ''}`}
         style={{ width: size, height: size }}
       >
+        {isToday && (
+          <div
+            className="absolute inset-1 rounded-full opacity-90"
+            style={{ background: 'conic-gradient(from 140deg, #FF9A6C, #FF7BAC, #C58BFA, #6BB8FF, #FF9A6C)' }}
+            aria-hidden
+          />
+        )}
         <svg width={size} height={size} className="-rotate-90" aria-hidden>
           <circle
             cx={size / 2}
@@ -345,9 +352,9 @@ const DayPill = ({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.85 }}
             transition={{ duration: 0.28, ease: "easeOut" }}
-            className={`absolute font-semibold tabular-nums ${
+            className={`absolute font-bold tabular-nums z-10 ${
               showDow ? "text-[11px]" : "text-[13px]"
-            } ${isToday ? "text-foreground" : "text-muted-foreground"}`}
+            } ${isToday ? "text-white drop-shadow" : isFuture ? "text-muted-foreground/50" : "text-muted-foreground"}`}
           >
             {showDow ? dow : date}
           </motion.span>
@@ -584,7 +591,7 @@ export const PetCenterDashboard = ({
       <HeroInsight petId={pet.id} />
 
       {/* ── Week strip ── */}
-      <div className="flex items-center justify-between rounded-2xl bg-card border border-border/40 px-2 py-2.5">
+      <div className="flex items-center justify-between rounded-3xl bg-card/60 backdrop-blur-xl border border-border/30 px-3 py-3 shadow-sm">
         {week.map((d, i) => (
           <DayPill
             key={i}
@@ -750,7 +757,11 @@ export const PetCenterDashboard = ({
         const offset = C - (overall / 100) * C;
         const ringColor = scoreColor(overall);
         return (
-          <div className="flex items-center justify-between gap-2 w-full px-2" dir="rtl">
+          <div className="relative flex items-center justify-between gap-2 w-full px-2" dir="rtl">
+            {/* Aurora ambient glows */}
+            <div className="pointer-events-none absolute -top-10 -right-16 w-56 h-56 rounded-full opacity-30 blur-3xl" style={{ background: 'hsl(20 90% 60%)' }} aria-hidden />
+            <div className="pointer-events-none absolute top-1/3 -left-20 w-60 h-60 rounded-full opacity-25 blur-3xl" style={{ background: 'hsl(280 70% 60%)' }} aria-hidden />
+            <div className="pointer-events-none absolute -bottom-12 left-1/3 w-64 h-64 rounded-full opacity-20 blur-3xl" style={{ background: 'hsl(210 80% 60%)' }} aria-hidden />
             <BreedTraitCircles
               breed={pet.breed}
               weight={weight}
@@ -775,7 +786,7 @@ export const PetCenterDashboard = ({
                   className="flex flex-col items-center shrink-0"
                   style={{ width: 56 }}
                 >
-                  <div className="relative" style={{ width: 44, height: 44 }}>
+                  <div className="relative rounded-full bg-card/50 backdrop-blur-xl border border-border/40 shadow-sm" style={{ width: 44, height: 44 }}>
                     <svg width={44} height={44} viewBox="0 0 44 44" className="-rotate-90" aria-hidden>
                       <circle cx={22} cy={22} r={18} fill="none" stroke="hsl(var(--muted))" strokeWidth={3} />
                       <circle cx={22} cy={22} r={18} fill="none" stroke={b.color} strokeWidth={3} strokeLinecap="round" strokeDasharray={113} strokeDashoffset={28} />
@@ -900,7 +911,7 @@ export const PetCenterDashboard = ({
                 className="flex flex-col items-center shrink-0"
                 style={{ width: 62 }}
               >
-                <div className="relative" style={{ width: 48, height: 48 }}>
+                <div className="relative rounded-full bg-card/50 backdrop-blur-xl border border-border/40 shadow-sm" style={{ width: 48, height: 48 }}>
                   <svg width={48} height={48} viewBox="0 0 48 48" className="-rotate-90" aria-hidden>
                     <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(var(--muted))" strokeWidth={4} />
                     <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(35 88% 58%)" strokeWidth={4} strokeLinecap="round" strokeDasharray={125.6} strokeDashoffset={125.6 - ((energyLevel ?? 0) / 5) * 125.6} />
@@ -922,7 +933,7 @@ export const PetCenterDashboard = ({
                 className="flex flex-col items-center shrink-0"
                 style={{ width: 62 }}
               >
-                <div className="relative" style={{ width: 48, height: 48 }}>
+                <div className="relative rounded-full bg-card/50 backdrop-blur-xl border border-border/40 shadow-sm" style={{ width: 48, height: 48 }}>
                   <svg width={48} height={48} viewBox="0 0 48 48" className="-rotate-90" aria-hidden>
                     <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(var(--muted))" strokeWidth={4} />
                     <circle cx={24} cy={24} r={20} fill="none" stroke={accent} strokeWidth={4} strokeLinecap="round" strokeDasharray={125.6} strokeDashoffset={weight ? 125.6 - ((Math.min(100, weight / 50 * 100)) / 100) * 125.6 : 125.6} />
@@ -944,7 +955,7 @@ export const PetCenterDashboard = ({
                 className="flex flex-col items-center shrink-0"
                 style={{ width: 62 }}
               >
-                <div className="relative" style={{ width: 48, height: 48 }}>
+                <div className="relative rounded-full bg-card/50 backdrop-blur-xl border border-border/40 shadow-sm" style={{ width: 48, height: 48 }}>
                   <svg width={48} height={48} viewBox="0 0 48 48" className="-rotate-90" aria-hidden>
                     <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(var(--muted))" strokeWidth={4} />
                     <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(150 55% 50%)" strokeWidth={4} strokeLinecap="round" strokeDasharray={125.6} strokeDashoffset={31.4} />
@@ -962,10 +973,14 @@ export const PetCenterDashboard = ({
       })()}
 
       {/* ── NRC source line ── */}
-      <div className="text-[10px] text-muted-foreground/60 text-center -mt-1">
-        {weight
-          ? `יעדים מבוססי NRC 2006 · משקל ${weight}kg`
-          : "הוסיפו משקל כדי לקבל יעדים מדויקים"}
+      <div className="mt-2 flex justify-center">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-card/40 border border-border/30 backdrop-blur-md">
+          <span className="h-[1px] w-4 bg-gradient-to-r from-transparent via-foreground/40 to-transparent" />
+          <span className="text-[10px] tracking-[0.15em] text-muted-foreground/80 font-medium" dir="auto" style={{ unicodeBidi: 'plaintext' }}>
+            {weight ? `NRC 2006 · ${weight}KG` : 'הוסיפו משקל ליעדים מדויקים'}
+          </span>
+          <span className="h-[1px] w-4 bg-gradient-to-r from-transparent via-foreground/40 to-transparent" />
+        </div>
       </div>
 
 
