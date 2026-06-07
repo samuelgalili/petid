@@ -24,6 +24,7 @@ import { PetVaultDrawer } from "@/components/pet-services/PetVaultDrawer";
 import { SmartRecommendationSheet } from "@/components/pet-services/SmartRecommendationSheet";
 import { HealthScoreBreakdown } from "@/components/profile/HealthScoreBreakdown";
 import { PetDashboardTabs } from "@/components/profile/PetDashboardTabs";
+import { PetCenterDashboard } from "@/components/profile/PetCenterDashboard";
 import { HeartRain } from "@/components/profile/HeartRain";
 import { haptic } from "@/lib/haptics";
 
@@ -361,16 +362,9 @@ const Profile = () => {
 
                 {/* Dashboard Tabs */}
                 {selectedPet && (
-                  <PetDashboardTabs
-                    selectedPet={selectedPet}
-                    healthRefreshKey={healthRefreshKey}
-                    onViewHealthDetails={() => setHealthBreakdownOpen(true)}
-                    triggerHealthRefresh={triggerHealthRefresh}
-                    onOpenSmartRec={(cat) => setSmartRecCategory(cat)}
-                    onOpenInsurance={() => setActiveSheet('insurance')}
-                    onOpenPetShop={() => setShowPetShop(true)}
-                    onOpenSheet={(id) => handleCategoryClick(id)}
-                    onOpenEmergency={() => setShowEmergencyHub(true)}
+                  <PetCenterDashboard
+                    pet={{ ...selectedPet, ...(globalActivePet || {}) } as any}
+                    accent={globalActivePet?.theme_color || undefined}
                   />
                 )}
               </motion.div>
