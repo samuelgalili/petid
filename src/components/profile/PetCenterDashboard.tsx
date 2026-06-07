@@ -738,16 +738,32 @@ export const PetCenterDashboard = ({
             style={{ width: SIZE, height: SIZE }}
             aria-label={`יעד יומי ${overall}%`}
           >
-            {/* Soft glow */}
+            {/* MIPO brand glow halo */}
             <div
               className="absolute inset-0 pointer-events-none rounded-full"
               aria-hidden
               style={{
-                background: `radial-gradient(circle at 50% 50%, ${accent}26 0%, transparent 60%)`,
-                filter: "blur(4px)",
+                background:
+                  "conic-gradient(from 0deg, #FF9A6C, #FF7BAC, #C58BFA, #6BB8FF, #6BE0E0, #FF9A6C)",
+                filter: "blur(22px)",
+                opacity: 0.55,
               }}
             />
-            {/* Single daily-goal ring */}
+            {/* Slow shimmer rotation */}
+            <motion.div
+              className="absolute inset-0 pointer-events-none rounded-full"
+              aria-hidden
+              animate={{ rotate: 360 }}
+              transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
+              style={{
+                background:
+                  "conic-gradient(from 0deg, transparent 0deg, rgba(255,255,255,0.35) 60deg, transparent 140deg, rgba(255,255,255,0.25) 220deg, transparent 360deg)",
+                filter: "blur(10px)",
+                mixBlendMode: "screen",
+                opacity: 0.7,
+              }}
+            />
+            {/* Single daily-goal ring with MIPO gradient */}
             <svg
               width={SIZE}
               height={SIZE}
@@ -755,12 +771,27 @@ export const PetCenterDashboard = ({
               className="absolute inset-0 -rotate-90"
               aria-hidden
             >
+              <defs>
+                <linearGradient id="mipoRing" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#FF9A6C" />
+                  <stop offset="35%" stopColor="#FF7BAC" />
+                  <stop offset="70%" stopColor="#C58BFA" />
+                  <stop offset="100%" stopColor="#6BB8FF" />
+                </linearGradient>
+                <filter id="mipoGlow" x="-30%" y="-30%" width="160%" height="160%">
+                  <feGaussianBlur stdDeviation="4" result="b" />
+                  <feMerge>
+                    <feMergeNode in="b" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
               <circle
                 cx={SIZE / 2}
                 cy={SIZE / 2}
                 r={R}
                 fill="none"
-                stroke="hsl(var(--muted) / 0.5)"
+                stroke="hsl(var(--muted) / 0.4)"
                 strokeWidth={STROKE}
               />
               <motion.circle
@@ -768,10 +799,11 @@ export const PetCenterDashboard = ({
                 cy={SIZE / 2}
                 r={R}
                 fill="none"
-                stroke={ringColor}
+                stroke="url(#mipoRing)"
                 strokeWidth={STROKE}
                 strokeLinecap="round"
                 strokeDasharray={C}
+                filter="url(#mipoGlow)"
                 initial={{ strokeDashoffset: C }}
                 animate={{ strokeDashoffset: offset }}
                 transition={{ duration: 0.9, ease: "easeOut" }}
