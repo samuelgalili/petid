@@ -18,6 +18,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { ProfileSkeleton } from "@/components/profile/ProfileSkeleton";
 import { PetShopView } from "@/components/profile/PetShopView";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { PetWeatherAlert } from "@/components/profile/PetWeatherAlert";
 import { InsuranceSheet, TrainingSheet, GroomingSheet, BoardingSheet, BreedInfoSheet, FoodSheet, ToysSheet, DogWalkerSheet, ProductsSheet, EnergySheet, GroomingProductsSheet, FeedingSheet, MemorialSheet, ComingSoonSheet } from "@/components/pet-services";
 import { PetVaultDrawer } from "@/components/pet-services/PetVaultDrawer";
