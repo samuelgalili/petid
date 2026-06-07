@@ -226,6 +226,54 @@ const FlipGauge = ({
 };
 
 /* ─── Day pill with ring around the number ─── */
+
+/* ─── Orbit Gauge: borderless flipping ring used around the avatar ─── */
+const OrbitGauge = ({
+  pct,
+  color,
+  icon,
+  eaten,
+  target,
+  unit,
+  label,
+  onClick,
+}: {
+  pct: number;
+  color: string;
+  icon: typeof Drumstick;
+  eaten: number | null;
+  target: number | null;
+  unit: string;
+  label: string;
+  onClick: () => void;
+}) => {
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <FlipGauge
+        pct={pct}
+        size={64}
+        stroke={4}
+        color={color}
+        icon={icon}
+        eaten={eaten}
+        target={target}
+        unit={unit}
+        iconSize={20}
+        numberClass="text-[13px] font-bold"
+        unitClass="text-[8px] text-muted-foreground/70"
+        onClick={onClick}
+        ariaLabel={label}
+      />
+      <span
+        className="text-[10px] font-medium"
+        style={{ color }}
+      >
+        {label}
+      </span>
+    </div>
+  );
+};
+
 const DayPill = ({
   dow,
   date,
