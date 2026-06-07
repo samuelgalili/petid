@@ -27,6 +27,8 @@ interface Props {
   weight?: number | null;
   kcalTarget?: number | null;
   accent?: string;
+  /** When set, renders the 8 traits as an absolute orbit ring around a parent (no card wrapper). */
+  orbit?: { radius: number; size?: number };
 }
 
 const SIZE_HE: Record<string, string> = {
@@ -111,28 +113,30 @@ const Circle = ({
   value,
   pct,
   color,
+  size = 64,
 }: {
   icon: React.ElementType;
   label: string;
   value: string;
   pct: number;
   color: string;
+  size?: number;
 }) => (
-  <div className="flex flex-col items-center shrink-0 w-[78px]">
-    <div className="relative" style={{ width: 64, height: 64 }}>
-      <Ring pct={pct} color={color} />
+  <div className="flex flex-col items-center shrink-0" style={{ width: size + 14 }}>
+    <div className="relative" style={{ width: size, height: size }}>
+      <Ring pct={pct} color={color} size={size} />
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <Icon className="w-4 h-4" style={{ color }} strokeWidth={2} />
+        <Icon style={{ color, width: size * 0.28, height: size * 0.28 }} strokeWidth={2} />
       </div>
     </div>
     <div
-      className="mt-1.5 text-[11px] font-semibold text-foreground leading-tight text-center"
+      className="mt-1 text-[10px] font-semibold text-foreground leading-tight text-center"
       dir="auto"
       style={{ unicodeBidi: "plaintext" }}
     >
       {value}
     </div>
-    <div className="text-[10px] text-muted-foreground/70 leading-tight text-center">
+    <div className="text-[9px] text-muted-foreground/70 leading-tight text-center">
       {label}
     </div>
   </div>
@@ -146,6 +150,7 @@ export const BreedTraitCircles = ({
   weight,
   kcalTarget,
   accent = "hsl(var(--primary))",
+  orbit,
 }: Props) => {
   const [info, setInfo] = useState<BreedRow | null>(null);
 
@@ -229,6 +234,34 @@ export const BreedTraitCircles = ({
       color: accent,
     },
   ];
+
+  if (orbit) {
+    const { radius, size = 48 } = orbit;
+    // 8 angles, offset 22.5° to avoid the 4 cardinal nutrient gauges
+    const angles = items.map((_, i) => -90 + 22.5 + i * 45);
+    return (
+      <>
+        {items.map((it, i) => {
+          const a = (angles[i] * Math.PI) / 180;
+          const x = Math.cos(a) * radius;
+          const y = Math.sin(a) * radius;
+          return (
+            <div
+              key={it.label}
+              className="absolute"
+              style={{
+                left: "50%",
+                top: "50%",
+                transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`,
+              }}
+            >
+              <Circle {...it} size={size} />
+            </div>
+          );
+        })}
+      </>
+    );
+  }
 
   return (
     <div className="mt-1" dir="rtl">

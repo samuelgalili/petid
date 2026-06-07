@@ -714,7 +714,7 @@ export const PetCenterDashboard = ({
         )}
       </AnimatePresence>
 
-      {/* ── Orbit: pet avatar centered with 4 gauges around ── */}
+      {/* ── Orbit: pet avatar centered with nutrient gauges + breed traits around ── */}
       <motion.div
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -722,6 +722,14 @@ export const PetCenterDashboard = ({
         className="relative mx-auto"
         style={{ width: 320, height: 320 }}
       >
+        {/* Breed traits orbiting outside the nutrient gauges */}
+        <BreedTraitCircles
+          breed={pet.breed}
+          weight={weight}
+          kcalTarget={targets.kcal}
+          accent={accent}
+          orbit={{ radius: 168, size: 44 }}
+        />
         {/* Glow behind avatar */}
         <div
           className="absolute inset-0 pointer-events-none"
@@ -832,14 +840,6 @@ export const PetCenterDashboard = ({
           ? `יעדים מבוססי NRC 2006 · משקל ${weight}kg`
           : "הוסיפו משקל כדי לקבל יעדים מדויקים"}
       </div>
-
-      {/* ── Breed Trait Circles ── */}
-      <BreedTraitCircles
-        breed={pet.breed}
-        weight={weight}
-        kcalTarget={targets.kcal}
-        accent={accent}
-      />
 
       {/* ── Recently logged ── */}
       <div className="mt-2" id="recent-logs">
