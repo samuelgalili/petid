@@ -74,7 +74,7 @@ const AuroraRing: React.FC<{ size?: number }> = ({ size = 220 }) => (
       width: size,
       height: size,
       background:
-        "conic-gradient(from 0deg, rgba(244,168,108,0.0) 0deg, rgba(244,168,108,0.55) 60deg, rgba(224,122,158,0.55) 140deg, rgba(160,123,201,0.55) 220deg, rgba(91,168,217,0.55) 300deg, rgba(244,168,108,0.0) 360deg)",
+        "conic-gradient(from 0deg, rgba(255,176,136,0.0) 0deg, rgba(255,176,136,0.6) 60deg, rgba(255,122,168,0.6) 140deg, rgba(198,139,255,0.6) 220deg, rgba(91,208,240,0.6) 300deg, rgba(255,176,136,0.0) 360deg)",
       filter: "blur(14px)",
     }}
   />
@@ -181,7 +181,7 @@ const AnalyzingStep: React.FC<{
           className="text-[24px] font-bold tracking-tight bg-clip-text text-transparent"
           style={{
             backgroundImage:
-              "linear-gradient(90deg,#F4A86C 0%,#E07A9E 35%,#A07BC9 65%,#5BA8D9 100%)",
+              "linear-gradient(90deg,#FFB088 0%,#FF7AA8 28%,#C68BFF 60%,#5BD0F0 100%)",
           }}
         >
           {analyzing ? "…" : detectedBreed || "Mixed breed"}
@@ -391,9 +391,9 @@ const CompleteStep: React.FC<{ avatarUrl: string; onGo: () => void }> = ({ avata
           <svg width="0" height="0">
             <defs>
               <linearGradient id="mipoCheck" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#F4A86C" />
-                <stop offset="50%" stopColor="#A07BC9" />
-                <stop offset="100%" stopColor="#5BA8D9" />
+                <stop offset="0%" stopColor="#FFB088" />
+                <stop offset="50%" stopColor="#C68BFF" />
+                <stop offset="100%" stopColor="#5BD0F0" />
               </linearGradient>
             </defs>
           </svg>
