@@ -764,7 +764,7 @@ export const PetCenterDashboard = ({
             <img
               src={dobermanAsset.url}
               alt={pet.name}
-              className="w-[132px] h-[132px] rounded-full object-cover bg-muted block"
+              className="w-[132px] h-[132px] rounded-full object-contain bg-muted block"
             />
           </motion.div>
         </div>
