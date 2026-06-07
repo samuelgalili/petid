@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Flame,
   Drumstick,
@@ -17,6 +17,7 @@ import {
   HeartPulse,
   Brush,
   Check,
+  X,
 } from "lucide-react";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
