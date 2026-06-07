@@ -393,6 +393,51 @@ const Profile = () => {
           {showPetShop && selectedPet && <PetShopView pet={selectedPet} onBack={() => setShowPetShop(false)} />}
         </AnimatePresence>
 
+        {/* Notifications Sheet */}
+        <Sheet open={notificationsOpen} onOpenChange={setNotificationsOpen}>
+          <SheetContent side="bottom" className="rounded-t-3xl pb-[calc(env(safe-area-inset-bottom)+80px)]" dir="rtl">
+            <SheetHeader>
+              <SheetTitle className="text-right">תזכורות</SheetTitle>
+            </SheetHeader>
+            <div className="mt-4 space-y-4">
+              <div className="flex gap-3 items-start">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-primary/10 text-primary">
+                  <UtensilsCrossed className="w-4 h-4" strokeWidth={1.5} />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-foreground">האכלה — היום 09:00</div>
+                  <div className="text-xs text-muted-foreground">
+                    {(() => {
+                      const w = globalActivePet?.weight;
+                      if (!w || w <= 0) return "ללא נתון";
+                      const kcal = Math.round(1.6 * 70 * Math.pow(w, 0.75));
+                      return `~${Math.round(kcal / 2)} קק״ל`;
+                    })()}
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-3 items-start">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-primary/10 text-primary">
+                  <Syringe className="w-4 h-4" strokeWidth={1.5} />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-foreground">חיסון משולש</div>
+                  <div className="text-xs text-muted-foreground">בעוד 14 ימים</div>
+                </div>
+              </div>
+              <div className="flex gap-3 items-start">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-primary/10 text-primary">
+                  <Weight className="w-4 h-4" strokeWidth={1.5} />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-foreground">שקילה חודשית</div>
+                  <div className="text-xs text-muted-foreground">לפני שבוע · יציב</div>
+                </div>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+
         <BottomNav />
       </div>
     </PageTransition>
