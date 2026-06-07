@@ -555,6 +555,23 @@ export const PetCenterDashboard = ({
 
   return (
     <div className="flex flex-col gap-3 pb-8">
+      {/* ── Top bar: Reminders bell ── */}
+      <div className="flex items-center justify-between px-1">
+        <button
+          type="button"
+          onClick={() => openSheet("timeline")}
+          className="relative w-10 h-10 rounded-full flex items-center justify-center bg-card border border-border/40 hover:border-border transition-colors"
+          aria-label="תזכורות"
+        >
+          <Bell className="w-4.5 h-4.5 text-foreground" strokeWidth={2} style={{ width: 18, height: 18 }} />
+          <span
+            className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
+            style={{ background: accent }}
+            aria-hidden
+          />
+        </button>
+      </div>
+
       {/* ── Hero Insight (Tier 1–5 ranked) ── */}
       <HeroInsight petId={pet.id} />
 
@@ -835,7 +852,7 @@ export const PetCenterDashboard = ({
       <div className="mt-2">
         <div className="flex items-baseline justify-between mb-2 px-1">
           <div className="text-[13px] font-bold text-foreground tracking-tight">
-            רישומים אחרונים
+            תזכורות
           </div>
           <button
             type="button"
