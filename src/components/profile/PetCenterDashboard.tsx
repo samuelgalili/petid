@@ -968,6 +968,37 @@ export const PetCenterDashboard = ({
           : "הוסיפו משקל כדי לקבל יעדים מדויקים"}
       </div>
 
+      {/* ── Daily care tasks grid (fills space below hero) ── */}
+      <div className="mt-4 px-2" dir="rtl">
+        <div className="flex items-baseline justify-between mb-2 px-1">
+          <div className="text-[13px] font-bold text-foreground tracking-tight">
+            משימות יומיות
+          </div>
+          <div className="text-[11px] text-muted-foreground/80" dir="auto" style={{ unicodeBidi: 'plaintext' }}>
+            {daily.completed}/{daily.total} · {daily.pct}%
+          </div>
+        </div>
+        <div className="grid grid-cols-4 gap-2">
+          {DAILY_TASKS.map((t) => {
+            const checked = !!daily.done[t.key];
+            const Icon = t.icon;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => daily.toggle(t.key)}
+                className={`relative flex flex-col items-center justify-center gap-1 rounded-2xl border px-1 py-2.5 transition-colors ${checked ? 'bg-primary/10 border-primary/40' : 'bg-card border-border/40'}`}
+              >
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center ${checked ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'}`}>
+                  {checked ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
+                </div>
+                <div className="text-[10px] text-foreground leading-tight text-center">{t.label}</div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
 
       {/* ── Metric Info Sheet ── */}
       <AnimatePresence>
