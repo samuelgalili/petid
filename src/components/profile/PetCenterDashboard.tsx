@@ -931,18 +931,6 @@ export const PetCenterDashboard = ({
       </div>
 
 
-      {/* ── Primary feeding CTA ── */}
-      <button
-        type="button"
-        onClick={() => openSheet("feed")}
-        className="mt-3 w-full h-12 rounded-full flex items-center justify-center gap-2 text-[14px] font-semibold text-primary-foreground shadow-lg"
-        style={{ background: accent, boxShadow: `0 8px 24px ${accent}55` }}
-      >
-        <Plus className="w-4 h-4" strokeWidth={2.5} />
-        האכלה
-      </button>
-
-
       {/* ── Metric Info Sheet ── */}
       <AnimatePresence>
         {infoKey && (() => {
