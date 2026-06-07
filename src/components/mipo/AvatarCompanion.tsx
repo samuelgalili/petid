@@ -9,7 +9,7 @@
  * Auto-hides on auth/onboarding routes.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
