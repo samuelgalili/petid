@@ -723,7 +723,7 @@ export const PetCenterDashboard = ({
 
       {/* ── Hero: avatar centered with a single Daily Goal ring ── */}
       {(() => {
-        const SIZE = 300;
+        const SIZE = 240;
         const STROKE = 10;
         const R = (SIZE - STROKE) / 2;
         const C = 2 * Math.PI * R;
@@ -734,13 +734,21 @@ export const PetCenterDashboard = ({
         const offset = C - (overall / 100) * C;
         const ringColor = scoreColor(overall);
         return (
+          <div className="flex items-center justify-center gap-2" dir="rtl">
+            <BreedTraitCircles
+              breed={pet.breed}
+              weight={weight}
+              kcalTarget={targets.kcal}
+              accent={accent}
+              vertical
+            />
           <motion.button
             type="button"
             onClick={() => setInfoKey("kcal")}
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.1, duration: 0.5, ease: "easeOut" }}
-            className="relative mx-auto block"
+            className="relative block shrink-0"
             style={{ width: SIZE, height: SIZE }}
             aria-label={`יעד יומי ${overall}%`}
           >
@@ -820,7 +828,7 @@ export const PetCenterDashboard = ({
               <img
                 src={dobermanAsset.url}
                 alt={pet.name}
-                className="w-[252px] h-[252px] rounded-full object-contain bg-muted block"
+                className="w-[200px] h-[200px] rounded-full object-contain bg-muted block"
               />
             </div>
             {/* Goal % badge */}
@@ -835,16 +843,9 @@ export const PetCenterDashboard = ({
               {overall}% יעד יומי
             </div>
           </motion.button>
+          </div>
         );
       })()}
-
-      {/* ── Breed traits — horizontal scroll strip below ── */}
-      <BreedTraitCircles
-        breed={pet.breed}
-        weight={weight}
-        kcalTarget={targets.kcal}
-        accent={accent}
-      />
 
       {/* ── NRC source line ── */}
       <div className="text-[10px] text-muted-foreground/60 text-center -mt-1">
