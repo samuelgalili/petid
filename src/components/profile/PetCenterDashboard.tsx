@@ -381,6 +381,9 @@ export const PetCenterDashboard = ({
 
   const targets = useMemo(() => computeTargets(weight), [weight]);
 
+  const daily = useDailyTasks(pet.id);
+  const dailyColor = scoreColor(daily.pct);
+
   // ── Placeholder "eaten today" (until live feeding log wired) ──
   // Conservative: show 0 of target when no log exists, never invent meals.
   const eaten = {
@@ -416,20 +419,41 @@ export const PetCenterDashboard = ({
       {/* ── Pet header: centered avatar + name ── */}
       <div className="flex flex-col items-center justify-center gap-2.5 px-1">
         <div className="relative">
-          <img
-            src={pet.avatar_url || fallback}
-            alt={pet.name}
-            className="w-16 h-16 rounded-full object-cover bg-muted border-2 border-border/40"
-          />
-          <div className="absolute -bottom-1 -right-1 flex items-center gap-1 px-1.5 py-0.5 rounded-full border border-border/50 bg-card">
-            <Flame className="w-3 h-3" style={{ color: accent }} />
+          <motion.div
+            key={daily.pct}
+            initial={{ scale: 0.96 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+            className="rounded-full p-[3px]"
+            style={{
+              background: dailyColor,
+              boxShadow: `0 0 0 4px ${dailyColor}22, 0 6px 18px ${dailyColor}33`,
+            }}
+          >
+            <img
+              src={pet.avatar_url || fallback}
+              alt={pet.name}
+              className="w-16 h-16 rounded-full object-cover bg-muted block"
+            />
+          </motion.div>
+          <div
+            className="absolute -bottom-1 -right-1 flex items-center gap-1 px-1.5 py-0.5 rounded-full border bg-card"
+            style={{ borderColor: `${dailyColor}66` }}
+          >
+            <Flame className="w-3 h-3" style={{ color: dailyColor }} />
             <span className="text-[10px] font-semibold text-foreground">
-              {targets.kcal != null ? Math.round(kcalPct) : 0}%
+              {daily.pct}%
             </span>
           </div>
         </div>
         <div className="text-[17px] font-bold text-foreground tracking-tight">
           {pet.name}
+        </div>
+        <div
+          className="text-[11px] font-medium"
+          style={{ color: dailyColor }}
+        >
+          דירוג יומי · {scoreLabel(daily.pct)} ({daily.completed}/{daily.total})
         </div>
       </div>
 
