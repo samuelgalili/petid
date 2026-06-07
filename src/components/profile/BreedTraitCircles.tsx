@@ -125,7 +125,7 @@ const Circle = ({
   size?: number;
 }) => (
   <div className="flex flex-col items-center shrink-0" style={{ width: size + 14 }}>
-    <div className="relative rounded-full bg-card/50 backdrop-blur-xl border border-border/40 shadow-sm" style={{ width: size, height: size }}>
+    <div className="relative rounded-full bg-card/30 border border-border/20" style={{ width: size, height: size }}>
       <Ring pct={pct} color={color} size={size} />
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <Icon style={{ color, width: size * 0.28, height: size * 0.28 }} strokeWidth={2} />

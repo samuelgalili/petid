@@ -591,7 +591,7 @@ export const PetCenterDashboard = ({
       <HeroInsight petId={pet.id} />
 
       {/* ── Week strip ── */}
-      <div className="flex items-center justify-between rounded-3xl bg-card/60 backdrop-blur-xl border border-border/30 px-3 py-3 shadow-sm">
+      <div className="flex items-center justify-between rounded-2xl bg-card/40 border border-border/20 px-2 py-2.5">
         {week.map((d, i) => (
           <DayPill
             key={i}
@@ -758,10 +758,8 @@ export const PetCenterDashboard = ({
         const ringColor = scoreColor(overall);
         return (
           <div className="relative flex items-center justify-between gap-2 w-full px-2" dir="rtl">
-            {/* Aurora ambient glows */}
-            <div className="pointer-events-none absolute -top-10 -right-16 w-56 h-56 rounded-full opacity-30 blur-3xl" style={{ background: 'hsl(20 90% 60%)' }} aria-hidden />
-            <div className="pointer-events-none absolute top-1/3 -left-20 w-60 h-60 rounded-full opacity-25 blur-3xl" style={{ background: 'hsl(280 70% 60%)' }} aria-hidden />
-            <div className="pointer-events-none absolute -bottom-12 left-1/3 w-64 h-64 rounded-full opacity-20 blur-3xl" style={{ background: 'hsl(210 80% 60%)' }} aria-hidden />
+            {/* Single soft aurora glow behind the avatar — keeps focus on the pet */}
+            <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full opacity-20 blur-3xl" style={{ background: 'radial-gradient(circle, hsl(20 90% 60%) 0%, hsl(280 70% 60%) 60%, transparent 100%)' }} aria-hidden />
             <BreedTraitCircles
               breed={pet.breed}
               weight={weight}
@@ -786,7 +784,7 @@ export const PetCenterDashboard = ({
                   className="flex flex-col items-center shrink-0"
                   style={{ width: 56 }}
                 >
-                  <div className="relative rounded-full bg-card/50 backdrop-blur-xl border border-border/40 shadow-sm" style={{ width: 44, height: 44 }}>
+                  <div className="relative rounded-full bg-card/30 border border-border/20" style={{ width: 44, height: 44 }}>
                     <svg width={44} height={44} viewBox="0 0 44 44" className="-rotate-90" aria-hidden>
                       <circle cx={22} cy={22} r={18} fill="none" stroke="hsl(var(--muted))" strokeWidth={3} />
                       <circle cx={22} cy={22} r={18} fill="none" stroke={b.color} strokeWidth={3} strokeLinecap="round" strokeDasharray={113} strokeDashoffset={28} />
@@ -810,29 +808,15 @@ export const PetCenterDashboard = ({
             style={{ width: SIZE, height: SIZE }}
             aria-label={`יעד יומי ${overall}%`}
           >
-            {/* MIPO brand glow halo */}
+            {/* Subtle brand halo behind the ring */}
             <div
               className="absolute inset-0 pointer-events-none rounded-full"
               aria-hidden
               style={{
                 background:
-                  "conic-gradient(from 0deg, #FF9A6C, #FF7BAC, #C58BFA, #6BB8FF, #6BE0E0, #FF9A6C)",
-                filter: "blur(22px)",
-                opacity: 0.55,
-              }}
-            />
-            {/* Slow shimmer rotation */}
-            <motion.div
-              className="absolute inset-0 pointer-events-none rounded-full"
-              aria-hidden
-              animate={{ rotate: 360 }}
-              transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
-              style={{
-                background:
-                  "conic-gradient(from 0deg, transparent 0deg, rgba(255,255,255,0.35) 60deg, transparent 140deg, rgba(255,255,255,0.25) 220deg, transparent 360deg)",
-                filter: "blur(10px)",
-                mixBlendMode: "screen",
-                opacity: 0.7,
+                  "conic-gradient(from 0deg, #FF9A6C, #FF7BAC, #C58BFA, #6BB8FF, #FF9A6C)",
+                filter: "blur(28px)",
+                opacity: 0.28,
               }}
             />
             {/* Single daily-goal ring with MIPO gradient */}
@@ -911,7 +895,7 @@ export const PetCenterDashboard = ({
                 className="flex flex-col items-center shrink-0"
                 style={{ width: 62 }}
               >
-                <div className="relative rounded-full bg-card/50 backdrop-blur-xl border border-border/40 shadow-sm" style={{ width: 48, height: 48 }}>
+                <div className="relative rounded-full bg-card/30 border border-border/20" style={{ width: 48, height: 48 }}>
                   <svg width={48} height={48} viewBox="0 0 48 48" className="-rotate-90" aria-hidden>
                     <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(var(--muted))" strokeWidth={4} />
                     <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(35 88% 58%)" strokeWidth={4} strokeLinecap="round" strokeDasharray={125.6} strokeDashoffset={125.6 - ((energyLevel ?? 0) / 5) * 125.6} />
@@ -933,7 +917,7 @@ export const PetCenterDashboard = ({
                 className="flex flex-col items-center shrink-0"
                 style={{ width: 62 }}
               >
-                <div className="relative rounded-full bg-card/50 backdrop-blur-xl border border-border/40 shadow-sm" style={{ width: 48, height: 48 }}>
+                <div className="relative rounded-full bg-card/30 border border-border/20" style={{ width: 48, height: 48 }}>
                   <svg width={48} height={48} viewBox="0 0 48 48" className="-rotate-90" aria-hidden>
                     <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(var(--muted))" strokeWidth={4} />
                     <circle cx={24} cy={24} r={20} fill="none" stroke={accent} strokeWidth={4} strokeLinecap="round" strokeDasharray={125.6} strokeDashoffset={weight ? 125.6 - ((Math.min(100, weight / 50 * 100)) / 100) * 125.6 : 125.6} />
@@ -955,7 +939,7 @@ export const PetCenterDashboard = ({
                 className="flex flex-col items-center shrink-0"
                 style={{ width: 62 }}
               >
-                <div className="relative rounded-full bg-card/50 backdrop-blur-xl border border-border/40 shadow-sm" style={{ width: 48, height: 48 }}>
+                <div className="relative rounded-full bg-card/30 border border-border/20" style={{ width: 48, height: 48 }}>
                   <svg width={48} height={48} viewBox="0 0 48 48" className="-rotate-90" aria-hidden>
                     <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(var(--muted))" strokeWidth={4} />
                     <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(150 55% 50%)" strokeWidth={4} strokeLinecap="round" strokeDasharray={125.6} strokeDashoffset={31.4} />
