@@ -280,7 +280,7 @@ const DetailsStep: React.FC<{
           Tell us about your pet
         </h1>
 
-        <div className="grid grid-cols-1 sm:grid-cols-[1fr,0.9fr] gap-6 items-center">
+        <div className="grid grid-cols-[1fr,1fr] gap-4 items-center">
           {/* Form */}
           <div className="space-y-4">
             <Field label="Name">
@@ -336,12 +336,16 @@ const DetailsStep: React.FC<{
             </Field>
           </div>
 
-          {/* Avatar preview */}
+          {/* Avatar preview — large, soft shadow only (like reference) */}
           <div className="flex items-center justify-center">
             <img
               src={avatarUrl}
               alt="pet"
-              className="w-44 h-44 object-contain drop-shadow-[0_18px_24px_rgba(0,0,0,0.12)]"
+              className="w-full max-w-[280px] h-auto object-contain"
+              style={{
+                filter:
+                  "drop-shadow(0 24px 28px rgba(0,0,0,0.10)) drop-shadow(0 6px 10px rgba(0,0,0,0.06))",
+              }}
             />
           </div>
         </div>
