@@ -137,6 +137,94 @@ const ArcGauge = ({
   );
 };
 
+/* ─── Flip Gauge: ring with icon ⇄ value flipping inside ─── */
+const FlipGauge = ({
+  pct,
+  size,
+  stroke,
+  color,
+  icon: Icon,
+  eaten,
+  target,
+  unit,
+  iconSize,
+  numberClass,
+  unitClass,
+  onClick,
+  ariaLabel,
+}: {
+  pct: number;
+  size: number;
+  stroke: number;
+  color: string;
+  icon: typeof Drumstick;
+  eaten: number | null;
+  target: number | null;
+  unit: string;
+  iconSize: number;
+  numberClass: string;
+  unitClass: string;
+  onClick?: () => void;
+  ariaLabel?: string;
+}) => {
+  const [showValue, setShowValue] = useState(false);
+  useEffect(() => {
+    const t = setInterval(() => setShowValue((v) => !v), 2600);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={ariaLabel}
+      className="relative outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-full"
+      style={{ width: size, height: size, ['--tw-ring-color' as any]: color }}
+    >
+      <ArcGauge pct={pct} size={size} stroke={stroke} color={color}>
+        <div className="relative w-full h-full" style={{ perspective: 600 }}>
+          <AnimatePresence mode="wait" initial={false}>
+            {showValue ? (
+              <motion.div
+                key="value"
+                initial={{ rotateY: -90, opacity: 0 }}
+                animate={{ rotateY: 0, opacity: 1 }}
+                exit={{ rotateY: 90, opacity: 0 }}
+                transition={{ duration: 0.45, ease: "easeOut" }}
+                className="absolute inset-0 flex flex-col items-center justify-center leading-none"
+                style={{ backfaceVisibility: "hidden" }}
+              >
+                <div className="flex items-baseline gap-0.5" dir="ltr">
+                  <span className={numberClass} style={{ color }}>
+                    {eaten ?? "—"}
+                  </span>
+                  <span className={unitClass}>
+                    /{target ?? "—"}{unit}
+                  </span>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="icon"
+                initial={{ rotateY: -90, opacity: 0 }}
+                animate={{ rotateY: 0, opacity: 1 }}
+                exit={{ rotateY: 90, opacity: 0 }}
+                transition={{ duration: 0.45, ease: "easeOut" }}
+                className="absolute inset-0 flex items-center justify-center"
+                style={{ backfaceVisibility: "hidden" }}
+              >
+                <Icon
+                  style={{ color, width: iconSize, height: iconSize }}
+                  strokeWidth={2}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </ArcGauge>
+    </button>
+  );
+};
+
 /* ─── Day pill with ring around the number ─── */
 const DayPill = ({
   dow,
@@ -220,6 +308,7 @@ const MacroCard = ({
   color,
   icon: Icon,
   delay,
+  onInfo,
 }: {
   eaten: number | null;
   target: number | null;
@@ -228,6 +317,7 @@ const MacroCard = ({
   color: string;
   icon: typeof Drumstick;
   delay: number;
+  onInfo: () => void;
 }) => {
   const pct =
     eaten != null && target != null && target > 0
@@ -238,24 +328,25 @@ const MacroCard = ({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4, ease: "easeOut" }}
-      className="flex-1 rounded-2xl bg-card border border-border/40 px-3 pt-3 pb-3 flex flex-col items-center"
+      className="flex-1 rounded-2xl bg-card border border-border/40 px-2 pt-3 pb-3 flex flex-col items-center gap-2"
     >
-      <div className="flex items-baseline gap-0.5 leading-none">
-        <span className="text-[18px] font-bold text-foreground">
-          {eaten ?? "—"}
-        </span>
-        <span className="text-[11px] text-muted-foreground/70">
-          /{target ?? "—"}
-          {unit}
-        </span>
-      </div>
-      <div className="text-[10px] text-muted-foreground/70 mt-0.5">
+      <FlipGauge
+        pct={pct}
+        size={64}
+        stroke={4}
+        color={color}
+        icon={Icon}
+        eaten={eaten}
+        target={target}
+        unit={unit}
+        iconSize={18}
+        numberClass="text-[13px] font-bold"
+        unitClass="text-[8px] text-muted-foreground/70"
+        onClick={onInfo}
+        ariaLabel={label}
+      />
+      <div className="text-[10px] text-muted-foreground/70">
         {label}
-      </div>
-      <div className="mt-2.5">
-        <ArcGauge pct={pct} size={52} stroke={4} color={color}>
-          <Icon className="w-4 h-4" style={{ color }} strokeWidth={2} />
-        </ArcGauge>
       </div>
     </motion.div>
   );
@@ -385,6 +476,7 @@ export const PetCenterDashboard = ({
   const daily = useDailyTasks(pet.id);
   const dailyColor = scoreColor(daily.pct);
   const [tasksOpen, setTasksOpen] = useState(false);
+  const [infoKey, setInfoKey] = useState<null | "kcal" | "protein" | "carbs" | "fat">(null);
 
   // ── Placeholder "eaten today" (until live feeding log wired) ──
   // Conservative: show 0 of target when no log exists, never invent meals.
@@ -573,35 +665,31 @@ export const PetCenterDashboard = ({
       </AnimatePresence>
 
       {/* ── Hero card: kcal eaten / target ── */}
-      <motion.button
-        type="button"
-        onClick={() => openSheet("feeding")}
+      <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.4 }}
-        className="rounded-2xl bg-card border border-border/40 px-4 py-4 flex items-center justify-between text-right"
+        className="rounded-2xl bg-card border border-border/40 px-4 py-5 flex flex-col items-center gap-2"
       >
-        <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-1">
-            <span className="text-[34px] font-bold text-foreground leading-none tracking-tight">
-              {eaten.kcal ?? "—"}
-            </span>
-            <span className="text-[14px] text-muted-foreground/70">
-              /{targets.kcal ?? "—"}
-            </span>
-          </div>
-          <div className="text-[12px] text-muted-foreground/80 mt-1.5">
-            קלוריות נצרכו היום
-          </div>
+        <FlipGauge
+          pct={kcalPct}
+          size={120}
+          stroke={7}
+          color="hsl(var(--foreground))"
+          icon={Flame}
+          eaten={eaten.kcal}
+          target={targets.kcal}
+          unit=""
+          iconSize={34}
+          numberClass="text-[24px] font-bold"
+          unitClass="text-[11px] text-muted-foreground/70"
+          onClick={() => setInfoKey("kcal")}
+          ariaLabel="קלוריות"
+        />
+        <div className="text-[12px] text-muted-foreground/80">
+          קלוריות נצרכו היום
         </div>
-        <ArcGauge pct={kcalPct} size={72} stroke={5} color="hsl(var(--foreground))">
-          <Flame
-            className="w-5 h-5"
-            style={{ color: "hsl(var(--foreground))" }}
-            strokeWidth={2}
-          />
-        </ArcGauge>
-      </motion.button>
+      </motion.div>
 
       {/* ── 3 Macro cards ── */}
       <div className="flex gap-2.5">
@@ -613,6 +701,7 @@ export const PetCenterDashboard = ({
           color={C_PROTEIN}
           icon={Drumstick}
           delay={0.18}
+          onInfo={() => setInfoKey("protein")}
         />
         <MacroCard
           eaten={eaten.carbs_g}
@@ -622,6 +711,7 @@ export const PetCenterDashboard = ({
           color={C_CARBS}
           icon={Wheat}
           delay={0.24}
+          onInfo={() => setInfoKey("carbs")}
         />
         <MacroCard
           eaten={eaten.fat_g}
@@ -631,6 +721,7 @@ export const PetCenterDashboard = ({
           color={C_FATS}
           icon={Droplet}
           delay={0.3}
+          onInfo={() => setInfoKey("fat")}
         />
       </div>
 
@@ -716,6 +807,97 @@ export const PetCenterDashboard = ({
           הוסף רישום
         </button>
       </div>
+
+      {/* ── Metric Info Sheet ── */}
+      <AnimatePresence>
+        {infoKey && (() => {
+          const META = {
+            kcal:    { title: "קלוריות",   color: "hsl(var(--foreground))", eaten: eaten.kcal,      target: targets.kcal,      unit: "קק״ל", desc: "סך האנרגיה היומית הנדרשת לפי NRC 2006, מחושבת לפי משקל הגוף (MER = 1.6 × 70 × kg^0.75). נצרך / יעד יומי." },
+            protein: { title: "חלבון",     color: C_PROTEIN,                eaten: eaten.protein_g, target: targets.protein_g, unit: "גרם",   desc: "בונה שריר, מערכת חיסון ורקמות. כ-25% מסך הקלוריות, מחושב לפי 4 קק״ל לגרם. חוסר ארוך-טווח עלול לפגוע בריפוי ובמסת השריר." },
+            carbs:   { title: "פחמימות",  color: C_CARBS,                  eaten: eaten.carbs_g,   target: targets.carbs_g,   unit: "גרם",   desc: "מקור אנרגיה זמין. כ-55% מהקלוריות, 4 קק״ל לגרם. עודף הופך לשומן — להתאים לפעילות בפועל." },
+            fat:     { title: "שומן",     color: C_FATS,                   eaten: eaten.fat_g,     target: targets.fat_g,     unit: "גרם",   desc: "אנרגיה דחוסה וויטמינים מסיסים. כ-20% מהקלוריות, 9 קק״ל לגרם. חיוני לעור ופרווה — אך לא להגזים." },
+          } as const;
+          const m = META[infoKey];
+          const pct = m.eaten != null && m.target != null && m.target > 0
+            ? Math.round((m.eaten / m.target) * 100) : 0;
+          return (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 z-[80] bg-background/70 backdrop-blur-sm"
+                onClick={() => setInfoKey(null)}
+              />
+              <motion.div
+                role="dialog"
+                aria-modal="true"
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{ type: "spring", damping: 32, stiffness: 320 }}
+                className="fixed inset-x-0 bottom-0 z-[81] rounded-t-3xl bg-card border-t border-border/50 px-4 pt-3 pb-7 max-h-[80vh] overflow-y-auto"
+              >
+                <div className="flex justify-center mb-3">
+                  <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+                </div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-9 h-9 rounded-xl flex items-center justify-center"
+                      style={{ background: `${m.color}1a` }}
+                    >
+                      <Flame className="w-4 h-4" style={{ color: m.color }} />
+                    </div>
+                    <div>
+                      <div className="text-[16px] font-bold text-foreground">{m.title}</div>
+                      <div className="text-[11px] text-muted-foreground">נתונים יומיים</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setInfoKey(null)}
+                    className="w-8 h-8 rounded-full flex items-center justify-center border border-border/50 text-muted-foreground"
+                    aria-label="סגור"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="rounded-2xl border border-border/40 px-4 py-3 mb-3 flex items-baseline justify-between" dir="ltr">
+                  <span className="text-[12px] text-muted-foreground/70">{m.unit}</span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-[28px] font-bold" style={{ color: m.color }}>
+                      {m.eaten ?? "—"}
+                    </span>
+                    <span className="text-[13px] text-muted-foreground/70">
+                      / {m.target ?? "—"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="h-1.5 w-full rounded-full bg-muted/40 overflow-hidden mb-4">
+                  <motion.div
+                    className="h-full rounded-full"
+                    style={{ background: m.color }}
+                    initial={false}
+                    animate={{ width: `${Math.min(100, pct)}%` }}
+                    transition={{ duration: 0.4 }}
+                  />
+                </div>
+
+                <p className="text-[13px] leading-[1.6] text-foreground/85 mb-2" dir="auto">
+                  {m.desc}
+                </p>
+                <p className="text-[10px] text-muted-foreground/60">
+                  יעדים מבוססי NRC 2006 · ערך שמרני, אינו תחליף לייעוץ וטרינרי.
+                </p>
+              </motion.div>
+            </>
+          );
+        })()}
+      </AnimatePresence>
     </div>
   );
 };
