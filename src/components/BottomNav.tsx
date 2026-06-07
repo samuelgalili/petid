@@ -77,7 +77,11 @@ const BottomNav = () => {
 
   const hiddenRoutes = ["/auth", "/signup", "/forgot-password", "/reset-password", "/splash", "/add-pet", "/onboarding", "/stories", "/story"];
   const isHiddenPage = hiddenRoutes.some((r) => location.pathname.startsWith(r));
-  if (isHiddenPage) return null;
+  // Hide while the MIPO onboarding gate is still active — it overlays the screen
+  // and the bottom nav would punch through it.
+  let onboardingActive = false;
+  try { onboardingActive = localStorage.getItem("mipo-onboarding-complete") !== "true"; } catch {}
+  if (isHiddenPage || onboardingActive) return null;
 
   const isActive = (path: string) => {
     const p = location.pathname;
