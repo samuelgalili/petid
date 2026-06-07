@@ -476,6 +476,7 @@ export const PetCenterDashboard = ({
   const daily = useDailyTasks(pet.id);
   const dailyColor = scoreColor(daily.pct);
   const [tasksOpen, setTasksOpen] = useState(false);
+  const [infoKey, setInfoKey] = useState<null | "kcal" | "protein" | "carbs" | "fat">(null);
 
   // ── Placeholder "eaten today" (until live feeding log wired) ──
   // Conservative: show 0 of target when no log exists, never invent meals.
