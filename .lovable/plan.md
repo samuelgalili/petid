@@ -1,43 +1,65 @@
-# 🛡️ PetID: The Ultimate Master Execution Prompt
+# MIPO Onboarding + Living Avatar — Plan
 
-**Vision:** Build a high-end, minimalist pet-tech ecosystem (Gemini-style UI) operating with a multi-agent smart system. The platform prioritizes scientific accuracy (NRC 2006), brand integrity (PetID), and human-approved automation.
+Match the 4 reference screens 1:1, generate a stylized AI avatar from the user's pet photo, and use that avatar across the entire app.
 
----
+## 1. Brand → MIPO
 
-## 1. Brand & UI Identity ✅
-- **Visuals:** Light Mode, black text on white background, large readable fonts, minimal PETID logo.
-- **Naming:** Strictly use PetID; replace all 'Vet Life' mentions with 'PetID Care'.
-- **The Feed:** Vertical scroll (TikTok/Instagram style) for personalized content and NRC-based insights.
+- Update visible app name strings to **MIPO** ("My Precious One 🐾"). Replace "Petid"/"PetID" in titles, splash, headers, manifest, index.html `<title>`/meta, OnboardingFlow copy.
+- Add new logo asset `src/assets/mipo-logo.svg` matching the uploaded reference (M with gradient #C47B5A → #9B6BAE → #4A90C4 + dot).
+- Add light gradient button style (white pill, soft pink/blue glow shadow) as a reusable `Button` variant `mipo` in design system. Use semantic tokens — add gradient + glow tokens to `index.css` / `tailwind.config.ts`.
 
-## 2. Data Intelligence (The OCR Hub) ✅
-- **Deep Extraction:** Extract Pet/Owner data from uploads (Weight, Breed, Microchip, Address like 'רחוב צרת 12', Expiry Dates).
-- **Sync Logic:** Scanned data proposes updates; User manual entry has 100% override authority.
-- **Storage:** Files must be auto-tagged and archived in the pet's 'Documents' tab.
+## 2. New Onboarding Flow (4 screens, 1:1)
 
-## 3. The Smart Agent Fleet (The Team) ✅
-- **General Rule:** No "Robots". Use names only. All chat messages start with: `[Name] מ-PetID:`.
-- **שרה (Sara)** — Service: Handles FAQs, general help, and user onboarding.
-- **דני (Dani)** — Nutrition: Provides scientific food/health advice based on NRC 2006 standards.
-- **רוני (Roni)** — Sales/Libra: Manages Libra Insurance leads and store offers post-scan.
-- **אלונה (Alona)** — Content: Creates personalized articles and localized tips based on address (e.g., רחוב צרת 12).
-- **גאי (Guy)** — CRM/Data: Confirms profile updates and document synchronization.
-- **The Brain:** An orchestrator (Edge Function) that coordinates between all agents.
+New component tree under `src/components/onboarding/mipo/`:
 
-## 4. The Unified Chat Hub (App OS) ✅
-- **Central Interface:** The chat is the primary way users interact. It handles uploads, purchases, and insurance leads via 'Action Cards'.
-- **Proactive Engagement:** Agents initiate conversations based on events (e.g., 'Moving to a new address' or 'Weight gain detected').
+```text
+MipoOnboarding.tsx        # state machine (5 steps: splash → upload → analyzing → avatar → details → done)
+steps/SplashStep.tsx      # Screen 01 — MIPO logo + tagline + "Get Started"
+steps/PhotoStep.tsx       # Photo picker (camera/upload)
+steps/AnalyzingStep.tsx   # Screen 02 — user's photo in rounded frame + animated aurora ring + "Analyzing..." + detected breed
+steps/AvatarStep.tsx      # Screen 03 — generated avatar fades in, "Meet your pet's avatar" + Back/Next
+steps/DetailsStep.tsx     # Screen "Tell us about your pet" + Pet Details / Save
+steps/CompleteStep.tsx    # "Setup Complete!" + Let's Go
+```
 
-## 5. Admin Control & Security ✅
-- **Approval Queue:** Manual confirmation required for all external communications (WhatsApp/SMS), price changes, and Libra leads.
-- **Kill Switch:** A global Admin button to freeze all autonomous agent functions instantly.
-- **Activity Log:** Real-time trace of every decision: `[Timestamp] | [Agent Name] | [Action] | [Status]`.
+Screen specs:
+- **Splash**: white bg, MIPO logo SVG centered, "Welcome to MIPO / Let's get started!", pill button with soft glow.
+- **Analyzing**: rounded square photo + circular aurora ring SVG animation (pulse), label "Detected: <Breed>" (breed in gradient text), Retake / Continue.
+- **Avatar reveal**: full-body generated avatar centered, headline + subtle subtitle, Back / Next.
+- **Pet Details**: form (Name input, Breed input prefilled, Age segmented [Puppy/Adult/Senior], Gender [Male/Female]) on the left, avatar standing on the right (mobile = stacked). Continue button bottom.
+- **Setup Complete**: aurora check medallion + headline + "Let's Go!" + avatar bottom-right corner.
 
-## 6. Database & Integration ✅
-- Schema with tables for `system_events`, `automation_bots`, `admin_approval_queue`, and `external_integrations`.
-- Securely manage API Keys for Libra Insurance and messaging gateways.
+All screens use one shared `MipoShell` for consistent padding, gradient buttons, soft shadows.
 
-## 7. Fleet Expansion (Agents 20 & 21) ✅
-- **Agent 20 — Lex (Underwriting & Compliance):** Converts medical + nutritional data into insurance value. Cross-references Dr. NRC and Einstein. Generates eligibility reports. Enforces Privacy by Design (anonymization). Notifies Siggy for VIP benefits on excellent health profiles.
-- **Agent 21 — Juno (Viral Growth & Community):** Analyzes social feed UGC for high engagement. Proposes content to Lumi based on real success stories. Identifies ambassador candidates. Routes budget approvals through Golan. Escalates trust crises to Menachem.
-- **Inter-Agent Protocol:** All operate under Human-in-the-Loop — all financial, legal, and external marketing actions require admin approval.
-- **Agent 22 — Maya (UX & Product Psychology):** Detects user friction (incomplete medical data → routes to Ori). Designs gamification strategies for Health Score. Coordinates visual feedback with Ofek. Optimizes micro-copy for empathy and action. Reports UX bugs to Ido.
+## 3. Avatar Generation
+
+- New edge function `supabase/functions/generate-pet-avatar/index.ts`.
+- Input: pet photo (base64 / data URL) + detected breed + name.
+- Calls Lovable AI Gateway `/v1/images/generations` with `openai/gpt-image-2`, quality `high`, `stream: false` (we await final image), prompt instructs: studio-quality stylized portrait of THIS pet, full body, clean white background, slight sparkle aura, soft pastel rim light, matching uploaded reference style.
+- Returns base64 PNG.
+- Client stores it via existing `upload-avatar` function → saved to `pets.avatar_url` so it persists across sessions.
+- Existing `detect-breed` function reused for the analyzing step.
+
+## 4. Living Avatar Everywhere
+
+The saved `avatar_url` already feeds `useActivePet`. To make the avatar truly "follow" the user, add a small persistent companion component:
+
+- `src/components/mipo/AvatarCompanion.tsx` — floating ~64px avatar bubble pinned above the BottomNav center, gentle bobbing animation, tap opens AI Chat (existing route). Hidden on auth/onboarding screens.
+- Mount once in `App.tsx` (or main layout) behind a feature flag `mipoOnboardingComplete`.
+- Reuse existing `PetCenterDashboard` for the profile page (already uses `avatar_url`).
+
+## 5. Wiring
+
+- `useOnboarding` extended with `petAvatarReady` flag (localStorage `mipo-onboarding-complete`).
+- Replace `OnboardingFlow` mount in `App.tsx` with `MipoOnboarding` when no pet exists yet.
+- After completion: redirect to `/feed`, companion appears.
+
+## Out of scope (this turn)
+
+- Translating tagline to ZH (only HE/EN strings updated now).
+- Reworking Feed / Shop / Chat layouts — only the companion is added; deeper screen redesigns come in follow-up turns per the original phased plan.
+- Auth screens — separate phase.
+
+## Reporting
+
+After this turn I'll report what shipped and ask before moving to the next phase (Feed + BottomNav + Parallel Life).

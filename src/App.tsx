@@ -8,7 +8,7 @@
  * - Splash screen on initial load
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -43,6 +43,8 @@ import SarahDataGapAlert from "@/components/SarahDataGapAlert";
 import { UXGuardian } from "@/components/UXGuardian";
 import { SarahCrashPopup } from "@/components/SarahCrashPopup";
 import { PrivacyConsentPopup } from "@/components/PrivacyConsentPopup";
+import MipoOnboarding from "@/components/onboarding/mipo/MipoOnboarding";
+import AvatarCompanion from "@/components/mipo/AvatarCompanion";
 
 // Route configuration - modular lazy-loaded routes
 import { allRoutes } from "@/routes";
@@ -67,6 +69,22 @@ const queryClient = new QueryClient({
  * Handles route rendering with animations and footer visibility
  */
 const MAIN_SHELL_ROUTES = ['/', '/feed', '/chat', '/shop'];
+
+const MipoOnboardingGate = () => {
+  const [show, setShow] = useState<boolean>(() => {
+    try { return localStorage.getItem("mipo-onboarding-complete") !== "true"; }
+    catch { return false; }
+  });
+  useEffect(() => {
+    const onStorage = () => {
+      try { setShow(localStorage.getItem("mipo-onboarding-complete") !== "true"); } catch {}
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+  if (!show) return null;
+  return <MipoOnboarding onComplete={() => setShow(false)} />;
+};
 
 const AnimatedRoutes = () => {
   const location = useLocation();
@@ -106,6 +124,8 @@ const AnimatedRoutes = () => {
       <UXGuardian />
       <SarahCrashPopup />
       <PrivacyConsentPopup />
+      <AvatarCompanion />
+      <MipoOnboardingGate />
     </div>
   );
 };
