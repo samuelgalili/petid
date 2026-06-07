@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Flame,
@@ -11,6 +11,12 @@ import {
   Stethoscope,
   Weight,
   Bell,
+  Footprints,
+  UtensilsCrossed,
+  GlassWater,
+  HeartPulse,
+  Brush,
+  Check,
 } from "lucide-react";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
@@ -305,6 +311,66 @@ const TimelineRow = ({
 };
 
 /* ─────────────────────────────────────────────────────────── */
+/* ─── Daily care tasks ─── */
+type DailyTaskKey =
+  | "walk_morning"
+  | "walk_evening"
+  | "feed_morning"
+  | "feed_evening"
+  | "water"
+  | "health_check"
+  | "grooming"
+  | "play";
+
+const DAILY_TASKS: { key: DailyTaskKey; label: string; icon: typeof Footprints }[] = [
+  { key: "walk_morning", label: "הליכת בוקר", icon: Footprints },
+  { key: "feed_morning", label: "ארוחת בוקר", icon: UtensilsCrossed },
+  { key: "water", label: "מים נקיים", icon: GlassWater },
+  { key: "play", label: "משחק", icon: Sparkles },
+  { key: "walk_evening", label: "הליכת ערב", icon: Footprints },
+  { key: "feed_evening", label: "ארוחת ערב", icon: UtensilsCrossed },
+  { key: "grooming", label: "טיפוח / מברשת", icon: Brush },
+  { key: "health_check", label: "בדיקת בריאות", icon: HeartPulse },
+];
+
+/* MIPO score color: red <40, orange <75, green ≥75 */
+const scoreColor = (pct: number) => {
+  if (pct >= 75) return "hsl(142 70% 45%)";
+  if (pct >= 40) return "hsl(30 92% 55%)";
+  return "hsl(0 78% 58%)";
+};
+const scoreLabel = (pct: number) =>
+  pct >= 75 ? "מצוין" : pct >= 40 ? "בסדר" : "נמוך";
+
+const todayKey = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
+const useDailyTasks = (petId: string) => {
+  const storageKey = `petid:daily:${petId}:${todayKey()}`;
+  const [done, setDone] = useState<Record<string, boolean>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const raw = localStorage.getItem(storageKey);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(done));
+    } catch {}
+  }, [storageKey, done]);
+  const toggle = useCallback((key: string) => {
+    setDone((prev) => ({ ...prev, [key]: !prev[key] }));
+  }, []);
+  const completed = DAILY_TASKS.filter((t) => done[t.key]).length;
+  const pct = Math.round((completed / DAILY_TASKS.length) * 100);
+  return { done, toggle, completed, total: DAILY_TASKS.length, pct };
+};
+
 export const PetCenterDashboard = ({
   pet,
   accent = "hsl(var(--primary))",
@@ -314,6 +380,9 @@ export const PetCenterDashboard = ({
   const weight = pet.weight ?? null;
 
   const targets = useMemo(() => computeTargets(weight), [weight]);
+
+  const daily = useDailyTasks(pet.id);
+  const dailyColor = scoreColor(daily.pct);
 
   // ── Placeholder "eaten today" (until live feeding log wired) ──
   // Conservative: show 0 of target when no log exists, never invent meals.
@@ -350,20 +419,41 @@ export const PetCenterDashboard = ({
       {/* ── Pet header: centered avatar + name ── */}
       <div className="flex flex-col items-center justify-center gap-2.5 px-1">
         <div className="relative">
-          <img
-            src={pet.avatar_url || fallback}
-            alt={pet.name}
-            className="w-16 h-16 rounded-full object-cover bg-muted border-2 border-border/40"
-          />
-          <div className="absolute -bottom-1 -right-1 flex items-center gap-1 px-1.5 py-0.5 rounded-full border border-border/50 bg-card">
-            <Flame className="w-3 h-3" style={{ color: accent }} />
+          <motion.div
+            key={daily.pct}
+            initial={{ scale: 0.96 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+            className="rounded-full p-[3px]"
+            style={{
+              background: dailyColor,
+              boxShadow: `0 0 0 4px ${dailyColor}22, 0 6px 18px ${dailyColor}33`,
+            }}
+          >
+            <img
+              src={pet.avatar_url || fallback}
+              alt={pet.name}
+              className="w-16 h-16 rounded-full object-cover bg-muted block"
+            />
+          </motion.div>
+          <div
+            className="absolute -bottom-1 -right-1 flex items-center gap-1 px-1.5 py-0.5 rounded-full border bg-card"
+            style={{ borderColor: `${dailyColor}66` }}
+          >
+            <Flame className="w-3 h-3" style={{ color: dailyColor }} />
             <span className="text-[10px] font-semibold text-foreground">
-              {targets.kcal != null ? Math.round(kcalPct) : 0}%
+              {daily.pct}%
             </span>
           </div>
         </div>
         <div className="text-[17px] font-bold text-foreground tracking-tight">
           {pet.name}
+        </div>
+        <div
+          className="text-[11px] font-medium"
+          style={{ color: dailyColor }}
+        >
+          דירוג יומי · {scoreLabel(daily.pct)} ({daily.completed}/{daily.total})
         </div>
       </div>
 
@@ -381,6 +471,86 @@ export const PetCenterDashboard = ({
           />
         ))}
       </div>
+
+      {/* ── Daily care tasks ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="rounded-2xl bg-card border border-border/40 px-4 py-3.5"
+      >
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-[13px] font-bold text-foreground tracking-tight">
+            משימות יומיות
+          </div>
+          <span
+            className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+            style={{
+              color: dailyColor,
+              background: `${dailyColor}1a`,
+            }}
+          >
+            {daily.completed}/{daily.total}
+          </span>
+        </div>
+
+        {/* Progress bar */}
+        <div className="h-1.5 w-full rounded-full bg-muted/40 overflow-hidden mb-3">
+          <motion.div
+            className="h-full rounded-full"
+            style={{ background: dailyColor }}
+            initial={{ width: 0 }}
+            animate={{ width: `${daily.pct}%` }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-1.5">
+          {DAILY_TASKS.map((t) => {
+            const Icon = t.icon;
+            const checked = !!daily.done[t.key];
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => daily.toggle(t.key)}
+                className="flex items-center gap-2 px-2.5 py-2 rounded-xl border transition-colors text-right"
+                style={{
+                  borderColor: checked ? `${dailyColor}55` : "hsl(var(--border) / 0.5)",
+                  background: checked ? `${dailyColor}12` : "transparent",
+                }}
+                aria-pressed={checked}
+              >
+                <div
+                  className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 border"
+                  style={{
+                    background: checked ? dailyColor : "transparent",
+                    borderColor: checked ? dailyColor : "hsl(var(--border))",
+                  }}
+                >
+                  {checked && (
+                    <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                  )}
+                </div>
+                <Icon
+                  className="w-3.5 h-3.5 shrink-0"
+                  style={{
+                    color: checked ? dailyColor : "hsl(var(--muted-foreground))",
+                  }}
+                  strokeWidth={2}
+                />
+                <span
+                  className={`text-[12px] font-medium truncate flex-1 ${
+                    checked ? "text-foreground" : "text-muted-foreground"
+                  }`}
+                >
+                  {t.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </motion.div>
 
       {/* ── Hero card: kcal eaten / target ── */}
       <motion.button
