@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Flame,
   Drumstick,
@@ -17,6 +17,7 @@ import {
   HeartPulse,
   Brush,
   Check,
+  X,
 } from "lucide-react";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
@@ -383,6 +384,7 @@ export const PetCenterDashboard = ({
 
   const daily = useDailyTasks(pet.id);
   const dailyColor = scoreColor(daily.pct);
+  const [tasksOpen, setTasksOpen] = useState(false);
 
   // ── Placeholder "eaten today" (until live feeding log wired) ──
   // Conservative: show 0 of target when no log exists, never invent meals.
@@ -418,7 +420,13 @@ export const PetCenterDashboard = ({
 
       {/* ── Pet header: centered avatar + name ── */}
       <div className="flex flex-col items-center justify-center gap-2.5 px-1">
-        <div className="relative">
+        <button
+          type="button"
+          onClick={() => setTasksOpen(true)}
+          aria-label="פתח משימות יומיות"
+          className="relative outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-full"
+          style={{ ['--tw-ring-color' as any]: dailyColor }}
+        >
           <motion.div
             key={daily.pct}
             initial={{ scale: 0.96 }}
@@ -445,16 +453,18 @@ export const PetCenterDashboard = ({
               {daily.pct}%
             </span>
           </div>
-        </div>
+        </button>
         <div className="text-[17px] font-bold text-foreground tracking-tight">
           {pet.name}
         </div>
-        <div
-          className="text-[11px] font-medium"
+        <button
+          type="button"
+          onClick={() => setTasksOpen(true)}
+          className="text-[11px] font-medium hover:underline"
           style={{ color: dailyColor }}
         >
           דירוג יומי · {scoreLabel(daily.pct)} ({daily.completed}/{daily.total})
-        </div>
+        </button>
       </div>
 
       {/* ── Week strip ── */}
@@ -472,85 +482,144 @@ export const PetCenterDashboard = ({
         ))}
       </div>
 
-      {/* ── Daily care tasks ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-        className="rounded-2xl bg-card border border-border/40 px-4 py-3.5"
-      >
-        <div className="flex items-center justify-between mb-3">
-          <div className="text-[13px] font-bold text-foreground tracking-tight">
-            משימות יומיות
-          </div>
-          <span
-            className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
-            style={{
-              color: dailyColor,
-              background: `${dailyColor}1a`,
-            }}
-          >
-            {daily.completed}/{daily.total}
-          </span>
-        </div>
+      {/* ── Daily Tasks Bottom Sheet ── */}
+      <AnimatePresence>
+        {tasksOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-[80] bg-background/70 backdrop-blur-sm"
+              onClick={() => setTasksOpen(false)}
+            />
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 32, stiffness: 320 }}
+              className="fixed inset-x-0 bottom-0 z-[81] rounded-t-3xl bg-card border-t border-border/50 px-4 pt-3 pb-6 max-h-[85vh] overflow-y-auto"
+            >
+              {/* Grabber */}
+              <div className="flex justify-center mb-3">
+                <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+              </div>
 
-        {/* Progress bar */}
-        <div className="h-1.5 w-full rounded-full bg-muted/40 overflow-hidden mb-3">
-          <motion.div
-            className="h-full rounded-full"
-            style={{ background: dailyColor }}
-            initial={{ width: 0 }}
-            animate={{ width: `${daily.pct}%` }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-1.5">
-          {DAILY_TASKS.map((t) => {
-            const Icon = t.icon;
-            const checked = !!daily.done[t.key];
-            return (
-              <button
-                key={t.key}
-                type="button"
-                onClick={() => daily.toggle(t.key)}
-                className="flex items-center gap-2 px-2.5 py-2 rounded-xl border transition-colors text-right"
-                style={{
-                  borderColor: checked ? `${dailyColor}55` : "hsl(var(--border) / 0.5)",
-                  background: checked ? `${dailyColor}12` : "transparent",
-                }}
-                aria-pressed={checked}
-              >
-                <div
-                  className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 border"
-                  style={{
-                    background: checked ? dailyColor : "transparent",
-                    borderColor: checked ? dailyColor : "hsl(var(--border))",
-                  }}
-                >
-                  {checked && (
-                    <Check className="w-3 h-3 text-white" strokeWidth={3} />
-                  )}
+              {/* Header */}
+              <div className="flex items-center justify-between mb-1">
+                <div>
+                  <div className="text-[16px] font-bold text-foreground tracking-tight">
+                    משימות יומיות
+                  </div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
+                    סמנו מה כבר ביצעתם — הדירוג מתעדכן אוטומטית
+                  </div>
                 </div>
-                <Icon
-                  className="w-3.5 h-3.5 shrink-0"
-                  style={{
-                    color: checked ? dailyColor : "hsl(var(--muted-foreground))",
-                  }}
-                  strokeWidth={2}
-                />
-                <span
-                  className={`text-[12px] font-medium truncate flex-1 ${
-                    checked ? "text-foreground" : "text-muted-foreground"
-                  }`}
+                <button
+                  type="button"
+                  onClick={() => setTasksOpen(false)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center border border-border/50 text-muted-foreground hover:text-foreground"
+                  aria-label="סגור"
                 >
-                  {t.label}
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Score row */}
+              <div className="flex items-center justify-between mt-3 mb-2">
+                <span
+                  className="text-[12px] font-semibold"
+                  style={{ color: dailyColor }}
+                >
+                  {scoreLabel(daily.pct)} · {daily.pct}%
                 </span>
-              </button>
-            );
-          })}
-        </div>
-      </motion.div>
+                <span
+                  className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                  style={{ color: dailyColor, background: `${dailyColor}1a` }}
+                >
+                  {daily.completed}/{daily.total}
+                </span>
+              </div>
+
+              {/* Progress bar */}
+              <div className="h-1.5 w-full rounded-full bg-muted/40 overflow-hidden mb-4">
+                <motion.div
+                  className="h-full rounded-full"
+                  style={{ background: dailyColor }}
+                  initial={false}
+                  animate={{ width: `${daily.pct}%` }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                />
+              </div>
+
+              {/* Tasks list */}
+              <div className="flex flex-col gap-2">
+                {DAILY_TASKS.map((t) => {
+                  const Icon = t.icon;
+                  const checked = !!daily.done[t.key];
+                  return (
+                    <button
+                      key={t.key}
+                      type="button"
+                      onClick={() => daily.toggle(t.key)}
+                      className="flex items-center gap-3 px-3 py-3 rounded-2xl border transition-colors text-right"
+                      style={{
+                        borderColor: checked
+                          ? `${dailyColor}55`
+                          : "hsl(var(--border) / 0.5)",
+                        background: checked ? `${dailyColor}10` : "transparent",
+                      }}
+                      aria-pressed={checked}
+                    >
+                      <div
+                        className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 border-2"
+                        style={{
+                          background: checked ? dailyColor : "transparent",
+                          borderColor: checked
+                            ? dailyColor
+                            : "hsl(var(--border))",
+                        }}
+                      >
+                        {checked && (
+                          <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+                        )}
+                      </div>
+                      <div
+                        className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                        style={{
+                          background: checked
+                            ? `${dailyColor}1f`
+                            : "hsl(var(--muted) / 0.5)",
+                        }}
+                      >
+                        <Icon
+                          className="w-4 h-4"
+                          style={{
+                            color: checked
+                              ? dailyColor
+                              : "hsl(var(--muted-foreground))",
+                          }}
+                          strokeWidth={2}
+                        />
+                      </div>
+                      <span
+                        className={`text-[14px] font-medium flex-1 ${
+                          checked ? "text-foreground" : "text-muted-foreground"
+                        }`}
+                      >
+                        {t.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* ── Hero card: kcal eaten / target ── */}
       <motion.button
