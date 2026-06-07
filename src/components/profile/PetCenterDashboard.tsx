@@ -22,6 +22,7 @@ import {
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
 import { HeroInsight } from "./HeroInsight";
+import { BreedTraitCircles } from "./BreedTraitCircles";
 
 interface PetLike {
   id: string;
@@ -831,6 +832,14 @@ export const PetCenterDashboard = ({
           ? `יעדים מבוססי NRC 2006 · משקל ${weight}kg`
           : "הוסיפו משקל כדי לקבל יעדים מדויקים"}
       </div>
+
+      {/* ── Breed Trait Circles ── */}
+      <BreedTraitCircles
+        breed={pet.breed}
+        weight={weight}
+        kcalTarget={targets.kcal}
+        accent={accent}
+      />
 
       {/* ── Recently logged ── */}
       <div className="mt-2" id="recent-logs">
