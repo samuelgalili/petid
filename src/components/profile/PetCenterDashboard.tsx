@@ -535,6 +535,20 @@ export const PetCenterDashboard = ({
   const dailyColor = scoreColor(daily.pct);
   const [tasksOpen, setTasksOpen] = useState(false);
   const [infoKey, setInfoKey] = useState<null | "kcal" | "protein" | "carbs" | "fat">(null);
+  const [energyLevel, setEnergyLevel] = useState<number | null>(null);
+  useEffect(() => {
+    if (!pet.breed) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("breed_information")
+        .select("energy_level")
+        .or(`breed_name.ilike.%${pet.breed}%,breed_name_he.ilike.%${pet.breed}%`)
+        .maybeSingle();
+      if (!cancelled && data) setEnergyLevel((data as { energy_level: number | null }).energy_level ?? null);
+    })();
+    return () => { cancelled = true; };
+  }, [pet.breed]);
 
   // ── Placeholder "eaten today" (until live feeding log wired) ──
   // Conservative: show 0 of target when no log exists, never invent meals.
