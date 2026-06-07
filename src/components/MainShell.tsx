@@ -10,6 +10,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
+import DailyTasksSheet from "@/components/DailyTasksSheet";
 import { useOverlayNav } from "@/contexts/OverlayNavContext";
 
 const SoundtrackFeed = lazy(() => import("@/pages/SoundtrackFeed"));
