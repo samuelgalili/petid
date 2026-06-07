@@ -171,54 +171,6 @@ const BottomNav = () => {
         )}
       </AnimatePresence>
 
-      {/* Floating FAB — Intelligence Hub: transforms + → Brain on expand */}
-      {!dashboardOpen && (
-        <motion.button
-          whileTap={{ scale: 0.85 }}
-          onClick={() => setShowQuickActions((v) => !v)}
-          className={cn(
-            "fixed z-[10000] w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md left-4 transition-all duration-300",
-            showQuickActions
-              ? "bg-primary/15 border-[1.5px] border-primary/40 shadow-[0_0_20px_hsl(var(--primary)/0.3)]"
-              : "bg-primary/10 border-[1.5px] border-primary/30"
-          )}
-          style={{ bottom: `calc(72px + env(safe-area-inset-bottom))` }}
-          aria-label="Intelligence Hub"
-        >
-          <AnimatePresence mode="wait">
-            {showQuickActions ? (
-              <motion.div
-                key="brain"
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                exit={{ scale: 0, rotate: 180 }}
-                transition={{ type: "spring", stiffness: 500, damping: 25 }}
-              >
-                <Brain className="w-5 h-5 text-primary" strokeWidth={2} />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="plus"
-                initial={{ scale: 0, rotate: 180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                exit={{ scale: 0, rotate: -180 }}
-                transition={{ type: "spring", stiffness: 500, damping: 25 }}
-              >
-                <Plus className="w-5 h-5 text-primary" strokeWidth={2} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-          {/* Subtle pulse ring when closed */}
-          {!showQuickActions && (
-            <motion.div
-              className="absolute inset-0 rounded-full border border-primary/20"
-              animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
-              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-            />
-          )}
-        </motion.button>
-      )}
-
       {/* ── Bottom Navigation Bar ── */}
       <nav
         className={cn(
@@ -286,24 +238,21 @@ const BottomNav = () => {
             </span>
           </div>
 
-          {/* Shop */}
+          {/* Feed */}
           <NavButton
-            onClick={() => handleNavClick("/shop")}
-            active={isActive("/shop")}
-            label={labels.shop}
+            onClick={() => handleNavClick("/feed")}
+            active={isActive("/feed")}
+            label={labels.feed}
             accent={petAccent}
           >
-            <ShoppingBag
-              className={cn("w-[22px] h-[22px] transition-colors", !isActive("/shop") && "text-muted-foreground")}
-              style={isActive("/shop") ? { color: petAccent || "hsl(var(--primary))" } : undefined}
-              strokeWidth={isActive("/shop") ? 2.2 : 1.5}
+            <Home
+              className={cn("w-[22px] h-[22px] transition-colors", !isActive("/feed") && "text-muted-foreground")}
+              style={isActive("/feed") ? { color: petAccent || "hsl(var(--primary))" } : undefined}
+              strokeWidth={isActive("/feed") ? 2.2 : 1.5}
             />
           </NavButton>
         </div>
       </nav>
-
-      {/* Pet Guardian Panel */}
-      <PetGuardianPanel isOpen={showGuardian} onClose={() => setShowGuardian(false)} />
     </>
   );
 };
