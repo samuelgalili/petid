@@ -216,21 +216,37 @@ const AvatarStep: React.FC<{
         {generating ? "Bringing them to life…" : "Ready to proceed?"}
       </p>
 
-      <div className="relative w-[280px] h-[280px] flex items-center justify-center mt-4">
+      <div className="relative w-[280px] h-[280px] flex items-center justify-center mt-4 overflow-hidden">
         {generating ? (
           <>
             <AuroraRing size={280} />
             <Loader2 className="w-10 h-10 text-slate-400 animate-spin relative z-10" />
           </>
         ) : (
-          <motion.img
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6 }}
-            src={avatarUrl}
-            alt="Generated avatar"
-            className="w-full h-full object-contain drop-shadow-[0_20px_30px_rgba(0,0,0,0.12)]"
-          />
+          <>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.6 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 1.1, duration: 0.6, ease: "easeOut" }}
+              className="absolute inset-0 flex items-center justify-center"
+            >
+              <AuroraRing size={280} />
+            </motion.div>
+            <motion.img
+              initial={{ x: -220, y: 6, opacity: 0, scale: 0.85, rotate: -4 }}
+              animate={{
+                x: [-220, -40, 0, 0],
+                y: [6, 6, 6, 0],
+                opacity: [0, 1, 1, 1],
+                scale: [0.85, 0.95, 1, 1],
+                rotate: [-4, 2, -1, 0],
+              }}
+              transition={{ duration: 1.4, times: [0, 0.55, 0.85, 1], ease: "easeOut" }}
+              src={avatarUrl}
+              alt="Generated avatar"
+              className="w-full h-full object-contain drop-shadow-[0_20px_30px_rgba(0,0,0,0.12)] relative z-10"
+            />
+          </>
         )}
       </div>
     </div>
