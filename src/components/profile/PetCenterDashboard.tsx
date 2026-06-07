@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
+import dobermanAsset from "@/assets/doberman.jpg.asset.json";
 import { HeroInsight } from "./HeroInsight";
 import { BreedTraitCircles } from "./BreedTraitCircles";
 
@@ -761,7 +762,7 @@ export const PetCenterDashboard = ({
             }}
           >
             <img
-              src={pet.avatar_url || fallback}
+              src={dobermanAsset.url}
               alt={pet.name}
               className="w-[132px] h-[132px] rounded-full object-cover bg-muted block"
             />
