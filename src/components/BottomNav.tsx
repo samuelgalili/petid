@@ -39,7 +39,7 @@ const BottomNav = () => {
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressTriggered = useRef(false);
 
-  // Single tap → floating pet switcher; Long press → open dashboard directly
+  // Single tap → open daily tasks sheet; Long press → open pet dashboard
   const handlePetPointerDown = useCallback(() => {
     longPressTriggered.current = false;
     longPressTimer.current = setTimeout(() => {
@@ -54,7 +54,7 @@ const BottomNav = () => {
     if (!longPressTriggered.current) {
       triggerRandom();
       if (navigator.vibrate) navigator.vibrate(10);
-      setShowPetSwitcher(true);
+      window.dispatchEvent(new CustomEvent("open-daily-tasks"));
     }
   }, [triggerRandom]);
 
