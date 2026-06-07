@@ -120,15 +120,13 @@ export const PetCenterDashboard = ({ pet, accent = "hsl(var(--primary))" }: Prop
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.25, type: "spring", damping: 18, stiffness: 200 }}
-        className="flex flex-col items-center justify-center py-2"
+        className="flex flex-col items-center justify-center py-4"
       >
-        <div className="w-44 h-44 rounded-full overflow-hidden flex items-center justify-center">
-          {pet.avatar_url ? (
-            <img src={pet.avatar_url} alt={pet.name} className="w-full h-full object-cover" />
-          ) : (
-            <img src={fallback} alt={pet.name} className="w-28 h-28 opacity-80" />
-          )}
-        </div>
+        <img
+          src={pet.avatar_url || fallback}
+          alt={pet.name}
+          className="h-56 w-auto object-contain drop-shadow-[0_18px_24px_rgba(0,0,0,0.18)]"
+        />
       </motion.div>
 
       {/* ── Vitality Section ── */}
