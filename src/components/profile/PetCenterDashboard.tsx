@@ -822,8 +822,8 @@ export const PetCenterDashboard = ({
               className="absolute left-1/2 -translate-x-1/2 -bottom-3 px-3 py-1 rounded-full text-[12px] font-bold shadow-md"
               style={{
                 background: "hsl(var(--card))",
-                color: ringColor,
-                border: `1px solid ${ringColor}55`,
+                color: "hsl(var(--foreground))",
+                border: "1px solid hsl(var(--border))",
               }}
             >
               {overall}% יעד יומי
