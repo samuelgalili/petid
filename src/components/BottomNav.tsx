@@ -39,24 +39,29 @@ const BottomNav = () => {
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressTriggered = useRef(false);
 
-  // Single tap → open daily tasks sheet; Long press → open pet dashboard
+  // First tap → open pet dashboard. If dashboard already open → open daily tasks.
+  // Long press → open pet switcher.
   const handlePetPointerDown = useCallback(() => {
     longPressTriggered.current = false;
     longPressTimer.current = setTimeout(() => {
       longPressTriggered.current = true;
       if (navigator.vibrate) navigator.vibrate(20);
-      openDashboard();
+      setShowPetSwitcher(true);
     }, 500);
-  }, [openDashboard]);
+  }, []);
 
   const handlePetPointerUp = useCallback(() => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
     if (!longPressTriggered.current) {
       triggerRandom();
       if (navigator.vibrate) navigator.vibrate(10);
-      window.dispatchEvent(new CustomEvent("open-daily-tasks"));
+      if (dashboardOpen) {
+        window.dispatchEvent(new CustomEvent("open-daily-tasks"));
+      } else {
+        openDashboard();
+      }
     }
-  }, [triggerRandom]);
+  }, [triggerRandom, dashboardOpen, openDashboard]);
 
   const handlePetPointerLeave = useCallback(() => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
