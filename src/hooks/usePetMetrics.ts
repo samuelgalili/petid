@@ -191,6 +191,13 @@ export const usePetMetrics = (petId: string | undefined) => {
     void load();
   }, [load]);
 
+  // Allow other parts of the app (e.g. QuickLogSheet) to force a refresh.
+  useEffect(() => {
+    const handler = () => { void load(); };
+    window.addEventListener("pet-metrics-refresh", handler);
+    return () => window.removeEventListener("pet-metrics-refresh", handler);
+  }, [load]);
+
   /** Toggle a daily task (optimistic + DB upsert). */
   const toggleTask = useCallback(
     async (key: DailyTaskKey): Promise<boolean> => {
