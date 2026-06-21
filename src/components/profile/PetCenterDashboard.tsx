@@ -323,59 +323,6 @@ const DayPill = ({
   );
 };
 
-/* ─── Macro mini-card (small) ─── */
-const MacroCard = ({
-  eaten,
-  target,
-  unit,
-  label,
-  color,
-  icon: Icon,
-  delay,
-  onInfo,
-}: {
-  eaten: number | null;
-  target: number | null;
-  unit: string;
-  label: string;
-  color: string;
-  icon: typeof Drumstick;
-  delay: number;
-  onInfo: () => void;
-}) => {
-  const pct =
-    eaten != null && target != null && target > 0
-      ? (eaten / target) * 100
-      : 0;
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.4, ease: "easeOut" }}
-      className="flex-1 rounded-2xl bg-card border border-border/40 px-2 pt-3 pb-3 flex flex-col items-center gap-2"
-    >
-      <FlipGauge
-        pct={pct}
-        size={64}
-        stroke={4}
-        color={color}
-        icon={Icon}
-        eaten={eaten}
-        target={target}
-        unit={unit}
-        iconSize={18}
-        numberClass="text-[13px] font-bold"
-        unitClass="text-[8px] text-muted-foreground/70"
-        onClick={onInfo}
-        ariaLabel={label}
-      />
-      <div className="text-[10px] text-muted-foreground/70">
-        {label}
-      </div>
-    </motion.div>
-  );
-};
-
 /* ─── Timeline row (kept, minimal) ─── */
 type TimelineKind = "vaccine" | "vet" | "weight" | "reminder";
 const T_META: Record<TimelineKind, { icon: typeof Weight }> = {
