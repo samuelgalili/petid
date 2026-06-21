@@ -71,6 +71,7 @@ import { BreedTraitCircles } from "./BreedTraitCircles";
 import { AnimatedCounter } from "./AnimatedCounter";
 import { supabase } from "@/integrations/supabase/client";
 import { usePetMetrics, DAILY_TASK_KEYS, type DailyTaskKey } from "@/hooks/usePetMetrics";
+import { computeAdjustedTargets } from "@/lib/nrcTargets";
 
 interface PetLike {
   id: string;
@@ -92,22 +93,6 @@ interface Props {
 
 const fmt = (v: string | number | null | undefined, suffix = "") =>
   v == null || v === "" ? "—" : `${v}${suffix}`;
-
-/* ─── NRC 2006 (conservative, adult neutered) ─── */
-const computeTargets = (weightKg: number | null | undefined) => {
-  if (!weightKg || weightKg <= 0) {
-    return { kcal: null, protein_g: null, fat_g: null, carbs_g: null, water_ml: null };
-  }
-  const RER = 70 * Math.pow(weightKg, 0.75);
-  const MER = RER * 1.6;
-  return {
-    kcal: Math.round(MER),
-    protein_g: Math.round((MER * 0.25) / 4),
-    fat_g: Math.round((MER * 0.2) / 9),
-    carbs_g: Math.round((MER * 0.55) / 4),
-    water_ml: Math.round(weightKg * 50),
-  };
-};
 
 /* ─── Day-of-week initials (Sun–Sat) ─── */
 const DAY_INITIALS = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
@@ -632,9 +617,11 @@ export const PetCenterDashboard = ({
   const fallback = type === "cat" ? catIcon : dogIcon;
   const weight = pet.weight ?? null;
 
-  const targets = useMemo(() => computeTargets(weight), [weight]);
-
   const metrics = usePetMetrics(pet.id);
+  const targets = useMemo(
+    () => computeAdjustedTargets(weight, metrics.baseline),
+    [weight, metrics.baseline],
+  );
   const daily = useMemo(
     () => ({
       done: metrics.todayTasks,
@@ -724,7 +711,7 @@ export const PetCenterDashboard = ({
       <HeroInsight petId={pet.id} />
 
       {/* ── Baseline strip: "what's normal for your pet" learning layer ── */}
-      <BaselineStrip baseline={metrics.baseline} />
+      <BaselineStrip baseline={metrics.baseline} targets={targets} />
 
       {/* ── Week strip ── */}
       <div className="relative flex items-center justify-between rounded-2xl bg-card/30 backdrop-blur-xl border border-white/10 px-2 py-2.5 shadow-[0_8px_28px_-12px_hsl(var(--primary)/0.25)]">

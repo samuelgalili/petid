@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, Minus, AlertCircle } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, AlertCircle, Sparkles } from "lucide-react";
+import type { DailyTargets } from "@/lib/nrcTargets";
 
 interface Baseline {
   avgWaterMl: number | null;
@@ -17,7 +18,13 @@ interface Baseline {
  * Conservative: hides everything until confidence ≥ 0.4 (≈ 6 days of logs).
  * Shows only what we actually know — never invents averages.
  */
-export const BaselineStrip = ({ baseline }: { baseline: Baseline }) => {
+export const BaselineStrip = ({
+  baseline,
+  targets,
+}: {
+  baseline: Baseline;
+  targets?: DailyTargets;
+}) => {
   if (baseline.confidence < 0.4) {
     return (
       <div className="rounded-2xl px-3 py-2 bg-muted/30 border border-border/30 text-[11px] text-muted-foreground/80 text-center">
@@ -96,6 +103,22 @@ export const BaselineStrip = ({ baseline }: { baseline: Baseline }) => {
               <span className="leading-snug">{a.detail}</span>
             </div>
           ))}
+        </div>
+      )}
+
+      {targets && targets.source !== "base" && targets.reason && (
+        <div className="mt-2 pt-2 border-t border-border/30 flex items-start gap-1.5 text-[11px] text-foreground/85">
+          <Sparkles className="w-3 h-3 mt-0.5 shrink-0" strokeWidth={1.8} />
+          <span className="leading-snug">
+            {targets.reason}
+            {targets.kcal != null && (
+              <> · יעד נוכחי <span className="tabular-nums font-semibold">{targets.kcal}</span> קק״ל
+                {targets.adjustmentPct !== 0 && (
+                  <> ({targets.adjustmentPct > 0 ? "+" : ""}{targets.adjustmentPct}%)</>
+                )}
+              </>
+            )}
+          </span>
         </div>
       )}
     </motion.div>
