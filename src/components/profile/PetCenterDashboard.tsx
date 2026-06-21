@@ -1278,7 +1278,15 @@ export const PetCenterDashboard = ({
         </div>
       </div>
 
-
+      {/* ── Bento Actions: top 4 actions in a 2-col grid ── */}
+      <BentoActions
+        daily={{ completed: daily.completed, total: daily.total, pct: daily.pct }}
+        dailyColor={dailyColor}
+        onTasks={() => setTasksOpen(true)}
+        onShare={() => shareToVet(pet, weight, daily.pct)}
+        onQuickAdd={() => openSheet("quick-add")}
+        onReport={() => openSheet("health-report")}
+      />
 
       {/* ── Metric Info Sheet ── */}
       <AnimatePresence>
