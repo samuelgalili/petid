@@ -348,11 +348,8 @@ const TimelineRow = ({
   return (
     <div className="flex gap-3 items-start">
       <div className="relative flex flex-col items-center">
-        <div
-          className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
-          style={{ background: `${accent}18`, color: accent }}
-        >
-          <Icon className="w-3.5 h-3.5" strokeWidth={1.8} />
+        <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-muted/40 border border-border/40 text-foreground">
+          <Ico icon={Icon} size="sm" />
         </div>
         {!last && (
           <div
@@ -538,11 +535,11 @@ const DailyBrief = ({
         className="absolute top-2 left-2 w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground/70 hover:text-foreground"
         aria-label="סגור"
       >
-        <X className="w-3.5 h-3.5" />
+        <Ico icon={X} size="sm" />
       </button>
       <div className="relative flex items-start gap-3">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border border-border/30 bg-muted/40">
-          <Icon className="w-5 h-5 text-muted-foreground" strokeWidth={1.75} />
+          <Ico icon={Icon} size="lg" className="text-muted-foreground" />
         </div>
         <div className="flex-1 min-w-0 pr-4">
           <div className="text-[13px] font-bold text-foreground leading-tight">
@@ -556,7 +553,7 @@ const DailyBrief = ({
             onClick={topAction.onClick}
             className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-full transition-transform active:scale-95 bg-foreground text-background"
           >
-            <topAction.icon className="w-3 h-3" strokeWidth={2.5} />
+            <Ico icon={topAction.icon} size="xs" />
             {topAction.label}
           </button>
         </div>
@@ -830,7 +827,7 @@ export const PetCenterDashboard = ({
                   className="w-8 h-8 rounded-full flex items-center justify-center border border-border/50 text-muted-foreground hover:text-foreground"
                   aria-label="סגור"
                 >
-                  <X className="w-4 h-4" />
+                  <Ico icon={X} size="md" />
                 </button>
               </div>
 
@@ -891,33 +888,22 @@ export const PetCenterDashboard = ({
                       <div
                         className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 border-2"
                         style={{
-                          background: checked ? dailyColor : "transparent",
+                          background: checked ? "hsl(var(--foreground))" : "transparent",
                           borderColor: checked
-                            ? dailyColor
+                            ? "hsl(var(--foreground))"
                             : "hsl(var(--border))",
                         }}
                       >
                         {checked && (
-                          <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+                          <Ico icon={Check} size="sm" className="text-background" />
                         )}
                       </div>
                       <div
-                        className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-                        style={{
-                          background: checked
-                            ? `${dailyColor}1f`
-                            : "hsl(var(--muted) / 0.5)",
-                        }}
+                        className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-muted/40 border border-border/40 ${
+                          checked ? "text-foreground" : "text-muted-foreground"
+                        }`}
                       >
-                        <Icon
-                          className="w-4 h-4"
-                          style={{
-                            color: checked
-                              ? dailyColor
-                              : "hsl(var(--muted-foreground))",
-                          }}
-                          strokeWidth={2}
-                        />
+                        <Ico icon={Icon} size="md" />
                       </div>
                       <span
                         className={`text-[14px] font-medium flex-1 ${
@@ -1153,7 +1139,7 @@ export const PetCenterDashboard = ({
                     className="w-8 h-8 rounded-full flex items-center justify-center border border-border/50 text-muted-foreground"
                     aria-label="סגור"
                   >
-                    <X className="w-4 h-4" />
+                    <Ico icon={X} size="md" />
                   </button>
                 </div>
 
