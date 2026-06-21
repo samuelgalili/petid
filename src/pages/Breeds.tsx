@@ -180,6 +180,8 @@ const Breeds = () => {
 
   const { data: breeds, isLoading } = useQuery({
     queryKey: ["breeds-encyclopedia", petType],
+    staleTime: 24 * 60 * 60 * 1000, // 24h — reference data
+    gcTime: 24 * 60 * 60 * 1000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("breed_information")
