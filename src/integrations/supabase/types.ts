@@ -14116,6 +14116,28 @@ export type Database = {
           source: string
         }[]
       }
+      search_products_unified: {
+        Args: {
+          p_category?: string
+          p_limit?: number
+          p_max_price?: number
+          p_min_price?: number
+          p_pet_type?: string
+          p_query?: string
+        }
+        Returns: {
+          brand: string
+          category: string
+          id: string
+          image_url: string
+          in_stock: boolean
+          name: string
+          pet_type: string
+          price: number
+          rank: number
+          source: string
+        }[]
+      }
       send_post_notification: {
         Args: {
           p_body: string
