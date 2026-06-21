@@ -383,7 +383,7 @@ const DayPill = ({
         {isToday && (
           <div
             className="absolute inset-1 rounded-full opacity-90"
-            style={{ background: 'conic-gradient(from 140deg, #FF9A6C, #FF7BAC, #C58BFA, #6BB8FF, #FF9A6C)' }}
+            style={{ background: 'hsl(var(--foreground))' }}
             aria-hidden
           />
         )}
