@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback, useId, type ReactNode } from "react";
+import { useMemo, useState, useEffect, useId, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -69,6 +69,7 @@ import { HeroInsight } from "./HeroInsight";
 import { BreedTraitCircles } from "./BreedTraitCircles";
 import { AnimatedCounter } from "./AnimatedCounter";
 import { supabase } from "@/integrations/supabase/client";
+import { usePetMetrics, DAILY_TASK_KEYS, type DailyTaskKey } from "@/hooks/usePetMetrics";
 
 interface PetLike {
   id: string;
@@ -384,16 +385,6 @@ const TimelineRow = ({
 
 /* ─────────────────────────────────────────────────────────── */
 /* ─── Daily care tasks ─── */
-type DailyTaskKey =
-  | "walk_morning"
-  | "walk_evening"
-  | "feed_morning"
-  | "feed_evening"
-  | "water"
-  | "health_check"
-  | "grooming"
-  | "play";
-
 const DAILY_TASKS: { key: DailyTaskKey; label: string; icon: typeof Footprints }[] = [
   { key: "walk_morning", label: "הליכת בוקר", icon: Footprints },
   { key: "feed_morning", label: "ארוחת בוקר", icon: UtensilsCrossed },
@@ -419,65 +410,7 @@ const todayKey = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
-const useDailyTasks = (petId: string) => {
-  const storageKey = `petid:daily:${petId}:${todayKey()}`;
-  const [done, setDone] = useState<Record<string, boolean>>(() => {
-    if (typeof window === "undefined") return {};
-    try {
-      const raw = localStorage.getItem(storageKey);
-      return raw ? JSON.parse(raw) : {};
-    } catch {
-      return {};
-    }
-  });
-  useEffect(() => {
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(done));
-    } catch {}
-  }, [storageKey, done]);
-  const toggle = useCallback((key: string): boolean => {
-    let newlyChecked = false;
-    setDone((prev) => {
-      const next = !prev[key];
-      newlyChecked = next === true && !prev[key];
-      return { ...prev, [key]: next };
-    });
-    return newlyChecked;
-  }, []);
-  const completed = DAILY_TASKS.filter((t) => done[t.key]).length;
-  const pct = Math.round((completed / DAILY_TASKS.length) * 100);
-  return { done, toggle, completed, total: DAILY_TASKS.length, pct };
-};
-
-/* ─── Daily streak: count consecutive days where pct ≥ 75% (real signal, not a guilt loop) ─── */
-const useDailyStreak = (petId: string, todayPct: number) => {
-  const key = `petid:streak:${petId}`;
-  const [streak, setStreak] = useState<number>(() => {
-    if (typeof window === "undefined") return 0;
-    try {
-      const raw = localStorage.getItem(key);
-      if (!raw) return 0;
-      return JSON.parse(raw).count ?? 0;
-    } catch { return 0; }
-  });
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (todayPct < 75) return;
-    try {
-      const today = todayKey();
-      const raw = localStorage.getItem(key);
-      const prev = raw ? JSON.parse(raw) as { count: number; lastDay: string } : { count: 0, lastDay: "" };
-      if (prev.lastDay === today) return;
-      // Was yesterday? then +1, else reset to 1
-      const yest = new Date(); yest.setDate(yest.getDate() - 1);
-      const yKey = `${yest.getFullYear()}-${String(yest.getMonth()+1).padStart(2,"0")}-${String(yest.getDate()).padStart(2,"0")}`;
-      const next = prev.lastDay === yKey ? prev.count + 1 : 1;
-      localStorage.setItem(key, JSON.stringify({ count: next, lastDay: today }));
-      setStreak(next);
-    } catch {}
-  }, [todayPct, key]);
-  return streak;
-};
+/* Streak is derived from the DB-backed weekTaskPct in PetCenterDashboard. */
 
 /* ─── Time-of-day awareness ─── */
 const useTimeOfDay = () => {
@@ -700,9 +633,28 @@ export const PetCenterDashboard = ({
 
   const targets = useMemo(() => computeTargets(weight), [weight]);
 
-  const daily = useDailyTasks(pet.id);
+  const metrics = usePetMetrics(pet.id);
+  const daily = useMemo(
+    () => ({
+      done: metrics.todayTasks,
+      toggle: metrics.toggleTask,
+      completed: metrics.completedToday,
+      total: metrics.totalTasks,
+      pct: metrics.taskPctToday,
+    }),
+    [metrics]
+  );
   const dailyColor = scoreColor(daily.pct);
-  const streak = useDailyStreak(pet.id, daily.pct);
+  /* Streak = consecutive days up to today with pct ≥ 75 (DB-backed). */
+  const streak = useMemo(() => {
+    const todayDow = new Date().getDay();
+    let n = 0;
+    for (let i = todayDow; i >= 0; i--) {
+      if ((metrics.weekTaskPct[i] ?? 0) >= 75) n++;
+      else break;
+    }
+    return n;
+  }, [metrics.weekTaskPct]);
   const [celebrateKey, setCelebrateKey] = useState(0);
   const [tasksOpen, setTasksOpen] = useState(false);
   const [infoKey, setInfoKey] = useState<null | "kcal" | "protein" | "carbs" | "fat">(null);
@@ -721,13 +673,13 @@ export const PetCenterDashboard = ({
     return () => { cancelled = true; };
   }, [pet.breed]);
 
-  // ── Placeholder "eaten today" (until live feeding log wired) ──
-  // Conservative: show 0 of target when no log exists, never invent meals.
+  // Real consumption today (from pet_feeding_logs / pet_water_logs).
+  // Macros are not yet logged per meal — show "—" rather than invent ratios.
   const eaten = {
-    kcal: targets.kcal != null ? Math.round(targets.kcal * 0.58) : null,
-    protein_g: targets.protein_g != null ? Math.round(targets.protein_g * 0.5) : null,
-    carbs_g: targets.carbs_g != null ? Math.round(targets.carbs_g * 0.5) : null,
-    fat_g: targets.fat_g != null ? Math.round(targets.fat_g * 0.5) : null,
+    kcal: metrics.kcalToday,
+    protein_g: null as number | null,
+    carbs_g: null as number | null,
+    fat_g: null as number | null,
   };
 
   const kcalPct =
@@ -736,8 +688,8 @@ export const PetCenterDashboard = ({
       : 0;
 
   const week = useMemo(buildWeek, []);
-  // Placeholder per-day completion pct
-  const dayPct = [100, 85, 90, kcalPct, 0, 0, 0];
+  // Real per-day completion % from DB
+  const dayPct = metrics.weekTaskPct;
 
   const openSheet = (sheet: string) =>
     window.dispatchEvent(
@@ -889,8 +841,8 @@ export const PetCenterDashboard = ({
                     <button
                       key={t.key}
                       type="button"
-                      onClick={() => {
-                        const newly = daily.toggle(t.key);
+                      onClick={async () => {
+                        const newly = await daily.toggle(t.key);
                         if (newly) {
                           setCelebrateKey((k) => k + 1);
                           if (typeof navigator !== "undefined" && "vibrate" in navigator) {
@@ -990,8 +942,15 @@ export const PetCenterDashboard = ({
           {
             key: "weight",
             icon: Weight,
-            value: weight ? `${weight}` : "+",
-            label: weight ? "ק״ג" : "משקל",
+            value: metrics.latestWeight != null
+              ? `${metrics.latestWeight}`
+              : weight ? `${weight}` : "+",
+            label:
+              metrics.weightDelta != null && metrics.weightDelta !== 0
+                ? `${metrics.weightDelta > 0 ? "↑" : "↓"} ${Math.abs(metrics.weightDelta)} ק״ג`
+                : metrics.latestWeight != null || weight
+                  ? "ק״ג"
+                  : "משקל",
             onClick: () => openSheet("weight"),
             depth: 0,
             x: 134,
@@ -1001,8 +960,18 @@ export const PetCenterDashboard = ({
           {
             key: "vaccines",
             icon: Syringe,
-            value: "✓",
-            label: "חיסונים",
+            value:
+              metrics.vaccinesActive + metrics.vaccinesExpired === 0
+                ? "—"
+                : metrics.vaccinesExpired > 0
+                  ? `${metrics.vaccinesExpired}`
+                  : `${metrics.vaccinesActive}`,
+            label:
+              metrics.vaccinesActive + metrics.vaccinesExpired === 0
+                ? "חיסונים"
+                : metrics.vaccinesExpired > 0
+                  ? "פג תוקף"
+                  : "בתוקף",
             onClick: () => openSheet("vaccines"),
             depth: 2,
             x: -130,
@@ -1012,8 +981,13 @@ export const PetCenterDashboard = ({
           {
             key: "hydration",
             icon: GlassWater,
-            value: targets.water_ml ? `${Math.round(targets.water_ml / 100) * 100}` : "—",
-            label: targets.water_ml ? "מ״ל" : "מים",
+            value:
+              metrics.waterToday != null && metrics.waterToday > 0
+                ? `${Math.round(metrics.waterToday)}`
+                : targets.water_ml
+                  ? `0/${Math.round(targets.water_ml / 100) * 100}`
+                  : "—",
+            label: targets.water_ml ? "מ״ל היום" : "מים",
             onClick: () => openSheet("water"),
             depth: 1,
             x: -118,
