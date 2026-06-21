@@ -841,8 +841,8 @@ export const PetCenterDashboard = ({
                     <button
                       key={t.key}
                       type="button"
-                      onClick={() => {
-                        const newly = daily.toggle(t.key);
+                      onClick={async () => {
+                        const newly = await daily.toggle(t.key);
                         if (newly) {
                           setCelebrateKey((k) => k + 1);
                           if (typeof navigator !== "undefined" && "vibrate" in navigator) {
