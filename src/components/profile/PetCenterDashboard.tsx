@@ -790,15 +790,22 @@ export const PetCenterDashboard = ({
                 { key: "health", icon: HeartPulse, label: "בריאות", color: "hsl(0 70% 60%)" },
                 { key: "grooming", icon: Brush, label: "טיפוח", color: "hsl(280 60% 60%)" },
               ].map((b) => (
-                <button
+                <motion.button
                   key={b.key}
                   type="button"
                   onClick={() => openSheet(b.key)}
                   aria-label={b.label}
-                  className="flex flex-col items-center shrink-0"
+                  whileHover={{ scale: 1.08, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex flex-col items-center shrink-0 group"
                   style={{ width: 56 }}
                 >
-                  <div className="relative rounded-full bg-card/30 border border-border/20" style={{ width: 44, height: 44 }}>
+                  <div className="relative rounded-full bg-card/30 backdrop-blur-md border border-white/10 transition-shadow duration-300 group-hover:shadow-[0_0_24px_-2px_var(--halo)]" style={{ width: 44, height: 44, ['--halo' as any]: b.color }}>
+                    <div
+                      className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-60 transition-opacity duration-300 blur-md"
+                      style={{ background: `radial-gradient(circle, ${b.color} 0%, transparent 70%)` }}
+                      aria-hidden
+                    />
                     <svg width={44} height={44} viewBox="0 0 44 44" className="-rotate-90" aria-hidden>
                       <circle cx={22} cy={22} r={18} fill="none" stroke="hsl(var(--muted))" strokeWidth={3} />
                       <circle cx={22} cy={22} r={18} fill="none" stroke={b.color} strokeWidth={3} strokeLinecap="round" strokeDasharray={113} strokeDashoffset={28} />
@@ -808,7 +815,7 @@ export const PetCenterDashboard = ({
                     </div>
                   </div>
                   <div className="mt-1 text-[9px] text-muted-foreground/80 leading-tight text-center">{b.label}</div>
-                </button>
+                </motion.button>
               ))}
             </div>
 
