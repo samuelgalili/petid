@@ -877,6 +877,20 @@ export const PetCenterDashboard = ({
   return (
     <div className="flex flex-col gap-3 pb-8">
 
+      {/* ── Daily Brief: time-aware, one CTA, dismissable per day ── */}
+      <DailyBrief
+        petName={pet.name}
+        weight={weight}
+        dailyPct={daily.pct}
+        topAction={
+          weight == null
+            ? { label: "הוספת משקל", onClick: () => openSheet("weight"), icon: Plus }
+            : daily.pct < 75
+              ? { label: "פתיחת משימות", onClick: () => setTasksOpen(true), icon: CalendarCheck }
+              : { label: "שליחה לוטרינר", onClick: () => shareToVet(pet, weight, daily.pct), icon: Share2 }
+        }
+      />
+
       {/* ── Hero Insight (Tier 1–5 ranked) ── */}
       <HeroInsight petId={pet.id} />
 
