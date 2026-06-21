@@ -896,27 +896,30 @@ export const PetCenterDashboard = ({
             </div>
             {/* Goal % badge */}
             <div
-              className="absolute left-1/2 -translate-x-1/2 -bottom-3 px-3 py-1 rounded-full text-[12px] font-bold shadow-md"
+              className="absolute left-1/2 -translate-x-1/2 -bottom-3 px-3 py-1 rounded-full text-[12px] font-bold shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.5)] backdrop-blur-xl"
               style={{
-                background: "hsl(var(--card))",
+                background: "hsl(var(--card) / 0.85)",
                 color: "hsl(var(--foreground))",
-                border: "1px solid hsl(var(--border))",
+                border: "1px solid hsl(var(--border) / 0.6)",
               }}
             >
-              {overall}% יעד יומי
+              <AnimatedCounter value={overall} duration={900} /><span>% יעד יומי</span>
             </div>
           </motion.button>
 
             {/* ── Weight + Vaccinations vertical column (left side of avatar) ── */}
             <div className="flex flex-col items-center gap-2 overflow-y-auto no-scrollbar py-1" style={{ scrollbarWidth: 'none', maxHeight: 280 }}>
               {/* Energy (breed) */}
-              <button
+              <motion.button
                 type="button"
                 onClick={() => openSheet('activity')}
-                className="flex flex-col items-center shrink-0"
+                whileHover={{ scale: 1.08, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex flex-col items-center shrink-0 group"
                 style={{ width: 62 }}
               >
-                <div className="relative rounded-full bg-card/30 border border-border/20" style={{ width: 48, height: 48 }}>
+                <div className="relative rounded-full bg-card/30 backdrop-blur-md border border-white/10 transition-shadow duration-300 group-hover:shadow-[0_0_24px_-2px_hsl(35_88%_58%)]" style={{ width: 48, height: 48 }}>
+                  <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-60 transition-opacity duration-300 blur-md" style={{ background: 'radial-gradient(circle, hsl(35 88% 58%) 0%, transparent 70%)' }} aria-hidden />
                   <svg width={48} height={48} viewBox="0 0 48 48" className="-rotate-90" aria-hidden>
                     <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(var(--muted))" strokeWidth={4} />
                     <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(35 88% 58%)" strokeWidth={4} strokeLinecap="round" strokeDasharray={125.6} strokeDashoffset={125.6 - ((energyLevel ?? 0) / 5) * 125.6} />
@@ -929,16 +932,19 @@ export const PetCenterDashboard = ({
                   {energyLevel == null || energyLevel === 0 ? '—' : energyLevel <= 2 ? 'נמוך' : energyLevel <= 3 ? 'בינוני' : 'גבוה'}
                 </div>
                 <div className="text-[9px] text-muted-foreground/70 leading-tight text-center">אנרגיה</div>
-              </button>
+              </motion.button>
 
               {/* Weight */}
-              <button
+              <motion.button
                 type="button"
                 onClick={() => openSheet('weight')}
-                className="flex flex-col items-center shrink-0"
+                whileHover={{ scale: 1.08, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex flex-col items-center shrink-0 group"
                 style={{ width: 62 }}
               >
-                <div className="relative rounded-full bg-card/30 border border-border/20" style={{ width: 48, height: 48 }}>
+                <div className="relative rounded-full bg-card/30 backdrop-blur-md border border-white/10 transition-shadow duration-300 group-hover:shadow-[0_0_24px_-2px_var(--halo)]" style={{ width: 48, height: 48, ['--halo' as any]: accent }}>
+                  <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-60 transition-opacity duration-300 blur-md" style={{ background: `radial-gradient(circle, ${accent} 0%, transparent 70%)` }} aria-hidden />
                   <svg width={48} height={48} viewBox="0 0 48 48" className="-rotate-90" aria-hidden>
                     <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(var(--muted))" strokeWidth={4} />
                     <circle cx={24} cy={24} r={20} fill="none" stroke={accent} strokeWidth={4} strokeLinecap="round" strokeDasharray={125.6} strokeDashoffset={weight ? 125.6 - ((Math.min(100, weight / 50 * 100)) / 100) * 125.6 : 125.6} />
@@ -951,16 +957,19 @@ export const PetCenterDashboard = ({
                   {weight ? `${weight} ק״ג` : '—'}
                 </div>
                 <div className="text-[9px] text-muted-foreground/70 leading-tight text-center">משקל</div>
-              </button>
+              </motion.button>
 
               {/* Vaccinations */}
-              <button
+              <motion.button
                 type="button"
                 onClick={() => openSheet('vaccines')}
-                className="flex flex-col items-center shrink-0"
+                whileHover={{ scale: 1.08, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex flex-col items-center shrink-0 group"
                 style={{ width: 62 }}
               >
-                <div className="relative rounded-full bg-card/30 border border-border/20" style={{ width: 48, height: 48 }}>
+                <div className="relative rounded-full bg-card/30 backdrop-blur-md border border-white/10 transition-shadow duration-300 group-hover:shadow-[0_0_24px_-2px_hsl(150_55%_50%)]" style={{ width: 48, height: 48 }}>
+                  <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-60 transition-opacity duration-300 blur-md" style={{ background: 'radial-gradient(circle, hsl(150 55% 50%) 0%, transparent 70%)' }} aria-hidden />
                   <svg width={48} height={48} viewBox="0 0 48 48" className="-rotate-90" aria-hidden>
                     <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(var(--muted))" strokeWidth={4} />
                     <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(150 55% 50%)" strokeWidth={4} strokeLinecap="round" strokeDasharray={125.6} strokeDashoffset={31.4} />
@@ -971,7 +980,7 @@ export const PetCenterDashboard = ({
                 </div>
                 <div className="mt-1 text-[10px] font-semibold text-foreground leading-tight text-center">עדכניים</div>
                 <div className="text-[9px] text-muted-foreground/70 leading-tight text-center">חיסונים</div>
-              </button>
+              </motion.button>
             </div>
           </div>
         );
