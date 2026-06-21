@@ -242,6 +242,33 @@
     --gradient-subtle: linear-gradient(135deg, hsl(204 30% 97%) 0%, hsl(210 30% 98%) 100%);
     --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(204 10% 99%) 100%);
 
+    /* ── Mipo Brand Tokens (Pet Dashboard) ──
+       Use ONLY on primary moments: daily-goal ring + streak chip + one active state.
+       Everything else on the dashboard must stay glass/neutral. */
+    --mipo-brand-1: 352 100% 74%;   /* coral  #FF7A8A */
+    --mipo-brand-2: 329 86% 70%;    /* pink   #F472B6 */
+    --mipo-brand-3: 255 92% 76%;    /* violet #A78BFA */
+    --mipo-brand-4: 187 92% 69%;    /* cyan   #67E8F9 */
+    --mipo-gradient: linear-gradient(
+      135deg,
+      hsl(var(--mipo-brand-1)) 0%,
+      hsl(var(--mipo-brand-2)) 35%,
+      hsl(var(--mipo-brand-3)) 70%,
+      hsl(var(--mipo-brand-4)) 100%
+    );
+    --mipo-gradient-conic: conic-gradient(
+      from 140deg,
+      hsl(var(--mipo-brand-1)),
+      hsl(var(--mipo-brand-2)),
+      hsl(var(--mipo-brand-3)),
+      hsl(var(--mipo-brand-4)),
+      hsl(var(--mipo-brand-1))
+    );
+    /* Neutral dashboard glass — use these instead of ad-hoc rgba/hex */
+    --mipo-glass-bg: hsl(var(--card) / 0.55);
+    --mipo-glass-border: hsl(0 0% 100% / 0.08);
+    --mipo-glass-highlight: hsl(0 0% 100% / 0.06);
+
     /* Soft Shadows - With blue tint */
     --shadow-sm: 0 2px 4px rgba(0, 120, 200, 0.08);
     --shadow-md: 0 4px 8px rgba(0, 120, 200, 0.1);
