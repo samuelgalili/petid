@@ -25,6 +25,7 @@ import catIcon from "@/assets/cat-official.png";
 import dobermanAsset from "@/assets/doberman.jpg.asset.json";
 import { HeroInsight } from "./HeroInsight";
 import { BreedTraitCircles } from "./BreedTraitCircles";
+import { AnimatedCounter } from "./AnimatedCounter";
 import { supabase } from "@/integrations/supabase/client";
 
 interface PetLike {
