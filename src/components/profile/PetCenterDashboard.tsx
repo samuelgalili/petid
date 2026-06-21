@@ -31,12 +31,16 @@ const ICON_STROKE = 1.5;
 type IcoSize = "xs" | "sm" | "md" | "lg";
 const ICO_PX: Record<IcoSize, number> = { xs: 12, sm: 14, md: 18, lg: 20 };
 
-/* Mipo brand gradient — used ONLY on primary moments (goal ring, streak, active state) */
+/* Mipo brand gradient — single source of truth lives in index.css
+   (--mipo-brand-1..4, --mipo-gradient, --mipo-gradient-conic).
+   Use ONLY on: daily-goal ring, streak chip, one active state.
+   Everything else on the dashboard must stay glass/neutral
+   (--mipo-glass-bg / --mipo-glass-border / --mipo-glass-highlight). */
 const BRAND_STOPS = [
-  { offset: "0%",   color: "#FF7A8A" },
-  { offset: "35%",  color: "#F472B6" },
-  { offset: "70%",  color: "#A78BFA" },
-  { offset: "100%", color: "#67E8F9" },
+  { offset: "0%",   color: "hsl(var(--mipo-brand-1))" },
+  { offset: "35%",  color: "hsl(var(--mipo-brand-2))" },
+  { offset: "70%",  color: "hsl(var(--mipo-brand-3))" },
+  { offset: "100%", color: "hsl(var(--mipo-brand-4))" },
 ];
 const Ico = ({
   icon: I,
