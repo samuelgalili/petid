@@ -1220,7 +1220,9 @@ export const PetCenterDashboard = ({
                   <LiquidMini pct={((energyLevel ?? 0) / 5) * 100} size={48} color="hsl(35 88% 58%)" icon={Zap} iconSize={14} />
                 </div>
                 <div className="mt-1 text-[10px] font-semibold text-foreground leading-tight text-center">
-                  {energyLevel == null || energyLevel === 0 ? '—' : energyLevel <= 2 ? 'נמוך' : energyLevel <= 3 ? 'בינוני' : 'גבוה'}
+                  {energyLevel == null || energyLevel === 0
+                    ? <span className="text-primary">+ הוסף גזע</span>
+                    : energyLevel <= 2 ? 'נמוך' : energyLevel <= 3 ? 'בינוני' : 'גבוה'}
                 </div>
                 <div className="text-[9px] text-muted-foreground/70 leading-tight text-center">אנרגיה</div>
               </motion.button>
@@ -1239,7 +1241,7 @@ export const PetCenterDashboard = ({
                   <LiquidMini pct={weight ? Math.min(100, (weight / 50) * 100) : 0} size={48} color={accent} icon={Weight} iconSize={14} />
                 </div>
                 <div className="mt-1 text-[10px] font-semibold text-foreground leading-tight text-center" dir="auto" style={{ unicodeBidi: 'plaintext' }}>
-                  {weight ? `${weight} ק״ג` : '—'}
+                  {weight ? `${weight} ק״ג` : <span className="text-primary">+ הוסף משקל</span>}
                 </div>
                 <div className="text-[9px] text-muted-foreground/70 leading-tight text-center">משקל</div>
               </motion.button>
