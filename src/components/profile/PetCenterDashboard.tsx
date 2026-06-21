@@ -965,7 +965,6 @@ export const PetCenterDashboard = ({
           value: ReactNode;
           label: string;
           onClick: () => void;
-          active?: boolean;
           // parallax: depth 0 = front (big, sharp), 2 = back (small, dim)
           depth: 0 | 1 | 2;
           // position relative to avatar center
@@ -994,7 +993,6 @@ export const PetCenterDashboard = ({
             value: weight ? `${weight}` : "+",
             label: weight ? "ק״ג" : "משקל",
             onClick: () => openSheet("weight"),
-            active: weight != null,
             depth: 0,
             x: 134,
             y: 78,
