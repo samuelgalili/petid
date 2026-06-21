@@ -1021,7 +1021,7 @@ export const PetCenterDashboard = ({
       <HeroInsight petId={pet.id} />
 
       {/* ── Week strip ── */}
-      <div className="flex items-center justify-between rounded-2xl bg-card/30 backdrop-blur-xl border border-white/10 px-2 py-2.5 shadow-[0_8px_28px_-12px_hsl(var(--primary)/0.25)]">
+      <div className="relative flex items-center justify-between rounded-2xl bg-card/30 backdrop-blur-xl border border-white/10 px-2 py-2.5 shadow-[0_8px_28px_-12px_hsl(var(--primary)/0.25)]">
         {week.map((d, i) => (
           <DayPill
             key={i}
@@ -1033,6 +1033,25 @@ export const PetCenterDashboard = ({
             accent={accent}
           />
         ))}
+        {streak > 0 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.7, y: -4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="absolute -top-2 -left-2 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold backdrop-blur-md border border-white/10"
+            style={{ background: "hsl(20 90% 55% / 0.18)", color: "hsl(20 95% 60%)" }}
+            aria-label={`רצף של ${streak} ימים`}
+          >
+            <motion.span
+              animate={{ scale: [1, 1.15, 1], rotate: [0, -5, 5, 0] }}
+              transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+              aria-hidden
+            >
+              🔥
+            </motion.span>
+            <span dir="ltr">{streak}</span>
+          </motion.div>
+        )}
       </div>
 
       {/* ── Daily Tasks Bottom Sheet ── */}
