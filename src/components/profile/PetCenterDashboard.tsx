@@ -735,9 +735,11 @@ export const PetCenterDashboard = ({
       new CustomEvent("open-pet-sheet", { detail: { sheet } })
     );
 
-  const C_PROTEIN = "hsl(8 78% 60%)";
-  const C_CARBS = "hsl(35 88% 58%)";
-  const C_FATS = "hsl(205 80% 58%)";
+  // Monochrome palette — single foreground tint everywhere
+  const C_FG = "hsl(var(--foreground))";
+  const C_PROTEIN = C_FG;
+  const C_CARBS = C_FG;
+  const C_FATS = C_FG;
 
   return (
     <div className="flex flex-col gap-3 pb-8">
@@ -1137,11 +1139,8 @@ export const PetCenterDashboard = ({
                 </div>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div
-                      className="w-9 h-9 rounded-xl flex items-center justify-center"
-                      style={{ background: `${m.color}1a` }}
-                    >
-                      <Flame className="w-4 h-4" style={{ color: m.color }} />
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-muted/40 border border-border/40 text-foreground">
+                      <Ico icon={Zap} size="md" />
                     </div>
                     <div>
                       <div className="text-[16px] font-bold text-foreground">{m.title}</div>
