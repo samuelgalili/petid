@@ -223,6 +223,16 @@ export const QuickLogSheet = ({ type, pet, onClose, onSaved }: Props) => {
 
   if (!type) return null;
   const m = META[type];
+  const Err = ({ k }: { k: string }) =>
+    errors[k] ? (
+      <p className="text-[11px] text-destructive mt-1 font-medium" role="alert">
+        {errors[k]}
+      </p>
+    ) : null;
+  const fieldClass = (k: string) =>
+    `w-full h-12 px-4 rounded-2xl bg-muted/40 border text-foreground text-lg tabular-nums ${
+      errors[k] ? "border-destructive/70" : "border-border/40"
+    }`;
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
@@ -245,9 +255,11 @@ export const QuickLogSheet = ({ type, pet, onClose, onSaved }: Props) => {
               <input
                 type="number" inputMode="numeric" autoFocus
                 value={amountMl} onChange={(e) => setAmountMl(e.target.value)}
-                className="w-full h-12 px-4 rounded-2xl bg-muted/40 border border-border/40 text-foreground text-lg tabular-nums"
+                className={fieldClass("amount_ml")}
                 placeholder="למשל 250"
+                aria-invalid={!!errors.amount_ml}
               />
+              <Err k="amount_ml" />
               <div className="flex gap-2 flex-wrap">
                 {[100, 200, 300, 500].map((v) => (
                   <button key={v} type="button" onClick={() => setAmountMl(String(v))}
@@ -265,16 +277,21 @@ export const QuickLogSheet = ({ type, pet, onClose, onSaved }: Props) => {
               <input
                 type="text"
                 value={foodName} onChange={(e) => setFoodName(e.target.value)}
-                className="w-full h-12 px-4 rounded-2xl bg-muted/40 border border-border/40 text-foreground"
+                className={fieldClass("food_name").replace("text-lg tabular-nums", "")}
                 placeholder="למשל Royal Canin"
+                maxLength={120}
+                aria-invalid={!!errors.food_name}
               />
+              <Err k="food_name" />
               <label className="block text-xs text-muted-foreground mt-2">קלוריות (קק״ל)</label>
               <input
                 type="number" inputMode="numeric"
                 value={kcal} onChange={(e) => setKcal(e.target.value)}
-                className="w-full h-12 px-4 rounded-2xl bg-muted/40 border border-border/40 text-foreground text-lg tabular-nums"
+                className={fieldClass("kcal")}
                 placeholder="לדוגמה 350"
+                aria-invalid={!!errors.kcal}
               />
+              <Err k="kcal" />
             </>
           )}
 
@@ -284,9 +301,11 @@ export const QuickLogSheet = ({ type, pet, onClose, onSaved }: Props) => {
               <input
                 type="number" inputMode="decimal" step="0.1" autoFocus
                 value={weightKg} onChange={(e) => setWeightKg(e.target.value)}
-                className="w-full h-12 px-4 rounded-2xl bg-muted/40 border border-border/40 text-foreground text-lg tabular-nums"
+                className={fieldClass("weight_kg")}
                 placeholder="למשל 12.5"
+                aria-invalid={!!errors.weight_kg}
               />
+              <Err k="weight_kg" />
             </>
           )}
 
