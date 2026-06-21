@@ -720,6 +720,71 @@ const shareToVet = async (pet: PetLike, weight: number | null, dailyPct: number)
   window.open(url, "_blank", "noopener");
 };
 
+/* ─── Mood inference (real data only — never invent emotion) ─── */
+type Mood = "unknown" | "asleep" | "calm" | "alert" | "attention" | "vet";
+const HALO: Record<Mood, { color: string; pulse: boolean; opacity: number }> = {
+  unknown:   { color: "hsl(220 10% 60%)",  pulse: false, opacity: 0 },
+  asleep:    { color: "hsl(230 50% 55%)",  pulse: false, opacity: 0.18 },
+  calm:      { color: "hsl(142 65% 50%)",  pulse: false, opacity: 0.28 },
+  alert:     { color: "hsl(45 90% 58%)",   pulse: false, opacity: 0.35 },
+  attention: { color: "hsl(28 92% 58%)",   pulse: true,  opacity: 0.45 },
+  vet:       { color: "hsl(0 78% 58%)",    pulse: true,  opacity: 0.5  },
+};
+const inferMood = ({
+  hasBreed, hasWeight, dailyPct, isNight,
+}: { hasBreed: boolean; hasWeight: boolean; dailyPct: number; isNight: boolean }): Mood => {
+  if (!hasBreed && !hasWeight) return "unknown";
+  if (isNight) return "asleep";
+  if (!hasWeight) return "attention";
+  if (dailyPct >= 75) return "calm";
+  if (dailyPct >= 40) return "alert";
+  return "attention";
+};
+
+/* ─── MoodAvatar: real image + breathing + state-driven halo (no fake "hunger") ─── */
+const MoodAvatar = ({ src, alt, mood }: { src: string; alt: string; mood: Mood }) => {
+  const h = HALO[mood];
+  const sleeping = mood === "asleep";
+  return (
+    <div className="relative w-[200px] h-[200px]">
+      {/* Halo — mood color */}
+      <motion.div
+        className="absolute inset-0 rounded-full pointer-events-none"
+        style={{ background: `radial-gradient(circle, ${h.color} 0%, transparent 65%)`, filter: "blur(18px)" }}
+        initial={false}
+        animate={
+          h.pulse
+            ? { opacity: [h.opacity * 0.6, h.opacity, h.opacity * 0.6], scale: [0.95, 1.05, 0.95] }
+            : { opacity: h.opacity, scale: 1 }
+        }
+        transition={h.pulse ? { duration: 2.4, repeat: Infinity, ease: "easeInOut" } : { duration: 0.6 }}
+        aria-hidden
+      />
+      {/* Breathing avatar */}
+      <motion.img
+        src={src}
+        alt={alt}
+        className="relative w-[200px] h-[200px] rounded-full object-contain bg-muted block"
+        style={{ opacity: mood === "unknown" ? 0.5 : sleeping ? 0.85 : 1, filter: sleeping ? "brightness(0.85)" : "none" }}
+        animate={{ scale: sleeping ? [1, 1.012, 1] : [1, 1.02, 1] }}
+        transition={{ duration: sleeping ? 5 : 3.2, repeat: Infinity, ease: "easeInOut" }}
+      />
+      {/* Sleeping Z marks */}
+      {sleeping && (
+        <motion.div
+          className="absolute -top-1 right-2 text-[16px] font-bold select-none"
+          style={{ color: "hsl(230 60% 70%)" }}
+          animate={{ y: [-2, -10, -2], opacity: [0.3, 0.9, 0.3] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          aria-hidden
+        >
+          z
+        </motion.div>
+      )}
+    </div>
+  );
+};
+
 /* ─── Bento action cards (2x2 below the avatar) ─── */
 const BentoActions = ({
   daily,
