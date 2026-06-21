@@ -222,11 +222,17 @@ const LiquidMini = ({
   pct: number;
   size: number;
   color: string;
-  icon: typeof Drumstick;
+  icon: LucideIcon;
   iconSize?: number;
 }) => (
   <ArcGauge pct={pct} size={size} stroke={4} color={color}>
-    <Icon style={{ color, width: iconSize, height: iconSize }} strokeWidth={2} />
+    <Icon
+      width={iconSize}
+      height={iconSize}
+      strokeWidth={ICON_STROKE}
+      style={{ color }}
+      aria-hidden
+    />
   </ArcGauge>
 );
 
