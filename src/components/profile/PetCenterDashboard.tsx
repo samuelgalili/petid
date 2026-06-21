@@ -1306,13 +1306,12 @@ export const PetCenterDashboard = ({
                 className="flex flex-col items-center shrink-0 group"
                 style={{ width: 62 }}
               >
-                <div className="relative rounded-full bg-card/30 backdrop-blur-md border border-white/10 transition-shadow duration-300 group-hover:shadow-[0_0_24px_-2px_hsl(35_88%_58%)]" style={{ width: 48, height: 48 }}>
-                  <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-60 transition-opacity duration-300 blur-md" style={{ background: 'radial-gradient(circle, hsl(35 88% 58%) 0%, transparent 70%)' }} aria-hidden />
-                  <LiquidMini pct={((energyLevel ?? 0) / 5) * 100} size={48} color="hsl(35 88% 58%)" icon={Zap} iconSize={14} />
+                <div className="relative rounded-full bg-card/40 backdrop-blur-md border border-border/30" style={{ width: 48, height: 48 }}>
+                  <LiquidMini pct={((energyLevel ?? 0) / 5) * 100} size={48} color="hsl(var(--foreground))" icon={Zap} iconSize={14} />
                 </div>
                 <div className="mt-1 text-[10px] font-semibold text-foreground leading-tight text-center">
                   {energyLevel == null || energyLevel === 0
-                    ? <span className="text-primary">+ הוסף גזע</span>
+                    ? <span className="text-muted-foreground">+ גזע</span>
                     : energyLevel <= 2 ? 'נמוך' : energyLevel <= 3 ? 'בינוני' : 'גבוה'}
                 </div>
                 <div className="text-[9px] text-muted-foreground/70 leading-tight text-center">אנרגיה</div>
@@ -1327,12 +1326,11 @@ export const PetCenterDashboard = ({
                 className="flex flex-col items-center shrink-0 group"
                 style={{ width: 62 }}
               >
-                <div className="relative rounded-full bg-card/30 backdrop-blur-md border border-white/10 transition-shadow duration-300 group-hover:shadow-[0_0_24px_-2px_var(--halo)]" style={{ width: 48, height: 48, ['--halo' as any]: accent }}>
-                  <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-60 transition-opacity duration-300 blur-md" style={{ background: `radial-gradient(circle, ${accent} 0%, transparent 70%)` }} aria-hidden />
-                  <LiquidMini pct={weight ? Math.min(100, (weight / 50) * 100) : 0} size={48} color={accent} icon={Weight} iconSize={14} />
+                <div className="relative rounded-full bg-card/40 backdrop-blur-md border border-border/30" style={{ width: 48, height: 48 }}>
+                  <LiquidMini pct={weight ? Math.min(100, (weight / 50) * 100) : 0} size={48} color="hsl(var(--foreground))" icon={Weight} iconSize={14} />
                 </div>
                 <div className="mt-1 text-[10px] font-semibold text-foreground leading-tight text-center" dir="auto" style={{ unicodeBidi: 'plaintext' }}>
-                  {weight ? `${weight} ק״ג` : <span className="text-primary">+ הוסף משקל</span>}
+                  {weight ? `${weight} ק״ג` : <span className="text-muted-foreground">+ משקל</span>}
                 </div>
                 <div className="text-[9px] text-muted-foreground/70 leading-tight text-center">משקל</div>
               </motion.button>
@@ -1346,9 +1344,8 @@ export const PetCenterDashboard = ({
                 className="flex flex-col items-center shrink-0 group"
                 style={{ width: 62 }}
               >
-                <div className="relative rounded-full bg-card/30 backdrop-blur-md border border-white/10 transition-shadow duration-300 group-hover:shadow-[0_0_24px_-2px_hsl(150_55%_50%)]" style={{ width: 48, height: 48 }}>
-                  <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-60 transition-opacity duration-300 blur-md" style={{ background: 'radial-gradient(circle, hsl(150 55% 50%) 0%, transparent 70%)' }} aria-hidden />
-                  <LiquidMini pct={75} size={48} color="hsl(150 55% 50%)" icon={Syringe} iconSize={14} />
+                <div className="relative rounded-full bg-card/40 backdrop-blur-md border border-border/30" style={{ width: 48, height: 48 }}>
+                  <LiquidMini pct={75} size={48} color="hsl(var(--foreground))" icon={Syringe} iconSize={14} />
                 </div>
                 <div className="mt-1 text-[10px] font-semibold text-foreground leading-tight text-center">עדכניים</div>
                 <div className="text-[9px] text-muted-foreground/70 leading-tight text-center">חיסונים</div>
