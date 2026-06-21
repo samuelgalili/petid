@@ -55,6 +55,16 @@ interface State {
   vaccinesExpired: number;
   weekTaskPct: number[]; // 7 entries, Sun..Sat
   todayTasks: Record<string, boolean>;
+  baseline: {
+    avgWaterMl: number | null;
+    avgKcal: number | null;
+    avgTaskPct: number | null;
+    weightTrendKgPerWeek: number | null;
+    confidence: number;
+    dataDays: number;
+    anomalies: Array<{ kind: string; severity: string; detail: string }>;
+    computedAt: string | null;
+  };
 }
 
 const EMPTY: State = {
@@ -67,6 +77,16 @@ const EMPTY: State = {
   vaccinesExpired: 0,
   weekTaskPct: [0, 0, 0, 0, 0, 0, 0],
   todayTasks: {},
+  baseline: {
+    avgWaterMl: null,
+    avgKcal: null,
+    avgTaskPct: null,
+    weightTrendKgPerWeek: null,
+    confidence: 0,
+    dataDays: 0,
+    anomalies: [],
+    computedAt: null,
+  },
 };
 
 export const usePetMetrics = (petId: string | undefined) => {
@@ -86,7 +106,7 @@ export const usePetMetrics = (petId: string | undefined) => {
     const weekStartISO = weekStart.toISOString();
     const todayStr = ymd(today);
 
-    const [feedToday, waterToday, weights, vaccines, weekTasks] =
+    const [feedToday, waterToday, weights, vaccines, weekTasks, baseline] =
       await Promise.all([
         supabase
           .from("pet_feeding_logs")
@@ -113,6 +133,11 @@ export const usePetMetrics = (petId: string | undefined) => {
           .select("task_key, completed, task_date")
           .eq("pet_id", petId)
           .gte("task_date", ymd(weekStart)),
+        supabase
+          .from("pet_baselines")
+          .select("*")
+          .eq("pet_id", petId)
+          .maybeSingle(),
       ]);
 
     const kcal =
@@ -184,6 +209,18 @@ export const usePetMetrics = (petId: string | undefined) => {
       vaccinesExpired: expired,
       weekTaskPct,
       todayTasks,
+      baseline: baseline.data
+        ? {
+            avgWaterMl: (baseline.data as any).avg_water_ml_per_day,
+            avgKcal: (baseline.data as any).avg_kcal_per_day,
+            avgTaskPct: (baseline.data as any).avg_task_pct,
+            weightTrendKgPerWeek: (baseline.data as any).weight_trend_kg_per_week,
+            confidence: Number((baseline.data as any).confidence ?? 0),
+            dataDays: Number((baseline.data as any).data_days ?? 0),
+            anomalies: ((baseline.data as any).anomalies ?? []) as Array<{ kind: string; severity: string; detail: string }>,
+            computedAt: (baseline.data as any).computed_at,
+          }
+        : EMPTY.baseline,
     });
   }, [petId, today, weekStart]);
 
