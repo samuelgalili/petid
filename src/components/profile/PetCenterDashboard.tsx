@@ -1212,19 +1212,12 @@ export const PetCenterDashboard = ({
         const ringColor = scoreColor(overall);
         return (
           <div className="relative flex items-center justify-between gap-2 w-full px-2" dir="rtl">
-            {/* Animated aurora — two drifting orbs that breathe behind the pet */}
+            {/* Single subtle ambient glow — neutral, no rainbow */}
             <motion.div
-              className="pointer-events-none absolute left-1/3 top-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full blur-3xl"
-              style={{ background: 'radial-gradient(circle, hsl(20 90% 60%) 0%, hsl(340 80% 60%) 50%, transparent 100%)' }}
-              animate={{ opacity: [0.15, 0.3, 0.15], scale: [1, 1.1, 1], x: [-20, 20, -20] }}
-              transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
-              aria-hidden
-            />
-            <motion.div
-              className="pointer-events-none absolute left-2/3 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-3xl"
-              style={{ background: 'radial-gradient(circle, hsl(265 80% 65%) 0%, hsl(205 80% 60%) 55%, transparent 100%)' }}
-              animate={{ opacity: [0.12, 0.28, 0.12], scale: [1.1, 1, 1.1], x: [20, -20, 20] }}
-              transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut' }}
+              className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full blur-3xl"
+              style={{ background: `radial-gradient(circle, ${ringColor} 0%, transparent 70%)` }}
+              animate={{ opacity: [0.08, 0.16, 0.08], scale: [1, 1.05, 1] }}
+              transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
               aria-hidden
             />
             <BreedTraitCircles
@@ -1234,37 +1227,6 @@ export const PetCenterDashboard = ({
               accent={accent}
               vertical
             />
-
-            {/* ── Breed-recommended actions vertical column ── */}
-            <div className="flex flex-col items-center gap-2 overflow-y-auto no-scrollbar py-1" style={{ scrollbarWidth: 'none', maxHeight: 280 }} aria-label="פעולות מומלצות לגזע">
-              {[
-                { key: "water", icon: GlassWater, label: "מים", color: "hsl(200 70% 55%)" },
-                { key: "activity", icon: Footprints, label: "פעילות", color: "hsl(30 80% 55%)" },
-                { key: "health", icon: HeartPulse, label: "בריאות", color: "hsl(0 70% 60%)" },
-                { key: "grooming", icon: Brush, label: "טיפוח", color: "hsl(280 60% 60%)" },
-              ].map((b) => (
-                <motion.button
-                  key={b.key}
-                  type="button"
-                  onClick={() => openSheet(b.key)}
-                  aria-label={b.label}
-                  whileHover={{ scale: 1.08, y: -2 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex flex-col items-center shrink-0 group"
-                  style={{ width: 56 }}
-                >
-                  <div className="relative rounded-full bg-card/30 backdrop-blur-md border border-white/10 transition-shadow duration-300 group-hover:shadow-[0_0_24px_-2px_var(--halo)]" style={{ width: 44, height: 44, ['--halo' as any]: b.color }}>
-                    <div
-                      className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-60 transition-opacity duration-300 blur-md"
-                      style={{ background: `radial-gradient(circle, ${b.color} 0%, transparent 70%)` }}
-                      aria-hidden
-                    />
-                    <LiquidMini pct={75} size={44} color={b.color} icon={b.icon} iconSize={14} />
-                  </div>
-                  <div className="mt-1 text-[9px] text-muted-foreground/80 leading-tight text-center">{b.label}</div>
-                </motion.button>
-              ))}
-            </div>
 
           <motion.button
             type="button"
@@ -1276,18 +1238,7 @@ export const PetCenterDashboard = ({
             style={{ width: SIZE, height: SIZE }}
             aria-label={`יעד יומי ${overall}%`}
           >
-            {/* Subtle brand halo behind the ring */}
-            <div
-              className="absolute inset-0 pointer-events-none rounded-full"
-              aria-hidden
-              style={{
-                background:
-                  "conic-gradient(from 0deg, #FF9A6C, #FF7BAC, #C58BFA, #6BB8FF, #FF9A6C)",
-                filter: "blur(28px)",
-                opacity: 0.28,
-              }}
-            />
-            {/* Single daily-goal ring with MIPO gradient */}
+            {/* Single daily-goal ring — one color, no rainbow */}
             <svg
               width={SIZE}
               height={SIZE}
@@ -1295,27 +1246,12 @@ export const PetCenterDashboard = ({
               className="absolute inset-0 -rotate-90"
               aria-hidden
             >
-              <defs>
-                <linearGradient id="mipoRing" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#FF9A6C" />
-                  <stop offset="35%" stopColor="#FF7BAC" />
-                  <stop offset="70%" stopColor="#C58BFA" />
-                  <stop offset="100%" stopColor="#6BB8FF" />
-                </linearGradient>
-                <filter id="mipoGlow" x="-30%" y="-30%" width="160%" height="160%">
-                  <feGaussianBlur stdDeviation="4" result="b" />
-                  <feMerge>
-                    <feMergeNode in="b" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-              </defs>
               <circle
                 cx={SIZE / 2}
                 cy={SIZE / 2}
                 r={R}
                 fill="none"
-                stroke="hsl(var(--muted) / 0.4)"
+                stroke="hsl(var(--muted) / 0.3)"
                 strokeWidth={STROKE}
               />
               <motion.circle
@@ -1323,11 +1259,10 @@ export const PetCenterDashboard = ({
                 cy={SIZE / 2}
                 r={R}
                 fill="none"
-                stroke="url(#mipoRing)"
+                stroke={ringColor}
                 strokeWidth={STROKE}
                 strokeLinecap="round"
                 strokeDasharray={C}
-                filter="url(#mipoGlow)"
                 initial={{ strokeDashoffset: C }}
                 animate={{ strokeDashoffset: offset }}
                 transition={{ duration: 0.9, ease: "easeOut" }}
