@@ -759,8 +759,21 @@ export const PetCenterDashboard = ({
         const ringColor = scoreColor(overall);
         return (
           <div className="relative flex items-center justify-between gap-2 w-full px-2" dir="rtl">
-            {/* Single soft aurora glow behind the avatar — keeps focus on the pet */}
-            <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full opacity-20 blur-3xl" style={{ background: 'radial-gradient(circle, hsl(20 90% 60%) 0%, hsl(280 70% 60%) 60%, transparent 100%)' }} aria-hidden />
+            {/* Animated aurora — two drifting orbs that breathe behind the pet */}
+            <motion.div
+              className="pointer-events-none absolute left-1/3 top-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full blur-3xl"
+              style={{ background: 'radial-gradient(circle, hsl(20 90% 60%) 0%, hsl(340 80% 60%) 50%, transparent 100%)' }}
+              animate={{ opacity: [0.15, 0.3, 0.15], scale: [1, 1.1, 1], x: [-20, 20, -20] }}
+              transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+              aria-hidden
+            />
+            <motion.div
+              className="pointer-events-none absolute left-2/3 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-3xl"
+              style={{ background: 'radial-gradient(circle, hsl(265 80% 65%) 0%, hsl(205 80% 60%) 55%, transparent 100%)' }}
+              animate={{ opacity: [0.12, 0.28, 0.12], scale: [1.1, 1, 1.1], x: [20, -20, 20] }}
+              transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut' }}
+              aria-hidden
+            />
             <BreedTraitCircles
               breed={pet.breed}
               weight={weight}
