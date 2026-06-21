@@ -19,6 +19,13 @@ import {
   Check,
   X,
   Zap,
+  Share2,
+  Sun,
+  Moon,
+  Sunrise,
+  FileText,
+  CalendarCheck,
+  ChevronLeft,
 } from "lucide-react";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
