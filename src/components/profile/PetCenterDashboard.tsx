@@ -954,6 +954,8 @@ export const PetCenterDashboard = ({
 
   const daily = useDailyTasks(pet.id);
   const dailyColor = scoreColor(daily.pct);
+  const streak = useDailyStreak(pet.id, daily.pct);
+  const [celebrateKey, setCelebrateKey] = useState(0);
   const [tasksOpen, setTasksOpen] = useState(false);
   const [infoKey, setInfoKey] = useState<null | "kcal" | "protein" | "carbs" | "fat">(null);
   const [energyLevel, setEnergyLevel] = useState<number | null>(null);
