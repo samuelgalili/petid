@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useMemo, useState, useEffect, useCallback, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Flame,
@@ -88,7 +88,7 @@ const buildWeek = () => {
   });
 };
 
-/* ─── Circular arc gauge (3/4 arc, like reference) ─── */
+/* ─── Liquid Fill Gauge: circular vessel that fills with animated waves up to pct% ─── */
 const ArcGauge = ({
   pct,
   size = 76,
@@ -103,36 +103,75 @@ const ArcGauge = ({
   children?: React.ReactNode;
 }) => {
   const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
   const safe = Math.max(0, Math.min(100, pct));
-  const offset = c - (safe / 100) * c;
+  const rid = useId().replace(/:/g, "");
+  const clipId = `lqc-${rid}`;
+  // Fill height inside the circle (top y of liquid surface)
+  const padding = stroke;
+  const innerTop = padding;
+  const innerBottom = size - padding;
+  const innerH = innerBottom - innerTop;
+  const surfaceY = innerBottom - (safe / 100) * innerH;
+  const w = size;
+  // Two stacked sine waves built from a quartet of quadratic curves
+  const wavePath = (yBase: number, amp: number) =>
+    `M${-w},${yBase} q${w / 4},${-amp} ${w / 2},0 t${w / 2},0 t${w / 2},0 t${w / 2},0 L${2 * w},${size} L${-w},${size} Z`;
   return (
     <div
       className="relative flex items-center justify-center"
       style={{ width: size, height: size }}
     >
-      <svg width={size} height={size} className="-rotate-90" aria-hidden>
+      <svg width={size} height={size} aria-hidden className="absolute inset-0">
+        <defs>
+          <clipPath id={clipId}>
+            <circle cx={size / 2} cy={size / 2} r={r} />
+          </clipPath>
+        </defs>
+        {/* Vessel: subtle ring + faint inner wash */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="hsl(var(--muted) / 0.18)"
+          stroke={color}
+          strokeOpacity={0.35}
+          strokeWidth={stroke / 2}
+        />
+        {/* Liquid */}
+        <g clipPath={`url(#${clipId})`}>
+          {/* Animate the surface Y as pct changes */}
+          <motion.g
+            initial={{ y: innerH }}
+            animate={{ y: 0 }}
+            transition={{ duration: 1.1, ease: "easeOut", delay: 0.15 }}
+          >
+            {/* Back wave — slower, more transparent */}
+            <motion.path
+              d={wavePath(surfaceY, Math.max(2, size * 0.06))}
+              fill={color}
+              fillOpacity={0.35}
+              animate={{ x: [0, w] }}
+              transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+            />
+            {/* Front wave — faster, more opaque */}
+            <motion.path
+              d={wavePath(surfaceY + 2, Math.max(2, size * 0.05))}
+              fill={color}
+              fillOpacity={0.75}
+              animate={{ x: [0, -w] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+            />
+          </motion.g>
+        </g>
+        {/* Crisp outline on top */}
         <circle
           cx={size / 2}
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="hsl(var(--muted))"
-          strokeOpacity={0.55}
-          strokeWidth={stroke}
-        />
-        <motion.circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
           stroke={color}
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          strokeDasharray={c}
-          initial={{ strokeDashoffset: c }}
-          animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 1.1, ease: "easeOut", delay: 0.2 }}
+          strokeOpacity={0.55}
+          strokeWidth={Math.max(1, stroke / 2)}
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
@@ -141,6 +180,25 @@ const ArcGauge = ({
     </div>
   );
 };
+
+/* ─── LiquidMini: standalone liquid fill for small side-column buttons ─── */
+const LiquidMini = ({
+  pct,
+  size,
+  color,
+  icon: Icon,
+  iconSize = 14,
+}: {
+  pct: number;
+  size: number;
+  color: string;
+  icon: typeof Drumstick;
+  iconSize?: number;
+}) => (
+  <ArcGauge pct={pct} size={size} stroke={4} color={color}>
+    <Icon style={{ color, width: iconSize, height: iconSize }} strokeWidth={2} />
+  </ArcGauge>
+);
 
 /* ─── Flip Gauge: ring with icon ⇄ value flipping inside ─── */
 const FlipGauge = ({
@@ -806,13 +864,7 @@ export const PetCenterDashboard = ({
                       style={{ background: `radial-gradient(circle, ${b.color} 0%, transparent 70%)` }}
                       aria-hidden
                     />
-                    <svg width={44} height={44} viewBox="0 0 44 44" className="-rotate-90" aria-hidden>
-                      <circle cx={22} cy={22} r={18} fill="none" stroke="hsl(var(--muted))" strokeWidth={3} />
-                      <circle cx={22} cy={22} r={18} fill="none" stroke={b.color} strokeWidth={3} strokeLinecap="round" strokeDasharray={113} strokeDashoffset={28} />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <b.icon style={{ color: b.color, width: 14, height: 14 }} strokeWidth={2} />
-                    </div>
+                    <LiquidMini pct={75} size={44} color={b.color} icon={b.icon} iconSize={14} />
                   </div>
                   <div className="mt-1 text-[9px] text-muted-foreground/80 leading-tight text-center">{b.label}</div>
                 </motion.button>
@@ -920,13 +972,7 @@ export const PetCenterDashboard = ({
               >
                 <div className="relative rounded-full bg-card/30 backdrop-blur-md border border-white/10 transition-shadow duration-300 group-hover:shadow-[0_0_24px_-2px_hsl(35_88%_58%)]" style={{ width: 48, height: 48 }}>
                   <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-60 transition-opacity duration-300 blur-md" style={{ background: 'radial-gradient(circle, hsl(35 88% 58%) 0%, transparent 70%)' }} aria-hidden />
-                  <svg width={48} height={48} viewBox="0 0 48 48" className="-rotate-90" aria-hidden>
-                    <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(var(--muted))" strokeWidth={4} />
-                    <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(35 88% 58%)" strokeWidth={4} strokeLinecap="round" strokeDasharray={125.6} strokeDashoffset={125.6 - ((energyLevel ?? 0) / 5) * 125.6} />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Zap style={{ color: 'hsl(35 88% 58%)', width: 14, height: 14 }} strokeWidth={2} />
-                  </div>
+                  <LiquidMini pct={((energyLevel ?? 0) / 5) * 100} size={48} color="hsl(35 88% 58%)" icon={Zap} iconSize={14} />
                 </div>
                 <div className="mt-1 text-[10px] font-semibold text-foreground leading-tight text-center">
                   {energyLevel == null || energyLevel === 0 ? '—' : energyLevel <= 2 ? 'נמוך' : energyLevel <= 3 ? 'בינוני' : 'גבוה'}
@@ -945,13 +991,7 @@ export const PetCenterDashboard = ({
               >
                 <div className="relative rounded-full bg-card/30 backdrop-blur-md border border-white/10 transition-shadow duration-300 group-hover:shadow-[0_0_24px_-2px_var(--halo)]" style={{ width: 48, height: 48, ['--halo' as any]: accent }}>
                   <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-60 transition-opacity duration-300 blur-md" style={{ background: `radial-gradient(circle, ${accent} 0%, transparent 70%)` }} aria-hidden />
-                  <svg width={48} height={48} viewBox="0 0 48 48" className="-rotate-90" aria-hidden>
-                    <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(var(--muted))" strokeWidth={4} />
-                    <circle cx={24} cy={24} r={20} fill="none" stroke={accent} strokeWidth={4} strokeLinecap="round" strokeDasharray={125.6} strokeDashoffset={weight ? 125.6 - ((Math.min(100, weight / 50 * 100)) / 100) * 125.6 : 125.6} />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Weight style={{ color: accent, width: 14, height: 14 }} strokeWidth={2} />
-                  </div>
+                  <LiquidMini pct={weight ? Math.min(100, (weight / 50) * 100) : 0} size={48} color={accent} icon={Weight} iconSize={14} />
                 </div>
                 <div className="mt-1 text-[10px] font-semibold text-foreground leading-tight text-center" dir="auto" style={{ unicodeBidi: 'plaintext' }}>
                   {weight ? `${weight} ק״ג` : '—'}
@@ -970,13 +1010,7 @@ export const PetCenterDashboard = ({
               >
                 <div className="relative rounded-full bg-card/30 backdrop-blur-md border border-white/10 transition-shadow duration-300 group-hover:shadow-[0_0_24px_-2px_hsl(150_55%_50%)]" style={{ width: 48, height: 48 }}>
                   <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-60 transition-opacity duration-300 blur-md" style={{ background: 'radial-gradient(circle, hsl(150 55% 50%) 0%, transparent 70%)' }} aria-hidden />
-                  <svg width={48} height={48} viewBox="0 0 48 48" className="-rotate-90" aria-hidden>
-                    <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(var(--muted))" strokeWidth={4} />
-                    <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(150 55% 50%)" strokeWidth={4} strokeLinecap="round" strokeDasharray={125.6} strokeDashoffset={31.4} />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Syringe style={{ color: 'hsl(150 55% 50%)', width: 14, height: 14 }} strokeWidth={2} />
-                  </div>
+                  <LiquidMini pct={75} size={48} color="hsl(150 55% 50%)" icon={Syringe} iconSize={14} />
                 </div>
                 <div className="mt-1 text-[10px] font-semibold text-foreground leading-tight text-center">עדכניים</div>
                 <div className="text-[9px] text-muted-foreground/70 leading-tight text-center">חיסונים</div>
