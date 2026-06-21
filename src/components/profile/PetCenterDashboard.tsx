@@ -788,10 +788,20 @@ export const PetCenterDashboard = ({
             initial={{ opacity: 0, scale: 0.7, y: -4 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
-            className="absolute -top-2 -left-2 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold backdrop-blur-md border border-border/40 bg-card/80 text-foreground"
+            className="absolute -top-2 -left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold backdrop-blur-md text-foreground"
+            style={{
+              background: "var(--mipo-glass-bg)",
+              border: "1px solid var(--mipo-glass-border)",
+              boxShadow: "0 6px 18px -8px hsl(var(--mipo-brand-3) / 0.55)",
+            }}
             aria-label={`רצף של ${streak} ימים`}
           >
-            <span aria-hidden className="text-muted-foreground">●</span>
+            {/* Brand gradient streak dot — one of the two allowed brand moments */}
+            <span
+              aria-hidden
+              className="inline-block w-1.5 h-1.5 rounded-full"
+              style={{ background: "var(--mipo-gradient)" }}
+            />
             <span dir="ltr">{streak}</span>
           </motion.div>
         )}
@@ -1106,7 +1116,6 @@ export const PetCenterDashboard = ({
             {/* ── Floating Glass Stack: 4 satellites with parallax depth, no orbit ring ── */}
             {satellites.map((s, i) => {
               const d = DEPTH[s.depth];
-              const isActive = !!s.active;
               return (
                 <motion.button
                   key={s.key}
@@ -1141,23 +1150,11 @@ export const PetCenterDashboard = ({
                     style={{
                       width: d.size,
                       height: d.size,
-                      background: "hsl(var(--card) / 0.55)",
-                      border: "1px solid hsl(0 0% 100% / 0.08)",
-                      boxShadow: `${d.shadow}, inset 0 1px 0 hsl(0 0% 100% / 0.06)`,
+                      background: "var(--mipo-glass-bg)",
+                      border: "1px solid var(--mipo-glass-border)",
+                      boxShadow: `${d.shadow}, inset 0 1px 0 var(--mipo-glass-highlight)`,
                     }}
                   >
-                    {/* Brand-gradient ring only on the active satellite */}
-                    {isActive && (
-                      <span
-                        aria-hidden
-                        className="absolute inset-[-2px] rounded-full opacity-90"
-                        style={{
-                          background: `conic-gradient(from 140deg, ${BRAND_STOPS.map(b => b.color).join(", ")}, ${BRAND_STOPS[0].color})`,
-                          WebkitMask: "radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px))",
-                                  mask: "radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px))",
-                        }}
-                      />
-                    )}
                     <div className="text-foreground/85">
                       <Ico icon={s.icon} size={d.iconSize} />
                     </div>
