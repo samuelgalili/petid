@@ -711,7 +711,7 @@ export const PetCenterDashboard = ({
       <HeroInsight petId={pet.id} />
 
       {/* ── Baseline strip: "what's normal for your pet" learning layer ── */}
-      <BaselineStrip baseline={metrics.baseline} />
+      <BaselineStrip baseline={metrics.baseline} targets={targets} />
 
       {/* ── Week strip ── */}
       <div className="relative flex items-center justify-between rounded-2xl bg-card/30 backdrop-blur-xl border border-white/10 px-2 py-2.5 shadow-[0_8px_28px_-12px_hsl(var(--primary)/0.25)]">
