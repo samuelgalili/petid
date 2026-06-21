@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback, useId } from "react";
+import { useMemo, useState, useEffect, useCallback, useId, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -948,7 +948,7 @@ export const PetCenterDashboard = ({
         const satellites: Array<{
           key: string;
           icon: LucideIcon;
-          value: React.ReactNode;
+          value: ReactNode;
           label: string;
           onClick: () => void;
           active?: boolean;
