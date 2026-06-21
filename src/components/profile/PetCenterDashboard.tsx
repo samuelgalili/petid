@@ -25,6 +25,7 @@ import catIcon from "@/assets/cat-official.png";
 import dobermanAsset from "@/assets/doberman.jpg.asset.json";
 import { HeroInsight } from "./HeroInsight";
 import { BreedTraitCircles } from "./BreedTraitCircles";
+import { AnimatedCounter } from "./AnimatedCounter";
 import { supabase } from "@/integrations/supabase/client";
 
 interface PetLike {
@@ -591,7 +592,7 @@ export const PetCenterDashboard = ({
       <HeroInsight petId={pet.id} />
 
       {/* ── Week strip ── */}
-      <div className="flex items-center justify-between rounded-2xl bg-card/40 border border-border/20 px-2 py-2.5">
+      <div className="flex items-center justify-between rounded-2xl bg-card/30 backdrop-blur-xl border border-white/10 px-2 py-2.5 shadow-[0_8px_28px_-12px_hsl(var(--primary)/0.25)]">
         {week.map((d, i) => (
           <DayPill
             key={i}
@@ -758,8 +759,21 @@ export const PetCenterDashboard = ({
         const ringColor = scoreColor(overall);
         return (
           <div className="relative flex items-center justify-between gap-2 w-full px-2" dir="rtl">
-            {/* Single soft aurora glow behind the avatar — keeps focus on the pet */}
-            <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full opacity-20 blur-3xl" style={{ background: 'radial-gradient(circle, hsl(20 90% 60%) 0%, hsl(280 70% 60%) 60%, transparent 100%)' }} aria-hidden />
+            {/* Animated aurora — two drifting orbs that breathe behind the pet */}
+            <motion.div
+              className="pointer-events-none absolute left-1/3 top-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full blur-3xl"
+              style={{ background: 'radial-gradient(circle, hsl(20 90% 60%) 0%, hsl(340 80% 60%) 50%, transparent 100%)' }}
+              animate={{ opacity: [0.15, 0.3, 0.15], scale: [1, 1.1, 1], x: [-20, 20, -20] }}
+              transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+              aria-hidden
+            />
+            <motion.div
+              className="pointer-events-none absolute left-2/3 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-3xl"
+              style={{ background: 'radial-gradient(circle, hsl(265 80% 65%) 0%, hsl(205 80% 60%) 55%, transparent 100%)' }}
+              animate={{ opacity: [0.12, 0.28, 0.12], scale: [1.1, 1, 1.1], x: [20, -20, 20] }}
+              transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut' }}
+              aria-hidden
+            />
             <BreedTraitCircles
               breed={pet.breed}
               weight={weight}
@@ -776,15 +790,22 @@ export const PetCenterDashboard = ({
                 { key: "health", icon: HeartPulse, label: "בריאות", color: "hsl(0 70% 60%)" },
                 { key: "grooming", icon: Brush, label: "טיפוח", color: "hsl(280 60% 60%)" },
               ].map((b) => (
-                <button
+                <motion.button
                   key={b.key}
                   type="button"
                   onClick={() => openSheet(b.key)}
                   aria-label={b.label}
-                  className="flex flex-col items-center shrink-0"
+                  whileHover={{ scale: 1.08, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex flex-col items-center shrink-0 group"
                   style={{ width: 56 }}
                 >
-                  <div className="relative rounded-full bg-card/30 border border-border/20" style={{ width: 44, height: 44 }}>
+                  <div className="relative rounded-full bg-card/30 backdrop-blur-md border border-white/10 transition-shadow duration-300 group-hover:shadow-[0_0_24px_-2px_var(--halo)]" style={{ width: 44, height: 44, ['--halo' as any]: b.color }}>
+                    <div
+                      className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-60 transition-opacity duration-300 blur-md"
+                      style={{ background: `radial-gradient(circle, ${b.color} 0%, transparent 70%)` }}
+                      aria-hidden
+                    />
                     <svg width={44} height={44} viewBox="0 0 44 44" className="-rotate-90" aria-hidden>
                       <circle cx={22} cy={22} r={18} fill="none" stroke="hsl(var(--muted))" strokeWidth={3} />
                       <circle cx={22} cy={22} r={18} fill="none" stroke={b.color} strokeWidth={3} strokeLinecap="round" strokeDasharray={113} strokeDashoffset={28} />
@@ -794,7 +815,7 @@ export const PetCenterDashboard = ({
                     </div>
                   </div>
                   <div className="mt-1 text-[9px] text-muted-foreground/80 leading-tight text-center">{b.label}</div>
-                </button>
+                </motion.button>
               ))}
             </div>
 
@@ -875,27 +896,30 @@ export const PetCenterDashboard = ({
             </div>
             {/* Goal % badge */}
             <div
-              className="absolute left-1/2 -translate-x-1/2 -bottom-3 px-3 py-1 rounded-full text-[12px] font-bold shadow-md"
+              className="absolute left-1/2 -translate-x-1/2 -bottom-3 px-3 py-1 rounded-full text-[12px] font-bold shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.5)] backdrop-blur-xl"
               style={{
-                background: "hsl(var(--card))",
+                background: "hsl(var(--card) / 0.85)",
                 color: "hsl(var(--foreground))",
-                border: "1px solid hsl(var(--border))",
+                border: "1px solid hsl(var(--border) / 0.6)",
               }}
             >
-              {overall}% יעד יומי
+              <AnimatedCounter value={overall} duration={900} /><span>% יעד יומי</span>
             </div>
           </motion.button>
 
             {/* ── Weight + Vaccinations vertical column (left side of avatar) ── */}
             <div className="flex flex-col items-center gap-2 overflow-y-auto no-scrollbar py-1" style={{ scrollbarWidth: 'none', maxHeight: 280 }}>
               {/* Energy (breed) */}
-              <button
+              <motion.button
                 type="button"
                 onClick={() => openSheet('activity')}
-                className="flex flex-col items-center shrink-0"
+                whileHover={{ scale: 1.08, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex flex-col items-center shrink-0 group"
                 style={{ width: 62 }}
               >
-                <div className="relative rounded-full bg-card/30 border border-border/20" style={{ width: 48, height: 48 }}>
+                <div className="relative rounded-full bg-card/30 backdrop-blur-md border border-white/10 transition-shadow duration-300 group-hover:shadow-[0_0_24px_-2px_hsl(35_88%_58%)]" style={{ width: 48, height: 48 }}>
+                  <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-60 transition-opacity duration-300 blur-md" style={{ background: 'radial-gradient(circle, hsl(35 88% 58%) 0%, transparent 70%)' }} aria-hidden />
                   <svg width={48} height={48} viewBox="0 0 48 48" className="-rotate-90" aria-hidden>
                     <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(var(--muted))" strokeWidth={4} />
                     <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(35 88% 58%)" strokeWidth={4} strokeLinecap="round" strokeDasharray={125.6} strokeDashoffset={125.6 - ((energyLevel ?? 0) / 5) * 125.6} />
@@ -908,16 +932,19 @@ export const PetCenterDashboard = ({
                   {energyLevel == null || energyLevel === 0 ? '—' : energyLevel <= 2 ? 'נמוך' : energyLevel <= 3 ? 'בינוני' : 'גבוה'}
                 </div>
                 <div className="text-[9px] text-muted-foreground/70 leading-tight text-center">אנרגיה</div>
-              </button>
+              </motion.button>
 
               {/* Weight */}
-              <button
+              <motion.button
                 type="button"
                 onClick={() => openSheet('weight')}
-                className="flex flex-col items-center shrink-0"
+                whileHover={{ scale: 1.08, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex flex-col items-center shrink-0 group"
                 style={{ width: 62 }}
               >
-                <div className="relative rounded-full bg-card/30 border border-border/20" style={{ width: 48, height: 48 }}>
+                <div className="relative rounded-full bg-card/30 backdrop-blur-md border border-white/10 transition-shadow duration-300 group-hover:shadow-[0_0_24px_-2px_var(--halo)]" style={{ width: 48, height: 48, ['--halo' as any]: accent }}>
+                  <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-60 transition-opacity duration-300 blur-md" style={{ background: `radial-gradient(circle, ${accent} 0%, transparent 70%)` }} aria-hidden />
                   <svg width={48} height={48} viewBox="0 0 48 48" className="-rotate-90" aria-hidden>
                     <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(var(--muted))" strokeWidth={4} />
                     <circle cx={24} cy={24} r={20} fill="none" stroke={accent} strokeWidth={4} strokeLinecap="round" strokeDasharray={125.6} strokeDashoffset={weight ? 125.6 - ((Math.min(100, weight / 50 * 100)) / 100) * 125.6 : 125.6} />
@@ -930,16 +957,19 @@ export const PetCenterDashboard = ({
                   {weight ? `${weight} ק״ג` : '—'}
                 </div>
                 <div className="text-[9px] text-muted-foreground/70 leading-tight text-center">משקל</div>
-              </button>
+              </motion.button>
 
               {/* Vaccinations */}
-              <button
+              <motion.button
                 type="button"
                 onClick={() => openSheet('vaccines')}
-                className="flex flex-col items-center shrink-0"
+                whileHover={{ scale: 1.08, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex flex-col items-center shrink-0 group"
                 style={{ width: 62 }}
               >
-                <div className="relative rounded-full bg-card/30 border border-border/20" style={{ width: 48, height: 48 }}>
+                <div className="relative rounded-full bg-card/30 backdrop-blur-md border border-white/10 transition-shadow duration-300 group-hover:shadow-[0_0_24px_-2px_hsl(150_55%_50%)]" style={{ width: 48, height: 48 }}>
+                  <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-60 transition-opacity duration-300 blur-md" style={{ background: 'radial-gradient(circle, hsl(150 55% 50%) 0%, transparent 70%)' }} aria-hidden />
                   <svg width={48} height={48} viewBox="0 0 48 48" className="-rotate-90" aria-hidden>
                     <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(var(--muted))" strokeWidth={4} />
                     <circle cx={24} cy={24} r={20} fill="none" stroke="hsl(150 55% 50%)" strokeWidth={4} strokeLinecap="round" strokeDasharray={125.6} strokeDashoffset={31.4} />
@@ -950,7 +980,7 @@ export const PetCenterDashboard = ({
                 </div>
                 <div className="mt-1 text-[10px] font-semibold text-foreground leading-tight text-center">עדכניים</div>
                 <div className="text-[9px] text-muted-foreground/70 leading-tight text-center">חיסונים</div>
-              </button>
+              </motion.button>
             </div>
           </div>
         );
