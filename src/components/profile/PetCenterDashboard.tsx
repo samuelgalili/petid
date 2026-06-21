@@ -71,6 +71,7 @@ import { BreedTraitCircles } from "./BreedTraitCircles";
 import { AnimatedCounter } from "./AnimatedCounter";
 import { supabase } from "@/integrations/supabase/client";
 import { usePetMetrics, DAILY_TASK_KEYS, type DailyTaskKey } from "@/hooks/usePetMetrics";
+import { computeAdjustedTargets } from "@/lib/nrcTargets";
 
 interface PetLike {
   id: string;
@@ -92,9 +93,6 @@ interface Props {
 
 const fmt = (v: string | number | null | undefined, suffix = "") =>
   v == null || v === "" ? "—" : `${v}${suffix}`;
-
-/* ─── NRC 2006 + 14-day baseline tuning (see src/lib/nrcTargets.ts) ─── */
-import { computeAdjustedTargets } from "@/lib/nrcTargets";
 
 /* ─── Day-of-week initials (Sun–Sat) ─── */
 const DAY_INITIALS = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
