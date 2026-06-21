@@ -7698,6 +7698,50 @@ export type Database = {
           },
         ]
       }
+      pet_daily_tasks: {
+        Row: {
+          completed: boolean
+          completed_at: string
+          created_at: string
+          id: string
+          pet_id: string
+          task_date: string
+          task_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          completed_at?: string
+          created_at?: string
+          id?: string
+          pet_id: string
+          task_date?: string
+          task_key: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          completed_at?: string
+          created_at?: string
+          id?: string
+          pet_id?: string
+          task_date?: string
+          task_key?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_daily_tasks_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pet_document_extracted_data: {
         Row: {
           chip_number: string | null
@@ -7881,6 +7925,56 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "pet_events_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pet_feeding_logs: {
+        Row: {
+          amount_g: number | null
+          created_at: string
+          food_name: string | null
+          id: string
+          kcal: number | null
+          logged_at: string
+          meal_type: string
+          notes: string | null
+          pet_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_g?: number | null
+          created_at?: string
+          food_name?: string | null
+          id?: string
+          kcal?: number | null
+          logged_at?: string
+          meal_type?: string
+          notes?: string | null
+          pet_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_g?: number | null
+          created_at?: string
+          food_name?: string | null
+          id?: string
+          kcal?: number | null
+          logged_at?: string
+          meal_type?: string
+          notes?: string | null
+          pet_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_feeding_logs_pet_id_fkey"
             columns: ["pet_id"]
             isOneToOne: false
             referencedRelation: "pets"
@@ -8513,6 +8607,91 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "pet_vet_visits_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pet_water_logs: {
+        Row: {
+          amount_ml: number
+          created_at: string
+          id: string
+          logged_at: string
+          notes: string | null
+          pet_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_ml: number
+          created_at?: string
+          id?: string
+          logged_at?: string
+          notes?: string | null
+          pet_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_ml?: number
+          created_at?: string
+          id?: string
+          logged_at?: string
+          notes?: string | null
+          pet_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_water_logs_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pet_weight_logs: {
+        Row: {
+          created_at: string
+          id: string
+          measured_at: string
+          notes: string | null
+          pet_id: string
+          source: string
+          updated_at: string
+          user_id: string
+          weight_kg: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          measured_at?: string
+          notes?: string | null
+          pet_id: string
+          source?: string
+          updated_at?: string
+          user_id: string
+          weight_kg: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          measured_at?: string
+          notes?: string | null
+          pet_id?: string
+          source?: string
+          updated_at?: string
+          user_id?: string
+          weight_kg?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_weight_logs_pet_id_fkey"
             columns: ["pet_id"]
             isOneToOne: false
             referencedRelation: "pets"
