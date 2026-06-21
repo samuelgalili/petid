@@ -27,9 +27,17 @@ import type { LucideIcon } from "lucide-react";
 /* Unified icon system — single stroke + size, currentColor.
    Use this everywhere instead of raw lucide elements so the
    dashboard stays monochrome and visually consistent. */
-const ICON_STROKE = 1.75;
+const ICON_STROKE = 1.5;
 type IcoSize = "xs" | "sm" | "md" | "lg";
-const ICO_PX: Record<IcoSize, number> = { xs: 12, sm: 14, md: 16, lg: 20 };
+const ICO_PX: Record<IcoSize, number> = { xs: 12, sm: 14, md: 18, lg: 20 };
+
+/* Mipo brand gradient — used ONLY on primary moments (goal ring, streak, active state) */
+const BRAND_STOPS = [
+  { offset: "0%",   color: "#FF7A8A" },
+  { offset: "35%",  color: "#F472B6" },
+  { offset: "70%",  color: "#A78BFA" },
+  { offset: "100%", color: "#67E8F9" },
+];
 const Ico = ({
   icon: I,
   size = "md",
