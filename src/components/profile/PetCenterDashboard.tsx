@@ -671,10 +671,10 @@ const DailyBrief = ({
   if (dismissed) return null;
 
   const meta = {
-    morning: { Icon: Sunrise, greet: "בוקר טוב", tint: "hsl(35 90% 60%)", msg: "בואו נתחיל את היום עם הליכה קצרה ומים נקיים." },
-    noon:    { Icon: Sun,     greet: "צהריים טובים", tint: "hsl(200 80% 60%)", msg: "זמן טוב לבדוק שיש מים קרים ומקום מוצל." },
-    evening: { Icon: Moon,    greet: "ערב טוב",    tint: "hsl(265 70% 65%)", msg: "סיום היום: ארוחת ערב, פעילות קלה ומנוחה." },
-    night:   { Icon: Moon,    greet: "לילה טוב",   tint: "hsl(230 60% 60%)", msg: "השעה מאוחרת — מומלץ לבדוק שאוכל לא נשאר בקערה." },
+    morning: { Icon: Sunrise, greet: "בוקר טוב",       msg: "בואו נתחיל את היום עם הליכה קצרה ומים נקיים." },
+    noon:    { Icon: Sun,     greet: "צהריים טובים",  msg: "זמן טוב לבדוק שיש מים קרים ומקום מוצל." },
+    evening: { Icon: Moon,    greet: "ערב טוב",        msg: "סיום היום: ארוחת ערב, פעילות קלה ומנוחה." },
+    night:   { Icon: Moon,    greet: "לילה טוב",       msg: "השעה מאוחרת — מומלץ לבדוק שאוכל לא נשאר בקערה." },
   }[tod];
   const { Icon } = meta;
 
@@ -690,10 +690,8 @@ const DailyBrief = ({
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="relative rounded-2xl backdrop-blur-xl border border-white/10 px-3 py-3 overflow-hidden"
-      style={{ background: `linear-gradient(135deg, ${meta.tint}1f, hsl(var(--card)/0.6))` }}
+      className="relative rounded-2xl backdrop-blur-xl border border-border/30 px-3 py-3 overflow-hidden bg-card/40"
     >
-      <div className="absolute -top-8 -left-8 w-32 h-32 rounded-full blur-3xl opacity-40" style={{ background: meta.tint }} aria-hidden />
       <button
         type="button"
         onClick={() => { setDismissed(true); try { localStorage.setItem(briefKey, "1"); } catch {} }}
@@ -703,8 +701,8 @@ const DailyBrief = ({
         <X className="w-3.5 h-3.5" />
       </button>
       <div className="relative flex items-start gap-3">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border border-white/10" style={{ background: `${meta.tint}26` }}>
-          <Icon className="w-5 h-5" style={{ color: meta.tint }} strokeWidth={2} />
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border border-border/30 bg-muted/40">
+          <Icon className="w-5 h-5 text-muted-foreground" strokeWidth={1.75} />
         </div>
         <div className="flex-1 min-w-0 pr-4">
           <div className="text-[13px] font-bold text-foreground leading-tight">
@@ -716,8 +714,7 @@ const DailyBrief = ({
           <button
             type="button"
             onClick={topAction.onClick}
-            className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1.5 rounded-full transition-transform active:scale-95"
-            style={{ background: meta.tint, color: "white" }}
+            className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-full transition-transform active:scale-95 bg-foreground text-background"
           >
             <topAction.icon className="w-3 h-3" strokeWidth={2.5} />
             {topAction.label}
