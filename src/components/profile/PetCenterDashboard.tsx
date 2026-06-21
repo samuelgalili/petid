@@ -19,6 +19,13 @@ import {
   Check,
   X,
   Zap,
+  Share2,
+  Sun,
+  Moon,
+  Sunrise,
+  FileText,
+  CalendarCheck,
+  ChevronLeft,
 } from "lucide-react";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
@@ -587,6 +594,230 @@ const useDailyTasks = (petId: string) => {
   return { done, toggle, completed, total: DAILY_TASKS.length, pct };
 };
 
+/* ─── Time-of-day awareness ─── */
+const useTimeOfDay = () => {
+  const [tod, setTod] = useState<"morning" | "noon" | "evening" | "night">(() => {
+    const h = new Date().getHours();
+    if (h < 6) return "night";
+    if (h < 11) return "morning";
+    if (h < 17) return "noon";
+    if (h < 21) return "evening";
+    return "night";
+  });
+  useEffect(() => {
+    const id = setInterval(() => {
+      const h = new Date().getHours();
+      setTod(h < 6 ? "night" : h < 11 ? "morning" : h < 17 ? "noon" : h < 21 ? "evening" : "night");
+    }, 5 * 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
+  return tod;
+};
+
+/* ─── Daily Brief: time-aware greeting card with ONE action ─── */
+const DailyBrief = ({
+  petName,
+  weight,
+  dailyPct,
+  topAction,
+}: {
+  petName: string;
+  weight: number | null;
+  dailyPct: number;
+  topAction: { label: string; onClick: () => void; icon: typeof Plus };
+}) => {
+  const tod = useTimeOfDay();
+  const briefKey = `petid:brief:dismiss:${todayKey()}`;
+  const [dismissed, setDismissed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(briefKey) === "1";
+  });
+  if (dismissed) return null;
+
+  const meta = {
+    morning: { Icon: Sunrise, greet: "בוקר טוב", tint: "hsl(35 90% 60%)", msg: "בואו נתחיל את היום עם הליכה קצרה ומים נקיים." },
+    noon:    { Icon: Sun,     greet: "צהריים טובים", tint: "hsl(200 80% 60%)", msg: "זמן טוב לבדוק שיש מים קרים ומקום מוצל." },
+    evening: { Icon: Moon,    greet: "ערב טוב",    tint: "hsl(265 70% 65%)", msg: "סיום היום: ארוחת ערב, פעילות קלה ומנוחה." },
+    night:   { Icon: Moon,    greet: "לילה טוב",   tint: "hsl(230 60% 60%)", msg: "השעה מאוחרת — מומלץ לבדוק שאוכל לא נשאר בקערה." },
+  }[tod];
+  const { Icon } = meta;
+
+  // Conservative tone — never push if data is missing
+  const note = weight == null
+    ? "כדי לקבל המלצות מדויקות, מומלץ להוסיף משקל עדכני."
+    : dailyPct >= 75
+      ? "המצב היומי נראה תקין. ממשיכים ברוטינה."
+      : meta.msg;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="relative rounded-2xl backdrop-blur-xl border border-white/10 px-3 py-3 overflow-hidden"
+      style={{ background: `linear-gradient(135deg, ${meta.tint}1f, hsl(var(--card)/0.6))` }}
+    >
+      <div className="absolute -top-8 -left-8 w-32 h-32 rounded-full blur-3xl opacity-40" style={{ background: meta.tint }} aria-hidden />
+      <button
+        type="button"
+        onClick={() => { setDismissed(true); try { localStorage.setItem(briefKey, "1"); } catch {} }}
+        className="absolute top-2 left-2 w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground/70 hover:text-foreground"
+        aria-label="סגור"
+      >
+        <X className="w-3.5 h-3.5" />
+      </button>
+      <div className="relative flex items-start gap-3">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border border-white/10" style={{ background: `${meta.tint}26` }}>
+          <Icon className="w-5 h-5" style={{ color: meta.tint }} strokeWidth={2} />
+        </div>
+        <div className="flex-1 min-w-0 pr-4">
+          <div className="text-[13px] font-bold text-foreground leading-tight">
+            {meta.greet}, {petName}
+          </div>
+          <div className="text-[11px] text-muted-foreground mt-1 leading-snug">
+            {note}
+          </div>
+          <button
+            type="button"
+            onClick={topAction.onClick}
+            className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1.5 rounded-full transition-transform active:scale-95"
+            style={{ background: meta.tint, color: "white" }}
+          >
+            <topAction.icon className="w-3 h-3" strokeWidth={2.5} />
+            {topAction.label}
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+/* ─── Build a shareable vet summary (last 7 days) ─── */
+const buildVetSummary = (pet: PetLike, weight: number | null, dailyPct: number) => {
+  const lines = [
+    `סיכום שבועי — ${pet.name}`,
+    pet.breed ? `גזע: ${pet.breed}` : null,
+    weight != null ? `משקל נוכחי: ${weight} ק״ג` : `משקל: לא הוזן`,
+    `שלמות שגרה יומית: ${dailyPct}%`,
+    `תאריך: ${new Date().toLocaleDateString("he-IL")}`,
+    ``,
+    `הופק מ-Mipo`,
+  ].filter(Boolean) as string[];
+  return lines.join("\n");
+};
+
+const shareToVet = async (pet: PetLike, weight: number | null, dailyPct: number) => {
+  const text = buildVetSummary(pet, weight, dailyPct);
+  const title = `סיכום ${pet.name}`;
+  try {
+    if (navigator.share) {
+      await navigator.share({ title, text });
+      return;
+    }
+  } catch {}
+  // WhatsApp fallback
+  const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+  window.open(url, "_blank", "noopener");
+};
+
+/* ─── Bento action cards (2x2 below the avatar) ─── */
+const BentoActions = ({
+  daily,
+  dailyColor,
+  onTasks,
+  onShare,
+  onQuickAdd,
+  onReport,
+}: {
+  daily: { completed: number; total: number; pct: number };
+  dailyColor: string;
+  onTasks: () => void;
+  onShare: () => void;
+  onQuickAdd: () => void;
+  onReport: () => void;
+}) => {
+  const cards = [
+    {
+      key: "tasks",
+      title: "משימות היום",
+      meta: `${daily.completed}/${daily.total} הושלמו`,
+      Icon: CalendarCheck,
+      tint: dailyColor,
+      onClick: onTasks,
+      hero: true,
+    },
+    {
+      key: "quick",
+      title: "הוספה מהירה",
+      meta: "ארוחה · מים · משקל",
+      Icon: Plus,
+      tint: "hsl(200 75% 55%)",
+      onClick: onQuickAdd,
+    },
+    {
+      key: "share",
+      title: "שליחה לוטרינר",
+      meta: "סיכום שבועי",
+      Icon: Share2,
+      tint: "hsl(150 55% 50%)",
+      onClick: onShare,
+    },
+    {
+      key: "report",
+      title: "דוח בריאות",
+      meta: "7 ימים אחרונים",
+      Icon: FileText,
+      tint: "hsl(265 65% 65%)",
+      onClick: onReport,
+    },
+  ];
+  return (
+    <div className="grid grid-cols-2 gap-2.5">
+      {cards.map((c, i) => (
+        <motion.button
+          key={c.key}
+          type="button"
+          onClick={c.onClick}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 * i, duration: 0.35, ease: "easeOut" }}
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.97 }}
+          className={`relative overflow-hidden rounded-2xl backdrop-blur-xl border border-white/10 px-3 py-3 text-right ${c.hero ? "col-span-2" : ""}`}
+          style={{ background: `linear-gradient(135deg, ${c.tint}1a, hsl(var(--card)/0.55))` }}
+        >
+          <div className="absolute -top-6 -left-6 w-24 h-24 rounded-full blur-2xl opacity-50" style={{ background: c.tint }} aria-hidden />
+          <div className="relative flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${c.tint}26`, border: `1px solid ${c.tint}40` }}>
+              <c.Icon className="w-4 h-4" style={{ color: c.tint }} strokeWidth={2} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[12px] font-bold text-foreground leading-tight truncate">
+                {c.title}
+              </div>
+              <div className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                {c.meta}
+              </div>
+            </div>
+            <ChevronLeft className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+          </div>
+          {c.hero && (
+            <div className="relative mt-2 h-1 rounded-full bg-muted/30 overflow-hidden">
+              <motion.div
+                className="h-full rounded-full"
+                style={{ background: c.tint }}
+                initial={false}
+                animate={{ width: `${daily.pct}%` }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+              />
+            </div>
+          )}
+        </motion.button>
+      ))}
+    </div>
+  );
+};
+
 export const PetCenterDashboard = ({
   pet,
   accent = "hsl(var(--primary))",
@@ -645,6 +876,20 @@ export const PetCenterDashboard = ({
 
   return (
     <div className="flex flex-col gap-3 pb-8">
+
+      {/* ── Daily Brief: time-aware, one CTA, dismissable per day ── */}
+      <DailyBrief
+        petName={pet.name}
+        weight={weight}
+        dailyPct={daily.pct}
+        topAction={
+          weight == null
+            ? { label: "הוספת משקל", onClick: () => openSheet("weight"), icon: Plus }
+            : daily.pct < 75
+              ? { label: "פתיחת משימות", onClick: () => setTasksOpen(true), icon: CalendarCheck }
+              : { label: "שליחה לוטרינר", onClick: () => shareToVet(pet, weight, daily.pct), icon: Share2 }
+        }
+      />
 
       {/* ── Hero Insight (Tier 1–5 ranked) ── */}
       <HeroInsight petId={pet.id} />
@@ -975,7 +1220,9 @@ export const PetCenterDashboard = ({
                   <LiquidMini pct={((energyLevel ?? 0) / 5) * 100} size={48} color="hsl(35 88% 58%)" icon={Zap} iconSize={14} />
                 </div>
                 <div className="mt-1 text-[10px] font-semibold text-foreground leading-tight text-center">
-                  {energyLevel == null || energyLevel === 0 ? '—' : energyLevel <= 2 ? 'נמוך' : energyLevel <= 3 ? 'בינוני' : 'גבוה'}
+                  {energyLevel == null || energyLevel === 0
+                    ? <span className="text-primary">+ הוסף גזע</span>
+                    : energyLevel <= 2 ? 'נמוך' : energyLevel <= 3 ? 'בינוני' : 'גבוה'}
                 </div>
                 <div className="text-[9px] text-muted-foreground/70 leading-tight text-center">אנרגיה</div>
               </motion.button>
@@ -994,7 +1241,7 @@ export const PetCenterDashboard = ({
                   <LiquidMini pct={weight ? Math.min(100, (weight / 50) * 100) : 0} size={48} color={accent} icon={Weight} iconSize={14} />
                 </div>
                 <div className="mt-1 text-[10px] font-semibold text-foreground leading-tight text-center" dir="auto" style={{ unicodeBidi: 'plaintext' }}>
-                  {weight ? `${weight} ק״ג` : '—'}
+                  {weight ? `${weight} ק״ג` : <span className="text-primary">+ הוסף משקל</span>}
                 </div>
                 <div className="text-[9px] text-muted-foreground/70 leading-tight text-center">משקל</div>
               </motion.button>
@@ -1031,7 +1278,15 @@ export const PetCenterDashboard = ({
         </div>
       </div>
 
-
+      {/* ── Bento Actions: top 4 actions in a 2-col grid ── */}
+      <BentoActions
+        daily={{ completed: daily.completed, total: daily.total, pct: daily.pct }}
+        dailyColor={dailyColor}
+        onTasks={() => setTasksOpen(true)}
+        onShare={() => shareToVet(pet, weight, daily.pct)}
+        onQuickAdd={() => openSheet("quick-add")}
+        onReport={() => openSheet("health-report")}
+      />
 
       {/* ── Metric Info Sheet ── */}
       <AnimatePresence>
