@@ -88,7 +88,7 @@ const buildWeek = () => {
   });
 };
 
-/* ─── Circular arc gauge (3/4 arc, like reference) ─── */
+/* ─── Liquid Fill Gauge: circular vessel that fills with animated waves up to pct% ─── */
 const ArcGauge = ({
   pct,
   size = 76,
@@ -103,36 +103,75 @@ const ArcGauge = ({
   children?: React.ReactNode;
 }) => {
   const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
   const safe = Math.max(0, Math.min(100, pct));
-  const offset = c - (safe / 100) * c;
+  const rid = useId().replace(/:/g, "");
+  const clipId = `lqc-${rid}`;
+  // Fill height inside the circle (top y of liquid surface)
+  const padding = stroke;
+  const innerTop = padding;
+  const innerBottom = size - padding;
+  const innerH = innerBottom - innerTop;
+  const surfaceY = innerBottom - (safe / 100) * innerH;
+  const w = size;
+  // Two stacked sine waves built from a quartet of quadratic curves
+  const wavePath = (yBase: number, amp: number) =>
+    `M${-w},${yBase} q${w / 4},${-amp} ${w / 2},0 t${w / 2},0 t${w / 2},0 t${w / 2},0 L${2 * w},${size} L${-w},${size} Z`;
   return (
     <div
       className="relative flex items-center justify-center"
       style={{ width: size, height: size }}
     >
-      <svg width={size} height={size} className="-rotate-90" aria-hidden>
+      <svg width={size} height={size} aria-hidden className="absolute inset-0">
+        <defs>
+          <clipPath id={clipId}>
+            <circle cx={size / 2} cy={size / 2} r={r} />
+          </clipPath>
+        </defs>
+        {/* Vessel: subtle ring + faint inner wash */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="hsl(var(--muted) / 0.18)"
+          stroke={color}
+          strokeOpacity={0.35}
+          strokeWidth={stroke / 2}
+        />
+        {/* Liquid */}
+        <g clipPath={`url(#${clipId})`}>
+          {/* Animate the surface Y as pct changes */}
+          <motion.g
+            initial={{ y: innerH }}
+            animate={{ y: 0 }}
+            transition={{ duration: 1.1, ease: "easeOut", delay: 0.15 }}
+          >
+            {/* Back wave — slower, more transparent */}
+            <motion.path
+              d={wavePath(surfaceY, Math.max(2, size * 0.06))}
+              fill={color}
+              fillOpacity={0.35}
+              animate={{ x: [0, w] }}
+              transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+            />
+            {/* Front wave — faster, more opaque */}
+            <motion.path
+              d={wavePath(surfaceY + 2, Math.max(2, size * 0.05))}
+              fill={color}
+              fillOpacity={0.75}
+              animate={{ x: [0, -w] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+            />
+          </motion.g>
+        </g>
+        {/* Crisp outline on top */}
         <circle
           cx={size / 2}
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="hsl(var(--muted))"
-          strokeOpacity={0.55}
-          strokeWidth={stroke}
-        />
-        <motion.circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
           stroke={color}
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          strokeDasharray={c}
-          initial={{ strokeDashoffset: c }}
-          animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 1.1, ease: "easeOut", delay: 0.2 }}
+          strokeOpacity={0.55}
+          strokeWidth={Math.max(1, stroke / 2)}
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
@@ -141,6 +180,25 @@ const ArcGauge = ({
     </div>
   );
 };
+
+/* ─── LiquidMini: standalone liquid fill for small side-column buttons ─── */
+const LiquidMini = ({
+  pct,
+  size,
+  color,
+  icon: Icon,
+  iconSize = 14,
+}: {
+  pct: number;
+  size: number;
+  color: string;
+  icon: typeof Drumstick;
+  iconSize?: number;
+}) => (
+  <ArcGauge pct={pct} size={size} stroke={4} color={color}>
+    <Icon style={{ color, width: iconSize, height: iconSize }} strokeWidth={2} />
+  </ArcGauge>
+);
 
 /* ─── Flip Gauge: ring with icon ⇄ value flipping inside ─── */
 const FlipGauge = ({
