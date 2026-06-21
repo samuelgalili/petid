@@ -1,10 +1,6 @@
 import { useMemo, useState, useEffect, useCallback, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Flame,
-  Drumstick,
-  Wheat,
-  Droplet,
   Plus,
   Sparkles,
   Syringe,
@@ -23,10 +19,37 @@ import {
   Sun,
   Moon,
   Sunrise,
-  FileText,
   CalendarCheck,
-  ChevronLeft,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
+/* ─────────────────────────────────────────────────────────── */
+/* Unified icon system — single stroke + size, currentColor.
+   Use this everywhere instead of raw lucide elements so the
+   dashboard stays monochrome and visually consistent. */
+const ICON_STROKE = 1.75;
+type IcoSize = "xs" | "sm" | "md" | "lg";
+const ICO_PX: Record<IcoSize, number> = { xs: 12, sm: 14, md: 16, lg: 20 };
+const Ico = ({
+  icon: I,
+  size = "md",
+  className = "",
+}: {
+  icon: LucideIcon;
+  size?: IcoSize;
+  className?: string;
+}) => {
+  const px = ICO_PX[size];
+  return (
+    <I
+      width={px}
+      height={px}
+      strokeWidth={ICON_STROKE}
+      className={className}
+      aria-hidden
+    />
+  );
+};
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
 import dobermanAsset from "@/assets/doberman.jpg.asset.json";
@@ -199,151 +222,21 @@ const LiquidMini = ({
   pct: number;
   size: number;
   color: string;
-  icon: typeof Drumstick;
+  icon: LucideIcon;
   iconSize?: number;
 }) => (
   <ArcGauge pct={pct} size={size} stroke={4} color={color}>
-    <Icon style={{ color, width: iconSize, height: iconSize }} strokeWidth={2} />
+    <Icon
+      width={iconSize}
+      height={iconSize}
+      strokeWidth={ICON_STROKE}
+      style={{ color }}
+      aria-hidden
+    />
   </ArcGauge>
 );
 
-/* ─── Flip Gauge: ring with icon ⇄ value flipping inside ─── */
-const FlipGauge = ({
-  pct,
-  size,
-  stroke,
-  color,
-  icon: Icon,
-  eaten,
-  target,
-  unit,
-  iconSize,
-  numberClass,
-  unitClass,
-  onClick,
-  ariaLabel,
-}: {
-  pct: number;
-  size: number;
-  stroke: number;
-  color: string;
-  icon: typeof Drumstick;
-  eaten: number | null;
-  target: number | null;
-  unit: string;
-  iconSize: number;
-  numberClass: string;
-  unitClass: string;
-  onClick?: () => void;
-  ariaLabel?: string;
-}) => {
-  const [showValue, setShowValue] = useState(false);
-  useEffect(() => {
-    const t = setInterval(() => setShowValue((v) => !v), 2600);
-    return () => clearInterval(t);
-  }, []);
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={ariaLabel}
-      className="relative outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-full"
-      style={{ width: size, height: size, ['--tw-ring-color' as any]: color }}
-    >
-      <ArcGauge pct={pct} size={size} stroke={stroke} color={color}>
-        <div className="relative w-full h-full" style={{ perspective: 600 }}>
-          <AnimatePresence mode="wait" initial={false}>
-            {showValue ? (
-              <motion.div
-                key="value"
-                initial={{ rotateY: -90, opacity: 0 }}
-                animate={{ rotateY: 0, opacity: 1 }}
-                exit={{ rotateY: 90, opacity: 0 }}
-                transition={{ duration: 0.45, ease: "easeOut" }}
-                className="absolute inset-0 flex flex-col items-center justify-center leading-none"
-                style={{ backfaceVisibility: "hidden" }}
-              >
-                <div className="flex items-baseline gap-0.5" dir="ltr">
-                  <span className={numberClass} style={{ color }}>
-                    {eaten ?? "—"}
-                  </span>
-                  <span className={unitClass}>
-                    /{target ?? "—"}{unit}
-                  </span>
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="icon"
-                initial={{ rotateY: -90, opacity: 0 }}
-                animate={{ rotateY: 0, opacity: 1 }}
-                exit={{ rotateY: 90, opacity: 0 }}
-                transition={{ duration: 0.45, ease: "easeOut" }}
-                className="absolute inset-0 flex items-center justify-center"
-                style={{ backfaceVisibility: "hidden" }}
-              >
-                <Icon
-                  style={{ color, width: iconSize, height: iconSize }}
-                  strokeWidth={2}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </ArcGauge>
-    </button>
-  );
-};
-
 /* ─── Day pill with ring around the number ─── */
-
-/* ─── Orbit Gauge: borderless flipping ring used around the avatar ─── */
-const OrbitGauge = ({
-  pct,
-  color,
-  icon,
-  eaten,
-  target,
-  unit,
-  label,
-  onClick,
-}: {
-  pct: number;
-  color: string;
-  icon: typeof Drumstick;
-  eaten: number | null;
-  target: number | null;
-  unit: string;
-  label: string;
-  onClick: () => void;
-}) => {
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <FlipGauge
-        pct={pct}
-        size={64}
-        stroke={4}
-        color={color}
-        icon={icon}
-        eaten={eaten}
-        target={target}
-        unit={unit}
-        iconSize={20}
-        numberClass="text-[13px] font-bold"
-        unitClass="text-[8px] text-muted-foreground/70"
-        onClick={onClick}
-        ariaLabel={label}
-      />
-      <span
-        className="text-[10px] font-medium"
-        style={{ color }}
-      >
-        {label}
-      </span>
-    </div>
-  );
-};
-
 const DayPill = ({
   dow,
   date,
@@ -430,59 +323,6 @@ const DayPill = ({
   );
 };
 
-/* ─── Macro mini-card (small) ─── */
-const MacroCard = ({
-  eaten,
-  target,
-  unit,
-  label,
-  color,
-  icon: Icon,
-  delay,
-  onInfo,
-}: {
-  eaten: number | null;
-  target: number | null;
-  unit: string;
-  label: string;
-  color: string;
-  icon: typeof Drumstick;
-  delay: number;
-  onInfo: () => void;
-}) => {
-  const pct =
-    eaten != null && target != null && target > 0
-      ? (eaten / target) * 100
-      : 0;
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.4, ease: "easeOut" }}
-      className="flex-1 rounded-2xl bg-card border border-border/40 px-2 pt-3 pb-3 flex flex-col items-center gap-2"
-    >
-      <FlipGauge
-        pct={pct}
-        size={64}
-        stroke={4}
-        color={color}
-        icon={Icon}
-        eaten={eaten}
-        target={target}
-        unit={unit}
-        iconSize={18}
-        numberClass="text-[13px] font-bold"
-        unitClass="text-[8px] text-muted-foreground/70"
-        onClick={onInfo}
-        ariaLabel={label}
-      />
-      <div className="text-[10px] text-muted-foreground/70">
-        {label}
-      </div>
-    </motion.div>
-  );
-};
-
 /* ─── Timeline row (kept, minimal) ─── */
 type TimelineKind = "vaccine" | "vet" | "weight" | "reminder";
 const T_META: Record<TimelineKind, { icon: typeof Weight }> = {
@@ -508,11 +348,8 @@ const TimelineRow = ({
   return (
     <div className="flex gap-3 items-start">
       <div className="relative flex flex-col items-center">
-        <div
-          className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
-          style={{ background: `${accent}18`, color: accent }}
-        >
-          <Icon className="w-3.5 h-3.5" strokeWidth={1.8} />
+        <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-muted/40 border border-border/40 text-foreground">
+          <Ico icon={Icon} size="sm" />
         </div>
         {!last && (
           <div
@@ -698,11 +535,11 @@ const DailyBrief = ({
         className="absolute top-2 left-2 w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground/70 hover:text-foreground"
         aria-label="סגור"
       >
-        <X className="w-3.5 h-3.5" />
+        <Ico icon={X} size="sm" />
       </button>
       <div className="relative flex items-start gap-3">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border border-border/30 bg-muted/40">
-          <Icon className="w-5 h-5 text-muted-foreground" strokeWidth={1.75} />
+          <Ico icon={Icon} size="lg" className="text-muted-foreground" />
         </div>
         <div className="flex-1 min-w-0 pr-4">
           <div className="text-[13px] font-bold text-foreground leading-tight">
@@ -716,7 +553,7 @@ const DailyBrief = ({
             onClick={topAction.onClick}
             className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-full transition-transform active:scale-95 bg-foreground text-background"
           >
-            <topAction.icon className="w-3 h-3" strokeWidth={2.5} />
+            <Ico icon={topAction.icon} size="xs" />
             {topAction.label}
           </button>
         </div>
@@ -841,104 +678,6 @@ const MoodAvatar = ({ src, alt, mood, celebrateKey }: { src: string; alt: string
   );
 };
 
-/* ─── Bento action cards (2x2 below the avatar) ─── */
-const BentoActions = ({
-  daily,
-  dailyColor,
-  onTasks,
-  onShare,
-  onQuickAdd,
-  onReport,
-}: {
-  daily: { completed: number; total: number; pct: number };
-  dailyColor: string;
-  onTasks: () => void;
-  onShare: () => void;
-  onQuickAdd: () => void;
-  onReport: () => void;
-}) => {
-  const cards = [
-    {
-      key: "tasks",
-      title: "משימות היום",
-      meta: `${daily.completed}/${daily.total} הושלמו`,
-      Icon: CalendarCheck,
-      tint: dailyColor,
-      onClick: onTasks,
-      hero: true,
-    },
-    {
-      key: "quick",
-      title: "הוספה מהירה",
-      meta: "ארוחה · מים · משקל",
-      Icon: Plus,
-      tint: "hsl(200 75% 55%)",
-      onClick: onQuickAdd,
-    },
-    {
-      key: "share",
-      title: "שליחה לוטרינר",
-      meta: "סיכום שבועי",
-      Icon: Share2,
-      tint: "hsl(150 55% 50%)",
-      onClick: onShare,
-    },
-    {
-      key: "report",
-      title: "דוח בריאות",
-      meta: "7 ימים אחרונים",
-      Icon: FileText,
-      tint: "hsl(265 65% 65%)",
-      onClick: onReport,
-    },
-  ];
-  return (
-    <div className="grid grid-cols-2 gap-2.5">
-      {cards.map((c, i) => (
-        <motion.button
-          key={c.key}
-          type="button"
-          onClick={c.onClick}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 * i, duration: 0.35, ease: "easeOut" }}
-          whileHover={{ y: -2 }}
-          whileTap={{ scale: 0.97 }}
-          className={`relative overflow-hidden rounded-2xl backdrop-blur-xl border border-white/10 px-3 py-3 text-right ${c.hero ? "col-span-2" : ""}`}
-          style={{ background: `linear-gradient(135deg, ${c.tint}1a, hsl(var(--card)/0.55))` }}
-        >
-          <div className="absolute -top-6 -left-6 w-24 h-24 rounded-full blur-2xl opacity-50" style={{ background: c.tint }} aria-hidden />
-          <div className="relative flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${c.tint}26`, border: `1px solid ${c.tint}40` }}>
-              <c.Icon className="w-4 h-4" style={{ color: c.tint }} strokeWidth={2} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-[12px] font-bold text-foreground leading-tight truncate">
-                {c.title}
-              </div>
-              <div className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                {c.meta}
-              </div>
-            </div>
-            <ChevronLeft className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
-          </div>
-          {c.hero && (
-            <div className="relative mt-2 h-1 rounded-full bg-muted/30 overflow-hidden">
-              <motion.div
-                className="h-full rounded-full"
-                style={{ background: c.tint }}
-                initial={false}
-                animate={{ width: `${daily.pct}%` }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-              />
-            </div>
-          )}
-        </motion.button>
-      ))}
-    </div>
-  );
-};
-
 export const PetCenterDashboard = ({
   pet,
   accent = "hsl(var(--primary))",
@@ -993,9 +732,11 @@ export const PetCenterDashboard = ({
       new CustomEvent("open-pet-sheet", { detail: { sheet } })
     );
 
-  const C_PROTEIN = "hsl(8 78% 60%)";
-  const C_CARBS = "hsl(35 88% 58%)";
-  const C_FATS = "hsl(205 80% 58%)";
+  // Monochrome palette — single foreground tint everywhere
+  const C_FG = "hsl(var(--foreground))";
+  const C_PROTEIN = C_FG;
+  const C_CARBS = C_FG;
+  const C_FATS = C_FG;
 
   return (
     <div className="flex flex-col gap-3 pb-8">
@@ -1086,7 +827,7 @@ export const PetCenterDashboard = ({
                   className="w-8 h-8 rounded-full flex items-center justify-center border border-border/50 text-muted-foreground hover:text-foreground"
                   aria-label="סגור"
                 >
-                  <X className="w-4 h-4" />
+                  <Ico icon={X} size="md" />
                 </button>
               </div>
 
@@ -1147,33 +888,22 @@ export const PetCenterDashboard = ({
                       <div
                         className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 border-2"
                         style={{
-                          background: checked ? dailyColor : "transparent",
+                          background: checked ? "hsl(var(--foreground))" : "transparent",
                           borderColor: checked
-                            ? dailyColor
+                            ? "hsl(var(--foreground))"
                             : "hsl(var(--border))",
                         }}
                       >
                         {checked && (
-                          <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+                          <Ico icon={Check} size="sm" className="text-background" />
                         )}
                       </div>
                       <div
-                        className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-                        style={{
-                          background: checked
-                            ? `${dailyColor}1f`
-                            : "hsl(var(--muted) / 0.5)",
-                        }}
+                        className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-muted/40 border border-border/40 ${
+                          checked ? "text-foreground" : "text-muted-foreground"
+                        }`}
                       >
-                        <Icon
-                          className="w-4 h-4"
-                          style={{
-                            color: checked
-                              ? dailyColor
-                              : "hsl(var(--muted-foreground))",
-                          }}
-                          strokeWidth={2}
-                        />
+                        <Ico icon={Icon} size="md" />
                       </div>
                       <span
                         className={`text-[14px] font-medium flex-1 ${
@@ -1395,11 +1125,8 @@ export const PetCenterDashboard = ({
                 </div>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div
-                      className="w-9 h-9 rounded-xl flex items-center justify-center"
-                      style={{ background: `${m.color}1a` }}
-                    >
-                      <Flame className="w-4 h-4" style={{ color: m.color }} />
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-muted/40 border border-border/40 text-foreground">
+                      <Ico icon={Zap} size="md" />
                     </div>
                     <div>
                       <div className="text-[16px] font-bold text-foreground">{m.title}</div>
@@ -1412,7 +1139,7 @@ export const PetCenterDashboard = ({
                     className="w-8 h-8 rounded-full flex items-center justify-center border border-border/50 text-muted-foreground"
                     aria-label="סגור"
                   >
-                    <X className="w-4 h-4" />
+                    <Ico icon={X} size="md" />
                   </button>
                 </div>
 
