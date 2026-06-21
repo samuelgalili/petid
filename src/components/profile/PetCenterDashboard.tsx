@@ -1250,10 +1250,15 @@ export const PetCenterDashboard = ({
             </svg>
             {/* Avatar inside the ring */}
             <div className="absolute inset-0 flex items-center justify-center">
-              <img
+              <MoodAvatar
                 src={dobermanAsset.url}
                 alt={pet.name}
-                className="w-[200px] h-[200px] rounded-full object-contain bg-muted block"
+                mood={inferMood({
+                  hasBreed: !!pet.breed,
+                  hasWeight: weight != null,
+                  dailyPct: daily.pct,
+                  isNight: (() => { const h = new Date().getHours(); return h >= 22 || h < 6; })(),
+                })}
               />
             </div>
             {/* Goal % badge */}
