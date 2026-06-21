@@ -93,21 +93,8 @@ interface Props {
 const fmt = (v: string | number | null | undefined, suffix = "") =>
   v == null || v === "" ? "—" : `${v}${suffix}`;
 
-/* ─── NRC 2006 (conservative, adult neutered) ─── */
-const computeTargets = (weightKg: number | null | undefined) => {
-  if (!weightKg || weightKg <= 0) {
-    return { kcal: null, protein_g: null, fat_g: null, carbs_g: null, water_ml: null };
-  }
-  const RER = 70 * Math.pow(weightKg, 0.75);
-  const MER = RER * 1.6;
-  return {
-    kcal: Math.round(MER),
-    protein_g: Math.round((MER * 0.25) / 4),
-    fat_g: Math.round((MER * 0.2) / 9),
-    carbs_g: Math.round((MER * 0.55) / 4),
-    water_ml: Math.round(weightKg * 50),
-  };
-};
+/* ─── NRC 2006 + 14-day baseline tuning (see src/lib/nrcTargets.ts) ─── */
+import { computeAdjustedTargets } from "@/lib/nrcTargets";
 
 /* ─── Day-of-week initials (Sun–Sat) ─── */
 const DAY_INITIALS = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
@@ -632,9 +619,11 @@ export const PetCenterDashboard = ({
   const fallback = type === "cat" ? catIcon : dogIcon;
   const weight = pet.weight ?? null;
 
-  const targets = useMemo(() => computeTargets(weight), [weight]);
-
   const metrics = usePetMetrics(pet.id);
+  const targets = useMemo(
+    () => computeAdjustedTargets(weight, metrics.baseline),
+    [weight, metrics.baseline],
+  );
   const daily = useMemo(
     () => ({
       done: metrics.todayTasks,
