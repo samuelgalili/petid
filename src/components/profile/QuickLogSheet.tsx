@@ -12,7 +12,7 @@ const todayISO = () => new Date().toISOString().slice(0, 10);
 
 const waterSchema = z.object({
   amount_ml: z.coerce
-    .number({ invalid_type_error: "כמות חייבת להיות מספר" })
+    .number()
     .int("יש להזין מספר שלם")
     .positive("הכמות חייבת להיות גדולה מ-0")
     .max(5000, "כמות חריגה (מקס׳ 5000 מ״ל לפעם)"),
@@ -32,7 +32,7 @@ const feedingSchema = z
 
 const weightSchema = z.object({
   weight_kg: z.coerce
-    .number({ invalid_type_error: "משקל חייב להיות מספר" })
+    .number()
     .positive("המשקל חייב להיות גדול מ-0")
     .min(0.1, "משקל לא חוקי")
     .max(120, "משקל חריג — בדקו שוב"),
