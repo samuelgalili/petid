@@ -586,12 +586,48 @@ const useDailyTasks = (petId: string) => {
       localStorage.setItem(storageKey, JSON.stringify(done));
     } catch {}
   }, [storageKey, done]);
-  const toggle = useCallback((key: string) => {
-    setDone((prev) => ({ ...prev, [key]: !prev[key] }));
+  const toggle = useCallback((key: string): boolean => {
+    let newlyChecked = false;
+    setDone((prev) => {
+      const next = !prev[key];
+      newlyChecked = next === true && !prev[key];
+      return { ...prev, [key]: next };
+    });
+    return newlyChecked;
   }, []);
   const completed = DAILY_TASKS.filter((t) => done[t.key]).length;
   const pct = Math.round((completed / DAILY_TASKS.length) * 100);
   return { done, toggle, completed, total: DAILY_TASKS.length, pct };
+};
+
+/* ─── Daily streak: count consecutive days where pct ≥ 75% (real signal, not a guilt loop) ─── */
+const useDailyStreak = (petId: string, todayPct: number) => {
+  const key = `petid:streak:${petId}`;
+  const [streak, setStreak] = useState<number>(() => {
+    if (typeof window === "undefined") return 0;
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return 0;
+      return JSON.parse(raw).count ?? 0;
+    } catch { return 0; }
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (todayPct < 75) return;
+    try {
+      const today = todayKey();
+      const raw = localStorage.getItem(key);
+      const prev = raw ? JSON.parse(raw) as { count: number; lastDay: string } : { count: 0, lastDay: "" };
+      if (prev.lastDay === today) return;
+      // Was yesterday? then +1, else reset to 1
+      const yest = new Date(); yest.setDate(yest.getDate() - 1);
+      const yKey = `${yest.getFullYear()}-${String(yest.getMonth()+1).padStart(2,"0")}-${String(yest.getDate()).padStart(2,"0")}`;
+      const next = prev.lastDay === yKey ? prev.count + 1 : 1;
+      localStorage.setItem(key, JSON.stringify({ count: next, lastDay: today }));
+      setStreak(next);
+    } catch {}
+  }, [todayPct, key]);
+  return streak;
 };
 
 /* ─── Time-of-day awareness ─── */
