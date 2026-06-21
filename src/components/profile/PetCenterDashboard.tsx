@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback, useId } from "react";
+import { useMemo, useState, useEffect, useCallback, useId, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -27,9 +27,17 @@ import type { LucideIcon } from "lucide-react";
 /* Unified icon system — single stroke + size, currentColor.
    Use this everywhere instead of raw lucide elements so the
    dashboard stays monochrome and visually consistent. */
-const ICON_STROKE = 1.75;
+const ICON_STROKE = 1.5;
 type IcoSize = "xs" | "sm" | "md" | "lg";
-const ICO_PX: Record<IcoSize, number> = { xs: 12, sm: 14, md: 16, lg: 20 };
+const ICO_PX: Record<IcoSize, number> = { xs: 12, sm: 14, md: 18, lg: 20 };
+
+/* Mipo brand gradient — used ONLY on primary moments (goal ring, streak, active state) */
+const BRAND_STOPS = [
+  { offset: "0%",   color: "#FF7A8A" },
+  { offset: "35%",  color: "#F472B6" },
+  { offset: "70%",  color: "#A78BFA" },
+  { offset: "100%", color: "#67E8F9" },
+];
 const Ico = ({
   icon: I,
   size = "md",
@@ -933,8 +941,81 @@ export const PetCenterDashboard = ({
         );
         const offset = C - (overall / 100) * C;
         const ringColor = scoreColor(overall);
+        const gradId = `mipo-ring-grad-${pet.id}`;
+
+        // 4 floating glass satellites — parallax depth, no orbit line.
+        // Positions are absolute around the centered avatar (340h container).
+        const satellites: Array<{
+          key: string;
+          icon: LucideIcon;
+          value: ReactNode;
+          label: string;
+          onClick: () => void;
+          active?: boolean;
+          // parallax: depth 0 = front (big, sharp), 2 = back (small, dim)
+          depth: 0 | 1 | 2;
+          // position relative to avatar center
+          x: number; // px, positive = right
+          y: number; // px, positive = down
+          // float phase for staggered sine
+          phase: number;
+        }> = [
+          {
+            key: "energy",
+            icon: Zap,
+            value:
+              energyLevel == null || energyLevel === 0
+                ? "—"
+                : energyLevel <= 2 ? "נמוך" : energyLevel <= 3 ? "בינוני" : "גבוה",
+            label: "אנרגיה",
+            onClick: () => openSheet("activity"),
+            depth: 1,
+            x: 122,
+            y: -96,
+            phase: 0,
+          },
+          {
+            key: "weight",
+            icon: Weight,
+            value: weight ? `${weight}` : "+",
+            label: weight ? "ק״ג" : "משקל",
+            onClick: () => openSheet("weight"),
+            active: weight != null,
+            depth: 0,
+            x: 134,
+            y: 78,
+            phase: 1.2,
+          },
+          {
+            key: "vaccines",
+            icon: Syringe,
+            value: "✓",
+            label: "חיסונים",
+            onClick: () => openSheet("vaccines"),
+            depth: 2,
+            x: -130,
+            y: 88,
+            phase: 2.4,
+          },
+          {
+            key: "hydration",
+            icon: GlassWater,
+            value: targets.water_ml ? `${Math.round(targets.water_ml / 100) * 100}` : "—",
+            label: targets.water_ml ? "מ״ל" : "מים",
+            onClick: () => openSheet("water"),
+            depth: 1,
+            x: -118,
+            y: -104,
+            phase: 3.6,
+          },
+        ];
+        const DEPTH = {
+          0: { size: 64, iconSize: "lg" as IcoSize, opacity: 1,    blur: 0,  shadow: "0 18px 40px -14px hsl(0 0% 0% / 0.55)" },
+          1: { size: 56, iconSize: "md" as IcoSize, opacity: 0.92, blur: 0,  shadow: "0 12px 28px -12px hsl(0 0% 0% / 0.45)" },
+          2: { size: 50, iconSize: "md" as IcoSize, opacity: 0.7,  blur: 0.4, shadow: "0 8px 20px -10px hsl(0 0% 0% / 0.35)" },
+        };
         return (
-          <div className="relative flex items-center justify-between gap-2 w-full px-2" dir="rtl">
+          <div className="relative w-full flex items-center justify-center" style={{ height: 340 }} dir="rtl">
             {/* Single subtle ambient glow — neutral, no rainbow */}
             <motion.div
               className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full blur-3xl"
@@ -942,13 +1023,6 @@ export const PetCenterDashboard = ({
               animate={{ opacity: [0.08, 0.16, 0.08], scale: [1, 1.05, 1] }}
               transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
               aria-hidden
-            />
-            <BreedTraitCircles
-              breed={pet.breed}
-              weight={weight}
-              kcalTarget={targets.kcal}
-              accent={accent}
-              vertical
             />
 
           <motion.button
@@ -961,7 +1035,7 @@ export const PetCenterDashboard = ({
             style={{ width: SIZE, height: SIZE }}
             aria-label={`יעד יומי ${overall}%`}
           >
-            {/* Single daily-goal ring — one color, no rainbow */}
+            {/* Daily-goal ring — Mipo brand gradient sweep */}
             <svg
               width={SIZE}
               height={SIZE}
@@ -969,6 +1043,13 @@ export const PetCenterDashboard = ({
               className="absolute inset-0 -rotate-90"
               aria-hidden
             >
+              <defs>
+                <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+                  {BRAND_STOPS.map((s) => (
+                    <stop key={s.offset} offset={s.offset} stopColor={s.color} />
+                  ))}
+                </linearGradient>
+              </defs>
               <circle
                 cx={SIZE / 2}
                 cy={SIZE / 2}
@@ -982,7 +1063,7 @@ export const PetCenterDashboard = ({
                 cy={SIZE / 2}
                 r={R}
                 fill="none"
-                stroke={ringColor}
+                stroke={`url(#${gradId})`}
                 strokeWidth={STROKE}
                 strokeLinecap="round"
                 strokeDasharray={C}
@@ -1018,62 +1099,78 @@ export const PetCenterDashboard = ({
             </div>
           </motion.button>
 
-            {/* ── Weight + Vaccinations vertical column (left side of avatar) ── */}
-            <div className="flex flex-col items-center gap-2 overflow-y-auto no-scrollbar py-1" style={{ scrollbarWidth: 'none', maxHeight: 280 }}>
-              {/* Energy (breed) */}
-              <motion.button
-                type="button"
-                onClick={() => openSheet('activity')}
-                whileHover={{ scale: 1.08, y: -2 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex flex-col items-center shrink-0 group"
-                style={{ width: 62 }}
-              >
-                <div className="relative rounded-full bg-card/40 backdrop-blur-md border border-border/30" style={{ width: 48, height: 48 }}>
-                  <LiquidMini pct={((energyLevel ?? 0) / 5) * 100} size={48} color="hsl(var(--foreground))" icon={Zap} iconSize={14} />
-                </div>
-                <div className="mt-1 text-[10px] font-semibold text-foreground leading-tight text-center">
-                  {energyLevel == null || energyLevel === 0
-                    ? <span className="text-muted-foreground">+ גזע</span>
-                    : energyLevel <= 2 ? 'נמוך' : energyLevel <= 3 ? 'בינוני' : 'גבוה'}
-                </div>
-                <div className="text-[9px] text-muted-foreground/70 leading-tight text-center">אנרגיה</div>
-              </motion.button>
-
-              {/* Weight */}
-              <motion.button
-                type="button"
-                onClick={() => openSheet('weight')}
-                whileHover={{ scale: 1.08, y: -2 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex flex-col items-center shrink-0 group"
-                style={{ width: 62 }}
-              >
-                <div className="relative rounded-full bg-card/40 backdrop-blur-md border border-border/30" style={{ width: 48, height: 48 }}>
-                  <LiquidMini pct={weight ? Math.min(100, (weight / 50) * 100) : 0} size={48} color="hsl(var(--foreground))" icon={Weight} iconSize={14} />
-                </div>
-                <div className="mt-1 text-[10px] font-semibold text-foreground leading-tight text-center" dir="auto" style={{ unicodeBidi: 'plaintext' }}>
-                  {weight ? `${weight} ק״ג` : <span className="text-muted-foreground">+ משקל</span>}
-                </div>
-                <div className="text-[9px] text-muted-foreground/70 leading-tight text-center">משקל</div>
-              </motion.button>
-
-              {/* Vaccinations */}
-              <motion.button
-                type="button"
-                onClick={() => openSheet('vaccines')}
-                whileHover={{ scale: 1.08, y: -2 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex flex-col items-center shrink-0 group"
-                style={{ width: 62 }}
-              >
-                <div className="relative rounded-full bg-card/40 backdrop-blur-md border border-border/30" style={{ width: 48, height: 48 }}>
-                  <LiquidMini pct={75} size={48} color="hsl(var(--foreground))" icon={Syringe} iconSize={14} />
-                </div>
-                <div className="mt-1 text-[10px] font-semibold text-foreground leading-tight text-center">עדכניים</div>
-                <div className="text-[9px] text-muted-foreground/70 leading-tight text-center">חיסונים</div>
-              </motion.button>
-            </div>
+            {/* ── Floating Glass Stack: 4 satellites with parallax depth, no orbit ring ── */}
+            {satellites.map((s, i) => {
+              const d = DEPTH[s.depth];
+              const isActive = !!s.active;
+              return (
+                <motion.button
+                  key={s.key}
+                  type="button"
+                  onClick={s.onClick}
+                  initial={{ opacity: 0, scale: 0.6, y: s.y + 10 }}
+                  animate={{
+                    opacity: d.opacity,
+                    scale: 1,
+                    y: [s.y - 4, s.y + 4, s.y - 4],
+                    x: [s.x - 2, s.x + 2, s.x - 2],
+                  }}
+                  transition={{
+                    opacity: { delay: 0.15 + i * 0.08, duration: 0.5 },
+                    scale:   { delay: 0.15 + i * 0.08, duration: 0.5, ease: "easeOut" },
+                    y: { duration: 5.5 + i * 0.4, repeat: Infinity, ease: "easeInOut", delay: s.phase * 0.3 },
+                    x: { duration: 7.5 + i * 0.4, repeat: Infinity, ease: "easeInOut", delay: s.phase * 0.3 },
+                  }}
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.94 }}
+                  className="absolute left-1/2 top-1/2 flex flex-col items-center group"
+                  style={{
+                    marginLeft: -d.size / 2,
+                    marginTop:  -d.size / 2,
+                    filter: d.blur ? `blur(${d.blur}px)` : undefined,
+                    zIndex: 10 - s.depth,
+                  }}
+                  aria-label={s.label}
+                >
+                  <div
+                    className="relative rounded-full flex items-center justify-center backdrop-blur-xl"
+                    style={{
+                      width: d.size,
+                      height: d.size,
+                      background: "hsl(var(--card) / 0.55)",
+                      border: "1px solid hsl(0 0% 100% / 0.08)",
+                      boxShadow: `${d.shadow}, inset 0 1px 0 hsl(0 0% 100% / 0.06)`,
+                    }}
+                  >
+                    {/* Brand-gradient ring only on the active satellite */}
+                    {isActive && (
+                      <span
+                        aria-hidden
+                        className="absolute inset-[-2px] rounded-full opacity-90"
+                        style={{
+                          background: `conic-gradient(from 140deg, ${BRAND_STOPS.map(b => b.color).join(", ")}, ${BRAND_STOPS[0].color})`,
+                          WebkitMask: "radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px))",
+                                  mask: "radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px))",
+                        }}
+                      />
+                    )}
+                    <div className="text-foreground/85">
+                      <Ico icon={s.icon} size={d.iconSize} />
+                    </div>
+                  </div>
+                  <div
+                    className="mt-1.5 text-[10px] font-semibold leading-none tabular-nums text-foreground"
+                    dir="auto"
+                    style={{ unicodeBidi: "plaintext" }}
+                  >
+                    {s.value}
+                  </div>
+                  <div className="text-[9px] text-muted-foreground/70 leading-tight mt-0.5">
+                    {s.label}
+                  </div>
+                </motion.button>
+              );
+            })}
           </div>
         );
       })()}
