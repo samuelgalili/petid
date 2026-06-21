@@ -315,19 +315,28 @@ export const QuickLogSheet = ({ type, pet, onClose, onSaved }: Props) => {
               <input
                 type="text" autoFocus
                 value={vName} onChange={(e) => setVName(e.target.value)}
-                className="w-full h-12 px-4 rounded-2xl bg-muted/40 border border-border/40 text-foreground"
+                className={fieldClass("vaccine_name").replace("text-lg tabular-nums", "")}
                 placeholder="למשל משולש"
+                maxLength={120}
+                aria-invalid={!!errors.vaccine_name}
               />
+              <Err k="vaccine_name" />
               <div className="grid grid-cols-2 gap-2 mt-2">
                 <div>
                   <label className="block text-xs text-muted-foreground">תאריך מתן</label>
                   <input type="date" value={vDate} onChange={(e) => setVDate(e.target.value)}
-                    className="w-full h-12 px-3 rounded-2xl bg-muted/40 border border-border/40 text-foreground" />
+                    max={todayISO()}
+                    className={fieldClass("vaccination_date").replace("text-lg tabular-nums", "")}
+                    aria-invalid={!!errors.vaccination_date} />
+                  <Err k="vaccination_date" />
                 </div>
                 <div>
                   <label className="block text-xs text-muted-foreground">תוקף עד</label>
                   <input type="date" value={vExpiry} onChange={(e) => setVExpiry(e.target.value)}
-                    className="w-full h-12 px-3 rounded-2xl bg-muted/40 border border-border/40 text-foreground" />
+                    min={vDate}
+                    className={fieldClass("expiry_date").replace("text-lg tabular-nums", "")}
+                    aria-invalid={!!errors.expiry_date} />
+                  <Err k="expiry_date" />
                 </div>
               </div>
             </>
