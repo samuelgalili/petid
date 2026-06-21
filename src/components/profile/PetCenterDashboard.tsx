@@ -592,7 +592,7 @@ export const PetCenterDashboard = ({
       <HeroInsight petId={pet.id} />
 
       {/* ── Week strip ── */}
-      <div className="flex items-center justify-between rounded-2xl bg-card/40 border border-border/20 px-2 py-2.5">
+      <div className="flex items-center justify-between rounded-2xl bg-card/30 backdrop-blur-xl border border-white/10 px-2 py-2.5 shadow-[0_8px_28px_-12px_hsl(var(--primary)/0.25)]">
         {week.map((d, i) => (
           <DayPill
             key={i}
