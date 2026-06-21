@@ -586,12 +586,48 @@ const useDailyTasks = (petId: string) => {
       localStorage.setItem(storageKey, JSON.stringify(done));
     } catch {}
   }, [storageKey, done]);
-  const toggle = useCallback((key: string) => {
-    setDone((prev) => ({ ...prev, [key]: !prev[key] }));
+  const toggle = useCallback((key: string): boolean => {
+    let newlyChecked = false;
+    setDone((prev) => {
+      const next = !prev[key];
+      newlyChecked = next === true && !prev[key];
+      return { ...prev, [key]: next };
+    });
+    return newlyChecked;
   }, []);
   const completed = DAILY_TASKS.filter((t) => done[t.key]).length;
   const pct = Math.round((completed / DAILY_TASKS.length) * 100);
   return { done, toggle, completed, total: DAILY_TASKS.length, pct };
+};
+
+/* ─── Daily streak: count consecutive days where pct ≥ 75% (real signal, not a guilt loop) ─── */
+const useDailyStreak = (petId: string, todayPct: number) => {
+  const key = `petid:streak:${petId}`;
+  const [streak, setStreak] = useState<number>(() => {
+    if (typeof window === "undefined") return 0;
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return 0;
+      return JSON.parse(raw).count ?? 0;
+    } catch { return 0; }
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (todayPct < 75) return;
+    try {
+      const today = todayKey();
+      const raw = localStorage.getItem(key);
+      const prev = raw ? JSON.parse(raw) as { count: number; lastDay: string } : { count: 0, lastDay: "" };
+      if (prev.lastDay === today) return;
+      // Was yesterday? then +1, else reset to 1
+      const yest = new Date(); yest.setDate(yest.getDate() - 1);
+      const yKey = `${yest.getFullYear()}-${String(yest.getMonth()+1).padStart(2,"0")}-${String(yest.getDate()).padStart(2,"0")}`;
+      const next = prev.lastDay === yKey ? prev.count + 1 : 1;
+      localStorage.setItem(key, JSON.stringify({ count: next, lastDay: today }));
+      setStreak(next);
+    } catch {}
+  }, [todayPct, key]);
+  return streak;
 };
 
 /* ─── Time-of-day awareness ─── */
@@ -741,10 +777,17 @@ const inferMood = ({
   return "attention";
 };
 
-/* ─── MoodAvatar: real image + breathing + state-driven halo (no fake "hunger") ─── */
-const MoodAvatar = ({ src, alt, mood }: { src: string; alt: string; mood: Mood }) => {
+/* ─── MoodAvatar: real image + breathing + state-driven halo + celebrate on real action ─── */
+const MoodAvatar = ({ src, alt, mood, celebrateKey }: { src: string; alt: string; mood: Mood; celebrateKey: number }) => {
   const h = HALO[mood];
   const sleeping = mood === "asleep";
+  const [wagging, setWagging] = useState(false);
+  useEffect(() => {
+    if (celebrateKey === 0) return;
+    setWagging(true);
+    const t = setTimeout(() => setWagging(false), 1500);
+    return () => clearTimeout(t);
+  }, [celebrateKey]);
   return (
     <div className="relative w-[200px] h-[200px]">
       {/* Halo — mood color */}
@@ -753,11 +796,19 @@ const MoodAvatar = ({ src, alt, mood }: { src: string; alt: string; mood: Mood }
         style={{ background: `radial-gradient(circle, ${h.color} 0%, transparent 65%)`, filter: "blur(18px)" }}
         initial={false}
         animate={
-          h.pulse
+          wagging
+            ? { opacity: [0.45, 0.7, 0.45], scale: [1, 1.08, 1] }
+            : h.pulse
             ? { opacity: [h.opacity * 0.6, h.opacity, h.opacity * 0.6], scale: [0.95, 1.05, 0.95] }
             : { opacity: h.opacity, scale: 1 }
         }
-        transition={h.pulse ? { duration: 2.4, repeat: Infinity, ease: "easeInOut" } : { duration: 0.6 }}
+        transition={
+          wagging
+            ? { duration: 0.5, repeat: 2, ease: "easeInOut" }
+            : h.pulse
+              ? { duration: 2.4, repeat: Infinity, ease: "easeInOut" }
+              : { duration: 0.6 }
+        }
         aria-hidden
       />
       {/* Breathing avatar */}
@@ -766,8 +817,16 @@ const MoodAvatar = ({ src, alt, mood }: { src: string; alt: string; mood: Mood }
         alt={alt}
         className="relative w-[200px] h-[200px] rounded-full object-contain bg-muted block"
         style={{ opacity: mood === "unknown" ? 0.5 : sleeping ? 0.85 : 1, filter: sleeping ? "brightness(0.85)" : "none" }}
-        animate={{ scale: sleeping ? [1, 1.012, 1] : [1, 1.02, 1] }}
-        transition={{ duration: sleeping ? 5 : 3.2, repeat: Infinity, ease: "easeInOut" }}
+        animate={
+          wagging
+            ? { scale: [1, 1.08, 1], rotate: [0, -6, 6, -4, 4, 0] }
+            : { scale: sleeping ? [1, 1.012, 1] : [1, 1.02, 1] }
+        }
+        transition={
+          wagging
+            ? { duration: 1.2, ease: "easeOut" }
+            : { duration: sleeping ? 5 : 3.2, repeat: Infinity, ease: "easeInOut" }
+        }
       />
       {/* Sleeping Z marks */}
       {sleeping && (
@@ -895,6 +954,8 @@ export const PetCenterDashboard = ({
 
   const daily = useDailyTasks(pet.id);
   const dailyColor = scoreColor(daily.pct);
+  const streak = useDailyStreak(pet.id, daily.pct);
+  const [celebrateKey, setCelebrateKey] = useState(0);
   const [tasksOpen, setTasksOpen] = useState(false);
   const [infoKey, setInfoKey] = useState<null | "kcal" | "protein" | "carbs" | "fat">(null);
   const [energyLevel, setEnergyLevel] = useState<number | null>(null);
@@ -960,7 +1021,7 @@ export const PetCenterDashboard = ({
       <HeroInsight petId={pet.id} />
 
       {/* ── Week strip ── */}
-      <div className="flex items-center justify-between rounded-2xl bg-card/30 backdrop-blur-xl border border-white/10 px-2 py-2.5 shadow-[0_8px_28px_-12px_hsl(var(--primary)/0.25)]">
+      <div className="relative flex items-center justify-between rounded-2xl bg-card/30 backdrop-blur-xl border border-white/10 px-2 py-2.5 shadow-[0_8px_28px_-12px_hsl(var(--primary)/0.25)]">
         {week.map((d, i) => (
           <DayPill
             key={i}
@@ -972,6 +1033,25 @@ export const PetCenterDashboard = ({
             accent={accent}
           />
         ))}
+        {streak > 0 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.7, y: -4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="absolute -top-2 -left-2 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold backdrop-blur-md border border-white/10"
+            style={{ background: "hsl(20 90% 55% / 0.18)", color: "hsl(20 95% 60%)" }}
+            aria-label={`רצף של ${streak} ימים`}
+          >
+            <motion.span
+              animate={{ scale: [1, 1.15, 1], rotate: [0, -5, 5, 0] }}
+              transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+              aria-hidden
+            >
+              🔥
+            </motion.span>
+            <span dir="ltr">{streak}</span>
+          </motion.div>
+        )}
       </div>
 
       {/* ── Daily Tasks Bottom Sheet ── */}
@@ -1056,7 +1136,15 @@ export const PetCenterDashboard = ({
                     <button
                       key={t.key}
                       type="button"
-                      onClick={() => daily.toggle(t.key)}
+                      onClick={() => {
+                        const newly = daily.toggle(t.key);
+                        if (newly) {
+                          setCelebrateKey((k) => k + 1);
+                          if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+                            try { (navigator as any).vibrate?.(15); } catch {}
+                          }
+                        }
+                      }}
                       className="flex items-center gap-3 px-3 py-3 rounded-2xl border transition-colors text-right"
                       style={{
                         borderColor: checked
@@ -1253,6 +1341,7 @@ export const PetCenterDashboard = ({
               <MoodAvatar
                 src={dobermanAsset.url}
                 alt={pet.name}
+                celebrateKey={celebrateKey}
                 mood={inferMood({
                   hasBreed: !!pet.breed,
                   hasWeight: weight != null,
