@@ -208,6 +208,10 @@ export const QuickLogSheet = ({ type, pet, onClose, onSaved }: Props) => {
       }
 
       toast({ title: "נשמר" });
+      // Trigger baseline recomputation for this pet (best-effort, async)
+      void supabase.functions.invoke("compute-pet-baselines", {
+        body: { pet_id: pet.id },
+      });
       onSaved?.();
       onClose();
     } catch (e: any) {

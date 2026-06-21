@@ -20,6 +20,8 @@ import {
   ChevronLeft,
   Check,
   X,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -106,6 +108,28 @@ export const HeroInsight = ({ petId }: { petId: string }) => {
       .from("pet_insights")
       .update({ dismissed_at: new Date().toISOString() })
       .eq("id", hero.id);
+    // Closing the learning loop: dismissing = "not relevant for me right now"
+    await supabase.from("recommendation_feedback").insert({
+      user_id: (await supabase.auth.getUser()).data.user?.id,
+      pet_id: petId,
+      recommendation_type: "insight",
+      recommendation_id: hero.id,
+      feedback: "dismissed",
+      context: { tier: hero.tier, category: hero.category },
+    });
+    setResolved(true);
+  };
+
+  const giveFeedback = async (verdict: "positive" | "negative") => {
+    if (!hero) return;
+    await supabase.from("recommendation_feedback").insert({
+      user_id: (await supabase.auth.getUser()).data.user?.id,
+      pet_id: petId,
+      recommendation_type: "insight",
+      recommendation_id: hero.id,
+      feedback: verdict,
+      context: { tier: hero.tier, category: hero.category },
+    });
     setResolved(true);
   };
 
@@ -168,6 +192,26 @@ export const HeroInsight = ({ petId }: { petId: string }) => {
           >
             <X className="w-3.5 h-3.5" strokeWidth={1.8} />
           </button>
+
+          {/* Feedback row — closes the learning loop */}
+          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-background/90 border border-border/40 backdrop-blur-md">
+            <button
+              type="button"
+              onClick={() => giveFeedback("positive")}
+              className="w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground"
+              aria-label="עזר לי"
+            >
+              <ThumbsUp className="w-3 h-3" strokeWidth={1.8} />
+            </button>
+            <button
+              type="button"
+              onClick={() => giveFeedback("negative")}
+              className="w-6 h-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground"
+              aria-label="לא רלוונטי"
+            >
+              <ThumbsDown className="w-3 h-3" strokeWidth={1.8} />
+            </button>
+          </div>
         </motion.div>
       )}
 
