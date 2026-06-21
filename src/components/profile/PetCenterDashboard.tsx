@@ -777,10 +777,17 @@ const inferMood = ({
   return "attention";
 };
 
-/* ─── MoodAvatar: real image + breathing + state-driven halo (no fake "hunger") ─── */
-const MoodAvatar = ({ src, alt, mood }: { src: string; alt: string; mood: Mood }) => {
+/* ─── MoodAvatar: real image + breathing + state-driven halo + celebrate on real action ─── */
+const MoodAvatar = ({ src, alt, mood, celebrateKey }: { src: string; alt: string; mood: Mood; celebrateKey: number }) => {
   const h = HALO[mood];
   const sleeping = mood === "asleep";
+  const [wagging, setWagging] = useState(false);
+  useEffect(() => {
+    if (celebrateKey === 0) return;
+    setWagging(true);
+    const t = setTimeout(() => setWagging(false), 1500);
+    return () => clearTimeout(t);
+  }, [celebrateKey]);
   return (
     <div className="relative w-[200px] h-[200px]">
       {/* Halo — mood color */}
@@ -789,11 +796,19 @@ const MoodAvatar = ({ src, alt, mood }: { src: string; alt: string; mood: Mood }
         style={{ background: `radial-gradient(circle, ${h.color} 0%, transparent 65%)`, filter: "blur(18px)" }}
         initial={false}
         animate={
-          h.pulse
+          wagging
+            ? { opacity: [0.45, 0.7, 0.45], scale: [1, 1.08, 1] }
+            : h.pulse
             ? { opacity: [h.opacity * 0.6, h.opacity, h.opacity * 0.6], scale: [0.95, 1.05, 0.95] }
             : { opacity: h.opacity, scale: 1 }
         }
-        transition={h.pulse ? { duration: 2.4, repeat: Infinity, ease: "easeInOut" } : { duration: 0.6 }}
+        transition={
+          wagging
+            ? { duration: 0.5, repeat: 2, ease: "easeInOut" }
+            : h.pulse
+              ? { duration: 2.4, repeat: Infinity, ease: "easeInOut" }
+              : { duration: 0.6 }
+        }
         aria-hidden
       />
       {/* Breathing avatar */}
@@ -802,8 +817,16 @@ const MoodAvatar = ({ src, alt, mood }: { src: string; alt: string; mood: Mood }
         alt={alt}
         className="relative w-[200px] h-[200px] rounded-full object-contain bg-muted block"
         style={{ opacity: mood === "unknown" ? 0.5 : sleeping ? 0.85 : 1, filter: sleeping ? "brightness(0.85)" : "none" }}
-        animate={{ scale: sleeping ? [1, 1.012, 1] : [1, 1.02, 1] }}
-        transition={{ duration: sleeping ? 5 : 3.2, repeat: Infinity, ease: "easeInOut" }}
+        animate={
+          wagging
+            ? { scale: [1, 1.08, 1], rotate: [0, -6, 6, -4, 4, 0] }
+            : { scale: sleeping ? [1, 1.012, 1] : [1, 1.02, 1] }
+        }
+        transition={
+          wagging
+            ? { duration: 1.2, ease: "easeOut" }
+            : { duration: sleeping ? 5 : 3.2, repeat: Infinity, ease: "easeInOut" }
+        }
       />
       {/* Sleeping Z marks */}
       {sleeping && (
