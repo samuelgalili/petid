@@ -942,8 +942,15 @@ export const PetCenterDashboard = ({
           {
             key: "weight",
             icon: Weight,
-            value: weight ? `${weight}` : "+",
-            label: weight ? "ק״ג" : "משקל",
+            value: metrics.latestWeight != null
+              ? `${metrics.latestWeight}`
+              : weight ? `${weight}` : "+",
+            label:
+              metrics.weightDelta != null && metrics.weightDelta !== 0
+                ? `${metrics.weightDelta > 0 ? "↑" : "↓"} ${Math.abs(metrics.weightDelta)} ק״ג`
+                : metrics.latestWeight != null || weight
+                  ? "ק״ג"
+                  : "משקל",
             onClick: () => openSheet("weight"),
             depth: 0,
             x: 134,
@@ -953,8 +960,18 @@ export const PetCenterDashboard = ({
           {
             key: "vaccines",
             icon: Syringe,
-            value: "✓",
-            label: "חיסונים",
+            value:
+              metrics.vaccinesActive + metrics.vaccinesExpired === 0
+                ? "—"
+                : metrics.vaccinesExpired > 0
+                  ? `${metrics.vaccinesExpired}`
+                  : `${metrics.vaccinesActive}`,
+            label:
+              metrics.vaccinesActive + metrics.vaccinesExpired === 0
+                ? "חיסונים"
+                : metrics.vaccinesExpired > 0
+                  ? "פג תוקף"
+                  : "בתוקף",
             onClick: () => openSheet("vaccines"),
             depth: 2,
             x: -130,
@@ -964,8 +981,13 @@ export const PetCenterDashboard = ({
           {
             key: "hydration",
             icon: GlassWater,
-            value: targets.water_ml ? `${Math.round(targets.water_ml / 100) * 100}` : "—",
-            label: targets.water_ml ? "מ״ל" : "מים",
+            value:
+              metrics.waterToday != null && metrics.waterToday > 0
+                ? `${Math.round(metrics.waterToday)}`
+                : targets.water_ml
+                  ? `0/${Math.round(targets.water_ml / 100) * 100}`
+                  : "—",
+            label: targets.water_ml ? "מ״ל היום" : "מים",
             onClick: () => openSheet("water"),
             depth: 1,
             x: -118,
