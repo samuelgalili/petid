@@ -1035,17 +1035,10 @@ export const PetCenterDashboard = ({
             initial={{ opacity: 0, scale: 0.7, y: -4 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
-            className="absolute -top-2 -left-2 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold backdrop-blur-md border border-white/10"
-            style={{ background: "hsl(20 90% 55% / 0.18)", color: "hsl(20 95% 60%)" }}
+            className="absolute -top-2 -left-2 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold backdrop-blur-md border border-border/40 bg-card/80 text-foreground"
             aria-label={`רצף של ${streak} ימים`}
           >
-            <motion.span
-              animate={{ scale: [1, 1.15, 1], rotate: [0, -5, 5, 0] }}
-              transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-              aria-hidden
-            >
-              🔥
-            </motion.span>
+            <span aria-hidden className="text-muted-foreground">●</span>
             <span dir="ltr">{streak}</span>
           </motion.div>
         )}
