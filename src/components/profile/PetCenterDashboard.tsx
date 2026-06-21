@@ -1117,7 +1117,15 @@ export const PetCenterDashboard = ({
                     <button
                       key={t.key}
                       type="button"
-                      onClick={() => daily.toggle(t.key)}
+                      onClick={() => {
+                        const newly = daily.toggle(t.key);
+                        if (newly) {
+                          setCelebrateKey((k) => k + 1);
+                          if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+                            try { (navigator as any).vibrate?.(15); } catch {}
+                          }
+                        }
+                      }}
                       className="flex items-center gap-3 px-3 py-3 rounded-2xl border transition-colors text-right"
                       style={{
                         borderColor: checked
