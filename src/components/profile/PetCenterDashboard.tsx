@@ -1,10 +1,6 @@
 import { useMemo, useState, useEffect, useCallback, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Flame,
-  Drumstick,
-  Wheat,
-  Droplet,
   Plus,
   Sparkles,
   Syringe,
@@ -23,10 +19,37 @@ import {
   Sun,
   Moon,
   Sunrise,
-  FileText,
   CalendarCheck,
-  ChevronLeft,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
+/* ─────────────────────────────────────────────────────────── */
+/* Unified icon system — single stroke + size, currentColor.
+   Use this everywhere instead of raw lucide elements so the
+   dashboard stays monochrome and visually consistent. */
+const ICON_STROKE = 1.75;
+type IcoSize = "xs" | "sm" | "md" | "lg";
+const ICO_PX: Record<IcoSize, number> = { xs: 12, sm: 14, md: 16, lg: 20 };
+const Ico = ({
+  icon: I,
+  size = "md",
+  className = "",
+}: {
+  icon: LucideIcon;
+  size?: IcoSize;
+  className?: string;
+}) => {
+  const px = ICO_PX[size];
+  return (
+    <I
+      width={px}
+      height={px}
+      strokeWidth={ICON_STROKE}
+      className={className}
+      aria-hidden
+    />
+  );
+};
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
 import dobermanAsset from "@/assets/doberman.jpg.asset.json";
