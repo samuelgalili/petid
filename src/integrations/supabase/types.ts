@@ -7519,6 +7519,62 @@ export type Database = {
         }
         Relationships: []
       }
+      pet_baselines: {
+        Row: {
+          anomalies: Json
+          avg_kcal_per_day: number | null
+          avg_task_pct: number | null
+          avg_water_ml_per_day: number | null
+          computed_at: string
+          confidence: number
+          data_days: number
+          latest_weight_kg: number | null
+          pet_id: string
+          updated_at: string
+          user_id: string
+          weight_trend_kg_per_week: number | null
+          window_days: number
+        }
+        Insert: {
+          anomalies?: Json
+          avg_kcal_per_day?: number | null
+          avg_task_pct?: number | null
+          avg_water_ml_per_day?: number | null
+          computed_at?: string
+          confidence?: number
+          data_days?: number
+          latest_weight_kg?: number | null
+          pet_id: string
+          updated_at?: string
+          user_id: string
+          weight_trend_kg_per_week?: number | null
+          window_days?: number
+        }
+        Update: {
+          anomalies?: Json
+          avg_kcal_per_day?: number | null
+          avg_task_pct?: number | null
+          avg_water_ml_per_day?: number | null
+          computed_at?: string
+          confidence?: number
+          data_days?: number
+          latest_weight_kg?: number | null
+          pet_id?: string
+          updated_at?: string
+          user_id?: string
+          weight_trend_kg_per_week?: number | null
+          window_days?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_baselines_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: true
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pet_boarding_bookings: {
         Row: {
           admin_notes: string | null
@@ -10267,6 +10323,50 @@ export type Database = {
           total_tests?: number
         }
         Relationships: []
+      }
+      recommendation_feedback: {
+        Row: {
+          context: Json | null
+          created_at: string
+          feedback: string
+          id: string
+          pet_id: string | null
+          reason: string | null
+          recommendation_id: string
+          recommendation_type: string
+          user_id: string
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string
+          feedback: string
+          id?: string
+          pet_id?: string | null
+          reason?: string | null
+          recommendation_id: string
+          recommendation_type: string
+          user_id: string
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string
+          feedback?: string
+          id?: string
+          pet_id?: string | null
+          reason?: string | null
+          recommendation_id?: string
+          recommendation_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recommendation_feedback_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       redemptions: {
         Row: {
