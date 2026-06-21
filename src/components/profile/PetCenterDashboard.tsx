@@ -1314,6 +1314,7 @@ export const PetCenterDashboard = ({
               <MoodAvatar
                 src={dobermanAsset.url}
                 alt={pet.name}
+                celebrateKey={celebrateKey}
                 mood={inferMood({
                   hasBreed: !!pet.breed,
                   hasWeight: weight != null,
