@@ -28,6 +28,7 @@ import { PetDashboardTabs } from "@/components/profile/PetDashboardTabs";
 import { PetCenterDashboard } from "@/components/profile/PetCenterDashboard";
 import { HeartRain } from "@/components/profile/HeartRain";
 import { haptic } from "@/lib/haptics";
+import { QuickLogSheet } from "@/components/profile/QuickLogSheet";
 
 interface Pet {
   id: string;
@@ -55,6 +56,7 @@ const Profile = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeSheet, setActiveSheet] = useState<string | null>(null);
+  const [quickLog, setQuickLog] = useState<"water" | "weight" | "feeding" | "vaccines" | null>(null);
   const [showPetShop, setShowPetShop] = useState(false);
   const [smartRecCategory, setSmartRecCategory] = useState<'coat' | 'energy' | 'health' | 'feeding' | 'mobility' | 'digestion' | null>(null);
   const [healthRefreshKey, setHealthRefreshKey] = useState(0);
@@ -139,6 +141,11 @@ const Profile = () => {
     if (navigationMap[categoryId]) { navigate(navigationMap[categoryId]); return; }
     if (categoryId === 'health') { setHealthBreakdownOpen(true); return; }
     if (categoryId === 'photo') { setIsImageEditorOpen(true); return; }
+    // Dashboard satellite quick logs → DB-backed sheet
+    if (categoryId === 'water' || categoryId === 'weight' || categoryId === 'vaccines' || categoryId === 'feeding') {
+      setQuickLog(categoryId as any);
+      return;
+    }
     setActiveSheet(categoryId);
   };
 
@@ -364,6 +371,18 @@ const Profile = () => {
         <ComingSoonSheet isOpen={activeSheet === 'calendar'} onClose={handleCloseSheet} title="יומן" />
         <ComingSoonSheet isOpen={activeSheet === 'adoption'} onClose={handleCloseSheet} title="למסירה" />
         <ComingSoonSheet isOpen={activeSheet === 'life_story'} onClose={handleCloseSheet} title="סיפור חיים" />
+
+        {/* DB-backed quick logs (water / weight / feeding / vaccines) */}
+        <QuickLogSheet
+          type={quickLog}
+          pet={selectedPet as any}
+          onClose={() => setQuickLog(null)}
+          onSaved={() => {
+            // Trigger dashboard refresh by firing a window event the hook listens to
+            window.dispatchEvent(new CustomEvent("pet-metrics-refresh"));
+            triggerHealthRefresh();
+          }}
+        />
 
         {/* Trait Sheets */}
         <EnergySheet isOpen={activeSheet === 'energy'} onClose={handleCloseSheet} pet={selectedPet} />
