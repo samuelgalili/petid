@@ -67,8 +67,28 @@ serve(async (req) => {
 
     if (!ingredients) {
       return new Response(
-        JSON.stringify({ success: false, error: "Ingredients text is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({
+          success: true,
+          verdict: "safe",
+          qualityScore: null,
+          confidence: 0.2,
+          redFlags: [],
+          positives: [],
+          proteinSources: [],
+          fillerIngredients: [],
+          summaryHe: "לא נמצאה רשימת רכיבים לניתוח. המוצר יכול להישמר, אך מומלץ לבצע בדיקה ידנית.",
+          firstFiveAnalysis: null,
+          estimatedKcalPerKg: null,
+          kcalEstimationMethod: null,
+          stats: {
+            totalRedFlags: 0,
+            criticalCount: 0,
+            warningCount: 0,
+            infoCount: 0,
+            positiveCount: 0,
+          },
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -194,7 +214,7 @@ RULES:
     console.error("Error in analyze-product-ingredients:", error);
     return new Response(
       JSON.stringify({ success: false, error: String(error) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

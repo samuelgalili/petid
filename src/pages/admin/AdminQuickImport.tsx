@@ -47,6 +47,7 @@ interface ScrapedData {
   dog_size: string;
   special_diet: string[];
   variants: any[];
+  weight_text?: string | null;
 }
 
 interface RedFlag {
@@ -95,6 +96,92 @@ interface DuplicateResult {
   matchType: string;
   matchScore: number;
   reason: string;
+}
+
+async function getFunctionErrorMessage(error: any, fallback: string): Promise<string> {
+  const response = error?.context;
+  if (response && typeof response.clone === "function") {
+    try {
+      const payload = await response.clone().json();
+      if (payload?.error) return payload.error;
+      if (payload?.message) return payload.message;
+    } catch {
+      try {
+        const text = await response.clone().text();
+        if (text) return text;
+      } catch {
+        // Keep the readable fallback below.
+      }
+    }
+  }
+
+  if (error?.message && !String(error.message).includes("non-2xx")) {
+    return error.message;
+  }
+
+  return fallback;
+}
+
+function createFallbackAnalysis(product: ScrapedData, reason?: string): IngredientAnalysis {
+  const text = (product.ingredients || "").toLowerCase();
+  const redFlags: RedFlag[] = [];
+  const positives: PositiveIngredient[] = [];
+
+  const flagMap: Record<string, RedFlag> = {
+    bha: { name: "bha", he: "BHA", risk: "חומר משמר סינתטי שכדאי לבדוק מול היצרן", severity: "warning" },
+    bht: { name: "bht", he: "BHT", risk: "חומר משמר סינתטי שכדאי לבדוק מול היצרן", severity: "warning" },
+    xylitol: { name: "xylitol", he: "קסיליטול", risk: "רעיל לכלבים גם בכמות קטנה", severity: "critical" },
+    onion: { name: "onion", he: "בצל", risk: "עלול להיות רעיל לכלבים וחתולים", severity: "critical" },
+    garlic: { name: "garlic", he: "שום", risk: "עלול להיות בעייתי בכמויות גבוהות", severity: "warning" },
+  };
+
+  const positiveMap: Record<string, PositiveIngredient> = {
+    salmon: { name: "salmon", he: "סלמון", benefit: "מקור חלבון ושומן איכותי" },
+    chicken: { name: "chicken", he: "עוף", benefit: "מקור חלבון נפוץ" },
+    taurine: { name: "taurine", he: "טאורין", benefit: "חשוב ללב ולעיניים, במיוחד אצל חתולים" },
+    glucosamine: { name: "glucosamine", he: "גלוקוזמין", benefit: "תמיכה במפרקים" },
+    "omega": { name: "omega", he: "אומגה", benefit: "תמיכה בעור ובפרווה" },
+  };
+
+  for (const [needle, flag] of Object.entries(flagMap)) {
+    if (text.includes(needle) || text.includes(flag.he.toLowerCase())) redFlags.push(flag);
+  }
+
+  for (const [needle, positive] of Object.entries(positiveMap)) {
+    if (text.includes(needle) || text.includes(positive.he.toLowerCase())) positives.push(positive);
+  }
+
+  const criticalCount = redFlags.filter((f) => f.severity === "critical").length;
+  const warningCount = redFlags.filter((f) => f.severity === "warning").length;
+  const verdict: IngredientAnalysis["verdict"] = criticalCount > 0 ? "danger" : warningCount > 0 ? "caution" : "safe";
+
+  return {
+    verdict,
+    qualityScore: null,
+    confidence: product.ingredients ? 0.35 : 0.2,
+    redFlags,
+    positives,
+    proteinSources: [],
+    fillerIngredients: [],
+    summaryHe: product.ingredients
+      ? "בוצעה בדיקה בסיסית מקומית כי הניתוח המתקדם לא היה זמין. מומלץ לעבור ידנית על הרכיבים לפני פרסום סופי."
+      : "אין רשימת רכיבים לניתוח. ניתן לפרסם, אך המוצר יסומן לביקורת ידנית.",
+    firstFiveAnalysis: reason ? `הניתוח המתקדם דולג: ${reason}` : null,
+    estimatedKcalPerKg: null,
+    kcalEstimationMethod: null,
+    stats: {
+      totalRedFlags: redFlags.length,
+      criticalCount,
+      warningCount,
+      infoCount: redFlags.filter((f) => f.severity === "info").length,
+      positiveCount: positives.length,
+    },
+  };
+}
+
+function isMissingCurationColumn(error: any): boolean {
+  const message = `${error?.message || ""} ${error?.details || ""}`.toLowerCase();
+  return message.includes("curation_") || message.includes("schema cache");
 }
 
 const STEP_LABELS = [
@@ -171,7 +258,9 @@ const AdminQuickImport = () => {
         body: { url },
       });
 
-      if (error) throw new Error(error.message);
+      if (error) {
+        throw new Error(await getFunctionErrorMessage(error, "שגיאה בסריקת הקישור."));
+      }
       if (!data?.success || !data?.data) {
         updateStatus(1, "error");
         setErrorMessage(data?.error || "לא נמצא מוצר בקישור. וודא שזה דף מוצר ספציפי.");
@@ -200,6 +289,7 @@ const AdminQuickImport = () => {
         dog_size: s.dog_size || "",
         special_diet: s.special_diet || [],
         variants: s.variants || [],
+        weight_text: s.weight_text || null,
       };
 
       setScrapedData(parsed);
@@ -226,16 +316,26 @@ const AdminQuickImport = () => {
     } catch (err: any) {
       console.error("Scrape failed:", err);
       updateStatus(1, "error");
-      setErrorMessage(err.message || "שגיאה בסריקת הקישור.");
+      setErrorMessage(await getFunctionErrorMessage(err, "שגיאה בסריקת הקישור."));
     }
   };
 
   // ═══════════════════════════════════════════
   // STEP 2: THE SCIENTIST - AI Ingredient Analysis
   // ═══════════════════════════════════════════
-  const runIngredientAnalysis = async () => {
-    if (!editData) return;
+  const runIngredientAnalysis = async (): Promise<boolean> => {
+    if (!editData) return false;
     updateStatus(2, "loading");
+
+    if (!editData.ingredients?.trim()) {
+      setAnalysis(createFallbackAnalysis(editData, "לא נמצאו רכיבים בעמוד המקור"));
+      updateStatus(2, "done");
+      toast({
+        title: "אין רכיבים לניתוח",
+        description: "נמשיך לפרסום, והמוצר יסומן לביקורת ידנית במידת הצורך.",
+      });
+      return true;
+    }
 
     try {
       const { data, error } = await supabase.functions.invoke("analyze-product-ingredients", {
@@ -247,15 +347,23 @@ const AdminQuickImport = () => {
         },
       });
 
-      if (error) throw new Error(error.message);
+      if (error) {
+        throw new Error(await getFunctionErrorMessage(error, "הניתוח המתקדם נכשל"));
+      }
       if (!data?.success) throw new Error(data?.error || "Analysis failed");
 
       setAnalysis(data as IngredientAnalysis);
       updateStatus(2, "done");
+      return true;
     } catch (err: any) {
       console.error("Analysis failed:", err);
-      updateStatus(2, "error");
-      toast({ title: "שגיאה בניתוח", description: err.message, variant: "destructive" });
+      setAnalysis(createFallbackAnalysis(editData, err.message));
+      updateStatus(2, "done");
+      toast({
+        title: "הניתוח המתקדם לא זמין",
+        description: "בוצעה בדיקה בסיסית, ואפשר להמשיך לפרסום בלי לאבד את המוצר.",
+      });
+      return true;
     }
   };
 
@@ -303,17 +411,27 @@ const AdminQuickImport = () => {
         productData.ingredients
       );
       (productData as any).curation_status = curation.status;
-      if (curation.status === "pending_review") {
-        (productData as any).curation_notes = curation.reason;
-      }
+      (productData as any).curation_notes = curation.reason;
 
-      const { data: inserted, error: insertError } = await supabase
+      let insertResult = await supabase
         .from("business_products")
         .insert(productData)
         .select("id, name, price, image_url")
         .single();
 
-      if (insertError) throw insertError;
+      if (insertResult.error && isMissingCurationColumn(insertResult.error)) {
+        const retryData = { ...productData };
+        delete retryData.curation_status;
+        delete retryData.curation_notes;
+        insertResult = await supabase
+          .from("business_products")
+          .insert(retryData)
+          .select("id, name, price, image_url")
+          .single();
+      }
+
+      if (insertResult.error) throw insertResult.error;
+      const inserted = insertResult.data;
 
       // Save feeding guidelines
       if (editData.feeding_guide?.length > 0 && inserted?.id) {
@@ -329,7 +447,8 @@ const AdminQuickImport = () => {
           .filter((g: any) => g.weight_min_kg != null);
 
         if (guidelines.length > 0) {
-          await supabase.from("product_feeding_guidelines").insert(guidelines);
+          const { error: guidelineError } = await supabase.from("product_feeding_guidelines").insert(guidelines);
+          if (guidelineError) console.error("Feeding guideline save error:", guidelineError);
         }
       }
 
@@ -352,7 +471,8 @@ const AdminQuickImport = () => {
           }));
 
         if (variantRows.length > 0) {
-          await supabase.from("product_variants").insert(variantRows);
+          const { error: variantError } = await supabase.from("product_variants").insert(variantRows);
+          if (variantError) console.error("Variant save error:", variantError);
         }
       }
 
@@ -1162,7 +1282,17 @@ const AdminQuickImport = () => {
                 <Button variant="outline" onClick={() => goToStep(1)} className="gap-2 font-bold">
                   <ChevronRight size={16} /> חזרה
                 </Button>
-                <Button onClick={() => { if (!analysis && editData.ingredients) runIngredientAnalysis(); goToStep(3); }} className="gap-2 text-base font-bold" size="lg">
+                <Button
+                  onClick={async () => {
+                    if (!analysis) {
+                      await runIngredientAnalysis();
+                    }
+                    goToStep(3);
+                  }}
+                  disabled={stepStatus[2] === "loading"}
+                  className="gap-2 text-base font-bold"
+                  size="lg"
+                >
                   המשך ללוגיקת האכלה <ChevronLeft size={18} />
                 </Button>
               </div>

@@ -7,6 +7,205 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+interface ExtractedProduct {
+  name?: string | null;
+  brand?: string | null;
+  price?: number | null;
+  sale_price?: number | null;
+  original_price?: number | null;
+  description?: string | null;
+  ingredients?: string | null;
+  benefits?: unknown[];
+  feeding_guide?: unknown[];
+  product_attributes?: Record<string, unknown>;
+  category?: string | null;
+  pet_type?: "dog" | "cat" | "all" | "other" | string | null;
+  life_stage?: string | null;
+  dog_size?: string | null;
+  special_diet?: string[];
+  sku?: string | null;
+  weight_text?: string | null;
+  variants?: Array<Record<string, unknown>>;
+}
+
+function decodeHtml(value: string): string {
+  return value
+    .replace(/&quot;/g, '"')
+    .replace(/&#034;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&nbsp;/g, " ")
+    .trim();
+}
+
+function stripHtml(value: string): string {
+  return decodeHtml(value.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " "))
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function parseWeight(text: string): { weight: number; unit: string; label: string } | null {
+  const match = text.match(/(\d+(?:[.,]\d+)?)\s*(ק"ג|קג|ק״ג|קילו|קילוגרם|kg|גרם|גר׳|g|gr|ליטר|ל׳|l|ml|מ"ל|מ״ל)/i);
+  if (!match) return null;
+
+  const weight = parseFloat(match[1].replace(",", "."));
+  const rawUnit = match[2].toLowerCase();
+  let unit = "kg";
+  if (rawUnit.includes("גר") || rawUnit === "g" || rawUnit === "gr") unit = "g";
+  if (rawUnit.includes("ליטר") || rawUnit === "l" || rawUnit === "ל׳") unit = "L";
+  if (rawUnit.includes("ml") || rawUnit.includes("מ")) unit = "ml";
+
+  const labelUnit = unit === "kg" ? 'ק"ג' : unit === "g" ? "גרם" : unit;
+  return { weight, unit, label: `${weight} ${labelUnit}` };
+}
+
+function parsePriceText(text: string): number | null {
+  const match = text.match(/(?:₪|ILS|NIS)?\s*(\d+(?:[,.]\d{1,2})?)/i);
+  if (!match) return null;
+  const value = parseFloat(match[1].replace(/,/g, ""));
+  return Number.isFinite(value) ? value : null;
+}
+
+function getMetaContent(html: string, key: string): string {
+  const patterns = [
+    new RegExp(`<meta[^>]+property=["']${key}["'][^>]+content=["']([^"']+)["']`, "i"),
+    new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+property=["']${key}["']`, "i"),
+    new RegExp(`<meta[^>]+name=["']${key}["'][^>]+content=["']([^"']+)["']`, "i"),
+    new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+name=["']${key}["']`, "i"),
+  ];
+
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    if (match?.[1]) return decodeHtml(match[1]);
+  }
+  return "";
+}
+
+function detectCategory(text: string, url: string): string | null {
+  const combined = `${text} ${url}`.toLowerCase();
+  if (/מזון.?יבש|dry.?food|kibble/.test(combined)) return "dry-food";
+  if (/מזון.?רטוב|wet.?food|שימורים|פחית|pate|פטה/.test(combined)) return "wet-food";
+  if (/חטיף|treat|snack|לעיסה/.test(combined)) return "treats";
+  if (/צעצוע|toy|plush|squeak|קונג|kong/.test(combined)) return "toys";
+  if (/שמפו|טיפוח|groom|shampoo|conditioner/.test(combined)) return "grooming";
+  if (/קולר|רצועה|collar|leash|harness|רתמה/.test(combined)) return "accessories";
+  if (/מיטה|bed|mat|כרית/.test(combined)) return "beds";
+  if (/קערה|bowl|anti.?spill/.test(combined)) return "bowls";
+  if (/בריאות|supplement|תוסף|ויטמין|joint|מפרק/.test(combined)) return "health";
+  if (/מזון|food/.test(combined)) return "food";
+  return null;
+}
+
+function detectPetType(text: string, url: string): "dog" | "cat" | "all" | "other" {
+  const combined = `${text} ${url}`.toLowerCase();
+  const dog = /כלב|לכלבים|dog|puppy/.test(combined);
+  const cat = /חתול|לחתולים|cat|kitten/.test(combined);
+  if (dog && cat) return "all";
+  if (dog) return "dog";
+  if (cat) return "cat";
+  return "all";
+}
+
+function extractIngredients(text: string): string | null {
+  const match = text.match(/(?:רכיבים|ingredients)\s*[:-]\s*([\s\S]{20,1200}?)(?:\n\s*(?:תוספים|ערכים|הוראות|המלצות|feeding|analysis|מידע נוסף)|$)/i);
+  return match?.[1]?.replace(/\s+/g, " ").trim() || null;
+}
+
+function extractBasicProduct(markdown: string, html: string, metadata: Record<string, unknown>, url: string): ExtractedProduct {
+  const text = stripHtml(markdown || html);
+  const title =
+    String(metadata?.title || metadata?.ogTitle || "") ||
+    getMetaContent(html, "og:title") ||
+    stripHtml((html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || "").split("|")[0]);
+  const description =
+    String(metadata?.description || metadata?.ogDescription || "") ||
+    getMetaContent(html, "og:description") ||
+    getMetaContent(html, "description") ||
+    "";
+
+  return {
+    name: title,
+    brand: null,
+    price: 0,
+    sale_price: null,
+    original_price: null,
+    description,
+    ingredients: extractIngredients(markdown || text),
+    benefits: [],
+    feeding_guide: [],
+    product_attributes: {},
+    category: detectCategory(text, url),
+    pet_type: detectPetType(text, url),
+    life_stage: null,
+    dog_size: null,
+    special_diet: [],
+    sku: null,
+    weight_text: parseWeight(`${title} ${description}`)?.label || null,
+    variants: [],
+  };
+}
+
+function extractVariants(extracted: ExtractedProduct, html: string, markdown: string, price: number | null, salePrice: number | null) {
+  const variants: Array<Record<string, unknown>> = [];
+  const seen = new Set<string>();
+
+  const addVariant = (label: string, variantPrice?: number | null, sku?: string | null) => {
+    const cleanLabel = decodeHtml(label).replace(/\s+/g, " ").trim();
+    if (!cleanLabel || seen.has(cleanLabel.toLowerCase())) return;
+    const parsed = parseWeight(cleanLabel);
+    seen.add(cleanLabel.toLowerCase());
+    variants.push({
+      label: cleanLabel,
+      weight: parsed?.weight ?? null,
+      weight_unit: parsed?.unit ?? null,
+      price: variantPrice ?? price ?? null,
+      sale_price: salePrice ?? null,
+      sku: sku ?? null,
+    });
+  };
+
+  if (Array.isArray(extracted.variants)) {
+    for (const variant of extracted.variants as Array<Record<string, unknown>>) {
+      addVariant(String(variant.label || variant.name || variant.value || ""), Number(variant.price) || null, variant.sku ? String(variant.sku) : null);
+    }
+  }
+
+  const variationsAttr = html.match(/data-product_variations=["']([^"']+)["']/i)?.[1];
+  if (variationsAttr) {
+    try {
+      const decoded = decodeHtml(variationsAttr);
+      const wooVariants = JSON.parse(decoded);
+      if (Array.isArray(wooVariants)) {
+        for (const variant of wooVariants.slice(0, 50)) {
+          const attrs = variant.attributes || {};
+          const label = Object.values(attrs).map((value) => decodeURIComponent(String(value).replace(/-/g, " "))).filter(Boolean).join(" - ");
+          addVariant(label, variant.display_price || variant.display_regular_price || null, variant.sku || null);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to parse product variations:", error);
+    }
+  }
+
+  if (variants.length === 0) {
+    const optionMatches = html.matchAll(/<option[^>]*>([^<]*(?:ק"ג|קג|ק״ג|kg|גרם|g|ליטר|ml)[^<]*)<\/option>/gi);
+    for (const match of optionMatches) addVariant(match[1]);
+  }
+
+  if (variants.length === 0 && typeof extracted.weight_text === "string") {
+    addVariant(extracted.weight_text);
+  }
+
+  if (variants.length === 0) {
+    const titleWeight = parseWeight(String(extracted.name || "") || markdown.slice(0, 500));
+    if (titleWeight) addVariant(titleWeight.label);
+  }
+
+  return variants.slice(0, 50);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -24,7 +223,7 @@ serve(async (req) => {
     const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
     if (!FIRECRAWL_API_KEY) {
       return new Response(JSON.stringify({ success: false, error: "Firecrawl not configured" }), {
-        status: 500,
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -50,7 +249,7 @@ serve(async (req) => {
       console.error("Firecrawl error:", scrapeData);
       return new Response(
         JSON.stringify({ success: false, error: "Failed to scrape page: " + (scrapeData.error || scrapeRes.status) }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -216,42 +415,53 @@ JSON STRUCTURE:
   "dog_size": "string or null",
   "special_diet": ["string"],
   "sku": "string or null",
-  "weight_text": "string or null"
+  "weight_text": "string or null",
+  "variants": [
+    {
+      "label": "string",
+      "weight": number or null,
+      "weight_unit": "kg|g|L|ml|null",
+      "price": number or null,
+      "sale_price": number or null,
+      "sku": "string or null"
+    }
+  ]
 }
 
 PAGE CONTENT:
 ${markdown.slice(0, 24000)}`;
 
-    console.log("Sending to AI for extraction...");
-    const aiData = await chatCompletion({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        { role: "user", content: extractionPrompt },
-      ],
-      temperature: 0.1,
-    });
-
-    const rawContent = aiData.choices?.[0]?.message?.content || "";
-
-    // Parse the JSON from LLM response (strip markdown fences if any)
-    let extracted: any;
+    let extracted: ExtractedProduct = {};
+    let aiExtractionError: string | null = null;
     try {
+      console.log("Sending to AI for extraction...");
+      const aiData = await chatCompletion({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "user", content: extractionPrompt },
+        ],
+        temperature: 0.1,
+      });
+
+      const rawContent = aiData.choices?.[0]?.message?.content || "";
       const jsonStr = rawContent.replace(/```json?\s*/g, "").replace(/```/g, "").trim();
-      extracted = JSON.parse(jsonStr);
-    } catch (parseErr) {
-      console.error("Failed to parse AI response:", rawContent.slice(0, 500));
-      return new Response(
-        JSON.stringify({ success: false, error: "AI returned invalid JSON", raw: rawContent.slice(0, 1000) }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      extracted = JSON.parse(jsonStr) as ExtractedProduct;
+    } catch (aiErr) {
+      aiExtractionError = aiErr instanceof Error ? aiErr.message : "AI extraction failed";
+      console.error("AI extraction failed, using local fallback:", aiExtractionError);
+      extracted = extractBasicProduct(markdown, html, metadata, url);
     }
 
     // ── Step 3: Assemble final result ──
+    const resultPrice = extracted.price || htmlPrice || 0;
+    const resultSalePrice = extracted.sale_price || htmlSalePrice || null;
+    const variants = extractVariants(extracted, html, markdown, resultPrice, resultSalePrice);
+
     const result = {
       name: extracted.name || metadata?.title || "",
       brand: extracted.brand || null,
-      price: extracted.price || htmlPrice || 0,
-      sale_price: extracted.sale_price || htmlSalePrice || null,
+      price: resultPrice,
+      sale_price: resultSalePrice,
       original_price: extracted.original_price || htmlOriginalPrice || null,
       description: extracted.description || "",
       image_url: mainImage || "/placeholder.svg",
@@ -268,8 +478,12 @@ ${markdown.slice(0, 24000)}`;
       dog_size: extracted.dog_size || null,
       special_diet: Array.isArray(extracted.special_diet) ? extracted.special_diet : [],
       weight_text: extracted.weight_text || null,
-      needs_review: !extracted.ingredients,
-      review_reasons: !extracted.ingredients ? ["missing_ingredients"] : [],
+      variants,
+      needs_review: !extracted.ingredients || !!aiExtractionError,
+      review_reasons: [
+        ...(!extracted.ingredients ? ["missing_ingredients"] : []),
+        ...(aiExtractionError ? ["ai_extraction_fallback"] : []),
+      ],
     };
 
     console.log("Extraction complete:", result.name, "| benefits:", result.benefits.length, "| feeding rows:", result.feeding_guide.length);
@@ -281,7 +495,7 @@ ${markdown.slice(0, 24000)}`;
     console.error("smart-scrape-product error:", err);
     return new Response(
       JSON.stringify({ success: false, error: err instanceof Error ? err.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

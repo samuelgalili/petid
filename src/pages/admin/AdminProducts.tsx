@@ -45,6 +45,17 @@ interface ProductData {
   flagged_at?: string | null;
   sku?: string | null;
   pet_type?: string | null;
+  brand?: string | null;
+  images?: string[] | null;
+  ingredients?: string | null;
+  benefits?: any[] | null;
+  feeding_guide?: any[] | null;
+  product_attributes?: Record<string, any> | null;
+  life_stage?: string | null;
+  dog_size?: string | null;
+  special_diet?: string[] | null;
+  weight_unit?: string | null;
+  price_per_weight?: number | null;
   // Unified field to track source
   source?: 'manual' | 'scraped';
   source_url?: string | null;
@@ -237,6 +248,18 @@ const AdminProducts = () => {
         sku: (product as any).sku || null,
         pet_type: (product as any).pet_type || null,
         flavors: (product as any).flavors || null,
+        brand: (product as any).brand || null,
+        images: (product as any).images || [],
+        source_url: (product as any).source_url || null,
+        ingredients: (product as any).ingredients || null,
+        benefits: (product as any).benefits || [],
+        feeding_guide: (product as any).feeding_guide || [],
+        product_attributes: (product as any).product_attributes || {},
+        life_stage: (product as any).life_stage || null,
+        dog_size: (product as any).dog_size || null,
+        special_diet: (product as any).special_diet || [],
+        weight_unit: (product as any).weight_unit || null,
+        price_per_weight: (product as any).price_per_weight || null,
       };
 
       if (product.id) {

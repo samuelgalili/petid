@@ -2375,6 +2375,10 @@ export type Database = {
           commission_rate: number | null
           cost_price: number | null
           created_at: string
+          curation_notes: string | null
+          curation_reviewed_at: string | null
+          curation_reviewed_by: string | null
+          curation_status: string | null
           description: string | null
           dog_size: string | null
           feeding_guide: Json | null
@@ -2425,6 +2429,10 @@ export type Database = {
           commission_rate?: number | null
           cost_price?: number | null
           created_at?: string
+          curation_notes?: string | null
+          curation_reviewed_at?: string | null
+          curation_reviewed_by?: string | null
+          curation_status?: string | null
           description?: string | null
           dog_size?: string | null
           feeding_guide?: Json | null
@@ -2475,6 +2483,10 @@ export type Database = {
           commission_rate?: number | null
           cost_price?: number | null
           created_at?: string
+          curation_notes?: string | null
+          curation_reviewed_at?: string | null
+          curation_reviewed_by?: string | null
+          curation_status?: string | null
           description?: string | null
           dog_size?: string | null
           feeding_guide?: Json | null

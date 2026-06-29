@@ -56,6 +56,15 @@ interface ScrapedProduct {
   salePrice: number | null;
   sku: string | null;
   variants: ScrapedProductVariant[];
+  category?: string | null;
+  petType?: string | null;
+  ingredients?: string | null;
+  benefits?: { title: string; description: string }[];
+  feedingGuide?: any[];
+  productAttributes?: Record<string, any>;
+  lifeStage?: string | null;
+  dogSize?: string | null;
+  specialDiet?: string[];
 }
 
 interface ProductData {
@@ -75,6 +84,15 @@ interface ProductData {
   pet_type?: string | null;
   weight_unit?: string | null;
   price_per_weight?: number | null;
+  source_url?: string | null;
+  brand?: string | null;
+  ingredients?: string | null;
+  benefits?: any[] | null;
+  feeding_guide?: any[] | null;
+  product_attributes?: Record<string, any> | null;
+  life_stage?: string | null;
+  dog_size?: string | null;
+  special_diet?: string[] | null;
 }
 
 interface EnrichedData {
@@ -126,6 +144,30 @@ const categories = [
   { value: "bowls", label: "קערות" },
   { value: "other", label: "אחר" },
 ];
+
+async function getFunctionErrorMessage(error: any, fallback: string): Promise<string> {
+  const response = error?.context;
+  if (response && typeof response.clone === "function") {
+    try {
+      const payload = await response.clone().json();
+      if (payload?.error) return payload.error;
+      if (payload?.message) return payload.message;
+    } catch {
+      try {
+        const text = await response.clone().text();
+        if (text) return text;
+      } catch {
+        // Use fallback below.
+      }
+    }
+  }
+
+  if (error?.message && !String(error.message).includes("non-2xx")) {
+    return error.message;
+  }
+
+  return fallback;
+}
 
 export const ProductFormDialog = ({
   open,
@@ -312,6 +354,16 @@ export const ProductFormDialog = ({
     if (productInfo.description) {
       updates.description = productInfo.description;
     }
+
+    updates.brand = productInfo.brand || updates.brand || null;
+    updates.ingredients = productInfo.ingredients || null;
+    updates.benefits = productInfo.benefits || [];
+    updates.feeding_guide = scraped.feedingGuide || productInfo.feedingGuide || [];
+    updates.product_attributes = productInfo.productAttributes || {};
+    updates.life_stage = productInfo.lifeStage || null;
+    updates.dog_size = productInfo.dogSize || null;
+    updates.special_diet = productInfo.specialDiet || [];
+    updates.source_url = scraped.source?.finalUrl || productInfo.source_url || null;
     
     // Images
     const images = productInfo.images || scraped.images || [];
@@ -402,6 +454,8 @@ export const ProductFormDialog = ({
       updates.category = "wet-food";
     } else if (decodedUrl.includes("חטיפ") || decodedUrl.includes("treats")) {
       updates.category = "treats";
+    } else if (productInfo.category) {
+      updates.category = productInfo.category;
     }
     
     // Pet type detection
@@ -409,6 +463,8 @@ export const ProductFormDialog = ({
       updates.pet_type = "dog";
     } else if (decodedUrl.includes("חתול") || decodedUrl.includes("cat")) {
       updates.pet_type = "cat";
+    } else if (productInfo.petType) {
+      updates.pet_type = productInfo.petType;
     }
     
     onProductChange(updates);
@@ -469,7 +525,7 @@ export const ProductFormDialog = ({
         console.error("Import error:", error);
         toast({
           title: "שגיאה בייבוא",
-          description: error.message || "לא ניתן לייבא נתונים מהכתובת",
+          description: await getFunctionErrorMessage(error, "לא ניתן לייבא נתונים מהכתובת"),
           variant: "destructive",
         });
         return;
@@ -565,6 +621,16 @@ export const ProductFormDialog = ({
     if (scrapedProduct.sku) {
       updates.sku = scrapedProduct.sku;
     }
+
+    updates.brand = scrapedProduct.brand || updates.brand || null;
+    updates.source_url = scrapedProduct.source_url || null;
+    updates.ingredients = scrapedProduct.ingredients || null;
+    updates.benefits = scrapedProduct.benefits || [];
+    updates.feeding_guide = scrapedProduct.feedingGuide || [];
+    updates.product_attributes = scrapedProduct.productAttributes || {};
+    updates.life_stage = scrapedProduct.lifeStage || null;
+    updates.dog_size = scrapedProduct.dogSize || null;
+    updates.special_diet = scrapedProduct.specialDiet || [];
     
     // CRITICAL: Process ALL variants
     const variants = scrapedProduct.variants || [];
@@ -629,6 +695,8 @@ export const ProductFormDialog = ({
       updates.category = "wet-food";
     } else if (decodedUrl.includes("חטיפ") || decodedUrl.includes("treats")) {
       updates.category = "treats";
+    } else if (scrapedProduct.category) {
+      updates.category = scrapedProduct.category;
     }
     
     // Pet type detection
@@ -636,6 +704,8 @@ export const ProductFormDialog = ({
       updates.pet_type = "dog";
     } else if (decodedUrl.includes("חתול") || decodedUrl.includes("cat")) {
       updates.pet_type = "cat";
+    } else if (scrapedProduct.petType) {
+      updates.pet_type = scrapedProduct.petType;
     }
     
     onProductChange(updates);
@@ -712,6 +782,17 @@ export const ProductFormDialog = ({
             image_url: scrapedProduct.images?.[0] || "/placeholder.svg",
             images: scrapedProduct.images?.slice(1) || [],
             sku: scrapedProduct.sku,
+            source_url: scrapedProduct.source_url || null,
+            brand: scrapedProduct.brand || null,
+            category: scrapedProduct.category || null,
+            pet_type: scrapedProduct.petType || null,
+            ingredients: scrapedProduct.ingredients || null,
+            benefits: scrapedProduct.benefits || [],
+            feeding_guide: scrapedProduct.feedingGuide || [],
+            product_attributes: scrapedProduct.productAttributes || {},
+            life_stage: scrapedProduct.lifeStage || null,
+            dog_size: scrapedProduct.dogSize || null,
+            special_diet: scrapedProduct.specialDiet || [],
             in_stock: true,
             is_featured: false,
             // Map variants to flavors with prices
