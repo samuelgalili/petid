@@ -26,9 +26,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { normalizeProductPetType } from "@/lib/productStore";
-import { createAdminProduct, uploadAdminProductImage } from "@/lib/mipoApi";
+import { createAdminProduct, invokeProductIntelFunction, uploadAdminProductImage } from "@/lib/mipoApi";
 import { motion } from "framer-motion";
 import {
   Package, Upload, ImageIcon, X, Sparkles, Loader2, Save,
@@ -167,7 +166,7 @@ const AdminSmartProductEditor = () => {
     }
     setIsAnalyzing(true);
     try {
-      const { data, error } = await supabase.functions.invoke("enrich-product-ai", {
+      const { data, error } = await invokeProductIntelFunction<any>("enrich-product-ai", {
         body: {
           productName: form.name,
           category: form.category,

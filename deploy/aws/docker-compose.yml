@@ -9,6 +9,8 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       DEFAULT_BUSINESS_ID: ${DEFAULT_BUSINESS_ID}
       ADMIN_API_KEY: ${ADMIN_API_KEY}
+      FIRECRAWL_API_KEY: ${FIRECRAWL_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       UPLOAD_DIR: /app/uploads
     volumes:
       - /opt/mipo/uploads:/app/uploads

@@ -9,7 +9,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
+import { invokeProductIntelFunction } from "@/lib/mipoApi";
 import { toast } from "sonner";
 
 interface ProductDuplicateCheckProps {
@@ -51,7 +51,7 @@ export function ProductDuplicateCheck({ productName, productId, sku, onSelectPro
 
     setLoading(true);
     try {
-      const { data: result, error } = await supabase.functions.invoke('product-duplicate-check', {
+      const { data: result, error } = await invokeProductIntelFunction<DuplicateData>('product-duplicate-check', {
         body: { productName, productId, sku }
       });
       

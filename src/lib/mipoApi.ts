@@ -196,6 +196,18 @@ export async function uploadAdminProductImage(file: File) {
   return result.upload;
 }
 
+export async function invokeProductIntelFunction<T = unknown>(
+  functionName: string,
+  options: { body?: Record<string, unknown> } = {},
+): Promise<{ data: T; error: null }> {
+  const data = await adminApiFetch<T>(`/product-intel/${functionName}`, {
+    method: "POST",
+    body: JSON.stringify(options.body || {}),
+  });
+
+  return { data, error: null };
+}
+
 export async function createContentReport(input: {
   content_type: string;
   content_id: string;

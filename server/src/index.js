@@ -3,6 +3,15 @@ import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Pool } from "pg";
+import {
+  analyzeProductIngredients,
+  enrichProductAi,
+  importProductsFromUrl,
+  productDuplicateCheck,
+  scrapeProduct,
+  searchProductImage,
+  smartScrapeProduct,
+} from "./productIntel.js";
 
 const port = Number(process.env.PORT || 3000);
 const databaseUrl = process.env.DATABASE_URL;
@@ -642,6 +651,34 @@ const createReport = async (body) => {
   return { id };
 };
 
+const runProductIntelFunction = async (functionName, body) => {
+  if (functionName === "import-products-from-url" || functionName === "scrape-products") {
+    return importProductsFromUrl(body);
+  }
+  if (functionName === "scrape-product") {
+    return scrapeProduct(body);
+  }
+  if (functionName === "smart-scrape-product") {
+    return smartScrapeProduct(body);
+  }
+  if (functionName === "enrich-product-ai") {
+    return enrichProductAi(body);
+  }
+  if (functionName === "search-product-image") {
+    return searchProductImage(body);
+  }
+  if (functionName === "analyze-product-ingredients") {
+    return analyzeProductIngredients(body);
+  }
+  if (functionName === "product-duplicate-check") {
+    return productDuplicateCheck(pool, body);
+  }
+
+  const error = new Error("Product intelligence function not found");
+  error.statusCode = 404;
+  throw error;
+};
+
 const fileExtensionForContentType = (contentType) => {
   if (contentType === "image/jpeg") return ".jpg";
   if (contentType === "image/png") return ".png";
@@ -766,6 +803,13 @@ const handleRequest = async (request, response) => {
     if (request.method === "POST" && url.pathname === "/api/uploads") {
       if (!requireAdmin(request, response)) return;
       sendJson(response, 201, { upload: await uploadImage(await readBody(request, maxUploadBytes + 1024 * 1024)) });
+      return;
+    }
+
+    const productIntelMatch = url.pathname.match(/^\/api\/product-intel\/([a-z0-9-]+)$/);
+    if (productIntelMatch && request.method === "POST") {
+      if (!requireAdmin(request, response)) return;
+      sendJson(response, 200, await runProductIntelFunction(productIntelMatch[1], await readBody(request, 2 * 1024 * 1024)));
       return;
     }
 

@@ -31,9 +31,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { normalizeProductPetType } from "@/lib/productStore";
-import { createAdminProduct } from "@/lib/mipoApi";
+import { createAdminProduct, invokeProductIntelFunction } from "@/lib/mipoApi";
 import { BulkProductImport } from "./BulkProductImport";
 import { CompetitorPriceManager } from "./products/CompetitorPriceManager";
 
@@ -188,7 +187,7 @@ export const ProductFormDialog = ({
     setEnrichedData(null);
     
     try {
-      const { data, error } = await supabase.functions.invoke("enrich-product-ai", {
+      const { data, error } = await invokeProductIntelFunction<any>("enrich-product-ai", {
         body: { 
           productName, 
           sku,
@@ -497,7 +496,7 @@ export const ProductFormDialog = ({
     
     try {
       // Use the new unified import function that handles both products and lists
-      const { data, error } = await supabase.functions.invoke("import-products-from-url", {
+      const { data, error } = await invokeProductIntelFunction<any>("import-products-from-url", {
         body: { 
           url: productUrl,
           maxProducts: 30,
@@ -878,7 +877,7 @@ export const ProductFormDialog = ({
     
     try {
       // Use the new scrape-product function with SKU mode
-      const { data, error } = await supabase.functions.invoke("scrape-product", {
+      const { data, error } = await invokeProductIntelFunction<any>("scrape-product", {
         body: { 
           mode: "sku", 
           sku: product.sku,
@@ -938,7 +937,7 @@ export const ProductFormDialog = ({
     setImageSearchResults([]);
 
     try {
-      const { data, error } = await supabase.functions.invoke("search-product-image", {
+      const { data, error } = await invokeProductIntelFunction<any>("search-product-image", {
         body: { query, limit: 8 },
       });
 

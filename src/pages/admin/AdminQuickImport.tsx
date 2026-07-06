@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeProductPetType } from "@/lib/productStore";
-import { createAdminProduct } from "@/lib/mipoApi";
+import { createAdminProduct, invokeProductIntelFunction } from "@/lib/mipoApi";
 import { motion, AnimatePresence } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -167,7 +167,7 @@ const AdminQuickImport = () => {
     setPossibleDuplicates([]);
 
     try {
-      const { data, error } = await supabase.functions.invoke("smart-scrape-product", {
+      const { data, error } = await invokeProductIntelFunction<any>("smart-scrape-product", {
         body: { url },
       });
 
@@ -210,7 +210,7 @@ const AdminQuickImport = () => {
       // Run duplicate check in background
       if (parsed.name) {
         try {
-          const { data: dupData } = await supabase.functions.invoke("product-duplicate-check", {
+          const { data: dupData } = await invokeProductIntelFunction<any>("product-duplicate-check", {
             body: { productName: parsed.name, sku: parsed.sku },
           });
           if (dupData) {
@@ -238,7 +238,7 @@ const AdminQuickImport = () => {
     updateStatus(2, "loading");
 
     try {
-      const { data, error } = await supabase.functions.invoke("analyze-product-ingredients", {
+      const { data, error } = await invokeProductIntelFunction<any>("analyze-product-ingredients", {
         body: {
           ingredients: editData.ingredients,
           petType: editData.pet_type,

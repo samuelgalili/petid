@@ -33,7 +33,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeProductPetType } from "@/lib/productStore";
-import { createAdminProduct } from "@/lib/mipoApi";
+import { createAdminProduct, invokeProductIntelFunction } from "@/lib/mipoApi";
 import * as XLSX from "@e965/xlsx";
 
 interface ParsedProduct {
@@ -269,52 +269,45 @@ export const BulkProductImport = ({
   const parseURLWithAI = async (url: string): Promise<ParsedProduct[]> => {
     try {
       // Use preview mode to scrape a single product page
-      const { data, error } = await supabase.functions.invoke('scrape-products', {
+      const { data, error } = await invokeProductIntelFunction<any>('scrape-products', {
         body: { 
-          productUrl: url,
-          mode: 'preview'
+          url,
+          maxProducts: 1,
+          maxPages: 1,
+          sameDomainOnly: true
         },
       });
 
       if (error) throw error;
 
-      // Handle successful product scrape
-      if (data?.success && data?.product) {
-        const p = data.product;
-        const product: ParsedProduct = {
-          id: `import-${Date.now()}-0`,
-          name: p.product_name || p.name || '',
-          description: p.short_description || p.description || '',
-          price: p.final_price || p.regular_price || parseFloat(p.price) || 0,
-          sku: p.sku || '',
-          category: mapCategory(p.main_category || p.category || ''),
-          image_url: p.main_image_url || p.image_url || '',
-          in_stock: p.stock_status === 'in_stock' || true,
-          isValid: Boolean((p.product_name || p.name) && (p.final_price || p.regular_price || parseFloat(p.price) > 0)),
-          errors: [],
-        };
-        
-        if (!product.name) product.errors.push('שם המוצר חסר');
-        if (product.price <= 0) product.errors.push('מחיר לא תקין');
-        product.isValid = product.errors.length === 0;
-        
-        return [product];
-      }
+      const importedProducts = data?.data?.products || data?.products || (data?.product ? [data.product] : []);
 
-      // Handle array of products
-      if (data?.products && Array.isArray(data.products)) {
-        return data.products.map((p: any, index: number) => {
+      if (Array.isArray(importedProducts) && importedProducts.length > 0) {
+        return importedProducts.map((p: any, index: number) => {
           const product: ParsedProduct = {
             id: `import-${Date.now()}-${index}`,
-            name: p.product_name || p.name || '',
-            description: p.short_description || p.description || '',
-            price: p.final_price || p.regular_price || parseFloat(p.price) || 0,
+            name: p.title || p.product_name || p.name || '',
+            description: p.description || p.short_description || '',
+            price: p.basePrice || p.salePrice || p.final_price || p.regular_price || parseFloat(p.price) || 0,
             sku: p.sku || '',
-            category: mapCategory(p.main_category || p.category || ''),
-            image_url: p.main_image_url || p.image_url || '',
+            category: mapCategory(p.category || p.main_category || ''),
+            image_url: p.images?.[0] || p.main_image_url || p.image_url || '',
             in_stock: p.stock_status === 'in_stock' || true,
             isValid: true,
             errors: [],
+            sourceUrl: p.source_url || url,
+            brand: p.brand || undefined,
+            petType: p.petType || undefined,
+            images: p.images || [],
+            sale_price: p.salePrice || null,
+            original_price: p.salePrice && p.basePrice ? p.basePrice : null,
+            ingredients: p.ingredients || null,
+            benefits: p.benefits || [],
+            feeding_guide: p.feedingGuide || [],
+            product_attributes: p.productAttributes || {},
+            life_stage: p.lifeStage || null,
+            dog_size: p.dogSize || null,
+            special_diet: p.specialDiet || [],
           };
           
           if (!product.name) product.errors.push('שם המוצר חסר');
@@ -522,7 +515,7 @@ export const BulkProductImport = ({
   const fixProductWithAI = async (product: ParsedProduct): Promise<ParsedProduct> => {
     try {
       // Try to find and scrape product by name/SKU
-      const { data, error } = await supabase.functions.invoke("scrape-product", {
+      const { data, error } = await invokeProductIntelFunction<any>("scrape-product", {
         body: { 
           mode: "sku", 
           sku: product.sku || product.name,
@@ -644,7 +637,7 @@ export const BulkProductImport = ({
 
     try {
       // Use enrich-product-ai to fill missing data
-      const { data, error } = await supabase.functions.invoke("enrich-product-ai", {
+      const { data, error } = await invokeProductIntelFunction<any>("enrich-product-ai", {
         body: { 
           productName: product.name,
           sku: product.sku,
@@ -654,7 +647,7 @@ export const BulkProductImport = ({
 
       if (error || !data?.success || !data?.data) {
         // Try scrape-product as fallback
-        const scrapeResult = await supabase.functions.invoke("scrape-product", {
+        const scrapeResult = await invokeProductIntelFunction<any>("scrape-product", {
           body: { 
             mode: "sku", 
             sku: product.sku || product.name,
