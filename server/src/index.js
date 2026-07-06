@@ -851,6 +851,7 @@ const bulkDeleteProducts = async (ids) => {
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const orderStatuses = new Set(["pending", "processing", "shipped", "delivered", "cancelled"]);
 const paymentStatuses = new Set(["pending", "paid", "failed", "awaiting_cod", "dev_approved", "refunded", "libra_credit"]);
+const couponDiscountTypes = new Set(["percentage", "percent", "fixed", "amount", "free_shipping"]);
 
 const toMoney = (value, fallback = 0) => {
   const parsed = Number(value);
@@ -885,6 +886,8 @@ const mapCoupon = (row) => ({
   valid_from: row.valid_from,
   valid_until: row.valid_until,
   is_active: row.is_active,
+  created_at: row.created_at,
+  updated_at: row.updated_at,
 });
 
 const findValidCoupon = async (client, code, subtotal) => {
@@ -924,6 +927,143 @@ const validateCoupon = async (body) => {
   }
 
   return mapCoupon(coupon);
+};
+
+const normalizeCouponBody = (body, { partial = false } = {}) => {
+  const normalized = {};
+
+  if (!partial || body.code !== undefined) {
+    const code = String(body.code || "").trim().toUpperCase();
+    if (!code) {
+      const error = new Error("Coupon code is required");
+      error.statusCode = 400;
+      throw error;
+    }
+    normalized.code = code;
+  }
+
+  if (!partial || body.discount_type !== undefined) {
+    const discountType = normalizeCouponDiscountType(String(body.discount_type || "percentage"));
+    if (!couponDiscountTypes.has(discountType)) {
+      const error = new Error("Invalid coupon discount type");
+      error.statusCode = 400;
+      throw error;
+    }
+    normalized.discount_type = discountType;
+  }
+
+  if (!partial || body.discount_value !== undefined) {
+    const discountValue = toMoney(body.discount_value);
+    if (discountValue < 0) {
+      const error = new Error("Coupon discount value must be positive");
+      error.statusCode = 400;
+      throw error;
+    }
+    normalized.discount_value = discountValue;
+  }
+
+  if (!partial || body.min_order_amount !== undefined) {
+    normalized.min_order_amount = body.min_order_amount === null || body.min_order_amount === ""
+      ? 0
+      : toMoney(body.min_order_amount);
+  }
+
+  if (!partial || body.max_uses !== undefined) {
+    if (body.max_uses === null || body.max_uses === "") {
+      normalized.max_uses = null;
+    } else {
+      const parsed = Number(body.max_uses);
+      normalized.max_uses = Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+    }
+  }
+
+  for (const field of ["valid_from", "valid_until"]) {
+    if (!partial || body[field] !== undefined) {
+      normalized[field] = body[field] ? new Date(body[field]).toISOString() : null;
+    }
+  }
+
+  if (!partial || body.is_active !== undefined) {
+    normalized.is_active = body.is_active !== false;
+  }
+
+  return normalized;
+};
+
+const listAdminCoupons = async () => {
+  const result = await pool.query("select * from public.coupons order by created_at desc");
+  return result.rows.map(mapCoupon);
+};
+
+const createAdminCoupon = async (body) => {
+  const coupon = normalizeCouponBody(body);
+  try {
+    const result = await pool.query(
+      `
+        insert into public.coupons (
+          code,
+          discount_type,
+          discount_value,
+          min_order_amount,
+          max_uses,
+          valid_from,
+          valid_until,
+          is_active
+        )
+        values ($1, $2, $3, $4, $5, $6, $7, $8)
+        returning *
+      `,
+      [
+        coupon.code,
+        coupon.discount_type,
+        coupon.discount_value,
+        coupon.min_order_amount,
+        coupon.max_uses,
+        coupon.valid_from,
+        coupon.valid_until,
+        coupon.is_active,
+      ],
+    );
+    return mapCoupon(result.rows[0]);
+  } catch (error) {
+    if (error.code === "23505") {
+      error.statusCode = 409;
+      error.message = "Coupon code already exists";
+    }
+    throw error;
+  }
+};
+
+const updateAdminCoupon = async (id, body) => {
+  const coupon = normalizeCouponBody(body, { partial: true });
+  const assignments = [];
+  const values = [id];
+
+  for (const [field, value] of Object.entries(coupon)) {
+    values.push(value);
+    assignments.push(`${field} = $${values.length}`);
+  }
+
+  if (assignments.length === 0) {
+    const result = await pool.query("select * from public.coupons where id = $1 limit 1", [id]);
+    return result.rows[0] ? mapCoupon(result.rows[0]) : null;
+  }
+
+  const result = await pool.query(
+    `
+      update public.coupons
+      set ${assignments.join(", ")}, updated_at = now()
+      where id = $1
+      returning *
+    `,
+    values,
+  );
+  return result.rows[0] ? mapCoupon(result.rows[0]) : null;
+};
+
+const deleteAdminCoupon = async (id) => {
+  const result = await pool.query("delete from public.coupons where id = $1 returning id", [id]);
+  return result.rowCount > 0;
 };
 
 const normalizeOrderItems = (items) => {
@@ -1950,6 +2090,36 @@ const handleRequest = async (request, response) => {
         return;
       }
       sendJson(response, 200, { order });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/coupons") {
+      if (!(await requireAdmin(request, response))) return;
+      sendJson(response, 200, { coupons: await listAdminCoupons() });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/admin/coupons") {
+      if (!(await requireAdmin(request, response))) return;
+      sendJson(response, 201, { coupon: await createAdminCoupon(await readBody(request)) });
+      return;
+    }
+
+    const adminCouponMatch = url.pathname.match(/^\/api\/admin\/coupons\/([0-9a-fA-F-]{36})$/);
+    if (adminCouponMatch && request.method === "PATCH") {
+      if (!(await requireAdmin(request, response))) return;
+      const coupon = await updateAdminCoupon(adminCouponMatch[1], await readBody(request));
+      if (!coupon) {
+        sendError(response, 404, "Coupon not found");
+        return;
+      }
+      sendJson(response, 200, { coupon });
+      return;
+    }
+
+    if (adminCouponMatch && request.method === "DELETE") {
+      if (!(await requireAdmin(request, response))) return;
+      sendJson(response, 200, { deleted: await deleteAdminCoupon(adminCouponMatch[1]) });
       return;
     }
 

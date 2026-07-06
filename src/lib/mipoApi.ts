@@ -58,12 +58,14 @@ export interface MipoCoupon {
   code: string;
   discount_type: "percentage" | "fixed" | "free_shipping" | string;
   discount_value: number;
-  min_order_amount: number;
+  min_order_amount: number | null;
   max_uses?: number | null;
   used_count?: number | null;
   valid_from?: string | null;
   valid_until?: string | null;
   is_active?: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 export interface MipoOrderItem {
@@ -242,6 +244,33 @@ export async function validateCouponCode(code: string, subtotal: number): Promis
     body: JSON.stringify({ code, subtotal }),
   });
   return result.coupon;
+}
+
+export async function getAdminCoupons(): Promise<MipoCoupon[]> {
+  const result = await adminApiFetch<{ coupons: MipoCoupon[] }>("/admin/coupons");
+  return result.coupons;
+}
+
+export async function createAdminCoupon(coupon: Partial<MipoCoupon>): Promise<MipoCoupon> {
+  const result = await adminApiFetch<{ coupon: MipoCoupon }>("/admin/coupons", {
+    method: "POST",
+    body: JSON.stringify(coupon),
+  });
+  return result.coupon;
+}
+
+export async function updateAdminCoupon(couponId: string, updates: Partial<MipoCoupon>): Promise<MipoCoupon> {
+  const result = await adminApiFetch<{ coupon: MipoCoupon }>(`/admin/coupons/${couponId}`, {
+    method: "PATCH",
+    body: JSON.stringify(updates),
+  });
+  return result.coupon;
+}
+
+export async function deleteAdminCoupon(couponId: string) {
+  return adminApiFetch<{ deleted: boolean }>(`/admin/coupons/${couponId}`, {
+    method: "DELETE",
+  });
 }
 
 export async function createShopOrder(input: CreateMipoOrderInput): Promise<MipoOrder> {

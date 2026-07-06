@@ -33,30 +33,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useAuditLog } from "@/hooks/useAuditLog";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  createAdminCoupon,
+  deleteAdminCoupon,
+  getAdminCoupons,
+  updateAdminCoupon,
+  type MipoCoupon,
+} from "@/lib/mipoApi";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
 
-interface CouponData {
-  id: string;
-  code: string;
-  discount_type: string;
-  discount_value: number;
-  min_order_amount: number | null;
-  max_uses: number | null;
-  used_count: number | null;
-  valid_from: string | null;
-  valid_until: string | null;
-  is_active: boolean | null;
-  created_at: string;
-}
+type CouponData = MipoCoupon;
 
 const emptyCoupon: Partial<CouponData> = {
   code: "",
-  discount_type: "percent",
+  discount_type: "percentage",
   discount_value: 10,
-  min_order_amount: null,
+  min_order_amount: 0,
   max_uses: null,
   valid_from: null,
   valid_until: null,
@@ -65,7 +58,6 @@ const emptyCoupon: Partial<CouponData> = {
 
 const AdminCoupons = () => {
   const { toast } = useToast();
-  const { logAction } = useAuditLog();
   const queryClient = useQueryClient();
   const [selectedCoupons, setSelectedCoupons] = useState<string[]>([]);
   const [editingCoupon, setEditingCoupon] = useState<Partial<CouponData> | null>(null);
@@ -75,64 +67,17 @@ const AdminCoupons = () => {
 
   const { data: coupons = [], isLoading } = useQuery({
     queryKey: ["admin-coupons"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("coupons")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      return data as CouponData[];
-    },
+    queryFn: getAdminCoupons,
   });
 
   const saveMutation = useMutation({
     mutationFn: async (coupon: Partial<CouponData>) => {
       if (coupon.id) {
-        const { error } = await supabase
-          .from("coupons")
-          .update({
-            code: coupon.code,
-            discount_type: coupon.discount_type,
-            discount_value: coupon.discount_value,
-            min_order_amount: coupon.min_order_amount,
-            max_uses: coupon.max_uses,
-            valid_from: coupon.valid_from,
-            valid_until: coupon.valid_until,
-            is_active: coupon.is_active,
-          })
-          .eq("id", coupon.id);
-
-        if (error) throw error;
-
-        await logAction({
-          action_type: "coupon.updated",
-          entity_type: "coupon",
-          entity_id: coupon.id,
-          new_values: coupon,
-        });
-      } else {
-        const { error } = await supabase
-          .from("coupons")
-          .insert({
-            code: coupon.code,
-            discount_type: coupon.discount_type,
-            discount_value: coupon.discount_value,
-            min_order_amount: coupon.min_order_amount,
-            max_uses: coupon.max_uses,
-            valid_from: coupon.valid_from,
-            valid_until: coupon.valid_until,
-            is_active: coupon.is_active,
-          });
-
-        if (error) throw error;
-
-        await logAction({
-          action_type: "coupon.created",
-          entity_type: "coupon",
-          new_values: coupon,
-        });
+        await updateAdminCoupon(coupon.id, coupon);
+        return;
       }
+
+      await createAdminCoupon(coupon);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-coupons"] });
@@ -140,10 +85,11 @@ const AdminCoupons = () => {
       setIsDialogOpen(false);
       setEditingCoupon(null);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : "";
       toast({ 
         title: "שגיאה", 
-        description: error.message?.includes("unique") ? "קוד הקופון כבר קיים" : "הפעולה נכשלה", 
+        description: message.includes("duplicate") || message.includes("unique") ? "קוד הקופון כבר קיים" : "הפעולה נכשלה",
         variant: "destructive" 
       });
     },
@@ -151,18 +97,7 @@ const AdminCoupons = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (couponId: string) => {
-      const { error } = await supabase
-        .from("coupons")
-        .delete()
-        .eq("id", couponId);
-
-      if (error) throw error;
-
-      await logAction({
-        action_type: "coupon.deleted",
-        entity_type: "coupon",
-        entity_id: couponId,
-      });
+      await deleteAdminCoupon(couponId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-coupons"] });
@@ -171,6 +106,20 @@ const AdminCoupons = () => {
     },
     onError: () => {
       toast({ title: "שגיאה", description: "המחיקה נכשלה", variant: "destructive" });
+    },
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (couponIds: string[]) => {
+      await Promise.all(couponIds.map((couponId) => deleteAdminCoupon(couponId)));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-coupons"] });
+      setSelectedCoupons([]);
+      toast({ title: "הקופונים נמחקו" });
+    },
+    onError: () => {
+      toast({ title: "שגיאה", description: "מחיקת הקופונים נכשלה", variant: "destructive" });
     },
   });
 
@@ -220,10 +169,15 @@ const AdminCoupons = () => {
       header: "הנחה",
       render: (coupon) => (
         <div className="flex items-center gap-1">
-          {coupon.discount_type === "percent" ? (
+          {coupon.discount_type === "percentage" || coupon.discount_type === "percent" ? (
             <>
               <Percent className="w-4 h-4 text-muted-foreground" />
               <span className="font-medium">{coupon.discount_value}%</span>
+            </>
+          ) : coupon.discount_type === "free_shipping" ? (
+            <>
+              <Ticket className="w-4 h-4 text-muted-foreground" />
+              <span className="font-medium">משלוח חינם</span>
             </>
           ) : (
             <>
@@ -320,8 +274,9 @@ const AdminCoupons = () => {
       key: "discount_type",
       label: "סוג הנחה",
       options: [
-        { value: "percent", label: "אחוזים" },
+        { value: "percentage", label: "אחוזים" },
         { value: "fixed", label: "סכום קבוע" },
+        { value: "free_shipping", label: "משלוח חינם" },
       ],
     },
   ];
@@ -362,7 +317,12 @@ const AdminCoupons = () => {
         emptyIcon={<Ticket className="w-12 h-12" />}
         emptyMessage="לא נמצאו קופונים"
         bulkActions={
-          <Button size="sm" variant="destructive">
+          <Button
+            size="sm"
+            variant="destructive"
+            disabled={selectedCoupons.length === 0 || bulkDeleteMutation.isPending}
+            onClick={() => bulkDeleteMutation.mutate(selectedCoupons)}
+          >
             <Trash2 className="w-4 h-4 ml-1" />
             מחק נבחרים
           </Button>
@@ -401,15 +361,20 @@ const AdminCoupons = () => {
                 <div>
                   <Label>סוג הנחה</Label>
                   <Select 
-                    value={editingCoupon.discount_type || "percent"} 
-                    onValueChange={(value) => setEditingCoupon({ ...editingCoupon, discount_type: value })}
+                    value={editingCoupon.discount_type || "percentage"}
+                    onValueChange={(value) => setEditingCoupon({
+                      ...editingCoupon,
+                      discount_type: value,
+                      discount_value: value === "free_shipping" ? 0 : editingCoupon.discount_value || 10,
+                    })}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="percent">אחוזים</SelectItem>
+                      <SelectItem value="percentage">אחוזים</SelectItem>
                       <SelectItem value="fixed">סכום קבוע</SelectItem>
+                      <SelectItem value="free_shipping">משלוח חינם</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -422,6 +387,7 @@ const AdminCoupons = () => {
                     value={editingCoupon.discount_value || ""}
                     onChange={(e) => setEditingCoupon({ ...editingCoupon, discount_value: parseFloat(e.target.value) })}
                     required
+                    disabled={editingCoupon.discount_type === "free_shipping"}
                   />
                 </div>
               </div>
@@ -432,7 +398,7 @@ const AdminCoupons = () => {
                   <Input
                     type="number"
                     min="0"
-                    value={editingCoupon.min_order_amount || ""}
+                    value={editingCoupon.min_order_amount ?? ""}
                     onChange={(e) => setEditingCoupon({ ...editingCoupon, min_order_amount: parseFloat(e.target.value) || null })}
                     placeholder="₪0"
                   />
