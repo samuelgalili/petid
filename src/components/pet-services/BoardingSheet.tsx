@@ -7,8 +7,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Building2, Calendar, MapPin, Check, AlertCircle, Star } from 'lucide-react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useMutation } from '@tanstack/react-query';
 import { ServiceBottomSheet } from './ServiceBottomSheet';
 import { Button } from '@/components/ui/button';
 import { DateWheelPicker } from '@/components/ui/date-wheel-picker';
@@ -17,6 +16,7 @@ import { he } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { DocumentsSection } from './DocumentsSection';
+import { createMyServiceBooking } from '@/lib/mipoApi';
 
 interface Pet {
   id: string;
@@ -33,38 +33,40 @@ interface BoardingSheetProps {
   pet: Pet | null;
 }
 
+const BOARDING_SERVICES = [
+  {
+    id: 'aviad-home',
+    name: 'פנסיון ביתי',
+    provider_name: 'פנסיון אביעד',
+    provider_address: 'אזור המרכז',
+    provider_image_url: null,
+    price_per_night: 120,
+    is_featured: true,
+    amenities: ['חצר', 'עדכונים יומיים', 'יחס אישי'],
+    suitable_pet_types: ['dog', 'cat'],
+  },
+  {
+    id: 'aviad-premium',
+    name: 'פנסיון פרימיום',
+    provider_name: 'פנסיון אביעד',
+    provider_address: 'אזור המרכז',
+    provider_image_url: null,
+    price_per_night: 180,
+    is_featured: false,
+    amenities: ['חדר פרטי', 'טיולים', 'תמונות יומיות'],
+    suitable_pet_types: ['dog'],
+  },
+];
+
 export const BoardingSheet = ({ isOpen, onClose, pet }: BoardingSheetProps) => {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [startDate, setStartDate] = useState<Date>(new Date()); // Default to today
   const [endDate, setEndDate] = useState<Date>(new Date()); // Default to today
   const [step, setStep] = useState<'select' | 'confirm'>('select');
 
-  const { data: services, isLoading } = useQuery({
-    queryKey: ['boarding-services', pet?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pet_boarding_services')
-        .select('*')
-        .eq('is_active', true)
-        .order('is_featured', { ascending: false });
-
-      if (error) throw error;
-
-      // Filter by pet type and breed
-      return data?.filter(service => {
-        if (pet?.type && service.suitable_pet_types) {
-          if (!service.suitable_pet_types.includes(pet.type)) return false;
-        }
-        if (pet?.breed && service.suitable_breeds?.length) {
-          if (!service.suitable_breeds.includes(pet.breed)) return false;
-        }
-        return true;
-      }) || [];
-    },
-    enabled: isOpen && !!pet,
-  });
+  const services = BOARDING_SERVICES.filter((service) => !pet?.type || service.suitable_pet_types.includes(pet.type));
+  const isLoading = false;
 
   const selectedServiceData = services?.find(s => s.id === selectedService);
   const nights = startDate && endDate && endDate > startDate
@@ -76,31 +78,30 @@ export const BoardingSheet = ({ isOpen, onClose, pet }: BoardingSheetProps) => {
 
   const bookingMutation = useMutation({
     mutationFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
       if (!pet || !selectedService || !startDate || !endDate) throw new Error('Missing data');
-      
-      const { error } = await supabase
-        .from('pet_boarding_bookings')
-        .insert({
-          user_id: user.id,
-          pet_id: pet.id,
-          service_id: selectedService,
-          start_date: format(startDate, 'yyyy-MM-dd'),
-          end_date: format(endDate, 'yyyy-MM-dd'),
-          total_nights: nights,
-          total_price: totalPrice,
-          status: 'pending',
-        });
+      if (!selectedServiceData) throw new Error('Service not found');
 
-      if (error) throw error;
+      await createMyServiceBooking({
+        pet_id: pet.id,
+        service_type: 'boarding',
+        service_id: selectedService,
+        service_name: selectedServiceData.name,
+        provider_name: selectedServiceData.provider_name,
+        start_date: format(startDate, 'yyyy-MM-dd'),
+        end_date: format(endDate, 'yyyy-MM-dd'),
+        total_price: totalPrice,
+        metadata: {
+          total_nights: nights,
+          price_per_night: selectedServiceData.price_per_night,
+          amenities: selectedServiceData.amenities,
+        },
+      });
     },
     onSuccess: () => {
       toast({
         title: 'ההזמנה נשלחה',
         description: 'נודיע לך כשההזמנה תאושר',
       });
-      queryClient.invalidateQueries({ queryKey: ['boarding-bookings'] });
       onClose();
       setStep('select');
       setSelectedService(null);

@@ -3,10 +3,10 @@
  * ✅ Uses unified ProductRecommendationSheet
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Sparkles } from "lucide-react";
 import { ProductRecommendationSheet, ProductWithLabel } from "./ProductRecommendationSheet";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchRecommendedProductGroups, type RecommendedProduct } from "@/lib/productRecommendations";
 
 interface Pet {
   id: string;
@@ -21,64 +21,56 @@ interface FurProductsSheetProps {
   onClose: () => void;
 }
 
-// Product interface for internal fetching
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  image_url: string;
-  category?: string;
-}
-
 export const FurProductsSheet = ({ pet, furLength, isOpen, onClose }: FurProductsSheetProps) => {
-  const [brushProducts, setBrushProducts] = useState<Product[]>([]);
-  const [shampooProducts, setShampooProducts] = useState<Product[]>([]);
-  const [serumProducts, setSerumProducts] = useState<Product[]>([]);
+  const [brushProducts, setBrushProducts] = useState<RecommendedProduct[]>([]);
+  const [shampooProducts, setShampooProducts] = useState<RecommendedProduct[]>([]);
+  const [serumProducts, setSerumProducts] = useState<RecommendedProduct[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const groups = await fetchRecommendedProductGroups([
+        {
+          key: 'brushes',
+          petType: pet.type,
+          keywords: ['brush', 'comb', 'מברשת', 'מסרק'],
+          limit: 1,
+          fallbackToPetProducts: false,
+        },
+        {
+          key: 'shampoos',
+          petType: pet.type,
+          keywords: ['shampoo', 'שמפו'],
+          limit: 1,
+          fallbackToPetProducts: false,
+        },
+        {
+          key: 'serums',
+          petType: pet.type,
+          keywords: ['serum', 'conditioner', 'oil', 'סרום', 'מרכך', 'שמן'],
+          limit: 1,
+          fallbackToPetProducts: false,
+        },
+      ]);
+
+      setBrushProducts(groups.brushes || []);
+      setShampooProducts(groups.shampoos || []);
+      setSerumProducts(groups.serums || []);
+    } catch (error) {
+      console.error('Error fetching fur products:', error);
+      setBrushProducts([]);
+      setShampooProducts([]);
+      setSerumProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [pet.type]);
 
   useEffect(() => {
     if (!isOpen) return;
     fetchData();
-  }, [isOpen, pet.type, furLength]);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      // Fetch brush products
-      const { data: brushes } = await supabase
-        .from('business_products')
-        .select('id, name, price, image_url, category')
-        .eq('pet_type', pet.type)
-        .or('category.ilike.%brush%,category.ilike.%מברשת%,category.ilike.%comb%,category.ilike.%מסרק%')
-        .limit(1);
-
-      setBrushProducts(brushes || []);
-
-      // Fetch shampoo products
-      const { data: shampoos } = await supabase
-        .from('business_products')
-        .select('id, name, price, image_url, category')
-        .eq('pet_type', pet.type)
-        .or('category.ilike.%shampoo%,category.ilike.%שמפו%')
-        .limit(1);
-
-      setShampooProducts(shampoos || []);
-
-      // Fetch serum/conditioner products
-      const { data: serums } = await supabase
-        .from('business_products')
-        .select('id, name, price, image_url, category')
-        .eq('pet_type', pet.type)
-        .or('category.ilike.%serum%,category.ilike.%סרום%,category.ilike.%conditioner%,category.ilike.%מרכך%,category.ilike.%oil%,category.ilike.%שמן%')
-        .limit(1);
-
-      setSerumProducts(serums || []);
-    } catch (error) {
-      console.error('Error fetching fur products:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [isOpen, fetchData]);
 
   const getFurLengthHe = () => {
     const labels: Record<string, string> = {

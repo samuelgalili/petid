@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchRecommendedProducts, type RecommendedProduct } from '@/lib/productRecommendations';
 
 interface Pet {
   id: string;
@@ -40,6 +40,14 @@ const tabs: { id: TabType; label: string; icon: typeof Shield }[] = [
   { id: 'boarding', label: 'פנסיון', icon: Building2 },
   { id: 'services', label: 'שירותים', icon: Sparkles },
 ];
+
+const categoryMap: Record<TabType, string[]> = {
+  insurance: ['insurance', 'ביטוח', 'health', 'בריאות'],
+  food: ['food', 'מזון', 'מזון יבש', 'מזון רטוב'],
+  treats: ['treats', 'treat', 'חטיפים', 'חטיף'],
+  boarding: ['boarding', 'פנסיון'],
+  services: ['services', 'שירותים', 'טיפוח', 'וטרינריה', 'grooming', 'health'],
+};
 
 // Skeleton loader component
 const RecommendationSkeleton = () => (
@@ -169,34 +177,11 @@ export const PetRecommendationsInline = ({ selectedPet, points = 0 }: PetRecomme
     queryKey: ['pet-recommendations-inline', selectedPet?.id, activeTab],
     queryFn: async () => {
       if (!selectedPet) return [];
-
-      const categoryMap: Record<TabType, string[]> = {
-        insurance: ['insurance', 'ביטוח'],
-        food: ['food', 'מזון', 'מזון יבש', 'מזון רטוב'],
-        treats: ['treats', 'חטיפים', 'חטיף'],
-        boarding: ['boarding', 'פנסיון'],
-        services: ['services', 'שירותים', 'טיפוח', 'וטרינריה'],
-      };
-
-      const categories = categoryMap[activeTab];
-      
-      const { data, error } = await supabase
-        .from('business_products')
-        .select('id, name, description, price, image_url, category, pet_type')
-        .or(categories.map(c => `category.ilike.%${c}%`).join(','))
-        .limit(3);
-
-      if (error) {
-        console.error('Error fetching recommendations:', error);
-        return [];
-      }
-
-      const filtered = data?.filter(p => {
-        if (!p.pet_type) return true;
-        return p.pet_type === selectedPet.type;
-      }) || [];
-
-      return filtered;
+      return fetchRecommendedProducts({
+        petType: selectedPet.type,
+        keywords: categoryMap[activeTab],
+        limit: 3,
+      });
     },
     enabled: !!selectedPet,
   });
@@ -258,7 +243,7 @@ export const PetRecommendationsInline = ({ selectedPet, points = 0 }: PetRecomme
             exit={{ opacity: 0 }}
             className="space-y-3"
           >
-            {recommendations.map((item: any, index: number) => (
+            {recommendations.map((item: RecommendedProduct, index: number) => (
               <motion.div
                 key={item.id}
                 initial={{ opacity: 0, y: 8 }}

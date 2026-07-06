@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, ShoppingCart, Star, ChevronLeft, Plus, Minus } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useCart } from '@/contexts/CartContext';
 import { toast } from 'sonner';
+import { fetchRecommendedProducts, type RecommendedProduct } from '@/lib/productRecommendations';
 
 interface Pet {
   id: string;
@@ -13,16 +13,7 @@ interface Pet {
   avatar_url?: string;
 }
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  sale_price?: number;
-  image_url: string;
-  category?: string;
-  average_rating?: number;
-  pet_type?: string;
-}
+type Product = RecommendedProduct & { average_rating?: number };
 
 interface PetShopViewProps {
   pet: Pet;
@@ -52,23 +43,13 @@ export const PetShopView = ({ pet, onBack }: PetShopViewProps) => {
     const fetchProducts = async () => {
       setIsLoading(true);
       try {
-        let query = supabase
-          .from('business_products')
-          .select('*')
-          .eq('in_stock', true)
-          .limit(20);
-
-        // Filter by pet type if applicable
-        if (pet.type === 'dog' || pet.type === 'cat') {
-          query = query.or(`pet_type.eq.${pet.type},pet_type.is.null`);
-        }
-
-        const { data, error } = await query;
-        if (error) throw error;
-        setProducts(data || []);
-        setFilteredProducts(data || []);
+        const data = await fetchRecommendedProducts({ petType: pet.type, limit: 60 });
+        setProducts(data);
+        setFilteredProducts(data);
       } catch (error) {
         console.error('Error fetching products:', error);
+        setProducts([]);
+        setFilteredProducts([]);
       } finally {
         setIsLoading(false);
       }

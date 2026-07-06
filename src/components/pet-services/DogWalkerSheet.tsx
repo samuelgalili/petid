@@ -6,14 +6,14 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Footprints, Calendar, Clock, Check, AlertCircle, Star, MapPin, User } from 'lucide-react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useMutation } from '@tanstack/react-query';
 import { ServiceBottomSheet } from './ServiceBottomSheet';
 import { Button } from '@/components/ui/button';
 import { DateWheelPicker } from '@/components/ui/date-wheel-picker';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
+import { createMyServiceBooking } from '@/lib/mipoApi';
 
 interface Pet {
   id: string;
@@ -36,51 +36,74 @@ const walkDurations = [
   { id: '60', label: 'שעה', price: 65 },
 ];
 
+const walkers = [
+  {
+    id: 'yossi',
+    name: 'יוסי - דוג ווקר מקצועי',
+    description: 'מטייל עם כלבים מזה 5 שנים, מתמחה בטיולים קבוצתיים וטיולים פרטיים',
+    rating: 4.8,
+    walks_completed: 342,
+    area: 'תל אביב והסביבה',
+    image_url: null,
+  },
+  {
+    id: 'michal',
+    name: 'מיכל - Dog Walker',
+    description: 'אוהבת כלבים מילדות, מציעה טיולים איכותיים עם תשומת לב אישית',
+    rating: 4.9,
+    walks_completed: 218,
+    area: 'רמת גן וגבעתיים',
+    image_url: null,
+  },
+];
+
 export const DogWalkerSheet = ({ isOpen, onClose, pet }: DogWalkerSheetProps) => {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [selectedDuration, setSelectedDuration] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [step, setStep] = useState<'select' | 'confirm'>('select');
 
-  // For now, showing placeholder data - in real app, this would fetch from dog_walker_services table
-  const { data: walkers, isLoading } = useQuery({
-    queryKey: ['dog-walkers', pet?.id],
-    queryFn: async () => {
-      // Placeholder - in real implementation, fetch from database
-      return [
-        {
-          id: '1',
-          name: 'יוסי - דוג ווקר מקצועי',
-          description: 'מטייל עם כלבים מזה 5 שנים, מתמחה בטיולים קבוצתיים וטיולים פרטיים',
-          rating: 4.8,
-          walks_completed: 342,
-          price_30: 35,
-          price_45: 50,
-          price_60: 65,
-          area: 'תל אביב והסביבה',
-          image_url: null,
-        },
-        {
-          id: '2',
-          name: 'מיכל - Dog Walker',
-          description: 'אוהבת כלבים מילדות, מציעה טיולים איכותיים עם תשומת לב אישית',
-          rating: 4.9,
-          walks_completed: 218,
-          price_30: 40,
-          price_45: 55,
-          price_60: 70,
-          area: 'רמת גן וגבעתיים',
-          image_url: null,
-        },
-      ];
-    },
-    enabled: isOpen && !!pet,
-  });
-
   const [selectedWalker, setSelectedWalker] = useState<string | null>(null);
-  const selectedWalkerData = walkers?.find(w => w.id === selectedWalker);
+  const selectedWalkerData = walkers.find(w => w.id === selectedWalker);
   const selectedDurationData = walkDurations.find(d => d.id === selectedDuration);
+  const isLoading = false;
+
+  const bookingMutation = useMutation({
+    mutationFn: async () => {
+      if (!pet || !selectedWalkerData || !selectedDurationData) throw new Error('Missing data');
+      await createMyServiceBooking({
+        pet_id: pet.id,
+        service_type: 'dog_walker',
+        service_id: selectedWalkerData.id,
+        service_name: selectedDurationData.label,
+        provider_name: selectedWalkerData.name,
+        requested_date: format(selectedDate, 'yyyy-MM-dd'),
+        total_price: selectedDurationData.price,
+        metadata: {
+          duration_minutes: Number(selectedDurationData.id),
+          area: selectedWalkerData.area,
+        },
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: 'הבקשה נשלחה',
+        description: 'נודיע לך כשהדוג ווקר יאשר',
+      });
+      onClose();
+      setStep('select');
+      setSelectedWalker(null);
+      setSelectedDuration(null);
+      setSelectedDate(new Date());
+    },
+    onError: () => {
+      toast({
+        title: 'שגיאה',
+        description: 'לא הצלחנו לשלוח את הבקשה',
+        variant: 'destructive',
+      });
+    },
+  });
 
   const handleContinue = () => {
     if (selectedWalker && selectedDuration && selectedDate) {
@@ -89,15 +112,7 @@ export const DogWalkerSheet = ({ isOpen, onClose, pet }: DogWalkerSheetProps) =>
   };
 
   const handleBook = () => {
-    toast({
-      title: 'הבקשה נשלחה',
-      description: 'נודיע לך כשהדוג ווקר יאשר',
-    });
-    onClose();
-    setStep('select');
-    setSelectedWalker(null);
-    setSelectedDuration(null);
-    setSelectedDate(new Date());
+    bookingMutation.mutate();
   };
 
   // Only for dogs
@@ -140,7 +155,7 @@ export const DogWalkerSheet = ({ isOpen, onClose, pet }: DogWalkerSheetProps) =>
                 <div key={i} className="bg-muted/50 rounded-2xl p-4 animate-pulse h-32" />
               ))}
             </div>
-          ) : walkers?.length ? (
+          ) : walkers.length ? (
             <div className="space-y-6">
               {/* Walkers List */}
               <div className="space-y-3">
@@ -348,8 +363,9 @@ export const DogWalkerSheet = ({ isOpen, onClose, pet }: DogWalkerSheetProps) =>
             <Button 
               className="w-full rounded-full h-12"
               onClick={handleBook}
+              disabled={bookingMutation.isPending}
             >
-              שלח בקשה לאישור
+              {bookingMutation.isPending ? 'שולח...' : 'שלח בקשה לאישור'}
             </Button>
             <Button 
               variant="ghost"

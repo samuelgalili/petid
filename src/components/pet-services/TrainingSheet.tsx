@@ -7,8 +7,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { GraduationCap, User, Clock, MessageCircle, ChevronLeft, Sparkles } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { ServiceBottomSheet } from './ServiceBottomSheet';
 import { Button } from '@/components/ui/button';
@@ -35,33 +33,36 @@ const trainingTypeLabels: Record<string, string> = {
   group: 'אילוף קבוצתי',
 };
 
+const TRAINING_PROGRAMS = [
+  {
+    id: 'private-basic',
+    name: 'אילוף בסיסי בבית',
+    trainer_name: 'אביעד - מאלף כלבים מוסמך',
+    trainer_image_url: null,
+    training_type: 'professional',
+    description: 'מפגש אישי להתנהגות בסיסית, משמעת ותקשורת נכונה.',
+    duration_sessions: 4,
+    price: 680,
+    suitable_pet_types: ['dog'],
+  },
+  {
+    id: 'online-puppy',
+    name: 'תוכנית גורים אונליין',
+    trainer_name: 'אביעד - מאלף כלבים מוסמך',
+    trainer_image_url: null,
+    training_type: 'online',
+    description: 'תרגול הדרגתי לגורים: צרכים, נשכנות, רצועה ופקודות בסיס.',
+    duration_sessions: 6,
+    price: 240,
+    suitable_pet_types: ['dog', 'cat'],
+  },
+];
+
 export const TrainingSheet = ({ isOpen, onClose, pet }: TrainingSheetProps) => {
   const navigate = useNavigate();
 
-  const { data: programs, isLoading } = useQuery({
-    queryKey: ['training-programs', pet?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pet_training_programs')
-        .select('*')
-        .eq('is_active', true)
-        .order('is_featured', { ascending: false });
-
-      if (error) throw error;
-
-      // Filter by pet type and breed
-      return data?.filter(program => {
-        if (pet?.type && program.suitable_pet_types) {
-          if (!program.suitable_pet_types.includes(pet.type)) return false;
-        }
-        if (pet?.breed && program.suitable_breeds?.length) {
-          if (!program.suitable_breeds.includes(pet.breed)) return false;
-        }
-        return true;
-      }) || [];
-    },
-    enabled: isOpen && !!pet,
-  });
+  const programs = TRAINING_PROGRAMS.filter((program) => !pet?.type || program.suitable_pet_types.includes(pet.type));
+  const isLoading = false;
 
   const handleOpenChat = () => {
     onClose();

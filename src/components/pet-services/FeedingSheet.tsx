@@ -1,23 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Utensils, ShoppingCart, Loader2 } from "lucide-react";
 import { ServiceBottomSheet } from "./ServiceBottomSheet";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { fetchRecommendedProductGroups, type RecommendedProduct } from "@/lib/productRecommendations";
 
 interface Pet {
   id: string;
   type: 'dog' | 'cat';
   breed?: string;
   weight?: number;
-}
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  image_url: string;
-  category?: string;
 }
 
 interface FeedingSheetProps {
@@ -27,74 +19,57 @@ interface FeedingSheetProps {
 }
 
 export const FeedingSheet = ({ pet, isOpen, onClose }: FeedingSheetProps) => {
-  const [breedInfo, setBreedInfo] = useState<any>(null);
-  const [dryFoodProducts, setDryFoodProducts] = useState<Product[]>([]);
-  const [wetFoodProducts, setWetFoodProducts] = useState<Product[]>([]);
+  const [dietaryNote, setDietaryNote] = useState('חלקו לשתי ארוחות במהלך היום');
+  const [dryFoodProducts, setDryFoodProducts] = useState<RecommendedProduct[]>([]);
+  const [wetFoodProducts, setWetFoodProducts] = useState<RecommendedProduct[]>([]);
   const [loading, setLoading] = useState(false);
   const [dailyAmount, setDailyAmount] = useState<string>('');
 
-  useEffect(() => {
-    if (!isOpen) return;
-    fetchData();
-  }, [isOpen, pet.breed, pet.type, pet.weight]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch breed info
-      let weightFromBreed = '';
-      if (pet.breed) {
-        const { data: breed } = await supabase
-          .from('breed_information')
-          .select('weight_range_kg, dietary_notes')
-          .or(`breed_name.ilike.%${pet.breed}%,breed_name_he.ilike.%${pet.breed}%`)
-          .maybeSingle();
-        
-        if (breed) {
-          setBreedInfo(breed);
-          weightFromBreed = breed.weight_range_kg;
-        }
-      }
-
-      // Calculate daily amount
-      const weight = pet.weight || extractWeightFromRange(weightFromBreed);
+      const weight = pet.weight || 0;
       if (weight) {
         const minGrams = Math.round(weight * 20); // 2%
         const maxGrams = Math.round(weight * 30); // 3%
         setDailyAmount(`${minGrams}-${maxGrams} גרם`);
+      } else {
+        setDailyAmount('');
       }
+      setDietaryNote(weight ? 'התאימו את הכמות לפי רמת הפעילות והנחיות הווטרינר' : 'חלקו לשתי ארוחות במהלך היום');
 
-      // Fetch dry food products - limit to 2
-      const { data: dryFood } = await supabase
-        .from('business_products')
-        .select('id, name, price, image_url, category')
-        .eq('pet_type', pet.type)
-        .or('category.ilike.%dry-food%,category.ilike.%מזון יבש%')
-        .limit(2);
+      const groups = await fetchRecommendedProductGroups([
+        {
+          key: 'dry',
+          petType: pet.type,
+          keywords: ['dry-food', 'dry food', 'מזון יבש', 'food', 'מזון'],
+          limit: 2,
+          fallbackToPetProducts: false,
+        },
+        {
+          key: 'wet',
+          petType: pet.type,
+          keywords: ['wet-food', 'wet food', 'מזון רטוב'],
+          limit: 1,
+          fallbackToPetProducts: false,
+        },
+      ]);
 
-      setDryFoodProducts(dryFood || []);
-
-      // Fetch wet food products - limit to 1
-      const { data: wetFood } = await supabase
-        .from('business_products')
-        .select('id, name, price, image_url, category')
-        .eq('pet_type', pet.type)
-        .or('category.ilike.%wet-food%,category.ilike.%מזון רטוב%')
-        .limit(1);
-
-      setWetFoodProducts(wetFood || []);
+      setDryFoodProducts(groups.dry || []);
+      setWetFoodProducts(groups.wet || []);
     } catch (error) {
       console.error('Error fetching feeding products:', error);
+      setDryFoodProducts([]);
+      setWetFoodProducts([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [pet.type, pet.weight]);
 
-  const extractWeightFromRange = (range: string): number => {
-    if (!range) return 0;
-    const match = range.match(/\d+/);
-    return match ? parseInt(match[0]) : 0;
-  };
+  useEffect(() => {
+    if (!isOpen) return;
+    fetchData();
+  }, [isOpen, fetchData]);
 
   const allProducts = [...dryFoodProducts, ...wetFoodProducts];
 
@@ -109,7 +84,7 @@ export const FeedingSheet = ({ pet, isOpen, onClose }: FeedingSheetProps) => {
             כמות יומית מומלצת: {dailyAmount || 'לפי משקל'}
           </p>
           <p className="text-xs text-muted-foreground">
-            {breedInfo?.dietary_notes || 'חלקו לשתי ארוחות במהלך היום'}
+            {dietaryNote}
           </p>
         </div>
       }

@@ -5,10 +5,10 @@
 import { motion } from 'framer-motion';
 import { Gamepad2, ChevronLeft } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { ServiceBottomSheet } from './ServiceBottomSheet';
 import { Button } from '@/components/ui/button';
+import { fetchRecommendedProducts } from '@/lib/productRecommendations';
 
 interface Pet {
   id: string;
@@ -31,21 +31,11 @@ export const ToysSheet = ({ isOpen, onClose, pet }: ToysSheetProps) => {
   const { data: products, isLoading } = useQuery({
     queryKey: ['toys-recommendations', pet?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('business_products')
-        .select('id, name, description, price, image_url, category, pet_type')
-        .or('category.ilike.%toy%,category.ilike.%צעצוע%,category.ilike.%משחק%')
-        .limit(10);
-
-      if (error) throw error;
-
-      // Filter by pet type
-      const filtered = data?.filter(p => {
-        if (!p.pet_type) return true;
-        return p.pet_type === pet?.type;
-      }) || [];
-
-      return filtered.slice(0, 6);
+      return fetchRecommendedProducts({
+        petType: pet?.type,
+        keywords: ['toy', 'game', 'play', 'צעצוע', 'משחק'],
+        limit: 6,
+      });
     },
     enabled: isOpen && !!pet,
   });

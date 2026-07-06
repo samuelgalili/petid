@@ -6,10 +6,10 @@
 import { motion } from 'framer-motion';
 import { Utensils, ChevronLeft, Star, AlertCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { ServiceBottomSheet } from './ServiceBottomSheet';
 import { Button } from '@/components/ui/button';
+import { fetchRecommendedProducts } from '@/lib/productRecommendations';
 
 interface Pet {
   id: string;
@@ -33,22 +33,11 @@ export const FoodSheet = ({ isOpen, onClose, pet }: FoodSheetProps) => {
   const { data: products, isLoading } = useQuery({
     queryKey: ['food-recommendations', pet?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('business_products')
-        .select('id, name, description, price, image_url, category, pet_type')
-        .or('category.ilike.%food%,category.ilike.%מזון%,category.ilike.%מזון יבש%,category.ilike.%מזון רטוב%')
-        .limit(10);
-
-      if (error) throw error;
-
-      // Filter by pet type
-      const filtered = data?.filter(p => {
-        if (!p.pet_type) return true;
-        return p.pet_type === pet?.type;
-      }) || [];
-
-      // Return only 3 products
-      return filtered.slice(0, 3);
+      return fetchRecommendedProducts({
+        petType: pet?.type,
+        keywords: ['food', 'dry food', 'wet food', 'מזון', 'מזון יבש', 'מזון רטוב'],
+        limit: 3,
+      });
     },
     enabled: isOpen && !!pet,
   });

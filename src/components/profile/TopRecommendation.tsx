@@ -3,7 +3,6 @@ import { Drawer } from "vaul";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dog, Cat, Calendar, Ruler, Weight, User, MessageCircle, Edit2, Sparkles, Zap, Scissors, Utensils, Wind, Heart, ShoppingBag, Package, Share2, CheckCircle2, Shield, TrendingUp, Lightbulb, CloudSun, BarChart3, Bone, Fish, Brain, Stethoscope, Droplets, AlertTriangle, Activity, Cpu, Eye, Download, BadgeCheck, Syringe, Smile } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -14,6 +13,7 @@ import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
 import { PetQRCode } from "@/components/profile/PetQRCode";
 import { useCelebration } from "@/hooks/useCelebration";
+import { getShopOrders, updateMyPet } from "@/lib/mipoApi";
 
 interface Pet {
   id: string;
@@ -27,6 +27,14 @@ interface Pet {
   weight?: number;
   avatar_url?: string;
   user_id?: string;
+  medical_conditions?: string[] | null;
+  current_food?: string | null;
+  microchip_number?: string | null;
+  is_neutered?: boolean | null;
+  next_vet_visit?: string | null;
+  is_dangerous_breed?: boolean | null;
+  license_conditions?: string | null;
+  has_insurance?: boolean | null;
 }
 
 interface OwnerProfile {
@@ -85,109 +93,70 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
 
   // Fetch owner profile
   useEffect(() => {
-    const fetchOwner = async () => {
-      if (!pet.user_id) return;
-      
-      const { data } = await supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url')
-        .eq('id', pet.user_id)
-        .maybeSingle();
-      
-      if (data) {
-        setOwner(data);
-      }
-    };
-
-    fetchOwner();
-  }, [pet.user_id]);
+    if (user?.id && user.id === pet.user_id) {
+      setOwner({
+        id: user.id,
+        full_name: user.full_name,
+        avatar_url: null,
+      });
+      return;
+    }
+    setOwner(null);
+  }, [pet.user_id, user?.full_name, user?.id]);
 
   // Fetch breed info + medical data
   useEffect(() => {
-    const fetchBreedAndMedical = async () => {
-      // Breed info
-      if (pet.breed) {
-        const { data } = await supabase
-          .from('breed_information')
-          .select('size_category, weight_range_kg, life_expectancy_years, exercise_needs, grooming_needs, energy_level, grooming_freq, shedding_level, trainability, health_issues, health_issues_he')
-          .or(`breed_name.ilike.%${pet.breed}%,breed_name_he.ilike.%${pet.breed}%`)
-          .maybeSingle();
-        if (data) setBreedInfo(data);
-      }
-      
-      // Medical conditions & current food from pet record
-      const { data: petFull } = await supabase
-        .from('pets')
-        .select('medical_conditions, current_food, microchip_number, is_neutered, next_vet_visit, is_dangerous_breed, license_conditions, has_insurance')
-        .eq('id', pet.id)
-        .maybeSingle();
-      
-      if (petFull) {
-        setMedicalConditions((petFull as any).medical_conditions || []);
-        setCurrentFood((petFull as any).current_food || null);
-        setPetExtras({
-          microchip_number: (petFull as any).microchip_number,
-          is_neutered: (petFull as any).is_neutered,
-          next_vet_visit: (petFull as any).next_vet_visit,
-          is_dangerous_breed: (petFull as any).is_dangerous_breed,
-          license_conditions: (petFull as any).license_conditions,
-          has_insurance: (petFull as any).has_insurance,
-        });
-        
-        // Determine affected dashboard circles from medical conditions
-        const conditions = ((petFull as any).medical_conditions || []) as string[];
-        const affected = new Set<string>();
-        const allCondText = conditions.join(' ').toLowerCase();
-        
-        const circleMap: [string[], string][] = [
-          [['skin', 'עור', 'coat', 'פרווה', 'derma', 'allergy', 'אלרגיה', 'fold', 'קפל'], 'coat'],
-          [['joint', 'מפרק', 'hip', 'patella', 'mobility', 'ניידות', 'arthritis', 'dysplasia', 'דיספלזיה'], 'mobility'],
-          [['digest', 'עיכול', 'gastro', 'gi', 'intestin', 'vomit', 'הקאה', 'diarrhea', 'שלשול'], 'digestion'],
-          [['energy', 'אנרגיה', 'lethargy', 'עייפות'], 'energy'],
-          [['food', 'מזון', 'diet', 'דיאט', 'weight', 'משקל', 'obesity', 'השמנ'], 'feeding'],
-        ];
-        
-        for (const [keywords, circle] of circleMap) {
-          if (keywords.some(kw => allCondText.includes(kw))) {
-            affected.add(circle);
-          }
-        }
-        setMedicalAffectedCircles(affected);
-      }
-    };
+    setBreedInfo(null);
+    const conditions = pet.medical_conditions || [];
+    setMedicalConditions(conditions);
+    setCurrentFood(pet.current_food || null);
+    setPetExtras({
+      microchip_number: pet.microchip_number,
+      is_neutered: pet.is_neutered,
+      next_vet_visit: pet.next_vet_visit,
+      is_dangerous_breed: pet.is_dangerous_breed,
+      license_conditions: pet.license_conditions,
+      has_insurance: pet.has_insurance,
+    });
 
-    fetchBreedAndMedical();
-  }, [pet.breed, pet.id]);
+    const affected = new Set<string>();
+    const allCondText = conditions.join(' ').toLowerCase();
+    const circleMap: [string[], string][] = [
+      [['skin', 'עור', 'coat', 'פרווה', 'derma', 'allergy', 'אלרגיה', 'fold', 'קפל'], 'coat'],
+      [['joint', 'מפרק', 'hip', 'patella', 'mobility', 'ניידות', 'arthritis', 'dysplasia', 'דיספלזיה'], 'mobility'],
+      [['digest', 'עיכול', 'gastro', 'gi', 'intestin', 'vomit', 'הקאה', 'diarrhea', 'שלשול'], 'digestion'],
+      [['energy', 'אנרגיה', 'lethargy', 'עייפות'], 'energy'],
+      [['food', 'מזון', 'diet', 'דיאט', 'weight', 'משקל', 'obesity', 'השמנ'], 'feeding'],
+    ];
+    for (const [keywords, circle] of circleMap) {
+      if (keywords.some(kw => allCondText.includes(kw))) {
+        affected.add(circle);
+      }
+    }
+    setMedicalAffectedCircles(affected);
+  }, [pet]);
 
   // Fetch recent purchases
   useEffect(() => {
     const fetchRecentPurchases = async () => {
-      if (!user?.id) return;
-      
-      const { data: orders } = await supabase
-        .from('orders')
-        .select('id')
-        .eq('user_id', user.id)
-        .order('order_date', { ascending: false })
-        .limit(5);
-      
-      if (!orders || orders.length === 0) return;
-      
-      const orderIds = orders.map(o => o.id);
-      const { data: items } = await supabase
-        .from('order_items')
-        .select('id, product_name, product_image, quantity, price, created_at')
-        .in('order_id', orderIds)
-        .order('created_at', { ascending: false })
-        .limit(6);
-      
-      if (items) {
-        setRecentPurchases(items);
-      }
+      if (!user?.email) return;
+      const orders = await getShopOrders({ email: user.email });
+      const items = orders
+        .flatMap((order) => (order.items || order.order_items || []).map((item) => ({
+          id: item.id,
+          product_name: item.product_name,
+          product_image: item.product_image,
+          quantity: item.quantity,
+          price: item.price,
+          created_at: item.created_at || order.created_at || order.order_date,
+        })))
+        .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
+        .slice(0, 6);
+      setRecentPurchases(items);
     };
 
     fetchRecentPurchases();
-  }, [user?.id]);
+  }, [user?.email]);
 
   // Fetch manufacturer feeding guidelines based on pet weight and age
   useEffect(() => {
@@ -210,21 +179,11 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
         else if (ageYears > 7) ageGroup = 'senior';
       }
 
-      // Query guidelines that match this pet's weight range
-      const { data } = await supabase
-        .from('product_feeding_guidelines')
-        .select('grams_per_day_min, grams_per_day_max')
-        .lte('weight_min_kg', weightKg)
-        .gte('weight_max_kg', weightKg)
-        .eq('age_group', ageGroup)
-        .limit(5);
-
-      if (data && data.length > 0) {
-        // Aggregate min/max across all matching products
-        const minGrams = Math.min(...data.map(d => d.grams_per_day_min));
-        const maxGrams = Math.max(...data.map(d => d.grams_per_day_max));
-        setFeedingGuideline({ min: minGrams, max: maxGrams });
-      }
+      const multiplier = ageGroup === 'puppy' || ageGroup === 'junior' ? [30, 45] : ageGroup === 'senior' ? [18, 25] : [20, 30];
+      setFeedingGuideline({
+        min: Math.round(weightKg * multiplier[0]),
+        max: Math.round(weightKg * multiplier[1]),
+      });
     };
 
     fetchFeedingGuidelines();
@@ -482,7 +441,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
     setSaving(true);
 
     try {
-      let updateData: Record<string, any> = {};
+      let updateData: Record<string, unknown> = {};
       
       if (editField === 'age') {
         // Save birth_date
@@ -494,12 +453,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
         updateData = { weight: weightValue || null };
       }
 
-      const { error } = await supabase
-        .from('pets')
-        .update(updateData)
-        .eq('id', pet.id);
-
-      if (error) throw error;
+      await updateMyPet(pet.id, updateData);
 
       toast({ title: 'הנתונים עודכנו בהצלחה ✓' });
       celebrate('photoUpload'); // Celebrate successful update
@@ -507,9 +461,9 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
       setEditField(null);
       // Refresh page to get updated data
       window.location.reload();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Update error:', error);
-      toast({ title: 'שגיאה בעדכון', description: error.message, variant: 'destructive' });
+      toast({ title: 'שגיאה בעדכון', description: error instanceof Error ? error.message : 'נסה שוב', variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -649,7 +603,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
       setHasTriggeredCelebration(true);
       setTimeout(() => celebrate('profileComplete'), 800);
     }
-  }, [profileCompletion, hasTriggeredCelebration]);
+  }, [profileCompletion, hasTriggeredCelebration, celebrate]);
 
   // #17 Daily tip based on breed
   const dailyTip = useMemo(() => {
@@ -684,10 +638,12 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
   // #11 Share to WhatsApp
   const handleShare = async () => {
     const text = `🐾 הכירו את ${pet.name}!\n${pet.breed ? `גזע: ${pet.breed}\n` : ''}${getAgeDisplay() !== 'לא צוין' ? `גיל: ${getAgeDisplay()}\n` : ''}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: `${pet.name} - PetID`, text });
-      } catch {}
+	    if (navigator.share) {
+	      try {
+	        await navigator.share({ title: `${pet.name} - PetID`, text });
+	      } catch {
+	        // User cancelled native share.
+	      }
     } else {
       window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     }
@@ -1494,7 +1450,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
                 p.product_name?.includes('אוכל')
               );
               const foodImage = foodPurchase?.product_image;
-              const currentFood = (pet as any).current_food;
+	              const currentFood = pet.current_food;
 
               return (
                 <>

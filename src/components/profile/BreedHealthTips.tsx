@@ -7,11 +7,11 @@ import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Eye, Wind, Scissors, Utensils, X, ShoppingBag, ShoppingCart, ChevronLeft } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { haptic } from "@/lib/haptics";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
+import { fetchRecommendedProducts } from "@/lib/productRecommendations";
 
 interface BreedHealthTipsProps {
   petName: string;
@@ -91,39 +91,34 @@ const isShihTzu = (breed?: string) => {
 };
 
 // Quick product sheet for a tip
-const TipProductSheet = ({ tip, petName, onClose }: { tip: BreedTip; petName: string; onClose: () => void }) => {
+const TipProductSheet = ({
+  tip,
+  petName,
+  petType,
+  onClose,
+}: {
+  tip: BreedTip;
+  petName: string;
+  petType: 'dog' | 'cat';
+  onClose: () => void;
+}) => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { toast } = useToast();
 
   const { data: product, isLoading } = useQuery({
-    queryKey: ["tip-product", tip.title],
+    queryKey: ["tip-product", tip.title, petType],
     queryFn: async () => {
-      // Search for a matching product by keywords
-      for (const keyword of tip.productKeywords) {
-        const { data } = await supabase
-          .from("business_products")
-          .select("id, name, price, sale_price, image_url, safety_score, brand, category")
-          .eq("in_stock", true)
-          .or(`name.ilike.%${keyword}%,description.ilike.%${keyword}%`)
-          .order("safety_score", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        if (data) return data;
-      }
-      // Fallback: get highest-rated product in category
-      if (tip.productCategory) {
-        const { data } = await supabase
-          .from("business_products")
-          .select("id, name, price, sale_price, image_url, safety_score, brand, category")
-          .eq("in_stock", true)
-          .ilike("category", `%${tip.productCategory}%`)
-          .order("safety_score", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        if (data) return data;
-      }
-      return null;
+      const keywords = tip.productCategory
+        ? [...tip.productKeywords, tip.productCategory]
+        : tip.productKeywords;
+      const results = await fetchRecommendedProducts({
+        petType,
+        keywords,
+        limit: 1,
+        fallbackToPetProducts: false,
+      });
+      return results[0] || null;
     },
     staleTime: 1000 * 60 * 10,
   });
@@ -332,6 +327,7 @@ export const BreedHealthTips = ({ petName, breed, ageMonths, ageYears, petType }
           <TipProductSheet
             tip={activeTip}
             petName={petName}
+            petType={petType}
             onClose={() => setActiveTip(null)}
           />
         )}

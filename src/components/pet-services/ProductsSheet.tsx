@@ -7,10 +7,10 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ShoppingBag, ChevronLeft, Cookie, Utensils, Gamepad2, Stethoscope } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { ServiceBottomSheet } from './ServiceBottomSheet';
 import { Button } from '@/components/ui/button';
+import { fetchRecommendedProducts } from '@/lib/productRecommendations';
 
 interface Pet {
   id: string;
@@ -44,29 +44,11 @@ export const ProductsSheet = ({ isOpen, onClose, pet }: ProductsSheetProps) => {
     queryKey: ['products-recommendations', pet?.id, activeCategory],
     queryFn: async () => {
       const searchTerms = activeCategoryData?.query.split(',') || [];
-      
-      let query = supabase
-        .from('business_products')
-        .select('id, name, description, price, image_url, category, pet_type')
-        .limit(20);
-
-      // Build OR condition for category search
-      if (searchTerms.length > 0) {
-        const orConditions = searchTerms.map(term => `category.ilike.%${term.trim()}%`).join(',');
-        query = query.or(orConditions);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      // Filter by pet type
-      const filtered = data?.filter(p => {
-        if (!p.pet_type) return true;
-        return p.pet_type === pet?.type;
-      }) || [];
-
-      return filtered.slice(0, 6);
+      return fetchRecommendedProducts({
+        petType: pet?.type,
+        keywords: searchTerms,
+        limit: 6,
+      });
     },
     enabled: isOpen && !!pet,
   });

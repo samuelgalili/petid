@@ -325,6 +325,25 @@ export interface MipoInsuranceClaim {
   updated_at?: string | null;
 }
 
+export interface MipoServiceBooking {
+  id: string;
+  user_id?: string;
+  pet_id: string | null;
+  service_type: string;
+  service_id: string | null;
+  service_name: string;
+  provider_name: string | null;
+  requested_date: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  total_price: number | null;
+  status: string;
+  notes: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at?: string | null;
+}
+
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/+$/, "");
 
 async function fileToDataUrl(file: File): Promise<string> {
@@ -629,6 +648,31 @@ export async function createMyInsuranceClaim(input: Partial<MipoInsuranceClaim>)
   });
   window.dispatchEvent(new Event("mipo:insurance-claims-changed"));
   return result.claim;
+}
+
+export async function getMyServiceBookings(input: {
+  pet_id?: string | null;
+  service_type?: string | null;
+  limit?: number;
+} = {}): Promise<MipoServiceBooking[]> {
+  const params = new URLSearchParams();
+  if (input.pet_id) params.set("pet_id", input.pet_id);
+  if (input.service_type) params.set("service_type", input.service_type);
+  if (input.limit) params.set("limit", String(input.limit));
+  const query = params.toString();
+  const result = await apiFetch<{ bookings: MipoServiceBooking[] }>(
+    `/me/service-bookings${query ? `?${query}` : ""}`,
+  );
+  return result.bookings;
+}
+
+export async function createMyServiceBooking(input: Partial<MipoServiceBooking>): Promise<MipoServiceBooking> {
+  const result = await apiFetch<{ booking: MipoServiceBooking }>("/me/service-bookings", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  window.dispatchEvent(new Event("mipo:service-bookings-changed"));
+  return result.booking;
 }
 
 export async function getMyVetVisits(petId: string): Promise<MipoVetVisit[]> {

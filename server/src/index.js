@@ -1640,6 +1640,108 @@ const createUserInsuranceClaim = async (userId, body) => {
   return serializeInsuranceClaim(result.rows[0]);
 };
 
+const serializeServiceBooking = (row) => ({
+  id: row.id,
+  user_id: row.user_id,
+  pet_id: row.pet_id || null,
+  service_type: row.service_type,
+  service_id: row.service_id || null,
+  service_name: row.service_name,
+  provider_name: row.provider_name || null,
+  requested_date: row.requested_date || null,
+  start_date: row.start_date || null,
+  end_date: row.end_date || null,
+  total_price: row.total_price === null || row.total_price === undefined ? null : Number(row.total_price),
+  status: row.status || "pending",
+  notes: row.notes || null,
+  metadata: row.metadata || {},
+  created_at: row.created_at || null,
+  updated_at: row.updated_at || null,
+});
+
+const listUserServiceBookings = async (userId, { petId = null, serviceType = null, limit = 100 } = {}) => {
+  const values = [userId];
+  const where = ["user_id = $1"];
+
+  if (petId && uuidPattern.test(petId)) {
+    values.push(petId);
+    where.push(`pet_id = $${values.length}`);
+  }
+  if (serviceType) {
+    values.push(String(serviceType).trim());
+    where.push(`service_type = $${values.length}`);
+  }
+
+  values.push(Math.min(200, Math.max(1, Number(limit) || 100)));
+  const result = await pool.query(
+    `
+      select *
+      from public.pet_service_bookings
+      where ${where.join(" and ")}
+      order by created_at desc
+      limit $${values.length}
+    `,
+    values,
+  );
+
+  return result.rows.map(serializeServiceBooking);
+};
+
+const createUserServiceBooking = async (userId, body) => {
+  const petId = body.pet_id ? String(body.pet_id) : null;
+  if (petId) await ensureUserPet(userId, petId);
+
+  const serviceType = String(body.service_type || "").trim();
+  const serviceName = String(body.service_name || "").trim();
+  if (!serviceType || !serviceName) {
+    const error = new Error("Service type and service name are required");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const metadata = body.metadata && typeof body.metadata === "object" && !Array.isArray(body.metadata)
+    ? body.metadata
+    : {};
+
+  const result = await pool.query(
+    `
+      insert into public.pet_service_bookings (
+        user_id,
+        pet_id,
+        service_type,
+        service_id,
+        service_name,
+        provider_name,
+        requested_date,
+        start_date,
+        end_date,
+        total_price,
+        status,
+        notes,
+        metadata
+      )
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending', $11, $12::jsonb)
+      returning *
+    `,
+    [
+      userId,
+      petId,
+      serviceType,
+      body.service_id ? String(body.service_id).trim() : null,
+      serviceName,
+      body.provider_name ? String(body.provider_name).trim() : null,
+      normalizeDateOnly(body.requested_date),
+      normalizeDateOnly(body.start_date),
+      normalizeDateOnly(body.end_date),
+      toNumber(body.total_price),
+      body.notes ? String(body.notes).trim() : null,
+      JSON.stringify(metadata),
+    ],
+  );
+
+  return serializeServiceBooking(result.rows[0]);
+};
+
 const normalizePetType = (value) => {
   if (value === "both") return "all";
   if (["dog", "cat", "other", "all"].includes(value)) return value;
@@ -3509,6 +3611,26 @@ const handleRequest = async (request, response) => {
       const auth = await requireUser(request, response);
       if (!auth) return;
       sendJson(response, 201, { claim: await createUserInsuranceClaim(auth.user.id, await readBody(request)) });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/me/service-bookings") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      sendJson(response, 200, {
+        bookings: await listUserServiceBookings(auth.user.id, {
+          petId: url.searchParams.get("pet_id") || null,
+          serviceType: url.searchParams.get("service_type") || null,
+          limit: url.searchParams.get("limit") || 100,
+        }),
+      });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/me/service-bookings") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      sendJson(response, 201, { booking: await createUserServiceBooking(auth.user.id, await readBody(request)) });
       return;
     }
 

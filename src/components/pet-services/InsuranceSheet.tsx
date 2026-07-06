@@ -6,8 +6,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Shield, Check, ChevronLeft, Info, FileText, Calendar, Building2, Hash, AlertTriangle } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { ServiceBottomSheet } from './ServiceBottomSheet';
 import { Button } from '@/components/ui/button';
 import { DocumentsSection } from './DocumentsSection';
@@ -21,6 +19,10 @@ interface Pet {
   breed?: string;
   age_years?: number;
   age_months?: number;
+  has_insurance?: boolean | null;
+  insurance_company?: string | null;
+  insurance_expiry_date?: string | null;
+  insurance_policy_number?: string | null;
 }
 
 interface InsuranceSheetProps {
@@ -36,51 +38,58 @@ interface PetInsuranceData {
   insurance_policy_number: string | null;
 }
 
+interface InsurancePolicy {
+  id: string;
+  name: string;
+  provider_name: string;
+  description: string;
+  coverage_details: Array<string | { name?: string; title?: string }>;
+  monthly_price: number;
+  annual_price: number;
+  is_featured: boolean;
+  suitable_pet_types: Array<'dog' | 'cat'>;
+}
+
+const INSURANCE_POLICIES: InsurancePolicy[] = [
+  {
+    id: 'health-basic',
+    name: 'כיסוי בריאות בסיסי',
+    provider_name: 'Mipo Partners',
+    description: 'כיסוי לביקורים, בדיקות וטיפולים נפוצים.',
+    coverage_details: ['ביקורי וטרינר', 'בדיקות מעבדה', 'החזרים על תרופות', 'מוקד ייעוץ'],
+    monthly_price: 69,
+    annual_price: 760,
+    is_featured: false,
+    suitable_pet_types: ['dog', 'cat'],
+  },
+  {
+    id: 'health-plus',
+    name: 'כיסוי בריאות מורחב',
+    provider_name: 'Mipo Partners',
+    description: 'מסלול רחב יותר למקרי חירום, ניתוחים והחזרים גבוהים יותר.',
+    coverage_details: ['חירום וניתוחים', 'אבחון מתקדם', 'חיסונים שנתיים', 'החזרים מוגדלים'],
+    monthly_price: 119,
+    annual_price: 1290,
+    is_featured: true,
+    suitable_pet_types: ['dog', 'cat'],
+  },
+];
+
 export const InsuranceSheet = ({ isOpen, onClose, pet }: InsuranceSheetProps) => {
   const [selectedPolicy, setSelectedPolicy] = useState<string | null>(null);
   const [showPackages, setShowPackages] = useState(false);
 
-  // Fetch pet's current insurance status
-  const { data: petInsurance, isLoading: loadingInsurance } = useQuery({
-    queryKey: ['pet-insurance-status', pet?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pets')
-        .select('has_insurance, insurance_company, insurance_expiry_date, insurance_policy_number')
-        .eq('id', pet!.id)
-        .maybeSingle();
-      if (error) throw error;
-      return data as PetInsuranceData | null;
-    },
-    enabled: isOpen && !!pet,
-  });
+  const petInsurance: PetInsuranceData | null = pet ? {
+    has_insurance: pet.has_insurance ?? false,
+    insurance_company: pet.insurance_company || null,
+    insurance_expiry_date: pet.insurance_expiry_date || null,
+    insurance_policy_number: pet.insurance_policy_number || null,
+  } : null;
 
-  // Fetch available policies
-  const { data: policies, isLoading: loadingPolicies } = useQuery({
-    queryKey: ['insurance-policies', pet?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pet_insurance_policies')
-        .select('*')
-        .eq('is_active', true)
-        .order('is_featured', { ascending: false });
+  const policies = INSURANCE_POLICIES.filter((policy) => !pet?.type || policy.suitable_pet_types.includes(pet.type))
+    .sort((a, b) => Number(b.is_featured) - Number(a.is_featured));
 
-      if (error) throw error;
-
-      return data?.filter(policy => {
-        if (pet?.type && policy.suitable_pet_types) {
-          if (!policy.suitable_pet_types.includes(pet.type)) return false;
-        }
-        if (pet?.breed && policy.suitable_breeds?.length) {
-          if (!policy.suitable_breeds.includes(pet.breed)) return false;
-        }
-        return true;
-      }) || [];
-    },
-    enabled: isOpen && !!pet,
-  });
-
-  const formatCoverage = (coverage: any) => {
+  const formatCoverage = (coverage: InsurancePolicy['coverage_details']) => {
     if (!coverage) return [];
     if (Array.isArray(coverage)) return coverage;
     if (typeof coverage === 'object') return Object.values(coverage);
@@ -96,7 +105,7 @@ export const InsuranceSheet = ({ isOpen, onClose, pet }: InsuranceSheetProps) =>
     ? isPast(new Date(petInsurance.insurance_expiry_date))
     : false;
 
-  const isLoading = loadingInsurance || loadingPolicies;
+  const isLoading = false;
 
   // Decide what to show: existing policy or packages
   const showExistingPolicy = hasActiveInsurance && !showPackages;
@@ -299,7 +308,7 @@ export const InsuranceSheet = ({ isOpen, onClose, pet }: InsuranceSheetProps) =>
 
                 {/* Coverage */}
                 <div className="space-y-1.5 mb-4">
-                  {formatCoverage(policy.coverage_details).slice(0, 4).map((item: any, i: number) => (
+                  {formatCoverage(policy.coverage_details).slice(0, 4).map((item, i: number) => (
                     <div key={i} className="flex items-center gap-2 text-sm">
                       <Check className="w-4 h-4 text-[hsl(142,71%,45%)]" />
                       <span className="text-foreground">{typeof item === 'string' ? item : item.name || item.title}</span>

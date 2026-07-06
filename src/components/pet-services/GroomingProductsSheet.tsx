@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Scissors } from "lucide-react";
 import { ProductRecommendationSheet, ProductWithLabel } from "./ProductRecommendationSheet";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchRecommendedProducts, type RecommendedProduct } from "@/lib/productRecommendations";
 
 interface Pet {
   id: string;
@@ -15,62 +15,38 @@ interface GroomingProductsSheetProps {
   onClose: () => void;
 }
 
-// Product interface for internal fetching
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  image_url: string;
-  category?: string;
-}
-
 export const GroomingProductsSheet = ({ pet, isOpen, onClose }: GroomingProductsSheetProps) => {
-  const [breedInfo, setBreedInfo] = useState<any>(null);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<RecommendedProduct[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const groomingProducts = await fetchRecommendedProducts({
+        petType: pet.type,
+        keywords: ['grooming', 'shampoo', 'brush', 'conditioner', 'טיפוח', 'שמפו', 'מרכך', 'מברשת'],
+        limit: 3,
+        fallbackToPetProducts: false,
+      });
+
+      setProducts(groomingProducts);
+    } catch (error) {
+      console.error('Error fetching grooming products:', error);
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [pet.type]);
 
   useEffect(() => {
     if (!isOpen) return;
     fetchData();
-  }, [isOpen, pet.breed, pet.type]);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      // Fetch breed info for grooming needs
-      if (pet.breed) {
-        const { data: breed } = await supabase
-          .from('breed_information')
-          .select('grooming_needs')
-          .or(`breed_name.ilike.%${pet.breed}%,breed_name_he.ilike.%${pet.breed}%`)
-          .maybeSingle();
-        
-        if (breed) {
-          setBreedInfo(breed);
-        }
-      }
-
-      // Fetch grooming products - limit to 3
-      const { data: groomingProducts } = await supabase
-        .from('business_products')
-        .select('id, name, price, image_url, category')
-        .eq('pet_type', pet.type)
-        .or('category.ilike.%grooming%,category.ilike.%shampoo%,category.ilike.%brush%,category.ilike.%conditioner%,category.ilike.%שמפו%,category.ilike.%מרכך%,category.ilike.%מברשת%')
-        .limit(3);
-
-      setProducts(groomingProducts || []);
-    } catch (error) {
-      console.error('Error fetching grooming products:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [isOpen, fetchData]);
 
   const getGroomingFrequency = () => {
-    const frequency = breedInfo?.grooming_needs?.toLowerCase() || '';
-    if (frequency.includes('daily') || frequency.includes('יומי')) return 'יומית';
-    if (frequency.includes('weekly') || frequency.includes('שבועי')) return 'שבועית';
-    if (frequency.includes('monthly') || frequency.includes('חודשי')) return 'חודשית';
+    const breed = pet.breed?.toLowerCase() || '';
+    if (breed.includes('poodle') || breed.includes('shih') || breed.includes('שיצו')) return 'שבועית';
+    if (breed.includes('persian') || breed.includes('פרסי')) return 'יומית';
     return 'בינוני';
   };
 
@@ -88,11 +64,9 @@ export const GroomingProductsSheet = ({ pet, isOpen, onClose }: GroomingProducts
       <p className="text-sm text-muted-foreground">
         {getGroomingFrequency()}
       </p>
-      {breedInfo?.grooming_needs && (
-        <p className="text-xs text-muted-foreground mt-2">
-          {breedInfo.grooming_needs}
-        </p>
-      )}
+      <p className="text-xs text-muted-foreground mt-2">
+        המלצה כללית עד שנחבר מאגר גזעים מלא ב-AWS.
+      </p>
     </div>
   );
 

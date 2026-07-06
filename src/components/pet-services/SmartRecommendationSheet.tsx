@@ -1,10 +1,10 @@
 /**
  * SmartRecommendationSheet - Context-aware product recommendations
- * Fetches personalized products from smart-recommendations edge function
+ * Fetches personalized products from the AWS API product catalog
  * Supports: coat, energy, health, feeding, mobility, digestion categories
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { ShoppingCart, Loader2, Shield, Sparkles } from "lucide-react";
 import { ServiceBottomSheet } from "./ServiceBottomSheet";
@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { fetchRecommendedProducts, type RecommendedProduct } from "@/lib/productRecommendations";
+import { getMyPet } from "@/lib/mipoApi";
 
 interface SmartProduct {
   id: string;
@@ -40,6 +42,49 @@ const categoryTitles: Record<string, string> = {
   digestion: 'המלצות עיכול',
 };
 
+const categoryKeywords: Record<SmartRecommendationSheetProps['category'], string[]> = {
+  coat: ['grooming', 'shampoo', 'brush', 'conditioner', 'טיפוח', 'שמפו', 'מברשת', 'מרכך'],
+  energy: ['toy', 'puzzle', 'interactive', 'צעצוע', 'משחק', 'אינטראקטיבי'],
+  health: ['health', 'medical', 'supplement', 'בריאות', 'רפואי', 'תוסף'],
+  feeding: ['food', 'dry food', 'wet food', 'treat', 'מזון', 'חטיף'],
+  mobility: ['joint', 'mobility', 'orthopedic', 'מפרק', 'אורתופדי', 'ניידות'],
+  digestion: ['digestion', 'probiotic', 'sensitive', 'עיכול', 'פרוביוטיקה', 'רגיש'],
+};
+
+const categoryLabel: Record<SmartRecommendationSheetProps['category'], string> = {
+  coat: 'טיפוח',
+  energy: 'פעילות',
+  health: 'בריאות',
+  feeding: 'תזונה',
+  mobility: 'מפרקים',
+  digestion: 'עיכול',
+};
+
+const personalizedCopy = (category: SmartRecommendationSheetProps['category'], petName: string) => {
+  const copy: Record<SmartRecommendationSheetProps['category'], string> = {
+    coat: `מתאים לשגרת הטיפוח של ${petName}`,
+    energy: `עוזר להוציא אנרגיה בצורה בטוחה`,
+    health: `בחירה שימושית לשגרת בריאות מונעת`,
+    feeding: `מוצר תזונה שמתאים לפרופיל של ${petName}`,
+    mobility: `תמיכה עדינה במפרקים ובניידות`,
+    digestion: `מתאים לבטן רגישה ושגרת עיכול יציבה`,
+  };
+  return copy[category];
+};
+
+const toSmartProduct = (
+  product: RecommendedProduct,
+  category: SmartRecommendationSheetProps['category'],
+  petName: string,
+): SmartProduct => ({
+  id: product.id,
+  name: product.name,
+  price: product.sale_price || product.price,
+  image_url: product.image_url,
+  label: categoryLabel[category],
+  personalizedCopy: personalizedCopy(category, petName),
+});
+
 export const SmartRecommendationSheet = ({
   isOpen,
   onClose,
@@ -56,35 +101,40 @@ export const SmartRecommendationSheet = ({
   const [addingToCart, setAddingToCart] = useState<string | null>(null);
   const [lifeStage, setLifeStage] = useState<string>('');
 
-  useEffect(() => {
-    if (!isOpen) return;
-    fetchRecommendations();
-  }, [isOpen, petId, category]);
-
-  const fetchRecommendations = async () => {
+  const fetchRecommendations = useCallback(async () => {
     setLoading(true);
     try {
-      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/smart-recommendations`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({ petId, category }),
+      const pet = await getMyPet(petId);
+      const recommendations = await fetchRecommendedProducts({
+        petType: pet.type,
+        keywords: categoryKeywords[category],
+        limit: 4,
       });
-
-      if (!resp.ok) throw new Error("Failed to fetch recommendations");
-
-      const data = await resp.json();
-      setProducts(data.products || []);
-      setLifeStage(data.lifeStage || '');
+      const mappedProducts = recommendations.map((product) => toSmartProduct(product, category, petName));
+      const insuranceOffer = category === 'health'
+        ? [{
+          id: 'insurance-offer',
+          name: `ביטוח בריאות ל${petName}`,
+          price: 0,
+          image_url: '',
+          label: 'ביטוח',
+          personalizedCopy: 'בדיקת התאמה לכיסוי רפואי והחזרים',
+        }]
+        : [];
+      setProducts([...insuranceOffer, ...mappedProducts]);
+      setLifeStage(pet.age_years && pet.age_years >= 8 ? 'senior' : pet.age_years && pet.age_years < 1 ? 'puppy' : '');
     } catch (error) {
       console.error("Error fetching smart recommendations:", error);
       setProducts([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [category, petId, petName]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    fetchRecommendations();
+  }, [isOpen, fetchRecommendations]);
 
   const handleAddToCart = async (product: SmartProduct) => {
     if (product.id === 'insurance-offer') {

@@ -7,8 +7,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Scissors, Calendar, Clock, Check, AlertCircle } from 'lucide-react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useMutation } from '@tanstack/react-query';
 import { ServiceBottomSheet } from './ServiceBottomSheet';
 import { Button } from '@/components/ui/button';
 import { DateWheelPicker } from '@/components/ui/date-wheel-picker';
@@ -17,6 +16,7 @@ import { he } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { DocumentsSection } from './DocumentsSection';
+import { createMyServiceBooking } from '@/lib/mipoApi';
 
 interface Pet {
   id: string;
@@ -40,69 +40,52 @@ const serviceTypeLabels: Record<string, string> = {
   nail_trim: 'גזיזת ציפורניים',
 };
 
+const GROOMING_SERVICES = [
+  { id: 'bath', name: 'רחצה וייבוש', service_type: 'bath', duration_minutes: 45, price: 120, suitable_pet_types: ['dog', 'cat'] },
+  { id: 'haircut', name: 'תספורת', service_type: 'haircut', duration_minutes: 75, price: 180, suitable_pet_types: ['dog'] },
+  { id: 'full_grooming', name: 'טיפוח מלא', service_type: 'full_grooming', duration_minutes: 120, price: 260, suitable_pet_types: ['dog', 'cat'] },
+  { id: 'nail_trim', name: 'גזיזת ציפורניים', service_type: 'nail_trim', duration_minutes: 20, price: 45, suitable_pet_types: ['dog', 'cat'] },
+];
+
 export const GroomingSheet = ({ isOpen, onClose, pet }: GroomingSheetProps) => {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date()); // Default to today
   const [step, setStep] = useState<'select' | 'confirm'>('select');
 
-  const { data: services, isLoading } = useQuery({
-    queryKey: ['grooming-services', pet?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pet_grooming_services')
-        .select('*')
-        .eq('is_active', true)
-        .order('price', { ascending: true });
-
-      if (error) throw error;
-
-      // Filter by pet type and breed
-      return data?.filter(service => {
-        if (pet?.type && service.suitable_pet_types) {
-          if (!service.suitable_pet_types.includes(pet.type)) return false;
-        }
-        if (pet?.breed && service.suitable_breeds?.length) {
-          if (!service.suitable_breeds.includes(pet.breed)) return false;
-        }
-        return true;
-      }) || [];
-    },
-    enabled: isOpen && !!pet,
-  });
+  const services = GROOMING_SERVICES.filter((service) => !pet?.type || service.suitable_pet_types.includes(pet.type));
+  const isLoading = false;
 
   const bookingMutation = useMutation({
     mutationFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
       if (!pet || !selectedService || !selectedDate) throw new Error('Missing data');
 
       const service = services?.find(s => s.id === selectedService);
-      
-      const { error } = await supabase
-        .from('pet_grooming_bookings')
-        .insert({
-          user_id: user.id,
-          pet_id: pet.id,
-          service_id: selectedService,
-          requested_date: format(selectedDate, 'yyyy-MM-dd'),
-          total_price: service?.price || 0,
-          status: 'pending',
-        });
+      if (!service) throw new Error('Service not found');
 
-      if (error) throw error;
+      await createMyServiceBooking({
+        pet_id: pet.id,
+        service_type: 'grooming',
+        service_id: selectedService,
+        service_name: service.name,
+        provider_name: 'סטודיו פול',
+        requested_date: format(selectedDate, 'yyyy-MM-dd'),
+        total_price: service.price,
+        metadata: {
+          service_type: service.service_type,
+          duration_minutes: service.duration_minutes,
+        },
+      });
     },
     onSuccess: () => {
       toast({
         title: 'ההזמנה נשלחה',
         description: 'נודיע לך כשההזמנה תאושר',
       });
-      queryClient.invalidateQueries({ queryKey: ['grooming-bookings'] });
       onClose();
       setStep('select');
       setSelectedService(null);
-      setSelectedDate(undefined);
+      setSelectedDate(new Date());
     },
     onError: (error) => {
       toast({
@@ -132,7 +115,7 @@ export const GroomingSheet = ({ isOpen, onClose, pet }: GroomingSheetProps) => {
         onClose();
         setStep('select');
         setSelectedService(null);
-        setSelectedDate(undefined);
+        setSelectedDate(new Date());
       }}
       title={step === 'confirm' ? 'אישור הזמנה' : `טיפוח ל${pet?.name || 'חיית המחמד'}`}
     >
