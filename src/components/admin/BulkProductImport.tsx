@@ -32,6 +32,11 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  DEFAULT_BUSINESS_ID,
+  assertDefaultBusinessProfileExists,
+  normalizeProductPetType,
+} from "@/lib/productStore";
 import * as XLSX from "@e965/xlsx";
 
 interface ParsedProduct {
@@ -54,6 +59,16 @@ interface ParsedProduct {
   originalData?: Partial<ParsedProduct>;
   brand?: string;
   petType?: string;
+  images?: string[];
+  sale_price?: number | null;
+  original_price?: number | null;
+  ingredients?: string | null;
+  benefits?: unknown[];
+  feeding_guide?: unknown[];
+  product_attributes?: Record<string, unknown>;
+  life_stage?: string | null;
+  dog_size?: string | null;
+  special_diet?: string[];
 }
 
 interface BulkProductImportProps {
@@ -764,20 +779,33 @@ export const BulkProductImport = ({
     try {
       let successCount = 0;
       let errorCount = 0;
+      const businessId = await assertDefaultBusinessProfileExists(DEFAULT_BUSINESS_ID);
 
       for (const product of enrichedProducts) {
         try {
           const { error } = await supabase.from("business_products").insert({
+            business_id: businessId,
             name: product.name,
             description: product.description || null,
             price: product.price,
+            original_price: product.original_price || null,
+            sale_price: product.sale_price || null,
             sku: product.sku || null,
             category: product.category || "other",
             image_url: product.image_url || "/placeholder.svg",
+            images: product.images || [],
+            source_url: product.sourceUrl || null,
             in_stock: product.in_stock,
             is_featured: false,
-            business_id: "cf941cc4-e1d1-4d7c-8122-a5df81a1e53c",
-            pet_type: product.petType as any || null,
+            pet_type: normalizeProductPetType(product.petType),
+            brand: product.brand || null,
+            ingredients: product.ingredients || null,
+            benefits: product.benefits || [],
+            feeding_guide: product.feeding_guide || [],
+            product_attributes: product.product_attributes || {},
+            life_stage: product.life_stage || null,
+            dog_size: product.dog_size || null,
+            special_diet: product.special_diet || [],
           });
 
           if (error) {

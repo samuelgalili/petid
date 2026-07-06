@@ -13,7 +13,6 @@ import { useToast } from "@/hooks/use-toast";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import confetti from "canvas-confetti";
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel";
-import { supabase } from "@/integrations/supabase/client";
 import { SkeletonProductGrid } from "@/components/ui/enhanced-skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,6 +31,7 @@ import { FleetSafetyAlert } from "@/components/fleet/FleetSafetyAlert";
 import { SlideToConfirm } from "@/components/shop/SlideToConfirm";
 import { ProductInfoDrawer } from "@/components/shop/ProductInfoDrawer";
 import { useCarePlan } from "@/hooks/useCarePlan";
+import { createContentReport, getShopProducts } from "@/lib/mipoApi";
 
 const Shop = () => {
   const navigate = useNavigate();
@@ -76,17 +76,13 @@ const Shop = () => {
     if (!selectedProduct) return;
     setIsReporting(true);
     try {
-      const { error } = await supabase
-        .from('content_reports')
-        .insert({
-          content_type: 'product',
-          content_id: selectedProduct.id || 'unknown',
-          reason: reportReason,
-          description: reportDetails || `דיווח על ${reportReason === 'price' ? 'מחיר שגוי' : reportReason === 'image' ? 'תמונה לא מתאימה' : reportReason === 'description' ? 'תיאור שגוי' : 'בעיה אחרת'}`,
-          reporter_id: user?.id || '00000000-0000-0000-0000-000000000000',
-        });
-
-      if (error) throw error;
+      await createContentReport({
+        content_type: 'product',
+        content_id: selectedProduct.id || 'unknown',
+        reason: reportReason,
+        description: reportDetails || `דיווח על ${reportReason === 'price' ? 'מחיר שגוי' : reportReason === 'image' ? 'תמונה לא מתאימה' : reportReason === 'description' ? 'תיאור שגוי' : 'בעיה אחרת'}`,
+        reporter_id: user?.id || null,
+      });
 
       toast({
         title: "תודה על הדיווח! 🙏",
@@ -156,57 +152,12 @@ const Shop = () => {
     });
   }, [carouselApi]);
 
-  // Fetch products from database - combining business_products and scraped_products
+  // Fetch products from the AWS API backed by RDS.
   const { data: dbProducts = [], isLoading: isLoadingProducts, isFetching, isError: isProductsError } = useQuery({
-    queryKey: ["shop-products-v2"],
+    queryKey: ["shop-products-aws"],
     queryFn: async () => {
-      console.log("Fetching shop products v2...");
-      
-      // First try to get from business_products
-      const { data: businessProducts, error: bpError } = await supabase
-        .from("business_products")
-        .select("*")
-        .order("created_at", { ascending: false });
-      
-      if (bpError) console.error("Error fetching business_products:", bpError);
-      console.log("Business products:", businessProducts?.length || 0);
-      
-      // Also get scraped products
-      const { data: scrapedProducts, error: spError } = await supabase
-        .from("scraped_products")
-        .select("*")
-        .order("scraped_at", { ascending: false });
-      
-      if (spError) console.error("Error fetching scraped_products:", spError);
-      console.log("Scraped products:", scrapedProducts?.length || 0);
-      
-      // Transform scraped products to match business_products format
-      const transformedScraped = (scrapedProducts || []).map(sp => ({
-        id: sp.id,
-        name: sp.product_name,
-        description: sp.long_description || sp.short_description || "",
-        price: sp.final_price || sp.regular_price || 0,
-        original_price: sp.regular_price !== sp.final_price ? sp.regular_price : null,
-        sale_price: sp.sale_price,
-        image_url: sp.main_image_url || "/placeholder.svg",
-        images: sp.main_image_url ? [sp.main_image_url] : [],
-        category: sp.sub_category || sp.main_category,
-        pet_type: sp.pet_type,
-        in_stock: sp.stock_status === "in_stock" || !sp.stock_status,
-        sku: sp.sku,
-        flavors: sp.flavors,
-        created_at: sp.created_at,
-        is_flagged: sp.is_flagged || false,
-        flagged_reason: sp.flagged_reason,
-      }));
-      
-      // Filter business products that are in stock
-      const filteredBusiness = (businessProducts || []).filter(p => p.in_stock !== false);
-      
-      // Combine both sources, business_products first
-      const allProducts = [...filteredBusiness, ...transformedScraped];
-      console.log("Total products to display:", allProducts.length);
-      return allProducts;
+      const products = await getShopProducts();
+      return products.filter((product) => product.in_stock !== false);
     },
     staleTime: 1000 * 60 * 2, // 2 minutes
     gcTime: 1000 * 60 * 5, // 5 minutes

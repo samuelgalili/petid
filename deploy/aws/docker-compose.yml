@@ -1,0 +1,36 @@
+services:
+  mipo-api:
+    build:
+      context: /opt/mipo/server
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATABASE_URL: ${DATABASE_URL}
+      DEFAULT_BUSINESS_ID: ${DEFAULT_BUSINESS_ID}
+      ADMIN_API_KEY: ${ADMIN_API_KEY}
+    networks:
+      - mipo
+
+  caddy:
+    image: caddy:2.9-alpine
+    restart: unless-stopped
+    depends_on:
+      - mipo-api
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /opt/mipo/deploy/aws/Caddyfile:/etc/caddy/Caddyfile:ro
+      - /opt/mipo/dist:/srv/www:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - mipo
+
+networks:
+  mipo:
+
+volumes:
+  caddy_data:
+  caddy_config:

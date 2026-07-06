@@ -32,6 +32,11 @@ import {
 } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  DEFAULT_BUSINESS_ID,
+  assertDefaultBusinessProfileExists,
+  normalizeProductPetType,
+} from "@/lib/productStore";
 import { BulkProductImport } from "./BulkProductImport";
 import { CompetitorPriceManager } from "./products/CompetitorPriceManager";
 
@@ -56,6 +61,15 @@ interface ScrapedProduct {
   salePrice: number | null;
   sku: string | null;
   variants: ScrapedProductVariant[];
+  category?: string | null;
+  petType?: string | null;
+  ingredients?: string | null;
+  benefits?: unknown[];
+  feedingGuide?: unknown[];
+  productAttributes?: Record<string, unknown>;
+  lifeStage?: string | null;
+  dogSize?: string | null;
+  specialDiet?: string[];
 }
 
 interface ProductData {
@@ -75,6 +89,15 @@ interface ProductData {
   pet_type?: string | null;
   weight_unit?: string | null;
   price_per_weight?: number | null;
+  brand?: string | null;
+  source_url?: string | null;
+  ingredients?: string | null;
+  benefits?: unknown[] | null;
+  feeding_guide?: unknown[] | null;
+  product_attributes?: Record<string, unknown> | null;
+  life_stage?: string | null;
+  dog_size?: string | null;
+  special_diet?: string[] | null;
 }
 
 interface EnrichedData {
@@ -228,7 +251,7 @@ export const ProductFormDialog = ({
         if (enriched.petType) {
           updates.pet_type = enriched.petType === "dog" ? "dog" : 
                             enriched.petType === "cat" ? "cat" : 
-                            enriched.petType === "both" ? "both" : "other";
+                            enriched.petType === "both" ? "all" : "other";
         }
         
         // Auto-fill image if found
@@ -249,6 +272,10 @@ export const ProductFormDialog = ({
         // Fill weight unit if available
         if (enriched.weightUnit) {
           updates.weight_unit = enriched.weightUnit;
+        }
+
+        if (enriched.brand) {
+          updates.brand = enriched.brand;
         }
         
         // Map enriched category to our category values
@@ -312,6 +339,19 @@ export const ProductFormDialog = ({
     if (productInfo.description) {
       updates.description = productInfo.description;
     }
+
+    updates.source_url = scraped.source?.finalUrl || scraped.source_url || productInfo.source_url || updates.source_url;
+    updates.brand = productInfo.brand || scraped.brand || updates.brand;
+    updates.ingredients = productInfo.ingredients || scraped.ingredients || updates.ingredients || null;
+    updates.benefits = productInfo.benefits || scraped.benefits || updates.benefits || [];
+    updates.feeding_guide =
+      productInfo.feeding_guide || productInfo.feedingGuide || scraped.feeding_guide || scraped.feedingGuide || updates.feeding_guide || [];
+    updates.product_attributes =
+      productInfo.product_attributes || productInfo.productAttributes || scraped.product_attributes || scraped.productAttributes || updates.product_attributes || {};
+    updates.life_stage = productInfo.life_stage || productInfo.lifeStage || scraped.life_stage || scraped.lifeStage || updates.life_stage || null;
+    updates.dog_size = productInfo.dog_size || productInfo.dogSize || scraped.dog_size || scraped.dogSize || updates.dog_size || null;
+    updates.special_diet =
+      productInfo.special_diet || productInfo.specialDiet || scraped.special_diet || scraped.specialDiet || updates.special_diet || [];
     
     // Images
     const images = productInfo.images || scraped.images || [];
@@ -402,6 +442,8 @@ export const ProductFormDialog = ({
       updates.category = "wet-food";
     } else if (decodedUrl.includes("חטיפ") || decodedUrl.includes("treats")) {
       updates.category = "treats";
+    } else if (productInfo.category || scraped.category) {
+      updates.category = productInfo.category || scraped.category;
     }
     
     // Pet type detection
@@ -409,6 +451,8 @@ export const ProductFormDialog = ({
       updates.pet_type = "dog";
     } else if (decodedUrl.includes("חתול") || decodedUrl.includes("cat")) {
       updates.pet_type = "cat";
+    } else if (productInfo.petType || productInfo.pet_type || scraped.petType || scraped.pet_type) {
+      updates.pet_type = normalizeProductPetType(productInfo.petType || productInfo.pet_type || scraped.petType || scraped.pet_type);
     }
     
     onProductChange(updates);
@@ -565,6 +609,16 @@ export const ProductFormDialog = ({
     if (scrapedProduct.sku) {
       updates.sku = scrapedProduct.sku;
     }
+
+    updates.source_url = scrapedProduct.source_url || updates.source_url;
+    updates.brand = scrapedProduct.brand || updates.brand;
+    updates.ingredients = scrapedProduct.ingredients || updates.ingredients || null;
+    updates.benefits = scrapedProduct.benefits || updates.benefits || [];
+    updates.feeding_guide = scrapedProduct.feedingGuide || updates.feeding_guide || [];
+    updates.product_attributes = scrapedProduct.productAttributes || updates.product_attributes || {};
+    updates.life_stage = scrapedProduct.lifeStage || updates.life_stage || null;
+    updates.dog_size = scrapedProduct.dogSize || updates.dog_size || null;
+    updates.special_diet = scrapedProduct.specialDiet || updates.special_diet || [];
     
     // CRITICAL: Process ALL variants
     const variants = scrapedProduct.variants || [];
@@ -629,6 +683,8 @@ export const ProductFormDialog = ({
       updates.category = "wet-food";
     } else if (decodedUrl.includes("חטיפ") || decodedUrl.includes("treats")) {
       updates.category = "treats";
+    } else if (scrapedProduct.category) {
+      updates.category = scrapedProduct.category;
     }
     
     // Pet type detection
@@ -636,6 +692,8 @@ export const ProductFormDialog = ({
       updates.pet_type = "dog";
     } else if (decodedUrl.includes("חתול") || decodedUrl.includes("cat")) {
       updates.pet_type = "cat";
+    } else if (scrapedProduct.petType) {
+      updates.pet_type = normalizeProductPetType(scrapedProduct.petType);
     }
     
     onProductChange(updates);
@@ -698,6 +756,7 @@ export const ProductFormDialog = ({
     
     try {
       const selectedProducts = scrapedProducts.filter((_, i) => selectedProductIndices.has(i));
+      const businessId = await assertDefaultBusinessProfileExists(DEFAULT_BUSINESS_ID);
       let successCount = 0;
       let errorCount = 0;
       
@@ -712,6 +771,17 @@ export const ProductFormDialog = ({
             image_url: scrapedProduct.images?.[0] || "/placeholder.svg",
             images: scrapedProduct.images?.slice(1) || [],
             sku: scrapedProduct.sku,
+            source_url: scrapedProduct.source_url || null,
+            category: scrapedProduct.category || null,
+            pet_type: normalizeProductPetType(scrapedProduct.petType),
+            brand: scrapedProduct.brand || null,
+            ingredients: scrapedProduct.ingredients || null,
+            benefits: scrapedProduct.benefits || [],
+            feeding_guide: scrapedProduct.feedingGuide || [],
+            product_attributes: scrapedProduct.productAttributes || {},
+            life_stage: scrapedProduct.lifeStage || null,
+            dog_size: scrapedProduct.dogSize || null,
+            special_diet: scrapedProduct.specialDiet || [],
             in_stock: true,
             is_featured: false,
             // Map variants to flavors with prices
@@ -723,7 +793,7 @@ export const ProductFormDialog = ({
               return label;
             }) || [],
             weight_unit: scrapedProduct.variants?.[0]?.weight_unit || null,
-            business_id: "cf941cc4-e1d1-4d7c-8122-a5df81a1e53c", // Default business ID
+            business_id: businessId,
           };
 
           const { error } = await supabase.from("business_products").insert(productData);
@@ -1375,7 +1445,7 @@ export const ProductFormDialog = ({
                 <SelectContent>
                   <SelectItem value="dog">כלב</SelectItem>
                   <SelectItem value="cat">חתול</SelectItem>
-                  <SelectItem value="both">כלב וחתול</SelectItem>
+                  <SelectItem value="all">כלב וחתול</SelectItem>
                   <SelectItem value="other">אחר</SelectItem>
                 </SelectContent>
               </Select>
@@ -1722,6 +1792,8 @@ export const ProductFormDialog = ({
                 category: firstProduct.category,
                 image_url: firstProduct.image_url || product?.image_url,
                 in_stock: firstProduct.in_stock,
+                brand: firstProduct.brand || product?.brand,
+                pet_type: normalizeProductPetType(firstProduct.petType) || product?.pet_type,
               });
               
               toast({

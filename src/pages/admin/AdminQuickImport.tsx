@@ -14,14 +14,17 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  DEFAULT_BUSINESS_ID,
+  assertDefaultBusinessProfileExists,
+  normalizeProductPetType,
+} from "@/lib/productStore";
 import { motion, AnimatePresence } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-
-const DEFAULT_BUSINESS_ID = "cf941cc4-e1d1-4d7c-8122-a5df81a1e53c";
 
 type WizardStep = 1 | 2 | 3 | 4;
 type StepStatus = "idle" | "loading" | "done" | "error";
@@ -267,8 +270,9 @@ const AdminQuickImport = () => {
     updateStatus(4, "loading");
 
     try {
+      const businessId = await assertDefaultBusinessProfileExists(DEFAULT_BUSINESS_ID);
       const productData: any = {
-        business_id: DEFAULT_BUSINESS_ID,
+        business_id: businessId,
         name: editData.name || "מוצר ללא שם",
         description: editData.description || null,
         price: editData.price || 1,
@@ -280,7 +284,7 @@ const AdminQuickImport = () => {
         source_url: editData.source_url,
         category: editData.category,
         in_stock: true,
-        pet_type: editData.pet_type || "all",
+        pet_type: normalizeProductPetType(editData.pet_type) || "all",
         brand: editData.brand || null,
         ingredients: editData.ingredients || null,
         benefits: editData.benefits,

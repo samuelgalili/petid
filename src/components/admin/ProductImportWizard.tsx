@@ -13,6 +13,11 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  DEFAULT_BUSINESS_ID,
+  assertDefaultBusinessProfileExists,
+  normalizeProductPetType,
+} from "@/lib/productStore";
+import {
   Link2,
   Barcode,
   Type,
@@ -33,8 +38,6 @@ import {
   Drumstick,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
-const DEFAULT_BUSINESS_ID = "cf941cc4-e1d1-4d7c-8122-a5df81a1e53c";
 
 type InputMethod = "url" | "barcode" | "name";
 type WizardStep = 1 | 2 | 3 | 4;
@@ -339,8 +342,9 @@ export const ProductImportWizard = ({
 
     setSaving(true);
     try {
+      const businessId = await assertDefaultBusinessProfileExists(DEFAULT_BUSINESS_ID);
       const productData: any = {
-        business_id: DEFAULT_BUSINESS_ID,
+        business_id: businessId,
         name: editedName.trim(),
         description: editedDescription || null,
         price: editedPrice,
@@ -354,7 +358,7 @@ export const ProductImportWizard = ({
         source_url: scrapedData?.source_url || null,
         category: editedCategory || null,
         in_stock: true,
-        pet_type: scrapedData?.petType || "all",
+        pet_type: normalizeProductPetType(scrapedData?.petType) || "all",
         brand: scrapedData?.brand || null,
         ingredients: scrapedData?.ingredients || null,
         benefits: scrapedData?.benefits || [],

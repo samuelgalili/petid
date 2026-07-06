@@ -25,6 +25,11 @@ import { useAuditLog } from "@/hooks/useAuditLog";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductBulkActions, ProductKeyboardShortcutsHelp, InlineEditCell } from "@/components/admin/products";
 import { useProductKeyboardShortcuts } from "@/hooks/useProductKeyboardShortcuts";
+import {
+  DEFAULT_BUSINESS_ID,
+  assertDefaultBusinessProfileExists,
+  normalizeProductPetType,
+} from "@/lib/productStore";
 
 interface ProductData {
   id: string;
@@ -45,6 +50,19 @@ interface ProductData {
   flagged_at?: string | null;
   sku?: string | null;
   pet_type?: string | null;
+  flavors?: string[] | null;
+  sale_price?: number | null;
+  images?: string[] | null;
+  brand?: string | null;
+  weight_unit?: string | null;
+  price_per_weight?: number | null;
+  ingredients?: string | null;
+  benefits?: unknown[] | null;
+  feeding_guide?: unknown[] | null;
+  product_attributes?: Record<string, unknown> | null;
+  life_stage?: string | null;
+  dog_size?: string | null;
+  special_diet?: string[] | null;
   // Unified field to track source
   source?: 'manual' | 'scraped';
   source_url?: string | null;
@@ -159,9 +177,6 @@ const AdminProducts = () => {
     }
   }, [searchParams]);
 
-  // Default business ID for the store
-  const DEFAULT_BUSINESS_ID = "cf941cc4-e1d1-4d7c-8122-a5df81a1e53c";
-
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["admin-products-unified"],
     queryFn: async () => {
@@ -229,14 +244,26 @@ const AdminProducts = () => {
         description: product.description,
         price: product.price,
         original_price: product.original_price,
-        sale_price: (product as any).sale_price || null,
+        sale_price: product.sale_price || null,
         image_url: product.image_url || "/placeholder.svg",
+        images: product.images || null,
         category: product.category,
         in_stock: product.in_stock,
         is_featured: product.is_featured,
-        sku: (product as any).sku || null,
-        pet_type: (product as any).pet_type || null,
-        flavors: (product as any).flavors || null,
+        sku: product.sku || null,
+        pet_type: normalizeProductPetType(product.pet_type),
+        flavors: product.flavors || null,
+        brand: product.brand || null,
+        weight_unit: product.weight_unit || null,
+        price_per_weight: product.price_per_weight || null,
+        source_url: product.source_url || null,
+        ingredients: product.ingredients || null,
+        benefits: product.benefits || [],
+        feeding_guide: product.feeding_guide || [],
+        product_attributes: product.product_attributes || {},
+        life_stage: product.life_stage || null,
+        dog_size: product.dog_size || null,
+        special_diet: product.special_diet || [],
       };
 
       if (product.id) {
@@ -255,11 +282,12 @@ const AdminProducts = () => {
         });
       } else {
         // For new products, use the default business
+        const businessId = await assertDefaultBusinessProfileExists(product.business_id || DEFAULT_BUSINESS_ID);
         const { error } = await supabase
           .from("business_products")
           .insert({
             ...productData,
-            business_id: product.business_id || DEFAULT_BUSINESS_ID,
+            business_id: businessId,
           });
 
         if (error) throw error;

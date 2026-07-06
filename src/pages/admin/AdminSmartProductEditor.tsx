@@ -27,14 +27,17 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  DEFAULT_BUSINESS_ID,
+  assertDefaultBusinessProfileExists,
+  normalizeProductPetType,
+} from "@/lib/productStore";
 import { motion } from "framer-motion";
 import {
   Package, Upload, ImageIcon, X, Sparkles, Loader2, Save,
   Heart, ShieldCheck, Repeat, Brain, Tag, Dog, Cat,
   DollarSign, BarChart3, Star, ShoppingCart,
 } from "lucide-react";
-
-const DEFAULT_BUSINESS_ID = "cf941cc4-e1d1-4d7c-8122-a5df81a1e53c";
 
 const CATEGORIES = [
   { value: "dry-food", label: "אוכל יבש" },
@@ -239,8 +242,9 @@ const AdminSmartProductEditor = () => {
 
     setIsSaving(true);
     try {
+      const businessId = await assertDefaultBusinessProfileExists(DEFAULT_BUSINESS_ID);
       const { error } = await supabase.from("business_products").insert({
-        business_id: DEFAULT_BUSINESS_ID,
+        business_id: businessId,
         name: form.name.trim(),
         brand: form.brand || null,
         description: form.description || null,
@@ -249,7 +253,7 @@ const AdminSmartProductEditor = () => {
         sale_price: form.sale_price,
         image_url: form.image_url || "/placeholder.svg",
         in_stock: form.in_stock,
-        pet_type: form.pet_type || "dog",
+        pet_type: normalizeProductPetType(form.pet_type) || "dog",
         is_featured: form.is_featured,
         medical_tags: form.medical_tags,
         breed_tags: form.breed_tags,
@@ -360,7 +364,7 @@ const AdminSmartProductEditor = () => {
                       <SelectContent>
                         <SelectItem value="dog">🐕 כלב</SelectItem>
                         <SelectItem value="cat">🐈 חתול</SelectItem>
-                        <SelectItem value="both">🐾 שניהם</SelectItem>
+                        <SelectItem value="all">🐾 שניהם</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

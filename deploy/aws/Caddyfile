@@ -1,0 +1,13 @@
+:80 {
+  encode zstd gzip
+
+  handle /api/* {
+    reverse_proxy mipo-api:3000
+  }
+
+  handle {
+    root * /srv/www
+    try_files {path} /index.html
+    file_server
+  }
+}
