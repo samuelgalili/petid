@@ -1,6 +1,6 @@
 import http from "node:http";
 import { createHash, createHmac, randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Pool } from "pg";
 import {
@@ -18,6 +18,7 @@ const databaseUrl = process.env.DATABASE_URL;
 const adminApiKey = process.env.ADMIN_API_KEY;
 const uploadDir = process.env.UPLOAD_DIR || "/app/uploads";
 const maxUploadBytes = Number(process.env.MAX_UPLOAD_BYTES || 5 * 1024 * 1024);
+const maxDocumentUploadBytes = Number(process.env.MAX_DOCUMENT_UPLOAD_BYTES || 10 * 1024 * 1024);
 const adminCookieName = "mipo_admin_session";
 const userCookieName = "mipo_user_session";
 const configuredAdminSessionHours = Number(process.env.ADMIN_SESSION_HOURS || 8);
@@ -997,6 +998,382 @@ const deleteUserPet = async (userId, petId) => {
     [petId, userId],
   );
   return result.rowCount > 0;
+};
+
+const serializeNotification = (row) => ({
+  id: row.id,
+  user_id: row.user_id,
+  type: row.type,
+  category: row.category || null,
+  title: row.title,
+  message: row.message,
+  data: row.data || {},
+  action_url: row.action_url || null,
+  is_read: row.is_read,
+  created_at: row.created_at || null,
+  updated_at: row.updated_at || null,
+});
+
+const listUserNotifications = async (userId, { unread = false, limit = 100 } = {}) => {
+  const values = [userId];
+  const where = ["user_id = $1"];
+  if (unread) where.push("is_read = false");
+  values.push(Math.min(200, Math.max(1, Number(limit) || 100)));
+
+  const result = await pool.query(
+    `
+      select *
+      from public.notifications
+      where ${where.join(" and ")}
+      order by created_at desc
+      limit $${values.length}
+    `,
+    values,
+  );
+
+  return result.rows.map(serializeNotification);
+};
+
+const countUnreadNotifications = async (userId) => {
+  const result = await pool.query(
+    "select count(*)::integer as count from public.notifications where user_id = $1 and is_read = false",
+    [userId],
+  );
+  return result.rows[0]?.count || 0;
+};
+
+const createUserNotification = async (userId, body) => {
+  const title = String(body.title || "").trim();
+  const message = String(body.message || "").trim();
+  if (!title || !message) {
+    const error = new Error("Notification title and message are required");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const result = await pool.query(
+    `
+      insert into public.notifications (
+        user_id,
+        type,
+        category,
+        title,
+        message,
+        data,
+        action_url
+      )
+      values ($1, $2, $3, $4, $5, $6::jsonb, $7)
+      returning *
+    `,
+    [
+      userId,
+      String(body.type || "general").trim() || "general",
+      body.category ? String(body.category).trim() : null,
+      title,
+      message,
+      JSON.stringify(body.data && typeof body.data === "object" && !Array.isArray(body.data) ? body.data : {}),
+      body.action_url ? String(body.action_url).trim() : null,
+    ],
+  );
+
+  return serializeNotification(result.rows[0]);
+};
+
+const markUserNotificationRead = async (userId, notificationId, isRead = true) => {
+  if (!uuidPattern.test(notificationId)) return null;
+  const result = await pool.query(
+    `
+      update public.notifications
+      set is_read = $3, updated_at = now()
+      where id = $1 and user_id = $2
+      returning *
+    `,
+    [notificationId, userId, Boolean(isRead)],
+  );
+  return result.rows[0] ? serializeNotification(result.rows[0]) : null;
+};
+
+const markAllUserNotificationsRead = async (userId) => {
+  const result = await pool.query(
+    `
+      update public.notifications
+      set is_read = true, updated_at = now()
+      where user_id = $1 and is_read = false
+      returning id
+    `,
+    [userId],
+  );
+  return result.rowCount;
+};
+
+const serializeDocument = (row) => ({
+  id: row.id,
+  user_id: row.user_id,
+  pet_id: row.pet_id,
+  document_type: row.document_type,
+  title: row.title,
+  description: row.description || null,
+  file_url: row.file_url,
+  file_name: row.file_name,
+  file_size: row.file_size,
+  content_type: row.content_type || null,
+  uploaded_at: row.uploaded_at || null,
+  updated_at: row.updated_at || null,
+});
+
+const ensureUserPet = async (userId, petId) => {
+  if (!uuidPattern.test(String(petId || ""))) {
+    const error = new Error("A valid pet id is required");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const pet = await getUserPet(userId, petId);
+  if (!pet) {
+    const error = new Error("Pet not found");
+    error.statusCode = 404;
+    throw error;
+  }
+  return pet;
+};
+
+const listUserDocuments = async (userId, { petId = null, documentType = null, limit = 200 } = {}) => {
+  const values = [userId];
+  const where = ["user_id = $1"];
+  if (petId && uuidPattern.test(petId)) {
+    values.push(petId);
+    where.push(`pet_id = $${values.length}`);
+  }
+  if (documentType && documentType !== "all") {
+    values.push(documentType);
+    where.push(`document_type = $${values.length}`);
+  }
+  values.push(Math.min(500, Math.max(1, Number(limit) || 200)));
+
+  const result = await pool.query(
+    `
+      select *
+      from public.pet_documents
+      where ${where.join(" and ")}
+      order by uploaded_at desc
+      limit $${values.length}
+    `,
+    values,
+  );
+
+  return result.rows.map(serializeDocument);
+};
+
+const createUserDocument = async (userId, body) => {
+  await ensureUserPet(userId, body.pet_id);
+
+  const title = String(body.title || "").trim();
+  if (!title) {
+    const error = new Error("Document title is required");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const upload = body.data_url
+    ? await uploadDocumentFile(body)
+    : {
+      url: String(body.file_url || ""),
+      file_name: String(body.file_name || body.title || "document"),
+      size: Number(body.file_size || 0) || null,
+      content_type: body.content_type || null,
+    };
+
+  if (!upload.url) {
+    const error = new Error("Document file is required");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const result = await pool.query(
+    `
+      insert into public.pet_documents (
+        user_id,
+        pet_id,
+        document_type,
+        title,
+        description,
+        file_url,
+        file_name,
+        file_size,
+        content_type
+      )
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      returning *
+    `,
+    [
+      userId,
+      body.pet_id,
+      String(body.document_type || "other").trim() || "other",
+      title,
+      body.description ? String(body.description).trim() : null,
+      upload.url,
+      upload.file_name,
+      upload.size,
+      upload.content_type,
+    ],
+  );
+
+  return serializeDocument(result.rows[0]);
+};
+
+const deleteUploadedFileFromUrl = async (fileUrl) => {
+  const value = String(fileUrl || "");
+  if (!value.startsWith("/uploads/")) return;
+  const fileName = path.basename(value);
+  if (!fileName || fileName === "." || fileName === "..") return;
+  try {
+    await unlink(path.join(uploadDir, fileName));
+  } catch {
+    // Missing files should not block metadata deletion.
+  }
+};
+
+const deleteUserDocument = async (userId, documentId) => {
+  if (!uuidPattern.test(documentId)) return false;
+  const result = await pool.query(
+    "delete from public.pet_documents where id = $1 and user_id = $2 returning file_url",
+    [documentId, userId],
+  );
+  if (result.rows[0]?.file_url) {
+    await deleteUploadedFileFromUrl(result.rows[0].file_url);
+  }
+  return result.rowCount > 0;
+};
+
+const serializeVetVisit = (row) => ({
+  id: row.id,
+  user_id: row.user_id,
+  pet_id: row.pet_id,
+  visit_date: row.visit_date || null,
+  clinic_name: row.clinic_name || null,
+  vet_name: row.vet_name || null,
+  reason: row.reason || null,
+  diagnosis: row.diagnosis || null,
+  treatment: row.treatment || null,
+  notes: row.notes || null,
+  vaccines: row.vaccines || [],
+  created_at: row.created_at || null,
+  updated_at: row.updated_at || null,
+});
+
+const listUserVetVisits = async (userId, petId) => {
+  await ensureUserPet(userId, petId);
+  const result = await pool.query(
+    `
+      select *
+      from public.pet_vet_visits
+      where user_id = $1 and pet_id = $2
+      order by visit_date desc nulls last, created_at desc
+    `,
+    [userId, petId],
+  );
+  return result.rows.map(serializeVetVisit);
+};
+
+const createUserVetVisit = async (userId, petId, body) => {
+  await ensureUserPet(userId, petId);
+  const result = await pool.query(
+    `
+      insert into public.pet_vet_visits (
+        user_id,
+        pet_id,
+        visit_date,
+        clinic_name,
+        vet_name,
+        reason,
+        diagnosis,
+        treatment,
+        notes,
+        vaccines
+      )
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)
+      returning *
+    `,
+    [
+      userId,
+      petId,
+      normalizeDateOnly(body.visit_date || body.visitDate),
+      body.clinic_name ? String(body.clinic_name).trim() : null,
+      body.vet_name ? String(body.vet_name).trim() : null,
+      body.reason ? String(body.reason).trim() : null,
+      body.diagnosis ? String(body.diagnosis).trim() : null,
+      body.treatment ? String(body.treatment).trim() : null,
+      body.notes ? String(body.notes).trim() : null,
+      JSON.stringify(Array.isArray(body.vaccines) ? body.vaccines : []),
+    ],
+  );
+  return serializeVetVisit(result.rows[0]);
+};
+
+const serializeVaccination = (row) => ({
+  id: row.id,
+  user_id: row.user_id,
+  pet_id: row.pet_id,
+  vaccine_name: row.vaccine_name,
+  administered_at: row.administered_at || null,
+  expires_at: row.expires_at || null,
+  veterinarian: row.veterinarian || null,
+  batch_number: row.batch_number || null,
+  notes: row.notes || null,
+  created_at: row.created_at || null,
+  updated_at: row.updated_at || null,
+});
+
+const listUserVaccinations = async (userId, petId) => {
+  await ensureUserPet(userId, petId);
+  const result = await pool.query(
+    `
+      select *
+      from public.pet_vaccinations
+      where user_id = $1 and pet_id = $2
+      order by expires_at asc nulls last, administered_at desc nulls last, created_at desc
+    `,
+    [userId, petId],
+  );
+  return result.rows.map(serializeVaccination);
+};
+
+const createUserVaccination = async (userId, petId, body) => {
+  await ensureUserPet(userId, petId);
+  const vaccineName = String(body.vaccine_name || body.vaccineName || "").trim();
+  if (!vaccineName) {
+    const error = new Error("Vaccine name is required");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const result = await pool.query(
+    `
+      insert into public.pet_vaccinations (
+        user_id,
+        pet_id,
+        vaccine_name,
+        administered_at,
+        expires_at,
+        veterinarian,
+        batch_number,
+        notes
+      )
+      values ($1, $2, $3, $4, $5, $6, $7, $8)
+      returning *
+    `,
+    [
+      userId,
+      petId,
+      vaccineName,
+      normalizeDateOnly(body.administered_at || body.administeredAt),
+      normalizeDateOnly(body.expires_at || body.expiresAt),
+      body.veterinarian ? String(body.veterinarian).trim() : null,
+      body.batch_number ? String(body.batch_number).trim() : null,
+      body.notes ? String(body.notes).trim() : null,
+    ],
+  );
+  return serializeVaccination(result.rows[0]);
 };
 
 const toNumber = (value) => {
@@ -2609,10 +2986,19 @@ const fileExtensionForContentType = (contentType) => {
   if (contentType === "image/png") return ".png";
   if (contentType === "image/webp") return ".webp";
   if (contentType === "image/gif") return ".gif";
+  if (contentType === "application/pdf") return ".pdf";
+  if (contentType === "text/plain") return ".txt";
+  if (contentType === "application/msword") return ".doc";
+  if (contentType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") return ".docx";
   return "";
 };
 
-const uploadImage = async (body) => {
+const uploadDataUrlFile = async (body, {
+  maxBytes = maxUploadBytes,
+  requireImage = false,
+  allowedContentTypes = null,
+  defaultExtension = ".bin",
+} = {}) => {
   const dataUrl = typeof body.data_url === "string" ? body.data_url : "";
   const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
   if (!match) {
@@ -2622,21 +3008,26 @@ const uploadImage = async (body) => {
   }
 
   const contentType = match[1];
-  if (!contentType.startsWith("image/")) {
+  if (requireImage && !contentType.startsWith("image/")) {
     const error = new Error("Only image uploads are supported");
+    error.statusCode = 415;
+    throw error;
+  }
+  if (allowedContentTypes && !allowedContentTypes.has(contentType)) {
+    const error = new Error("Unsupported file type");
     error.statusCode = 415;
     throw error;
   }
 
   const buffer = Buffer.from(match[2], "base64");
-  if (buffer.length > maxUploadBytes) {
-    const error = new Error("Image is too large");
+  if (buffer.length > maxBytes) {
+    const error = new Error("File is too large");
     error.statusCode = 413;
     throw error;
   }
 
   const originalExtension = path.extname(String(body.file_name || "")).toLowerCase();
-  const extension = originalExtension || fileExtensionForContentType(contentType) || ".img";
+  const extension = originalExtension || fileExtensionForContentType(contentType) || defaultExtension;
   const fileName = `${Date.now()}-${randomUUID()}${extension}`;
 
   await mkdir(uploadDir, { recursive: true });
@@ -2649,6 +3040,30 @@ const uploadImage = async (body) => {
     size: buffer.length,
   };
 };
+
+const uploadImage = async (body) => uploadDataUrlFile(body, {
+  maxBytes: maxUploadBytes,
+  requireImage: true,
+  defaultExtension: ".img",
+});
+
+const documentContentTypes = new Set([
+  "application/pdf",
+  "application/octet-stream",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "text/plain",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+]);
+
+const uploadDocumentFile = async (body) => uploadDataUrlFile(body, {
+  maxBytes: maxDocumentUploadBytes,
+  allowedContentTypes: documentContentTypes,
+  defaultExtension: ".bin",
+});
 
 const handleRequest = async (request, response) => {
   const url = new URL(request.url || "/", "http://localhost");
@@ -2739,6 +3154,87 @@ const handleRequest = async (request, response) => {
       return;
     }
 
+    if (request.method === "GET" && url.pathname === "/api/me/notifications") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      sendJson(response, 200, {
+        notifications: await listUserNotifications(auth.user.id, {
+          unread: url.searchParams.get("unread") === "true",
+          limit: url.searchParams.get("limit") || 100,
+        }),
+        unread_count: await countUnreadNotifications(auth.user.id),
+      });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/me/notifications") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      sendJson(response, 201, { notification: await createUserNotification(auth.user.id, await readBody(request)) });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/me/notifications/unread-count") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      sendJson(response, 200, { unread_count: await countUnreadNotifications(auth.user.id) });
+      return;
+    }
+
+    if (request.method === "PATCH" && url.pathname === "/api/me/notifications/read-all") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      sendJson(response, 200, { updated: await markAllUserNotificationsRead(auth.user.id) });
+      return;
+    }
+
+    const myNotificationMatch = url.pathname.match(/^\/api\/me\/notifications\/([0-9a-fA-F-]{36})$/);
+    if (myNotificationMatch && request.method === "PATCH") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      const body = await readBody(request);
+      const notification = await markUserNotificationRead(
+        auth.user.id,
+        myNotificationMatch[1],
+        Object.prototype.hasOwnProperty.call(body, "is_read") ? body.is_read : true,
+      );
+      if (!notification) {
+        sendError(response, 404, "Notification not found");
+        return;
+      }
+      sendJson(response, 200, { notification });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/me/documents") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      sendJson(response, 200, {
+        documents: await listUserDocuments(auth.user.id, {
+          petId: url.searchParams.get("pet_id") || null,
+          documentType: url.searchParams.get("document_type") || null,
+          limit: url.searchParams.get("limit") || 200,
+        }),
+      });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/me/documents") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      sendJson(response, 201, { document: await createUserDocument(auth.user.id, await readBody(request, Math.ceil(maxDocumentUploadBytes * 1.5) + 1024 * 1024)) });
+      return;
+    }
+
+    const myDocumentMatch = url.pathname.match(/^\/api\/me\/documents\/([0-9a-fA-F-]{36})$/);
+    if (myDocumentMatch && request.method === "DELETE") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      const deleted = await deleteUserDocument(auth.user.id, myDocumentMatch[1]);
+      sendJson(response, deleted ? 200 : 404, { deleted });
+      return;
+    }
+
     if (request.method === "GET" && url.pathname === "/api/me/pets") {
       const auth = await requireUser(request, response);
       if (!auth) return;
@@ -2784,6 +3280,36 @@ const handleRequest = async (request, response) => {
       if (!auth) return;
       const deleted = await deleteUserPet(auth.user.id, myPetMatch[1]);
       sendJson(response, deleted ? 200 : 404, { deleted });
+      return;
+    }
+
+    const myVetVisitsMatch = url.pathname.match(/^\/api\/me\/pets\/([0-9a-fA-F-]{36})\/vet-visits$/);
+    if (myVetVisitsMatch && request.method === "GET") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      sendJson(response, 200, { vet_visits: await listUserVetVisits(auth.user.id, myVetVisitsMatch[1]) });
+      return;
+    }
+
+    if (myVetVisitsMatch && request.method === "POST") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      sendJson(response, 201, { vet_visit: await createUserVetVisit(auth.user.id, myVetVisitsMatch[1], await readBody(request)) });
+      return;
+    }
+
+    const myVaccinationsMatch = url.pathname.match(/^\/api\/me\/pets\/([0-9a-fA-F-]{36})\/vaccinations$/);
+    if (myVaccinationsMatch && request.method === "GET") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      sendJson(response, 200, { vaccinations: await listUserVaccinations(auth.user.id, myVaccinationsMatch[1]) });
+      return;
+    }
+
+    if (myVaccinationsMatch && request.method === "POST") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      sendJson(response, 201, { vaccination: await createUserVaccination(auth.user.id, myVaccinationsMatch[1], await readBody(request)) });
       return;
     }
 

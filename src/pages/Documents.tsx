@@ -1,5 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,10 +12,11 @@ import { SwipeableDocumentCard } from "@/components/SwipeableDocumentCard";
 import { Card } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
+import { createMyDocument, deleteMyDocument, getMyDocuments, getMyPets } from "@/lib/mipoApi";
 
 interface PetDocument {
   id: string;
-  user_id: string;
+  user_id?: string;
   pet_id: string;
   document_type: string;
   title: string;
@@ -37,9 +37,9 @@ export default function Documents() {
   const [searchParams] = useSearchParams();
   const preselectedPetId = searchParams.get('petId');
   const highlightDocId = searchParams.get('highlight');
-  const [pets, setPets] = useState<any[]>([]);
-  const [documents, setDocuments] = useState<any[]>([]);
-  const [filteredDocuments, setFilteredDocuments] = useState<any[]>([]);
+  const [pets, setPets] = useState<Pet[]>([]);
+  const [documents, setDocuments] = useState<PetDocument[]>([]);
+  const [filteredDocuments, setFilteredDocuments] = useState<PetDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -47,7 +47,7 @@ export default function Documents() {
   const [selectedDocType, setSelectedDocType] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("date-desc");
-  const [pendingDelete, setPendingDelete] = useState<{ id: string; fileUrl: string; doc: any } | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; fileUrl: string; doc: PetDocument } | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const deleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
@@ -60,6 +60,31 @@ export default function Documents() {
 
   const { toast } = useToast();
 
+  const fetchPets = useCallback(async () => {
+    try {
+      const data = await getMyPets();
+      setPets(data.map((pet) => ({ id: pet.id, name: pet.name })));
+    } catch (error) {
+      console.error("Error fetching pets:", error);
+    }
+  }, []);
+
+  const fetchDocuments = useCallback(async () => {
+    try {
+      setLoading(true);
+      setDocuments(await getMyDocuments());
+    } catch (error) {
+      console.error("Error fetching documents:", error);
+      toast({
+        title: "שגיאה",
+        description: "לא ניתן לטעון את המסמכים",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
   // Document stats
   const documentStats = useMemo(() => {
     const vaccination = documents.filter(d => d.document_type === 'vaccination').length;
@@ -71,7 +96,7 @@ export default function Documents() {
   useEffect(() => {
     fetchPets();
     fetchDocuments();
-  }, []);
+  }, [fetchPets, fetchDocuments]);
 
   // Auto-scroll to highlighted document from deep-link
   useEffect(() => {
@@ -124,50 +149,6 @@ export default function Documents() {
     setFilteredDocuments(filtered);
   }, [selectedPetId, selectedDocType, documents, searchQuery, sortBy]);
 
-  const fetchPets = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from("pets")
-        .select("id, name")
-        .eq("user_id", user.id)
-        .eq("archived", false);
-
-      if (error) throw error;
-      setPets(data || []);
-    } catch (error) {
-      console.error("Error fetching pets:", error);
-    }
-  };
-
-  const fetchDocuments = async () => {
-    try {
-      setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from("pet_documents")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("uploaded_at", { ascending: false });
-
-      if (error) throw error;
-      setDocuments(data || []);
-    } catch (error) {
-      console.error("Error fetching documents:", error);
-      toast({
-        title: "שגיאה",
-        description: "לא ניתן לטעון את המסמכים",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -196,32 +177,13 @@ export default function Documents() {
 
     try {
       setUploading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
-
-      // Convert file to base64 data URL
-      const fileUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(selectedFile);
+      await createMyDocument({
+        pet_id: uploadPetId,
+        document_type: uploadDocType,
+        title: uploadTitle,
+        description: uploadDescription || null,
+        file: selectedFile,
       });
-
-      // Save document metadata to database
-      const { error: dbError } = await supabase
-        .from("pet_documents")
-        .insert({
-          user_id: user.id,
-          pet_id: uploadPetId,
-          document_type: uploadDocType,
-          title: uploadTitle,
-          description: uploadDescription || null,
-          file_url: fileUrl,
-          file_name: selectedFile.name,
-          file_size: selectedFile.size,
-        });
-
-      if (dbError) throw dbError;
 
       toast({
         title: "הצלחה!",
@@ -306,26 +268,9 @@ export default function Documents() {
     });
   };
 
-  const performActualDelete = async (docId: string, fileUrl: string) => {
+  const performActualDelete = async (docId: string, _fileUrl: string) => {
     try {
-      // Extract file path from URL
-      const urlParts = fileUrl.split("/pet-documents/");
-      if (urlParts.length > 1) {
-        const filePath = urlParts[1];
-        
-        // Delete from storage
-        await supabase.storage
-          .from("pet-documents")
-          .remove([filePath]);
-      }
-
-      // Delete from database
-      const { error } = await supabase
-        .from("pet_documents")
-        .delete()
-        .eq("id", docId);
-
-      if (error) throw error;
+      await deleteMyDocument(docId);
       
       setPendingDelete(null);
     } catch (error) {
@@ -344,17 +289,7 @@ export default function Documents() {
   };
 
   const resolveDocumentUrl = async (fileUrl: string) => {
-    if (fileUrl.startsWith("data:")) return fileUrl;
-    const urlParts = fileUrl.split("/pet-documents/");
-    if (urlParts.length <= 1) return fileUrl;
-
-    const filePath = decodeURIComponent(urlParts[1].split("?")[0]);
-    const { data, error } = await supabase.storage
-      .from("pet-documents")
-      .createSignedUrl(filePath, 60);
-
-    if (error || !data?.signedUrl) throw error || new Error("Could not create signed URL");
-    return data.signedUrl;
+    return fileUrl;
   };
 
   const handleDownload = async (fileUrl: string, fileName: string) => {

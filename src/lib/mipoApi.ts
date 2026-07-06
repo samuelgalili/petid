@@ -213,6 +213,63 @@ export interface MipoAuthResult {
   profile: MipoProfile | null;
 }
 
+export interface MipoNotification {
+  id: string;
+  user_id?: string;
+  type: string;
+  category?: string | null;
+  title: string;
+  message: string;
+  data?: Record<string, unknown>;
+  action_url?: string | null;
+  is_read: boolean;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+export interface MipoDocument {
+  id: string;
+  user_id?: string;
+  pet_id: string;
+  document_type: string;
+  title: string;
+  description: string | null;
+  file_url: string;
+  file_name: string;
+  file_size: number | null;
+  content_type?: string | null;
+  uploaded_at: string;
+  updated_at?: string | null;
+}
+
+export interface MipoVetVisit {
+  id: string;
+  pet_id: string;
+  visit_date?: string | null;
+  clinic_name?: string | null;
+  vet_name?: string | null;
+  reason?: string | null;
+  diagnosis?: string | null;
+  treatment?: string | null;
+  notes?: string | null;
+  vaccines?: unknown[];
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface MipoVaccination {
+  id: string;
+  pet_id: string;
+  vaccine_name: string;
+  administered_at?: string | null;
+  expires_at?: string | null;
+  veterinarian?: string | null;
+  batch_number?: string | null;
+  notes?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/+$/, "");
 
 async function fileToDataUrl(file: File): Promise<string> {
@@ -396,6 +453,128 @@ export async function uploadMyImage(file: File) {
   });
 
   return result.upload;
+}
+
+export async function getMyNotifications(input: { unread?: boolean; limit?: number } = {}) {
+  const params = new URLSearchParams();
+  if (input.unread) params.set("unread", "true");
+  if (input.limit) params.set("limit", String(input.limit));
+  const query = params.toString();
+  return apiFetch<{ notifications: MipoNotification[]; unread_count: number }>(
+    `/me/notifications${query ? `?${query}` : ""}`,
+  );
+}
+
+export async function createMyNotification(input: {
+  type?: string;
+  category?: string | null;
+  title: string;
+  message: string;
+  data?: Record<string, unknown>;
+  action_url?: string | null;
+}): Promise<MipoNotification> {
+  const result = await apiFetch<{ notification: MipoNotification }>("/me/notifications", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  window.dispatchEvent(new Event("mipo:notifications-changed"));
+  return result.notification;
+}
+
+export async function getMyUnreadNotificationCount(): Promise<number> {
+  const result = await apiFetch<{ unread_count: number }>("/me/notifications/unread-count");
+  return result.unread_count;
+}
+
+export async function markMyNotificationRead(notificationId: string, isRead = true): Promise<MipoNotification> {
+  const result = await apiFetch<{ notification: MipoNotification }>(`/me/notifications/${notificationId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ is_read: isRead }),
+  });
+  window.dispatchEvent(new Event("mipo:notifications-changed"));
+  return result.notification;
+}
+
+export async function markAllMyNotificationsRead() {
+  const result = await apiFetch<{ updated: number }>("/me/notifications/read-all", {
+    method: "PATCH",
+    body: JSON.stringify({}),
+  });
+  window.dispatchEvent(new Event("mipo:notifications-changed"));
+  return result;
+}
+
+export async function getMyDocuments(input: {
+  pet_id?: string | null;
+  document_type?: string | null;
+  limit?: number;
+} = {}): Promise<MipoDocument[]> {
+  const params = new URLSearchParams();
+  if (input.pet_id) params.set("pet_id", input.pet_id);
+  if (input.document_type && input.document_type !== "all") params.set("document_type", input.document_type);
+  if (input.limit) params.set("limit", String(input.limit));
+  const query = params.toString();
+  const result = await apiFetch<{ documents: MipoDocument[] }>(`/me/documents${query ? `?${query}` : ""}`);
+  return result.documents;
+}
+
+export async function createMyDocument(input: {
+  pet_id: string;
+  document_type: string;
+  title: string;
+  description?: string | null;
+  file: File;
+}): Promise<MipoDocument> {
+  const dataUrl = await fileToDataUrl(input.file);
+  const result = await apiFetch<{ document: MipoDocument }>("/me/documents", {
+    method: "POST",
+    body: JSON.stringify({
+      pet_id: input.pet_id,
+      document_type: input.document_type,
+      title: input.title,
+      description: input.description || null,
+      file_name: input.file.name,
+      file_size: input.file.size,
+      content_type: input.file.type || null,
+      data_url: dataUrl,
+    }),
+  });
+  window.dispatchEvent(new Event("mipo:documents-changed"));
+  return result.document;
+}
+
+export async function deleteMyDocument(documentId: string) {
+  const result = await apiFetch<{ deleted: boolean }>(`/me/documents/${documentId}`, {
+    method: "DELETE",
+  });
+  window.dispatchEvent(new Event("mipo:documents-changed"));
+  return result;
+}
+
+export async function getMyVetVisits(petId: string): Promise<MipoVetVisit[]> {
+  const result = await apiFetch<{ vet_visits: MipoVetVisit[] }>(`/me/pets/${petId}/vet-visits`);
+  return result.vet_visits;
+}
+
+export async function createMyVetVisit(petId: string, input: Partial<MipoVetVisit>): Promise<MipoVetVisit> {
+  const result = await apiFetch<{ vet_visit: MipoVetVisit }>(`/me/pets/${petId}/vet-visits`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  return result.vet_visit;
+}
+
+export async function getMyVaccinations(petId: string): Promise<MipoVaccination[]> {
+  const result = await apiFetch<{ vaccinations: MipoVaccination[] }>(`/me/pets/${petId}/vaccinations`);
+  return result.vaccinations;
+}
+
+export async function createMyVaccination(petId: string, input: Partial<MipoVaccination>): Promise<MipoVaccination> {
+  const result = await apiFetch<{ vaccination: MipoVaccination }>(`/me/pets/${petId}/vaccinations`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  return result.vaccination;
 }
 
 export async function loginAdmin(email: string, password: string): Promise<MipoAdmin> {

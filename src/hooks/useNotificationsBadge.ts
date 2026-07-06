@@ -1,55 +1,38 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "./useAuth";
+import { getMyUnreadNotificationCount } from "@/lib/mipoApi";
 
 export const useNotificationsBadge = () => {
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchUnreadCount = useCallback(async () => {
     if (!user) {
       setUnreadCount(0);
       setLoading(false);
       return;
     }
 
-    const fetchUnreadCount = async () => {
-      const { count, error } = await supabase
-        .from("notifications")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .eq("is_read", false);
-
-      if (!error && count !== null) {
-        setUnreadCount(count);
-      }
+    try {
+      setUnreadCount(await getMyUnreadNotificationCount());
+    } finally {
       setLoading(false);
-    };
+    }
+  }, [user]);
 
+  useEffect(() => {
     fetchUnreadCount();
 
-    // Subscribe to realtime changes
-    const channel = supabase
-      .channel('notifications-badge')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`
-        },
-        () => {
-          fetchUnreadCount();
-        }
-      )
-      .subscribe();
+    const handleChange = () => fetchUnreadCount();
+    window.addEventListener("mipo:notifications-changed", handleChange);
+    const interval = window.setInterval(fetchUnreadCount, 30000);
 
     return () => {
-      supabase.removeChannel(channel);
+      window.removeEventListener("mipo:notifications-changed", handleChange);
+      window.clearInterval(interval);
     };
-  }, [user]);
+  }, [fetchUnreadCount]);
 
   return { unreadCount, loading };
 };

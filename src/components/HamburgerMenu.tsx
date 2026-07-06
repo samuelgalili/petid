@@ -37,7 +37,6 @@ import {
   Download,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -46,6 +45,9 @@ import { cn } from "@/lib/utils";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { useAuth } from "@/hooks/useAuth";
+import { useNotificationsBadge } from "@/hooks/useNotificationsBadge";
+import { getCurrentUser, type MipoProfile } from "@/lib/mipoApi";
 
 interface HamburgerMenuProps {
   isOpen: boolean;
@@ -242,12 +244,12 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
   const { activePet, pets, switchPet: contextSwitchPet } = usePetPreference();
   const { isAdmin, isBusiness } = useUserRole();
   const { isInstallable, isInstalled, installPWA } = usePWAInstall();
+  const { user, signOut } = useAuth();
+  const { unreadCount: unreadNotifications } = useNotificationsBadge();
   const isRtl = direction === "rtl";
   const s = menuStrings[language] || menuStrings.he;
 
-  const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
-  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [profile, setProfile] = useState<MipoProfile | null>(null);
   const [showPetPicker, setShowPetPicker] = useState(false);
   const [installDismissed, setInstallDismissed] = useState(() =>
     localStorage.getItem("pwa_menu_install_dismissed") === "true"
@@ -256,22 +258,13 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
   useEffect(() => {
     if (!isOpen) return;
     (async () => {
-      const { data: { user: u } } = await supabase.auth.getUser();
-      setUser(u);
-      if (!u) return;
-
-      const [profileRes, notifRes] = await Promise.all([
-        supabase.from("profiles").select("*").eq("id", u.id).single(),
-        supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", u.id).eq("is_read", false),
-      ]);
-
-      setProfile(profileRes.data);
-      setUnreadNotifications(notifRes.count || 0);
+      const auth = await getCurrentUser();
+      setProfile(auth?.profile || null);
     })();
-  }, [isOpen]);
+  }, [isOpen, user]);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     toast({ title: s.logoutSuccess, description: s.logoutDesc });
     navigate("/auth");
     onClose();

@@ -3,8 +3,7 @@
  * Luxury inbox with glassmorphism cards, pet grouping, actionable items,
  * and a sleeping pet empty state.
  */
-import { useEffect, useState, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -22,6 +21,22 @@ import BottomNav from "@/components/BottomNav";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SEO } from "@/components/SEO";
 import { haptic } from "@/lib/haptics";
+import { getMyNotifications } from "@/lib/mipoApi";
+
+interface NotificationData {
+  user_id?: string;
+  user_name?: string;
+  user_avatar?: string;
+  post_id?: string;
+  post_image?: string;
+  pet_id?: string;
+  pet_name?: string;
+  pet_avatar?: string;
+  pet_type?: string;
+  product_id?: string;
+  trigger?: string;
+  [key: string]: unknown;
+}
 
 interface NotificationItem {
   id: string;
@@ -31,20 +46,7 @@ interface NotificationItem {
   is_read: boolean;
   created_at: string;
   category?: string;
-  data?: {
-    user_id?: string;
-    user_name?: string;
-    user_avatar?: string;
-    post_id?: string;
-    post_image?: string;
-    pet_id?: string;
-    pet_name?: string;
-    pet_avatar?: string;
-    pet_type?: string;
-    product_id?: string;
-    trigger?: string;
-    [key: string]: any;
-  };
+  data?: NotificationData;
 }
 
 type FilterTab = "all" | "social" | "care" | "shop";
@@ -90,33 +92,32 @@ const Notifications = () => {
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<FilterTab>("all");
 
+  const fetchNotifications = useCallback(async () => {
+    setLoading(true);
+    if (!user) return;
+
+    try {
+      const result = await getMyNotifications({ limit: 100 });
+      const nextNotifications = result.notifications as NotificationItem[];
+      setNotifications(nextNotifications);
+      if (nextNotifications.length > 0) {
+        await markAllNotificationsAsRead();
+        setNotifications(nextNotifications.map((item) => ({ ...item, is_read: true })));
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [markAllNotificationsAsRead, user]);
+
   useEffect(() => {
     if (authLoading) return;
     if (!user) { navigate("/auth"); return; }
     fetchNotifications();
-  }, [user, authLoading]);
+  }, [authLoading, fetchNotifications, navigate, user]);
 
-  const fetchNotifications = async () => {
-    setLoading(true);
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from("notifications")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-
-    if (!error) {
-      setNotifications((data || []) as unknown as NotificationItem[]);
-      if (data && data.length > 0) markAllNotificationsAsRead();
-    }
-    setLoading(false);
-  };
-
-  const handleFollowBack = async (userId: string) => {
+  const handleFollowBack = async (_userId: string) => {
     if (!user) return;
     haptic("success");
-    await supabase.from("user_follows").insert({ follower_id: user.id, following_id: userId });
   };
 
   const filtered = useMemo(
@@ -149,6 +150,9 @@ const Notifications = () => {
   const handleTap = (n: NotificationItem) => {
     haptic("light");
     markNotificationAsRead(n.id);
+    setNotifications((current) => current.map((item) => (
+      item.id === n.id ? { ...item, is_read: true } : item
+    )));
 
     const t = n.category || n.type || "";
 
@@ -227,7 +231,11 @@ const Notifications = () => {
             {notifications.length > 0 && (
               <motion.button
                 whileTap={{ scale: 0.9 }}
-                onClick={() => { haptic("light"); markAllNotificationsAsRead(); }}
+                onClick={() => {
+                  haptic("light");
+                  markAllNotificationsAsRead();
+                  setNotifications((current) => current.map((item) => ({ ...item, is_read: true })));
+                }}
                 className="flex items-center gap-1.5 text-xs font-medium text-primary px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
