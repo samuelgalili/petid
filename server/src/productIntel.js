@@ -499,6 +499,110 @@ const callGeminiJson = async (prompt, { temperature = 0.1 } = {}) => {
   return match ? JSON.parse(match[0]) : null;
 };
 
+const callGeminiPartsJson = async (parts, { temperature = 0.1 } = {}) => {
+  if (!geminiApiKey) return null;
+  const response = await fetchWithTimeout(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts }],
+        generationConfig: { temperature, responseMimeType: "application/json" },
+      }),
+    },
+    60000,
+  );
+  if (!response.ok) throw new Error(`Gemini request failed (${response.status})`);
+  const data = await response.json();
+  const text = data.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("") || "";
+  const match = text.match(/\{[\s\S]*\}/);
+  return match ? JSON.parse(match[0]) : null;
+};
+
+const parseDataUrl = (value) => {
+  const input = String(value || "");
+  const match = input.match(/^data:([^;]+);base64,([\s\S]+)$/);
+  if (match) {
+    return {
+      mimeType: match[1],
+      data: match[2].replace(/\s/g, ""),
+    };
+  }
+  return {
+    mimeType: "application/octet-stream",
+    data: input.replace(/\s/g, ""),
+  };
+};
+
+const normalizeScannedProduct = (product, index) => {
+  const name = normalizeWhitespace(product?.name || product?.title || product?.product_name || "");
+  const price = parsePrice(product?.price) || parsePrice(product?.sale_price) || parsePrice(product?.regular_price) || 0;
+  const category = inferCategory(`${name} ${product?.category || ""}`) || product?.category || "other";
+  const petType = inferPetType(`${name} ${product?.pet_type || product?.petType || ""}`) || product?.pet_type || product?.petType || null;
+  return {
+    id: `scan-${Date.now()}-${index}`,
+    name,
+    description: normalizeWhitespace(product?.description || "") || "",
+    price,
+    sku: normalizeWhitespace(product?.sku || product?.barcode || "") || "",
+    category,
+    image_url: "",
+    in_stock: true,
+    petType,
+    brand: normalizeWhitespace(product?.brand || "") || undefined,
+    ingredients: normalizeWhitespace(product?.ingredients || "") || null,
+    benefits: Array.isArray(product?.benefits) ? product.benefits : [],
+    feeding_guide: Array.isArray(product?.feeding_guide) ? product.feeding_guide : [],
+    product_attributes: product?.product_attributes && typeof product.product_attributes === "object" ? product.product_attributes : {},
+    life_stage: product?.life_stage || product?.lifeStage || null,
+    dog_size: product?.dog_size || product?.dogSize || null,
+    special_diet: Array.isArray(product?.special_diet) ? product.special_diet : [],
+  };
+};
+
+export const scanProductList = async (body) => {
+  const fileData = body.image || body.document || body.file || body.data_url;
+  if (!fileData || typeof fileData !== "string") {
+    throw Object.assign(new Error("A base64 image or document is required"), { statusCode: 400 });
+  }
+
+  if (!geminiApiKey) {
+    return {
+      success: false,
+      products: [],
+      error: "GEMINI_API_KEY is required for image/PDF product list extraction",
+    };
+  }
+
+  const file = parseDataUrl(fileData);
+  const prompt = `Extract pet-shop products from this ${body.type || "catalog"}.
+Return JSON only with this shape:
+{"products":[{"name":string,"description":string,"price":number|string,"sku":string|null,"barcode":string|null,"category":string|null,"pet_type":"dog|cat|all|other"|null,"brand":string|null,"ingredients":string|null,"benefits":[],"feeding_guide":[],"product_attributes":{},"life_stage":string|null,"dog_size":string|null,"special_diet":[]}]}
+
+Rules:
+- Include only actual products, not headings or totals.
+- Prices are Israeli shekels unless another currency is visible.
+- If price is missing, use 0.
+- Keep Hebrew names exactly as shown.
+- Use category hints like dry-food, wet-food, treats, toys, accessories, grooming, health, beds, collars, bowls, other.`;
+
+  const extracted = await callGeminiPartsJson([
+    { text: prompt },
+    { inlineData: { mimeType: file.mimeType, data: file.data } },
+  ]);
+
+  const products = Array.isArray(extracted?.products)
+    ? extracted.products.map(normalizeScannedProduct).filter((product) => product.name)
+    : [];
+
+  return {
+    success: true,
+    products,
+    data: { products },
+  };
+};
+
 export const importProductsFromUrl = async (body) => {
   const { url, maxProducts = 30, maxPages = 5, sameDomainOnly = true } = body;
   if (!url || typeof url !== "string" || !url.startsWith("http")) {

@@ -9,6 +9,7 @@ import {
   importProductsFromUrl,
   productDuplicateCheck,
   scrapeProduct,
+  scanProductList,
   searchProductImage,
   smartScrapeProduct,
 } from "./productIntel.js";
@@ -16,6 +17,7 @@ import {
 const port = Number(process.env.PORT || 3000);
 const databaseUrl = process.env.DATABASE_URL;
 const adminApiKey = process.env.ADMIN_API_KEY;
+const defaultBusinessId = process.env.DEFAULT_BUSINESS_ID || "cf941cc4-e1d1-4d7c-8122-a5df81a1e53c";
 const uploadDir = process.env.UPLOAD_DIR || "/app/uploads";
 const maxUploadBytes = Number(process.env.MAX_UPLOAD_BYTES || 5 * 1024 * 1024);
 const maxDocumentUploadBytes = Number(process.env.MAX_DOCUMENT_UPLOAD_BYTES || 10 * 1024 * 1024);
@@ -2035,13 +2037,41 @@ const listProducts = async () => {
   ];
 };
 
+const ensureDefaultBusinessProfile = async () => {
+  await pool.query(
+    `
+      insert into public.business_profiles (
+        id,
+        business_name,
+        business_type,
+        description,
+        email,
+        website,
+        city,
+        is_verified,
+        is_featured
+      )
+      values (
+        $1,
+        'Mipo Shop',
+        'shop',
+        'Default Mipo shop business profile for product catalog management.',
+        'shop@mipo.pet',
+        'https://mipo.pet',
+        'Israel',
+        true,
+        true
+      )
+      on conflict (id) do nothing
+    `,
+    [defaultBusinessId],
+  );
+  return defaultBusinessId;
+};
+
 const createProduct = async (body) => {
   const payload = normalizeProductPayload(body);
-  const businessId = body.business_id || process.env.DEFAULT_BUSINESS_ID;
-
-  if (!businessId) {
-    throw new Error("DEFAULT_BUSINESS_ID is required");
-  }
+  const businessId = body.business_id || await ensureDefaultBusinessProfile();
 
   const result = await pool.query(
     `
@@ -3319,6 +3349,9 @@ const runProductIntelFunction = async (functionName, body) => {
   }
   if (functionName === "scrape-product") {
     return scrapeProduct(body);
+  }
+  if (functionName === "scan-product-list") {
+    return scanProductList(body);
   }
   if (functionName === "smart-scrape-product") {
     return smartScrapeProduct(body);

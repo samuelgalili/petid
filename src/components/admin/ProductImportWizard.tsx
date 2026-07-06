@@ -11,9 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { normalizeProductPetType } from "@/lib/productStore";
-import { createAdminProduct } from "@/lib/mipoApi";
+import { createAdminProduct, invokeProductIntelFunction, type MipoProduct } from "@/lib/mipoApi";
 import {
   Link2,
   Barcode,
@@ -49,7 +48,7 @@ interface ScrapedData {
   category: string | null;
   petType: string | null;
   source_url: string;
-  feedingGuide?: any[];
+  feedingGuide?: unknown[];
   ingredients?: string | null;
   benefits?: { title: string; description: string }[];
   lifeStage?: string | null;
@@ -57,7 +56,24 @@ interface ScrapedData {
   specialDiet?: string[];
   productAttributes?: Record<string, string>;
   brand?: string | null;
-  variants?: any[];
+  variants?: ScrapedVariant[];
+}
+
+interface ScrapedVariant {
+  label?: string | null;
+  weight?: number | null;
+  weight_unit?: string | null;
+  price?: number | null;
+  sale_price?: number | null;
+  sku?: string | null;
+}
+
+interface ProductIntelImportResponse {
+  success?: boolean;
+  error?: string;
+  data?: {
+    products?: ScrapedData[];
+  };
 }
 
 interface VariantRow {
@@ -109,7 +125,7 @@ function detectVariantTypes(category: string | null, scrapedData: ScrapedData): 
   return ["weight"];
 }
 
-function scrapedVariantsToRows(variants: any[]): VariantRow[] {
+function scrapedVariantsToRows(variants: ScrapedVariant[]): VariantRow[] {
   return variants.map((v) => ({
     id: generateId(),
     variant_type: v.weight ? "weight" : "size",
@@ -178,7 +194,7 @@ export const ProductImportWizard = ({
     setLoading(true);
 
     try {
-      let url = inputValue.trim();
+      const url = inputValue.trim();
 
       if (inputMethod === "url") {
         if (!url.startsWith("http")) {
@@ -210,7 +226,7 @@ export const ProductImportWizard = ({
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke(
+      const { data, error } = await invokeProductIntelFunction<ProductIntelImportResponse>(
         "import-products-from-url",
         { body: { url, maxProducts: 1, maxPages: 1, sameDomainOnly: true } }
       );
@@ -241,9 +257,13 @@ export const ProductImportWizard = ({
       }
 
       setStep(2);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Fetch failed:", err);
-      toast({ title: "שגיאה בשליפת הנתונים", description: err.message, variant: "destructive" });
+      toast({
+        title: "שגיאה בשליפת הנתונים",
+        description: err instanceof Error ? err.message : "נסה שוב או השתמש בהזנה ידנית",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -306,7 +326,7 @@ export const ProductImportWizard = ({
     setVariants(prev => prev.filter(v => v.id !== id));
   };
 
-  const updateVariant = (id: string, field: keyof VariantRow, value: any) => {
+  const updateVariant = (id: string, field: keyof VariantRow, value: string | number | boolean | null) => {
     setVariants(prev => prev.map(v => v.id === id ? { ...v, [field]: value } : v));
   };
 
@@ -349,7 +369,7 @@ export const ProductImportWizard = ({
           return label;
         });
 
-      const productData: any = {
+      const productData: Partial<MipoProduct> = {
         name: editedName.trim(),
         description: editedDescription || null,
         price: editedPrice,
@@ -380,9 +400,13 @@ export const ProductImportWizard = ({
       setSavedProductId(inserted.id);
       toast({ title: "המוצר נשמר בהצלחה!", description: inserted.name });
       onSuccess();
-    } catch (err: any) {
+    } catch (err) {
       console.error("Save failed:", err);
-      toast({ title: "שגיאה בשמירה", description: err.message, variant: "destructive" });
+      toast({
+        title: "שגיאה בשמירה",
+        description: err instanceof Error ? err.message : "שמירת המוצר נכשלה",
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }

@@ -31,7 +31,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { normalizeProductPetType } from "@/lib/productStore";
 import { createAdminProduct, invokeProductIntelFunction } from "@/lib/mipoApi";
 import * as XLSX from "@e965/xlsx";
@@ -67,6 +66,108 @@ interface ParsedProduct {
   dog_size?: string | null;
   special_diet?: string[];
 }
+
+type ProductRow = Record<string, unknown>;
+
+interface ProductIntelProduct {
+  title?: string;
+  product_name?: string;
+  name?: string;
+  description?: string;
+  short_description?: string;
+  price?: number | string;
+  basePrice?: number;
+  salePrice?: number | null;
+  final_price?: number;
+  regular_price?: number;
+  sku?: string | null;
+  barcode?: string | null;
+  category?: string | null;
+  main_category?: string | null;
+  image_url?: string | null;
+  imageUrl?: string | null;
+  main_image_url?: string | null;
+  allImageUrls?: string[];
+  images?: string[];
+  stock_status?: string | null;
+  source_url?: string | null;
+  brand?: string | null;
+  petType?: string | null;
+  ingredients?: string | null;
+  benefits?: unknown[];
+  feedingGuide?: unknown[];
+  feeding_guide?: unknown[];
+  productAttributes?: Record<string, unknown>;
+  product_attributes?: Record<string, unknown>;
+  lifeStage?: string | null;
+  life_stage?: string | null;
+  dogSize?: string | null;
+  dog_size?: string | null;
+  specialDiet?: string[];
+  special_diet?: string[];
+}
+
+interface ProductIntelListResponse {
+  success?: boolean;
+  error?: string;
+  products?: ProductIntelProduct[];
+  data?: {
+    products?: ProductIntelProduct[];
+  };
+  product?: ProductIntelProduct;
+}
+
+interface ProductIntelScrapeResponse {
+  success?: boolean;
+  error?: string;
+  data?: ProductIntelProduct & {
+    product?: ProductIntelProduct;
+    source?: {
+      finalUrl?: string;
+    };
+  };
+}
+
+interface ProductIntelEnrichResponse {
+  success?: boolean;
+  error?: string;
+  data?: ProductIntelProduct;
+}
+
+const errorMessage = (error: unknown, fallback: string) => (
+  error instanceof Error ? error.message : fallback
+);
+
+const cellText = (row: ProductRow, keys: string[]) => {
+  for (const key of keys) {
+    const value = row[key];
+    if (value !== undefined && value !== null) return String(value);
+  }
+  return "";
+};
+
+const numberValue = (value: unknown): number => {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  const parsed = parseFloat(String(value || "").replace(/[₪,\s]/g, ""));
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const productPrice = (product: ProductIntelProduct): number => (
+  product.basePrice
+  || product.salePrice
+  || product.final_price
+  || product.regular_price
+  || numberValue(product.price)
+  || 0
+);
+
+const scanProductsFromResponse = (data: ProductIntelListResponse): ProductIntelProduct[] => (
+  data.products || data.data?.products || []
+);
+
+const importProductsFromResponse = (data: ProductIntelListResponse): ProductIntelProduct[] => (
+  data.data?.products || data.products || (data.product ? [data.product] : [])
+);
 
 interface BulkProductImportProps {
   open: boolean;
@@ -159,17 +260,17 @@ export const BulkProductImport = ({
     const workbook = XLSX.read(data);
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
-    const jsonData = XLSX.utils.sheet_to_json(sheet);
+    const jsonData = XLSX.utils.sheet_to_json<ProductRow>(sheet);
 
-    return jsonData.map((row: any, index) => {
+    return jsonData.map((row, index) => {
       const product: ParsedProduct = {
         id: `import-${Date.now()}-${index}`,
-        name: row['name'] || row['שם'] || row['Name'] || '',
-        description: row['description'] || row['תיאור'] || row['Description'] || '',
-        price: parseFloat(row['price'] || row['מחיר'] || row['Price'] || '0') || 0,
-        sku: String(row['sku'] || row['מק״ט'] || row['SKU'] || row['barcode'] || row['ברקוד'] || ''),
-        category: row['category'] || row['קטגוריה'] || row['Category'] || 'other',
-        image_url: row['image'] || row['image_url'] || row['תמונה'] || row['Image'] || '',
+        name: cellText(row, ['name', 'שם', 'Name']),
+        description: cellText(row, ['description', 'תיאור', 'Description']),
+        price: numberValue(cellText(row, ['price', 'מחיר', 'Price'])),
+        sku: cellText(row, ['sku', 'מק״ט', 'SKU', 'barcode', 'ברקוד']),
+        category: cellText(row, ['category', 'קטגוריה', 'Category']) || 'other',
+        image_url: cellText(row, ['image', 'image_url', 'תמונה', 'Image']),
         in_stock: true,
         isValid: true,
         errors: [],
@@ -196,8 +297,8 @@ export const BulkProductImport = ({
     });
 
     try {
-      const { data, error } = await supabase.functions.invoke('scan-invoice', {
-        body: { 
+      const { data, error } = await invokeProductIntelFunction<ProductIntelListResponse>('scan-product-list', {
+        body: {
           image: base64,
           type: 'product_list'
         },
@@ -205,18 +306,19 @@ export const BulkProductImport = ({
 
       if (error) throw error;
 
-      if (data?.products && Array.isArray(data.products)) {
-        return data.products.map((p: any, index: number) => ({
+      const products = scanProductsFromResponse(data);
+      if (products.length > 0) {
+        return products.map((p, index) => ({
           id: `import-${Date.now()}-${index}`,
           name: p.name || '',
           description: p.description || '',
-          price: parseFloat(p.price) || 0,
+          price: productPrice(p),
           sku: p.sku || p.barcode || '',
           category: p.category || 'other',
           image_url: '',
           in_stock: true,
-          isValid: Boolean(p.name && parseFloat(p.price) > 0),
-          errors: !p.name ? ['שם המוצר חסר'] : parseFloat(p.price) <= 0 ? ['מחיר לא תקין'] : [],
+          isValid: Boolean(p.name && productPrice(p) > 0),
+          errors: !p.name ? ['שם המוצר חסר'] : productPrice(p) <= 0 ? ['מחיר לא תקין'] : [],
         }));
       }
 
@@ -235,8 +337,8 @@ export const BulkProductImport = ({
     });
 
     try {
-      const { data, error } = await supabase.functions.invoke('scan-invoice', {
-        body: { 
+      const { data, error } = await invokeProductIntelFunction<ProductIntelListResponse>('scan-product-list', {
+        body: {
           document: base64,
           type: 'product_catalog'
         },
@@ -244,18 +346,19 @@ export const BulkProductImport = ({
 
       if (error) throw error;
 
-      if (data?.products && Array.isArray(data.products)) {
-        return data.products.map((p: any, index: number) => ({
+      const products = scanProductsFromResponse(data);
+      if (products.length > 0) {
+        return products.map((p, index) => ({
           id: `import-${Date.now()}-${index}`,
           name: p.name || '',
           description: p.description || '',
-          price: parseFloat(p.price) || 0,
+          price: productPrice(p),
           sku: p.sku || p.barcode || '',
           category: p.category || 'other',
           image_url: '',
           in_stock: true,
-          isValid: Boolean(p.name && parseFloat(p.price) > 0),
-          errors: !p.name ? ['שם המוצר חסר'] : parseFloat(p.price) <= 0 ? ['מחיר לא תקין'] : [],
+          isValid: Boolean(p.name && productPrice(p) > 0),
+          errors: !p.name ? ['שם המוצר חסר'] : productPrice(p) <= 0 ? ['מחיר לא תקין'] : [],
         }));
       }
 
@@ -269,7 +372,7 @@ export const BulkProductImport = ({
   const parseURLWithAI = async (url: string): Promise<ParsedProduct[]> => {
     try {
       // Use preview mode to scrape a single product page
-      const { data, error } = await invokeProductIntelFunction<any>('scrape-products', {
+      const { data, error } = await invokeProductIntelFunction<ProductIntelListResponse>('scrape-products', {
         body: { 
           url,
           maxProducts: 1,
@@ -280,15 +383,15 @@ export const BulkProductImport = ({
 
       if (error) throw error;
 
-      const importedProducts = data?.data?.products || data?.products || (data?.product ? [data.product] : []);
+      const importedProducts = importProductsFromResponse(data);
 
       if (Array.isArray(importedProducts) && importedProducts.length > 0) {
-        return importedProducts.map((p: any, index: number) => {
+        return importedProducts.map((p, index) => {
           const product: ParsedProduct = {
             id: `import-${Date.now()}-${index}`,
             name: p.title || p.product_name || p.name || '',
             description: p.description || p.short_description || '',
-            price: p.basePrice || p.salePrice || p.final_price || p.regular_price || parseFloat(p.price) || 0,
+            price: productPrice(p),
             sku: p.sku || '',
             category: mapCategory(p.category || p.main_category || ''),
             image_url: p.images?.[0] || p.main_image_url || p.image_url || '',
@@ -383,11 +486,11 @@ export const BulkProductImport = ({
         title: `נמצאו ${products.length} מוצרים`,
         description: "בדוק ואשר את המוצרים לפני הייבוא",
       });
-    } catch (err: any) {
+    } catch (err) {
       console.error('URL import error:', err);
       toast({
         title: "שגיאה בטעינה מהקישור",
-        description: err.message || "נסה קישור אחר",
+        description: errorMessage(err, "נסה קישור אחר"),
         variant: "destructive",
       });
     } finally {
@@ -436,11 +539,11 @@ export const BulkProductImport = ({
         title: `נמצאו ${products.length} מוצרים`,
         description: "בדוק ואשר את המוצרים לפני הייבוא",
       });
-    } catch (err: any) {
+    } catch (err) {
       console.error('File parsing error:', err);
       toast({
         title: "שגיאה בקריאת הקובץ",
-        description: err.message || "נסה קובץ אחר",
+        description: errorMessage(err, "נסה קובץ אחר"),
         variant: "destructive",
       });
     } finally {
@@ -515,7 +618,7 @@ export const BulkProductImport = ({
   const fixProductWithAI = async (product: ParsedProduct): Promise<ParsedProduct> => {
     try {
       // Try to find and scrape product by name/SKU
-      const { data, error } = await invokeProductIntelFunction<any>("scrape-product", {
+      const { data, error } = await invokeProductIntelFunction<ProductIntelScrapeResponse>("scrape-product", {
         body: { 
           mode: "sku", 
           sku: product.sku || product.name,
@@ -537,7 +640,7 @@ export const BulkProductImport = ({
         ...product,
         name: productInfo.title || product.name,
         description: productInfo.description || product.description,
-        price: productInfo.basePrice || productInfo.salePrice || product.price,
+        price: productPrice(productInfo) || product.price,
         image_url: productInfo.images?.[0] || product.image_url,
         category: product.category || mapCategory(scraped.source?.finalUrl || ""),
         sourceUrl: scraped.source?.finalUrl,
@@ -637,7 +740,7 @@ export const BulkProductImport = ({
 
     try {
       // Use enrich-product-ai to fill missing data
-      const { data, error } = await invokeProductIntelFunction<any>("enrich-product-ai", {
+      const { data, error } = await invokeProductIntelFunction<ProductIntelEnrichResponse>("enrich-product-ai", {
         body: { 
           productName: product.name,
           sku: product.sku,
@@ -647,7 +750,7 @@ export const BulkProductImport = ({
 
       if (error || !data?.success || !data?.data) {
         // Try scrape-product as fallback
-        const scrapeResult = await invokeProductIntelFunction<any>("scrape-product", {
+        const scrapeResult = await invokeProductIntelFunction<ProductIntelScrapeResponse>("scrape-product", {
           body: { 
             mode: "sku", 
             sku: product.sku || product.name,
