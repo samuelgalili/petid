@@ -12,11 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  DEFAULT_BUSINESS_ID,
-  assertDefaultBusinessProfileExists,
-  normalizeProductPetType,
-} from "@/lib/productStore";
+import { normalizeProductPetType } from "@/lib/productStore";
+import { createAdminProduct } from "@/lib/mipoApi";
 import {
   Link2,
   Barcode,
@@ -342,9 +339,17 @@ export const ProductImportWizard = ({
 
     setSaving(true);
     try {
-      const businessId = await assertDefaultBusinessProfileExists(DEFAULT_BUSINESS_ID);
+      const variantLabels = variants
+        .filter(v => v.label.trim())
+        .map(v => {
+          let label = v.label.trim();
+          if (v.price) {
+            label += ` - ₪${v.price}`;
+          }
+          return label;
+        });
+
       const productData: any = {
-        business_id: businessId,
         name: editedName.trim(),
         description: editedDescription || null,
         price: editedPrice,
@@ -367,60 +372,11 @@ export const ProductImportWizard = ({
         life_stage: scrapedData?.lifeStage || null,
         dog_size: scrapedData?.dogSize || null,
         special_diet: scrapedData?.specialDiet || [],
+        flavors: variantLabels,
+        weight_unit: variants.find(v => v.weight_unit)?.weight_unit || null,
       };
 
-      const { data: inserted, error } = await supabase
-        .from("business_products")
-        .insert(productData)
-        .select("id, name, price, image_url")
-        .single();
-
-      if (error) throw error;
-
-      // Save variants
-      if (variants.length > 0 && inserted?.id) {
-        const variantRows = variants
-          .filter(v => v.label.trim())
-          .map((v, i) => ({
-            product_id: inserted.id,
-            variant_type: v.variant_type,
-            label: v.label.trim(),
-            value: v.value.trim() || v.label.trim(),
-            weight_kg: v.weight_kg,
-            weight_unit: v.weight_unit,
-            price: v.price,
-            sale_price: v.sale_price,
-            sku: v.sku,
-            in_stock: v.in_stock,
-            display_order: i,
-          }));
-
-        if (variantRows.length > 0) {
-          const { error: variantError } = await supabase
-            .from("product_variants")
-            .insert(variantRows);
-          if (variantError) console.error("Variant save error:", variantError);
-        }
-      }
-
-      // Save feeding guide if available
-      if (scrapedData?.feedingGuide?.length && inserted?.id) {
-        const guidelines = scrapedData.feedingGuide
-          .map((fg: any) => ({
-            product_id: inserted.id,
-            weight_min_kg: parseWeightMin(fg.range),
-            weight_max_kg: parseWeightMax(fg.range),
-            grams_per_day_min: parseGramsMin(fg.amount),
-            grams_per_day_max: parseGramsMax(fg.amount),
-            notes: `${fg.range} → ${fg.amount}`,
-          }))
-          .filter((g: any) => g.weight_min_kg != null);
-
-        if (guidelines.length > 0) {
-          await supabase.from("product_feeding_guidelines").insert(guidelines);
-        }
-      }
-
+      const inserted = await createAdminProduct(productData);
       setSavedProductId(inserted.id);
       toast({ title: "המוצר נשמר בהצלחה!", description: inserted.name });
       onSuccess();
@@ -823,21 +779,3 @@ export const ProductImportWizard = ({
     </Dialog>
   );
 };
-
-// --- Weight/gram parsing helpers ---
-function parseWeightMin(range: string): number | null {
-  const match = range.match(/(\d+(?:\.\d+)?)/);
-  return match ? parseFloat(match[1]) : null;
-}
-function parseWeightMax(range: string): number | null {
-  const matches = range.match(/(\d+(?:\.\d+)?)/g);
-  return matches && matches.length >= 2 ? parseFloat(matches[1]) : parseWeightMin(range);
-}
-function parseGramsMin(amount: string): number | null {
-  const match = amount.match(/(\d+(?:\.\d+)?)/);
-  return match ? Math.round(parseFloat(match[1])) : null;
-}
-function parseGramsMax(amount: string): number | null {
-  const matches = amount.match(/(\d+(?:\.\d+)?)/g);
-  return matches && matches.length >= 2 ? Math.round(parseFloat(matches[1])) : parseGramsMin(amount);
-}

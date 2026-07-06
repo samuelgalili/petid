@@ -14,11 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  DEFAULT_BUSINESS_ID,
-  assertDefaultBusinessProfileExists,
-  normalizeProductPetType,
-} from "@/lib/productStore";
+import { normalizeProductPetType } from "@/lib/productStore";
+import { createAdminProduct } from "@/lib/mipoApi";
 import { motion, AnimatePresence } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -270,9 +267,7 @@ const AdminQuickImport = () => {
     updateStatus(4, "loading");
 
     try {
-      const businessId = await assertDefaultBusinessProfileExists(DEFAULT_BUSINESS_ID);
       const productData: any = {
-        business_id: businessId,
         name: editData.name || "מוצר ללא שם",
         description: editData.description || null,
         price: editData.price || 1,
@@ -298,6 +293,14 @@ const AdminQuickImport = () => {
         safety_score: analysis?.qualityScore || null,
         kcal_per_kg: analysis?.estimatedKcalPerKg || null,
         api_sync_enabled: apiSyncEnabled,
+        flavors: editData.variants?.map((v: any) => {
+          let label = v.label || "";
+          if (v.price) {
+            label += ` - ₪${v.price}`;
+          }
+          return label;
+        }).filter(Boolean) || [],
+        weight_unit: editData.variants?.find((v: any) => v.weight_unit)?.weight_unit || null,
       };
 
       // Apply automated curation logic
@@ -311,54 +314,7 @@ const AdminQuickImport = () => {
         (productData as any).curation_notes = curation.reason;
       }
 
-      const { data: inserted, error: insertError } = await supabase
-        .from("business_products")
-        .insert(productData)
-        .select("id, name, price, image_url")
-        .single();
-
-      if (insertError) throw insertError;
-
-      // Save feeding guidelines
-      if (editData.feeding_guide?.length > 0 && inserted?.id) {
-        const guidelines = editData.feeding_guide
-          .map((fg: any) => ({
-            product_id: inserted.id,
-            weight_min_kg: parseWeightMin(fg.range),
-            weight_max_kg: parseWeightMax(fg.range),
-            grams_per_day_min: parseGramsMin(fg.amount),
-            grams_per_day_max: parseGramsMax(fg.amount),
-            notes: `${fg.range} → ${fg.amount}`,
-          }))
-          .filter((g: any) => g.weight_min_kg != null);
-
-        if (guidelines.length > 0) {
-          await supabase.from("product_feeding_guidelines").insert(guidelines);
-        }
-      }
-
-      // Save variants
-      if (editData.variants?.length > 0 && inserted?.id) {
-        const variantRows = editData.variants
-          .filter((v: any) => v.label?.trim())
-          .map((v: any, i: number) => ({
-            product_id: inserted.id,
-            variant_type: v.weight ? "weight" : "size",
-            label: v.label.trim(),
-            value: v.label.trim(),
-            weight_kg: v.weight || null,
-            weight_unit: v.weight_unit || null,
-            price: v.price || null,
-            sale_price: v.sale_price || null,
-            sku: v.sku || null,
-            in_stock: true,
-            display_order: i,
-          }));
-
-        if (variantRows.length > 0) {
-          await supabase.from("product_variants").insert(variantRows);
-        }
-      }
+      const inserted = await createAdminProduct(productData);
 
       setPublishedProduct(inserted);
       updateStatus(4, "done");
@@ -1580,27 +1536,6 @@ function EditableField({ label, value, onChange, type = "text" }: {
       />
     </div>
   );
-}
-
-// ── Utility Helpers ──
-function parseWeightMin(range: string): number | null {
-  const match = range.match(/(\d+(?:\.\d+)?)/);
-  return match ? parseFloat(match[1]) : null;
-}
-
-function parseWeightMax(range: string): number | null {
-  const matches = range.match(/(\d+(?:\.\d+)?)/g);
-  return matches && matches.length >= 2 ? parseFloat(matches[1]) : parseWeightMin(range);
-}
-
-function parseGramsMin(amount: string): number | null {
-  const match = amount.match(/(\d+(?:\.\d+)?)/);
-  return match ? Math.round(parseFloat(match[1])) : null;
-}
-
-function parseGramsMax(amount: string): number | null {
-  const matches = amount.match(/(\d+(?:\.\d+)?)/g);
-  return matches && matches.length >= 2 ? Math.round(parseFloat(matches[1])) : parseGramsMin(amount);
 }
 
 // ── Scientist Helpers ──

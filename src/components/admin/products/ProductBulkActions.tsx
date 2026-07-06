@@ -39,14 +39,20 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  bulkDeleteAdminProducts,
+  bulkUpdateAdminProducts,
+  createAdminProduct,
+  updateAdminProduct,
+  type MipoProduct,
+} from "@/lib/mipoApi";
 import { toast } from "sonner";
 
 interface ProductBulkActionsProps {
   selectedIds: string[];
   onActionComplete: () => void;
   onClearSelection: () => void;
-  products?: Array<{ id: string; source?: 'manual' | 'scraped' }>;
+  products?: Array<MipoProduct>;
 }
 
 const categories = [
@@ -76,14 +82,9 @@ export function ProductBulkActions({
   const handleBulkUpdate = async (updates: Record<string, any>) => {
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('business_products')
-        .update(updates)
-        .in('id', selectedIds);
-
-      if (error) throw error;
+      const result = await bulkUpdateAdminProducts(selectedIds, updates);
       
-      toast.success(`${selectedIds.length} מוצרים עודכנו בהצלחה`);
+      toast.success(`${result.updated} מוצרים עודכנו בהצלחה`);
       onActionComplete();
       onClearSelection();
     } catch (err) {
@@ -99,45 +100,9 @@ export function ProductBulkActions({
     
     setLoading(true);
     try {
-      // Separate products by source
-      const selectedProducts = products.filter(p => selectedIds.includes(p.id));
-      const manualIds = selectedProducts.filter(p => p.source === 'manual' || !p.source).map(p => p.id);
-      const scrapedIds = selectedProducts.filter(p => p.source === 'scraped').map(p => p.id);
+      const result = await bulkDeleteAdminProducts(selectedIds);
       
-      // If no products info provided, try both tables
-      if (selectedProducts.length === 0) {
-        // Delete from business_products
-        await supabase
-          .from('business_products')
-          .delete()
-          .in('id', selectedIds);
-        
-        // Delete from scraped_products
-        await supabase
-          .from('scraped_products')
-          .delete()
-          .in('id', selectedIds);
-      } else {
-        // Delete from business_products
-        if (manualIds.length > 0) {
-          const { error } = await supabase
-            .from('business_products')
-            .delete()
-            .in('id', manualIds);
-          if (error) throw error;
-        }
-        
-        // Delete from scraped_products
-        if (scrapedIds.length > 0) {
-          const { error } = await supabase
-            .from('scraped_products')
-            .delete()
-            .in('id', scrapedIds);
-          if (error) throw error;
-        }
-      }
-      
-      toast.success(`${selectedIds.length} מוצרים נמחקו`);
+      toast.success(`${result.deleted} מוצרים נמחקו`);
       onActionComplete();
       onClearSelection();
     } catch (err) {
@@ -153,40 +118,42 @@ export function ProductBulkActions({
 
     setLoading(true);
     try {
-      // Get current prices first
-      const { data: products, error: fetchError } = await supabase
-        .from('business_products')
-        .select('id, price')
-        .in('id', selectedIds);
-
-      if (fetchError) throw fetchError;
+      const selectedProducts = products.filter(p => selectedIds.includes(p.id));
+      if (selectedProducts.length === 0) {
+        throw new Error("לא נמצאו מוצרים נבחרים");
+      }
 
       // Calculate new prices
       const value = parseFloat(priceValue);
-      const updates = products?.map(p => {
-        let newPrice = p.price;
+      const updates = selectedProducts.map(p => {
+        const currentPrice = Number(p.price) || 0;
+        let newPrice = currentPrice;
         
         if (priceAction === 'set') {
-          newPrice = priceType === 'fixed' ? value : p.price;
+          newPrice = priceType === 'fixed' ? value : currentPrice;
         } else if (priceAction === 'increase') {
-          newPrice = priceType === 'percent' 
-            ? p.price * (1 + value / 100) 
-            : p.price + value;
+          newPrice = priceType === 'percent'
+            ? currentPrice * (1 + value / 100)
+            : currentPrice + value;
         } else if (priceAction === 'decrease') {
-          newPrice = priceType === 'percent' 
-            ? p.price * (1 - value / 100) 
-            : p.price - value;
+          newPrice = priceType === 'percent'
+            ? currentPrice * (1 - value / 100)
+            : currentPrice - value;
         }
         
-        return { id: p.id, price: Math.max(0, Math.round(newPrice * 100) / 100) };
-      }) || [];
+        return {
+          id: p.id,
+          source: p.source,
+          price: Math.max(0, Math.round(newPrice * 100) / 100),
+        };
+      });
 
       // Update each product
       for (const update of updates) {
-        await supabase
-          .from('business_products')
-          .update({ price: update.price })
-          .eq('id', update.id);
+        await updateAdminProduct(update.id, {
+          source: update.source,
+          price: update.price,
+        });
       }
 
       toast.success(`מחירים עודכנו ל-${selectedIds.length} מוצרים`);
@@ -205,28 +172,20 @@ export function ProductBulkActions({
   const handleDuplicate = async () => {
     setLoading(true);
     try {
-      // Get products to duplicate
-      const { data: products, error: fetchError } = await supabase
-        .from('business_products')
-        .select('*')
-        .in('id', selectedIds);
-
-      if (fetchError) throw fetchError;
+      const selectedProducts = products.filter(p => selectedIds.includes(p.id));
+      if (selectedProducts.length === 0) {
+        throw new Error("לא נמצאו מוצרים לשכפול");
+      }
 
       // Create duplicates
-      const duplicates = products?.map(p => ({
-        ...p,
-        id: undefined,
-        name: `${p.name} (העתק)`,
-        created_at: undefined,
-        updated_at: undefined,
-      })) || [];
-
-      const { error: insertError } = await supabase
-        .from('business_products')
-        .insert(duplicates);
-
-      if (insertError) throw insertError;
+      for (const product of selectedProducts) {
+        const { id, source, created_at, updated_at, business_id, ...duplicate } = product;
+        await createAdminProduct({
+          ...duplicate,
+          name: `${product.name} (העתק)`,
+          business_id: business_id || undefined,
+        });
+      }
 
       toast.success(`${selectedIds.length} מוצרים שוכפלו`);
       onActionComplete();

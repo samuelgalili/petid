@@ -27,11 +27,8 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  DEFAULT_BUSINESS_ID,
-  assertDefaultBusinessProfileExists,
-  normalizeProductPetType,
-} from "@/lib/productStore";
+import { normalizeProductPetType } from "@/lib/productStore";
+import { createAdminProduct, uploadAdminProductImage } from "@/lib/mipoApi";
 import { motion } from "framer-motion";
 import {
   Package, Upload, ImageIcon, X, Sparkles, Loader2, Save,
@@ -145,12 +142,8 @@ const AdminSmartProductEditor = () => {
     }
     setIsUploading(true);
     try {
-      const ext = file.name.split(".").pop();
-      const path = `products/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("product-images").upload(path, file);
-      if (error) throw error;
-      const { data: { publicUrl } } = supabase.storage.from("product-images").getPublicUrl(path);
-      updateForm("image_url", publicUrl);
+      const upload = await uploadAdminProductImage(file);
+      updateForm("image_url", upload.url);
       toast({ title: "התמונה הועלתה בהצלחה" });
     } catch (err: any) {
       toast({ title: "שגיאה בהעלאה", description: err.message, variant: "destructive" });
@@ -242,9 +235,7 @@ const AdminSmartProductEditor = () => {
 
     setIsSaving(true);
     try {
-      const businessId = await assertDefaultBusinessProfileExists(DEFAULT_BUSINESS_ID);
-      const { error } = await supabase.from("business_products").insert({
-        business_id: businessId,
+      await createAdminProduct({
         name: form.name.trim(),
         brand: form.brand || null,
         description: form.description || null,
@@ -260,9 +251,7 @@ const AdminSmartProductEditor = () => {
         auto_restock: form.auto_restock,
         restock_interval_days: form.restock_interval_days,
         special_diet: form.medical_tags, // sync with special_diet
-      } as any);
-
-      if (error) throw error;
+      });
       toast({ title: "המוצר נשמר בהצלחה!" });
       navigate("/admin/products");
     } catch (err: any) {

@@ -32,11 +32,8 @@ import {
 } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  DEFAULT_BUSINESS_ID,
-  assertDefaultBusinessProfileExists,
-  normalizeProductPetType,
-} from "@/lib/productStore";
+import { normalizeProductPetType } from "@/lib/productStore";
+import { createAdminProduct } from "@/lib/mipoApi";
 import { BulkProductImport } from "./BulkProductImport";
 import { CompetitorPriceManager } from "./products/CompetitorPriceManager";
 
@@ -756,7 +753,6 @@ export const ProductFormDialog = ({
     
     try {
       const selectedProducts = scrapedProducts.filter((_, i) => selectedProductIndices.has(i));
-      const businessId = await assertDefaultBusinessProfileExists(DEFAULT_BUSINESS_ID);
       let successCount = 0;
       let errorCount = 0;
       
@@ -793,17 +789,10 @@ export const ProductFormDialog = ({
               return label;
             }) || [],
             weight_unit: scrapedProduct.variants?.[0]?.weight_unit || null,
-            business_id: businessId,
           };
 
-          const { error } = await supabase.from("business_products").insert(productData);
-          
-          if (error) {
-            console.error("Error inserting product:", error);
-            errorCount++;
-          } else {
-            successCount++;
-          }
+          await createAdminProduct(productData);
+          successCount++;
         } catch (err) {
           console.error("Error processing product:", err);
           errorCount++;

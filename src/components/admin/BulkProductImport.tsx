@@ -32,11 +32,8 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  DEFAULT_BUSINESS_ID,
-  assertDefaultBusinessProfileExists,
-  normalizeProductPetType,
-} from "@/lib/productStore";
+import { normalizeProductPetType } from "@/lib/productStore";
+import { createAdminProduct } from "@/lib/mipoApi";
 import * as XLSX from "@e965/xlsx";
 
 interface ParsedProduct {
@@ -779,12 +776,10 @@ export const BulkProductImport = ({
     try {
       let successCount = 0;
       let errorCount = 0;
-      const businessId = await assertDefaultBusinessProfileExists(DEFAULT_BUSINESS_ID);
 
       for (const product of enrichedProducts) {
         try {
-          const { error } = await supabase.from("business_products").insert({
-            business_id: businessId,
+          await createAdminProduct({
             name: product.name,
             description: product.description || null,
             price: product.price,
@@ -807,13 +802,7 @@ export const BulkProductImport = ({
             dog_size: product.dog_size || null,
             special_diet: product.special_diet || [],
           });
-
-          if (error) {
-            console.error("Insert error:", error);
-            errorCount++;
-          } else {
-            successCount++;
-          }
+          successCount++;
         } catch (err) {
           console.error("Error inserting product:", err);
           errorCount++;

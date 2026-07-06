@@ -22,14 +22,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useAuditLog } from "@/hooks/useAuditLog";
-import { supabase } from "@/integrations/supabase/client";
 import { ProductBulkActions, ProductKeyboardShortcutsHelp, InlineEditCell } from "@/components/admin/products";
 import { useProductKeyboardShortcuts } from "@/hooks/useProductKeyboardShortcuts";
+import { normalizeProductPetType } from "@/lib/productStore";
 import {
-  DEFAULT_BUSINESS_ID,
-  assertDefaultBusinessProfileExists,
-  normalizeProductPetType,
-} from "@/lib/productStore";
+  bulkDeleteAdminProducts,
+  createAdminProduct,
+  deleteAdminProduct,
+  getAdminProducts,
+  updateAdminProduct,
+  uploadAdminProductImage,
+} from "@/lib/mipoApi";
 
 interface ProductData {
   id: string;
@@ -143,15 +146,13 @@ const AdminProducts = () => {
   // Unflag product mutation
   const unflagMutation = useMutation({
     mutationFn: async (productId: string) => {
-      // Find the product to determine its source
       const product = products.find(p => p.id === productId);
-      const tableName = product?.source === 'scraped' ? 'scraped_products' : 'business_products';
-      
-      const { error } = await supabase
-        .from(tableName)
-        .update({ is_flagged: false, flagged_at: null, flagged_reason: null })
-        .eq("id", productId);
-      if (error) throw error;
+      await updateAdminProduct(productId, {
+        source: product?.source,
+        is_flagged: false,
+        flagged_at: null,
+        flagged_reason: null,
+      });
 
       await logAction({
         action_type: "product.updated",
@@ -179,53 +180,7 @@ const AdminProducts = () => {
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["admin-products-unified"],
-    queryFn: async () => {
-      // Fetch from business_products (manual)
-      const { data: businessProducts, error: bpError } = await supabase
-        .from("business_products")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (bpError) console.error("Error fetching business_products:", bpError);
-
-      // Fetch from scraped_products (imported)
-      const { data: scrapedProducts, error: spError } = await supabase
-        .from("scraped_products")
-        .select("*")
-        .order("scraped_at", { ascending: false });
-
-      if (spError) console.error("Error fetching scraped_products:", spError);
-
-      // Transform and unify
-      const manualProducts: ProductData[] = (businessProducts || []).map(p => ({
-        ...p,
-        source: 'manual' as const,
-        source_url: null,
-      }));
-
-      const importedProducts: ProductData[] = (scrapedProducts || []).map(sp => ({
-        id: sp.id,
-        name: sp.product_name || '',
-        description: sp.long_description || sp.short_description || '',
-        price: sp.final_price || sp.regular_price || 0,
-        original_price: sp.regular_price !== sp.final_price ? sp.regular_price : null,
-        image_url: sp.main_image_url || '/placeholder.svg',
-        category: sp.sub_category || sp.main_category || null,
-        in_stock: sp.stock_status === 'in_stock' || sp.stock_status === null,
-        is_featured: false,
-        business_id: DEFAULT_BUSINESS_ID,
-        created_at: sp.created_at || sp.scraped_at,
-        is_flagged: sp.is_flagged || false,
-        flagged_reason: sp.flagged_reason || null,
-        sku: sp.sku || null,
-        pet_type: sp.pet_type || null,
-        source: 'scraped' as const,
-        source_url: (sp as any).source_url || null,
-      }));
-
-      // Combine - manual first, then scraped
-      return [...manualProducts, ...importedProducts];
-    },
+    queryFn: async () => getAdminProducts() as Promise<ProductData[]>,
   });
 
 
@@ -267,12 +222,10 @@ const AdminProducts = () => {
       };
 
       if (product.id) {
-        const { error } = await supabase
-          .from("business_products")
-          .update(productData)
-          .eq("id", product.id);
-
-        if (error) throw error;
+        await updateAdminProduct(product.id, {
+          ...productData,
+          source: product.source,
+        });
 
         await logAction({
           action_type: "product.updated",
@@ -281,16 +234,10 @@ const AdminProducts = () => {
           new_values: product,
         });
       } else {
-        // For new products, use the default business
-        const businessId = await assertDefaultBusinessProfileExists(product.business_id || DEFAULT_BUSINESS_ID);
-        const { error } = await supabase
-          .from("business_products")
-          .insert({
-            ...productData,
-            business_id: businessId,
-          });
-
-        if (error) throw error;
+        await createAdminProduct({
+          ...productData,
+          business_id: product.business_id,
+        });
 
         await logAction({
           action_type: "product.created",
@@ -313,16 +260,8 @@ const AdminProducts = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (productId: string) => {
-      // Find the product to determine its source
       const product = products.find(p => p.id === productId);
-      const tableName = product?.source === 'scraped' ? 'scraped_products' : 'business_products';
-      
-      const { error } = await supabase
-        .from(tableName)
-        .delete()
-        .eq("id", productId);
-
-      if (error) throw error;
+      await deleteAdminProduct(productId, product?.source);
 
       await logAction({
         action_type: "product.deleted",
@@ -344,33 +283,12 @@ const AdminProducts = () => {
 
   const bulkDeleteMutation = useMutation({
     mutationFn: async (productIds: string[]) => {
-      // Separate products by source
-      const productsToDelete = products.filter(p => productIds.includes(p.id));
-      const manualIds = productsToDelete.filter(p => p.source === 'manual').map(p => p.id);
-      const scrapedIds = productsToDelete.filter(p => p.source === 'scraped').map(p => p.id);
-
-      // Delete from business_products
-      if (manualIds.length > 0) {
-        const { error } = await supabase
-          .from("business_products")
-          .delete()
-          .in("id", manualIds);
-        if (error) throw error;
-      }
-
-      // Delete from scraped_products
-      if (scrapedIds.length > 0) {
-        const { error } = await supabase
-          .from("scraped_products")
-          .delete()
-          .in("id", scrapedIds);
-        if (error) throw error;
-      }
+      const result = await bulkDeleteAdminProducts(productIds);
 
       await logAction({
         action_type: "product.deleted",
         entity_type: "product",
-        metadata: { deleted_count: productIds.length, bulk: true, manual: manualIds.length, scraped: scrapedIds.length },
+        metadata: { deleted_count: result.deleted, bulk: true, manual: result.manual, scraped: result.scraped },
       });
     },
     onSuccess: () => {
@@ -388,21 +306,8 @@ const AdminProducts = () => {
   const handleImageUpload = async (file: File) => {
     try {
       setUploading(true);
-      const fileExt = file.name.split(".").pop();
-      const fileName = `product-${Date.now()}.${fileExt}`;
-      const filePath = `products/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from("avatars")
-        .getPublicUrl(filePath);
-
-      setEditingProduct((prev) => prev ? { ...prev, image_url: publicUrl } : null);
+      const upload = await uploadAdminProductImage(file);
+      setEditingProduct((prev) => prev ? { ...prev, image_url: upload.url } : null);
       toast({ title: "התמונה הועלתה" });
     } catch (error) {
       toast({ title: "שגיאה בהעלאת התמונה", variant: "destructive" });
@@ -414,12 +319,10 @@ const AdminProducts = () => {
   // Inline edit mutation
   const inlineEditMutation = useMutation({
     mutationFn: async ({ productId, field, value, source }: { productId: string; field: string; value: any; source?: string }) => {
-      const tableName = source === 'scraped' ? 'scraped_products' : 'business_products';
-      const { error } = await supabase
-        .from(tableName)
-        .update({ [field]: value })
-        .eq("id", productId);
-      if (error) throw error;
+      await updateAdminProduct(productId, {
+        source: source === "scraped" ? "scraped" : "manual",
+        [field]: value,
+      } as Partial<ProductData>);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products-unified"] });
