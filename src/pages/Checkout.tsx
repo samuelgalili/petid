@@ -16,7 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
 import { AppHeader } from "@/components/AppHeader";
 import { CHECKOUT } from "@/lib/brandVoice";
-import { createShopOrder, MipoCoupon, validateCouponCode } from "@/lib/mipoApi";
+import { createShopOrder, createShopPaymentSession, MipoCoupon, validateCouponCode } from "@/lib/mipoApi";
 
 const shippingSchema = z.object({
   fullName: z.string().trim().min(2, "שם מלא חייב להכיל לפחות 2 תווים").max(100, "שם מלא חייב להכיל פחות מ-100 תווים"),
@@ -293,12 +293,41 @@ const Checkout = () => {
         localStorage.setItem("mipo_order_ids", JSON.stringify([order.id]));
       }
 
-      clearCart();
-      toast({
-        title: "ההזמנה נשמרה",
-        description: paymentMethod === "cash-on-delivery" ? "התשלום יתבצע במסירה" : "התשלום סומן במצב פיתוח עד חיבור ספק סליקה ב-AWS",
+      if (paymentMethod === "cash-on-delivery") {
+        clearCart();
+        toast({
+          title: "ההזמנה נשמרה",
+          description: "התשלום יתבצע במסירה",
+        });
+        navigate("/order-confirmation", { state: { order: orderDetails } });
+        return;
+      }
+
+      localStorage.setItem("pendingOrder", JSON.stringify(orderDetails));
+      const paymentSession = await createShopPaymentSession({
+        order_id: order.id,
+        success_url: `${window.location.origin}/payment-success`,
+        cancel_url: `${window.location.origin}/payment-failed`,
       });
-      navigate("/order-confirmation", { state: { order: orderDetails } });
+
+      if (paymentSession.dev_mode) {
+        toast({
+          title: "תשלום במצב פיתוח",
+          description: "ספק הסליקה לא מוגדר עדיין ב-AWS, ממשיכים למסך הצלחה",
+        });
+      }
+
+      if (paymentSession.payment_url) {
+        window.location.assign(paymentSession.payment_url);
+        return;
+      }
+
+      if (paymentSession.redirect_url) {
+        window.location.assign(paymentSession.redirect_url);
+        return;
+      }
+
+      throw new Error("לא התקבלה כתובת תשלום מספק הסליקה");
     } catch (error: unknown) {
       console.error("Error placing order:", error);
       setIsProcessing(false);

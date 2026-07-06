@@ -1,5 +1,5 @@
 import http from "node:http";
-import { createHash, randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Pool } from "pg";
@@ -24,6 +24,12 @@ const adminSessionHours = Number.isFinite(configuredAdminSessionHours) && config
   ? configuredAdminSessionHours
   : 8;
 const adminSessionMs = adminSessionHours * 60 * 60 * 1000;
+const cardcomTerminal = process.env.CARDCOM_TERMINAL_NUMBER;
+const cardcomUsername = process.env.CARDCOM_USERNAME || process.env.CARDCOM_API_NAME;
+const cardcomApiPassword = process.env.CARDCOM_API_PASSWORD;
+const cardcomWebhookSecret = process.env.CARDCOM_WEBHOOK_SECRET;
+const cardcomLowProfileUrl = "https://secure.cardcom.solutions/Interface/LowProfile.aspx";
+const cardcomIndicatorUrl = "https://secure.cardcom.solutions/Interface/BillGoldGetLowProfileIndicator.aspx";
 
 if (!databaseUrl) {
   throw new Error("DATABASE_URL is required");
@@ -56,6 +62,22 @@ const readBody = async (request, maxBytes = 1024 * 1024) => {
   if (chunks.length === 0) return {};
   const raw = Buffer.concat(chunks).toString("utf8");
   return raw ? JSON.parse(raw) : {};
+};
+
+const readRawBody = async (request, maxBytes = 1024 * 1024) => {
+  const chunks = [];
+  let totalBytes = 0;
+  for await (const chunk of request) {
+    totalBytes += chunk.length;
+    if (totalBytes > maxBytes) {
+      const error = new Error("Request body too large");
+      error.statusCode = 413;
+      throw error;
+    }
+    chunks.push(chunk);
+  }
+
+  return chunks.length > 0 ? Buffer.concat(chunks).toString("utf8") : "";
 };
 
 const sendJson = (response, statusCode, body, headers = {}) => {
@@ -136,6 +158,22 @@ const getRequestIp = (request) => {
     return forwardedFor.split(",")[0].trim();
   }
   return request.socket?.remoteAddress || null;
+};
+
+const getPublicBaseUrl = (request) => {
+  const configuredUrl = process.env.PUBLIC_APP_URL || process.env.APP_URL || process.env.VITE_APP_URL;
+  if (configuredUrl) return configuredUrl.replace(/\/+$/, "");
+
+  const proto = request.headers["x-forwarded-proto"] || "http";
+  const host = request.headers["x-forwarded-host"] || request.headers.host || "localhost";
+  return `${proto}://${host}`.replace(/\/+$/, "");
+};
+
+const absoluteAppUrl = (request, urlOrPath) => {
+  if (!urlOrPath) return null;
+  const value = String(urlOrPath);
+  if (/^https?:\/\//i.test(value)) return value;
+  return new URL(value.replace(/^\/+/, ""), `${getPublicBaseUrl(request)}/`).toString();
 };
 
 const buildAdminCookie = (request, token) => {
@@ -1045,7 +1083,7 @@ const createOrder = async (body) => {
   const orderItems = normalizeOrderItems(body.items);
   const shippingAddress = normalizeShippingAddress(body.shipping_address || body.shippingData);
   const paymentMethod = String(body.payment_method || "credit-card");
-  const paymentStatus = paymentMethod === "cash-on-delivery" ? "awaiting_cod" : "dev_approved";
+  const paymentStatus = paymentMethod === "cash-on-delivery" ? "awaiting_cod" : "pending";
   const paymentInstallments = toPositiveInteger(body.installments || body.payment_installments);
   const client = await pool.connect();
 
@@ -1286,6 +1324,461 @@ const bulkUpdateOrders = async (ids, updates) => {
   return { updated: result.rowCount };
 };
 
+const getStringValue = (source, keys) => {
+  for (const key of keys) {
+    const value = source?.[key];
+    if (value === null || value === undefined) continue;
+    const normalized = String(value).trim();
+    if (normalized) return normalized;
+  }
+  return null;
+};
+
+const getNumberValue = (source, keys) => {
+  const raw = getStringValue(source, keys);
+  if (raw === null) return null;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const parseCardcomReturnValue = (rawReturnValue) => {
+  if (!rawReturnValue) return { orderId: null, orderNumber: null };
+
+  const tryParse = (value) => {
+    try {
+      const parsed = JSON.parse(value);
+      return {
+        orderId: parsed?.order_id ? String(parsed.order_id) : null,
+        orderNumber: parsed?.order_number ? String(parsed.order_number) : null,
+      };
+    } catch {
+      return null;
+    }
+  };
+
+  const direct = tryParse(rawReturnValue);
+  if (direct) return direct;
+
+  try {
+    const decoded = decodeURIComponent(rawReturnValue);
+    return tryParse(decoded) || { orderId: null, orderNumber: null };
+  } catch {
+    return { orderId: null, orderNumber: null };
+  }
+};
+
+const verifyCardcomSignature = (rawBody, signature) => {
+  if (!cardcomWebhookSecret) return true;
+  if (!rawBody || !signature) return false;
+
+  const expected = createHmac("sha256", cardcomWebhookSecret)
+    .update(rawBody)
+    .digest("base64");
+
+  return secretsEqual(signature, expected);
+};
+
+const formatCardcomMoney = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed.toFixed(2) : "0.00";
+};
+
+const buildCardcomInvoiceLines = (order) => {
+  const lines = {};
+  let index = 1;
+
+  for (const item of order.order_items || order.items || []) {
+    const quantity = toPositiveInteger(item.quantity);
+    const price = toMoney(item.price);
+    const description = [
+      item.product_name,
+      item.variant ? `- ${item.variant}` : "",
+      item.size ? `(${item.size})` : "",
+    ].filter(Boolean).join(" ");
+
+    lines[`InvoiceLines${index}.Description`] = description || "מוצר";
+    lines[`InvoiceLines${index}.Quantity`] = String(quantity);
+    lines[`InvoiceLines${index}.Price`] = formatCardcomMoney(price);
+    index += 1;
+  }
+
+  if (toMoney(order.shipping) > 0) {
+    lines[`InvoiceLines${index}.Description`] = "משלוח";
+    lines[`InvoiceLines${index}.Quantity`] = "1";
+    lines[`InvoiceLines${index}.Price`] = formatCardcomMoney(order.shipping);
+    index += 1;
+  }
+
+  if (toMoney(order.discount_amount) > 0) {
+    lines[`InvoiceLines${index}.Description`] = "קופון";
+    lines[`InvoiceLines${index}.Quantity`] = "1";
+    lines[`InvoiceLines${index}.Price`] = formatCardcomMoney(-toMoney(order.discount_amount));
+    index += 1;
+  }
+
+  const sum = Object.keys(lines)
+    .filter((key) => key.endsWith(".Quantity"))
+    .reduce((total, quantityKey) => {
+      const prefix = quantityKey.replace(".Quantity", "");
+      return total + Number(lines[quantityKey] || 1) * Number(lines[`${prefix}.Price`] || 0);
+    }, 0);
+
+  return {
+    lines,
+    lineCount: index - 1,
+    sum: toMoney(sum),
+  };
+};
+
+const fetchCardcomLowProfileIndicator = async (lowProfileCode) => {
+  if (!cardcomTerminal || !cardcomUsername) {
+    const error = new Error("CardCom credentials are missing");
+    error.statusCode = 503;
+    throw error;
+  }
+
+  const params = new URLSearchParams({
+    TerminalNumber: cardcomTerminal,
+    UserName: cardcomUsername,
+    LowProfileCode: lowProfileCode,
+  });
+
+  const indicatorResponse = await fetch(`${cardcomIndicatorUrl}?${params.toString()}`, { method: "GET" });
+  const indicatorText = await indicatorResponse.text();
+  if (!indicatorResponse.ok) {
+    const error = new Error(`CardCom indicator request failed (${indicatorResponse.status})`);
+    error.statusCode = 502;
+    error.details = indicatorText;
+    throw error;
+  }
+
+  return Object.fromEntries(new URLSearchParams(indicatorText).entries());
+};
+
+const createShopPayment = async (request, body) => {
+  const orderId = String(body.order_id || body.orderId || "").trim();
+  if (!uuidPattern.test(orderId)) {
+    const error = new Error("A valid order_id is required");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const order = await getOrder(orderId);
+  if (!order) {
+    const error = new Error("Order not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (toMoney(order.total) <= 0) {
+    const error = new Error("Invalid payment amount");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const successUrl = absoluteAppUrl(request, body.success_url || "/payment-success");
+  const cancelUrl = absoluteAppUrl(request, body.cancel_url || "/payment-failed");
+  const successRedirect = `${successUrl}${successUrl.includes("?") ? "&" : "?"}order_id=${encodeURIComponent(order.id)}`;
+  const errorRedirect = `${cancelUrl}${cancelUrl.includes("?") ? "&" : "?"}order_id=${encodeURIComponent(order.id)}`;
+
+  if (order.payment_method === "cash-on-delivery") {
+    await pool.query(
+      "update public.orders set payment_status = 'awaiting_cod', updated_at = now() where id = $1",
+      [order.id],
+    );
+    return {
+      success: true,
+      order_id: order.id,
+      order_number: order.order_number,
+      payment_method: "cash-on-delivery",
+      redirect_url: successRedirect,
+    };
+  }
+
+  if (order.payment_status === "paid") {
+    return {
+      success: true,
+      order_id: order.id,
+      order_number: order.order_number,
+      already_paid: true,
+      redirect_url: successRedirect,
+    };
+  }
+
+  if (!cardcomTerminal || !cardcomUsername || !cardcomApiPassword) {
+    await pool.query(
+      "update public.orders set payment_status = 'dev_approved', updated_at = now() where id = $1",
+      [order.id],
+    );
+    return {
+      success: true,
+      order_id: order.id,
+      order_number: order.order_number,
+      dev_mode: true,
+      redirect_url: `${successRedirect}&dev_mode=1`,
+    };
+  }
+
+  const { lines, lineCount, sum } = buildCardcomInvoiceLines(order);
+  if (sum <= 0) {
+    const error = new Error("Invalid CardCom invoice amount");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const webhookUrl = absoluteAppUrl(request, "/api/payments/cardcom/webhook");
+  const customerName = String(order.shipping_address?.fullName || order.customer_name || "Customer").trim();
+  const customerEmail = String(order.shipping_address?.email || order.customer_email || "").trim();
+  const customerAddress = String(order.shipping_address?.address || order.shipping_address?.street || "").trim() || customerName;
+  const customerCity = String(order.shipping_address?.city || "").trim() || "Unknown";
+  const customerPhone = String(order.shipping_address?.phone || order.customer_phone || "").trim();
+  const itemsDescription = (order.order_items || order.items || [])
+    .map((item) => `${item.product_name} x${item.quantity}`)
+    .join(", ")
+    .slice(0, 50) || order.order_number;
+
+  const formData = new URLSearchParams();
+  formData.append("TerminalNumber", cardcomTerminal);
+  formData.append("UserName", cardcomUsername);
+  formData.append("ApiPassword", cardcomApiPassword);
+  formData.append("APILevel", "10");
+  formData.append("codepage", "65001");
+  formData.append("Operation", "1");
+  formData.append("SumToBill", formatCardcomMoney(sum));
+  formData.append("CoinId", "1");
+  formData.append("Language", "he");
+  formData.append("SuccessRedirectUrl", successRedirect);
+  formData.append("ErrorRedirectUrl", errorRedirect);
+  formData.append("InvoiceHeadOperation", "1");
+  formData.append("InvoiceHead.CustName", customerName);
+  formData.append("InvoiceHead.CustAddresLine1", customerAddress);
+  formData.append("InvoiceHead.CustCity", customerCity);
+  formData.append("InvoiceHead.CoinID", "1");
+  formData.append("InvoiceHead.Language", "he");
+  formData.append("InvoiceHead.SendByEmail", customerEmail ? "true" : "false");
+  if (customerEmail) formData.append("InvoiceHead.Email", customerEmail);
+  if (customerPhone) formData.append("InvoiceHead.CustMobilePH", customerPhone);
+  formData.append("WebHookUrl", webhookUrl);
+  formData.append("IndicatorUrl", webhookUrl);
+  formData.append("ReturnValue", JSON.stringify({ order_id: order.id, order_number: order.order_number }));
+  formData.append("MaxNumOfPayments", String(order.payment_installments || 1));
+  formData.append("ProductName", itemsDescription);
+  formData.append("HideSumField", "true");
+  formData.append("SumInStar498", "false");
+
+  for (const [key, value] of Object.entries(lines)) {
+    formData.append(key, value);
+  }
+
+  const cardcomResponse = await fetch(cardcomLowProfileUrl, {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: formData.toString(),
+  });
+  const responseText = await cardcomResponse.text();
+  const cardcomParams = new URLSearchParams(responseText);
+  const responseCode = Number(cardcomParams.get("ResponseCode") || cardcomParams.get("OperationResponse") || "-1");
+  const lowProfileId = cardcomParams.get("LowProfileCode") || cardcomParams.get("LowProfileId") || "";
+  const paymentUrl = cardcomParams.get("Url") || cardcomParams.get("url") || cardcomParams.get("LowProfileUrl") || "";
+  const description = cardcomParams.get("Description") || cardcomParams.get("ErrorDescription") || "";
+  const isSuccess = responseCode === 0 || (paymentUrl.length > 0 && responseCode === -1);
+
+  if (!isSuccess) {
+    await pool.query(
+      "update public.orders set payment_status = 'failed', updated_at = now() where id = $1",
+      [order.id],
+    );
+    const error = new Error(description || "CardCom failed to create a payment page");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  await pool.query(
+    `
+      update public.orders
+      set payment_status = 'pending',
+          payment_transaction_id = coalesce(nullif($2, ''), payment_transaction_id),
+          updated_at = now()
+      where id = $1
+    `,
+    [order.id, lowProfileId],
+  );
+
+  await pool.query(
+    `
+      insert into public.cardcom_events (
+        order_id,
+        low_profile_code,
+        operation_response,
+        is_success,
+        payload_json
+      )
+      values ($1, $2, $3, true, $4::jsonb)
+    `,
+    [
+      order.id,
+      lowProfileId || null,
+      Number.isFinite(responseCode) ? responseCode : null,
+      JSON.stringify({
+        stage: "create_payment",
+        response_code: responseCode,
+        description,
+        raw_response: responseText.slice(0, 1000),
+        invoice_line_count: lineCount,
+        sum_to_bill: formatCardcomMoney(sum),
+      }),
+    ],
+  );
+
+  return {
+    success: true,
+    order_id: order.id,
+    order_number: order.order_number,
+    payment_url: paymentUrl,
+    low_profile_code: lowProfileId || null,
+  };
+};
+
+const parseCardcomWebhookPayload = (rawBody, queryPayload) => {
+  if (!rawBody) return queryPayload;
+
+  try {
+    return {
+      ...queryPayload,
+      ...JSON.parse(rawBody),
+    };
+  } catch {
+    return {
+      ...queryPayload,
+      ...Object.fromEntries(new URLSearchParams(rawBody).entries()),
+    };
+  }
+};
+
+const handleCardcomWebhook = async (request, url) => {
+  const rawBody = request.method === "GET" ? "" : await readRawBody(request);
+  const signature = request.headers["x-cardcom-signature"];
+  if (rawBody && !verifyCardcomSignature(rawBody, signature)) {
+    const error = new Error("Invalid CardCom signature");
+    error.statusCode = 401;
+    throw error;
+  }
+
+  const payload = parseCardcomWebhookPayload(rawBody, Object.fromEntries(url.searchParams.entries()));
+  const lowProfileCode = getStringValue(payload, [
+    "LowProfileCode",
+    "lowprofilecode",
+    "LowProfileId",
+    "LowProfileDealId",
+  ]);
+
+  if (!lowProfileCode) {
+    const error = new Error("Missing LowProfileCode");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const indicatorPayload = await fetchCardcomLowProfileIndicator(lowProfileCode);
+  const operationResponse = getNumberValue(indicatorPayload, ["OperationResponse", "operationresponse"]);
+  if (operationResponse === null) {
+    const error = new Error("Invalid CardCom indicator response");
+    error.statusCode = 502;
+    throw error;
+  }
+
+  const dealResponse = getNumberValue(indicatorPayload, ["DealResponse", "dealresponse"]);
+  const returnValue = getStringValue(indicatorPayload, ["ReturnValue", "returnvalue"]) ||
+    getStringValue(payload, ["ReturnValue", "returnvalue"]);
+  const { orderId: parsedOrderId } = parseCardcomReturnValue(returnValue);
+  const transactionId = getStringValue(indicatorPayload, [
+    "TranzactionId",
+    "TransactionId",
+    "InternalDealNumber",
+    "DealNumber",
+    "LowProfileDealId",
+  ]) || getStringValue(payload, [
+    "TranzactionId",
+    "TransactionId",
+    "InternalDealNumber",
+    "LowProfileDealId",
+  ]) || lowProfileCode;
+
+  let orderResult = parsedOrderId && uuidPattern.test(parsedOrderId)
+    ? await pool.query("select id, order_number, payment_status from public.orders where id = $1 limit 1", [parsedOrderId])
+    : { rowCount: 0, rows: [] };
+
+  if (orderResult.rowCount === 0) {
+    orderResult = await pool.query(
+      "select id, order_number, payment_status from public.orders where payment_transaction_id = $1 limit 1",
+      [lowProfileCode],
+    );
+  }
+
+  const order = orderResult.rows[0] || null;
+  const isSuccess = operationResponse === 0 && (dealResponse === null || dealResponse === 0);
+
+  await pool.query(
+    `
+      insert into public.cardcom_events (
+        order_id,
+        low_profile_code,
+        transaction_id,
+        operation_response,
+        deal_response,
+        is_success,
+        payload_json
+      )
+      values ($1, $2, $3, $4, $5, $6, $7::jsonb)
+    `,
+    [
+      order?.id || null,
+      lowProfileCode,
+      transactionId,
+      operationResponse,
+      dealResponse,
+      isSuccess,
+      JSON.stringify({
+        method: request.method,
+        incoming: payload,
+        indicator: indicatorPayload,
+      }),
+    ],
+  );
+
+  if (!order) {
+    const error = new Error("Order not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (isSuccess) {
+    if (order.payment_status !== "paid") {
+      await pool.query(
+        `
+          update public.orders
+          set payment_status = 'paid',
+              payment_transaction_id = $2,
+              status = 'processing',
+              updated_at = now()
+          where id = $1
+        `,
+        [order.id, transactionId],
+      );
+    }
+  } else if (order.payment_status !== "paid") {
+    await pool.query(
+      "update public.orders set payment_status = 'failed', updated_at = now() where id = $1",
+      [order.id],
+    );
+  }
+
+  return {
+    received: true,
+    order_id: order.id,
+    payment_status: isSuccess ? "paid" : "failed",
+  };
+};
+
 const createReport = async (body) => {
   const id = randomUUID();
   await pool.query(
@@ -1457,6 +1950,16 @@ const handleRequest = async (request, response) => {
         return;
       }
       sendJson(response, 200, { order });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/payments/shop") {
+      sendJson(response, 200, await createShopPayment(request, await readBody(request)));
+      return;
+    }
+
+    if ((request.method === "POST" || request.method === "GET") && url.pathname === "/api/payments/cardcom/webhook") {
+      sendJson(response, 200, await handleCardcomWebhook(request, url));
       return;
     }
 

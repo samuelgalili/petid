@@ -139,6 +139,18 @@ export interface CreateMipoOrderInput {
   want_recurring_order?: boolean;
 }
 
+export interface MipoPaymentSession {
+  success: boolean;
+  order_id: string;
+  order_number: string;
+  payment_method?: string;
+  payment_url?: string;
+  redirect_url?: string;
+  low_profile_code?: string | null;
+  dev_mode?: boolean;
+  already_paid?: boolean;
+}
+
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/+$/, "");
 
 async function fileToDataUrl(file: File): Promise<string> {
@@ -238,6 +250,17 @@ export async function createShopOrder(input: CreateMipoOrderInput): Promise<Mipo
     body: JSON.stringify(input),
   });
   return result.order;
+}
+
+export async function createShopPaymentSession(input: {
+  order_id: string;
+  success_url: string;
+  cancel_url: string;
+}): Promise<MipoPaymentSession> {
+  return apiFetch<MipoPaymentSession>("/payments/shop", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
 
 export async function getShopOrder(orderIdOrNumber: string): Promise<MipoOrder> {

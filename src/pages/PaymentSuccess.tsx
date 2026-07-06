@@ -3,17 +3,52 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { CheckCircle, Package, Truck, ArrowLeft } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/contexts/CartContext";
+import { getShopOrder, type MipoOrder } from "@/lib/mipoApi";
 
-interface OrderDetails {
-  order_number: string;
-  total: number;
-  shipping_address: {
-    fullName: string;
-    email: string;
+type ShippingAddress = {
+  fullName?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  zipCode?: string;
+};
+
+const getShippingAddress = (order: MipoOrder): ShippingAddress => order.shipping_address || {};
+
+const toConfirmationOrder = (order: MipoOrder) => {
+  const shippingAddress = getShippingAddress(order);
+  return {
+    orderId: order.order_number,
+    orderUuid: order.id,
+    items: order.items.map((item) => ({
+      id: item.product_id || item.id,
+      name: item.product_name,
+      image: item.product_image,
+      price: item.price,
+      quantity: item.quantity,
+      variant: item.variant,
+      size: item.size,
+    })),
+    shippingData: {
+      fullName: shippingAddress.fullName || order.customer_name || "",
+      email: shippingAddress.email || order.customer_email || "",
+      phone: shippingAddress.phone || order.customer_phone || "",
+      address: shippingAddress.address || "",
+      city: shippingAddress.city || "",
+      zipCode: shippingAddress.zipCode || "",
+    },
+    paymentMethod: order.payment_method,
+    subtotal: order.subtotal,
+    shipping: order.shipping,
+    tax: order.tax,
+    discount: order.discount_amount,
+    cashOnDeliveryFee: order.cash_on_delivery_fee,
+    total: order.total,
+    orderDate: order.order_date,
   };
-}
+};
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();
@@ -23,35 +58,35 @@ const PaymentSuccess = () => {
   const paymentId = searchParams.get('payment_id');
   const subscriptionId = searchParams.get('subscription_id');
   
-  const [order, setOrder] = useState<OrderDetails | null>(null);
+  const [order, setOrder] = useState<MipoOrder | null>(null);
   const [loading, setLoading] = useState(!!orderId);
 
   useEffect(() => {
     const fetchOrder = async () => {
-      if (!orderId) return;
+      if (!orderId) {
+        setLoading(false);
+        return;
+      }
 
       try {
-        const { data, error } = await supabase
-          .from('orders')
-          .select('order_number, total, shipping_address')
-          .eq('id', orderId)
-          .single();
+        const data = await getShopOrder(orderId);
+        setOrder(data);
 
-        if (!error && data) {
-          setOrder(data as OrderDetails);
-          
-          // Clear cart on successful payment
-          clearCart();
-          
-          // Clear pending order from localStorage
-          localStorage.removeItem('pendingOrder');
-          
-          // Store as last order for order confirmation page
-          const pendingOrder = localStorage.getItem('pendingOrder');
-          if (pendingOrder) {
-            localStorage.setItem('lastOrder', pendingOrder);
-          }
+        clearCart();
+
+        const pendingOrder = localStorage.getItem("pendingOrder");
+        if (pendingOrder) {
+          localStorage.setItem("lastOrder", pendingOrder);
+        } else {
+          localStorage.setItem("lastOrder", JSON.stringify(toConfirmationOrder(data)));
         }
+
+        localStorage.removeItem("pendingOrder");
+        localStorage.setItem("mipo_checkout_contact", JSON.stringify(toConfirmationOrder(data).shippingData));
+
+        const existingIds = JSON.parse(localStorage.getItem("mipo_order_ids") || "[]");
+        const nextIds = Array.from(new Set([data.id, ...(Array.isArray(existingIds) ? existingIds : [])])).slice(0, 50);
+        localStorage.setItem("mipo_order_ids", JSON.stringify(nextIds));
       } catch (err) {
         console.error('Error fetching order:', err);
       } finally {
@@ -89,10 +124,10 @@ const PaymentSuccess = () => {
                 <span className="text-muted-foreground">סכום ששולם:</span>
                 <span className="font-bold text-green-600">₪{order.total.toFixed(2)}</span>
               </div>
-              {order.shipping_address?.email && (
+              {getShippingAddress(order).email && (
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted-foreground">אישור נשלח ל:</span>
-                  <span className="font-medium">{order.shipping_address.email}</span>
+                  <span className="font-medium">{getShippingAddress(order).email}</span>
                 </div>
               )}
             </div>

@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { XCircle, RefreshCw, MessageCircle, ArrowLeft } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { getShopOrder } from "@/lib/mipoApi";
 
 const PaymentFailed = () => {
   const navigate = useNavigate();
@@ -20,15 +20,8 @@ const PaymentFailed = () => {
       if (!orderId) return;
 
       try {
-        const { data } = await supabase
-          .from('orders')
-          .select('order_number')
-          .eq('id', orderId)
-          .single();
-
-        if (data) {
-          setOrderNumber(data.order_number);
-        }
+        const data = await getShopOrder(orderId);
+        setOrderNumber(data.order_number);
       } catch (err) {
         console.error('Error fetching order:', err);
       }
