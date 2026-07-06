@@ -7,8 +7,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Syringe, Calendar, AlertCircle, MapPin, CalendarPlus, X } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { getMyPetHealthSummary } from "@/lib/mipoApi";
 
 interface VaccineCountdownProps {
   petId: string;
@@ -27,42 +27,42 @@ export const VaccineCountdown = ({ petId, petName }: VaccineCountdownProps) => {
   const [upcoming, setUpcoming] = useState<UpcomingVaccine[]>([]);
   const [selectedVaccine, setSelectedVaccine] = useState<UpcomingVaccine | null>(null);
 
-  useEffect(() => {
-    const fetch = async () => {
-      const today = new Date().toISOString().split("T")[0];
-      const { data } = await supabase
-        .from("pet_vet_visits")
-        .select("id, vaccines, next_visit_date")
-        .eq("pet_id", petId)
-        .not("next_visit_date", "is", null)
-        .gte("next_visit_date", today)
-        .order("next_visit_date", { ascending: true })
-        .limit(5);
+	  useEffect(() => {
+	    const fetch = async () => {
+	      const today = new Date().toISOString().split("T")[0];
+	      const summary = await getMyPetHealthSummary(petId);
+	      const visitItems: UpcomingVaccine[] = summary.vet_visits
+	        .filter((visit) => visit.next_visit_date && visit.next_visit_date >= today && (visit.vaccines || []).length > 0)
+	        .map((visit) => ({
+	          id: visit.id,
+	          vaccines: visit.vaccines || [],
+	          nextDate: visit.next_visit_date!,
+	          daysUntil: Math.ceil((new Date(visit.next_visit_date!).getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+	        }));
+	      const vaccinationItems: UpcomingVaccine[] = summary.vaccinations
+	        .filter((vaccination) => vaccination.expires_at && vaccination.expires_at >= today)
+	        .map((vaccination) => ({
+	          id: vaccination.id,
+	          vaccines: [vaccination.vaccine_name],
+	          nextDate: vaccination.expires_at!,
+	          daysUntil: Math.ceil((new Date(vaccination.expires_at!).getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+	        }));
 
-      if (data) {
-        const items: UpcomingVaccine[] = data
-          .filter((v: any) => v.vaccines && (v.vaccines as string[]).length > 0)
-          .map((v: any) => ({
-            id: v.id,
-            vaccines: v.vaccines as string[],
-            nextDate: v.next_visit_date,
-            daysUntil: Math.ceil((new Date(v.next_visit_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
-          }));
+	      const seen = new Set<string>();
+	      const unique = [...visitItems, ...vaccinationItems]
+	        .sort((a, b) => new Date(a.nextDate).getTime() - new Date(b.nextDate).getTime())
+	        .filter((item) => {
+	          const key = `${[...item.vaccines].sort().join(",")}|${item.nextDate}`;
+	          if (seen.has(key)) return false;
+	          seen.add(key);
+	          return true;
+	        })
+	        .slice(0, 5);
 
-        // Deduplicate by vaccine names + date to avoid showing the same vaccine twice
-        const seen = new Set<string>();
-        const unique = items.filter((item) => {
-          const key = `${item.vaccines.sort().join(",")}|${item.nextDate}`;
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        });
-
-        setUpcoming(unique);
-      }
-    };
-    fetch();
-  }, [petId]);
+	      setUpcoming(unique);
+	    };
+	    fetch();
+	  }, [petId]);
 
   if (upcoming.length === 0) return null;
 

@@ -6,7 +6,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Stethoscope, Syringe, Calendar, Pill, FileText, ChevronDown, ChevronUp } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { getMyPetHealthSummary, type MipoVetVisit } from "@/lib/mipoApi";
 
 interface MedicalEvent {
   id: string;
@@ -26,64 +26,54 @@ export const MedicalTimeline = ({ petId, petName }: MedicalTimelineProps) => {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
 
-  useEffect(() => {
-    const fetchMedicalEvents = async () => {
-      try {
-        // Fetch from pet_documents (extracted medical data)
-        const { data: docs } = await supabase
-          .from("pet_documents")
-          .select("id, document_type, title, uploaded_at, description")
-          .eq("pet_id", petId)
-          .order("uploaded_at", { ascending: false })
-          .limit(10);
+	  useEffect(() => {
+	    const fetchMedicalEvents = async () => {
+	      try {
+	        const summary = await getMyPetHealthSummary(petId);
+	        const docs = summary.documents.slice(0, 10);
+	        const vetVisits = summary.vet_visits.slice(0, 10);
+	        const timeline: MedicalEvent[] = [];
 
-        // Fetch from pet_vet_visits (structured vet visit data)
-        const { data: vetVisits } = await supabase
-          .from("pet_vet_visits")
-          .select("id, visit_type, visit_date, diagnosis, treatment, clinic_name, vaccines, is_recovery_mode")
-          .eq("pet_id", petId)
-          .order("visit_date", { ascending: false })
-          .limit(10);
+	        // Add vet visits from pet_vet_visits table
+	        if (vetVisits.length > 0) {
+	          for (const visit of vetVisits) {
+	            const typeMap: Record<string, MedicalEvent['type']> = {
+	              vaccination: 'vaccination',
+	              surgery: 'surgery',
+	              treatment: 'treatment',
+	              checkup: 'vet_visit',
+	            };
+	            const vaccines = visit.vaccines || [];
+	            const title = visit.visit_type === 'vaccination' && vaccines.length > 0
+	              ? `חיסון: ${vaccines.join(', ')}`
+	              : visit.diagnosis || visit.clinic_name || 'ביקור וטרינר';
+	            timeline.push({
+	              id: visit.id,
+	              type: typeMap[visit.visit_type || ''] || 'vet_visit',
+	              title,
+	              date: visit.visit_date || visit.created_at || new Date().toISOString(),
+	              notes: visit.treatment || null,
+	            });
+	          }
+	        }
 
-        // Fetch pet's last/next vet visit
-        const { data: petData } = await (supabase as any)
-          .from("pets")
-          .select("last_vet_visit, next_vet_visit, medical_conditions")
-          .eq("id", petId)
-          .maybeSingle();
+	        for (const vaccination of summary.vaccinations) {
+	          timeline.push({
+	            id: vaccination.id,
+	            type: 'vaccination',
+	            title: `חיסון: ${vaccination.vaccine_name}`,
+	            date: vaccination.administered_at || vaccination.created_at || new Date().toISOString(),
+	            notes: vaccination.notes,
+	          });
+	        }
 
-        const timeline: MedicalEvent[] = [];
-
-        // Add vet visits from pet_vet_visits table
-        if (vetVisits) {
-          for (const visit of vetVisits) {
-            const typeMap: Record<string, MedicalEvent['type']> = {
-              vaccination: 'vaccination',
-              surgery: 'surgery',
-              treatment: 'treatment',
-              checkup: 'vet_visit',
-            };
-            const vaccines = (visit.vaccines as string[]) || [];
-            const title = visit.visit_type === 'vaccination' && vaccines.length > 0
-              ? `חיסון: ${vaccines.join(', ')}`
-              : visit.diagnosis || visit.clinic_name || 'ביקור וטרינר';
-            timeline.push({
-              id: visit.id,
-              type: typeMap[visit.visit_type || ''] || 'vet_visit',
-              title,
-              date: visit.visit_date,
-              notes: visit.treatment || null,
-            });
-          }
-        }
-
-        // Add documents as events (only if not duplicating vet visits)
-        const vetVisitIds = new Set(vetVisits?.map((v: any) => v.id) || []);
-        if (docs) {
-          for (const doc of docs) {
-            if (vetVisitIds.has(doc.id)) continue;
-            const typeMap: Record<string, MedicalEvent['type']> = {
-              vaccination: 'vaccination',
+	        // Add documents as events (only if not duplicating vet visits)
+	        const vetVisitIds = new Set(vetVisits.map((visit: MipoVetVisit) => visit.id));
+	        if (docs.length > 0) {
+	          for (const doc of docs) {
+	            if (vetVisitIds.has(doc.id)) continue;
+	            const typeMap: Record<string, MedicalEvent['type']> = {
+	              vaccination: 'vaccination',
               vet_visit: 'vet_visit',
               treatment: 'treatment',
               surgery: 'surgery',
@@ -96,17 +86,17 @@ export const MedicalTimeline = ({ petId, petName }: MedicalTimelineProps) => {
               notes: doc.description,
             });
           }
-        }
+	        }
 
-        // Add vet visits from pet record
-        if (petData?.next_vet_visit) {
-          timeline.push({
-            id: 'next-vet',
-            type: 'vet_visit',
-            title: 'ביקור וטרינר הבא',
-            date: petData.next_vet_visit,
-          });
-        }
+	        // Add vet visits from pet record
+	        if (summary.pet.next_vet_visit) {
+	          timeline.push({
+	            id: 'next-vet',
+	            type: 'vet_visit',
+	            title: 'ביקור וטרינר הבא',
+	            date: summary.pet.next_vet_visit,
+	          });
+	        }
 
         // Sort by date, newest first, deduplicate
         timeline.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());

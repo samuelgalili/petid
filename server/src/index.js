@@ -403,6 +403,9 @@ const serializeProfile = (row) => row ? ({
   whatsapp_number: row.whatsapp_number || null,
   avatar_url: row.avatar_url || null,
   birthdate: row.birthdate || null,
+  street: row.street || null,
+  city: row.city || null,
+  id_number_last4: row.id_number_last4 || null,
   created_at: row.created_at || null,
   updated_at: row.updated_at || null,
 }) : null;
@@ -524,6 +527,9 @@ const getUserFromSession = async (request) => {
         p.whatsapp_number as profile_whatsapp_number,
         p.avatar_url as profile_avatar_url,
         p.birthdate as profile_birthdate,
+        p.street as profile_street,
+        p.city as profile_city,
+        p.id_number_last4 as profile_id_number_last4,
         p.created_at as profile_created_at,
         p.updated_at as profile_updated_at
       from public.user_sessions user_session
@@ -556,6 +562,9 @@ const getUserFromSession = async (request) => {
     whatsapp_number: row.profile_whatsapp_number,
     avatar_url: row.profile_avatar_url,
     birthdate: row.profile_birthdate,
+    street: row.profile_street,
+    city: row.profile_city,
+    id_number_last4: row.profile_id_number_last4,
     created_at: row.profile_created_at,
     updated_at: row.profile_updated_at,
   } : null);
@@ -720,6 +729,11 @@ const updateMyProfile = async (userId, body) => {
   const bio = Object.prototype.hasOwnProperty.call(body, "bio") ? String(body.bio || "").slice(0, 150) : undefined;
   const avatarUrl = Object.prototype.hasOwnProperty.call(body, "avatar_url") ? String(body.avatar_url || "").trim() || null : undefined;
   const birthdate = Object.prototype.hasOwnProperty.call(body, "birthdate") ? normalizeDateOnly(body.birthdate) : undefined;
+  const street = Object.prototype.hasOwnProperty.call(body, "street") ? String(body.street || "").trim() || null : undefined;
+  const city = Object.prototype.hasOwnProperty.call(body, "city") ? String(body.city || "").trim() || null : undefined;
+  const idNumberLast4 = Object.prototype.hasOwnProperty.call(body, "id_number_last4")
+    ? String(body.id_number_last4 || "").replace(/\D/g, "").slice(-4) || null
+    : undefined;
 
   if (fullName !== undefined && fullName.length < 2) {
     const error = new Error("Full name must be at least 2 characters");
@@ -755,6 +769,9 @@ const updateMyProfile = async (userId, body) => {
   if (whatsappNumber !== undefined) pushProfile("whatsapp_number", whatsappNumber);
   if (bio !== undefined) pushProfile("bio", bio);
   if (avatarUrl !== undefined) pushProfile("avatar_url", avatarUrl);
+  if (street !== undefined) pushProfile("street", street);
+  if (city !== undefined) pushProfile("city", city);
+  if (idNumberLast4 !== undefined) pushProfile("id_number_last4", idNumberLast4);
   if (birthdate !== undefined) {
     pushProfile("birthdate", birthdate);
     pushApp("birthdate", birthdate);
@@ -791,32 +808,63 @@ const updateMyProfile = async (userId, body) => {
   };
 };
 
-const serializePet = (row) => ({
-  id: row.id,
-  user_id: row.user_id,
-  name: row.name,
-  type: row.type,
-  pet_type: row.type,
-  breed: row.breed || null,
-  secondary_breed: row.secondary_breed || null,
-  is_mixed: row.is_mixed || false,
-  breed_confidence: row.breed_confidence,
-  avatar_url: row.avatar_url || null,
-  weight: row.weight === null || row.weight === undefined ? null : Number(row.weight),
-  birth_date: row.birth_date || null,
-  gender: row.gender || null,
-  is_neutered: row.is_neutered,
-  medical_conditions: row.medical_conditions || null,
-  health_notes: row.health_notes || null,
-  personality_tags: row.personality_tags || null,
-  favorite_activities: row.favorite_activities || row.activities || null,
-  activities: row.activities || row.favorite_activities || null,
-  theme_color: row.theme_color || null,
-  archived: row.archived || false,
-  archived_at: row.archived_at || null,
-  created_at: row.created_at || null,
-  updated_at: row.updated_at || null,
-});
+const calculatePetAge = (birthDate) => {
+  if (!birthDate) return { age_years: null, age_months: null };
+  const birth = new Date(String(birthDate));
+  if (Number.isNaN(birth.getTime())) return { age_years: null, age_months: null };
+  const totalMonths = Math.max(0, Math.floor((Date.now() - birth.getTime()) / (1000 * 60 * 60 * 24 * 30.4375)));
+  return {
+    age_years: Math.floor(totalMonths / 12),
+    age_months: totalMonths % 12,
+  };
+};
+
+const serializePet = (row) => {
+  const age = calculatePetAge(row.birth_date);
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    name: row.name,
+    type: row.type,
+    pet_type: row.type,
+    breed: row.breed || null,
+    secondary_breed: row.secondary_breed || null,
+    is_mixed: row.is_mixed || false,
+    breed_confidence: row.breed_confidence,
+    avatar_url: row.avatar_url || null,
+    weight: row.weight === null || row.weight === undefined ? null : Number(row.weight),
+    birth_date: row.birth_date || null,
+    age_years: age.age_years,
+    age_months: age.age_months,
+    gender: row.gender || null,
+    color: row.color || null,
+    is_neutered: row.is_neutered,
+    medical_conditions: row.medical_conditions || null,
+    health_notes: row.health_notes || null,
+    personality_tags: row.personality_tags || null,
+    favorite_activities: row.favorite_activities || row.activities || null,
+    activities: row.activities || row.favorite_activities || null,
+    theme_color: row.theme_color || null,
+    has_insurance: row.has_insurance,
+    insurance_company: row.insurance_company || null,
+    insurance_expiry_date: row.insurance_expiry_date || null,
+    current_food: row.current_food || null,
+    last_vet_visit: row.last_vet_visit || null,
+    next_vet_visit: row.next_vet_visit || null,
+    vet_clinic: row.vet_clinic || null,
+    vet_clinic_name: row.vet_clinic_name || row.vet_clinic || null,
+    vet_clinic_phone: row.vet_clinic_phone || null,
+    vet_clinic_address: row.vet_clinic_address || null,
+    microchip_number: row.microchip_number || null,
+    is_dangerous_breed: row.is_dangerous_breed || false,
+    license_conditions: row.license_conditions || null,
+    license_expiry_date: row.license_expiry_date || null,
+    archived: row.archived || false,
+    archived_at: row.archived_at || null,
+    created_at: row.created_at || null,
+    updated_at: row.updated_at || null,
+  };
+};
 
 const normalizePetPayload = (body, { partial = false } = {}) => {
   const payload = {};
@@ -847,16 +895,31 @@ const normalizePetPayload = (body, { partial = false } = {}) => {
     "secondary_breed",
     "avatar_url",
     "gender",
+    "color",
     "health_notes",
     "theme_color",
+    "insurance_company",
+    "current_food",
+    "vet_clinic",
+    "vet_clinic_name",
+    "vet_clinic_phone",
+    "vet_clinic_address",
+    "microchip_number",
+    "license_conditions",
   ];
   for (const field of simpleTextFields) {
     if (has(field)) payload[field] = body[field] === null ? null : String(body[field] || "").trim() || null;
   }
 
   if (has("birth_date") || has("birthDate")) payload.birth_date = normalizeDateOnly(body.birth_date || body.birthDate);
+  if (has("last_vet_visit") || has("lastVetVisit")) payload.last_vet_visit = normalizeDateOnly(body.last_vet_visit || body.lastVetVisit);
+  if (has("next_vet_visit") || has("nextVetVisit")) payload.next_vet_visit = normalizeDateOnly(body.next_vet_visit || body.nextVetVisit);
+  if (has("insurance_expiry_date") || has("insuranceExpiryDate")) payload.insurance_expiry_date = normalizeDateOnly(body.insurance_expiry_date || body.insuranceExpiryDate);
+  if (has("license_expiry_date") || has("licenseExpiryDate")) payload.license_expiry_date = normalizeDateOnly(body.license_expiry_date || body.licenseExpiryDate);
   if (has("weight")) payload.weight = toNumber(body.weight);
   if (has("is_neutered")) payload.is_neutered = body.is_neutered === null ? null : Boolean(body.is_neutered);
+  if (has("has_insurance")) payload.has_insurance = body.has_insurance === null ? null : Boolean(body.has_insurance);
+  if (has("is_dangerous_breed")) payload.is_dangerous_breed = Boolean(body.is_dangerous_breed);
   if (has("is_mixed")) payload.is_mixed = Boolean(body.is_mixed);
   if (has("breed_confidence")) {
     const confidence = Number(body.breed_confidence);
@@ -1249,7 +1312,9 @@ const serializeVetVisit = (row) => ({
   id: row.id,
   user_id: row.user_id,
   pet_id: row.pet_id,
+  visit_type: row.visit_type || null,
   visit_date: row.visit_date || null,
+  next_visit_date: row.next_visit_date || null,
   clinic_name: row.clinic_name || null,
   vet_name: row.vet_name || null,
   reason: row.reason || null,
@@ -1257,6 +1322,10 @@ const serializeVetVisit = (row) => ({
   treatment: row.treatment || null,
   notes: row.notes || null,
   vaccines: row.vaccines || [],
+  is_recovery_mode: row.is_recovery_mode || false,
+  recovery_until: row.recovery_until || null,
+  raw_summary: row.raw_summary || null,
+  cost: row.cost === null || row.cost === undefined ? null : Number(row.cost),
   created_at: row.created_at || null,
   updated_at: row.updated_at || null,
 });
@@ -1277,36 +1346,70 @@ const listUserVetVisits = async (userId, petId) => {
 
 const createUserVetVisit = async (userId, petId, body) => {
   await ensureUserPet(userId, petId);
+  const visitDate = normalizeDateOnly(body.visit_date || body.visitDate) || new Date().toISOString().slice(0, 10);
+  const nextVisitDate = normalizeDateOnly(body.next_visit_date || body.nextVisitDate);
+  const clinicName = body.clinic_name ? String(body.clinic_name).trim() : null;
+  const vaccines = Array.isArray(body.vaccines)
+    ? body.vaccines.map((item) => String(item || "").trim()).filter(Boolean)
+    : [];
   const result = await pool.query(
     `
       insert into public.pet_vet_visits (
         user_id,
         pet_id,
+        visit_type,
         visit_date,
+        next_visit_date,
         clinic_name,
         vet_name,
         reason,
         diagnosis,
         treatment,
         notes,
-        vaccines
+        vaccines,
+        is_recovery_mode,
+        recovery_until,
+        raw_summary,
+        cost
       )
-      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb, $13, $14, $15, $16)
       returning *
     `,
     [
       userId,
       petId,
-      normalizeDateOnly(body.visit_date || body.visitDate),
-      body.clinic_name ? String(body.clinic_name).trim() : null,
+      body.visit_type ? String(body.visit_type).trim() : vaccines.length > 0 ? "vaccination" : "checkup",
+      visitDate,
+      nextVisitDate,
+      clinicName,
       body.vet_name ? String(body.vet_name).trim() : null,
       body.reason ? String(body.reason).trim() : null,
       body.diagnosis ? String(body.diagnosis).trim() : null,
       body.treatment ? String(body.treatment).trim() : null,
       body.notes ? String(body.notes).trim() : null,
-      JSON.stringify(Array.isArray(body.vaccines) ? body.vaccines : []),
+      JSON.stringify(vaccines),
+      Boolean(body.is_recovery_mode || body.isRecoveryMode),
+      normalizeDateOnly(body.recovery_until || body.recoveryUntil),
+      body.raw_summary ? String(body.raw_summary).trim() : null,
+      toNumber(body.cost),
     ],
   );
+
+  const petUpdates = ["last_vet_visit = greatest(coalesce(last_vet_visit, $3::date), $3::date)"];
+  const petValues = [petId, userId, visitDate];
+  if (nextVisitDate) {
+    petValues.push(nextVisitDate);
+    petUpdates.push(`next_vet_visit = $${petValues.length}`);
+  }
+  if (clinicName) {
+    petValues.push(clinicName);
+    petUpdates.push(`vet_clinic_name = coalesce(vet_clinic_name, $${petValues.length})`);
+  }
+  await pool.query(
+    `update public.pets set ${petUpdates.join(", ")}, updated_at = now() where id = $1 and user_id = $2`,
+    petValues,
+  );
+
   return serializeVetVisit(result.rows[0]);
 };
 
@@ -1347,6 +1450,8 @@ const createUserVaccination = async (userId, petId, body) => {
     throw error;
   }
 
+  const administeredAt = normalizeDateOnly(body.administered_at || body.administeredAt);
+  const expiresAt = normalizeDateOnly(body.expires_at || body.expiresAt);
   const result = await pool.query(
     `
       insert into public.pet_vaccinations (
@@ -1366,14 +1471,70 @@ const createUserVaccination = async (userId, petId, body) => {
       userId,
       petId,
       vaccineName,
-      normalizeDateOnly(body.administered_at || body.administeredAt),
-      normalizeDateOnly(body.expires_at || body.expiresAt),
+      administeredAt,
+      expiresAt,
       body.veterinarian ? String(body.veterinarian).trim() : null,
       body.batch_number ? String(body.batch_number).trim() : null,
       body.notes ? String(body.notes).trim() : null,
     ],
   );
+  const updates = [];
+  const values = [petId, userId];
+  if (administeredAt) {
+    values.push(administeredAt);
+    updates.push(`last_vet_visit = greatest(coalesce(last_vet_visit, $${values.length}::date), $${values.length}::date)`);
+  }
+  if (expiresAt) {
+    values.push(expiresAt);
+    updates.push(`next_vet_visit = $${values.length}`);
+  }
+  if (updates.length > 0) {
+    await pool.query(
+      `update public.pets set ${updates.join(", ")}, updated_at = now() where id = $1 and user_id = $2`,
+      values,
+    );
+  }
   return serializeVaccination(result.rows[0]);
+};
+
+const getUserPetHealthSummary = async (userId, petId) => {
+  const [pet, profile, vetVisits, vaccinations, documents] = await Promise.all([
+    getUserPet(userId, petId),
+    getProfileByUserId(userId),
+    listUserVetVisits(userId, petId),
+    listUserVaccinations(userId, petId),
+    listUserDocuments(userId, { petId, limit: 100 }),
+  ]);
+
+  if (!pet) return null;
+
+  const visitsWithDates = vetVisits.filter((visit) => visit.visit_date);
+  const lastVetVisit = visitsWithDates[0]?.visit_date || pet.last_vet_visit || null;
+  const futureDates = [
+    pet.next_vet_visit,
+    ...vetVisits.map((visit) => visit.next_visit_date),
+    ...vaccinations.map((vaccination) => vaccination.expires_at),
+  ].filter(Boolean)
+    .filter((date) => new Date(date) >= new Date())
+    .sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+
+  const activeRecovery = vetVisits.find((visit) => (
+    visit.is_recovery_mode && visit.recovery_until && new Date(visit.recovery_until) >= new Date()
+  )) || null;
+
+  return {
+    pet: {
+      ...pet,
+      last_vet_visit: lastVetVisit,
+      next_vet_visit: futureDates[0] || pet.next_vet_visit || null,
+      vet_clinic_name: pet.vet_clinic_name || pet.vet_clinic || vetVisits.find((visit) => visit.clinic_name)?.clinic_name || null,
+    },
+    profile,
+    vet_visits: vetVisits,
+    vaccinations,
+    documents,
+    active_recovery: activeRecovery,
+  };
 };
 
 const toNumber = (value) => {
@@ -3280,6 +3441,19 @@ const handleRequest = async (request, response) => {
       if (!auth) return;
       const deleted = await deleteUserPet(auth.user.id, myPetMatch[1]);
       sendJson(response, deleted ? 200 : 404, { deleted });
+      return;
+    }
+
+    const myPetHealthSummaryMatch = url.pathname.match(/^\/api\/me\/pets\/([0-9a-fA-F-]{36})\/health-summary$/);
+    if (myPetHealthSummaryMatch && request.method === "GET") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      const summary = await getUserPetHealthSummary(auth.user.id, myPetHealthSummaryMatch[1]);
+      if (!summary) {
+        sendError(response, 404, "Pet not found");
+        return;
+      }
+      sendJson(response, 200, summary);
       return;
     }
 

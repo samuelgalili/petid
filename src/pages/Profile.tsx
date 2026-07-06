@@ -6,15 +6,11 @@ import { PageTransition } from "@/components/PageTransition";
 import BottomNav from "@/components/BottomNav";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, Plus, Edit3, MessageCircle } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useUserRole } from "@/hooks/useUserRole";
 import { useNavigate } from "react-router-dom";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
 import { ProfileImageEditor } from "@/components/ProfileImageEditor";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useQueryClient } from "@tanstack/react-query";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { ProfileSkeleton } from "@/components/profile/ProfileSkeleton";
 import { PetShopView } from "@/components/profile/PetShopView";
@@ -26,6 +22,7 @@ import { HealthScoreBreakdown } from "@/components/profile/HealthScoreBreakdown"
 import { PetDashboardTabs } from "@/components/profile/PetDashboardTabs";
 import { HeartRain } from "@/components/profile/HeartRain";
 import { haptic } from "@/lib/haptics";
+import { getCurrentUser, getMyPets, type MipoProfile } from "@/lib/mipoApi";
 
 interface Pet {
   id: string;
@@ -39,14 +36,11 @@ interface Pet {
 }
 
 const Profile = () => {
-  const { toast } = useToast();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { role, isAdmin } = useUserRole();
   const { switchPet: contextSwitchPet, activePet: globalActivePet } = usePetPreference();
 
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<MipoProfile | null>(null);
   const [pets, setPets] = useState<Pet[]>([]);
   const [selectedPetId, setSelectedPetId] = useState<string | null>(null);
   const [isImageEditorOpen, setIsImageEditorOpen] = useState(false);
@@ -100,15 +94,24 @@ const Profile = () => {
   const fetchAllData = async () => {
     try {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { navigate('/auth'); return; }
+      const auth = await getCurrentUser();
+      if (!auth?.user) { navigate('/auth'); return; }
 
-      const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
-      const authAvatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture;
-      setProfile({ ...profileData, id: user.id, avatar_url: profileData?.avatar_url || authAvatarUrl });
+      setProfile(auth.profile || {
+        id: auth.user.id,
+        email: auth.user.email,
+        full_name: auth.user.full_name,
+        phone: auth.user.phone || null,
+        avatar_url: null,
+      });
 
-      const { data: petsData } = await supabase.from('pets').select('*').eq('user_id', user.id).eq('archived', false).order('created_at', { ascending: false });
-      const fetchedPets = (petsData || []) as Pet[];
+      const petsData = await getMyPets();
+      const fetchedPets = petsData
+        .filter((pet) => !pet.archived)
+        .map((pet) => ({
+          ...pet,
+          type: pet.type === "cat" ? "cat" : "dog",
+        })) as Pet[];
       setPets(fetchedPets);
 
       if (fetchedPets.length > 0 && !selectedPetId) {
@@ -116,7 +119,7 @@ const Profile = () => {
           ? globalActivePet.id : fetchedPets[0].id;
         setSelectedPetId(initialPetId);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
@@ -381,11 +384,11 @@ const Profile = () => {
         {/* Menus & Editors */}
         <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
         <ProfileImageEditor
-          isOpen={isImageEditorOpen}
-          onClose={() => setIsImageEditorOpen(false)}
-          currentImageUrl={profile?.avatar_url}
-          onImageUpdated={(url) => setProfile((prev: any) => ({ ...prev, avatar_url: url }))}
-        />
+	          isOpen={isImageEditorOpen}
+	          onClose={() => setIsImageEditorOpen(false)}
+	          currentImageUrl={profile?.avatar_url}
+	          onImageUpdated={(url) => setProfile((prev) => prev ? { ...prev, avatar_url: url } : prev)}
+	        />
 
         {/* Service Bottom Sheets */}
         <InsuranceSheet isOpen={activeSheet === 'insurance'} onClose={handleCloseSheet} pet={selectedPet} />

@@ -5,10 +5,10 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { FileText, Download, Loader2 } from "lucide-react";
+import { FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getMyPetHealthSummary, type MipoVetVisit } from "@/lib/mipoApi";
 
 interface VetHistoryPDFProps {
   petId: string;
@@ -21,24 +21,14 @@ export const VetHistoryPDF = ({ petId, petName, petBreed, petType }: VetHistoryP
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
-  const handleExport = async () => {
-    setLoading(true);
-    try {
-      // Fetch all vet visits
-      const { data: visits } = await supabase
-        .from("pet_vet_visits")
-        .select("*")
-        .eq("pet_id", petId)
-        .order("visit_date", { ascending: false });
+	  const handleExport = async () => {
+	    setLoading(true);
+	    try {
+	      const summary = await getMyPetHealthSummary(petId);
+	      const visits = summary.vet_visits;
+	      const pet = summary.pet;
 
-      // Fetch pet data
-      const { data: pet } = await supabase
-        .from("pets")
-        .select("name, type, breed, birth_date, weight, medical_conditions, is_neutered, current_food")
-        .eq("id", petId)
-        .maybeSingle();
-
-      if (!visits || visits.length === 0) {
+	      if (!visits || visits.length === 0) {
         toast({ title: "אין היסטוריה רפואית לייצוא", variant: "destructive" });
         setLoading(false);
         return;
@@ -92,16 +82,16 @@ export const VetHistoryPDF = ({ petId, petName, petBreed, petType }: VetHistoryP
 
   <h2 style="font-size:16px; margin-bottom:12px;">ביקורי וטרינר (${visits.length})</h2>
 
-  ${visits.map((v: any) => {
-    const typeLabels: Record<string, string> = {
-      vaccination: "חיסון", surgery: "ניתוח", treatment: "טיפול", checkup: "בדיקה",
-    };
-    return `
-    <div class="visit">
-      <div class="visit-header">
-        <span class="visit-date">${new Date(v.visit_date).toLocaleDateString("he-IL")}</span>
-        <span class="visit-type">${typeLabels[v.visit_type] || v.visit_type || "ביקור"}</span>
-      </div>
+	  ${visits.map((v: MipoVetVisit) => {
+	    const typeLabels: Record<string, string> = {
+	      vaccination: "חיסון", surgery: "ניתוח", treatment: "טיפול", checkup: "בדיקה",
+	    };
+	    return `
+	    <div class="visit">
+	      <div class="visit-header">
+	        <span class="visit-date">${new Date(v.visit_date || v.created_at || new Date().toISOString()).toLocaleDateString("he-IL")}</span>
+	        <span class="visit-type">${typeLabels[v.visit_type] || v.visit_type || "ביקור"}</span>
+	      </div>
       ${v.clinic_name ? `<div class="visit-detail"><strong>מרפאה:</strong> ${v.clinic_name}</div>` : ""}
       ${v.vet_name ? `<div class="visit-detail"><strong>וטרינר:</strong> ${v.vet_name}</div>` : ""}
       ${v.diagnosis ? `<div class="visit-detail"><strong>אבחנה:</strong> ${v.diagnosis}</div>` : ""}
@@ -109,9 +99,9 @@ export const VetHistoryPDF = ({ petId, petName, petBreed, petType }: VetHistoryP
       ${v.vaccines && (v.vaccines as string[]).length > 0 ? `<div class="visit-detail"><strong>חיסונים:</strong> ${(v.vaccines as string[]).join(", ")}</div>` : ""}
       ${v.notes ? `<div class="visit-detail"><strong>הערות:</strong> ${v.notes}</div>` : ""}
       ${v.cost ? `<div class="visit-detail"><strong>עלות:</strong> ₪${v.cost}</div>` : ""}
-      ${v.next_visit_date ? `<div class="visit-detail"><strong>ביקור הבא:</strong> ${new Date(v.next_visit_date).toLocaleDateString("he-IL")}</div>` : ""}
-    </div>`;
-  }).join("")}
+	      ${v.next_visit_date ? `<div class="visit-detail"><strong>ביקור הבא:</strong> ${new Date(v.next_visit_date).toLocaleDateString("he-IL")}</div>` : ""}
+	    </div>`;
+	  }).join("")}
 
   <div class="footer">
     מסמך זה הופק אוטומטית על ידי PetID · אין לראות במידע זה תחליף לייעוץ וטרינרי מקצועי

@@ -6,7 +6,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart, ShoppingBag, Pill, Leaf, Utensils, X } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { getMyPetHealthSummary } from "@/lib/mipoApi";
 
 interface RecoveryBannerProps {
   petId: string;
@@ -43,28 +43,18 @@ export const RecoveryBanner = ({ petId, petName, onOpenRecoveryProducts }: Recov
   const [daysLeft, setDaysLeft] = useState(0);
   const [showProducts, setShowProducts] = useState(false);
 
-  useEffect(() => {
-    const checkRecovery = async () => {
-      const today = new Date().toISOString().split("T")[0];
-      const { data } = await supabase
-        .from("pet_vet_visits")
-        .select("recovery_until, is_recovery_mode")
-        .eq("pet_id", petId)
-        .eq("is_recovery_mode", true)
-        .gte("recovery_until", today)
-        .order("recovery_until", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (data?.recovery_until) {
-        const until = new Date(data.recovery_until);
-        const remaining = Math.ceil((until.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-        if (remaining > 0) {
-          setIsInRecovery(true);
-          setDaysLeft(remaining);
-        }
-      }
-    };
+	  useEffect(() => {
+	    const checkRecovery = async () => {
+	      const summary = await getMyPetHealthSummary(petId);
+	      if (summary.active_recovery?.recovery_until) {
+	        const until = new Date(summary.active_recovery.recovery_until);
+	        const remaining = Math.ceil((until.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+	        if (remaining > 0) {
+	          setIsInRecovery(true);
+	          setDaysLeft(remaining);
+	        }
+	      }
+	    };
     checkRecovery();
   }, [petId]);
 

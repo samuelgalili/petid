@@ -177,6 +177,9 @@ export interface MipoProfile {
   whatsapp_number?: string | null;
   avatar_url?: string | null;
   birthdate?: string | null;
+  street?: string | null;
+  city?: string | null;
+  id_number_last4?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -194,7 +197,10 @@ export interface MipoPet {
   avatar_url?: string | null;
   weight?: number | null;
   birth_date?: string | null;
+  age_years?: number | null;
+  age_months?: number | null;
   gender?: string | null;
+  color?: string | null;
   is_neutered?: boolean | null;
   medical_conditions?: string[] | null;
   health_notes?: string | null;
@@ -202,6 +208,20 @@ export interface MipoPet {
   favorite_activities?: string[] | null;
   activities?: string[] | null;
   theme_color?: string | null;
+  has_insurance?: boolean | null;
+  insurance_company?: string | null;
+  insurance_expiry_date?: string | null;
+  current_food?: string | null;
+  last_vet_visit?: string | null;
+  next_vet_visit?: string | null;
+  vet_clinic?: string | null;
+  vet_clinic_name?: string | null;
+  vet_clinic_phone?: string | null;
+  vet_clinic_address?: string | null;
+  microchip_number?: string | null;
+  is_dangerous_breed?: boolean | null;
+  license_conditions?: string | null;
+  license_expiry_date?: string | null;
   archived?: boolean | null;
   archived_at?: string | null;
   created_at?: string | null;
@@ -245,14 +265,20 @@ export interface MipoDocument {
 export interface MipoVetVisit {
   id: string;
   pet_id: string;
+  visit_type?: string | null;
   visit_date?: string | null;
+  next_visit_date?: string | null;
   clinic_name?: string | null;
   vet_name?: string | null;
   reason?: string | null;
   diagnosis?: string | null;
   treatment?: string | null;
   notes?: string | null;
-  vaccines?: unknown[];
+  vaccines?: string[];
+  is_recovery_mode?: boolean | null;
+  recovery_until?: string | null;
+  raw_summary?: string | null;
+  cost?: number | null;
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -268,6 +294,15 @@ export interface MipoVaccination {
   notes?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
+}
+
+export interface MipoPetHealthSummary {
+  pet: MipoPet;
+  profile: MipoProfile | null;
+  vet_visits: MipoVetVisit[];
+  vaccinations: MipoVaccination[];
+  documents: MipoDocument[];
+  active_recovery: MipoVetVisit | null;
 }
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/+$/, "");
@@ -540,6 +575,7 @@ export async function createMyDocument(input: {
     }),
   });
   window.dispatchEvent(new Event("mipo:documents-changed"));
+  window.dispatchEvent(new Event("mipo:health-changed"));
   return result.document;
 }
 
@@ -548,6 +584,7 @@ export async function deleteMyDocument(documentId: string) {
     method: "DELETE",
   });
   window.dispatchEvent(new Event("mipo:documents-changed"));
+  window.dispatchEvent(new Event("mipo:health-changed"));
   return result;
 }
 
@@ -556,11 +593,16 @@ export async function getMyVetVisits(petId: string): Promise<MipoVetVisit[]> {
   return result.vet_visits;
 }
 
+export async function getMyPetHealthSummary(petId: string): Promise<MipoPetHealthSummary> {
+  return apiFetch<MipoPetHealthSummary>(`/me/pets/${petId}/health-summary`);
+}
+
 export async function createMyVetVisit(petId: string, input: Partial<MipoVetVisit>): Promise<MipoVetVisit> {
   const result = await apiFetch<{ vet_visit: MipoVetVisit }>(`/me/pets/${petId}/vet-visits`, {
     method: "POST",
     body: JSON.stringify(input),
   });
+  window.dispatchEvent(new Event("mipo:health-changed"));
   return result.vet_visit;
 }
 
@@ -574,6 +616,7 @@ export async function createMyVaccination(petId: string, input: Partial<MipoVacc
     method: "POST",
     body: JSON.stringify(input),
   });
+  window.dispatchEvent(new Event("mipo:health-changed"));
   return result.vaccination;
 }
 

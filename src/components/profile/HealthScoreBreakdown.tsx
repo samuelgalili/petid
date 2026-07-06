@@ -19,8 +19,8 @@ import { FelineNeuteredCare } from "./FelineNeuteredCare";
 import { FelineObesityCare } from "./FelineObesityCare";
 import { FelineDiabeticCare } from "./FelineDiabeticCare";
 import { FelineDashboard } from "./FelineDashboard";
-import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { getMyPetHealthSummary, type MipoPet } from "@/lib/mipoApi";
 
 interface Pet {
   id: string;
@@ -58,6 +58,15 @@ interface TodoItem {
   action?: () => void;
 }
 
+interface LowPillarProduct {
+  id: string;
+  name: string;
+  price?: number | string | null;
+  sale_price?: number | string | null;
+  image_url?: string | null;
+  category?: string | null;
+}
+
 // Breed-specific preventive tips (dogs + cats)
 const BREED_PREVENTIVE_TIPS: Record<string, string> = {
   // Dogs
@@ -86,61 +95,36 @@ const BREED_PREVENTIVE_TIPS: Record<string, string> = {
 };
 
 export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakdownProps) => {
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [petData, setPetData] = useState<any>(null);
+	  const navigate = useNavigate();
+	  const [loading, setLoading] = useState(true);
+	  const [petData, setPetData] = useState<MipoPet | null>(null);
   const [vaccineCount, setVaccineCount] = useState(0);
   const [hasParasitePrevention, setHasParasitePrevention] = useState(false);
   const [hasRegisteredClinic, setHasRegisteredClinic] = useState(false);
   const [ownerProfileComplete, setOwnerProfileComplete] = useState(false);
   const [hasMicrochip, setHasMicrochip] = useState(false);
   const [profileCompletion, setProfileCompletion] = useState(0);
-  const [lowPillarProducts, setLowPillarProducts] = useState<any[]>([]);
-  const [breedInfo, setBreedInfo] = useState<any>(null);
+	  const [lowPillarProducts, setLowPillarProducts] = useState<LowPillarProduct[]>([]);
+	  const [breedInfo, setBreedInfo] = useState<{ grooming_freq?: number } | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
     fetchData();
   }, [isOpen, pet.id]);
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const userId = (await supabase.auth.getUser()).data.user?.id || '';
+	  const fetchData = async () => {
+	    try {
+	      setLoading(true);
+	      const summary = await getMyPetHealthSummary(pet.id);
+	      setBreedInfo(pet.breed ? { grooming_freq: /persian|פרסי|maine|מיין|ragdoll|רגדול/i.test(pet.breed) ? 5 : 3 } : null);
 
-      const [petResult, vaccineResult, profileResult, breedResult] = await Promise.all([
-        supabase
-          .from("pets")
-          .select("weight, is_neutered, medical_conditions, health_notes, has_insurance, current_food, vet_clinic_name, microchip_number, next_vet_visit, last_vet_visit")
-          .eq("id", pet.id)
-          .maybeSingle(),
-        supabase
-          .from("pet_vet_visits")
-          .select("id, vaccines, visit_date, raw_summary")
-          .eq("pet_id", pet.id)
-          .order("visit_date", { ascending: false })
-          .limit(20),
-        supabase
-          .from("profiles")
-          .select("full_name, city, phone, id_number_last4")
-          .eq("id", userId)
-          .maybeSingle(),
-        pet.breed ? supabase
-          .from('breed_information')
-          .select('grooming_freq')
-          .or(`breed_name.ilike.%${pet.breed}%,breed_name_he.ilike.%${pet.breed}%`)
-          .maybeSingle() : Promise.resolve({ data: null }),
-      ]);
+	      const pd = summary.pet;
+	      setPetData(pd);
+	      setHasMicrochip(!!pd?.microchip_number);
+	      setHasRegisteredClinic(!!pd?.vet_clinic_name);
 
-      if (breedResult.data) setBreedInfo(breedResult.data);
-
-      const pd = petResult.data as any;
-      setPetData(pd);
-      setHasMicrochip(!!pd?.microchip_number);
-      setHasRegisteredClinic(!!pd?.vet_clinic_name);
-
-      const profile = profileResult.data;
-      setOwnerProfileComplete(!!(profile?.full_name && profile?.city && profile?.phone));
+	      const profile = summary.profile;
+	      setOwnerProfileComplete(!!(profile?.full_name && profile?.city && profile?.phone));
 
       // Profile completion
       const fields = [
@@ -151,19 +135,26 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
       ];
       setProfileCompletion(Math.round((fields.filter(Boolean).length / fields.length) * 100));
 
-      const visits = vaccineResult.data || [];
-      const recentVaccines = visits.filter((v: any) => {
-        const vDate = new Date(v.visit_date);
-        const monthsAgo = (Date.now() - vDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
-        return monthsAgo <= 12 && (v.vaccines as string[])?.length > 0;
-      });
-      setVaccineCount(recentVaccines.length);
+	      const visits = summary.vet_visits;
+	      const recentVisitVaccines = visits.filter((v) => {
+	        if (!v.visit_date || !v.vaccines?.length) return false;
+	        const vDate = new Date(v.visit_date);
+	        const monthsAgo = (Date.now() - vDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
+	        return monthsAgo <= 12;
+	      });
+	      const recentStructuredVaccines = summary.vaccinations.filter((vaccination) => {
+	        if (!vaccination.administered_at) return false;
+	        const vDate = new Date(vaccination.administered_at);
+	        const monthsAgo = (Date.now() - vDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
+	        return monthsAgo <= 12;
+	      });
+	      setVaccineCount(recentVisitVaccines.length + recentStructuredVaccines.length);
 
-      const hasDeworming = visits.some((v: any) => {
-        const summary = ((v as any).raw_summary || '').toLowerCase();
-        return summary.includes('תילוע') || summary.includes('deworm') || summary.includes('milbemax');
-      });
-      setHasParasitePrevention(hasDeworming);
+	      const hasDeworming = visits.some((v) => {
+	        const visitSummary = [v.raw_summary, v.notes, ...(v.vaccines || [])].filter(Boolean).join(" ").toLowerCase();
+	        return visitSummary.includes('תילוע') || visitSummary.includes('deworm') || visitSummary.includes('milbemax');
+	      });
+	      setHasParasitePrevention(hasDeworming);
     } catch (err) {
       console.error('Error fetching health breakdown:', err);
     } finally {
@@ -511,29 +502,11 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
     return pillars.reduce((min, p) => p.score < min.score ? p : min, pillars[0]);
   }, [pillars]);
 
-  // Fetch products for lowest pillar
-  useEffect(() => {
-    if (!lowestPillar || !isOpen || lowestPillar.score >= 80) return;
-    const fetchProducts = async () => {
-      let searchTerm = '';
-      if (lowestPillar.id === 'nutrition') searchTerm = 'food';
-      else if (lowestPillar.id === 'prevention') searchTerm = 'health';
-      else if (lowestPillar.id === 'eye_care') searchTerm = 'eye';
-      else if (lowestPillar.id === 'dental') searchTerm = 'dental';
-      else if (lowestPillar.id === 'urinary') searchTerm = 'urinary';
-      else if (lowestPillar.id === 'hydration') searchTerm = 'wet';
-      else if (lowestPillar.id === 'hairball') searchTerm = 'hairball';
-      else return;
-
-      const { data } = await supabase
-        .from('business_products')
-        .select('id, name, price, sale_price, image_url, category')
-        .or(`category.ilike.%${searchTerm}%,name.ilike.%${searchTerm}%`)
-        .limit(3);
-      setLowPillarProducts(data || []);
-    };
-    fetchProducts();
-  }, [lowestPillar, isOpen]);
+	  // Fetch products for lowest pillar
+	  useEffect(() => {
+	    if (!lowestPillar || !isOpen || lowestPillar.score >= 80) return;
+	    setLowPillarProducts([]);
+	  }, [lowestPillar, isOpen]);
 
   if (!isOpen) return null;
 

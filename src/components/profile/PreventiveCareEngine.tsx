@@ -9,7 +9,7 @@ import {
   Scale, AlertTriangle, Phone, ChevronLeft, Sparkles,
   Pill, Baby, MapPin, X, ExternalLink
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { getMyPetHealthSummary } from "@/lib/mipoApi";
 
 interface PreventiveCareEngineProps {
   petId: string;
@@ -54,29 +54,20 @@ export const PreventiveCareEngine = ({
     return Math.floor((Date.now() - birth.getTime()) / (1000 * 60 * 60 * 24 * 30));
   }, [birthDate]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const [petResult, visitResult] = await Promise.all([
-        supabase.from("pets").select("weight").eq("id", petId).maybeSingle(),
-        supabase
-          .from("pet_vet_visits")
-          .select("raw_summary, visit_date")
-          .eq("pet_id", petId)
-          .order("visit_date", { ascending: false })
-          .limit(10),
-      ]);
+	  useEffect(() => {
+	    const fetchData = async () => {
+	      const summary = await getMyPetHealthSummary(petId);
+	      if (summary.pet.weight) setCurrentWeight(summary.pet.weight);
 
-      if (petResult.data?.weight) setCurrentWeight(petResult.data.weight as number);
-
-      // Check for deworming in recent visits
-      const visits = visitResult.data || [];
-      for (const v of visits) {
-        const summary = ((v as any).raw_summary || '').toLowerCase();
-        if (summary.includes('תילוע') || summary.includes('deworm') || summary.includes('milbemax') || summary.includes('drontal')) {
-          setLastDeworming((v as any).visit_date);
-          break;
-        }
-      }
+	      // Check for deworming in recent visits
+	      const visits = summary.vet_visits.slice(0, 10);
+	      for (const v of visits) {
+	        const visitSummary = (v.raw_summary || v.notes || '').toLowerCase();
+	        if (visitSummary.includes('תילוע') || visitSummary.includes('deworm') || visitSummary.includes('milbemax') || visitSummary.includes('drontal')) {
+	          setLastDeworming(v.visit_date || null);
+	          break;
+	        }
+	      }
     };
     fetchData();
   }, [petId]);

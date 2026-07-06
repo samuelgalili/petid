@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { createMyVaccination, createMyVetVisit } from "@/lib/mipoApi";
 
 interface VetVisitInputProps {
   petId: string;
@@ -35,45 +35,72 @@ export const VetVisitInput = ({ petId, petName, onVisitLogged }: VetVisitInputPr
   const [summary, setSummary] = useState("");
   const [visitDate, setVisitDate] = useState(new Date().toISOString().split("T")[0]);
   const [clinicName, setClinicName] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [extracted, setExtracted] = useState<ExtractedData | null>(null);
+	  const [loading, setLoading] = useState(false);
+	  const [extracted, setExtracted] = useState<ExtractedData | null>(null);
 
-  const handleSubmit = async () => {
+	  const extractLocalSummary = (value: string): ExtractedData => {
+	    const normalized = value.toLowerCase();
+	    const vaccineKeywords = ["כלבת", "משושה", "מרובעת", "תילוע", "fvrcp", "felv", "rabies"];
+	    const vaccines = vaccineKeywords.filter((keyword) => normalized.includes(keyword.toLowerCase()));
+	    const isRecoveryMode = ["ניתוח", "החלמה", "זיהום", "פציעה", "infection", "surgery"].some((keyword) => normalized.includes(keyword));
+	    const nextVisitDate = vaccines.length > 0
+	      ? new Date(new Date(visitDate).setFullYear(new Date(visitDate).getFullYear() + 1)).toISOString().slice(0, 10)
+	      : null;
+
+	    return {
+	      diagnoses: isRecoveryMode ? ["מעקב החלמה"] : [],
+	      medications: normalized.includes("אנטיביוט") || normalized.includes("antibiotic") ? ["אנטיביוטיקה"] : [],
+	      vaccines,
+	      isRecoveryMode,
+	      recoveryReason: isRecoveryMode ? "זוהה צורך במעקב החלמה מהסיכום" : null,
+	      nextVisitDate,
+	      breedManagementGuide: null,
+	      affectedDashboardCircles: isRecoveryMode ? ["health"] : [],
+	    };
+	  };
+
+	  const handleSubmit = async () => {
     if (!summary.trim()) {
       toast({ title: "נא להזין סיכום ביקור", variant: "destructive" });
       return;
     }
 
-    setLoading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+	    setLoading(true);
+	    try {
+	      const localExtraction = extractLocalSummary(summary.trim());
+	      setExtracted(localExtraction);
+	      const recoveryUntil = localExtraction.isRecoveryMode
+	        ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+	        : null;
 
-      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-vet-summary`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({
-          petId,
-          userId: user.id,
-          summary: summary.trim(),
-          visitDate,
-          clinicName: clinicName.trim() || null,
-        }),
-      });
+	      await createMyVetVisit(petId, {
+	        visit_type: localExtraction.vaccines.length > 0 ? "vaccination" : "checkup",
+	        visit_date: visitDate,
+	        next_visit_date: localExtraction.nextVisitDate,
+	        clinic_name: clinicName.trim() || null,
+	        reason: "manual_summary",
+	        diagnosis: localExtraction.diagnoses.join(", ") || null,
+	        treatment: localExtraction.medications.join(", ") || null,
+	        notes: summary.trim(),
+	        raw_summary: summary.trim(),
+	        vaccines: localExtraction.vaccines,
+	        is_recovery_mode: localExtraction.isRecoveryMode,
+	        recovery_until: recoveryUntil,
+	      });
 
-      if (!resp.ok) throw new Error("Failed to process");
+	      await Promise.all(localExtraction.vaccines.map((vaccineName) => createMyVaccination(petId, {
+	        vaccine_name: vaccineName,
+	        administered_at: visitDate,
+	        expires_at: localExtraction.nextVisitDate,
+	        veterinarian: clinicName.trim() || null,
+	        notes: summary.trim(),
+	      })));
 
-      const data = await resp.json();
-      setExtracted(data.extracted);
-
-      const messages: string[] = [];
-      if (data.extracted.vaccines?.length > 0) messages.push(`💉 חיסונים: ${data.extracted.vaccines.join(", ")}`);
-      if (data.extracted.diagnoses?.length > 0) messages.push(`🔍 אבחנות: ${data.extracted.diagnoses.length}`);
-      if (data.extracted.medications?.length > 0) messages.push(`💊 תרופות: ${data.extracted.medications.length}`);
-      if (data.extracted.isRecoveryMode) messages.push(`🏥 מצב החלמה הופעל ל-14 ימים`);
+	      const messages: string[] = [];
+	      if (localExtraction.vaccines.length > 0) messages.push(`💉 חיסונים: ${localExtraction.vaccines.join(", ")}`);
+	      if (localExtraction.diagnoses.length > 0) messages.push(`🔍 אבחנות: ${localExtraction.diagnoses.length}`);
+	      if (localExtraction.medications.length > 0) messages.push(`💊 תרופות: ${localExtraction.medications.length}`);
+	      if (localExtraction.isRecoveryMode) messages.push(`🏥 מצב החלמה הופעל ל-14 ימים`);
 
       toast({
         title: `ביקור וטרינר נרשם עבור ${petName} ✅`,
@@ -156,14 +183,14 @@ export const VetVisitInput = ({ petId, petName, onVisitLogged }: VetVisitInputPr
                   disabled={loading || !summary.trim()}
                   className="w-full h-9 text-sm"
                 >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin ml-2" />
-                      מנתח סיכום...
-                    </>
-                  ) : (
-                    "שמור ונתח ביקור"
-                  )}
+	                  {loading ? (
+	                    <>
+	                      <Loader2 className="w-4 h-4 animate-spin ml-2" />
+	                      שומר סיכום...
+	                    </>
+	                  ) : (
+	                    "שמור ביקור"
+	                  )}
                 </Button>
 
                 {/* Extraction Results */}

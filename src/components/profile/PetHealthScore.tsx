@@ -2,10 +2,10 @@ import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Activity, Syringe, Calendar, Shield, ChevronLeft, AlertTriangle, CreditCard, Banknote } from "lucide-react";
 import { PetIdCard } from "./PetIdCard";
-import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { GlowRing } from "@/components/ui/GlowRing";
 import { AdaptiveBackground } from "@/components/ui/AdaptiveBackground";
+import { getMyPetHealthSummary, type MipoPet } from "@/lib/mipoApi";
 
 interface Pet {
   id: string;
@@ -53,7 +53,7 @@ const BREED_INSURANCE_PITCHES: Record<string, { risks: string; pitch: string }> 
 
 export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScoreProps) => {
   const navigate = useNavigate();
-  const [petData, setPetData] = useState<PetFullData | null>(null);
+	  const [petData, setPetData] = useState<(PetFullData & MipoPet) | null>(null);
   const [loading, setLoading] = useState(true);
   const [vaccineCount, setVaccineCount] = useState(0);
   const [inRecovery, setInRecovery] = useState(false);
@@ -68,98 +68,64 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
   const [totalVetSpend, setTotalVetSpend] = useState(0);
   const [pendingClaimsCount, setPendingClaimsCount] = useState(0);
 
-  const fetchHealthData = async () => {
-      try {
-      const userId = (await supabase.auth.getUser()).data.user?.id || '';
-      const [petResult, vaccineResult, profileResult, claimsResult] = await Promise.all([
-        supabase
-          .from("pets")
-          .select("weight, is_neutered, medical_conditions, health_notes, has_insurance, insurance_company, insurance_expiry_date, last_vet_visit, next_vet_visit, current_food, vet_clinic_name")
-          .eq("id", pet.id)
-          .maybeSingle(),
-        supabase
-          .from("pet_vet_visits")
-          .select("id, vaccines, visit_date, is_recovery_mode, recovery_until, raw_summary")
-          .eq("pet_id", pet.id)
-          .order("visit_date", { ascending: false })
-          .limit(20),
-        supabase
-          .from("profiles")
-          .select("full_name, city, phone, id_number_last4")
-          .eq("id", userId)
-          .maybeSingle(),
-        supabase
-          .from("insurance_claims")
-          .select("id, status, total_amount")
-          .eq("pet_id", pet.id)
-          .eq("user_id", userId),
-      ]);
+	  const fetchHealthData = async () => {
+	      try {
+	        const summary = await getMyPetHealthSummary(pet.id);
+	        setPetData(summary.pet as PetFullData & MipoPet);
 
-        if (petResult.data) setPetData(petResult.data as PetFullData);
-        
-        // Weight tracking: has weight been logged
-        setHasRecentWeight(!!petResult.data?.weight);
-        
-        // Registered clinic check — also fallback to extracted document data
-        const petClinic = (petResult.data as any)?.vet_clinic_name;
-        if (petClinic) {
-          setHasRegisteredClinic(true);
-          setClinicName(petClinic);
-        } else {
-          // Try to find clinic from scanned documents
-          const { data: extractedClinic } = await supabase
-            .from("pet_document_extracted_data")
-            .select("vet_clinic, vet_name")
-            .eq("pet_id", pet.id)
-            .or("vet_clinic.neq.,vet_name.neq.")
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          const foundClinic = extractedClinic?.vet_clinic || extractedClinic?.vet_name || null;
-          setHasRegisteredClinic(!!foundClinic);
-          setClinicName(foundClinic);
-        }
-        
-        // Owner profile completeness
-        const profile = profileResult.data;
-        setOwnerProfileComplete(!!(profile?.full_name && profile?.city && profile?.phone));
-        
-        const visits = vaccineResult.data || [];
-        
-        const recentVaccines = visits.filter((v: any) => {
-          const vDate = new Date(v.visit_date);
-          const monthsAgo = (Date.now() - vDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
-          return monthsAgo <= 12 && (v.vaccines as string[])?.length > 0;
-        });
-        setVaccineCount(recentVaccines.length);
-        
-        // Parasite prevention: check for deworming in visits
-        const hasDeworming = visits.some((v: any) => {
-          const summary = ((v as any).raw_summary || '').toLowerCase();
-          return summary.includes('תילוע') || summary.includes('deworm') || summary.includes('milbemax') || summary.includes('drontal');
-        });
-        setHasParasitePrevention(hasDeworming);
-        
-        // Show boost animation if vaccines exist
-        if (recentVaccines.length > 0) {
-          setTimeout(() => {
-            setShowVaccineBoost(true);
-            setTimeout(() => setShowVaccineBoost(false), 1500);
-          }, 1200);
-        }
-        
-        const activeRecovery = visits.find((v: any) =>
-          v.is_recovery_mode && v.recovery_until && new Date(v.recovery_until) > new Date()
-        );
-        setInRecovery(!!activeRecovery);
+	        // Weight tracking: has weight been logged
+	        setHasRecentWeight(!!summary.pet.weight);
 
-        // Claims tracking
-        const claims = (claimsResult.data || []) as any[];
-        setPendingClaimsCount(claims.filter((c: any) => c.status === 'pending').length);
-        
-        // Calculate total vet spend from claims for savings pitch
-        const spend = claims.reduce((sum: number, c: any) => sum + (Number(c.total_amount) || 0), 0);
-        setTotalVetSpend(spend);
+	        // Registered clinic check — also fallback to extracted document data
+	        const petClinic = summary.pet.vet_clinic_name || summary.vet_visits.find((visit) => visit.clinic_name)?.clinic_name || null;
+	        if (petClinic) {
+	          setHasRegisteredClinic(true);
+	          setClinicName(petClinic);
+	        } else {
+	          setHasRegisteredClinic(false);
+	          setClinicName(null);
+	        }
+
+	        // Owner profile completeness
+	        const profile = summary.profile;
+	        setOwnerProfileComplete(!!(profile?.full_name && profile?.city && profile?.phone));
+
+	        const visits = summary.vet_visits;
+
+	        const recentVisitVaccines = visits.filter((v) => {
+	          if (!v.visit_date || !v.vaccines?.length) return false;
+	          const vDate = new Date(v.visit_date);
+	          const monthsAgo = (Date.now() - vDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
+	          return monthsAgo <= 12;
+	        });
+	        const recentStructuredVaccines = summary.vaccinations.filter((vaccination) => {
+	          if (!vaccination.administered_at) return false;
+	          const vDate = new Date(vaccination.administered_at);
+	          const monthsAgo = (Date.now() - vDate.getTime()) / (1000 * 60 * 60 * 24 * 30);
+	          return monthsAgo <= 12;
+	        });
+	        setVaccineCount(recentVisitVaccines.length + recentStructuredVaccines.length);
+
+	        // Parasite prevention: check for deworming in visits
+	        const hasDeworming = visits.some((v) => {
+	          const visitSummary = [v.raw_summary, v.notes, ...(v.vaccines || [])].filter(Boolean).join(" ").toLowerCase();
+	          return visitSummary.includes('תילוע') || visitSummary.includes('deworm') || visitSummary.includes('milbemax') || visitSummary.includes('drontal');
+	        });
+	        setHasParasitePrevention(hasDeworming);
+
+	        // Show boost animation if vaccines exist
+	        if (recentVisitVaccines.length + recentStructuredVaccines.length > 0) {
+	          setTimeout(() => {
+	            setShowVaccineBoost(true);
+	            setTimeout(() => setShowVaccineBoost(false), 1500);
+	          }, 1200);
+	        }
+
+	        setInRecovery(!!summary.active_recovery);
+
+	        // Claims are still pending migration from Supabase.
+	        setPendingClaimsCount(0);
+	        setTotalVetSpend(0);
       } catch (error) {
         console.error('Error fetching pet health data:', error);
       } finally {
@@ -192,7 +158,7 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
   // V23 Health Score: Vaccines (30) + Weight (15) + Parasites (12) + Profile (10) + Vet (13) + Clinic (10) + Owner (10)
   const healthScore = useMemo(() => {
     if (!petData) return 50;
-    
+
     let score = 0;
 
     // 1. Completed Vaccines — up to 30 points
@@ -305,16 +271,16 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
 
     if (!hasInsurance) {
       if (isHighRisk) {
-        result.push({ 
-          icon: AlertTriangle, 
-          text: 'ללא ביטוח — הגן עכשיו', 
+        result.push({
+          icon: AlertTriangle,
+          text: 'ללא ביטוח — הגן עכשיו',
           type: 'warning',
           action: () => setShowInsurancePitch(true),
         });
       } else {
-        result.push({ 
-          icon: Shield, 
-          text: 'ללא ביטוח', 
+        result.push({
+          icon: Shield,
+          text: 'ללא ביטוח',
           type: 'info',
           action: () => setShowInsurancePitch(true),
         });

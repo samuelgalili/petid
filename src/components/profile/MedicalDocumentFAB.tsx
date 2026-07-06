@@ -17,9 +17,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import AILoader from "@/components/ui/ai-loader";
-import { LibraClaimForm } from "./LibraClaimForm";
+import {
+  createMyDocument,
+  createMyVaccination,
+  createMyVetVisit,
+  type MipoPet,
+  type MipoProfile,
+  updateMyPet,
+  updateMyProfile,
+} from "@/lib/mipoApi";
 
 interface MedicalDocumentFABProps {
   petId: string;
@@ -71,11 +78,10 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<ModalStep>('closed');
-  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
-  const [confirming, setConfirming] = useState(false);
-  const [lastBase64, setLastBase64] = useState<string | null>(null);
-  const [lastFileName, setLastFileName] = useState('');
-  const [showClaimForm, setShowClaimForm] = useState(false);
+	  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+	  const [confirming, setConfirming] = useState(false);
+	  const [lastFile, setLastFile] = useState<File | null>(null);
+	  const [lastFileName, setLastFileName] = useState('');
 
   // Manual entry state
   const [manualSummary, setManualSummary] = useState('');
@@ -124,62 +130,109 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
     return null;
   }, [petBirthDate]);
 
-  // Scan without saving — dry run
-  const processFile = async (base64: string, fileName: string) => {
-    setStep('scanning');
-    setLastBase64(base64);
-    setLastFileName(fileName);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+	  const extractLocalSummary = (value: string, date: string): ScanResult => {
+	    const normalized = value.toLowerCase();
+	    const vaccineKeywords = ["כלבת", "משושה", "מרובעת", "תילוע", "fvrcp", "felv", "rabies"];
+	    const vaccines = vaccineKeywords.filter((keyword) => normalized.includes(keyword.toLowerCase()));
+	    const nextDueDate = vaccines.length > 0 ? calculateNextDue(vaccines, date) || new Date(new Date(date).setFullYear(new Date(date).getFullYear() + 1)).toISOString().slice(0, 10) : null;
+	    return {
+	      clinicName: manualClinic || null,
+	      clinicPhone: null,
+	      clinicAddress: null,
+	      visitDate: date,
+	      vaccines,
+	      diagnoses: ["ניתוח", "החלמה", "זיהום", "infection", "surgery"].some((keyword) => normalized.includes(keyword)) ? ["מעקב החלמה"] : [],
+	      medications: normalized.includes("אנטיביוט") || normalized.includes("antibiotic") ? ["אנטיביוטיקה"] : [],
+	      weight: null,
+	      deworming: normalized.includes("תילוע") || normalized.includes("deworm"),
+	      cost: null,
+	      nextDueDate,
+	      ownerName: null,
+	      ownerAddress: null,
+	      ownerCity: null,
+	      ownerPhone: null,
+	      ownerIdNumber: null,
+	      petName: null,
+	      petBreed: null,
+	      petColor: null,
+	      petGender: null,
+	      petBirthDate: null,
+	      microchipNumber: null,
+	      isNeutered: null,
+	      licenseConditions: null,
+	      isDangerousBreed: false,
+	    };
+	  };
 
-      const { data, error } = await supabase.functions.invoke("scan-vet-document", {
-        body: { petId, userId: user.id, imageBase64: base64, fileName, saveToDb: false },
-      });
-      if (error) throw error;
+	  // AWS upload without document OCR. Full AI extraction will be migrated separately.
+	  const processFile = async (file: File) => {
+	    setStep('scanning');
+	    setLastFile(file);
+	    setLastFileName(file.name);
+	    try {
+	      await createMyDocument({
+	        pet_id: petId,
+	        document_type: "medical",
+	        title: file.name,
+	        description: `מסמך רפואי עבור ${petName}`,
+	        file,
+	      });
+	      toast({ title: "המסמך הועלה ✅", description: "המסמך נשמר בכספת הרפואית" });
+	      onComplete?.();
+	      handleClose();
+	    } catch (err) {
+	      console.error("Document upload error:", err);
+	      toast({ title: "שגיאה בהעלאה", description: "נסה שוב או הזן ידנית", variant: "destructive" });
+	      setStep('choose');
+	    }
+	  };
 
-      const result: ScanResult = data.scanResult;
-      if (result.vaccines?.length > 0 && result.visitDate) {
-        result.nextDueDate = calculateNextDue(result.vaccines, result.visitDate);
-      }
-      setScanResult(result);
-      setStep('review');
-    } catch (err) {
-      console.error("Scan error:", err);
-      toast({ title: "שגיאה בסריקה", description: "נסה שוב או הזן ידנית", variant: "destructive" });
-      setStep('choose');
-    }
-  };
+	  const handleCameraCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+	    const file = e.target.files?.[0];
+	    if (!file) return;
+	    processFile(file);
+	  };
 
-  const handleCameraCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => processFile((reader.result as string).split(",")[1], file.name);
-    reader.readAsDataURL(file);
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => processFile((reader.result as string).split(",")[1], file.name);
-    reader.readAsDataURL(file);
-  };
+	  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+	    const file = e.target.files?.[0];
+	    if (!file) return;
+	    processFile(file);
+	  };
 
   // Save medical data after user confirms, then check for pet/profile data
-  const handleConfirm = async () => {
-    if (!scanResult) return;
-    setConfirming(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+	  const handleConfirm = async () => {
+	    if (!scanResult) return;
+	    setConfirming(true);
+	    try {
+	      if (lastFile) {
+	        await createMyDocument({
+	          pet_id: petId,
+	          document_type: "medical",
+	          title: lastFileName || lastFile.name,
+	          description: `מסמך רפואי עבור ${petName}`,
+	          file: lastFile,
+	        });
+	      }
 
-      if (lastBase64) {
-        await supabase.functions.invoke("scan-vet-document", {
-          body: { petId, userId: user.id, imageBase64: lastBase64, fileName: lastFileName, saveToDb: true },
-        });
-      }
+	      if (scanResult.visitDate || scanResult.diagnoses.length > 0 || scanResult.vaccines.length > 0) {
+	        await createMyVetVisit(petId, {
+	          visit_type: scanResult.vaccines.length > 0 ? "vaccination" : "checkup",
+	          visit_date: scanResult.visitDate || new Date().toISOString().slice(0, 10),
+	          next_visit_date: scanResult.nextDueDate || null,
+	          clinic_name: scanResult.clinicName,
+	          diagnosis: scanResult.diagnoses.join(", ") || null,
+	          treatment: scanResult.medications.join(", ") || null,
+	          notes: scanResult.medications.join(", ") || null,
+	          vaccines: scanResult.vaccines,
+	          raw_summary: scanResult.diagnoses.concat(scanResult.medications).join(", ") || null,
+	        });
+	        await Promise.all(scanResult.vaccines.map((vaccineName) => createMyVaccination(petId, {
+	          vaccine_name: vaccineName,
+	          administered_at: scanResult.visitDate || new Date().toISOString().slice(0, 10),
+	          expires_at: scanResult.nextDueDate || null,
+	          veterinarian: scanResult.clinicName,
+	        })));
+	      }
 
       toast({ title: "הנתונים אושרו ✅", description: "ציון הבריאות ולוח החיסונים עודכנו" });
 
@@ -215,7 +268,7 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
     if (!scanResult) return;
     setConfirming(true);
     try {
-      const petUpdate: Record<string, unknown> = {};
+	      const petUpdate: Partial<MipoPet> = {};
       if (scanResult.petName) petUpdate.name = scanResult.petName;
       if (scanResult.petBreed) petUpdate.breed = scanResult.petBreed;
       if (scanResult.petColor) petUpdate.color = scanResult.petColor;
@@ -226,9 +279,9 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
       if (scanResult.isDangerousBreed) petUpdate.is_dangerous_breed = true;
       if (scanResult.licenseConditions) petUpdate.license_conditions = scanResult.licenseConditions;
 
-      if (Object.keys(petUpdate).length > 0) {
-        await supabase.from("pets").update(petUpdate).eq("id", petId);
-      }
+	      if (Object.keys(petUpdate).length > 0) {
+	        await updateMyPet(petId, petUpdate);
+	      }
 
       toast({ title: "פרופיל החיה עודכן ✅" });
 
@@ -260,27 +313,22 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
   };
 
   // Save profile data after user approves
-  const handleProfileConfirm = async () => {
-    if (!scanResult) return;
-    setConfirming(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+	  const handleProfileConfirm = async () => {
+	    if (!scanResult) return;
+	    setConfirming(true);
+	    try {
+	      const profileUpdate: Partial<MipoProfile> = {};
+	      if (scanResult.ownerName) profileUpdate.full_name = scanResult.ownerName;
+	      if (scanResult.ownerCity) profileUpdate.city = scanResult.ownerCity;
+	      if (scanResult.ownerAddress) profileUpdate.street = scanResult.ownerAddress;
+	      if (scanResult.ownerPhone) profileUpdate.phone = scanResult.ownerPhone;
+	      if (scanResult.ownerIdNumber) {
+	        profileUpdate.id_number_last4 = scanResult.ownerIdNumber.slice(-4);
+	      }
 
-      const profileUpdate: Record<string, unknown> = {};
-      if (scanResult.ownerName) profileUpdate.full_name = scanResult.ownerName;
-      if (scanResult.ownerCity) profileUpdate.city = scanResult.ownerCity;
-      if (scanResult.ownerAddress) profileUpdate.street = scanResult.ownerAddress;
-      if (scanResult.ownerPhone) profileUpdate.phone = scanResult.ownerPhone;
-      if (scanResult.ownerIdNumber) {
-        // Store encrypted and last 4 digits masked
-        profileUpdate.id_number_encrypted = scanResult.ownerIdNumber;
-        profileUpdate.id_number_last4 = scanResult.ownerIdNumber.slice(-4);
-      }
-
-      if (Object.keys(profileUpdate).length > 0) {
-        await supabase.from("profiles").update(profileUpdate).eq("id", user.id);
-      }
+	      if (Object.keys(profileUpdate).length > 0) {
+	        await updateMyProfile(profileUpdate);
+	      }
 
       toast({ title: "הפרופיל עודכן ✅", description: "הפרטים האישיים נשמרו בהצלחה" });
       onComplete?.();
@@ -297,51 +345,50 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
     handleClose();
   };
 
-  const handleManualSubmit = async () => {
-    if (!manualSummary.trim()) return;
-    setManualSubmitting(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const { data, error } = await supabase.functions.invoke("extract-vet-summary", {
-        body: { petId, userId: user.id, summary: manualSummary, visitDate: manualDate, clinicName: manualClinic || null },
-      });
-      if (error) throw error;
-
-      const extracted = data.extracted;
-      setScanResult({
-        clinicName: manualClinic || null,
-        clinicPhone: null,
-        clinicAddress: null,
-        visitDate: manualDate,
-        vaccines: extracted.vaccines || [],
-        diagnoses: extracted.diagnoses || [],
-        medications: extracted.medications || [],
-        weight: null,
-        deworming: false,
-        cost: null,
-        nextDueDate: extracted.nextVisitDate,
-        ownerName: null, ownerAddress: null, ownerCity: null, ownerPhone: null, ownerIdNumber: null,
-        petName: null, petBreed: null, petColor: null, petGender: null,
-        petBirthDate: null, microchipNumber: null, isNeutered: null,
-        licenseConditions: null, isDangerousBreed: false,
-      });
-      setLastBase64(null); // Manual — already saved by extract-vet-summary
-      setStep('review');
-    } catch (err) {
-      console.error("Manual submit error:", err);
-      toast({ title: "שגיאה בשמירה", variant: "destructive" });
+	  const handleManualSubmit = async () => {
+	    if (!manualSummary.trim()) return;
+	    setManualSubmitting(true);
+	    try {
+	      const result = extractLocalSummary(manualSummary, manualDate);
+	      const recoveryUntil = result.diagnoses.length > 0
+	        ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+	        : null;
+	      await createMyVetVisit(petId, {
+	        visit_type: result.vaccines.length > 0 ? "vaccination" : "checkup",
+	        visit_date: manualDate,
+	        next_visit_date: result.nextDueDate || null,
+	        clinic_name: manualClinic || null,
+	        diagnosis: result.diagnoses.join(", ") || null,
+	        treatment: result.medications.join(", ") || null,
+	        notes: manualSummary,
+	        raw_summary: manualSummary,
+	        vaccines: result.vaccines,
+	        is_recovery_mode: result.diagnoses.length > 0,
+	        recovery_until: recoveryUntil,
+	      });
+	      await Promise.all(result.vaccines.map((vaccineName) => createMyVaccination(petId, {
+	        vaccine_name: vaccineName,
+	        administered_at: manualDate,
+	        expires_at: result.nextDueDate || null,
+	        veterinarian: manualClinic || null,
+	        notes: manualSummary,
+	      })));
+	      toast({ title: "הביקור נשמר ✅", description: "הנתונים עודכנו בפרופיל הרפואי" });
+	      onComplete?.();
+	      handleClose();
+	    } catch (err) {
+	      console.error("Manual submit error:", err);
+	      toast({ title: "שגיאה בשמירה", variant: "destructive" });
     } finally {
       setManualSubmitting(false);
     }
   };
 
   const handleClose = () => {
-    setStep('closed');
-    setScanResult(null);
-    setLastBase64(null);
-    setLastFileName('');
+	    setStep('closed');
+	    setScanResult(null);
+	    setLastFile(null);
+	    setLastFileName('');
     setManualSummary('');
     setManualDate(new Date().toISOString().split('T')[0]);
     setManualClinic('');
@@ -636,14 +683,14 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
                    </div>
 
                   {/* Libra Claim CTA - shows when diagnosis or cost detected */}
-                  {(scanResult.diagnoses?.length > 0 || scanResult.cost) && (
-                    <Button
-                      variant="outline"
-                      className="w-full h-11 rounded-2xl text-xs font-semibold border-primary/30 text-primary"
-                      onClick={() => setShowClaimForm(true)}
-                    >
-                      <Shield className="w-4 h-4 ml-2" strokeWidth={1.5} />
-                      הגש בקשה להחזר מ-Libra
+	                  {(scanResult.diagnoses?.length > 0 || scanResult.cost) && (
+	                    <Button
+	                      variant="outline"
+	                      className="w-full h-11 rounded-2xl text-xs font-semibold border-primary/30 text-primary"
+	                      onClick={() => toast({ title: "תביעות ביטוח יועברו ל-AWS בשלב הבא" })}
+	                    >
+	                      <Shield className="w-4 h-4 ml-2" strokeWidth={1.5} />
+	                      הגש בקשה להחזר מ-Libra
                     </Button>
                   )}
                 </div>
@@ -902,28 +949,6 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
           </motion.div>
         )}
       </AnimatePresence>
-      {/* Libra Claim Form */}
-      {scanResult && (
-        <LibraClaimForm
-          petId={petId}
-          claimData={{
-            ownerName: scanResult.ownerName,
-            ownerIdNumber: scanResult.ownerIdNumber,
-            petName: scanResult.petName || petName,
-            microchipNumber: scanResult.microchipNumber,
-            clinicName: scanResult.clinicName,
-            visitDate: scanResult.visitDate,
-            diagnosis: scanResult.diagnoses?.join('; ') || null,
-            treatment: scanResult.medications?.join('; ') || null,
-            totalAmount: scanResult.cost,
-          }}
-          open={showClaimForm}
-          onClose={() => setShowClaimForm(false)}
-          onSubmitted={() => {
-            onComplete?.();
-          }}
-        />
-      )}
-    </>
-  );
-};
+	    </>
+	  );
+	};
