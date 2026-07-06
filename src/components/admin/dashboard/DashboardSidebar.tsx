@@ -13,10 +13,10 @@ import {
   PawPrint
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/hooks/useAuth';
+import { useAwsAdminAuth } from '@/hooks/useAwsAdminAuth';
 
 interface NavItem {
   icon: React.ElementType;
@@ -39,11 +39,11 @@ const navItems: NavItem[] = [
 export const DashboardSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { admin, logout } = useAwsAdminAuth();
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
+    await logout();
+    navigate('/admin/login');
   };
 
   return (
@@ -96,13 +96,13 @@ export const DashboardSidebar = () => {
         <div className="flex items-center gap-3 px-3 py-2">
           <Avatar className="w-10 h-10 border-2 border-slate-600">
             <AvatarFallback className="bg-slate-700 text-white text-sm">
-              {user?.email?.charAt(0).toUpperCase() || 'A'}
+              {admin?.email?.charAt(0).toUpperCase() || 'A'}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">Jonathan Doe</p>
+            <p className="text-sm font-medium truncate">{admin?.display_name || 'Admin'}</p>
             <p className="text-xs text-slate-400 truncate">- Admin</p>
-            <p className="text-xs text-slate-500 truncate">{user?.email || 'admin@petid.com'}</p>
+            <p className="text-xs text-slate-500 truncate">{admin?.email || 'admin@mipo.local'}</p>
           </div>
         </div>
         

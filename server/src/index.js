@@ -1,5 +1,5 @@
 import http from "node:http";
-import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Pool } from "pg";
@@ -19,7 +19,11 @@ const adminApiKey = process.env.ADMIN_API_KEY;
 const uploadDir = process.env.UPLOAD_DIR || "/app/uploads";
 const maxUploadBytes = Number(process.env.MAX_UPLOAD_BYTES || 5 * 1024 * 1024);
 const adminCookieName = "mipo_admin_session";
-const adminSessionMs = Number(process.env.ADMIN_SESSION_HOURS || 8) * 60 * 60 * 1000;
+const configuredAdminSessionHours = Number(process.env.ADMIN_SESSION_HOURS || 8);
+const adminSessionHours = Number.isFinite(configuredAdminSessionHours) && configuredAdminSessionHours > 0
+  ? configuredAdminSessionHours
+  : 8;
+const adminSessionMs = adminSessionHours * 60 * 60 * 1000;
 
 if (!databaseUrl) {
   throw new Error("DATABASE_URL is required");
@@ -63,29 +67,6 @@ const sendError = (response, statusCode, message, details) => {
   sendJson(response, statusCode, { error: message, details });
 };
 
-const requireAdmin = (request, response) => {
-  if (!adminApiKey) {
-    sendError(response, 503, "Admin API key is not configured");
-    return false;
-  }
-
-  if (request.headers["x-admin-api-key"] === adminApiKey) {
-    return true;
-  }
-
-  const sessionToken = parseCookies(request.headers.cookie || "")[adminCookieName];
-  if (sessionToken && verifyAdminToken(sessionToken)) {
-    return true;
-  }
-
-  if (request.headers["x-admin-api-key"] !== adminApiKey) {
-    sendError(response, 401, "Unauthorized");
-    return false;
-  }
-
-  return true;
-};
-
 const parseCookies = (cookieHeader) => Object.fromEntries(
   cookieHeader
     .split(";")
@@ -101,36 +82,60 @@ const parseCookies = (cookieHeader) => Object.fromEntries(
     }),
 );
 
-const signAdminPayload = (payload) => (
-  createHmac("sha256", adminApiKey).update(payload).digest("base64url")
-);
-
-const createAdminToken = () => {
-  const payload = Buffer.from(JSON.stringify({
-    exp: Date.now() + adminSessionMs,
-    nonce: randomUUID(),
-  })).toString("base64url");
-  return `${payload}.${signAdminPayload(payload)}`;
+const secretsEqual = (actual, expected) => {
+  if (!actual || !expected) return false;
+  const actualBuffer = Buffer.from(String(actual));
+  const expectedBuffer = Buffer.from(String(expected));
+  if (actualBuffer.length !== expectedBuffer.length) return false;
+  return timingSafeEqual(actualBuffer, expectedBuffer);
 };
 
-const verifyAdminToken = (token) => {
-  if (!adminApiKey || typeof token !== "string") return false;
+const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
 
-  const [payload, signature] = token.split(".");
-  if (!payload || !signature) return false;
+const hashPassword = (password) => {
+  const salt = randomBytes(16).toString("base64url");
+  const hash = scryptSync(String(password), salt, 64).toString("base64url");
+  return `scrypt$${salt}$${hash}`;
+};
 
-  const expected = signAdminPayload(payload);
-  const actualBuffer = Buffer.from(signature);
-  const expectedBuffer = Buffer.from(expected);
-  if (actualBuffer.length !== expectedBuffer.length) return false;
-  if (!timingSafeEqual(actualBuffer, expectedBuffer)) return false;
+const verifyPassword = (password, passwordHash) => {
+  const [algorithm, salt, hash] = String(passwordHash || "").split("$");
+  if (algorithm !== "scrypt" || !salt || !hash) return false;
 
-  try {
-    const decoded = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
-    return Number(decoded.exp) > Date.now();
-  } catch {
-    return false;
+  const actualHash = Buffer.from(hash, "base64url");
+  const expectedHash = scryptSync(String(password), salt, actualHash.length);
+  if (actualHash.length !== expectedHash.length) return false;
+  return timingSafeEqual(actualHash, expectedHash);
+};
+
+const hashSessionToken = (token) => createHash("sha256").update(String(token)).digest("hex");
+
+const serializeAdmin = (row) => ({
+  id: row.id,
+  email: row.email,
+  display_name: row.display_name || null,
+  role: row.role,
+  created_at: row.created_at || null,
+  last_login_at: row.last_login_at || null,
+});
+
+const adminUserSelect = `
+  id,
+  email,
+  display_name,
+  role,
+  is_active,
+  created_at,
+  updated_at,
+  last_login_at
+`;
+
+const getRequestIp = (request) => {
+  const forwardedFor = request.headers["x-forwarded-for"];
+  if (typeof forwardedFor === "string" && forwardedFor.trim()) {
+    return forwardedFor.split(",")[0].trim();
   }
+  return request.socket?.remoteAddress || null;
 };
 
 const buildAdminCookie = (request, token) => {
@@ -143,6 +148,181 @@ const buildAdminCookie = (request, token) => {
     `Max-Age=${Math.floor(adminSessionMs / 1000)}`,
     isHttps ? "Secure" : "",
   ].filter(Boolean).join("; ");
+};
+
+const buildClearAdminCookie = (request) => {
+  const isHttps = request.headers["x-forwarded-proto"] === "https";
+  return [
+    `${adminCookieName}=`,
+    "HttpOnly",
+    "Path=/",
+    "SameSite=Lax",
+    "Max-Age=0",
+    isHttps ? "Secure" : "",
+  ].filter(Boolean).join("; ");
+};
+
+const createAdminSession = async (request, adminUserId) => {
+  const token = randomBytes(32).toString("base64url");
+  const tokenHash = hashSessionToken(token);
+  const expiresAt = new Date(Date.now() + adminSessionMs).toISOString();
+
+  await pool.query(
+    `
+      insert into public.admin_sessions (
+        admin_user_id,
+        session_token_hash,
+        expires_at,
+        user_agent,
+        ip_address
+      )
+      values ($1, $2, $3, $4, $5)
+    `,
+    [
+      adminUserId,
+      tokenHash,
+      expiresAt,
+      request.headers["user-agent"] || null,
+      getRequestIp(request),
+    ],
+  );
+
+  return token;
+};
+
+const getAdminFromSession = async (request) => {
+  const sessionToken = parseCookies(request.headers.cookie || "")[adminCookieName];
+  if (!sessionToken) return null;
+
+  const tokenHash = hashSessionToken(sessionToken);
+  const result = await pool.query(
+    `
+      select
+        au.id,
+        au.email,
+        au.display_name,
+        au.role,
+        au.is_active,
+        au.created_at,
+        au.updated_at,
+        au.last_login_at
+      from public.admin_sessions admin_session
+      join public.admin_users au on au.id = admin_session.admin_user_id
+      where admin_session.session_token_hash = $1
+        and admin_session.expires_at > now()
+        and au.is_active = true
+      limit 1
+    `,
+    [tokenHash],
+  );
+
+  if (result.rowCount === 0) return null;
+
+  await pool.query(
+    "update public.admin_sessions set last_seen_at = now() where session_token_hash = $1",
+    [tokenHash],
+  );
+
+  return serializeAdmin(result.rows[0]);
+};
+
+const requireAdmin = async (request, response) => {
+  if (adminApiKey && secretsEqual(request.headers["x-admin-api-key"], adminApiKey)) {
+    request.admin = { id: "api-key", email: "api-key", role: "admin" };
+    return true;
+  }
+
+  const admin = await getAdminFromSession(request);
+  if (admin) {
+    request.admin = admin;
+    return true;
+  }
+
+  sendError(response, 401, "Unauthorized");
+  return false;
+};
+
+const bootstrapAdmin = async (body) => {
+  const email = normalizeEmail(body.email);
+  const password = String(body.password || "");
+  const displayName = String(body.display_name || body.displayName || "Admin").trim() || "Admin";
+
+  if (!email || !email.includes("@")) {
+    const error = new Error("A valid admin email is required");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (password.length < 12) {
+    const error = new Error("Admin password must be at least 12 characters");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const result = await pool.query(
+    `
+      insert into public.admin_users (
+        email,
+        password_hash,
+        display_name,
+        role,
+        is_active
+      )
+      values ($1, $2, $3, 'admin', true)
+      on conflict (email) do update set
+        password_hash = excluded.password_hash,
+        display_name = excluded.display_name,
+        is_active = true,
+        updated_at = now()
+      returning ${adminUserSelect}
+    `,
+    [email, hashPassword(password), displayName],
+  );
+
+  return serializeAdmin(result.rows[0]);
+};
+
+const loginAdmin = async (request, body) => {
+  const email = normalizeEmail(body.email);
+  const password = String(body.password || "");
+
+  const result = await pool.query(
+    `
+      select ${adminUserSelect}, password_hash
+      from public.admin_users
+      where lower(email) = $1
+      limit 1
+    `,
+    [email],
+  );
+
+  const row = result.rows[0];
+  if (!row || !row.is_active || !verifyPassword(password, row.password_hash)) {
+    const error = new Error("Invalid email or password");
+    error.statusCode = 401;
+    throw error;
+  }
+
+  const token = await createAdminSession(request, row.id);
+  const updated = await pool.query(
+    `update public.admin_users set last_login_at = now(), updated_at = now() where id = $1 returning ${adminUserSelect}`,
+    [row.id],
+  );
+
+  return {
+    admin: serializeAdmin(updated.rows[0]),
+    token,
+  };
+};
+
+const logoutAdmin = async (request) => {
+  const sessionToken = parseCookies(request.headers.cookie || "")[adminCookieName];
+  if (!sessionToken) return;
+
+  await pool.query(
+    "delete from public.admin_sessions where session_token_hash = $1",
+    [hashSessionToken(sessionToken)],
+  );
 };
 
 const toNumber = (value) => {
@@ -740,19 +920,41 @@ const handleRequest = async (request, response) => {
       return;
     }
 
-    if (request.method === "POST" && url.pathname === "/api/admin/session") {
+    if (request.method === "POST" && url.pathname === "/api/admin/bootstrap") {
       if (!adminApiKey) {
         sendError(response, 503, "Admin API key is not configured");
         return;
       }
 
-      const body = await readBody(request);
-      if (body.key !== adminApiKey) {
+      if (!secretsEqual(request.headers["x-admin-api-key"], adminApiKey)) {
         sendError(response, 401, "Unauthorized");
         return;
       }
 
-      sendJson(response, 200, { ok: true }, { "set-cookie": buildAdminCookie(request, createAdminToken()) });
+      sendJson(response, 201, { admin: await bootstrapAdmin(await readBody(request)) });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/admin/login") {
+      const result = await loginAdmin(request, await readBody(request));
+      sendJson(response, 200, { admin: result.admin }, { "set-cookie": buildAdminCookie(request, result.token) });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/admin/logout") {
+      await logoutAdmin(request);
+      sendJson(response, 200, { ok: true }, { "set-cookie": buildClearAdminCookie(request) });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/me") {
+      const admin = await getAdminFromSession(request);
+      if (!admin) {
+        sendError(response, 401, "Unauthorized");
+        return;
+      }
+
+      sendJson(response, 200, { admin });
       return;
     }
 
@@ -762,20 +964,20 @@ const handleRequest = async (request, response) => {
     }
 
     if (request.method === "POST" && url.pathname === "/api/products") {
-      if (!requireAdmin(request, response)) return;
+      if (!(await requireAdmin(request, response))) return;
       sendJson(response, 201, { product: await createProduct(await readBody(request)) });
       return;
     }
 
     if (request.method === "PATCH" && url.pathname === "/api/products/bulk") {
-      if (!requireAdmin(request, response)) return;
+      if (!(await requireAdmin(request, response))) return;
       const body = await readBody(request);
       sendJson(response, 200, await bulkUpdateProducts(body.ids, body.updates || {}));
       return;
     }
 
     if (request.method === "DELETE" && url.pathname === "/api/products/bulk") {
-      if (!requireAdmin(request, response)) return;
+      if (!(await requireAdmin(request, response))) return;
       const body = await readBody(request);
       sendJson(response, 200, await bulkDeleteProducts(body.ids));
       return;
@@ -783,7 +985,7 @@ const handleRequest = async (request, response) => {
 
     const productMatch = url.pathname.match(/^\/api\/products\/([0-9a-fA-F-]{36})$/);
     if (productMatch && request.method === "PATCH") {
-      if (!requireAdmin(request, response)) return;
+      if (!(await requireAdmin(request, response))) return;
       const product = await updateProduct(productMatch[1], await readBody(request));
       if (!product) {
         sendError(response, 404, "Product not found");
@@ -794,21 +996,21 @@ const handleRequest = async (request, response) => {
     }
 
     if (productMatch && request.method === "DELETE") {
-      if (!requireAdmin(request, response)) return;
+      if (!(await requireAdmin(request, response))) return;
       const deleted = await deleteProduct(productMatch[1], url.searchParams.get("source"));
       sendJson(response, deleted ? 200 : 404, { deleted });
       return;
     }
 
     if (request.method === "POST" && url.pathname === "/api/uploads") {
-      if (!requireAdmin(request, response)) return;
+      if (!(await requireAdmin(request, response))) return;
       sendJson(response, 201, { upload: await uploadImage(await readBody(request, maxUploadBytes + 1024 * 1024)) });
       return;
     }
 
     const productIntelMatch = url.pathname.match(/^\/api\/product-intel\/([a-z0-9-]+)$/);
     if (productIntelMatch && request.method === "POST") {
-      if (!requireAdmin(request, response)) return;
+      if (!(await requireAdmin(request, response))) return;
       sendJson(response, 200, await runProductIntelFunction(productIntelMatch[1], await readBody(request, 2 * 1024 * 1024)));
       return;
     }

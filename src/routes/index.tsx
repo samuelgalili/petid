@@ -45,9 +45,7 @@ const Protected = ({ children }: { children: React.ReactNode }) => (
 
 // Admin wrapper
 const Admin = ({ children }: { children: React.ReactNode }) => (
-  <ProtectedRoute>
-    <AdminRoute>{children}</AdminRoute>
-  </ProtectedRoute>
+  <AdminRoute>{children}</AdminRoute>
 );
 
 // ==========================================
@@ -309,6 +307,7 @@ export const staticRoutes: RouteObject[] = [
 // ADMIN MODULE - All lazy loaded
 // ==========================================
 const AdminGrowo = lazy(() => import("@/pages/admin/AdminGrowo"));
+const AdminLogin = lazy(() => import("@/pages/admin/AdminLogin"));
 const AdminOrders = lazy(() => import("@/pages/admin/AdminOrders"));
 const AdminParks = lazy(() => import("@/pages/admin/AdminParks"));
 const AdminAdoption = lazy(() => import("@/pages/admin/AdminAdoption"));
@@ -395,6 +394,8 @@ const AdminPage = ({ component: Component, pageName }: { component: ComponentTyp
 );
 
 export const adminRoutes: RouteObject[] = [
+  { path: "/admin/login", element: <LazyPage component={AdminLogin} pageName="כניסת מנהל" /> },
+
   // Default admin route - redirect to growo dashboard
   { path: "/admin", element: <Navigate to="/admin/growo" replace /> },
 

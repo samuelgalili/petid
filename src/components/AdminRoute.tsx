@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAdmin } from "@/hooks/useAdmin";
 
 interface AdminRouteProps {
@@ -8,6 +8,7 @@ interface AdminRouteProps {
 
 export const AdminRoute = ({ children }: AdminRouteProps) => {
   const { isAdmin, loading } = useAdmin();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -18,7 +19,7 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
   }
 
   if (!isAdmin) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/admin/login" replace state={{ from: location.pathname }} />;
   }
 
   return <>{children}</>;

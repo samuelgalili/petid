@@ -18,8 +18,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { useAwsAdminAuth } from "@/hooks/useAwsAdminAuth";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -136,7 +135,7 @@ const quickActions = [
 export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: AdminLayoutProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, signOut } = useAuth();
+  const { admin, logout } = useAwsAdminAuth();
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -178,16 +177,12 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
   }, [location.pathname]);
 
   const fetchPendingCounts = async () => {
-    const { count } = await supabase
-      .from("reports")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "pending");
-    setPendingReports(count || 0);
+    setPendingReports(0);
   };
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate("/");
+    await logout();
+    navigate("/admin/login");
   };
 
   const toggleGroup = (label: string) => {
@@ -371,12 +366,12 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
             <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/30">
               <Avatar className="w-7 h-7">
                 <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-bold">
-                  {user?.email?.charAt(0).toUpperCase() || 'מ'}
+                  {admin?.email?.charAt(0).toUpperCase() || 'מ'}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-medium truncate text-foreground">מנהל מערכת</p>
-                <p className="text-[9px] text-muted-foreground truncate">{user?.email}</p>
+                <p className="text-[11px] font-medium truncate text-foreground">{admin?.display_name || "מנהל מערכת"}</p>
+                <p className="text-[9px] text-muted-foreground truncate">{admin?.email}</p>
               </div>
             </div>
             <div className="flex gap-1">

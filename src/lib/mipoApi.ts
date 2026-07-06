@@ -44,8 +44,16 @@ export interface MipoProduct {
   source?: "manual" | "scraped";
 }
 
+export interface MipoAdmin {
+  id: string;
+  email: string;
+  display_name: string | null;
+  role: string;
+  created_at?: string | null;
+  last_login_at?: string | null;
+}
+
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/+$/, "");
-let promptedAdminKey: string | null = null;
 
 async function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -54,11 +62,6 @@ async function fileToDataUrl(file: File): Promise<string> {
     reader.onload = () => resolve(String(reader.result));
     reader.readAsDataURL(file);
   });
-}
-
-function getStoredAdminKey() {
-  if (typeof window === "undefined") return promptedAdminKey;
-  return promptedAdminKey || window.localStorage.getItem("mipo_admin_api_key");
 }
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -80,56 +83,59 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
-async function createAdminSession(key: string) {
-  return apiFetch<{ ok: boolean }>("/admin/session", {
-    method: "POST",
-    body: JSON.stringify({ key }),
-  });
-}
-
-async function requestAdminKey() {
-  const existingKey = getStoredAdminKey();
-  if (existingKey) return existingKey;
-  if (typeof window === "undefined") throw new Error("נדרש מפתח מנהל");
-
-  const key = window.prompt("הזן מפתח מנהל ל-Mipo");
-  if (!key) throw new Error("נדרש מפתח מנהל");
-
-  promptedAdminKey = key;
-  await createAdminSession(key);
-  return key;
-}
-
 async function adminApiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const adminKey = getStoredAdminKey();
   const response = await fetch(`${API_BASE_URL}${path}`, {
     credentials: "same-origin",
     ...init,
     headers: {
       "content-type": "application/json",
-      ...(adminKey ? { "x-admin-api-key": adminKey } : {}),
       ...(init?.headers || {}),
     },
   });
 
-  if (response.status === 401 && !adminKey) {
-    const promptedKey = await requestAdminKey();
-    return adminApiFetch<T>(path, {
-      ...init,
-      headers: {
-        ...(init?.headers || {}),
-        "x-admin-api-key": promptedKey,
-      },
-    });
-  }
-
   const body = await response.json().catch(() => null);
 
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error("נדרשת התחברות מנהל");
+    }
     throw new Error(body?.error || `API request failed with ${response.status}`);
   }
 
   return body as T;
+}
+
+export async function getCurrentAdmin(): Promise<MipoAdmin | null> {
+  const response = await fetch(`${API_BASE_URL}/admin/me`, {
+    credentials: "same-origin",
+    headers: {
+      "content-type": "application/json",
+    },
+  });
+
+  if (response.status === 401) return null;
+
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(body?.error || `API request failed with ${response.status}`);
+  }
+
+  return (body?.admin || null) as MipoAdmin | null;
+}
+
+export async function loginAdmin(email: string, password: string): Promise<MipoAdmin> {
+  const result = await apiFetch<{ admin: MipoAdmin }>("/admin/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+  return result.admin;
+}
+
+export async function logoutAdmin() {
+  return apiFetch<{ ok: boolean }>("/admin/logout", {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
 }
 
 export async function getShopProducts(): Promise<MipoProduct[]> {
