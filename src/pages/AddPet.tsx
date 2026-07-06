@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
@@ -13,7 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload, Sparkles, ArrowLeft, ArrowRight, Calendar as CalendarIcon, Camera, Check, Heart, MapPin, ImagePlus } from "lucide-react";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { useGuest } from "@/contexts/GuestContext";
-import { useGame } from "@/contexts/GameContext";
+import { useAuth } from "@/hooks/useAuth";
+import { createMyPet, uploadMyImage } from "@/lib/mipoApi";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -75,27 +75,9 @@ const CAT_ACTIVITIES = [
 
 const TOTAL_STEPS = 7;
 
-const fileExtension = (file: File) => {
-  const fromName = file.name.split(".").pop();
-  if (fromName) return fromName.toLowerCase();
-  const fromType = file.type.split("/")[1];
-  return fromType || "jpg";
-};
-
-const uploadPetAvatar = async (userId: string, file: File): Promise<string> => {
-  const id = crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  const path = `${userId}/${id}.${fileExtension(file)}`;
-  const { error } = await supabase.storage.from("pet-avatars").upload(path, file, {
-    cacheControl: "3600",
-    contentType: file.type || "image/jpeg",
-    upsert: false,
-  });
-
-  if (error) throw error;
-
-  const { data } = supabase.storage.from("pet-avatars").getPublicUrl(path);
-  return data.publicUrl;
-};
+const errorMessage = (error: unknown, fallback: string) => (
+  error instanceof Error ? error.message : fallback
+);
 
 const AddPet = () => {
   const [searchParams] = useSearchParams();
@@ -141,18 +123,14 @@ const AddPet = () => {
   
   const { petType, setPetType, refresh: refreshPets } = usePetPreference();
   const { isGuest } = useGuest();
-  const { awardBadge, updateStreak } = useGame();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session && !isGuest) {
-        navigate("/auth");
-      }
-    };
-    checkAuth();
+    if (!authLoading && !user && !isGuest) {
+      navigate("/auth");
+    }
 
     const hasSeenTutorial = localStorage.getItem('hasSeenSwipeTutorial');
     if (!hasSeenTutorial && !isOnboarding) {
@@ -192,7 +170,7 @@ const AddPet = () => {
         localStorage.removeItem('addPetDraft');
       }
     }
-  }, [navigate, isGuest, toast, isOnboarding, setPetType]);
+  }, [navigate, isGuest, toast, isOnboarding, setPetType, user, authLoading]);
 
   // Auto-save
   useEffect(() => {
@@ -231,24 +209,8 @@ const AddPet = () => {
     localStorage.setItem('hasSeenSwipeTutorial', 'true');
   };
 
-  const matchBreedInDB = async (detectedBreed: string, type: string) => {
-    try {
-      // Try exact match first
-      let { data } = await supabase
-        .from("breed_information")
-        .select("breed_name, breed_name_he")
-        .eq("pet_type", type)
-        .or(`breed_name.ilike.%${detectedBreed}%,breed_name_he.ilike.%${detectedBreed}%`)
-        .limit(1)
-        .maybeSingle();
-
-      if (data) {
-        return data.breed_name_he || data.breed_name;
-      }
-      return detectedBreed;
-    } catch {
-      return detectedBreed;
-    }
+  const matchBreedInDB = async (detectedBreed: string, _type: string) => {
+    return detectedBreed;
   };
 
   const searchBreeds = async (query: string) => {
@@ -256,97 +218,20 @@ const AddPet = () => {
       setBreedSearchResults([]);
       return;
     }
-    try {
-      const { data } = await supabase
-        .from("breed_information")
-        .select("breed_name, breed_name_he")
-        .eq("pet_type", petType)
-        .or(`breed_name.ilike.%${query}%,breed_name_he.ilike.%${query}%`)
-        .limit(8);
-      setBreedSearchResults(data || []);
-    } catch {
-      setBreedSearchResults([]);
-    }
+    setBreedSearchResults([]);
   };
 
   const [breedDetectionFailed, setBreedDetectionFailed] = useState(false);
   const [photoQualityFeedback, setPhotoQualityFeedback] = useState<string | null>(null);
   const [detectedHealthRisks, setDetectedHealthRisks] = useState<Array<{ risk: string; risk_he: string; severity: string; note: string }>>([]);
 
-  const detectBreed = async (base64Image: string) => {
+  const detectBreed = async (_base64Image: string) => {
     if (!petType) return;
     
-    setBreedDetecting(true);
+    setBreedDetecting(false);
     setBreedDetectionFailed(false);
     setPhotoQualityFeedback(null);
     setDetectedHealthRisks([]);
-    try {
-      const { data, error } = await supabase.functions.invoke("detect-breed", {
-        body: {
-          imageBase64: base64Image,
-          petType: petType
-        }
-      });
-
-      if (error) throw error;
-      
-      if (data.error) {
-        console.error('Breed detection error:', data.error);
-        setBreedDetectionFailed(true);
-        return;
-      }
-
-      // Handle photo quality feedback
-      if (data.photo_quality === 'poor' && data.photo_feedback) {
-        setPhotoQualityFeedback(data.photo_feedback);
-      }
-
-      // Store health risks
-      if (data.health_risks && Array.isArray(data.health_risks) && data.health_risks.length > 0) {
-        setDetectedHealthRisks(data.health_risks);
-      }
-
-      if (data.breed && data.breed !== "Unknown Breed") {
-        // Check if detected animal type mismatches user selection
-        if (data.detectedType && data.detectedType !== petType) {
-          setTypeMismatch({
-            detectedType: data.detectedType,
-            breed: data.breed,
-            confidence: data.confidence || 0
-          });
-          return;
-        }
-        
-        const confidence = data.confidence || 0;
-        const matchedBreed = await matchBreedInDB(data.breed_he || data.breed, petType);
-        
-        // Handle mixed breeds from AI
-        if (data.mixed_breeds && Array.isArray(data.mixed_breeds) && data.mixed_breeds.length > 1) {
-          const secondaryBreed = await matchBreedInDB(data.mixed_breeds[1], petType);
-          setFormData(prev => ({ 
-            ...prev, 
-            breed: matchedBreed, 
-            secondary_breed: secondaryBreed,
-            is_mixed: true 
-          }));
-          toast({ title: "🧬 זוהה מעורב!", description: `${matchedBreed} + ${secondaryBreed}` });
-        } else {
-          setFormData(prev => ({ ...prev, breed: matchedBreed }));
-          if (confidence > 0.8) {
-            toast({ title: "✨ גזע זוהה!", description: `${matchedBreed} (${Math.round(confidence * 100)}% וודאות)` });
-          }
-        }
-        setBreedSource('ai');
-        setBreedConfidence(confidence);
-      } else {
-        setBreedDetectionFailed(true);
-      }
-    } catch (error) {
-      console.error('Error detecting breed:', error);
-      setBreedDetectionFailed(true);
-    } finally {
-      setBreedDetecting(false);
-    }
   };
 
   const handleTypeMismatchSwitch = async () => {
@@ -433,8 +318,6 @@ const AddPet = () => {
         return;
       }
       
-      const { data: { user } } = await supabase.auth.getUser();
-      
       if (!user) {
         navigate("/auth");
         return;
@@ -442,7 +325,7 @@ const AddPet = () => {
       
       let avatarUrl = "";
       if (imageFile) {
-        avatarUrl = await uploadPetAvatar(user.id, imageFile);
+        avatarUrl = (await uploadMyImage(imageFile)).url;
       } else if (imagePreview && imagePreview.startsWith("http")) {
         avatarUrl = imagePreview;
       }
@@ -451,8 +334,7 @@ const AddPet = () => {
         ? `${formData.breed} + ${formData.secondary_breed}` 
         : formData.breed || null;
 
-      const { data: petData, error: insertError } = await supabase.from("pets").insert({
-        user_id: user.id,
+      const petData = await createMyPet({
         name: formData.name,
         type: petType,
         birth_date: formData.birthDate ? formData.birthDate.toISOString().split('T')[0] : null,
@@ -465,32 +347,10 @@ const AddPet = () => {
         favorite_activities: activities.length > 0 ? activities : null,
         medical_conditions: medicalConditions.length > 0 ? medicalConditions : null,
         health_notes: otherConditionText || healthNotes || null
-      }).select().single();
-      
-      if (insertError) throw insertError;
-
-      // Save breed detection history
-      if (petData && formData.breed && breedConfidence !== null) {
-        await supabase.from("breed_detection_history").insert({
-          pet_id: petData.id,
-          breed: formData.breed,
-          confidence: breedConfidence !== null ? Math.round(breedConfidence * 100) : null,
-          avatar_url: avatarUrl
-        });
-      }
+      });
 
       // Award badge for first pet / onboarding
       if (isOnboarding) {
-        const { data: welcomeBadge } = await supabase
-          .from('badges')
-          .select('id')
-          .eq('condition_type', 'onboarding_complete')
-          .maybeSingle();
-
-        if (welcomeBadge) {
-          await awardBadge(welcomeBadge.id);
-        }
-        await updateStreak();
         localStorage.setItem('onboardingCompleted', 'true');
       }
 
@@ -504,7 +364,7 @@ const AddPet = () => {
       toast({
         title: isOnboarding ? "🎉 מזל טוב!" : "הצלחה!",
         description: isOnboarding 
-          ? `הפרופיל של ${formData.name} מוכן! קיבלת 50 נקודות ובאדג׳ ברוך הבא`
+          ? `הפרופיל של ${formData.name} מוכן!`
           : `${formData.name} נוסף בהצלחה!`
       });
       
@@ -516,11 +376,11 @@ const AddPet = () => {
       localStorage.removeItem('addPetDraft');
       
       setTimeout(() => navigate("/"), 1500);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('AddPet submit error:', error);
       toast({
         title: "שגיאה",
-        description: error.message || "שגיאה בשמירת חיית המחמד",
+        description: errorMessage(error, "שגיאה בשמירת חיית המחמד"),
         variant: "destructive"
       });
     } finally {

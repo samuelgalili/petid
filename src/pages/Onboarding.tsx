@@ -5,11 +5,11 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
-import { useGame } from "@/contexts/GameContext";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { haptic } from "@/lib/haptics";
+import { createMyPet, uploadMyImage } from "@/lib/mipoApi";
 import confetti from "canvas-confetti";
 import {
   Camera, ImagePlus, Loader2, Sparkles, ArrowLeft, Check, PawPrint,
@@ -49,11 +49,15 @@ const SLIDES = [
 
 type Phase = "intro" | "petType" | "photo" | "name" | "creating" | "success";
 
+const errorMessage = (error: unknown, fallback: string) => (
+  error instanceof Error ? error.message : fallback
+);
+
 const Onboarding = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { petType, setPetType, refresh: refreshPets } = usePetPreference();
-  const { awardBadge, updateStreak } = useGame();
+  const { setPetType, refresh: refreshPets } = usePetPreference();
+  const { user } = useAuth();
 
   /* ── State ── */
   const [phase, setPhase] = useState<Phase>("intro");
@@ -66,12 +70,11 @@ const Onboarding = () => {
   const [breedConfidence, setBreedConfidence] = useState<number | null>(null);
   const [breedDetecting, setBreedDetecting] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [createdPetAvatar, setCreatedPetAvatar] = useState("");
 
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   /* ── Intro swipe ── */
-  const handleSwipe = (_: any, info: PanInfo) => {
+  const handleSwipe = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (Math.abs(info.offset.x) < 50) return;
     if (info.offset.x < 0 && slideIdx < SLIDES.length - 1) {
       haptic("selection");
@@ -130,40 +133,9 @@ const Onboarding = () => {
     input.click();
   };
 
-  const detectBreed = async (base64: string) => {
+  const detectBreed = async (_base64: string) => {
     if (!selectedType) return;
-    setBreedDetecting(true);
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/detect-pet-breed`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({ imageBase64: base64, petType: selectedType }),
-        }
-      );
-      const data = await response.json();
-      if (data.breed && data.breed !== "Unknown Breed") {
-        // Try matching Hebrew name from DB
-        const { data: match } = await supabase
-          .from("breed_information")
-          .select("breed_name, breed_name_he")
-          .eq("pet_type", selectedType)
-          .or(`breed_name.ilike.%${data.breed}%,breed_name_he.ilike.%${data.breed}%`)
-          .limit(1)
-          .maybeSingle();
-        setDetectedBreed(match?.breed_name_he || match?.breed_name || data.breed);
-        setBreedConfidence(data.confidence || null);
-        haptic("success");
-      }
-    } catch (err) {
-      console.error("Breed detection error:", err);
-    } finally {
-      setBreedDetecting(false);
-    }
+    setBreedDetecting(false);
   };
 
   const proceedToName = () => {
@@ -179,43 +151,22 @@ const Onboarding = () => {
     setLoading(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/auth"); return; }
 
-      const avatarUrl = imagePreview || "";
+      const avatarUrl = imageFile ? (await uploadMyImage(imageFile)).url : "";
 
-      const { data: petData, error } = await supabase.from("pets").insert({
-        user_id: user.id,
+      const petData = await createMyPet({
         name: petName.trim(),
         type: selectedType,
         breed: detectedBreed || null,
         breed_confidence: breedConfidence,
         avatar_url: avatarUrl,
-      }).select().single();
-
-      if (error) throw error;
-
-      // Save breed detection history
-      if (petData && detectedBreed && breedConfidence !== null) {
-        await supabase.from("breed_detection_history").insert({
-          pet_id: petData.id,
-          breed: detectedBreed,
-          confidence: breedConfidence,
-          avatar_url: avatarUrl,
-        });
-      }
+      });
 
       // Award onboarding badge
-      const { data: welcomeBadge } = await supabase
-        .from("badges")
-        .select("id")
-        .eq("condition_type", "onboarding_complete")
-        .maybeSingle();
-      if (welcomeBadge) await awardBadge(welcomeBadge.id);
-      await updateStreak();
       localStorage.setItem("onboardingCompleted", "true");
+      localStorage.setItem("activePetId", petData.id);
 
-      setCreatedPetAvatar(avatarUrl);
       await refreshPets?.();
 
       // Trigger success
@@ -225,9 +176,9 @@ const Onboarding = () => {
         haptic("success");
         confetti({ particleCount: 200, spread: 120, origin: { y: 0.5 }, colors: ["#FFD700", "#FF6B8A", "#7C5CFC", "#4ECDC4"] });
       }, 1200);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Create pet error:", err);
-      toast({ title: "שגיאה", description: err.message || "לא הצלחנו ליצור את הפרופיל", variant: "destructive" });
+      toast({ title: "שגיאה", description: errorMessage(err, "לא הצלחנו ליצור את הפרופיל"), variant: "destructive" });
       setPhase("name");
       setLoading(false);
     }

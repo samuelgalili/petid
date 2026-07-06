@@ -19,11 +19,17 @@ const adminApiKey = process.env.ADMIN_API_KEY;
 const uploadDir = process.env.UPLOAD_DIR || "/app/uploads";
 const maxUploadBytes = Number(process.env.MAX_UPLOAD_BYTES || 5 * 1024 * 1024);
 const adminCookieName = "mipo_admin_session";
+const userCookieName = "mipo_user_session";
 const configuredAdminSessionHours = Number(process.env.ADMIN_SESSION_HOURS || 8);
 const adminSessionHours = Number.isFinite(configuredAdminSessionHours) && configuredAdminSessionHours > 0
   ? configuredAdminSessionHours
   : 8;
 const adminSessionMs = adminSessionHours * 60 * 60 * 1000;
+const configuredUserSessionDays = Number(process.env.USER_SESSION_DAYS || 30);
+const userSessionDays = Number.isFinite(configuredUserSessionDays) && configuredUserSessionDays > 0
+  ? configuredUserSessionDays
+  : 30;
+const userSessionMs = userSessionDays * 24 * 60 * 60 * 1000;
 const cardcomTerminal = process.env.CARDCOM_TERMINAL_NUMBER;
 const cardcomUsername = process.env.CARDCOM_USERNAME || process.env.CARDCOM_API_NAME;
 const cardcomApiPassword = process.env.CARDCOM_API_PASSWORD;
@@ -361,6 +367,636 @@ const logoutAdmin = async (request) => {
     "delete from public.admin_sessions where session_token_hash = $1",
     [hashSessionToken(sessionToken)],
   );
+};
+
+const splitFullName = (fullName) => {
+  const parts = String(fullName || "").trim().split(/\s+/).filter(Boolean);
+  return {
+    firstName: parts[0] || null,
+    lastName: parts.length > 1 ? parts.slice(1).join(" ") : null,
+  };
+};
+
+const normalizeDateOnly = (value) => {
+  if (value === null || value === undefined || value === "") return null;
+  const date = new Date(String(value));
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString().slice(0, 10);
+};
+
+const normalizeTextArray = (value) => {
+  if (value === null) return null;
+  if (!Array.isArray(value)) return null;
+  const list = value.map((item) => String(item || "").trim()).filter(Boolean);
+  return list.length > 0 ? list : null;
+};
+
+const serializeProfile = (row) => row ? ({
+  id: row.id,
+  email: row.email,
+  full_name: row.full_name || null,
+  first_name: row.first_name || null,
+  last_name: row.last_name || null,
+  bio: row.bio || null,
+  phone: row.phone || null,
+  whatsapp_number: row.whatsapp_number || null,
+  avatar_url: row.avatar_url || null,
+  birthdate: row.birthdate || null,
+  created_at: row.created_at || null,
+  updated_at: row.updated_at || null,
+}) : null;
+
+const serializeUser = (row, profile = null) => {
+  const fullName = row.full_name || profile?.full_name || null;
+  return {
+    id: row.id,
+    email: row.email,
+    full_name: fullName,
+    phone: row.phone || profile?.phone || profile?.whatsapp_number || null,
+    birthdate: row.birthdate || profile?.birthdate || null,
+    created_at: row.created_at || null,
+    updated_at: row.updated_at || null,
+    last_login_at: row.last_login_at || null,
+    user_metadata: {
+      full_name: fullName,
+      name: fullName,
+      birthdate: row.birthdate || profile?.birthdate || null,
+      phone: row.phone || profile?.phone || profile?.whatsapp_number || null,
+    },
+    app_metadata: {},
+  };
+};
+
+const userSelect = `
+  id,
+  email,
+  full_name,
+  phone,
+  birthdate,
+  is_active,
+  created_at,
+  updated_at,
+  last_login_at
+`;
+
+const getProfileByUserId = async (userId) => {
+  const result = await pool.query("select * from public.profiles where id = $1 limit 1", [userId]);
+  return result.rows[0] ? serializeProfile(result.rows[0]) : null;
+};
+
+const buildUserCookie = (request, token) => {
+  const isHttps = request.headers["x-forwarded-proto"] === "https";
+  return [
+    `${userCookieName}=${encodeURIComponent(token)}`,
+    "HttpOnly",
+    "Path=/",
+    "SameSite=Lax",
+    `Max-Age=${Math.floor(userSessionMs / 1000)}`,
+    isHttps ? "Secure" : "",
+  ].filter(Boolean).join("; ");
+};
+
+const buildClearUserCookie = (request) => {
+  const isHttps = request.headers["x-forwarded-proto"] === "https";
+  return [
+    `${userCookieName}=`,
+    "HttpOnly",
+    "Path=/",
+    "SameSite=Lax",
+    "Max-Age=0",
+    isHttps ? "Secure" : "",
+  ].filter(Boolean).join("; ");
+};
+
+const createUserSession = async (request, userId, db = pool) => {
+  const token = randomBytes(32).toString("base64url");
+  const tokenHash = hashSessionToken(token);
+  const expiresAt = new Date(Date.now() + userSessionMs).toISOString();
+
+  await db.query(
+    `
+      insert into public.user_sessions (
+        user_id,
+        session_token_hash,
+        expires_at,
+        user_agent,
+        ip_address
+      )
+      values ($1, $2, $3, $4, $5)
+    `,
+    [
+      userId,
+      tokenHash,
+      expiresAt,
+      request.headers["user-agent"] || null,
+      getRequestIp(request),
+    ],
+  );
+
+  return token;
+};
+
+const getUserFromSession = async (request) => {
+  const sessionToken = parseCookies(request.headers.cookie || "")[userCookieName];
+  if (!sessionToken) return null;
+
+  const tokenHash = hashSessionToken(sessionToken);
+  const result = await pool.query(
+    `
+      select
+        au.id,
+        au.email,
+        au.full_name,
+        au.phone,
+        au.birthdate,
+        au.is_active,
+        au.created_at,
+        au.updated_at,
+        au.last_login_at,
+        p.id as profile_id,
+        p.email as profile_email,
+        p.full_name as profile_full_name,
+        p.first_name as profile_first_name,
+        p.last_name as profile_last_name,
+        p.bio as profile_bio,
+        p.phone as profile_phone,
+        p.whatsapp_number as profile_whatsapp_number,
+        p.avatar_url as profile_avatar_url,
+        p.birthdate as profile_birthdate,
+        p.created_at as profile_created_at,
+        p.updated_at as profile_updated_at
+      from public.user_sessions user_session
+      join public.app_users au on au.id = user_session.user_id
+      left join public.profiles p on p.id = au.id
+      where user_session.session_token_hash = $1
+        and user_session.expires_at > now()
+        and au.is_active = true
+      limit 1
+    `,
+    [tokenHash],
+  );
+
+  if (result.rowCount === 0) return null;
+
+  await pool.query(
+    "update public.user_sessions set last_seen_at = now() where session_token_hash = $1",
+    [tokenHash],
+  );
+
+  const row = result.rows[0];
+  const profile = serializeProfile(row.profile_id ? {
+    id: row.profile_id,
+    email: row.profile_email || row.email,
+    full_name: row.profile_full_name,
+    first_name: row.profile_first_name,
+    last_name: row.profile_last_name,
+    bio: row.profile_bio,
+    phone: row.profile_phone,
+    whatsapp_number: row.profile_whatsapp_number,
+    avatar_url: row.profile_avatar_url,
+    birthdate: row.profile_birthdate,
+    created_at: row.profile_created_at,
+    updated_at: row.profile_updated_at,
+  } : null);
+
+  return {
+    user: serializeUser(row, profile),
+    profile,
+  };
+};
+
+const requireUser = async (request, response) => {
+  const auth = await getUserFromSession(request);
+  if (auth?.user) {
+    request.user = auth.user;
+    request.profile = auth.profile;
+    return auth;
+  }
+
+  sendError(response, 401, "Unauthorized");
+  return null;
+};
+
+const signupUser = async (request, body) => {
+  const email = normalizeEmail(body.email);
+  const password = String(body.password || "");
+  const fullName = String(body.full_name || body.fullName || "").trim();
+  const phone = String(body.phone || "").trim() || null;
+  const birthdate = normalizeDateOnly(body.birthdate || body.birthDate);
+
+  if (!email || !email.includes("@")) {
+    const error = new Error("A valid email is required");
+    error.statusCode = 400;
+    throw error;
+  }
+  if (password.length < 8) {
+    const error = new Error("Password must be at least 8 characters");
+    error.statusCode = 400;
+    throw error;
+  }
+  if (fullName.length < 2) {
+    const error = new Error("Full name is required");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const { firstName, lastName } = splitFullName(fullName);
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    const userResult = await client.query(
+      `
+        insert into public.app_users (
+          email,
+          password_hash,
+          full_name,
+          phone,
+          birthdate,
+          is_active
+        )
+        values ($1, $2, $3, $4, $5, true)
+        returning ${userSelect}
+      `,
+      [email, hashPassword(password), fullName, phone, birthdate],
+    );
+
+    const profileResult = await client.query(
+      `
+        insert into public.profiles (
+          id,
+          email,
+          full_name,
+          first_name,
+          last_name,
+          phone,
+          whatsapp_number,
+          birthdate
+        )
+        values ($1, $2, $3, $4, $5, $6, $6, $7)
+        returning *
+      `,
+      [userResult.rows[0].id, email, fullName, firstName, lastName, phone, birthdate],
+    );
+
+    const token = await createUserSession(request, userResult.rows[0].id, client);
+    await client.query("commit");
+
+    const profile = serializeProfile(profileResult.rows[0]);
+    return {
+      user: serializeUser(userResult.rows[0], profile),
+      profile,
+      token,
+    };
+  } catch (error) {
+    await client.query("rollback");
+    if (error.code === "23505") {
+      error.message = "Email already exists";
+      error.statusCode = 409;
+    }
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+const loginUser = async (request, body) => {
+  const email = normalizeEmail(body.email);
+  const password = String(body.password || "");
+
+  const result = await pool.query(
+    `
+      select ${userSelect}, password_hash
+      from public.app_users
+      where lower(email) = $1
+      limit 1
+    `,
+    [email],
+  );
+
+  const row = result.rows[0];
+  if (!row || !row.is_active || !verifyPassword(password, row.password_hash)) {
+    const error = new Error("Invalid email or password");
+    error.statusCode = 401;
+    throw error;
+  }
+
+  const token = await createUserSession(request, row.id);
+  const updated = await pool.query(
+    `update public.app_users set last_login_at = now(), updated_at = now() where id = $1 returning ${userSelect}`,
+    [row.id],
+  );
+  const profile = await getProfileByUserId(row.id);
+
+  return {
+    user: serializeUser(updated.rows[0], profile),
+    profile,
+    token,
+  };
+};
+
+const logoutUser = async (request) => {
+  const sessionToken = parseCookies(request.headers.cookie || "")[userCookieName];
+  if (!sessionToken) return;
+
+  await pool.query(
+    "delete from public.user_sessions where session_token_hash = $1",
+    [hashSessionToken(sessionToken)],
+  );
+};
+
+const updateMyProfile = async (userId, body) => {
+  const fullName = Object.prototype.hasOwnProperty.call(body, "full_name")
+    ? String(body.full_name || "").trim()
+    : Object.prototype.hasOwnProperty.call(body, "fullName")
+      ? String(body.fullName || "").trim()
+      : undefined;
+  const phone = Object.prototype.hasOwnProperty.call(body, "phone") ? String(body.phone || "").trim() || null : undefined;
+  const whatsappNumber = Object.prototype.hasOwnProperty.call(body, "whatsapp_number")
+    ? String(body.whatsapp_number || "").trim() || null
+    : Object.prototype.hasOwnProperty.call(body, "whatsappNumber")
+      ? String(body.whatsappNumber || "").trim() || null
+      : undefined;
+  const bio = Object.prototype.hasOwnProperty.call(body, "bio") ? String(body.bio || "").slice(0, 150) : undefined;
+  const avatarUrl = Object.prototype.hasOwnProperty.call(body, "avatar_url") ? String(body.avatar_url || "").trim() || null : undefined;
+  const birthdate = Object.prototype.hasOwnProperty.call(body, "birthdate") ? normalizeDateOnly(body.birthdate) : undefined;
+
+  if (fullName !== undefined && fullName.length < 2) {
+    const error = new Error("Full name must be at least 2 characters");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const profileAssignments = [];
+  const profileValues = [userId];
+  const appAssignments = [];
+  const appValues = [userId];
+
+  const pushProfile = (column, value) => {
+    profileValues.push(value);
+    profileAssignments.push(`${column} = $${profileValues.length}`);
+  };
+  const pushApp = (column, value) => {
+    appValues.push(value);
+    appAssignments.push(`${column} = $${appValues.length}`);
+  };
+
+  if (fullName !== undefined) {
+    const { firstName, lastName } = splitFullName(fullName);
+    pushProfile("full_name", fullName);
+    pushProfile("first_name", firstName);
+    pushProfile("last_name", lastName);
+    pushApp("full_name", fullName);
+  }
+  if (phone !== undefined) {
+    pushProfile("phone", phone);
+    pushApp("phone", phone);
+  }
+  if (whatsappNumber !== undefined) pushProfile("whatsapp_number", whatsappNumber);
+  if (bio !== undefined) pushProfile("bio", bio);
+  if (avatarUrl !== undefined) pushProfile("avatar_url", avatarUrl);
+  if (birthdate !== undefined) {
+    pushProfile("birthdate", birthdate);
+    pushApp("birthdate", birthdate);
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    if (appAssignments.length > 0) {
+      await client.query(
+        `update public.app_users set ${appAssignments.join(", ")}, updated_at = now() where id = $1`,
+        appValues,
+      );
+    }
+    if (profileAssignments.length > 0) {
+      await client.query(
+        `update public.profiles set ${profileAssignments.join(", ")}, updated_at = now() where id = $1`,
+        profileValues,
+      );
+    }
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
+
+  const userResult = await pool.query(`select ${userSelect} from public.app_users where id = $1`, [userId]);
+  const profile = await getProfileByUserId(userId);
+  return {
+    user: serializeUser(userResult.rows[0], profile),
+    profile,
+  };
+};
+
+const serializePet = (row) => ({
+  id: row.id,
+  user_id: row.user_id,
+  name: row.name,
+  type: row.type,
+  pet_type: row.type,
+  breed: row.breed || null,
+  secondary_breed: row.secondary_breed || null,
+  is_mixed: row.is_mixed || false,
+  breed_confidence: row.breed_confidence,
+  avatar_url: row.avatar_url || null,
+  weight: row.weight === null || row.weight === undefined ? null : Number(row.weight),
+  birth_date: row.birth_date || null,
+  gender: row.gender || null,
+  is_neutered: row.is_neutered,
+  medical_conditions: row.medical_conditions || null,
+  health_notes: row.health_notes || null,
+  personality_tags: row.personality_tags || null,
+  favorite_activities: row.favorite_activities || row.activities || null,
+  activities: row.activities || row.favorite_activities || null,
+  theme_color: row.theme_color || null,
+  archived: row.archived || false,
+  archived_at: row.archived_at || null,
+  created_at: row.created_at || null,
+  updated_at: row.updated_at || null,
+});
+
+const normalizePetPayload = (body, { partial = false } = {}) => {
+  const payload = {};
+  const has = (field) => Object.prototype.hasOwnProperty.call(body, field);
+
+  if (has("name") || !partial) {
+    const name = String(body.name || "").trim();
+    if (!name) {
+      const error = new Error("Pet name is required");
+      error.statusCode = 400;
+      throw error;
+    }
+    payload.name = name;
+  }
+
+  if (has("type") || has("pet_type") || !partial) {
+    const type = String(body.type || body.pet_type || "").trim();
+    if (!["dog", "cat", "other"].includes(type)) {
+      const error = new Error("A valid pet type is required");
+      error.statusCode = 400;
+      throw error;
+    }
+    payload.type = type;
+  }
+
+  const simpleTextFields = [
+    "breed",
+    "secondary_breed",
+    "avatar_url",
+    "gender",
+    "health_notes",
+    "theme_color",
+  ];
+  for (const field of simpleTextFields) {
+    if (has(field)) payload[field] = body[field] === null ? null : String(body[field] || "").trim() || null;
+  }
+
+  if (has("birth_date") || has("birthDate")) payload.birth_date = normalizeDateOnly(body.birth_date || body.birthDate);
+  if (has("weight")) payload.weight = toNumber(body.weight);
+  if (has("is_neutered")) payload.is_neutered = body.is_neutered === null ? null : Boolean(body.is_neutered);
+  if (has("is_mixed")) payload.is_mixed = Boolean(body.is_mixed);
+  if (has("breed_confidence")) {
+    const confidence = Number(body.breed_confidence);
+    payload.breed_confidence = Number.isFinite(confidence) ? Math.round(confidence) : null;
+  }
+  if (has("medical_conditions")) payload.medical_conditions = normalizeTextArray(body.medical_conditions);
+  if (has("personality_tags")) payload.personality_tags = normalizeTextArray(body.personality_tags);
+  if (has("favorite_activities") || has("activities")) {
+    const activities = normalizeTextArray(body.favorite_activities || body.activities);
+    payload.favorite_activities = activities;
+    payload.activities = activities;
+  }
+  if (has("archived")) {
+    payload.archived = Boolean(body.archived);
+    payload.archived_at = payload.archived ? new Date().toISOString() : null;
+  }
+  if (has("archived_at")) payload.archived_at = body.archived_at ? new Date(String(body.archived_at)).toISOString() : null;
+
+  return payload;
+};
+
+const insertUserPet = async (userId, body) => {
+  const payload = normalizePetPayload(body);
+  const result = await pool.query(
+    `
+      insert into public.pets (
+        user_id,
+        name,
+        type,
+        breed,
+        secondary_breed,
+        is_mixed,
+        breed_confidence,
+        avatar_url,
+        weight,
+        birth_date,
+        gender,
+        is_neutered,
+        medical_conditions,
+        health_notes,
+        personality_tags,
+        favorite_activities,
+        activities,
+        theme_color,
+        archived,
+        archived_at
+      )
+      values (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+        $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
+      )
+      returning *
+    `,
+    [
+      userId,
+      payload.name,
+      payload.type,
+      payload.breed || null,
+      payload.secondary_breed || null,
+      payload.is_mixed || false,
+      payload.breed_confidence || null,
+      payload.avatar_url || null,
+      payload.weight || null,
+      payload.birth_date || null,
+      payload.gender || null,
+      Object.prototype.hasOwnProperty.call(payload, "is_neutered") ? payload.is_neutered : null,
+      payload.medical_conditions || null,
+      payload.health_notes || null,
+      payload.personality_tags || null,
+      payload.favorite_activities || null,
+      payload.activities || null,
+      payload.theme_color || null,
+      payload.archived || false,
+      payload.archived_at || null,
+    ],
+  );
+
+  return serializePet(result.rows[0]);
+};
+
+const listUserPets = async (userId, archived = "false") => {
+  const values = [userId];
+  const where = ["user_id = $1"];
+  if (archived !== "all") {
+    values.push(archived === "true");
+    where.push(`archived = $${values.length}`);
+  }
+
+  const result = await pool.query(
+    `
+      select *
+      from public.pets
+      where ${where.join(" and ")}
+      order by archived_at desc nulls last, created_at desc
+    `,
+    values,
+  );
+  return result.rows.map(serializePet);
+};
+
+const getUserPet = async (userId, petId) => {
+  if (!uuidPattern.test(petId)) return null;
+  const result = await pool.query(
+    "select * from public.pets where id = $1 and user_id = $2 limit 1",
+    [petId, userId],
+  );
+  return result.rows[0] ? serializePet(result.rows[0]) : null;
+};
+
+const updateUserPet = async (userId, petId, body) => {
+  if (!uuidPattern.test(petId)) return null;
+  const payload = normalizePetPayload(body, { partial: true });
+  const entries = Object.entries(payload);
+  if (entries.length === 0) return getUserPet(userId, petId);
+
+  const values = [petId, userId];
+  const assignments = entries.map(([column, value]) => {
+    values.push(value);
+    return `${column} = $${values.length}`;
+  });
+
+  const result = await pool.query(
+    `
+      update public.pets
+      set ${assignments.join(", ")}, updated_at = now()
+      where id = $1 and user_id = $2
+      returning *
+    `,
+    values,
+  );
+
+  return result.rows[0] ? serializePet(result.rows[0]) : null;
+};
+
+const deleteUserPet = async (userId, petId) => {
+  if (!uuidPattern.test(petId)) return false;
+  const result = await pool.query(
+    "delete from public.pets where id = $1 and user_id = $2",
+    [petId, userId],
+  );
+  return result.rowCount > 0;
 };
 
 const toNumber = (value) => {
@@ -2064,6 +2700,97 @@ const handleRequest = async (request, response) => {
       }
 
       sendJson(response, 200, { admin });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/auth/signup") {
+      const result = await signupUser(request, await readBody(request));
+      sendJson(response, 201, { user: result.user, profile: result.profile }, { "set-cookie": buildUserCookie(request, result.token) });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/auth/login") {
+      const result = await loginUser(request, await readBody(request));
+      sendJson(response, 200, { user: result.user, profile: result.profile }, { "set-cookie": buildUserCookie(request, result.token) });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/auth/logout") {
+      await logoutUser(request);
+      sendJson(response, 200, { ok: true }, { "set-cookie": buildClearUserCookie(request) });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/auth/me") {
+      const auth = await getUserFromSession(request);
+      if (!auth) {
+        sendError(response, 401, "Unauthorized");
+        return;
+      }
+
+      sendJson(response, 200, auth);
+      return;
+    }
+
+    if (request.method === "PATCH" && url.pathname === "/api/me/profile") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      sendJson(response, 200, await updateMyProfile(auth.user.id, await readBody(request)));
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/me/pets") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      const archived = url.searchParams.get("archived") || "false";
+      sendJson(response, 200, { pets: await listUserPets(auth.user.id, archived) });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/me/pets") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      sendJson(response, 201, { pet: await insertUserPet(auth.user.id, await readBody(request)) });
+      return;
+    }
+
+    const myPetMatch = url.pathname.match(/^\/api\/me\/pets\/([0-9a-fA-F-]{36})$/);
+    if (myPetMatch && request.method === "GET") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      const pet = await getUserPet(auth.user.id, myPetMatch[1]);
+      if (!pet) {
+        sendError(response, 404, "Pet not found");
+        return;
+      }
+      sendJson(response, 200, { pet });
+      return;
+    }
+
+    if (myPetMatch && request.method === "PATCH") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      const pet = await updateUserPet(auth.user.id, myPetMatch[1], await readBody(request));
+      if (!pet) {
+        sendError(response, 404, "Pet not found");
+        return;
+      }
+      sendJson(response, 200, { pet });
+      return;
+    }
+
+    if (myPetMatch && request.method === "DELETE") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      const deleted = await deleteUserPet(auth.user.id, myPetMatch[1]);
+      sendJson(response, deleted ? 200 : 404, { deleted });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/me/uploads") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      sendJson(response, 201, { upload: await uploadImage(await readBody(request, maxUploadBytes + 1024 * 1024)) });
       return;
     }
 

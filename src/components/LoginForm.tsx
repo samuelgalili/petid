@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { z } from "zod";
 
 const loginSchema = z.object({
@@ -26,6 +26,7 @@ export const LoginForm = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { signIn } = useAuth();
 
   const validateForm = (): boolean => {
     const result = loginSchema.safeParse(formData);
@@ -50,16 +51,11 @@ export const LoginForm = () => {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
-      });
+      const { error } = await signIn(formData.email, formData.password, false);
 
       if (error) {
-        if (error.message.includes("Invalid login credentials")) {
+        if (error.message.includes("Invalid email or password")) {
           setGeneralError("אימייל או סיסמה שגויים");
-        } else if (error.message.includes("Email not confirmed")) {
-          setGeneralError("האימייל לא אומת. בדוק את תיבת הדואר שלך");
         } else {
           setGeneralError(error.message);
         }
@@ -72,6 +68,7 @@ export const LoginForm = () => {
       navigate("/");
     } catch {
       setGeneralError("אירעה שגיאה לא צפויה");
+    } finally {
       setLoading(false);
     }
   };

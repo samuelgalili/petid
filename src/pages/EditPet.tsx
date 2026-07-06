@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,16 +13,11 @@ import { he } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { AppHeader } from "@/components/AppHeader";
+import { getMyPet, updateMyPet } from "@/lib/mipoApi";
 
-interface Pet {
-  id: string;
-  name: string;
-  type: string;
-  breed: string | null;
-  birth_date: string | null;
-  gender: string | null;
-  is_neutered: boolean | null;
-}
+const errorMessage = (error: unknown, fallback: string) => (
+  error instanceof Error ? error.message : fallback
+);
 
 const EditPet = () => {
   const { petId } = useParams<{ petId: string }>();
@@ -47,13 +41,7 @@ const EditPet = () => {
       if (!petId) return;
       
       try {
-        const { data, error } = await supabase
-          .from("pets")
-          .select("*")
-          .eq("id", petId)
-          .maybeSingle();
-        
-        if (error) throw error;
+        const data = await getMyPet(petId);
         if (!data) {
           toast({ title: "חיה לא נמצאה", variant: "destructive" });
           navigate(-1);
@@ -67,8 +55,8 @@ const EditPet = () => {
           gender: data.gender || "",
           is_neutered: data.is_neutered ? "true" : "false"
         });
-      } catch (error: any) {
-        toast({ title: "שגיאה", description: error.message, variant: "destructive" });
+      } catch (error: unknown) {
+        toast({ title: "שגיאה", description: errorMessage(error, "שגיאה בטעינת חיית המחמד"), variant: "destructive" });
       } finally {
         setLoading(false);
       }
@@ -83,23 +71,18 @@ const EditPet = () => {
     
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from("pets")
-        .update({
-          name: formData.name.trim(),
-          breed: formData.breed || null,
-          birth_date: formData.birthDate ? formData.birthDate.toISOString().split('T')[0] : null,
-          gender: formData.gender || null,
-          is_neutered: formData.is_neutered === "true"
-        })
-        .eq("id", petId);
-      
-      if (error) throw error;
+      await updateMyPet(petId, {
+        name: formData.name.trim(),
+        breed: formData.breed || null,
+        birth_date: formData.birthDate ? formData.birthDate.toISOString().split('T')[0] : null,
+        gender: formData.gender || null,
+        is_neutered: formData.is_neutered === "true"
+      });
       
       toast({ title: "הפרטים עודכנו בהצלחה!" });
       navigate('/');
-    } catch (error: any) {
-      toast({ title: "שגיאה", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      toast({ title: "שגיאה", description: errorMessage(error, "שגיאה בשמירת חיית המחמד"), variant: "destructive" });
     } finally {
       setSaving(false);
     }

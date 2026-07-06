@@ -153,6 +153,66 @@ export interface MipoPaymentSession {
   already_paid?: boolean;
 }
 
+export interface MipoUser {
+  id: string;
+  email: string;
+  full_name: string | null;
+  phone?: string | null;
+  birthdate?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  last_login_at?: string | null;
+  user_metadata?: Record<string, unknown>;
+  app_metadata?: Record<string, unknown>;
+}
+
+export interface MipoProfile {
+  id: string;
+  email: string;
+  full_name: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  bio?: string | null;
+  phone?: string | null;
+  whatsapp_number?: string | null;
+  avatar_url?: string | null;
+  birthdate?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface MipoPet {
+  id: string;
+  user_id?: string;
+  name: string;
+  type: "dog" | "cat" | "other" | string;
+  pet_type?: "dog" | "cat" | "other" | string;
+  breed?: string | null;
+  secondary_breed?: string | null;
+  is_mixed?: boolean | null;
+  breed_confidence?: number | null;
+  avatar_url?: string | null;
+  weight?: number | null;
+  birth_date?: string | null;
+  gender?: string | null;
+  is_neutered?: boolean | null;
+  medical_conditions?: string[] | null;
+  health_notes?: string | null;
+  personality_tags?: string[] | null;
+  favorite_activities?: string[] | null;
+  activities?: string[] | null;
+  theme_color?: string | null;
+  archived?: boolean | null;
+  archived_at?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface MipoAuthResult {
+  user: MipoUser;
+  profile: MipoProfile | null;
+}
+
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/+$/, "");
 
 async function fileToDataUrl(file: File): Promise<string> {
@@ -221,6 +281,121 @@ export async function getCurrentAdmin(): Promise<MipoAdmin | null> {
   }
 
   return (body?.admin || null) as MipoAdmin | null;
+}
+
+export async function getCurrentUser(): Promise<MipoAuthResult | null> {
+  const response = await fetch(`${API_BASE_URL}/auth/me`, {
+    credentials: "same-origin",
+    headers: {
+      "content-type": "application/json",
+    },
+  });
+
+  if (response.status === 401) return null;
+
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(body?.error || `API request failed with ${response.status}`);
+  }
+
+  return {
+    user: body.user as MipoUser,
+    profile: (body.profile || null) as MipoProfile | null,
+  };
+}
+
+export async function loginUser(email: string, password: string): Promise<MipoAuthResult> {
+  return apiFetch<MipoAuthResult>("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export async function signupUser(input: {
+  full_name: string;
+  email: string;
+  password: string;
+  birthdate?: string | null;
+  phone?: string | null;
+}): Promise<MipoAuthResult> {
+  return apiFetch<MipoAuthResult>("/auth/signup", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function logoutUser() {
+  return apiFetch<{ ok: boolean }>("/auth/logout", {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
+export async function updateMyProfile(input: Partial<MipoProfile> & {
+  fullName?: string;
+  whatsappNumber?: string | null;
+}): Promise<MipoAuthResult> {
+  return apiFetch<MipoAuthResult>("/me/profile", {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function getMyPets(input: { archived?: boolean | "all" } = {}): Promise<MipoPet[]> {
+  const params = new URLSearchParams();
+  if (input.archived !== undefined) params.set("archived", String(input.archived));
+  const query = params.toString();
+  const result = await apiFetch<{ pets: MipoPet[] }>(`/me/pets${query ? `?${query}` : ""}`);
+  return result.pets;
+}
+
+export async function getMyPet(petId: string): Promise<MipoPet> {
+  const result = await apiFetch<{ pet: MipoPet }>(`/me/pets/${petId}`);
+  return result.pet;
+}
+
+export async function createMyPet(input: Partial<MipoPet> & {
+  pet_type?: string;
+  birthDate?: string | null;
+}): Promise<MipoPet> {
+  const result = await apiFetch<{ pet: MipoPet }>("/me/pets", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  window.dispatchEvent(new Event("mipo:pets-changed"));
+  return result.pet;
+}
+
+export async function updateMyPet(petId: string, input: Partial<MipoPet>): Promise<MipoPet> {
+  const result = await apiFetch<{ pet: MipoPet }>(`/me/pets/${petId}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+  window.dispatchEvent(new Event("mipo:pets-changed"));
+  return result.pet;
+}
+
+export async function deleteMyPet(petId: string) {
+  const result = await apiFetch<{ deleted: boolean }>(`/me/pets/${petId}`, {
+    method: "DELETE",
+  });
+  window.dispatchEvent(new Event("mipo:pets-changed"));
+  return result;
+}
+
+export async function uploadMyImage(file: File) {
+  const dataUrl = await fileToDataUrl(file);
+  const result = await apiFetch<{
+    upload: { url: string; file_name: string; content_type: string; size: number };
+  }>("/me/uploads", {
+    method: "POST",
+    body: JSON.stringify({
+      file_name: file.name,
+      data_url: dataUrl,
+    }),
+  });
+
+  return result.upload;
 }
 
 export async function loginAdmin(email: string, password: string): Promise<MipoAdmin> {

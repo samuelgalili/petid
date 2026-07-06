@@ -1,31 +1,23 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { LoginForm } from "@/components/LoginForm";
-import { PhoneLoginForm } from "@/components/PhoneLoginForm";
-import { SocialAuthButtons } from "@/components/SocialAuthButtons";
 import { useAuth } from "@/hooks/useAuth";
 import { AuthLoadingSkeleton } from "@/components/AuthLoadingSkeleton";
-import { supabase } from "@/integrations/supabase/client";
 import { PetidLogo } from "@/components/PetidLogo";
-import { PawPrint, Heart, Shield, Mail, Smartphone } from "lucide-react";
+import { PawPrint, Heart, Shield } from "lucide-react";
+import { getMyPets } from "@/lib/mipoApi";
 
 const Auth = () => {
   const { isAuthenticated, loading: authLoading, user } = useAuth();
   const navigate = useNavigate();
   const [pageLoading, setPageLoading] = useState(true);
-  const [loginMethod, setLoginMethod] = useState<"email" | "phone">("phone");
 
   useEffect(() => {
     const checkUserPets = async () => {
       if (!authLoading && isAuthenticated && user) {
-        const { data: pets, error } = await supabase
-          .from("pets")
-          .select("id")
-          .eq("user_id", user.id)
-          .eq("archived", false)
-          .limit(1);
-        if (!error && pets && pets.length > 0) {
+        const pets = await getMyPets();
+        if (pets.length > 0) {
           localStorage.setItem("onboardingCompleted", "true");
           navigate("/");
         } else {
@@ -38,7 +30,7 @@ const Auth = () => {
         }
       }
     };
-    checkUserPets();
+    checkUserPets().catch(() => navigate("/onboarding"));
   }, [isAuthenticated, authLoading, navigate, user]);
 
   useEffect(() => {
@@ -94,59 +86,12 @@ const Auth = () => {
           </p>
         </motion.div>
 
-        {/* Login Method Tabs */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.3 }}
-          className="flex bg-muted/60 rounded-lg p-1 mb-5 gap-1"
         >
-          {[
-            { key: "phone" as const, icon: Smartphone, label: "SMS" },
-            { key: "email" as const, icon: Mail, label: "אימייל" },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setLoginMethod(tab.key)}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200 ${
-                loginMethod === tab.key
-                  ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <tab.icon className="w-3.5 h-3.5" />
-              <span>{tab.label}</span>
-            </button>
-          ))}
-        </motion.div>
-
-        {/* Login Form with slide animation */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={loginMethod}
-            initial={{ opacity: 0, x: loginMethod === "phone" ? -16 : 16 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: loginMethod === "phone" ? 16 : -16 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
-          >
-            {loginMethod === "phone" ? <PhoneLoginForm /> : <LoginForm />}
-          </motion.div>
-        </AnimatePresence>
-
-        {/* OR Divider */}
-        <div className="flex items-center my-5">
-          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-          <span className="px-4 text-xs font-medium text-muted-foreground">או</span>
-          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-        </div>
-
-        {/* Social Auth */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.3 }}
-        >
-          <SocialAuthButtons redirectTo="/" />
+          <LoginForm />
         </motion.div>
 
         {/* Features */}

@@ -2,13 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { SignupForm } from "@/components/SignupForm";
-import { SocialAuthButtons } from "@/components/SocialAuthButtons";
 import { useAuth } from "@/hooks/useAuth";
 import { AuthLoadingSkeleton } from "@/components/AuthLoadingSkeleton";
-import { supabase } from "@/integrations/supabase/client";
 import { PetidLogo } from "@/components/PetidLogo";
 import { Sparkles, Users } from "lucide-react";
 import petidIcon from "@/assets/petid-icon.png";
+import { getMyPets } from "@/lib/mipoApi";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -23,14 +22,8 @@ const Signup = () => {
   useEffect(() => {
     const checkUserPets = async () => {
       if (!authLoading && isAuthenticated && user) {
-        const { data: pets, error } = await supabase
-          .from('pets')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('archived', false)
-          .limit(1);
-        
-        if (!error && pets && pets.length > 0) {
+        const pets = await getMyPets();
+        if (pets.length > 0) {
           localStorage.setItem('onboardingCompleted', 'true');
           navigate("/");
         } else {
@@ -44,7 +37,7 @@ const Signup = () => {
       }
     };
     
-    checkUserPets();
+    checkUserPets().catch(() => navigate("/onboarding"));
   }, [isAuthenticated, authLoading, navigate, user]);
 
   useEffect(() => {
@@ -98,16 +91,6 @@ const Signup = () => {
           <h1 className="text-xl font-bold text-foreground mb-1">הצטרפו לפטיד</h1>
           <p className="text-sm text-muted-foreground">צרו חשבון וניהלו את חיות המחמד שלכם</p>
         </motion.div>
-
-        {/* Social Auth First */}
-        <SocialAuthButtons redirectTo="/" />
-
-        {/* OR Divider */}
-        <div className="flex items-center my-5">
-          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-          <span className="px-4 text-xs font-medium text-muted-foreground">או</span>
-          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-        </div>
 
         {/* Signup Form */}
         <SignupForm />

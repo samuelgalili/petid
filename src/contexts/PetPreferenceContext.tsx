@@ -5,7 +5,7 @@
  * react instantly when the active pet changes.
  */
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { getCurrentUser, getMyPets } from "@/lib/mipoApi";
 
 export interface PetProfile {
   id: string;
@@ -67,56 +67,59 @@ export const PetPreferenceProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const fetchPets = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    try {
+      const auth = await getCurrentUser();
+      if (!auth?.user) {
+        setPets([]);
+        setActivePet(null);
+        setSelectedPetType(null);
+        setLoading(false);
+        return;
+      }
+
+      const data = await getMyPets();
+      const list: PetProfile[] = (data || []).map((p, i: number) => ({
+        id: p.id,
+        name: p.name,
+        breed: p.breed || null,
+        pet_type: p.type || p.pet_type || "dog",
+        avatar_url: p.avatar_url || null,
+        weight: p.weight ?? null,
+        birth_date: p.birth_date || null,
+        medical_conditions: p.medical_conditions || null,
+        theme_color: p.theme_color || PET_COLORS[i % PET_COLORS.length],
+      }));
+
+      setPets(list);
+
+      // Restore last active pet from localStorage, or default to first
+      const savedId = localStorage.getItem("activePetId");
+      const match = list.find((p) => p.id === savedId);
+      const nextActivePet = match || list[0] || null;
+      setActivePet(nextActivePet);
+      if (nextActivePet) {
+        localStorage.setItem("activePetId", nextActivePet.id);
+        setSelectedPetType((current) => current ?? normalizePetType(nextActivePet.pet_type));
+      }
+    } catch {
       setPets([]);
       setActivePet(null);
       setSelectedPetType(null);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const { data } = await supabase
-      .from("pets")
-      .select("id, name, breed, type, avatar_url, weight, birth_date, medical_conditions")
-      .eq("user_id", user.id)
-      .eq("archived", false)
-      .order("created_at", { ascending: false });
-
-    const list: PetProfile[] = (data || []).map((p: any, i: number) => ({
-      id: p.id,
-      name: p.name,
-      breed: p.breed,
-      pet_type: p.type || "dog",
-      avatar_url: p.avatar_url,
-      weight: p.weight,
-      birth_date: p.birth_date,
-      medical_conditions: p.medical_conditions,
-      theme_color: PET_COLORS[i % PET_COLORS.length],
-    }));
-
-    setPets(list);
-
-    // Restore last active pet from localStorage, or default to first
-    const savedId = localStorage.getItem("activePetId");
-    const match = list.find((p) => p.id === savedId);
-    const nextActivePet = match || list[0] || null;
-    setActivePet(nextActivePet);
-    if (nextActivePet) {
-      localStorage.setItem("activePetId", nextActivePet.id);
-      setSelectedPetType((current) => current ?? normalizePetType(nextActivePet.pet_type));
-    }
-    setLoading(false);
   }, []);
 
   useEffect(() => {
     fetchPets();
 
-    // Re-fetch when auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      fetchPets();
-    });
-    return () => subscription.unsubscribe();
+    const handleChange = () => fetchPets();
+    window.addEventListener("mipo:auth-changed", handleChange);
+    window.addEventListener("mipo:pets-changed", handleChange);
+    return () => {
+      window.removeEventListener("mipo:auth-changed", handleChange);
+      window.removeEventListener("mipo:pets-changed", handleChange);
+    };
   }, [fetchPets]);
 
   const switchPet = useCallback((petId: string) => {

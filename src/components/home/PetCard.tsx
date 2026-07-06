@@ -1,12 +1,25 @@
 import { motion } from "framer-motion";
 import { Plus, Heart, Brain, Siren, Trash2, Weight, Hash, Sparkles } from "lucide-react";
-import { memo, useMemo, useState } from "react";
+import { memo, useMemo, useState, type CSSProperties } from "react";
 import { OptimizedImage } from "@/components/OptimizedImage";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { updateMyPet } from "@/lib/mipoApi";
+
+interface PetCardPet {
+  id: string;
+  name: string;
+  type: string;
+  birth_date?: string | null;
+  gender?: string | null;
+  weight?: number | null;
+  avatar_url?: string | null;
+  breed?: string | null;
+  is_lost?: boolean | null;
+  microchip_number?: string | null;
+}
 
 interface PetCardProps {
-  pet: any;
+  pet: PetCardPet;
   index: number;
   isNewPet: boolean;
   isSelected?: boolean;
@@ -46,6 +59,9 @@ const approx = (value: number | null | undefined, unit: string) => {
   return `כ-${value} ${unit}`;
 };
 
+const plaintextStyle: CSSProperties = { unicodeBidi: "plaintext" };
+const plaintextBreakStyle: CSSProperties = { wordBreak: "break-word", unicodeBidi: "plaintext" };
+
 /* ── Stat Cell — reusable mini component ── */
 const StatCell = ({ label, value, placeholder }: { label: string; value: string | null; placeholder: string }) => (
   <motion.div
@@ -54,7 +70,7 @@ const StatCell = ({ label, value, placeholder }: { label: string; value: string 
   >
     <span className="text-[10px] text-muted-foreground/70 font-medium mb-0.5 truncate w-full">{label}</span>
     {value ? (
-      <span className="text-xs font-bold text-foreground truncate w-full" dir="auto" style={{ unicodeBidi: 'plaintext' as any }}>{value}</span>
+      <span className="text-xs font-bold text-foreground truncate w-full" dir="auto" style={plaintextStyle}>{value}</span>
     ) : (
       <span className="text-[9px] text-muted-foreground/50 italic leading-tight truncate w-full">{placeholder}</span>
     )}
@@ -89,8 +105,7 @@ export const PetCard = memo(({
     }
     setDeleting(true);
     try {
-      const { error } = await supabase.from("pets").update({ archived: true } as any).eq("id", pet.id);
-      if (error) throw error;
+      await updateMyPet(pet.id, { archived: true });
       toast.success(`${pet.name} הוסר/ה בהצלחה`);
       onDeleted?.();
     } catch {
@@ -226,7 +241,7 @@ export const PetCard = memo(({
         <p
           className="text-[11px] text-muted-foreground/70 font-medium truncate mb-3"
           dir="auto"
-          style={{ wordBreak: 'break-word', unicodeBidi: 'plaintext' as any }}
+          style={plaintextBreakStyle}
         >
           {pet.breed || (pet.type === 'dog' ? 'גזע לא ידוע' : 'חתול')}
         </p>

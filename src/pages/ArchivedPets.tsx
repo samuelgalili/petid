@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,9 +14,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { deleteMyPet, getMyPets, updateMyPet } from "@/lib/mipoApi";
 
 interface ArchivedPet {
   id: string;
@@ -27,6 +27,10 @@ interface ArchivedPet {
   archived_at: string;
 }
 
+const errorMessage = (error: unknown, fallback: string) => (
+  error instanceof Error ? error.message : fallback
+);
+
 const ArchivedPets = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -35,26 +39,19 @@ const ArchivedPets = () => {
   const [selectedPet, setSelectedPet] = useState<ArchivedPet | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  useEffect(() => {
-    fetchArchivedPets();
-  }, []);
-
-  const fetchArchivedPets = async () => {
+  const fetchArchivedPets = useCallback(async () => {
     try {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data, error } = await supabase
-          .from('pets')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('archived', true)
-          .order('archived_at', { ascending: false });
-
-        if (error) throw error;
-        setArchivedPets(data || []);
-      }
-    } catch (error: any) {
+      const data = await getMyPets({ archived: true });
+      setArchivedPets(data.map((pet) => ({
+        id: pet.id,
+        name: pet.name,
+        breed: pet.breed || null,
+        type: pet.type,
+        avatar_url: pet.avatar_url || null,
+        archived_at: pet.archived_at || pet.updated_at || new Date().toISOString(),
+      })));
+    } catch {
       toast({
         title: "שגיאה",
         description: "נכשל בטעינת חיות מחמד מאורכבות",
@@ -63,19 +60,18 @@ const ArchivedPets = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchArchivedPets();
+  }, [fetchArchivedPets]);
 
   const handleRestorePet = async (petId: string, petName: string) => {
     try {
-      const { error } = await supabase
-        .from('pets')
-        .update({
-          archived: false,
-          archived_at: null,
-        })
-        .eq('id', petId);
-
-      if (error) throw error;
+      await updateMyPet(petId, {
+        archived: false,
+        archived_at: null,
+      });
 
       toast({
         title: "החיה שוחזרה!",
@@ -83,10 +79,10 @@ const ArchivedPets = () => {
       });
 
       fetchArchivedPets();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "שגיאה",
-        description: error.message,
+        description: errorMessage(error, "שגיאה בשחזור חיית המחמד"),
         variant: "destructive",
       });
     }
@@ -96,21 +92,7 @@ const ArchivedPets = () => {
     if (!selectedPet) return;
 
     try {
-      const { error } = await supabase
-        .from('pets')
-        .delete()
-        .eq('id', selectedPet.id);
-
-      if (error) throw error;
-
-      if (selectedPet.avatar_url) {
-        const fileName = selectedPet.avatar_url.split('/').pop();
-        if (fileName) {
-          await supabase.storage
-            .from('pet-avatars')
-            .remove([fileName]);
-        }
-      }
+      await deleteMyPet(selectedPet.id);
 
       toast({
         title: "החיה נמחקה לצמיתות",
@@ -120,10 +102,10 @@ const ArchivedPets = () => {
       setShowDeleteConfirm(false);
       setSelectedPet(null);
       fetchArchivedPets();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "שגיאה",
-        description: error.message,
+        description: errorMessage(error, "שגיאה במחיקה"),
         variant: "destructive",
       });
     }
