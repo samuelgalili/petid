@@ -1543,6 +1543,103 @@ const toNumber = (value) => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
+const serializeInsuranceClaim = (row) => ({
+  id: row.id,
+  user_id: row.user_id,
+  pet_id: row.pet_id || null,
+  pet_name: row.pet_name || null,
+  pet_microchip: row.pet_microchip || null,
+  owner_name: row.owner_name || null,
+  owner_id_number: row.owner_id_number || null,
+  clinic_name: row.clinic_name || null,
+  visit_date: row.visit_date || null,
+  diagnosis: row.diagnosis || null,
+  treatment: row.treatment || null,
+  total_amount: row.total_amount === null || row.total_amount === undefined ? null : Number(row.total_amount),
+  paid_amount: row.paid_amount === null || row.paid_amount === undefined ? null : Number(row.paid_amount),
+  status: row.status || "pending",
+  status_note: row.status_note || null,
+  submitted_at: row.submitted_at || null,
+  updated_at: row.updated_at || null,
+});
+
+const insuranceClaimStatuses = new Set(["pending", "approved", "paid", "denied"]);
+
+const listUserInsuranceClaims = async (userId, { petId = null, limit = 100 } = {}) => {
+  const values = [userId];
+  const where = ["user_id = $1"];
+
+  if (petId && uuidPattern.test(petId)) {
+    values.push(petId);
+    where.push(`pet_id = $${values.length}`);
+  }
+
+  values.push(Math.min(200, Math.max(1, Number(limit) || 100)));
+
+  const result = await pool.query(
+    `
+      select *
+      from public.insurance_claims
+      where ${where.join(" and ")}
+      order by submitted_at desc
+      limit $${values.length}
+    `,
+    values,
+  );
+
+  return result.rows.map(serializeInsuranceClaim);
+};
+
+const createUserInsuranceClaim = async (userId, body) => {
+  const petId = body.pet_id ? String(body.pet_id) : null;
+  if (petId) await ensureUserPet(userId, petId);
+
+  const status = insuranceClaimStatuses.has(String(body.status || "pending"))
+    ? String(body.status || "pending")
+    : "pending";
+
+  const result = await pool.query(
+    `
+      insert into public.insurance_claims (
+        user_id,
+        pet_id,
+        pet_name,
+        pet_microchip,
+        owner_name,
+        owner_id_number,
+        clinic_name,
+        visit_date,
+        diagnosis,
+        treatment,
+        total_amount,
+        paid_amount,
+        status,
+        status_note
+      )
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      returning *
+    `,
+    [
+      userId,
+      petId,
+      body.pet_name ? String(body.pet_name).trim() : null,
+      body.pet_microchip ? String(body.pet_microchip).trim() : null,
+      body.owner_name ? String(body.owner_name).trim() : null,
+      body.owner_id_number ? String(body.owner_id_number).trim() : null,
+      body.clinic_name ? String(body.clinic_name).trim() : null,
+      normalizeDateOnly(body.visit_date),
+      body.diagnosis ? String(body.diagnosis).trim() : null,
+      body.treatment ? String(body.treatment).trim() : null,
+      toNumber(body.total_amount),
+      toNumber(body.paid_amount),
+      status,
+      body.status_note ? String(body.status_note).trim() : null,
+    ],
+  );
+
+  return serializeInsuranceClaim(result.rows[0]);
+};
+
 const normalizePetType = (value) => {
   if (value === "both") return "all";
   if (["dog", "cat", "other", "all"].includes(value)) return value;
@@ -3393,6 +3490,25 @@ const handleRequest = async (request, response) => {
       if (!auth) return;
       const deleted = await deleteUserDocument(auth.user.id, myDocumentMatch[1]);
       sendJson(response, deleted ? 200 : 404, { deleted });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/me/insurance-claims") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      sendJson(response, 200, {
+        claims: await listUserInsuranceClaims(auth.user.id, {
+          petId: url.searchParams.get("pet_id") || null,
+          limit: url.searchParams.get("limit") || 100,
+        }),
+      });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/me/insurance-claims") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      sendJson(response, 201, { claim: await createUserInsuranceClaim(auth.user.id, await readBody(request)) });
       return;
     }
 

@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Camera, ChevronLeft, ChevronRight } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 
 interface PetPhotoGalleryProps {
   petId: string;
@@ -9,32 +8,13 @@ interface PetPhotoGalleryProps {
   petName: string;
 }
 
-export const PetPhotoGallery = ({ petId, petAvatar, petName }: PetPhotoGalleryProps) => {
+export const PetPhotoGallery = ({ petId: _petId, petAvatar, petName }: PetPhotoGalleryProps) => {
   const [photos, setPhotos] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const fetchPhotos = async () => {
-      // Start with avatar
-      const photoList: string[] = [];
-      if (petAvatar) photoList.push(petAvatar);
-
-      const { data } = await supabase
-        .from('pet_photos')
-        .select('photo_url')
-        .eq('pet_id', petId)
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      if (data) {
-        photoList.push(...data.map(p => p.photo_url));
-      }
-
-      setPhotos(photoList);
-    };
-
-    fetchPhotos();
-  }, [petId, petAvatar]);
+    setPhotos(petAvatar ? [petAvatar] : []);
+  }, [petAvatar]);
 
   if (photos.length === 0) return null;
 

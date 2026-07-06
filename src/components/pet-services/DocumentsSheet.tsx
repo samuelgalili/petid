@@ -6,17 +6,32 @@ import { useState } from 'react';
 import { ServiceBottomSheet } from './ServiceBottomSheet';
 import { FileText, Upload, Trash2, Eye, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
-import { autoSaveToDocuments } from '@/lib/autoSaveUpload';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createMyDocument, deleteMyDocument, getMyDocuments, type MipoDocument, type MipoPet } from '@/lib/mipoApi';
 
 interface DocumentsSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  pet: any;
+  pet: Pick<MipoPet, 'id'> | null;
 }
+
+interface SheetDocument {
+  id: string;
+  category: string;
+  document_name: string;
+  document_url: string;
+  file_size: number | null;
+}
+
+const toSheetDocument = (doc: MipoDocument): SheetDocument => ({
+  id: doc.id,
+  category: doc.document_type,
+  document_name: doc.title || doc.file_name,
+  document_url: doc.file_url,
+  file_size: doc.file_size,
+});
 
 export const DocumentsSheet = ({ isOpen, onClose, pet }: DocumentsSheetProps) => {
   const { toast } = useToast();
@@ -26,29 +41,16 @@ export const DocumentsSheet = ({ isOpen, onClose, pet }: DocumentsSheetProps) =>
   const { data: documents, isLoading } = useQuery({
     queryKey: ['all-pet-documents', pet?.id],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user || !pet?.id) return [];
-
-      const { data, error } = await supabase
-        .from('pet_service_documents')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('pet_id', pet.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
+      if (!pet?.id) return [];
+      const results = await getMyDocuments({ pet_id: pet.id, limit: 200 });
+      return results.map(toSheetDocument);
     },
     enabled: !!pet?.id && isOpen,
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (documentId: string) => {
-      const { error } = await supabase
-        .from('pet_service_documents')
-        .delete()
-        .eq('id', documentId);
-      if (error) throw error;
+      await deleteMyDocument(documentId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-pet-documents', pet?.id] });
@@ -61,51 +63,22 @@ export const DocumentsSheet = ({ isOpen, onClose, pet }: DocumentsSheetProps) =>
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !pet?.id) return;
 
     setIsUploading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const dataUrl = reader.result as string;
-        
-        const { error } = await supabase
-          .from('pet_service_documents')
-          .insert({
-            user_id: user.id,
-            pet_id: pet.id,
-            category: 'general',
-            document_name: file.name,
-            document_url: dataUrl,
-            document_type: file.type,
-            file_size: file.size,
-          });
-
-        if (error) throw error;
-
-        queryClient.invalidateQueries({ queryKey: ['all-pet-documents', pet?.id] });
-        
-        // Also save to main pet_documents for central document library
-        await autoSaveToDocuments({
-          userId: user.id,
-          petId: pet.id,
-          fileUrl: dataUrl,
-          fileName: file.name,
-          fileSize: file.size,
-          documentType: 'general',
-          title: file.name,
-        });
-        
-        toast({ title: 'המסמך הועלה בהצלחה' });
-        setIsUploading(false);
-      };
-      reader.readAsDataURL(file);
+      await createMyDocument({
+        pet_id: pet.id,
+        document_type: 'other',
+        title: file.name,
+        file,
+      });
+      queryClient.invalidateQueries({ queryKey: ['all-pet-documents', pet?.id] });
+      toast({ title: 'המסמך הועלה בהצלחה' });
     } catch (error) {
       console.error('Upload error:', error);
       toast({ title: 'שגיאה בהעלאת המסמך', variant: 'destructive' });
+    } finally {
       setIsUploading(false);
     }
   };
@@ -123,6 +96,11 @@ export const DocumentsSheet = ({ isOpen, onClose, pet }: DocumentsSheetProps) =>
       grooming: 'טיפוח',
       food: 'מזון',
       boarding: 'פנסיון',
+      health: 'בריאות',
+      medical: 'בריאות',
+      vaccination: 'חיסונים',
+      invoice: 'חשבונית',
+      other: 'כללי',
       general: 'כללי',
     };
     return labels[category] || category;
@@ -171,7 +149,7 @@ export const DocumentsSheet = ({ isOpen, onClose, pet }: DocumentsSheetProps) =>
         ) : documents && documents.length > 0 ? (
           <div className="space-y-3">
             <AnimatePresence>
-              {documents.map((doc: any) => (
+              {documents.map((doc) => (
                 <motion.div
                   key={doc.id}
                   initial={{ opacity: 0, y: 10 }}

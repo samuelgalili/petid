@@ -1,7 +1,7 @@
 /**
- * PetVaultDrawer — Full-screen secure document vault with OCR scanner
+ * PetVaultDrawer — Full-screen secure document vault with scanner upload
  * Folders: Vaccinations, Insurance, Invoices, General
- * Features: AI OCR scanning, verification badges, View + Share actions
+ * Features: document upload, scanner capture, View + Share actions
  */
 
 import { useState, useRef, useCallback } from 'react';
@@ -12,17 +12,27 @@ import {
   Sparkles, Scan, Trash2,
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
+import { createMyDocument, deleteMyDocument, getMyDocuments, type MipoDocument, type MipoPet } from '@/lib/mipoApi';
 
 type VaultCategory = 'vaccinations' | 'insurance' | 'invoices' | 'general';
 
 interface PetVaultDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  pet: any;
+  pet: Pick<MipoPet, 'id' | 'name'> | null;
+}
+
+interface VaultDocument {
+  id: string;
+  category: VaultCategory;
+  document_name: string;
+  document_url: string;
+  document_type: string;
+  file_size: number | null;
+  created_at: string;
 }
 
 const VAULT_CATEGORIES: { id: VaultCategory; label: string; icon: typeof FileText; color: string }[] = [
@@ -32,7 +42,7 @@ const VAULT_CATEGORIES: { id: VaultCategory; label: string; icon: typeof FileTex
   { id: 'general', label: 'כללי', icon: FolderOpen, color: 'text-muted-foreground bg-muted/50' },
 ];
 
-const CATEGORY_MAP: Record<string, VaultCategory> = {
+const DOCUMENT_TYPE_TO_CATEGORY: Record<string, VaultCategory> = {
   health: 'vaccinations',
   medical: 'vaccinations',
   vaccination: 'vaccinations',
@@ -49,6 +59,23 @@ const CATEGORY_MAP: Record<string, VaultCategory> = {
   food: 'general',
 };
 
+const CATEGORY_TO_DOCUMENT_TYPE: Record<VaultCategory, string> = {
+  vaccinations: 'vaccination',
+  insurance: 'insurance',
+  invoices: 'invoice',
+  general: 'other',
+};
+
+const toVaultDocument = (doc: MipoDocument): VaultDocument => ({
+  id: doc.id,
+  category: DOCUMENT_TYPE_TO_CATEGORY[doc.document_type] || 'general',
+  document_name: doc.title || doc.file_name,
+  document_url: doc.file_url,
+  document_type: doc.content_type || doc.document_type,
+  file_size: doc.file_size,
+  created_at: doc.uploaded_at,
+});
+
 export const PetVaultDrawer = ({ isOpen, onClose, pet }: PetVaultDrawerProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -64,43 +91,18 @@ export const PetVaultDrawer = ({ isOpen, onClose, pet }: PetVaultDrawerProps) =>
   const { data: documents, isLoading } = useQuery({
     queryKey: ['pet-vault-documents', pet?.id],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user || !pet?.id) return [];
-      const { data, error } = await supabase
-        .from('pet_service_documents')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('pet_id', pet.id)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data || [];
+      if (!pet?.id) return [];
+      const results = await getMyDocuments({ pet_id: pet.id, limit: 200 });
+      return results.map(toVaultDocument);
     },
     enabled: !!pet?.id && isOpen,
   });
 
-  // Fetch extracted data for verification badges
-  const { data: extractedData } = useQuery({
-    queryKey: ['pet-vault-extracted', pet?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('pet_document_extracted_data')
-        .select('document_id, vaccination_type, treatment_type, diagnosis')
-        .eq('pet_id', pet.id);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!pet?.id && isOpen,
-  });
-
-  const verifiedDocIds = new Set((extractedData || []).map((d: any) => d.document_id));
+  const verifiedDocIds = new Set<string>();
 
   const deleteMutation = useMutation({
     mutationFn: async (documentId: string) => {
-      const { error } = await supabase
-        .from('pet_service_documents')
-        .delete()
-        .eq('id', documentId);
-      if (error) throw error;
+      await deleteMyDocument(documentId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pet-vault-documents', pet?.id] });
@@ -114,134 +116,70 @@ export const PetVaultDrawer = ({ isOpen, onClose, pet }: PetVaultDrawerProps) =>
   // Regular file upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, category: VaultCategory) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !pet?.id) return;
     setIsUploading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const dataUrl = reader.result as string;
-        const dbCategory = category === 'vaccinations' ? 'health' : category === 'invoices' ? 'invoice' : category;
-        const { error } = await supabase
-          .from('pet_service_documents')
-          .insert({
-            user_id: user.id,
-            pet_id: pet.id,
-            category: dbCategory,
-            document_name: file.name,
-            document_url: dataUrl,
-            document_type: file.type,
-            file_size: file.size,
-          });
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['pet-vault-documents', pet?.id] });
-        toast({ title: 'המסמך הועלה בהצלחה' });
-        setIsUploading(false);
-      };
-      reader.readAsDataURL(file);
+      await createMyDocument({
+        pet_id: pet.id,
+        document_type: CATEGORY_TO_DOCUMENT_TYPE[category],
+        title: file.name,
+        file,
+      });
+      queryClient.invalidateQueries({ queryKey: ['pet-vault-documents', pet?.id] });
+      toast({ title: 'המסמך הועלה בהצלחה' });
     } catch (error) {
       console.error('Upload error:', error);
       toast({ title: 'שגיאה בהעלאת המסמך', variant: 'destructive' });
+    } finally {
       setIsUploading(false);
     }
   };
 
-  // OCR Scanner — capture image then send to AI
+  // Scanner — capture image and save it as a medical document.
   const handleScanCapture = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !pet?.id) return;
 
     const previewUrl = URL.createObjectURL(file);
     setScanPreview(previewUrl);
     setIsScanning(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      await createMyDocument({
+        pet_id: pet.id,
+        document_type: 'medical',
+        title: `סריקה - ${format(new Date(), 'dd/MM/yyyy HH:mm')}`,
+        file,
+      });
 
-      // Convert to base64 for AI
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const dataUrl = reader.result as string;
-        const base64 = dataUrl.split(',')[1];
+      toast({
+        title: `המסמך נשמר בכספת של ${pet?.name || 'חיית המחמד'}`,
+        description: 'עיבוד AI יחזור לאחר חיבור שירות OCR ב-AWS',
+      });
 
-        // 1. Save document first
-        const dbCategory = 'health';
-        const { data: docData, error: insertErr } = await supabase
-          .from('pet_service_documents')
-          .insert({
-            user_id: user.id,
-            pet_id: pet.id,
-            category: dbCategory,
-            document_name: `סריקה - ${format(new Date(), 'dd/MM/yyyy HH:mm')}`,
-            document_url: dataUrl,
-            document_type: file.type,
-            file_size: file.size,
-          })
-          .select()
-          .single();
+      window.dispatchEvent(new CustomEvent('vault-scan-complete', {
+        detail: { petId: pet.id, petName: pet.name, scanResult: null },
+      }));
 
-        if (insertErr) throw insertErr;
-
-        // 2. Send to AI OCR
-        const { data: scanData, error: scanErr } = await supabase.functions.invoke('scan-vet-document', {
-          body: {
-            petId: pet.id,
-            userId: user.id,
-            imageBase64: base64,
-            imageBase64ForSave: base64,
-            fileName: file.name,
-            documentId: docData.id,
-            saveToDb: true,
-          },
-        });
-
-        if (scanErr) throw scanErr;
-
-        // 3. Show results
-        const result = scanData?.scanResult;
-        const msgs: string[] = [];
-        if (result?.vaccines?.length > 0) msgs.push(`💉 ${result.vaccines.length} חיסונים`);
-        if (result?.diagnoses?.length > 0) msgs.push(`🔍 ${result.diagnoses.length} אבחנות`);
-        if (result?.weight) msgs.push(`⚖️ ${result.weight} ק"ג`);
-        if (result?.deworming) msgs.push(`💊 תילוע`);
-
-        toast({
-          title: `🔬 המומחה עיבד את המסמך של ${pet?.name}`,
-          description: msgs.length > 0
-            ? `${msgs.join(' | ')} — הכל מעודכן!`
-            : 'המסמך נשמר בכספת',
-        });
-
-        // 4. Dispatch event so chat/dashboard can react
-        window.dispatchEvent(new CustomEvent('vault-scan-complete', {
-          detail: { petId: pet.id, petName: pet.name, scanResult: result },
-        }));
-
-        queryClient.invalidateQueries({ queryKey: ['pet-vault-documents', pet?.id] });
-        queryClient.invalidateQueries({ queryKey: ['pet-vault-extracted', pet?.id] });
-
-        setScannerOpen(false);
-        setScanPreview(null);
-        setIsScanning(false);
-      };
-      reader.readAsDataURL(file);
+      queryClient.invalidateQueries({ queryKey: ['pet-vault-documents', pet?.id] });
+      setScannerOpen(false);
+      setScanPreview(null);
     } catch (error) {
       console.error('Scan error:', error);
       toast({
-        title: 'שגיאה בסריקת המסמך',
+        title: 'שגיאה בשמירת המסמך',
         description: 'נסה שוב או העלה את הקובץ ידנית',
         variant: 'destructive',
       });
-      setIsScanning(false);
       setScanPreview(null);
+    } finally {
+      setIsScanning(false);
     }
   }, [pet, queryClient, toast]);
 
   const handleView = (url: string) => window.open(url, '_blank');
 
-  const handleShare = async (doc: any) => {
+  const handleShare = async (doc: VaultDocument) => {
     if (navigator.share) {
       try {
         await navigator.share({
@@ -264,7 +202,7 @@ export const PetVaultDrawer = ({ isOpen, onClose, pet }: PetVaultDrawerProps) =>
 
   const groupedDocs = VAULT_CATEGORIES.map((cat) => ({
     ...cat,
-    docs: (documents || []).filter((d: any) => (CATEGORY_MAP[d.category] || 'general') === cat.id),
+    docs: (documents || []).filter((d) => d.category === cat.id),
   }));
 
   if (!isOpen) return null;
@@ -318,7 +256,7 @@ export const PetVaultDrawer = ({ isOpen, onClose, pet }: PetVaultDrawerProps) =>
               </div>
               <div className="text-right flex-1">
                 <p className="text-sm font-bold text-foreground">סריקת מסמך</p>
-                <p className="text-[10px] text-muted-foreground">צלם מסמך — המומחה יחלץ את הנתונים אוטומטית</p>
+                <p className="text-[10px] text-muted-foreground">צלם או העלה מסמך לכספת</p>
               </div>
               <Sparkles className="w-4 h-4 text-primary/60" />
             </motion.button>
@@ -397,7 +335,7 @@ export const PetVaultDrawer = ({ isOpen, onClose, pet }: PetVaultDrawerProps) =>
 
                             {/* Documents */}
                             {group.docs.length > 0 ? (
-                              group.docs.map((doc: any) => {
+                              group.docs.map((doc) => {
                                 const isVerified = verifiedDocIds.has(doc.id);
                                 const isImage = doc.document_type?.startsWith('image/');
 
@@ -524,7 +462,7 @@ export const PetVaultDrawer = ({ isOpen, onClose, pet }: PetVaultDrawerProps) =>
                         >
                           <Sparkles className="w-5 h-5 text-primary" />
                         </motion.div>
-                        <p className="text-white/80 text-sm font-medium">המומחה מנתח את המסמך...</p>
+                        <p className="text-white/80 text-sm font-medium">שומר את המסמך...</p>
                       </div>
                     </motion.div>
                   ) : (

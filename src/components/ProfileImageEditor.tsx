@@ -12,8 +12,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { updateMyProfile, uploadMyImage } from "@/lib/mipoApi";
 
 interface ProfileImageEditorProps {
   isOpen: boolean;
@@ -120,9 +120,13 @@ export const ProfileImageEditor = ({
       Math.round(0 - safeArea / 2 + image.height * 0.5 - pixelCrop.y)
     );
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       canvas.toBlob((blob) => {
-        resolve(blob!);
+        if (!blob) {
+          reject(new Error("Failed to create cropped image"));
+          return;
+        }
+        resolve(blob);
       }, "image/jpeg", 0.7); // 70% quality for compression
     });
   };
@@ -140,42 +144,18 @@ export const ProfileImageEditor = ({
     setIsUploading(true);
 
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) throw new Error("User not authenticated");
-
       const croppedImage = await getCroppedImg(
         imageSrc,
         croppedAreaPixels,
         rotation
       );
 
-      // Create form data for edge function
-      const formData = new FormData();
-      formData.append("file", croppedImage, "avatar.jpg");
-      formData.append("type", "profile");
-
-      // Upload via edge function
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-avatar`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: formData,
-        }
-      );
-
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error || "Upload failed");
-      }
+      const file = new File([croppedImage], "avatar.jpg", { type: "image/jpeg" });
+      const upload = await uploadMyImage(file);
+      await updateMyProfile({ avatar_url: upload.url });
 
       // Update parent component with new URL
-      onImageUpdated(result.url);
+      onImageUpdated(upload.url);
       
       // Show success message
       toast({
@@ -186,11 +166,11 @@ export const ProfileImageEditor = ({
       // Close the editor
       handleClose();
       
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error uploading avatar:", error);
       toast({
         title: "שגיאה",
-        description: error.message || "שגיאה בהעלאת התמונה",
+        description: error instanceof Error ? error.message : "שגיאה בהעלאת התמונה",
         variant: "destructive",
       });
     } finally {

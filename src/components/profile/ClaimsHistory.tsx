@@ -7,7 +7,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Shield, Clock, CheckCircle2, Banknote, ChevronDown, ChevronUp, AlertCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { getMyInsuranceClaims } from "@/lib/mipoApi";
 
 interface ClaimsHistoryProps {
   petId: string;
@@ -26,18 +26,7 @@ export const ClaimsHistory = ({ petId }: ClaimsHistoryProps) => {
   const { data: claims, isLoading } = useQuery({
     queryKey: ['insurance-claims', petId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
-
-      const { data, error } = await supabase
-        .from('insurance_claims')
-        .select('*')
-        .eq('pet_id', petId)
-        .eq('user_id', user.id)
-        .order('submitted_at', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
+      return getMyInsuranceClaims({ pet_id: petId });
     },
     enabled: !!petId,
   });
@@ -81,7 +70,7 @@ export const ClaimsHistory = ({ petId }: ClaimsHistoryProps) => {
               className="overflow-hidden"
             >
               <div className="px-4 pb-4 space-y-2.5">
-                {claims.map((claim: any) => {
+                {claims.map((claim) => {
                   const cfg = STATUS_CONFIG[claim.status] || STATUS_CONFIG.pending;
                   const StatusIcon = cfg.icon;
 

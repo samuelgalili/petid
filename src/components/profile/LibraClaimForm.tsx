@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { createMyInsuranceClaim } from "@/lib/mipoApi";
 
 interface ClaimData {
   ownerName: string | null;
@@ -55,11 +55,7 @@ export const LibraClaimForm = ({ petId, claimData, open, onClose, onSubmitted }:
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const { error } = await supabase.from("insurance_claims").insert({
-        user_id: user.id,
+      await createMyInsuranceClaim({
         pet_id: petId,
         pet_name: claimData.petName,
         pet_microchip: claimData.microchipNumber,
@@ -71,9 +67,7 @@ export const LibraClaimForm = ({ petId, claimData, open, onClose, onSubmitted }:
         treatment: claimData.treatment,
         total_amount: claimData.totalAmount,
         status: 'pending',
-      } as any);
-
-      if (error) throw error;
+      });
 
       setSubmitted(true);
 

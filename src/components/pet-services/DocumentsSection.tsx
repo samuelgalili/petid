@@ -4,16 +4,12 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, Upload, Trash2, Download, Calendar, ChevronDown, ChevronUp, Plus } from 'lucide-react';
+import { FileText, Trash2, Download, ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { autoSaveToDocuments } from '@/lib/autoSaveUpload';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useDocumentExtraction } from '@/hooks/useDocumentExtraction';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
+import { createMyDocument, deleteMyDocument, getMyDocuments, type MipoDocument } from '@/lib/mipoApi';
 
 type DocumentCategory = 'insurance' | 'training' | 'grooming' | 'boarding' | 'food' | 'health';
 
@@ -21,6 +17,14 @@ interface DocumentsSectionProps {
   petId: string;
   category: DocumentCategory;
   title?: string;
+}
+
+interface ServiceDocument {
+  id: string;
+  document_name: string;
+  document_url: string;
+  file_size: number | null;
+  created_at: string;
 }
 
 const categoryLabels: Record<DocumentCategory, string> = {
@@ -32,9 +36,31 @@ const categoryLabels: Record<DocumentCategory, string> = {
   health: 'בריאות',
 };
 
+const documentTypeToCategory: Record<string, DocumentCategory> = {
+  insurance: 'insurance',
+  training: 'training',
+  grooming: 'grooming',
+  boarding: 'boarding',
+  food: 'food',
+  health: 'health',
+  medical: 'health',
+  vaccination: 'health',
+};
+
+const categoryToDocumentType = (category: DocumentCategory) => (
+  category === 'health' ? 'medical' : category
+);
+
+const toServiceDocument = (doc: MipoDocument): ServiceDocument => ({
+  id: doc.id,
+  document_name: doc.title || doc.file_name,
+  document_url: doc.file_url,
+  file_size: doc.file_size,
+  created_at: doc.uploaded_at,
+});
+
 export const DocumentsSection = ({ petId, category, title }: DocumentsSectionProps) => {
   const { toast } = useToast();
-  const { extractDataFromDocument } = useDocumentExtraction();
   const queryClient = useQueryClient();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -42,30 +68,17 @@ export const DocumentsSection = ({ petId, category, title }: DocumentsSectionPro
   const { data: documents, isLoading } = useQuery({
     queryKey: ['pet-documents', petId, category],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
-
-      const { data, error } = await supabase
-        .from('pet_service_documents')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('pet_id', petId)
-        .eq('category', category)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
+      const results = await getMyDocuments({ pet_id: petId, limit: 200 });
+      return results
+        .filter((doc) => documentTypeToCategory[doc.document_type] === category)
+        .map(toServiceDocument);
     },
     enabled: !!petId,
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (documentId: string) => {
-      const { error } = await supabase
-        .from('pet_service_documents')
-        .delete()
-        .eq('id', documentId);
-      if (error) throw error;
+      await deleteMyDocument(documentId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pet-documents', petId, category] });
@@ -82,64 +95,18 @@ export const DocumentsSection = ({ petId, category, title }: DocumentsSectionPro
 
     setIsUploading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      // For now, store as data URL (similar to avatar approach)
-      // In production, use proper file storage
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const dataUrl = reader.result as string;
-        
-        const { data: docData, error } = await supabase
-          .from('pet_service_documents')
-          .insert({
-            user_id: user.id,
-            pet_id: petId,
-            category,
-            document_name: file.name,
-            document_url: dataUrl,
-            document_type: file.type,
-            file_size: file.size,
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        // Auto-extract data from document using AI
-        if (docData) {
-          // Pass text content to AI for extraction
-          // For now using the filename and metadata, in production you'd use a proper OCR service
-          // or pass the dataUrl if the LLM supports image analysis
-          await extractDataFromDocument(
-            docData.id,
-            `מסמך מסוג ${category} בשם ${file.name}.`, 
-            file.name,
-            petId
-          );
-        }
-
-        queryClient.invalidateQueries({ queryKey: ['pet-documents', petId, category] });
-        
-        // Also save to main pet_documents for central document library
-        await autoSaveToDocuments({
-          userId: user.id,
-          petId,
-          fileUrl: dataUrl,
-          fileName: file.name,
-          fileSize: file.size,
-          documentType: category,
-          title: file.name,
-        });
-        
-        toast({ title: 'המסמך הועלה בהצלחה' });
-        setIsUploading(false);
-      };
-      reader.readAsDataURL(file);
+      await createMyDocument({
+        pet_id: petId,
+        document_type: categoryToDocumentType(category),
+        title: file.name,
+        file,
+      });
+      queryClient.invalidateQueries({ queryKey: ['pet-documents', petId, category] });
+      toast({ title: 'המסמך הועלה בהצלחה' });
     } catch (error) {
       console.error('Upload error:', error);
       toast({ title: 'שגיאה בהעלאת המסמך', variant: 'destructive' });
+    } finally {
       setIsUploading(false);
     }
   };

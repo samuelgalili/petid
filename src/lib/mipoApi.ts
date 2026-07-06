@@ -305,6 +305,26 @@ export interface MipoPetHealthSummary {
   active_recovery: MipoVetVisit | null;
 }
 
+export interface MipoInsuranceClaim {
+  id: string;
+  user_id?: string;
+  pet_id: string | null;
+  pet_name: string | null;
+  pet_microchip: string | null;
+  owner_name: string | null;
+  owner_id_number: string | null;
+  clinic_name: string | null;
+  visit_date: string | null;
+  diagnosis: string | null;
+  treatment: string | null;
+  total_amount: number | null;
+  paid_amount: number | null;
+  status: "pending" | "approved" | "paid" | "denied" | string;
+  status_note: string | null;
+  submitted_at: string;
+  updated_at?: string | null;
+}
+
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/+$/, "");
 
 async function fileToDataUrl(file: File): Promise<string> {
@@ -586,6 +606,29 @@ export async function deleteMyDocument(documentId: string) {
   window.dispatchEvent(new Event("mipo:documents-changed"));
   window.dispatchEvent(new Event("mipo:health-changed"));
   return result;
+}
+
+export async function getMyInsuranceClaims(input: {
+  pet_id?: string | null;
+  limit?: number;
+} = {}): Promise<MipoInsuranceClaim[]> {
+  const params = new URLSearchParams();
+  if (input.pet_id) params.set("pet_id", input.pet_id);
+  if (input.limit) params.set("limit", String(input.limit));
+  const query = params.toString();
+  const result = await apiFetch<{ claims: MipoInsuranceClaim[] }>(
+    `/me/insurance-claims${query ? `?${query}` : ""}`,
+  );
+  return result.claims;
+}
+
+export async function createMyInsuranceClaim(input: Partial<MipoInsuranceClaim>): Promise<MipoInsuranceClaim> {
+  const result = await apiFetch<{ claim: MipoInsuranceClaim }>("/me/insurance-claims", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  window.dispatchEvent(new Event("mipo:insurance-claims-changed"));
+  return result.claim;
 }
 
 export async function getMyVetVisits(petId: string): Promise<MipoVetVisit[]> {

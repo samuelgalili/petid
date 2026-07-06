@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Calendar, Plus, Syringe, Scissors, Stethoscope } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { format, isBefore, addDays } from "date-fns";
+import { Calendar, Syringe, Scissors, Stethoscope } from "lucide-react";
+import { format } from "date-fns";
 import { he } from "date-fns/locale";
+import { getMyPetHealthSummary } from "@/lib/mipoApi";
 
 interface PetMiniCalendarProps {
   petId: string;
@@ -34,28 +33,72 @@ const EVENT_COLORS: Record<string, string> = {
 };
 
 export const PetMiniCalendar = ({ petId, petName, isOwner }: PetMiniCalendarProps) => {
-  const { user } = useAuth();
   const [events, setEvents] = useState<PetEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchEvents = async () => {
-      if (!user?.id) return;
-      
-      const { data } = await supabase
-        .from('pet_events')
-        .select('id, title, event_date, event_type')
-        .eq('pet_id', petId)
-        .gte('event_date', new Date().toISOString())
-        .order('event_date', { ascending: true })
-        .limit(3);
+    let active = true;
 
-      if (data) setEvents(data);
-      setLoading(false);
+    const fetchEvents = async () => {
+      if (!petId) {
+        if (active) setLoading(false);
+        return;
+      }
+
+      try {
+        const summary = await getMyPetHealthSummary(petId);
+        const upcoming: PetEvent[] = [];
+        const today = new Date();
+
+        if (summary.pet.next_vet_visit && new Date(summary.pet.next_vet_visit) >= today) {
+          upcoming.push({
+            id: `${petId}-next-vet`,
+            title: `ביקור וטרינר של ${petName}`,
+            event_date: summary.pet.next_vet_visit,
+            event_type: 'vet',
+          });
+        }
+
+        summary.vet_visits.forEach((visit) => {
+          if (!visit.next_visit_date || new Date(visit.next_visit_date) < today) return;
+          upcoming.push({
+            id: `${visit.id}-follow-up`,
+            title: visit.reason || visit.clinic_name || 'ביקור מעקב',
+            event_date: visit.next_visit_date,
+            event_type: 'vet',
+          });
+        });
+
+        summary.vaccinations.forEach((vaccination) => {
+          if (!vaccination.expires_at || new Date(vaccination.expires_at) < today) return;
+          upcoming.push({
+            id: `${vaccination.id}-expires`,
+            title: `חיסון ${vaccination.vaccine_name}`,
+            event_date: vaccination.expires_at,
+            event_type: 'vaccination',
+          });
+        });
+
+        const uniqueEvents = Array.from(
+          new Map(upcoming.map((event) => [`${event.event_type}-${event.event_date}-${event.title}`, event])).values(),
+        )
+          .sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime())
+          .slice(0, 3);
+
+        if (active) setEvents(uniqueEvents);
+      } catch (error) {
+        console.error('Failed to fetch pet events:', error);
+        if (active) setEvents([]);
+      } finally {
+        if (active) setLoading(false);
+      }
     };
 
     fetchEvents();
-  }, [petId, user?.id]);
+    return () => {
+      active = false;
+    };
+  }, [petId, petName]);
 
   const getDaysUntil = (dateStr: string) => {
     const diff = Math.ceil((new Date(dateStr).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
