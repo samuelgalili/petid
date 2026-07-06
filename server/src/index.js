@@ -810,6 +810,482 @@ const bulkDeleteProducts = async (ids) => {
   };
 };
 
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const orderStatuses = new Set(["pending", "processing", "shipped", "delivered", "cancelled"]);
+const paymentStatuses = new Set(["pending", "paid", "failed", "awaiting_cod", "dev_approved", "refunded", "libra_credit"]);
+
+const toMoney = (value, fallback = 0) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.round(parsed * 100) / 100 : fallback;
+};
+
+const toPositiveInteger = (value, fallback = 1) => {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+const generateOrderNumber = () => {
+  const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const suffix = randomBytes(3).toString("hex").toUpperCase();
+  return `MIPO-${date}-${suffix}`;
+};
+
+const normalizeCouponDiscountType = (type) => {
+  if (type === "percent") return "percentage";
+  if (type === "amount") return "fixed";
+  return type;
+};
+
+const mapCoupon = (row) => ({
+  id: row.id,
+  code: row.code,
+  discount_type: normalizeCouponDiscountType(row.discount_type),
+  discount_value: toMoney(row.discount_value),
+  min_order_amount: toMoney(row.min_order_amount),
+  max_uses: row.max_uses,
+  used_count: row.used_count || 0,
+  valid_from: row.valid_from,
+  valid_until: row.valid_until,
+  is_active: row.is_active,
+});
+
+const findValidCoupon = async (client, code, subtotal) => {
+  const normalizedCode = String(code || "").trim().toUpperCase();
+  if (!normalizedCode) return null;
+
+  const result = await client.query(
+    `
+      select *
+      from public.coupons
+      where upper(code) = $1
+        and is_active = true
+      limit 1
+    `,
+    [normalizedCode],
+  );
+
+  const coupon = result.rows[0];
+  if (!coupon) return null;
+
+  const now = Date.now();
+  if (coupon.valid_from && new Date(coupon.valid_from).getTime() > now) return null;
+  if (coupon.valid_until && new Date(coupon.valid_until).getTime() < now) return null;
+  if (coupon.min_order_amount && subtotal < Number(coupon.min_order_amount)) return null;
+  if (coupon.max_uses && Number(coupon.used_count || 0) >= Number(coupon.max_uses)) return null;
+
+  return coupon;
+};
+
+const validateCoupon = async (body) => {
+  const subtotal = toMoney(body.subtotal);
+  const coupon = await findValidCoupon(pool, body.code, subtotal);
+  if (!coupon) {
+    const error = new Error("Coupon not found or not valid");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  return mapCoupon(coupon);
+};
+
+const normalizeOrderItems = (items) => {
+  if (!Array.isArray(items) || items.length === 0) {
+    const error = new Error("Order items are required");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return items.map((item) => {
+    const quantity = toPositiveInteger(item.quantity);
+    const price = toMoney(item.price);
+    const name = String(item.name || item.product_name || "").trim();
+
+    if (!name) {
+      const error = new Error("Each order item requires a product name");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (price <= 0) {
+      const error = new Error("Each order item requires a positive price");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const productId = String(item.product_id || item.id || "").trim();
+    return {
+      product_id: uuidPattern.test(productId) ? productId : null,
+      product_source: item.product_source || item.source || null,
+      product_name: name,
+      product_image: item.image || item.product_image || "/placeholder.svg",
+      quantity,
+      price,
+      variant: item.variant || null,
+      size: item.size || null,
+    };
+  });
+};
+
+const normalizeShippingAddress = (shippingAddress) => {
+  const address = shippingAddress && typeof shippingAddress === "object" ? shippingAddress : {};
+  const normalized = {
+    fullName: String(address.fullName || address.full_name || "").trim(),
+    email: normalizeEmail(address.email),
+    phone: String(address.phone || "").trim(),
+    address: String(address.address || address.street || "").trim(),
+    city: String(address.city || "").trim(),
+    zipCode: String(address.zipCode || address.zip_code || address.postal_code || "").trim(),
+  };
+
+  if (!normalized.fullName || !normalized.email || !normalized.phone || !normalized.address || !normalized.city) {
+    const error = new Error("Shipping name, email, phone, address, and city are required");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return normalized;
+};
+
+const calculateOrderAmounts = async (client, body, orderItems, shippingAddress) => {
+  const subtotal = toMoney(orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0));
+  const coupon = body.coupon_code || body.coupon?.code
+    ? await findValidCoupon(client, body.coupon_code || body.coupon?.code, subtotal)
+    : null;
+
+  const couponType = coupon ? normalizeCouponDiscountType(coupon.discount_type) : null;
+  const couponValue = coupon ? toMoney(coupon.discount_value) : 0;
+  const discountAmount = coupon && couponType !== "free_shipping"
+    ? couponType === "percentage"
+      ? toMoney((subtotal * couponValue) / 100)
+      : Math.min(subtotal, couponValue)
+    : 0;
+
+  const baseShipping = subtotal >= 199 ? 0 : 25;
+  const shipping = couponType === "free_shipping" ? 0 : baseShipping;
+  const cashOnDeliveryFee = body.payment_method === "cash-on-delivery" ? 5 : 0;
+  const tax = 0;
+  const total = toMoney(Math.max(0, subtotal - discountAmount) + shipping + cashOnDeliveryFee + tax);
+
+  return {
+    subtotal,
+    shipping,
+    tax,
+    discountAmount,
+    cashOnDeliveryFee,
+    total,
+    coupon,
+    customerEmail: normalizeEmail(body.customer_email || shippingAddress.email),
+  };
+};
+
+const mapOrderItem = (row) => ({
+  id: row.id,
+  order_id: row.order_id,
+  product_id: row.product_id,
+  product_source: row.product_source,
+  product_name: row.product_name,
+  product_image: row.product_image || "/placeholder.svg",
+  quantity: row.quantity,
+  price: toMoney(row.price),
+  variant: row.variant,
+  size: row.size,
+  created_at: row.created_at,
+});
+
+const mapOrder = (row, items = []) => ({
+  id: row.id,
+  order_number: row.order_number,
+  customer_id: row.customer_id,
+  user_id: row.user_id,
+  customer_name: row.customer_name,
+  customer_email: row.customer_email,
+  customer_phone: row.customer_phone,
+  status: row.status,
+  payment_status: row.payment_status,
+  payment_method: row.payment_method,
+  payment_installments: row.payment_installments,
+  subtotal: toMoney(row.subtotal),
+  shipping: toMoney(row.shipping),
+  tax: toMoney(row.tax),
+  discount_amount: toMoney(row.discount_amount),
+  cash_on_delivery_fee: toMoney(row.cash_on_delivery_fee),
+  total: toMoney(row.total),
+  coupon_id: row.coupon_id,
+  shipping_address: row.shipping_address || {},
+  order_type: row.order_type || "regular",
+  pet_name: row.pet_name,
+  special_instructions: row.special_instructions,
+  medical_urgency: row.medical_urgency || "none",
+  shipping_status: row.shipping_status || "label_created",
+  tracking_number: row.tracking_number,
+  order_date: row.order_date,
+  created_at: row.created_at,
+  updated_at: row.updated_at,
+  items,
+  order_items: items,
+});
+
+const attachOrderItems = async (orders) => {
+  if (orders.length === 0) return [];
+  const ids = orders.map((order) => order.id);
+  const itemsResult = await pool.query(
+    "select * from public.order_items where order_id = any($1::uuid[]) order by created_at asc",
+    [ids],
+  );
+  const itemsByOrder = new Map();
+  for (const item of itemsResult.rows.map(mapOrderItem)) {
+    const group = itemsByOrder.get(item.order_id) || [];
+    group.push(item);
+    itemsByOrder.set(item.order_id, group);
+  }
+  return orders.map((order) => mapOrder(order, itemsByOrder.get(order.id) || []));
+};
+
+const createOrder = async (body) => {
+  const orderItems = normalizeOrderItems(body.items);
+  const shippingAddress = normalizeShippingAddress(body.shipping_address || body.shippingData);
+  const paymentMethod = String(body.payment_method || "credit-card");
+  const paymentStatus = paymentMethod === "cash-on-delivery" ? "awaiting_cod" : "dev_approved";
+  const paymentInstallments = toPositiveInteger(body.installments || body.payment_installments);
+  const client = await pool.connect();
+
+  try {
+    await client.query("begin");
+
+    const amounts = await calculateOrderAmounts(client, body, orderItems, shippingAddress);
+    const customerResult = await client.query(
+      `
+        insert into public.shop_customers (email, full_name, phone, last_order_at)
+        values ($1, $2, $3, now())
+        on conflict (email) do update set
+          full_name = excluded.full_name,
+          phone = excluded.phone,
+          last_order_at = now(),
+          updated_at = now()
+        returning id
+      `,
+      [amounts.customerEmail, shippingAddress.fullName, shippingAddress.phone],
+    );
+
+    const orderNumber = generateOrderNumber();
+    const orderResult = await client.query(
+      `
+        insert into public.orders (
+          order_number,
+          customer_id,
+          customer_name,
+          customer_email,
+          customer_phone,
+          status,
+          payment_status,
+          payment_method,
+          payment_installments,
+          subtotal,
+          shipping,
+          tax,
+          discount_amount,
+          cash_on_delivery_fee,
+          total,
+          coupon_id,
+          shipping_address,
+          order_type,
+          pet_name,
+          special_instructions,
+          medical_urgency
+        )
+        values (
+          $1, $2, $3, $4, $5,
+          'pending', $6, $7, $8,
+          $9, $10, $11, $12, $13, $14, $15, $16,
+          $17, $18, $19, $20
+        )
+        returning *
+      `,
+      [
+        orderNumber,
+        customerResult.rows[0].id,
+        shippingAddress.fullName,
+        amounts.customerEmail,
+        shippingAddress.phone,
+        paymentStatus,
+        paymentMethod,
+        paymentInstallments,
+        amounts.subtotal,
+        amounts.shipping,
+        amounts.tax,
+        amounts.discountAmount,
+        amounts.cashOnDeliveryFee,
+        amounts.total,
+        amounts.coupon?.id || null,
+        JSON.stringify(shippingAddress),
+        body.order_type || (body.want_recurring_order ? "auto-restock" : "regular"),
+        body.pet_name || null,
+        body.special_instructions || null,
+        body.medical_urgency || "none",
+      ],
+    );
+
+    const order = orderResult.rows[0];
+    const itemValues = [];
+    const placeholders = orderItems.map((item, index) => {
+      const base = index * 9;
+      itemValues.push(
+        order.id,
+        item.product_id,
+        item.product_source,
+        item.product_name,
+        item.product_image,
+        item.quantity,
+        item.price,
+        item.variant,
+        item.size,
+      );
+      return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9})`;
+    });
+
+    const itemsResult = await client.query(
+      `
+        insert into public.order_items (
+          order_id,
+          product_id,
+          product_source,
+          product_name,
+          product_image,
+          quantity,
+          price,
+          variant,
+          size
+        )
+        values ${placeholders.join(", ")}
+        returning *
+      `,
+      itemValues,
+    );
+
+    if (amounts.coupon?.id) {
+      await client.query("update public.coupons set used_count = used_count + 1, updated_at = now() where id = $1", [amounts.coupon.id]);
+    }
+
+    await client.query("commit");
+    return mapOrder(order, itemsResult.rows.map(mapOrderItem));
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+const listOrders = async ({ ids = [], email = null, limit = 200 } = {}) => {
+  const values = [];
+  const where = [];
+
+  if (ids.length > 0) {
+    values.push(ids);
+    where.push(`id = any($${values.length}::uuid[])`);
+  }
+
+  if (email) {
+    values.push(normalizeEmail(email));
+    where.push(`lower(customer_email) = $${values.length}`);
+  }
+
+  values.push(limit);
+  const sql = `
+    select *
+    from public.orders
+    ${where.length > 0 ? `where ${where.join(" or ")}` : ""}
+    order by order_date desc
+    limit $${values.length}
+  `;
+
+  const result = await pool.query(sql, values);
+  return attachOrderItems(result.rows);
+};
+
+const getOrder = async (id) => {
+  const result = uuidPattern.test(id)
+    ? await pool.query("select * from public.orders where id = $1 limit 1", [id])
+    : await pool.query("select * from public.orders where order_number = $1 limit 1", [id]);
+  if (result.rowCount === 0) return null;
+  const [order] = await attachOrderItems(result.rows);
+  return order;
+};
+
+const updateOrder = async (id, body) => {
+  const assignments = [];
+  const values = [id];
+
+  if (body.status !== undefined) {
+    if (!orderStatuses.has(body.status)) {
+      const error = new Error("Invalid order status");
+      error.statusCode = 400;
+      throw error;
+    }
+    values.push(body.status);
+    assignments.push(`status = $${values.length}`);
+  }
+
+  if (body.payment_status !== undefined) {
+    if (!paymentStatuses.has(body.payment_status)) {
+      const error = new Error("Invalid payment status");
+      error.statusCode = 400;
+      throw error;
+    }
+    values.push(body.payment_status);
+    assignments.push(`payment_status = $${values.length}`);
+  }
+
+  for (const field of ["shipping_status", "tracking_number", "special_instructions"]) {
+    if (body[field] !== undefined) {
+      values.push(body[field] || null);
+      assignments.push(`${field} = $${values.length}`);
+    }
+  }
+
+  if (assignments.length === 0) return getOrder(id);
+
+  const result = await pool.query(
+    `
+      update public.orders
+      set ${assignments.join(", ")}, updated_at = now()
+      where id = $1
+      returning *
+    `,
+    values,
+  );
+
+  if (result.rowCount === 0) return null;
+  const [order] = await attachOrderItems(result.rows);
+  return order;
+};
+
+const bulkUpdateOrders = async (ids, updates) => {
+  if (!Array.isArray(ids) || ids.length === 0) {
+    const error = new Error("Order ids are required");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!updates?.status || !orderStatuses.has(updates.status)) {
+    const error = new Error("Valid order status is required");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const result = await pool.query(
+    `
+      update public.orders
+      set status = $2, updated_at = now()
+      where id = any($1::uuid[])
+      returning id
+    `,
+    [ids, updates.status],
+  );
+
+  return { updated: result.rowCount };
+};
+
 const createReport = async (body) => {
   const id = randomUUID();
   await pool.query(
@@ -955,6 +1431,67 @@ const handleRequest = async (request, response) => {
       }
 
       sendJson(response, 200, { admin });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/orders") {
+      if (!(await requireAdmin(request, response))) return;
+      const limit = Math.min(500, Math.max(1, Number(url.searchParams.get("limit") || 200)));
+      sendJson(response, 200, { orders: await listOrders({ limit }) });
+      return;
+    }
+
+    if (request.method === "PATCH" && url.pathname === "/api/admin/orders/bulk") {
+      if (!(await requireAdmin(request, response))) return;
+      const body = await readBody(request);
+      sendJson(response, 200, await bulkUpdateOrders(body.ids, body.updates || {}));
+      return;
+    }
+
+    const adminOrderMatch = url.pathname.match(/^\/api\/admin\/orders\/([0-9a-fA-F-]{36})$/);
+    if (adminOrderMatch && request.method === "PATCH") {
+      if (!(await requireAdmin(request, response))) return;
+      const order = await updateOrder(adminOrderMatch[1], await readBody(request));
+      if (!order) {
+        sendError(response, 404, "Order not found");
+        return;
+      }
+      sendJson(response, 200, { order });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/coupons/validate") {
+      sendJson(response, 200, { coupon: await validateCoupon(await readBody(request)) });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/orders") {
+      sendJson(response, 201, { order: await createOrder(await readBody(request)) });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/orders") {
+      const ids = (url.searchParams.get("ids") || "")
+        .split(",")
+        .map((id) => id.trim())
+        .filter((id) => uuidPattern.test(id));
+      const email = url.searchParams.get("email");
+      if (ids.length === 0 && !email) {
+        sendJson(response, 200, { orders: [] });
+        return;
+      }
+      sendJson(response, 200, { orders: await listOrders({ ids, email, limit: 200 }) });
+      return;
+    }
+
+    const orderMatch = url.pathname.match(/^\/api\/orders\/([^/]+)$/);
+    if (orderMatch && request.method === "GET") {
+      const order = await getOrder(decodeURIComponent(orderMatch[1]));
+      if (!order) {
+        sendError(response, 404, "Order not found");
+        return;
+      }
+      sendJson(response, 200, { order });
       return;
     }
 

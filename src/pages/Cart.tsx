@@ -10,17 +10,9 @@ import { useCart } from "@/contexts/CartContext";
 import { Plus, Minus, Trash2, ShoppingBag, Tag, X, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AppHeader } from "@/components/AppHeader";
-import { supabase } from "@/integrations/supabase/client";
 import { SEO } from "@/components/SEO";
 import { SmartCartLayers } from "@/components/shop/SmartCartLayers";
-
-interface Coupon {
-  id: string;
-  code: string;
-  discount_type: string;
-  discount_value: number;
-  min_order_amount: number;
-}
+import { MipoCoupon, validateCouponCode } from "@/lib/mipoApi";
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -29,7 +21,7 @@ const Cart = () => {
   
   // Coupon state
   const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<MipoCoupon | null>(null);
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
   
 
@@ -56,37 +48,12 @@ const Cart = () => {
     
     setIsValidatingCoupon(true);
     try {
-      const { data, error } = await supabase
-        .from('coupons')
-        .select('*')
-        .eq('code', couponCode.toUpperCase())
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (error) throw error;
+      const data = await validateCouponCode(couponCode, subtotal);
 
       if (!data) {
         toast({
           title: "קופון לא תקין",
           description: "הקופון שהזנת לא קיים או לא פעיל",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (data.min_order_amount && subtotal < data.min_order_amount) {
-        toast({
-          title: "מינימום הזמנה",
-          description: `הזמנה מינימלית לקופון זה: ₪${data.min_order_amount}`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (data.max_uses && data.used_count >= data.max_uses) {
-        toast({
-          title: "קופון מנוצל",
-          description: "הקופון הזה כבר נוצל עד תום",
           variant: "destructive",
         });
         return;
@@ -104,8 +71,8 @@ const Cart = () => {
     } catch (error) {
       console.error("Error validating coupon:", error);
       toast({
-        title: "שגיאה",
-        description: "לא ניתן לבדוק את הקופון",
+        title: "קופון לא תקין",
+        description: "הקופון שהזנת לא קיים או לא פעיל",
         variant: "destructive",
       });
     } finally {

@@ -10,7 +10,7 @@ import {
   ShoppingCart, DollarSign, Eye, AlertCircle, Printer,
   MapPin, MessageSquare, ChevronRight, Repeat, Heart,
   CheckSquare, Square, Send, Download, User, PawPrint,
-  AlertTriangle, X, Sparkles,
+  AlertTriangle, X, Sparkles, type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,7 +25,6 @@ import {
   Sheet, SheetContent, SheetHeader, SheetTitle,
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminNotifications } from "@/hooks/useAdminNotifications";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -35,6 +34,7 @@ import {
 } from "@/components/admin/AdminStyles";
 import { cn } from "@/lib/utils";
 import { OrderLabelGenerator, type LabelFormat } from "@/components/admin/OrderLabelGenerator";
+import { bulkUpdateAdminOrders, getAdminOrders, updateAdminOrder } from "@/lib/mipoApi";
 
 interface OrderItem {
   id: string;
@@ -45,6 +45,17 @@ interface OrderItem {
   size?: string | null;
   variant?: string | null;
   product_id?: string | null;
+}
+
+interface AdminShippingAddress {
+  fullName?: string;
+  address?: string;
+  street?: string;
+  apartment?: string;
+  city?: string;
+  zipCode?: string;
+  phone?: string;
+  email?: string;
 }
 
 interface Order {
@@ -58,8 +69,8 @@ interface Order {
   subtotal: number;
   shipping: number;
   tax: number;
-  user_id: string;
-  shipping_address: any;
+  user_id: string | null;
+  shipping_address: AdminShippingAddress;
   order_type: string;
   pet_name: string | null;
   customer_name: string | null;
@@ -79,7 +90,7 @@ function detectMedicalUrgency(items: OrderItem[]): string {
   return "none";
 }
 
-const STATUS_CONFIG: Record<string, { label: string; icon: any; color: string }> = {
+const STATUS_CONFIG: Record<string, { label: string; icon: LucideIcon; color: string }> = {
   pending: { label: "ממתין", icon: Clock, color: "text-amber-500 bg-amber-500/10 border-amber-500/20" },
   processing: { label: "באריזה", icon: RefreshCw, color: "text-blue-500 bg-blue-500/10 border-blue-500/20" },
   shipped: { label: "נשלח", icon: Truck, color: "text-violet-500 bg-violet-500/10 border-violet-500/20" },
@@ -122,65 +133,26 @@ const AdminOrders = () => {
   const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*")
-        .order("order_date", { ascending: false })
-        .limit(200);
-
-      if (error) throw error;
-
-      // Fetch order items for all orders
-      const orderIds = (data || []).map(o => o.id);
-      let itemsMap: Record<string, OrderItem[]> = {};
-
-      if (orderIds.length > 0) {
-        const { data: items } = await supabase
-          .from("order_items")
-          .select("*")
-          .in("order_id", orderIds);
-
-        if (items) {
-          for (const item of items) {
-            if (!itemsMap[item.order_id]) itemsMap[item.order_id] = [];
-            itemsMap[item.order_id].push(item as OrderItem);
-          }
-        }
-      }
-
-      // Check inventory for out-of-stock warnings
-      const productIds = Object.values(itemsMap)
-        .flat()
-        .map(i => i.product_id)
-        .filter(Boolean) as string[];
-
-      if (productIds.length > 0) {
-        const { data: products } = await supabase
-          .from("business_products")
-          .select("id, in_stock")
-          .in("id", [...new Set(productIds)]);
-
-        if (products) {
-          const oos = new Set(products.filter(p => !p.in_stock).map(p => p.id));
-          setOutOfStockItems(oos);
-        }
-      }
+      const data = await getAdminOrders();
+      setOutOfStockItems(new Set());
 
       const enrichedOrders: Order[] = (data || []).map(o => {
-        const items = itemsMap[o.id] || [];
+        const items = (o.order_items || []) as OrderItem[];
+        const shippingAddress = (o.shipping_address || {}) as AdminShippingAddress;
         const urgency = o.medical_urgency && o.medical_urgency !== "none"
           ? o.medical_urgency
           : detectMedicalUrgency(items);
         return {
           ...o,
+          shipping_address: shippingAddress,
           order_items: items,
           medical_urgency: urgency,
-          customer_name: o.customer_name || (typeof o.shipping_address === 'object' && o.shipping_address !== null ? (o.shipping_address as any)?.fullName : null) || null,
+          customer_name: o.customer_name || shippingAddress.fullName || null,
         } as Order;
       });
 
       setOrders(enrichedOrders);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching orders:", error);
       toast({ title: "שגיאה בטעינת הזמנות", variant: "destructive" });
     } finally {
@@ -190,11 +162,6 @@ const AdminOrders = () => {
 
   useEffect(() => {
     fetchOrders();
-    const channel = supabase
-      .channel("order-mgmt-changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => fetchOrders())
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
   }, [fetchOrders]);
 
   const filteredOrders = useMemo(() => {
@@ -222,7 +189,11 @@ const AdminOrders = () => {
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   };
@@ -239,11 +210,7 @@ const AdminOrders = () => {
     if (selectedIds.size === 0) return;
     setUpdatingStatus(true);
     try {
-      const { error } = await supabase
-        .from("orders")
-        .update({ status: newStatus })
-        .in("id", [...selectedIds]);
-      if (error) throw error;
+      await bulkUpdateAdminOrders([...selectedIds], { status: newStatus });
       toast({ title: `${selectedIds.size} הזמנות עודכנו ל${STATUS_CONFIG[newStatus].label}` });
       setSelectedIds(new Set());
       fetchOrders();
@@ -257,11 +224,7 @@ const AdminOrders = () => {
   const updateSingleStatus = async (orderId: string, newStatus: Order["status"]) => {
     setUpdatingStatus(true);
     try {
-      const { error } = await supabase
-        .from("orders")
-        .update({ status: newStatus })
-        .eq("id", orderId);
-      if (error) throw error;
+      await updateAdminOrder(orderId, { status: newStatus });
       toast({ title: `סטטוס עודכן ל${STATUS_CONFIG[newStatus].label}` });
       if (selectedOrder?.id === orderId) {
         setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
@@ -633,12 +596,12 @@ function OrderDetailPanel({
             </p>
             <Card className="border-border/30">
               <CardContent className="p-3 text-xs space-y-1">
-                <p>{addr.street} {addr.apartment ? `דירה ${addr.apartment}` : ""}</p>
-                <p>{addr.city}</p>
+                <p>{addr.address || addr.street} {addr.apartment ? `דירה ${addr.apartment}` : ""}</p>
+                <p>{addr.city}{addr.zipCode ? `, ${addr.zipCode}` : ""}</p>
                 {addr.phone && <p dir="ltr" className="text-muted-foreground">{addr.phone}</p>}
                 {addr.city && (
                   <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${addr.street}, ${addr.city}`)}`}
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${addr.address || addr.street || ""}, ${addr.city}`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-primary text-[10px] font-medium mt-1 hover:underline"

@@ -53,6 +53,92 @@ export interface MipoAdmin {
   last_login_at?: string | null;
 }
 
+export interface MipoCoupon {
+  id: string;
+  code: string;
+  discount_type: "percentage" | "fixed" | "free_shipping" | string;
+  discount_value: number;
+  min_order_amount: number;
+  max_uses?: number | null;
+  used_count?: number | null;
+  valid_from?: string | null;
+  valid_until?: string | null;
+  is_active?: boolean;
+}
+
+export interface MipoOrderItem {
+  id: string;
+  order_id?: string;
+  product_id?: string | null;
+  product_source?: string | null;
+  product_name: string;
+  product_image: string;
+  quantity: number;
+  price: number;
+  variant?: string | null;
+  size?: string | null;
+  created_at?: string | null;
+}
+
+export interface MipoOrder {
+  id: string;
+  order_number: string;
+  customer_id?: string | null;
+  customer_name?: string | null;
+  customer_email?: string | null;
+  customer_phone?: string | null;
+  status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
+  payment_status: string;
+  payment_method: string;
+  payment_installments?: number;
+  subtotal: number;
+  shipping: number;
+  tax: number;
+  discount_amount: number;
+  cash_on_delivery_fee: number;
+  total: number;
+  coupon_id?: string | null;
+  shipping_address: Record<string, unknown>;
+  order_type: string;
+  pet_name?: string | null;
+  special_instructions?: string | null;
+  medical_urgency?: string | null;
+  shipping_status?: string | null;
+  tracking_number?: string | null;
+  order_date: string;
+  created_at?: string | null;
+  updated_at?: string | null;
+  items: MipoOrderItem[];
+  order_items: MipoOrderItem[];
+}
+
+export interface CreateMipoOrderInput {
+  items: Array<{
+    id?: string;
+    product_id?: string | null;
+    product_source?: string | null;
+    name: string;
+    price: number;
+    quantity: number;
+    image?: string;
+    variant?: string | null;
+    size?: string | null;
+  }>;
+  shipping_address: {
+    fullName: string;
+    email: string;
+    phone: string;
+    address: string;
+    city: string;
+    zipCode: string;
+  };
+  payment_method: string;
+  installments?: number;
+  coupon_code?: string;
+  order_type?: string;
+  want_recurring_order?: boolean;
+}
+
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/+$/, "");
 
 async function fileToDataUrl(file: File): Promise<string> {
@@ -135,6 +221,59 @@ export async function logoutAdmin() {
   return apiFetch<{ ok: boolean }>("/admin/logout", {
     method: "POST",
     body: JSON.stringify({}),
+  });
+}
+
+export async function validateCouponCode(code: string, subtotal: number): Promise<MipoCoupon> {
+  const result = await apiFetch<{ coupon: MipoCoupon }>("/coupons/validate", {
+    method: "POST",
+    body: JSON.stringify({ code, subtotal }),
+  });
+  return result.coupon;
+}
+
+export async function createShopOrder(input: CreateMipoOrderInput): Promise<MipoOrder> {
+  const result = await apiFetch<{ order: MipoOrder }>("/orders", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  return result.order;
+}
+
+export async function getShopOrder(orderIdOrNumber: string): Promise<MipoOrder> {
+  const result = await apiFetch<{ order: MipoOrder }>(`/orders/${encodeURIComponent(orderIdOrNumber)}`);
+  return result.order;
+}
+
+export async function getShopOrders(input: { ids?: string[]; email?: string } = {}): Promise<MipoOrder[]> {
+  const params = new URLSearchParams();
+  if (input.ids?.length) params.set("ids", input.ids.join(","));
+  if (input.email) params.set("email", input.email);
+  const query = params.toString();
+  const result = await apiFetch<{ orders: MipoOrder[] }>(`/orders${query ? `?${query}` : ""}`);
+  return result.orders;
+}
+
+export async function getAdminOrders(): Promise<MipoOrder[]> {
+  const result = await adminApiFetch<{ orders: MipoOrder[] }>("/admin/orders");
+  return result.orders;
+}
+
+export async function updateAdminOrder(
+  orderId: string,
+  updates: Partial<Pick<MipoOrder, "status" | "payment_status" | "shipping_status" | "tracking_number" | "special_instructions">>,
+): Promise<MipoOrder> {
+  const result = await adminApiFetch<{ order: MipoOrder }>(`/admin/orders/${orderId}`, {
+    method: "PATCH",
+    body: JSON.stringify(updates),
+  });
+  return result.order;
+}
+
+export async function bulkUpdateAdminOrders(ids: string[], updates: Partial<Pick<MipoOrder, "status">>) {
+  return adminApiFetch<{ updated: number }>("/admin/orders/bulk", {
+    method: "PATCH",
+    body: JSON.stringify({ ids, updates }),
   });
 }
 

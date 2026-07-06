@@ -165,13 +165,13 @@ export const shopRoutes: RouteObject[] = [
   { path: "/shop/feed", element: <LazyPage component={ShopFeed} pageName="Shop Feed" dark /> },
   
   { path: "/product/:id", element: <LazyPage component={ProductDetail} pageName="פרטי מוצר" /> },
-  { path: "/cart", element: <Protected><LazyPage component={Cart} pageName="עגלת קניות" /></Protected> },
+  { path: "/cart", element: <LazyPage component={Cart} pageName="עגלת קניות" /> },
   { path: "/favorites", element: <Protected><LazyPage component={Favorites} pageName="מועדפים" /></Protected> },
-  { path: "/checkout", element: <Protected><LazyPage component={Checkout} pageName="תשלום" /></Protected> },
-  { path: "/order-confirmation", element: <Protected><LazyPage component={OrderConfirmation} pageName="אישור הזמנה" /></Protected> },
+  { path: "/checkout", element: <LazyPage component={Checkout} pageName="תשלום" /> },
+  { path: "/order-confirmation", element: <LazyPage component={OrderConfirmation} pageName="אישור הזמנה" /> },
   { path: "/reorder-confirmation", element: <Protected><LazyPage component={ReorderConfirmation} pageName="אישור הזמנה מחדש" /></Protected> },
-  { path: "/order-history", element: <Protected><LazyPage component={OrderHistory} pageName="היסטוריית הזמנות" /></Protected> },
-  { path: "/order-tracking/:orderId", element: <Protected><LazyPage component={OrderTrackingPage} pageName="מעקב הזמנה" /></Protected> },
+  { path: "/order-history", element: <LazyPage component={OrderHistory} pageName="היסטוריית הזמנות" /> },
+  { path: "/order-tracking/:orderId", element: <LazyPage component={OrderTrackingPage} pageName="מעקב הזמנה" /> },
   
   { path: "/payment-success", element: <LazyPage component={PaymentSuccess} pageName="תשלום הצליח" /> },
   { path: "/payment-failed", element: <LazyPage component={PaymentFailed} pageName="תשלום נכשל" /> },

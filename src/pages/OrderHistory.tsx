@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Package, Clock, CheckCircle, Truck, XCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,10 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/contexts/CartContext";
-import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import { AppHeader } from "@/components/AppHeader";
+import { getShopOrders, type MipoOrder } from "@/lib/mipoApi";
 
 interface OrderItem {
   id: string;
@@ -32,7 +32,7 @@ interface Order {
   tax: number;
   total: number;
   payment_method: string;
-  shipping_address: any;
+  shipping_address: MipoOrder["shipping_address"];
   items: OrderItem[];
 }
 
@@ -44,39 +44,19 @@ const OrderHistory = () => {
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
 
-      // Fetch orders
-      const { data: ordersData, error: ordersError } = await supabase
-        .from("orders")
-        .select("*")
-        .order("order_date", { ascending: false });
+      const savedIds = JSON.parse(localStorage.getItem("mipo_order_ids") || "[]");
+      const savedContact = JSON.parse(localStorage.getItem("mipo_checkout_contact") || "{}");
+      const ordersWithItems = await getShopOrders({
+        ids: Array.isArray(savedIds) ? savedIds : [],
+        email: typeof savedContact.email === "string" ? savedContact.email : undefined,
+      });
 
-      if (ordersError) throw ordersError;
-
-      // Fetch order items for all orders
-      const orderIds = ordersData?.map((order) => order.id) || [];
-      const { data: itemsData, error: itemsError } = await supabase
-        .from("order_items")
-        .select("*")
-        .in("order_id", orderIds);
-
-      if (itemsError) throw itemsError;
-
-      // Combine orders with their items
-      const ordersWithItems = ordersData?.map((order) => ({
-        ...order,
-        items: itemsData?.filter((item) => item.order_id === order.id) || [],
-      })) || [];
-
-      setOrders(ordersWithItems);
-    } catch (error: any) {
+      setOrders(ordersWithItems as Order[]);
+    } catch (error: unknown) {
       console.error("Error fetching orders:", error);
       toast({
         title: "שגיאה",
@@ -86,7 +66,11 @@ const OrderHistory = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
   const getStatusIcon = (status: Order["status"]) => {
     switch (status) {
@@ -123,7 +107,7 @@ const OrderHistory = () => {
 
     order.items.forEach((item) => {
       addToCart({
-        id: `${item.product_name}-${Date.now()}-${Math.random()}`,
+        id: item.id || `${item.product_name}-${Date.now()}-${Math.random()}`,
         name: item.product_name,
         price: item.price,
         image: item.product_image,

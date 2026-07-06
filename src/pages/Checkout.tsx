@@ -12,12 +12,11 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
 import { AppHeader } from "@/components/AppHeader";
-import { CHECKOUT, SUCCESS } from "@/lib/brandVoice";
-import { differenceInYears } from "date-fns";
+import { CHECKOUT } from "@/lib/brandVoice";
+import { createShopOrder, MipoCoupon, validateCouponCode } from "@/lib/mipoApi";
 
 const shippingSchema = z.object({
   fullName: z.string().trim().min(2, "שם מלא חייב להכיל לפחות 2 תווים").max(100, "שם מלא חייב להכיל פחות מ-100 תווים"),
@@ -28,14 +27,6 @@ const shippingSchema = z.object({
   zipCode: z.string().trim().regex(/^[0-9]{5,7}$/, "מיקוד חייב להכיל 5-7 ספרות"),
 });
 
-interface Coupon {
-  id: string;
-  code: string;
-  discount_type: string;
-  discount_value: number;
-  min_order_amount: number;
-}
-
 const Checkout = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -44,7 +35,7 @@ const Checkout = () => {
   const [paymentMethod, setPaymentMethod] = useState("credit-card");
   const [installments, setInstallments] = useState(1);
   const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<MipoCoupon | null>(null);
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
   const [wantRecurringOrder, setWantRecurringOrder] = useState(false);
   const [shippingData, setShippingData] = useState({
@@ -57,9 +48,8 @@ const Checkout = () => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isUnder18, setIsUnder18] = useState<boolean | null>(null);
-  const [ageCheckLoading, setAgeCheckLoading] = useState(true);
-  const [profileLoaded, setProfileLoaded] = useState(false);
+  const isUnder18 = false;
+  const ageCheckLoading = false;
 
   // Load coupon from sessionStorage (applied in Cart)
   useEffect(() => {
@@ -74,61 +64,24 @@ const Checkout = () => {
     }
   }, []);
 
-  // Check user age and pre-fill shipping data on component mount
+  // Pre-fill the guest checkout form from the last AWS order/contact on this browser.
   useEffect(() => {
-    const loadUserProfile = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          navigate("/auth");
-          return;
-        }
-
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('birthdate, first_name, last_name, full_name, email, phone, street, house_number, apartment_number, city, postal_code')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        // Check age
-        if (profile?.birthdate) {
-          const birthdate = new Date(profile.birthdate);
-          const age = differenceInYears(new Date(), birthdate);
-          setIsUnder18(age < 18);
-        } else {
-          setIsUnder18(false);
-        }
-
-        // Pre-fill shipping data from profile
-        if (profile && !profileLoaded) {
-          const fullName = profile.full_name || 
-            [profile.first_name, profile.last_name].filter(Boolean).join(' ') || 
-            '';
-          
-          const address = [profile.street, profile.house_number, profile.apartment_number ? `דירה ${profile.apartment_number}` : '']
-            .filter(Boolean)
-            .join(' ') || '';
-
-          setShippingData(prev => ({
-            fullName: prev.fullName || fullName,
-            email: prev.email || profile.email || user.email || '',
-            phone: prev.phone || profile.phone?.replace(/^0/, '') || '',
-            address: prev.address || address,
-            city: prev.city || profile.city || '',
-            zipCode: prev.zipCode || profile.postal_code || '',
-          }));
-          setProfileLoaded(true);
-        }
-      } catch (error) {
-        console.error("Error loading profile:", error);
-        setIsUnder18(false);
-      } finally {
-        setAgeCheckLoading(false);
-      }
-    };
-
-    loadUserProfile();
-  }, [navigate, profileLoaded]);
+    try {
+      const savedContact = localStorage.getItem("mipo_checkout_contact");
+      if (!savedContact) return;
+      const contact = JSON.parse(savedContact);
+      setShippingData((prev) => ({
+        fullName: prev.fullName || contact.fullName || "",
+        email: prev.email || contact.email || "",
+        phone: prev.phone || contact.phone || "",
+        address: prev.address || contact.address || "",
+        city: prev.city || contact.city || "",
+        zipCode: prev.zipCode || contact.zipCode || "",
+      }));
+    } catch {
+      // Ignore stale local data.
+    }
+  }, []);
 
   const subtotal = getSubtotal();
   const baseShipping = subtotal >= 199 ? 0 : 25;
@@ -153,37 +106,12 @@ const Checkout = () => {
     
     setIsValidatingCoupon(true);
     try {
-      const { data, error } = await supabase
-        .from('coupons')
-        .select('*')
-        .eq('code', couponCode.toUpperCase())
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (error) throw error;
+      const data = await validateCouponCode(couponCode, subtotal);
 
       if (!data) {
         toast({
           title: "קופון לא תקין",
           description: "הקופון שהזנת לא קיים או לא פעיל",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (data.min_order_amount && subtotal < data.min_order_amount) {
-        toast({
-          title: "מינימום הזמנה",
-          description: `הזמנה מינימלית לקופון זה: ₪${data.min_order_amount}`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (data.max_uses && data.used_count >= data.max_uses) {
-        toast({
-          title: "קופון מנוצל",
-          description: "הקופון הזה כבר נוצל עד תום",
           variant: "destructive",
         });
         return;
@@ -203,8 +131,8 @@ const Checkout = () => {
     } catch (error) {
       console.error("Error validating coupon:", error);
       toast({
-        title: "שגיאה",
-        description: "לא ניתן לבדוק את הקופון",
+        title: "קופון לא תקין",
+        description: "הקופון שהזנת לא קיים או לא פעיל",
         variant: "destructive",
       });
     } finally {
@@ -321,16 +249,10 @@ const Checkout = () => {
         return;
       }
 
-      console.log('Starting payment request with total:', orderTotal);
-      const clientRequestId = crypto.randomUUID();
-      const clientDebugVersion = 'checkout@2026-02-14-debug-v1';
-
-      // Call the edge function to create payment and order
-      // Calculate shipping discount for free shipping coupons
-      const shippingDiscount = isFreeShippingCoupon ? baseShipping : 0;
-      
-      const paymentPayload = {
+      const order = await createShopOrder({
         items: items.map(item => ({
+          id: item.id,
+          product_id: item.id,
           name: item.name,
           price: item.price,
           quantity: item.quantity,
@@ -341,155 +263,55 @@ const Checkout = () => {
         shipping_address: shippingData,
         payment_method: paymentMethod,
         installments: installments,
-        subtotal: subtotal,
-        shipping: shipping,
-        original_shipping: baseShipping,
-        shipping_discount: shippingDiscount,
-        tax: 0,
-        total: orderTotal,
-        coupon_id: appliedCoupon?.id,
-        discount_amount: discount,
-        success_url: `${window.location.origin}/payment-success`,
-        cancel_url: `${window.location.origin}/payment-failed`,
-        client_request_id: clientRequestId,
-      };
-
-      console.log('PAYMENT_PAYLOAD', JSON.stringify(paymentPayload));
-      console.log('PAYMENT_TRACE_CLIENT', JSON.stringify({
-        client_debug_version: clientDebugVersion,
-        client_request_id: clientRequestId,
-        expected_auth_param_name: 'UserName',
-      }));
-
-      const { data, error } = await supabase.functions.invoke('create-shop-payment', {
-        body: paymentPayload
+        coupon_code: appliedCoupon?.code,
+        want_recurring_order: wantRecurringOrder,
       });
 
-      console.log('Payment response:', JSON.stringify(data), 'Error:', JSON.stringify(error));
-      if (data?.debug) {
-        console.log('PAYMENT_TRACE_SERVER_DEBUG', JSON.stringify(data.debug));
+      const orderDetails = {
+        orderId: order.order_number,
+        orderUuid: order.id,
+        items,
+        shippingData: order.shipping_address || shippingData,
+        paymentMethod: order.payment_method,
+        subtotal: order.subtotal,
+        shipping: order.shipping,
+        tax: order.tax,
+        discount: order.discount_amount,
+        cashOnDeliveryFee: order.cash_on_delivery_fee,
+        total: order.total,
+        orderDate: order.order_date,
+      };
+
+      localStorage.setItem("lastOrder", JSON.stringify(orderDetails));
+      localStorage.setItem("mipo_checkout_contact", JSON.stringify(shippingData));
+
+      try {
+        const existingIds = JSON.parse(localStorage.getItem("mipo_order_ids") || "[]");
+        const nextIds = Array.from(new Set([order.id, ...(Array.isArray(existingIds) ? existingIds : [])])).slice(0, 50);
+        localStorage.setItem("mipo_order_ids", JSON.stringify(nextIds));
+      } catch {
+        localStorage.setItem("mipo_order_ids", JSON.stringify([order.id]));
       }
 
-      if (error) {
-        console.error('Edge function error:', error);
-        let detailedMessage = error.message || 'שגיאה בתקשורת עם השרת';
-        const responseContext = (error as any)?.context;
-
-        if (responseContext instanceof Response) {
-          try {
-            const errorBody = await responseContext.clone().json();
-            const parts = [errorBody?.error, errorBody?.details].filter(Boolean);
-            if (parts.length > 0) {
-              detailedMessage = parts.join(': ');
-            }
-            if (errorBody?.debug) {
-              console.error('PAYMENT_TRACE_SERVER_DEBUG', errorBody.debug);
-            }
-            console.error('Edge function error body:', errorBody, 'status:', responseContext.status);
-          } catch {
-            try {
-              const errorText = await responseContext.clone().text();
-              if (errorText) {
-                detailedMessage = errorText;
-              }
-              console.error('Edge function error text:', errorText, 'status:', responseContext.status);
-            } catch {
-              // keep fallback message
-            }
-          }
-        }
-
-        throw new Error(detailedMessage);
-      }
-
-      // Check for error in response data
-      if (data?.error) {
-        console.error('Payment error in response:', data.error);
-        throw new Error(data.error);
-      }
-
-      if (!data) {
-        throw new Error('לא התקבלה תגובה מהשרת');
-      }
-
-      // If we got a payment URL (CardCom), redirect to it
-      if (data.payment_url) {
-        // Store order details for after payment
-        const orderDetails = {
-          orderId: data.order_number,
-          items,
-          shippingData,
-          paymentMethod,
-          subtotal,
-          shipping,
-          total: orderTotal,
-          orderDate: new Date().toISOString(),
-        };
-        localStorage.setItem("pendingOrder", JSON.stringify(orderDetails));
-        
-        console.log('Redirecting to CardCom:', data.payment_url);
-        // Redirect to CardCom payment page
-        window.location.href = data.payment_url;
-        return;
-      }
-
-      // For cash on delivery or dev mode - direct success
-      if (data.success && data.redirect_url) {
-        const orderDetails = {
-          orderId: data.order_number,
-          items,
-          shippingData,
-          paymentMethod,
-          subtotal,
-          shipping,
-          total: orderTotal,
-          orderDate: new Date().toISOString(),
-        };
-        localStorage.setItem("lastOrder", JSON.stringify(orderDetails));
-        clearCart();
-        
-        if (data.dev_mode) {
-          toast({
-            title: "מצב פיתוח",
-            description: "ההזמנה נשמרה ללא חיוב אמיתי (CardCom לא מוגדר)",
-          });
-        }
-        
-        navigate("/order-confirmation", { state: { order: orderDetails } });
-        return;
-      }
-
-      // If we have success but no payment_url or redirect_url, check for order_id
-      if (data.success && data.order_id) {
-        const orderDetails = {
-          orderId: data.order_number || data.order_id,
-          items,
-          shippingData,
-          paymentMethod,
-          subtotal,
-          shipping,
-          total: orderTotal,
-          orderDate: new Date().toISOString(),
-        };
-        localStorage.setItem("lastOrder", JSON.stringify(orderDetails));
-        clearCart();
-        navigate("/order-confirmation", { state: { order: orderDetails } });
-        return;
-      }
-
-      throw new Error("תגובה לא צפויה מהשרת");
-    } catch (error: any) {
+      clearCart();
+      toast({
+        title: "ההזמנה נשמרה",
+        description: paymentMethod === "cash-on-delivery" ? "התשלום יתבצע במסירה" : "התשלום סומן במצב פיתוח עד חיבור ספק סליקה ב-AWS",
+      });
+      navigate("/order-confirmation", { state: { order: orderDetails } });
+    } catch (error: unknown) {
       console.error("Error placing order:", error);
       setIsProcessing(false);
       
       // More specific error messages
+      const message = error instanceof Error ? error.message : "";
       let errorMessage = "נכשל בביצוע ההזמנה. אנא נסה שוב.";
-      if (error.message?.includes('Failed to send')) {
+      if (message.includes('Failed to send')) {
         errorMessage = "שגיאת תקשורת - נסה שוב";
-      } else if (error.message?.includes('נדרשת התחברות')) {
+      } else if (message.includes('נדרשת התחברות')) {
         errorMessage = "נא להתחבר מחדש ולנסות שוב";
-      } else if (error.message) {
-        errorMessage = error.message;
+      } else if (message) {
+        errorMessage = message;
       }
       
       toast({

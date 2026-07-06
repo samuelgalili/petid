@@ -12,14 +12,43 @@ import { AppHeader } from "@/components/AppHeader";
 import { useActivePet } from "@/hooks/useActivePet";
 import { toast } from "sonner";
 
+interface ConfirmationItem {
+  id?: string;
+  name: string;
+  image?: string;
+  price: number;
+  quantity: number;
+  variant?: string | null;
+  size?: string | null;
+}
+
+interface ConfirmationShippingData {
+  fullName: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  zipCode: string;
+}
+
+interface ConfirmationPet {
+  name: string;
+  weight?: number | null;
+  pet_type?: string | null;
+  breed?: string | null;
+}
+
 interface OrderDetails {
   orderId: string;
-  items: any[];
-  shippingData: any;
+  orderUuid?: string;
+  items: ConfirmationItem[];
+  shippingData: ConfirmationShippingData;
   paymentMethod: string;
   subtotal: number;
   shipping: number;
   tax: number;
+  discount?: number;
+  cashOnDeliveryFee?: number;
   total: number;
   orderDate: string;
 }
@@ -48,9 +77,9 @@ function parseBagKg(name: string): number {
 
 // ── Health Score Section ──
 
-const HealthScoreUpdate = ({ pet, items }: { pet: any; items: any[] }) => {
+const HealthScoreUpdate = ({ pet, items }: { pet: ConfirmationPet; items: ConfirmationItem[] }) => {
   const impact = useMemo(() => {
-    const cartText = items.map((i: any) => i.name?.toLowerCase() || "").join(" ");
+    const cartText = items.map((i) => i.name?.toLowerCase() || "").join(" ");
     let boost = 0;
     const areas: string[] = [];
 
@@ -126,14 +155,14 @@ const HealthScoreUpdate = ({ pet, items }: { pet: any; items: any[] }) => {
 
 // ── Peace of Mind Summary ──
 
-const PeaceOfMindSummary = ({ pet, items }: { pet: any; items: any[] }) => {
+const PeaceOfMindSummary = ({ pet, items }: { pet: ConfirmationPet; items: ConfirmationItem[] }) => {
   const inventoryDays = useMemo(() => {
     if (!pet.weight) return null;
     let maxDays = 0;
     for (const item of items) {
       const bagKg = parseBagKg(item.name || "");
       if (bagKg > 0) {
-        const dailyG = estimateDailyGrams(pet.weight, pet.pet_type);
+        const dailyG = estimateDailyGrams(pet.weight || null, pet.pet_type || "dog");
         if (dailyG > 0) {
           const days = Math.round((bagKg * 1000 * (item.quantity || 1)) / dailyG);
           if (days > maxDays) maxDays = days;
@@ -198,7 +227,7 @@ const PeaceOfMindSummary = ({ pet, items }: { pet: any; items: any[] }) => {
 
 // ── Social Health ID Card ──
 
-const SocialHealthCard = ({ pet }: { pet: any }) => {
+const SocialHealthCard = ({ pet }: { pet: ConfirmationPet }) => {
   const handleShare = async () => {
     const shareText = `✅ ${pet.name} (${pet.breed || pet.pet_type}) — מעודכנ/ת בחיסונים ותזונה! ציון בריאות: 100% 🐾 #PetID #HealthyPet`;
 
@@ -264,21 +293,28 @@ const SocialHealthCard = ({ pet }: { pet: any }) => {
 const OrderConfirmation = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const order = location.state?.order as OrderDetails;
+  const order = useMemo(() => {
+    const stateOrder = location.state?.order as OrderDetails | undefined;
+    if (stateOrder) return stateOrder;
+    try {
+      const savedOrder = localStorage.getItem("lastOrder");
+      return savedOrder ? JSON.parse(savedOrder) as OrderDetails : null;
+    } catch {
+      return null;
+    }
+  }, [location.state]);
   const { pet } = useActivePet();
+  const confirmationPet = pet as ConfirmationPet | null;
 
   useEffect(() => {
     if (!order) {
-      const savedOrder = localStorage.getItem("lastOrder");
-      if (!savedOrder) {
-        navigate("/");
-      }
+      navigate("/");
     }
   }, [order, navigate]);
 
   if (!order) return null;
 
-  const orderTotal = order.total + (order.paymentMethod === "cash-on-delivery" ? 5 : 0);
+  const orderTotal = order.total;
 
   return (
     <div className="min-h-screen pb-20 bg-background" dir="rtl">
@@ -296,10 +332,10 @@ const OrderConfirmation = () => {
             <Heart className="w-12 h-12 text-primary" strokeWidth={1.5} />
           </div>
           <h1 className="text-2xl font-bold text-foreground mb-2 text-center">
-            {pet ? `${pet.name} מודה לך!` : "הזמנה אושרה!"}
+            {confirmationPet ? `${confirmationPet.name} מודה לך!` : "הזמנה אושרה!"}
           </h1>
           <p className="text-muted-foreground text-center text-sm">
-            {pet ? "מדד הבריאות השתפר בזכות הרכישה" : "תודה על ההזמנה שלך"}
+            {confirmationPet ? "מדד הבריאות השתפר בזכות הרכישה" : "תודה על ההזמנה שלך"}
           </p>
         </motion.div>
       </div>
@@ -319,13 +355,13 @@ const OrderConfirmation = () => {
         </motion.div>
 
         {/* Health Score Update */}
-        {pet && <HealthScoreUpdate pet={pet} items={order.items} />}
+        {confirmationPet && <HealthScoreUpdate pet={confirmationPet} items={order.items} />}
 
         {/* Peace of Mind Summary */}
-        {pet && <PeaceOfMindSummary pet={pet} items={order.items} />}
+        {confirmationPet && <PeaceOfMindSummary pet={confirmationPet} items={order.items} />}
 
         {/* Social Health ID Card */}
-        {pet && <SocialHealthCard pet={pet} />}
+        {confirmationPet && <SocialHealthCard pet={confirmationPet} />}
 
         {/* Confirmation Email */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
@@ -375,10 +411,10 @@ const OrderConfirmation = () => {
               <h3 className="font-bold text-foreground">פריטים בהזמנה ({order.items.length})</h3>
             </div>
             <div className="space-y-3">
-              {order.items.map((item: any, index: number) => (
+              {order.items.map((item, index) => (
                 <div key={index} className="flex gap-3">
                   <div className="w-16 h-16 rounded-xl overflow-hidden bg-muted flex-shrink-0">
-                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    <img src={item.image || "/placeholder.svg"} alt={item.name} className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-foreground text-sm line-clamp-2">{item.name}</h4>
@@ -412,7 +448,7 @@ const OrderConfirmation = () => {
             {order.paymentMethod === "cash-on-delivery" && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">עמלת מזומן</span>
-                <span className="font-semibold text-foreground">₪5.00</span>
+                <span className="font-semibold text-foreground">₪{(order.cashOnDeliveryFee || 5).toFixed(2)}</span>
               </div>
             )}
             <div className="text-xs text-muted-foreground">* המחירים כוללים מע״מ</div>

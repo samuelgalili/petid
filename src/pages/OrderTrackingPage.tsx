@@ -1,14 +1,12 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { supabase } from '@/integrations/supabase/client';
 import {
   ArrowRight, Package, Plane, Truck, MapPin,
   CheckCircle2, Clock, ShoppingBag, AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ShipmentTracker } from '@/components/shipping/ShipmentTracker';
-import { useEffect, useState } from 'react';
+import { getShopOrder } from '@/lib/mipoApi';
 
 const milestoneSteps = [
   { key: 'label_created', label: 'ההזמנה התקבלה', sublabel: 'Order Placed', icon: ShoppingBag },
@@ -39,55 +37,12 @@ const OrderTrackingPage = () => {
   const { data: order, isLoading: orderLoading } = useQuery({
     queryKey: ['order-detail', orderId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('id', orderId!)
-        .single();
-      if (error) throw error;
-      return data;
+      return getShopOrder(orderId!);
     },
     enabled: !!orderId,
   });
 
-  const { data: tracking } = useQuery({
-    queryKey: ['shipment-tracking-page', orderId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('shipment_tracking' as any)
-        .select('*')
-        .eq('order_id', orderId!)
-        .maybeSingle();
-      if (error) throw error;
-      return data as any;
-    },
-    enabled: !!orderId,
-  });
-
-  // Realtime subscription
-  const [realtimeStatus, setRealtimeStatus] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!orderId) return;
-    const channel = supabase
-      .channel(`tracking-${orderId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'shipment_tracking',
-          filter: `order_id=eq.${orderId}`,
-        },
-        (payload) => {
-          setRealtimeStatus((payload.new as any).current_status);
-        }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [orderId]);
-
-  const currentStatus = realtimeStatus || tracking?.current_status || order?.shipping_status || 'label_created';
+  const currentStatus = order?.shipping_status || 'label_created';
   const activeStep = getStepIndex(currentStatus);
   const isFailed = currentStatus === 'delivery_failed';
 
@@ -132,11 +87,11 @@ const OrderTrackingPage = () => {
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="text-base font-semibold leading-snug truncate">
-                {(order as any)?.special_instructions || order?.order_number || 'הזמנה'}
+                {order?.special_instructions || order?.order_number || 'הזמנה'}
               </h2>
-              {(order as any)?.pet_name && (
+              {order?.pet_name && (
                 <p className="text-sm text-muted-foreground mt-0.5">
-                  🐾 עבור {(order as any).pet_name}
+                  🐾 עבור {order.pet_name}
                 </p>
               )}
               <p className="text-xs text-muted-foreground mt-1">
@@ -226,11 +181,9 @@ const OrderTrackingPage = () => {
                       }`}>
                         {step.sublabel}
                       </p>
-                      {isCurrent && tracking?.estimated_delivery && (
+                      {isCurrent && currentStatus === 'label_created' && (
                         <p className="text-xs text-primary mt-1.5 font-medium">
-                          צפי הגעה: {new Date(tracking.estimated_delivery).toLocaleDateString('he-IL', {
-                            day: 'numeric', month: 'long',
-                          })}
+                          פרטי שילוח יופיעו לאחר העברת ההזמנה לטיפול
                         </p>
                       )}
                     </div>
@@ -240,18 +193,6 @@ const OrderTrackingPage = () => {
             </div>
           </div>
         </motion.div>
-
-        {/* ─── Detailed Tracking (ShipmentTracker) ─── */}
-        {tracking && (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-            className="rounded-[20px] bg-card border border-border/50 overflow-hidden shadow-sm"
-          >
-            <ShipmentTracker orderId={orderId!} />
-          </motion.div>
-        )}
       </div>
     </div>
   );
