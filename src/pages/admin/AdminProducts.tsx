@@ -22,7 +22,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useAuditLog } from "@/hooks/useAuditLog";
-import { ProductBulkActions, ProductKeyboardShortcutsHelp, InlineEditCell } from "@/components/admin/products";
+import { ProductBulkActions } from "@/components/admin/products/ProductBulkActions";
+import { ProductKeyboardShortcutsHelp } from "@/components/admin/products/ProductKeyboardShortcutsHelp";
+import { InlineEditCell } from "@/components/admin/products/InlineEditCell";
 import { useProductKeyboardShortcuts } from "@/hooks/useProductKeyboardShortcuts";
 import { normalizeProductPetType } from "@/lib/productStore";
 import {

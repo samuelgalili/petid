@@ -397,6 +397,11 @@ export interface MipoDataExport {
   vaccinations: MipoVaccination[];
 }
 
+export interface MipoPublicPet {
+  pet: MipoPet;
+  owner: Pick<MipoProfile, "full_name" | "phone" | "city"> | null;
+}
+
 export interface MipoAdminAnalytics {
   orders: Array<Pick<MipoOrder, "id" | "status" | "total" | "created_at"> & { user_id?: string | null }>;
   pets: Array<Pick<MipoPet, "id" | "type" | "breed" | "birth_date" | "medical_conditions" | "is_neutered" | "last_vet_visit" | "created_at" | "user_id"> & {
@@ -649,6 +654,21 @@ export async function getMyPets(input: { archived?: boolean | "all" } = {}): Pro
 export async function getMyPet(petId: string): Promise<MipoPet> {
   const result = await apiFetch<{ pet: MipoPet }>(`/me/pets/${petId}`);
   return result.pet;
+}
+
+export async function getPublicPet(petId: string): Promise<MipoPublicPet> {
+  return apiFetch<MipoPublicPet>(`/public/pets/${encodeURIComponent(petId)}`);
+}
+
+export async function logPublicPetScan(petId: string, input: {
+  latitude?: number | null;
+  longitude?: number | null;
+  user_agent?: string | null;
+}): Promise<{ logged: boolean }> {
+  return apiFetch<{ logged: boolean }>(`/public/pets/${encodeURIComponent(petId)}/qr-scan`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
 
 export async function createMyPet(input: Partial<MipoPet> & {

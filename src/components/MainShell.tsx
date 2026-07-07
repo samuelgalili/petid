@@ -1,21 +1,18 @@
 /**
- * MainShell — Persistent Feed + Overlay Navigation
+ * MainShell — Persistent Home + Overlay Navigation
  * ==================================================
- * The Feed (SoundtrackFeed) is mounted as the base layer for feed-like routes.
+ * The AWS-backed profile/home screen is mounted as the base layer.
  * Chat, Shop, and Dashboard render as full-screen overlays on top.
  */
 import { lazy, Suspense } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import { useOverlayNav } from "@/contexts/OverlayNavContext";
 
-const SoundtrackFeed = lazy(() => import("@/pages/SoundtrackFeed"));
 const Chat = lazy(() => import("@/pages/Chat"));
 const Shop = lazy(() => import("@/pages/Shop"));
 const ProfilePage = lazy(() => import("@/pages/Profile"));
-const PublicPetProfile = lazy(() => import("@/components/PublicPetProfile"));
 
 const overlayVariants = {
   hidden: { y: "100%" },
@@ -39,19 +36,18 @@ const LoadingFallback = () => (
 
 const MainShell = () => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { dashboardOpen, closeDashboard, publicPetId, closePublicPet } = useOverlayNav();
+  const { dashboardOpen, closeDashboard } = useOverlayNav();
 
   const showChat = location.pathname === "/chat";
   const showShop = location.pathname === "/shop" || location.pathname.startsWith("/shop/");
-  const shouldMountFeed = !showShop;
+  const shouldMountHome = !showShop;
 
   return (
     <div className="relative min-h-screen">
-      {/* ═══ BASE LAYER: Feed ═══ */}
-      {shouldMountFeed && (
+      {/* ═══ BASE LAYER: AWS-backed home/profile ═══ */}
+      {shouldMountHome && (
         <Suspense fallback={<LoadingFallback />}>
-          <SoundtrackFeed />
+          <ProfilePage />
         </Suspense>
       )}
 
@@ -121,15 +117,6 @@ const MainShell = () => {
               <ProfilePage />
             </Suspense>
           </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ═══ OVERLAY: Public Pet Profile ═══ */}
-      <AnimatePresence>
-        {publicPetId && (
-          <Suspense fallback={<LoadingFallback />}>
-            <PublicPetProfile petId={publicPetId} onClose={closePublicPet} />
-          </Suspense>
         )}
       </AnimatePresence>
 

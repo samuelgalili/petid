@@ -34,7 +34,6 @@ import { useToast } from "@/hooks/use-toast";
 import { normalizeProductPetType } from "@/lib/productStore";
 import { createAdminProduct, invokeProductIntelFunction } from "@/lib/mipoApi";
 import { BulkProductImport } from "./BulkProductImport";
-import { CompetitorPriceManager } from "./products/CompetitorPriceManager";
 
 interface ScrapedProductVariant {
   label: string;
@@ -1707,13 +1706,6 @@ export const ProductFormDialog = ({
                 </div>
               </div>
 
-              {/* Competitor Price Comparison */}
-              <CompetitorPriceManager
-                productName={product.name || ""}
-                currentPrice={product.price}
-                sku={product.sku || undefined}
-                onPriceSelect={(price) => onProductChange({ ...product, price })}
-              />
             </div>
 
             {/* Switches */}

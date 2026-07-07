@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SEO } from "@/components/SEO";
-import { supabase } from "@/integrations/supabase/client";
+import { getPublicPet, logPublicPetScan } from "@/lib/mipoApi";
 
 interface PetData {
   id: string;
@@ -56,12 +56,11 @@ const FoundPet = () => {
 
   const logQrScan = (petId: string) => {
     const doLog = (lat?: number, lng?: number) => {
-      supabase.from("qr_scan_logs").insert({
-        pet_id: petId,
+      logPublicPetScan(petId, {
         latitude: lat ?? null,
         longitude: lng ?? null,
         user_agent: navigator.userAgent,
-      } as any).then(() => {});
+      }).catch(() => {});
     };
 
     if (navigator.geolocation) {
@@ -78,31 +77,16 @@ const FoundPet = () => {
     const fetchPet = async () => {
       if (!petId) { setNotFound(true); setLoading(false); return; }
 
-      const { data: petData, error } = await supabase
-        .from("pets")
-        .select("*")
-        .eq("id", petId)
-        .maybeSingle();
-
-      if (error || !petData) {
+      try {
+        const publicPet = await getPublicPet(petId);
+        setPet(publicPet.pet as unknown as PetData);
+        setOwner(publicPet.owner);
+        logQrScan(petId);
+      } catch {
         setNotFound(true);
         setLoading(false);
         return;
       }
-
-      setPet(petData as unknown as PetData);
-
-      // Fetch owner basic info (only name + city for display, phone if allowed)
-      const { data: ownerData } = await supabase
-        .from("profiles")
-        .select("full_name, phone, city")
-        .eq("id", petData.user_id)
-        .maybeSingle();
-
-      if (ownerData) setOwner(ownerData);
-
-      // Log the QR scan with GPS if available
-      logQrScan(petId);
 
       setLoading(false);
     };

@@ -1344,6 +1344,59 @@ const getUserPet = async (userId, petId) => {
   return result.rows[0] ? serializePet(result.rows[0]) : null;
 };
 
+const getPublicPet = async (petId) => {
+  if (!uuidPattern.test(String(petId || ""))) return null;
+  const result = await pool.query(
+    `
+      select
+        p.*,
+        pr.full_name as owner_full_name,
+        pr.phone as owner_phone,
+        pr.city as owner_city
+      from public.pets p
+      left join public.profiles pr on pr.id = p.user_id
+      where p.id = $1
+      limit 1
+    `,
+    [petId],
+  );
+
+  const row = result.rows[0];
+  if (!row) return null;
+  return {
+    pet: serializePet(row),
+    owner: {
+      full_name: row.owner_full_name || null,
+      phone: row.owner_phone || null,
+      city: row.owner_city || null,
+    },
+  };
+};
+
+const logPublicPetQrScan = async (petId, body, request) => {
+  if (!uuidPattern.test(String(petId || ""))) return false;
+
+  try {
+    await pool.query(
+      `
+        insert into public.qr_scan_logs (pet_id, latitude, longitude, ip_address, user_agent)
+        values ($1, $2, $3, $4, $5)
+      `,
+      [
+        petId,
+        body.latitude === undefined || body.latitude === null ? null : Number(body.latitude),
+        body.longitude === undefined || body.longitude === null ? null : Number(body.longitude),
+        request.headers["x-forwarded-for"]?.split(",")[0]?.trim() || request.socket.remoteAddress || null,
+        body.user_agent || request.headers["user-agent"] || null,
+      ],
+    );
+    return true;
+  } catch (error) {
+    console.warn("Failed to log QR scan", error.message);
+    return false;
+  }
+};
+
 const updateUserPet = async (userId, petId, body) => {
   if (!uuidPattern.test(petId)) return null;
   const payload = normalizePetPayload(body, { partial: true });
@@ -4113,6 +4166,25 @@ const handleRequest = async (request, response) => {
       }
 
       sendJson(response, 200, auth);
+      return;
+    }
+
+    const publicPetMatch = url.pathname.match(/^\/api\/public\/pets\/([0-9a-fA-F-]{36})$/);
+    if (publicPetMatch && request.method === "GET") {
+      const publicPet = await getPublicPet(publicPetMatch[1]);
+      if (!publicPet) {
+        sendError(response, 404, "Pet not found");
+        return;
+      }
+      sendJson(response, 200, publicPet);
+      return;
+    }
+
+    const publicPetScanMatch = url.pathname.match(/^\/api\/public\/pets\/([0-9a-fA-F-]{36})\/qr-scan$/);
+    if (publicPetScanMatch && request.method === "POST") {
+      sendJson(response, 201, {
+        logged: await logPublicPetQrScan(publicPetScanMatch[1], await readBody(request), request),
+      });
       return;
     }
 

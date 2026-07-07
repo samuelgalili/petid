@@ -42,16 +42,7 @@ const navGroups: NavGroup[] = [
     label: "ראשי",
     icon: LayoutDashboard,
     items: [
-      { icon: Crown, label: "Sovereign Dashboard", href: "/admin/sovereign" },
-      { icon: Crown, label: "דשבורד מנכ״ל", href: "/admin/ceo" },
-      { icon: Zap, label: "מרכז פיקוד", href: "/admin/command-center" },
-      { icon: Brain, label: "דשבורד", href: "/admin/growo" },
       { icon: BarChart3, label: "אנליטיקות", href: "/admin/analytics" },
-      { icon: Wallet, label: "כספים", href: "/admin/financial" },
-      { icon: ListTodo, label: "משימות", href: "/admin/tasks" },
-      { icon: CalendarDays, label: "יומן", href: "/admin/calendar" },
-      { icon: Crown, label: "AI Control Room", href: "/admin/control-room" },
-      { icon: Eye, label: "Brain Dashboard", href: "/admin/brain-dashboard" },
     ]
   },
   {
@@ -59,68 +50,18 @@ const navGroups: NavGroup[] = [
     icon: ShoppingCart,
     items: [
       { icon: Package, label: "מוצרים", href: "/admin/products" },
-      { icon: ShieldAlert, label: "תור ביקורת", href: "/admin/review-queue" },
+      { icon: PackageSearch, label: "ייבוא מהיר", href: "/admin/quick-import" },
       { icon: Sparkles, label: "עורך חכם", href: "/admin/smart-editor" },
-      { icon: FolderTree, label: "קטגוריות", href: "/admin/categories" },
-      { icon: DollarSign, label: "תמחור", href: "/admin/pricing" },
-      { icon: Ticket, label: "קופונים", href: "/admin/coupons" },
       { icon: ShoppingCart, label: "הזמנות", href: "/admin/orders" },
-      { icon: Truck, label: "משלוחים", href: "/admin/shipping" },
-      { icon: RotateCcw, label: "החזרות", href: "/admin/returns" },
-      { icon: Boxes, label: "מלאי", href: "/admin/inventory" },
-      { icon: Truck, label: "ספקים", href: "/admin/suppliers" },
-      { icon: ShoppingCart, label: "הזמנות רכש", href: "/admin/purchase-orders" },
-      { icon: Receipt, label: "חשבוניות", href: "/admin/invoices" },
-      { icon: FileCheck, label: "ביקורת ספקים", href: "/admin/vendor-audit" },
-      { icon: Sparkles, label: "משא״מ ספקים AI", href: "/admin/supplier-negotiation" },
-      { icon: Megaphone, label: "שיווק", href: "/admin/marketing" },
-    ]
-  },
-  {
-    label: "לקוחות וקהילה",
-    icon: Users,
-    items: [
-      { icon: Contact, label: "CRM", href: "/admin/crm" },
-      { icon: UserPlus, label: "לידים", href: "/admin/leads" },
-      { icon: Users2, label: "פילוח", href: "/admin/segments" },
-      
-      { icon: CreditCard, label: "חובות", href: "/admin/debts" },
-      { icon: Headphones, label: "תמיכה", href: "/admin/helpdesk" },
-      { icon: Bot, label: "שירות AI", href: "/admin/ai-service" },
-      { icon: Heart, label: "אימוץ", href: "/admin/adoption" },
-      { icon: MapPin, label: "פארקים", href: "/admin/parks" },
-      { icon: Store, label: "עסקים", href: "/admin/business" },
-      { icon: Building2, label: "סניפים", href: "/admin/branches" },
-    ]
-  },
-  {
-    label: "תוכן ונתונים",
-    icon: FileText,
-    items: [
-      { icon: DatabaseIcon, label: "Data Hub", href: "/admin/data-hub" },
-      { icon: Tv, label: "ניהול פיד", href: "/admin/feed-manager" },
-      { icon: PlaySquare, label: "סטוריז", href: "/admin/stories" },
-      { icon: FileText, label: "בלוג", href: "/admin/blog" },
-      { icon: Flag, label: "דיווחים", href: "/admin/reports" },
-      { icon: Bot, label: "סקראפר", href: "/admin/scraper" },
-      { icon: Upload, label: "ייבוא נתונים", href: "/admin/data-import" },
-      { icon: FileText, label: "אימות OCR", href: "/admin/ocr-verification" },
+      { icon: Ticket, label: "קופונים", href: "/admin/coupons" },
     ]
   },
   {
     label: "הגדרות מערכת",
     icon: Settings,
     items: [
-      { icon: Users, label: "משתמשים וצוות", href: "/admin/users" },
-      { icon: Shield, label: "תפקידים", href: "/admin/roles" },
-      { icon: Zap, label: "אוטומציות", href: "/admin/automations" },
-      { icon: Clock, label: "מעקב שעות", href: "/admin/time-tracking" },
-      { icon: Bell, label: "מרכז התראות", href: "/admin/notifications" },
-      { icon: Plug, label: "אינטגרציות", href: "/admin/integrations" },
-      { icon: Webhook, label: "Webhooks", href: "/admin/webhooks" },
-      { icon: History, label: "לוג פעילות", href: "/admin/audit" },
-      { icon: HardDrive, label: "גיבוי", href: "/admin/backup" },
       { icon: Settings, label: "הגדרות", href: "/admin/settings" },
+      { icon: FolderTree, label: "קטגוריות", href: "/admin/categories" },
     ]
   },
 ];
@@ -207,7 +148,7 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
         "flex items-center border-b border-border/20 h-14 shrink-0",
         collapsed ? "justify-center px-2" : "px-4 gap-3"
       )}>
-        <Link to="/admin/growo" className="flex items-center gap-2.5 group">
+        <Link to="/admin/analytics" className="flex items-center gap-2.5 group">
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-sm">
             <Shield className="w-4 h-4 text-primary-foreground" />
           </div>
@@ -470,7 +411,7 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
                 <div className="min-w-0">
                   {breadcrumbs.length > 0 ? (
                     <nav className="flex items-center gap-1 text-xs">
-                      <Link to="/admin/growo" className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
+                      <Link to="/admin/analytics" className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
                         ניהול
                       </Link>
                       {breadcrumbs.map((crumb, i) => (

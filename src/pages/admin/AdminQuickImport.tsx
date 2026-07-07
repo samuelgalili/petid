@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Link2, Download, CheckCircle2, AlertCircle, Loader2, ExternalLink,
@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { normalizeProductPetType } from "@/lib/productStore";
 import { createAdminProduct, invokeProductIntelFunction } from "@/lib/mipoApi";
 import { motion, AnimatePresence } from "framer-motion";
@@ -131,17 +130,10 @@ const AdminQuickImport = () => {
   const [publishedProduct, setPublishedProduct] = useState<any>(null);
 
   // Supplier linking
-  const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [suppliers] = useState<any[]>([]);
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>("");
   const [costPrice, setCostPrice] = useState<string>("");
   const [apiSyncEnabled, setApiSyncEnabled] = useState(false);
-
-  // Fetch suppliers on mount
-  useEffect(() => {
-    supabase.from("suppliers").select("id, name, shipping_days, payment_terms, api_endpoint").eq("is_active", true).order("name").then(({ data }) => {
-      if (data) setSuppliers(data);
-    });
-  }, []);
 
   const updateStatus = (s: WizardStep, status: StepStatus) => {
     setStepStatus(prev => ({ ...prev, [s]: status }));

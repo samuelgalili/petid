@@ -89,9 +89,9 @@ const menuStrings = {
     privacy: "פרטיות",
     // Admin section
     controlCenter: "מרכז שליטה",
-    userManagement: "ניהול משתמשים",
-    productApprovals: "אישור מוצרים",
-    systemLogs: "יומני מערכת",
+    analytics: "אנליטיקה",
+    productApprovals: "מוצרים",
+    orderManagement: "הזמנות",
     // Shop owner section
     myStore: "החנות שלי",
     inventory: "מלאי",
@@ -131,9 +131,9 @@ const menuStrings = {
     privacy: "Privacy",
     // Admin section
     controlCenter: "Control Center",
-    userManagement: "User Management",
-    productApprovals: "Product Approvals",
-    systemLogs: "System Logs",
+    analytics: "Analytics",
+    productApprovals: "Products",
+    orderManagement: "Orders",
     // Shop owner section
     myStore: "My Store",
     inventory: "Inventory",
@@ -172,9 +172,9 @@ const menuStrings = {
     notificationSettings: "إعدادات الإشعارات",
     privacy: "الخصوصية",
     controlCenter: "مركز التحكم",
-    userManagement: "إدارة المستخدمين",
-    productApprovals: "موافقات المنتجات",
-    systemLogs: "سجلات النظام",
+    analytics: "التحليلات",
+    productApprovals: "المنتجات",
+    orderManagement: "الطلبات",
     myStore: "متجري",
     inventory: "المخزون",
     salesAnalytics: "تحليلات المبيعات",
@@ -427,9 +427,9 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
               {isAdmin && (
                 <>
                   <SectionLabel icon={ShieldCheck}>{s.controlCenter}</SectionLabel>
-                  <MenuItem icon={UserCog} label={s.userManagement} onClick={() => go("/admin/users")} isRtl={isRtl} accent />
+                  <MenuItem icon={BarChart3} label={s.analytics} onClick={() => go("/admin/analytics")} isRtl={isRtl} accent />
                   <MenuItem icon={ClipboardCheck} label={s.productApprovals} onClick={() => go("/admin/products")} isRtl={isRtl} accent />
-                  <MenuItem icon={ScrollText} label={s.systemLogs} onClick={() => go("/admin/audit")} isRtl={isRtl} accent />
+                  <MenuItem icon={ShoppingCart} label={s.orderManagement} onClick={() => go("/admin/orders")} isRtl={isRtl} accent />
                   <SectionDivider />
                 </>
               )}
@@ -438,9 +438,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
               {isBusiness && !isAdmin && (
                 <>
                   <SectionLabel icon={Store}>{s.myStore}</SectionLabel>
-                  <MenuItem icon={Boxes} label={s.inventory} onClick={() => go("/convert-to-business")} isRtl={isRtl} accent />
-                  <MenuItem icon={BarChart3} label={s.salesAnalytics} onClick={() => go("/convert-to-business")} isRtl={isRtl} accent />
-                  <MenuItem icon={Truck} label={s.activeShipments} onClick={() => go("/convert-to-business")} isRtl={isRtl} accent />
+                  <MenuItem icon={Store} label={s.myStore} onClick={() => go("/shop")} isRtl={isRtl} accent />
                   <SectionDivider />
                 </>
               )}
@@ -453,7 +451,6 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
 
               {/* ── Activity ── */}
               <MenuItem icon={Bell} label={s.notifications} onClick={() => go("/notifications")} badge={unreadNotifications} isRtl={isRtl} />
-              <MenuItem icon={MessageCircle} label={s.messages} onClick={() => go("/messages")} isRtl={isRtl} />
               <MenuItem icon={Bookmark} label={s.favorites} onClick={() => go("/favorites")} isRtl={isRtl} />
 
               <SectionDivider />
@@ -468,12 +465,6 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
               {/* ── Services ── */}
               <MenuItem icon={Heart} label={s.adoption} onClick={() => go("/adoption")} isNew isRtl={isRtl} />
               <MenuItem icon={ShieldCheck} label={s.insurance} onClick={() => go("/insurance")} isRtl={isRtl} />
-
-              <SectionDivider />
-
-              {/* ── Content ── */}
-              <MenuItem icon={Camera} label={s.photos} onClick={() => go("/photos")} isRtl={isRtl} />
-              <MenuItem icon={FileText} label={s.documents} onClick={() => go("/documents")} isRtl={isRtl} />
 
               <SectionDivider />
 

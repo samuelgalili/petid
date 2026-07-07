@@ -23,26 +23,26 @@ import { useOverlayNav } from "@/contexts/OverlayNavContext";
 import { PetGuardianPanel } from "@/components/PetGuardianPanel";
 
 const navLabels = {
-  he: { feed: "פיד", shop: "חנות", chat: "AI", addPet: "הוסף חיית מחמד" },
-  en: { feed: "Feed", shop: "Shop", chat: "AI", addPet: "Add Pet" },
-  ar: { feed: "فيد", shop: "متجر", chat: "AI", addPet: "إضافة حيوان" },
+  he: { home: "בית", shop: "חנות", chat: "AI", addPet: "הוסף חיית מחמד" },
+  en: { home: "Home", shop: "Shop", chat: "AI", addPet: "Add Pet" },
+  ar: { home: "الرئيسية", shop: "متجر", chat: "AI", addPet: "إضافة حيوان" },
 };
 
 const quickActions = {
   he: [
     { key: "scan-food", icon: ScanLine, label: "סריקת מזון", path: "/chat", color: "#4ECDC4", intent: "אני רוצה לסרוק מזון ולבדוק אם הוא מתאים לחיית המחמד שלי" },
     { key: "scan-doc", icon: FileText, label: "סריקת מסמך", path: "/chat", color: "#7C5CFC", intent: "אני רוצה לסרוק מסמך רפואי ולעדכן את הנתונים של חיית המחמד שלי" },
-    { key: "post", icon: Camera, label: "פוסט", path: "/feed", color: "#FF6B8A", intent: undefined },
+    { key: "profile", icon: Camera, label: "פרופיל", path: "/", color: "#FF6B8A", intent: undefined },
   ],
   en: [
     { key: "scan-food", icon: ScanLine, label: "Scan Food", path: "/chat", color: "#4ECDC4", intent: "I want to scan food and check if it fits my pet" },
     { key: "scan-doc", icon: FileText, label: "Scan Doc", path: "/chat", color: "#7C5CFC", intent: "I want to scan a medical document and update my pet data" },
-    { key: "post", icon: Camera, label: "Post", path: "/feed", color: "#FF6B8A", intent: undefined },
+    { key: "profile", icon: Camera, label: "Profile", path: "/", color: "#FF6B8A", intent: undefined },
   ],
   ar: [
     { key: "scan-food", icon: ScanLine, label: "مسح طعام", path: "/chat", color: "#4ECDC4", intent: "أريد فحص طعام ومعرفة إذا كان مناسبًا لحيواني الأليف" },
     { key: "scan-doc", icon: FileText, label: "مسح مستند", path: "/chat", color: "#7C5CFC", intent: "أريد فحص مستند طبي وتحديث بيانات حيواني الأليف" },
-    { key: "post", icon: Camera, label: "نشر", path: "/feed", color: "#FF6B8A", intent: undefined },
+    { key: "profile", icon: Camera, label: "الملف", path: "/", color: "#FF6B8A", intent: undefined },
   ],
 };
 
@@ -108,7 +108,7 @@ const BottomNav = () => {
 
   const isActive = (path: string) => {
     const p = location.pathname;
-    if (path === "/feed") return p === "/feed" || p === "/" || p.startsWith("/post/") || p.startsWith("/story/") || p === "/explore";
+    if (path === "/") return p === "/" || p === "/feed";
     if (path === "/shop") return p === "/shop" || p.startsWith("/product/") || p === "/cart" || p === "/checkout" || p.startsWith("/shop/");
     if (path === "/chat") return p === "/chat";
     return p === path;
