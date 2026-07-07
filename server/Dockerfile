@@ -6,6 +6,7 @@ COPY package.json package-lock.json* ./
 RUN npm install --omit=dev
 
 COPY src ./src
+COPY sql ./sql
 
 ENV PORT=3000
 EXPOSE 3000

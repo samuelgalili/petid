@@ -1,0 +1,115 @@
+name: Deploy AWS
+
+on:
+  push:
+    branches: [aws-migration]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aws-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.ref_name == 'aws-migration'
+
+    env:
+      MIPO_AWS_HOST: ${{ vars.MIPO_AWS_HOST || '63.183.241.110' }}
+      MIPO_AWS_USER: ${{ vars.MIPO_AWS_USER || 'ubuntu' }}
+      MIPO_REMOTE_PATH: ${{ vars.MIPO_REMOTE_PATH || '/opt/mipo' }}
+      MIPO_PUBLIC_BASE_URL: ${{ vars.MIPO_PUBLIC_BASE_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Check server scripts
+        run: |
+          node --check server/src/index.js
+          node --check server/src/applyMigrations.js
+          node --check server/src/migrateSupabaseToAws.js
+
+      - name: Build frontend
+        run: |
+          set -euo pipefail
+          public_base_url="${MIPO_PUBLIC_BASE_URL:-http://${MIPO_AWS_HOST}}"
+          VITE_DISABLE_SUPABASE=true VITE_APP_URL="$public_base_url" VITE_API_URL=/api npm run build
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.MIPO_AWS_SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "$SSH_PRIVATE_KEY" ]; then
+            echo "Missing GitHub secret MIPO_AWS_SSH_PRIVATE_KEY" >&2
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/mipo_aws_key
+          chmod 600 ~/.ssh/mipo_aws_key
+          ssh-keyscan -H "$MIPO_AWS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Prepare remote directories
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/mipo_aws_key "${MIPO_AWS_USER}@${MIPO_AWS_HOST}" \
+            "sudo mkdir -p '${MIPO_REMOTE_PATH}/server' '${MIPO_REMOTE_PATH}/deploy/aws' '${MIPO_REMOTE_PATH}/dist' '${MIPO_REMOTE_PATH}/uploads' && sudo chown -R '${MIPO_AWS_USER}:${MIPO_AWS_USER}' '${MIPO_REMOTE_PATH}'"
+
+      - name: Sync files
+        run: |
+          set -euo pipefail
+          remote="${MIPO_AWS_USER}@${MIPO_AWS_HOST}"
+          ssh_args="-i $HOME/.ssh/mipo_aws_key"
+
+          rsync -az --delete \
+            -e "ssh ${ssh_args}" \
+            --exclude node_modules \
+            --exclude .env \
+            --exclude '.env.*' \
+            server/ "${remote}:${MIPO_REMOTE_PATH}/server/"
+
+          rsync -az --delete \
+            -e "ssh ${ssh_args}" \
+            deploy/aws/ "${remote}:${MIPO_REMOTE_PATH}/deploy/aws/"
+
+          rsync -az --delete \
+            -e "ssh ${ssh_args}" \
+            dist/ "${remote}:${MIPO_REMOTE_PATH}/dist/"
+
+      - name: Run migrations and restart services
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/mipo_aws_key "${MIPO_AWS_USER}@${MIPO_AWS_HOST}" \
+            "MIPO_REMOTE_PATH='${MIPO_REMOTE_PATH}' bash -s" <<'REMOTE'
+          set -euo pipefail
+          cd "$MIPO_REMOTE_PATH"
+          compose_file="$MIPO_REMOTE_PATH/deploy/aws/docker-compose.yml"
+
+          docker compose -f "$compose_file" build mipo-api
+          docker compose -f "$compose_file" run --rm --no-deps mipo-api node src/applyMigrations.js
+          docker compose -f "$compose_file" up -d --no-deps mipo-api
+          docker compose -f "$compose_file" up -d caddy
+          docker compose -f "$compose_file" ps
+          REMOTE
+
+      - name: Smoke test production
+        run: |
+          set -euo pipefail
+          base_url="${MIPO_PUBLIC_BASE_URL:-http://${MIPO_AWS_HOST}}"
+          curl --fail --show-error --silent "$base_url/api/health"
+          curl --fail --show-error --silent --head "$base_url/" >/dev/null
