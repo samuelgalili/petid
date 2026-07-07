@@ -205,6 +205,13 @@ export interface MipoProfile {
   street?: string | null;
   city?: string | null;
   id_number_last4?: string | null;
+  id_verified?: boolean | null;
+  marketing_consent?: boolean | null;
+  marketing_consent_date?: string | null;
+  marketing_unsubscribed_at?: string | null;
+  quiet_mode_until?: string | null;
+  last_active_at?: string | null;
+  show_activity_status?: boolean | null;
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -247,6 +254,14 @@ export interface MipoPet {
   is_dangerous_breed?: boolean | null;
   license_conditions?: string | null;
   license_expiry_date?: string | null;
+  is_lost?: boolean | null;
+  lost_since?: string | null;
+  lost_reward_text?: string | null;
+  lost_temperament?: string | null;
+  lost_medication_note?: string | null;
+  lost_allergy_note?: string | null;
+  lost_show_phone?: boolean | null;
+  lost_contact_phone?: string | null;
   archived?: boolean | null;
   archived_at?: string | null;
   created_at?: string | null;
@@ -367,6 +382,37 @@ export interface MipoServiceBooking {
   metadata: Record<string, unknown>;
   created_at: string;
   updated_at?: string | null;
+}
+
+export interface MipoDataExport {
+  exported_at: string;
+  profile: MipoProfile | null;
+  pets: MipoPet[];
+  documents: MipoDocument[];
+  insurance_claims: MipoInsuranceClaim[];
+  service_bookings: MipoServiceBooking[];
+  notifications: MipoNotification[];
+  orders: MipoOrder[];
+  vet_visits: MipoVetVisit[];
+  vaccinations: MipoVaccination[];
+}
+
+export interface MipoAdminAnalytics {
+  orders: Array<Pick<MipoOrder, "id" | "status" | "total" | "created_at"> & { user_id?: string | null }>;
+  pets: Array<Pick<MipoPet, "id" | "type" | "breed" | "birth_date" | "medical_conditions" | "is_neutered" | "last_vet_visit" | "created_at" | "user_id"> & {
+    is_lost?: boolean | null;
+  }>;
+  profiles: Array<Pick<MipoProfile, "id" | "city" | "created_at">>;
+  products: MipoProduct[];
+  pet_documents: Array<{ id: string; needs_review?: boolean | null; created_at: string }>;
+  chat_feedback: Array<{
+    id: string;
+    user_id?: string | null;
+    message_content?: string | null;
+    rating?: string | null;
+    created_at: string;
+  }>;
+  breeds: MipoBreedInfo[];
 }
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/+$/, "");
@@ -551,6 +597,45 @@ export async function updateMyProfile(input: Partial<MipoProfile> & {
     method: "PATCH",
     body: JSON.stringify(input),
   });
+}
+
+export async function updateMyMarketingConsent(enabled: boolean): Promise<MipoProfile> {
+  const result = await apiFetch<{ profile: MipoProfile }>("/me/marketing-consent", {
+    method: "PATCH",
+    body: JSON.stringify({ marketing_consent: enabled, source: "settings" }),
+  });
+  return result.profile;
+}
+
+export async function getMyDataExport(): Promise<MipoDataExport> {
+  const result = await apiFetch<{ export: MipoDataExport }>("/me/export");
+  return result.export;
+}
+
+export async function deleteMyAccount(): Promise<MipoDataExport> {
+  const result = await apiFetch<{ deleted: boolean; export: MipoDataExport }>("/me/account", {
+    method: "DELETE",
+  });
+  setStorageHint(userSessionHintKey, false);
+  return result.export;
+}
+
+export async function getProfileActivity(userId: string): Promise<{
+  last_active_at: string | null;
+  show_activity_status: boolean;
+} | null> {
+  try {
+    const result = await apiFetch<{
+      activity: { last_active_at: string | null; show_activity_status: boolean };
+    }>(`/profiles/${encodeURIComponent(userId)}/activity`);
+    return result.activity;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateMyActivityStatus(): Promise<void> {
+  await updateMyProfile({ last_active_at: new Date().toISOString() } as Partial<MipoProfile>);
 }
 
 export async function getMyPets(input: { archived?: boolean | "all" } = {}): Promise<MipoPet[]> {
@@ -805,6 +890,11 @@ export async function logoutAdmin() {
   });
 }
 
+export async function getAdminAnalytics(days: number): Promise<MipoAdminAnalytics> {
+  const params = new URLSearchParams({ days: String(days) });
+  return adminApiFetch<MipoAdminAnalytics>(`/admin/analytics?${params.toString()}`);
+}
+
 export async function validateCouponCode(code: string, subtotal: number): Promise<MipoCoupon> {
   const result = await apiFetch<{ coupon: MipoCoupon }>("/coupons/validate", {
     method: "POST",
@@ -870,6 +960,14 @@ export async function getShopOrders(input: { ids?: string[]; email?: string } = 
   if (input.email) params.set("email", input.email);
   const query = params.toString();
   const result = await apiFetch<{ orders: MipoOrder[] }>(`/orders${query ? `?${query}` : ""}`);
+  return result.orders;
+}
+
+export async function getMyOrders(input: { limit?: number } = {}): Promise<MipoOrder[]> {
+  const params = new URLSearchParams();
+  if (input.limit) params.set("limit", String(input.limit));
+  const query = params.toString();
+  const result = await apiFetch<{ orders: MipoOrder[] }>(`/me/orders${query ? `?${query}` : ""}`);
   return result.orders;
 }
 

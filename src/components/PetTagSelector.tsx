@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { PawPrint, X, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import defaultPetAvatar from "@/assets/default-pet-avatar.png";
+import { getMyPets } from "@/lib/mipoApi";
 
 interface Pet {
   id: string;
@@ -33,13 +33,13 @@ export const PetTagSelector = ({ selectedPets, onChange, className }: PetTagSele
         return;
       }
 
-      const { data } = await supabase
-        .from("pets")
-        .select("id, name, avatar_url, type")
-        .eq("user_id", user.id)
-        .eq("archived", false);
-
-      setPets(data || []);
+      const data = await getMyPets();
+      setPets(data.map((pet) => ({
+        id: pet.id,
+        name: pet.name,
+        avatar_url: pet.avatar_url || null,
+        type: pet.type,
+      })));
       setLoading(false);
     };
 

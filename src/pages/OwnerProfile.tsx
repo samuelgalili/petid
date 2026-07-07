@@ -20,12 +20,19 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { calculateSmartReorderDays, estimateDailyGrams } from "@/lib/brandVoice";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
+import {
+  getCurrentUser,
+  getMyDocuments,
+  getMyInsuranceClaims,
+  getMyOrders,
+  getMyPets,
+  type MipoProfile,
+} from "@/lib/mipoApi";
 
 // ─── Types ────────────────────────────────────────
 interface Pet {
@@ -57,7 +64,7 @@ interface Order {
   status: string;
   total: number;
   created_at: string;
-  items?: any[];
+  items?: Array<{ product_name?: string; name?: string; quantity?: number }>;
 }
 
 interface PetDocument {
@@ -134,7 +141,7 @@ const OwnerProfile = () => {
   const { user } = useAuth();
 
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<MipoProfile | null>(null);
   const [pets, setPets] = useState<Pet[]>([]);
   const [claims, setClaims] = useState<Claim[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -152,40 +159,43 @@ const OwnerProfile = () => {
     setLoading(true);
     try {
       const [profileRes, petsRes, claimsRes, ordersRes, docsRes] = await Promise.all([
-        supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
-        supabase.from("pets").select("*").eq("user_id", user.id).eq("archived", false).order("created_at", { ascending: false }),
-        supabase.from("insurance_claims").select("*").eq("user_id", user.id).order("submitted_at", { ascending: false }).limit(10),
-        (supabase as any).from("orders").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
-        supabase.from("pet_documents").select("*").eq("user_id", user.id).order("uploaded_at", { ascending: false }).limit(20),
+        getCurrentUser(),
+        getMyPets(),
+        getMyInsuranceClaims({ limit: 10 }),
+        getMyOrders({ limit: 5 }),
+        getMyDocuments({ limit: 20 }),
       ]);
 
-      setProfile(profileRes.data);
-      const fetchedPets = (petsRes.data || []) as Pet[];
+      setProfile(profileRes?.profile || null);
+      const fetchedPets = (petsRes || []) as Pet[];
       setPets(fetchedPets);
-      setClaims((claimsRes.data || []) as Claim[]);
-      const fetchedOrders = (ordersRes.data || []) as Order[];
+      setClaims((claimsRes || []) as Claim[]);
+      const fetchedOrders = (ordersRes || []).map((order) => ({
+        ...order,
+        created_at: order.created_at || order.order_date,
+      })) as Order[];
       setOrders(fetchedOrders);
-      setDocuments((docsRes.data || []) as unknown as PetDocument[]);
+      setDocuments((docsRes || []) as unknown as PetDocument[]);
 
       // Total saved from paid claims
-      const saved = (claimsRes.data || [])
-        .filter((c: any) => c.status === "paid" && c.paid_amount)
-        .reduce((sum: number, c: any) => sum + (c.paid_amount || 0), 0);
+      const saved = (claimsRes || [])
+        .filter((c) => c.status === "paid" && c.paid_amount)
+        .reduce((sum, c) => sum + (c.paid_amount || 0), 0);
       setTotalSaved(saved);
 
       // Spending prediction: average monthly from last orders
       if (fetchedOrders.length >= 2) {
-        const totals = fetchedOrders.map((o: any) => o.total || 0);
-        const avg = totals.reduce((a: number, b: number) => a + b, 0) / totals.length;
+        const totals = fetchedOrders.map((order) => order.total || 0);
+        const avg = totals.reduce((a, b) => a + b, 0) / totals.length;
         setMonthlySpendEstimate(Math.round(avg));
       }
 
       // Restock prediction from last order + primary pet weight (V47 logic)
       if (fetchedOrders.length > 0 && fetchedPets.length > 0) {
-        const lastOrder = fetchedOrders[0] as any;
+        const lastOrder = fetchedOrders[0];
         const primaryPet = fetchedPets[0];
         const orderItems = Array.isArray(lastOrder.items)
-          ? lastOrder.items.map((i: any) => ({ name: i.product_name || i.name || "", quantity: i.quantity || 1 }))
+          ? lastOrder.items.map((i) => ({ name: i.product_name || i.name || "", quantity: i.quantity || 1 }))
           : [];
         const days = calculateSmartReorderDays(
           new Date(lastOrder.created_at),

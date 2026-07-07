@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { he } from "date-fns/locale";
+import { getProfileActivity, updateMyActivityStatus } from "@/lib/mipoApi";
 
 interface ActivityStatusProps {
   userId: string;
@@ -26,11 +26,7 @@ export const ActivityStatus = ({ userId, showText = true, className = "" }: Acti
 
   const fetchStatus = async () => {
     try {
-      const { data } = await supabase
-        .from('profiles')
-        .select('last_active_at, show_activity_status')
-        .eq('id', userId)
-        .single();
+      const data = await getProfileActivity(userId);
 
       if (data) {
         const lastActive = data.last_active_at ? new Date(data.last_active_at) : null;
@@ -79,10 +75,7 @@ export const ActivityStatus = ({ userId, showText = true, className = "" }: Acti
 export const useActivityStatus = () => {
   const updateActivity = async (userId: string) => {
     try {
-      await supabase
-        .from('profiles')
-        .update({ last_active_at: new Date().toISOString() })
-        .eq('id', userId);
+      if (userId) await updateMyActivityStatus();
     } catch (error) {
       console.error("Error updating activity status:", error);
     }

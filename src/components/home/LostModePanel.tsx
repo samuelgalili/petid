@@ -34,29 +34,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { createMyNotification, updateMyPet, type MipoPet } from "@/lib/mipoApi";
 
-interface Pet {
-  id: string;
-  name: string;
-  type: string;
-  breed?: string;
-  avatar_url?: string;
-  microchip_number?: string;
-  medical_conditions?: string[];
-  health_notes?: string;
-  color?: string;
-  weight?: number;
-  is_lost?: boolean;
-  lost_since?: string;
-  lost_reward_text?: string;
-  lost_temperament?: string;
-  lost_medication_note?: string;
-  lost_allergy_note?: string;
-  lost_show_phone?: boolean;
-  lost_contact_phone?: string;
-}
+type Pet = MipoPet;
 
 interface LostModePanelProps {
   pet: Pet;
@@ -84,21 +65,16 @@ export const LostModePanel = ({ pet, ownerPhone, onUpdate }: LostModePanelProps)
   const activateLostMode = async () => {
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from("pets")
-        .update({
-          is_lost: true,
-          lost_since: new Date().toISOString(),
-          lost_temperament: temperament || null,
-          lost_medication_note: medication || null,
-          lost_allergy_note: allergy || null,
-          lost_reward_text: reward || null,
-          lost_show_phone: showPhone,
-          lost_contact_phone: contactPhone || null,
-        })
-        .eq("id", pet.id);
-
-      if (error) throw error;
+      await updateMyPet(pet.id, {
+        is_lost: true,
+        lost_since: new Date().toISOString(),
+        lost_temperament: temperament || null,
+        lost_medication_note: medication || null,
+        lost_allergy_note: allergy || null,
+        lost_reward_text: reward || null,
+        lost_show_phone: showPhone,
+        lost_contact_phone: contactPhone || null,
+      });
       toast.success(`מצב חירום הופעל עבור ${pet.name}`);
       setShowActivateDialog(false);
       onUpdate();
@@ -112,14 +88,18 @@ export const LostModePanel = ({ pet, ownerPhone, onUpdate }: LostModePanelProps)
   const deactivateLostMode = async () => {
     setSaving(true);
     try {
-      const { data, error } = await supabase.functions.invoke("found-pet-resolve", {
-        body: { pet_id: pet.id },
+      await updateMyPet(pet.id, {
+        is_lost: false,
+        lost_since: null,
       });
-
-      if (error) throw error;
-      const result = data as any;
-      const pushText = result?.push_sent ? ` נשלחו ${result.push_sent} התראות.` : '';
-      toast.success(`🎉 ${pet.name} חזר/ה הביתה!${pushText}`);
+      await createMyNotification({
+        type: "found_pet_resolved",
+        category: "emergency",
+        title: `${pet.name} חזר/ה הביתה`,
+        message: "מצב החירום כובה בהצלחה.",
+        data: { pet_id: pet.id },
+      });
+      toast.success(`🎉 ${pet.name} חזר/ה הביתה!`);
       setShowDeactivateDialog(false);
       onUpdate();
     } catch (err) {
@@ -133,19 +113,14 @@ export const LostModePanel = ({ pet, ownerPhone, onUpdate }: LostModePanelProps)
   const updateLostSettings = async () => {
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from("pets")
-        .update({
-          lost_temperament: temperament || null,
-          lost_medication_note: medication || null,
-          lost_allergy_note: allergy || null,
-          lost_reward_text: reward || null,
-          lost_show_phone: showPhone,
-          lost_contact_phone: contactPhone || null,
-        })
-        .eq("id", pet.id);
-
-      if (error) throw error;
+      await updateMyPet(pet.id, {
+        lost_temperament: temperament || null,
+        lost_medication_note: medication || null,
+        lost_allergy_note: allergy || null,
+        lost_reward_text: reward || null,
+        lost_show_phone: showPhone,
+        lost_contact_phone: contactPhone || null,
+      });
       toast.success("הגדרות עודכנו");
       setShowSettingsSheet(false);
       onUpdate();
@@ -204,12 +179,14 @@ PetID - שומרים על חיות המחמד שלנו
 
   const shareToFeed = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke("lost-pet-alert", {
-        body: { pet_id: pet.id },
+      await createMyNotification({
+        type: "lost_pet_alert",
+        category: "emergency",
+        title: `${pet.name} נעדר/ת`,
+        message: "התראת חירום נשמרה במערכת.",
+        data: { pet_id: pet.id },
       });
-      if (error) throw error;
-      const result = data as any;
-      toast.success(`פורסם בפיד ונשלחו ${result?.push_sent || 0} התראות באזור`);
+      toast.success("התראת החירום נשמרה במערכת");
       onUpdate();
     } catch {
       toast.error("שגיאה בפרסום");
@@ -218,12 +195,14 @@ PetID - שומרים על חיות המחמד שלנו
 
   const sendRadiusAlert = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke("lost-pet-alert", {
-        body: { pet_id: pet.id },
+      await createMyNotification({
+        type: "lost_pet_radius_requested",
+        category: "emergency",
+        title: `בקשת התראה אזורית עבור ${pet.name}`,
+        message: "בקשת התראה אזורית נרשמה במערכת.",
+        data: { pet_id: pet.id },
       });
-      if (error) throw error;
-      const result = data as any;
-      toast.success(`🚨 נשלחו ${result?.push_sent || 0} התראות ל-${result?.nearby_users || 0} משתמשים באזור ${result?.city || ''}`);
+      toast.success("בקשת התראה אזורית נרשמה במערכת");
     } catch {
       toast.error("שגיאה בשליחת התראות");
     }

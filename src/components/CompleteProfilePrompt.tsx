@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation as useGeoLocation } from "@/hooks/useLocation";
+import { getCurrentUser, updateMyProfile } from "@/lib/mipoApi";
 
 interface ProfileData {
   full_name: string | null;
@@ -36,11 +36,7 @@ const CompleteProfilePrompt = () => {
     if (sessionStorage.getItem(dismissedKey)) return;
 
     const checkProfile = async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("full_name, first_name, last_name, phone, city")
-        .eq("id", user.id)
-        .maybeSingle();
+      const data = (await getCurrentUser())?.profile;
 
       if (!data) return;
       setProfile(data);
@@ -95,7 +91,7 @@ const CompleteProfilePrompt = () => {
     if (!user) return;
     setLoading(true);
 
-    const updates: Record<string, string> = {};
+    const updates: Partial<ProfileData> & { full_name?: string } = {};
     if (missingFields.includes("first_name") && form.first_name) updates.first_name = form.first_name.trim();
     if (missingFields.includes("last_name") && form.last_name) updates.last_name = form.last_name.trim();
     if (missingFields.includes("phone") && form.phone) updates.phone = form.phone.trim();
@@ -105,21 +101,17 @@ const CompleteProfilePrompt = () => {
     if (updates.first_name || updates.last_name) {
       const fn = updates.first_name || profile?.first_name || "";
       const ln = updates.last_name || profile?.last_name || "";
-      (updates as any).full_name = `${fn} ${ln}`.trim();
+      updates.full_name = `${fn} ${ln}`.trim();
     }
 
-    const { error } = await supabase
-      .from("profiles")
-      .update(updates)
-      .eq("id", user.id);
-
-    setLoading(false);
-
-    if (error) {
-      toast({ title: "שגיאה", description: "לא הצלחנו לשמור את הפרטים", variant: "destructive" });
-    } else {
+    try {
+      await updateMyProfile(updates);
       toast({ title: "הפרטים נשמרו! ✅", description: "תודה שהשלמת את הפרופיל" });
       handleDismiss();
+    } catch {
+      toast({ title: "שגיאה", description: "לא הצלחנו לשמור את הפרטים", variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   };
 

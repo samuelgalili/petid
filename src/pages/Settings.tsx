@@ -50,8 +50,13 @@ import { CloseFriendsManager } from "@/components/CloseFriendsManager";
 import { DraftPostsManager } from "@/components/DraftPostsManager";
 import { ScheduledPostsManager } from "@/components/ScheduledPostsManager";
 import { motion } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
 import { SEO } from "@/components/SEO";
+import {
+  deleteMyAccount,
+  getCurrentUser,
+  getMyDataExport,
+  updateMyMarketingConsent,
+} from "@/lib/mipoApi";
 
 // ─── Collapsible Section ─────────────────────────
 const SettingsSection = ({
@@ -116,19 +121,25 @@ const SettingRow = ({
   label: string;
   description: string;
   type?: "link" | "toggle" | "select";
-  value?: any;
+  value?: unknown;
   options?: { value: string; label: string }[];
-  action?: any;
+  action?: unknown;
   destructive?: boolean;
   badge?: string;
   showSeparator?: boolean;
 }) => {
+  const runAction = (nextValue?: string | boolean) => {
+    if (typeof action === "function") {
+      (action as (value?: string | boolean) => void | Promise<void>)(nextValue);
+    }
+  };
+
   return (
     <>
       <motion.div
         whileHover={type === "link" ? { x: -3 } : {}}
         whileTap={type === "link" ? { scale: 0.98 } : {}}
-        onClick={type === "link" ? action : undefined}
+        onClick={type === "link" ? () => runAction() : undefined}
         className={`flex items-center gap-3.5 p-3.5 transition-all ${
           type === "link" ? "cursor-pointer hover:bg-muted/50" : ""
         }`}
@@ -162,13 +173,13 @@ const SettingRow = ({
         </div>
         {type === "toggle" && (
           <Switch
-            checked={value}
-            onCheckedChange={action}
+            checked={Boolean(value)}
+            onCheckedChange={(checked) => runAction(checked)}
             className="flex-shrink-0 data-[state=checked]:bg-primary"
           />
         )}
         {type === "select" && (
-          <Select value={value} onValueChange={action}>
+          <Select value={typeof value === "string" ? value : ""} onValueChange={(nextValue) => runAction(nextValue)}>
             <SelectTrigger className="w-[110px] h-8 flex-shrink-0 rounded-xl border-border/50 bg-muted/30 text-xs">
               <SelectValue />
             </SelectTrigger>
@@ -213,9 +224,10 @@ const Settings = () => {
   const [sosAlerts, setSosAlerts] = useState(() => localStorage.getItem("pref_sos_alerts") !== "false");
 
   // Privacy
-  const [privacyMode, setPrivacyMode] = useState<"public" | "private">(() =>
-    (localStorage.getItem("pref_privacy_mode") as any) || "public"
-  );
+  const [privacyMode, setPrivacyMode] = useState<"public" | "private">(() => {
+    const stored = localStorage.getItem("pref_privacy_mode");
+    return stored === "private" ? "private" : "public";
+  });
 
   // Units
   const [weightUnit, setWeightUnit] = useState(() => localStorage.getItem("pref_weight_unit") || "kg");
@@ -231,15 +243,11 @@ const Settings = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       if (!user?.id) return;
-      const { data } = await supabase
-        .from("profiles")
-        .select("avatar_url, full_name, marketing_consent")
-        .eq("id", user.id)
-        .maybeSingle();
+      const data = (await getCurrentUser())?.profile;
       if (data) {
-        setProfileAvatar(data.avatar_url);
-        setProfileName(data.full_name);
-        setMarketingConsent((data as any).marketing_consent ?? false);
+        setProfileAvatar(data.avatar_url || null);
+        setProfileName(data.full_name || null);
+        setMarketingConsent(data.marketing_consent ?? false);
       }
     };
     fetchProfile();
@@ -249,18 +257,14 @@ const Settings = () => {
     if (!user?.id) return;
     const next = !marketingConsent;
     setMarketingConsent(next);
-    await supabase.from("profiles").update({
-      marketing_consent: next,
-      marketing_consent_date: next ? new Date().toISOString() : null,
-      marketing_unsubscribed_at: next ? null : new Date().toISOString(),
-    } as any).eq("id", user.id);
-    // Log for compliance
-    await supabase.from("marketing_opt_out_log" as any).insert({
-      user_id: user.id,
-      action: next ? "opt_in" : "opt_out",
-      source: "settings",
-    });
-    toast.success(next ? "הסכמה לשיווק הופעלה" : "הוסרת מרשימת השיווק");
+    try {
+      const profile = await updateMyMarketingConsent(next);
+      setMarketingConsent(profile.marketing_consent ?? next);
+      toast.success(next ? "הסכמה לשיווק הופעלה" : "הוסרת מרשימת השיווק");
+    } catch {
+      setMarketingConsent(!next);
+      toast.error("שגיאה בעדכון הסכמה לשיווק");
+    }
   };
 
   // Persist toggles
@@ -291,12 +295,9 @@ const Settings = () => {
   const handleExportData = async () => {
     toast.info("מכין ייצוא נתונים...");
     try {
-      const { data, error } = await supabase.functions.invoke("right-to-be-forgotten", {
-        body: { export_data: true },
-      });
-      if (error) throw error;
+      const dataExport = await getMyDataExport();
       // Download as JSON
-      const blob = new Blob([JSON.stringify(data.export, null, 2)], { type: "application/json" });
+      const blob = new Blob([JSON.stringify(dataExport, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -317,21 +318,16 @@ const Settings = () => {
 
     toast.info("מייצא נתונים לפני מחיקה...");
     try {
-      const { data, error } = await supabase.functions.invoke("right-to-be-forgotten", {
-        body: { export_data: true },
-      });
-      if (error) throw error;
+      const dataExport = await deleteMyAccount();
 
       // Auto-download export before deletion
-      if (data.export) {
-        const blob = new Blob([JSON.stringify(data.export, null, 2)], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `petid-data-export-${new Date().toISOString().slice(0, 10)}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-      }
+      const blob = new Blob([JSON.stringify(dataExport, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `petid-data-export-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
 
       toast.success("החשבון נמחק. הנתונים הורדו למכשיר שלך.");
       await signOut();
@@ -489,7 +485,8 @@ const Settings = () => {
                 { value: "private", label: "פרטי" },
               ]}
               action={(val: string) => {
-                setPrivacyMode(val as any);
+                if (val !== "public" && val !== "private") return;
+                setPrivacyMode(val);
                 localStorage.setItem("pref_privacy_mode", val);
                 toast.success(val === "private" ? "הפרופיל הוסתר" : "הפרופיל גלוי");
               }}
@@ -528,7 +525,7 @@ const Settings = () => {
                 { value: "en", label: "English" },
                 { value: "ar", label: "عربية" },
               ]}
-              action={(val: string) => setLanguage(val as any)}
+              action={(val: string) => setLanguage(val as "he" | "en" | "ar")}
             />
             <SettingRow
               icon={Weight}
@@ -571,7 +568,7 @@ const Settings = () => {
                 { value: "dark", label: "כהה" },
                 { value: "system", label: "אוטומטי" },
               ]}
-              action={(val: string) => setTheme(val as any)}
+              action={(val: string) => setTheme(val as "light" | "dark" | "system")}
             />
             <SettingRow
               icon={Type}
@@ -584,7 +581,7 @@ const Settings = () => {
                 { value: "medium", label: "בינוני" },
                 { value: "large", label: "גדול" },
               ]}
-              action={(val: string) => setFontSize(val as any)}
+              action={(val: string) => setFontSize(val as "small" | "medium" | "large")}
             />
             <SettingRow
               icon={Contrast}

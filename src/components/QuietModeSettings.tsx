@@ -3,9 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { BellOff, Clock, Moon } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { getCurrentUser, updateMyProfile } from "@/lib/mipoApi";
 
 interface QuietModeSettingsProps {
   open: boolean;
@@ -28,11 +28,7 @@ export const QuietModeSettings = ({ open, onOpenChange }: QuietModeSettingsProps
     if (!user) return;
 
     try {
-      const { data } = await supabase
-        .from('profiles')
-        .select('quiet_mode_until')
-        .eq('id', user.id)
-        .single();
+      const data = (await getCurrentUser())?.profile;
 
       if (data?.quiet_mode_until) {
         const until = new Date(data.quiet_mode_until);
@@ -54,12 +50,7 @@ export const QuietModeSettings = ({ open, onOpenChange }: QuietModeSettingsProps
         ? new Date(Date.now() + quietModeHours * 60 * 60 * 1000).toISOString()
         : null;
 
-      const { error } = await supabase
-        .from('profiles')
-        .update({ quiet_mode_until: quietModeUntil })
-        .eq('id', user.id);
-
-      if (error) throw error;
+      await updateMyProfile({ quiet_mode_until: quietModeUntil });
 
       setQuietModeEnabled(enabled);
       toast.success(enabled 

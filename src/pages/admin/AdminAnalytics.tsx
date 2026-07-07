@@ -1,12 +1,13 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { getAdminAnalytics, type MipoAdminAnalytics } from "@/lib/mipoApi";
+import type { LucideIcon } from "lucide-react";
 import {
   DollarSign, PawPrint, Heart, RefreshCw,
   TrendingUp, ArrowUpRight, ArrowDownRight,
@@ -19,6 +20,16 @@ import {
   ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell,
   Legend, ScatterChart, Scatter, ZAxis, FunnelChart, Funnel, LabelList,
 } from "recharts";
+
+const EMPTY_ANALYTICS: MipoAdminAnalytics = {
+  orders: [],
+  pets: [],
+  profiles: [],
+  products: [],
+  pet_documents: [],
+  chat_feedback: [],
+  breeds: [],
+};
 
 const CHART_COLORS = [
   "hsl(204, 100%, 48%)", // petid-blue
@@ -47,81 +58,22 @@ const AdminAnalytics = () => {
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
   const prevSince = new Date(Date.now() - days * 2 * 24 * 60 * 60 * 1000).toISOString();
 
-  // ─── Data Queries ───
-  const { data: orders = [], isLoading: loadingOrders } = useQuery({
-    queryKey: ["analytics-orders", days],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("orders")
-        .select("id, total, status, created_at, user_id")
-        .gte("created_at", prevSince)
-        .order("created_at", { ascending: false });
-      return data || [];
-    },
+  // ─── Data Query ───
+  const { data: analytics, isLoading: isAnalyticsLoading } = useQuery({
+    queryKey: ["admin-analytics", days],
+    queryFn: () => getAdminAnalytics(days),
   });
 
-  const { data: pets = [], isLoading: loadingPets } = useQuery({
-    queryKey: ["analytics-pets"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("pets")
-        .select("id, type, breed, birth_date, medical_conditions, is_lost, is_neutered, last_vet_visit, created_at, user_id");
-      return data || [];
-    },
-  });
-
-  const { data: profiles = [] } = useQuery({
-    queryKey: ["analytics-profiles", days],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, created_at");
-      return data || [];
-    },
-  });
-
-  const { data: products = [] } = useQuery({
-    queryKey: ["analytics-products"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("business_products")
-        .select("id, name, brand, category, medical_tags, price, sale_price, auto_restock, restock_interval_days");
-      return data || [];
-    },
-  });
-
-  const { data: petDocuments = [] } = useQuery({
-    queryKey: ["analytics-ocr"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("pet_documents")
-        .select("id, needs_review, created_at")
-        .gte("created_at", since);
-      return data || [];
-    },
-  });
-
-  const { data: chatFeedback = [] } = useQuery({
-    queryKey: ["analytics-chat"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("chat_message_feedback")
-        .select("id, message_content, rating, created_at")
-        .gte("created_at", since)
-        .limit(500);
-      return data || [];
-    },
-  });
-
-  const { data: breeds = [] } = useQuery({
-    queryKey: ["analytics-breeds"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("breed_information")
-        .select("id, breed_name, breed_name_he, pet_type");
-      return data || [];
-    },
-  });
+  const analyticsData = analytics ?? EMPTY_ANALYTICS;
+  const orders = analyticsData.orders;
+  const pets = analyticsData.pets;
+  const profiles = analyticsData.profiles;
+  const products = analyticsData.products;
+  const petDocuments = analyticsData.pet_documents;
+  const chatFeedback = analyticsData.chat_feedback;
+  const breeds = analyticsData.breeds;
+  const loadingOrders = isAnalyticsLoading;
+  const loadingPets = isAnalyticsLoading;
 
   // ─── Derived Analytics ───
 
@@ -250,7 +202,7 @@ const AdminAnalytics = () => {
   // OCR accuracy
   const ocrMetrics = useMemo(() => {
     const total = petDocuments.length;
-    const needsReview = petDocuments.filter((d: any) => d.needs_review).length;
+    const needsReview = petDocuments.filter((d) => d.needs_review).length;
     const accuracy = total > 0 ? Math.round(((total - needsReview) / total) * 100) : 100;
     return { total, needsReview, accuracy };
   }, [petDocuments]);
@@ -384,7 +336,7 @@ const AdminAnalytics = () => {
 
   // 4. Conversion funnel: chat → purchase
   const conversionFunnel = useMemo(() => {
-    const chatUsers = new Set(chatFeedback.map(c => (c as any).user_id).filter(Boolean));
+    const chatUsers = new Set(chatFeedback.map(c => c.user_id).filter(Boolean));
     const purchaseUsers = new Set(
       orders.filter(o => new Date(o.created_at) >= new Date(since)).map(o => o.user_id).filter(Boolean)
     );
@@ -402,7 +354,7 @@ const AdminAnalytics = () => {
 
   // Actionable insights
   const actionableInsights = useMemo(() => {
-    const insights: { icon: any; text: string; type: "info" | "warning" | "success" }[] = [];
+    const insights: { icon: LucideIcon; text: string; type: "info" | "warning" | "success" }[] = [];
 
     if (healthSpendingCorrelation.avgSpendHigh > healthSpendingCorrelation.avgSpendLow && healthSpendingCorrelation.lowCount > 0) {
       insights.push({
@@ -448,7 +400,7 @@ const AdminAnalytics = () => {
     value: string;
     subtitle?: string;
     change?: number;
-    icon: any;
+    icon: LucideIcon;
     color: string;
     children?: React.ReactNode;
   }) => (

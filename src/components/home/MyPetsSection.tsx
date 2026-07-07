@@ -5,15 +5,15 @@ import { useNavigate } from "react-router-dom";
 import { PetCard, AddPetCard } from "./PetCard";
 import { LostModePanel } from "./LostModePanel";
 import { ComponentErrorBoundary } from "@/components/common/ComponentErrorBoundary";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
+import { getCurrentUser, type MipoPet } from "@/lib/mipoApi";
 
 interface MyPetsSectionProps {
-  pets: any[];
+  pets: MipoPet[];
   newlyAddedPetIds: Set<string>;
-  onPetLongPressStart: (pet: any) => void;
+  onPetLongPressStart: (pet: MipoPet) => void;
   onPetLongPressEnd: () => void;
   onPetsRefresh?: () => void;
 }
@@ -31,13 +31,20 @@ export const MyPetsSection = ({
   const [selectedPetId, setSelectedPetId] = useState<string | null>(null);
   const [ownerPhone, setOwnerPhone] = useState<string | undefined>();
 
-  // Fetch owner phone for lost mode (lazy)
-  useState(() => {
-    if (user?.id) {
-      supabase.from("profiles").select("phone").eq("id", user.id).maybeSingle()
-        .then(({ data }) => { if (data?.phone) setOwnerPhone(data.phone); });
-    }
-  });
+  useEffect(() => {
+    let active = true;
+    if (!user?.id) return;
+
+    getCurrentUser()
+      .then((auth) => {
+        if (active && auth?.profile?.phone) setOwnerPhone(auth.profile.phone);
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
+  }, [user?.id]);
 
   const lostPets = pets.filter(p => p.is_lost);
 

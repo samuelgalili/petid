@@ -4,12 +4,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Camera, Upload } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Camera } from "lucide-react";
 import { toast } from "sonner";
+import { updateMyPet, uploadMyImage, type MipoPet } from "@/lib/mipoApi";
 
 interface PetEditSheetProps {
-  pet: any | null;
+  pet: MipoPet | null;
   isOpen: boolean;
   onClose: () => void;
   editFormData: { name: string; breed: string };
@@ -52,45 +52,21 @@ export const PetEditSheet = ({
 
     setIsUploadingImage(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("User not authenticated");
-
-      // Create form data for edge function
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("type", "pet");
-      formData.append("petId", pet.id);
-
-      // Upload via edge function
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-avatar`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: formData,
-        }
-      );
-
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error || "Upload failed");
-      }
+      const upload = await uploadMyImage(file);
+      const updatedPet = await updateMyPet(pet.id, { avatar_url: upload.url });
 
       // Update local state immediately
-      setLocalAvatarUrl(result.url);
+      setLocalAvatarUrl(updatedPet.avatar_url || upload.url);
       
       // Notify parent component
       if (onAvatarUpdate) {
-        onAvatarUpdate(pet.id, result.url);
+        onAvatarUpdate(pet.id, updatedPet.avatar_url || upload.url);
       }
 
       toast.success("תמונת חיית המחמד עודכנה בהצלחה!");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error uploading pet image:", error);
-      toast.error(error.message || "שגיאה בהעלאת התמונה");
+      toast.error(error instanceof Error ? error.message : "שגיאה בהעלאת התמונה");
     } finally {
       setIsUploadingImage(false);
     }

@@ -414,6 +414,15 @@ const serializeProfile = (row) => row ? ({
   street: row.street || null,
   city: row.city || null,
   id_number_last4: row.id_number_last4 || null,
+  id_verified: row.id_verified || false,
+  marketing_consent: row.marketing_consent || false,
+  marketing_consent_date: row.marketing_consent_date || null,
+  marketing_unsubscribed_at: row.marketing_unsubscribed_at || null,
+  quiet_mode_until: row.quiet_mode_until || null,
+  last_active_at: row.last_active_at || null,
+  show_activity_status: row.show_activity_status === null || row.show_activity_status === undefined
+    ? true
+    : row.show_activity_status,
   created_at: row.created_at || null,
   updated_at: row.updated_at || null,
 }) : null;
@@ -538,6 +547,12 @@ const getUserFromSession = async (request) => {
         p.street as profile_street,
         p.city as profile_city,
         p.id_number_last4 as profile_id_number_last4,
+        p.marketing_consent as profile_marketing_consent,
+        p.marketing_consent_date as profile_marketing_consent_date,
+        p.marketing_unsubscribed_at as profile_marketing_unsubscribed_at,
+        p.quiet_mode_until as profile_quiet_mode_until,
+        p.last_active_at as profile_last_active_at,
+        p.show_activity_status as profile_show_activity_status,
         p.created_at as profile_created_at,
         p.updated_at as profile_updated_at
       from public.user_sessions user_session
@@ -573,6 +588,12 @@ const getUserFromSession = async (request) => {
     street: row.profile_street,
     city: row.profile_city,
     id_number_last4: row.profile_id_number_last4,
+    marketing_consent: row.profile_marketing_consent,
+    marketing_consent_date: row.profile_marketing_consent_date,
+    marketing_unsubscribed_at: row.profile_marketing_unsubscribed_at,
+    quiet_mode_until: row.profile_quiet_mode_until,
+    last_active_at: row.profile_last_active_at,
+    show_activity_status: row.profile_show_activity_status,
     created_at: row.profile_created_at,
     updated_at: row.profile_updated_at,
   } : null);
@@ -933,6 +954,17 @@ const updateMyProfile = async (userId, body) => {
   const birthdate = Object.prototype.hasOwnProperty.call(body, "birthdate") ? normalizeDateOnly(body.birthdate) : undefined;
   const street = Object.prototype.hasOwnProperty.call(body, "street") ? String(body.street || "").trim() || null : undefined;
   const city = Object.prototype.hasOwnProperty.call(body, "city") ? String(body.city || "").trim() || null : undefined;
+  const firstName = Object.prototype.hasOwnProperty.call(body, "first_name") ? String(body.first_name || "").trim() || null : undefined;
+  const lastName = Object.prototype.hasOwnProperty.call(body, "last_name") ? String(body.last_name || "").trim() || null : undefined;
+  const quietModeUntil = Object.prototype.hasOwnProperty.call(body, "quiet_mode_until")
+    ? body.quiet_mode_until ? new Date(String(body.quiet_mode_until)).toISOString() : null
+    : undefined;
+  const lastActiveAt = Object.prototype.hasOwnProperty.call(body, "last_active_at")
+    ? body.last_active_at ? new Date(String(body.last_active_at)).toISOString() : null
+    : undefined;
+  const showActivityStatus = Object.prototype.hasOwnProperty.call(body, "show_activity_status")
+    ? Boolean(body.show_activity_status)
+    : undefined;
   const idNumberLast4 = Object.prototype.hasOwnProperty.call(body, "id_number_last4")
     ? String(body.id_number_last4 || "").replace(/\D/g, "").slice(-4) || null
     : undefined;
@@ -964,6 +996,8 @@ const updateMyProfile = async (userId, body) => {
     pushProfile("last_name", lastName);
     pushApp("full_name", fullName);
   }
+  if (fullName === undefined && firstName !== undefined) pushProfile("first_name", firstName);
+  if (fullName === undefined && lastName !== undefined) pushProfile("last_name", lastName);
   if (phone !== undefined) {
     pushProfile("phone", phone);
     pushApp("phone", phone);
@@ -974,6 +1008,9 @@ const updateMyProfile = async (userId, body) => {
   if (street !== undefined) pushProfile("street", street);
   if (city !== undefined) pushProfile("city", city);
   if (idNumberLast4 !== undefined) pushProfile("id_number_last4", idNumberLast4);
+  if (quietModeUntil !== undefined) pushProfile("quiet_mode_until", quietModeUntil);
+  if (lastActiveAt !== undefined) pushProfile("last_active_at", lastActiveAt);
+  if (showActivityStatus !== undefined) pushProfile("show_activity_status", showActivityStatus);
   if (birthdate !== undefined) {
     pushProfile("birthdate", birthdate);
     pushApp("birthdate", birthdate);
@@ -1007,6 +1044,64 @@ const updateMyProfile = async (userId, body) => {
   return {
     user: serializeUser(userResult.rows[0], profile),
     profile,
+  };
+};
+
+const updateMyMarketingConsent = async (userId, body) => {
+  const enabled = Boolean(body.marketing_consent ?? body.enabled);
+  const action = enabled ? "opt_in" : "opt_out";
+
+  const result = await pool.query(
+    `
+      update public.profiles
+      set
+        marketing_consent = $2,
+        marketing_consent_date = case when $2 then now() else null end,
+        marketing_unsubscribed_at = case when $2 then null else now() end,
+        updated_at = now()
+      where id = $1
+      returning *
+    `,
+    [userId, enabled],
+  );
+
+  try {
+    await pool.query(
+      `
+        insert into public.marketing_opt_out_log (user_id, action, source)
+        values ($1, $2, $3)
+      `,
+      [userId, action, body.source ? String(body.source).slice(0, 100) : "settings"],
+    );
+  } catch (error) {
+    if (error.code !== "42P01") throw error;
+  }
+
+  return serializeProfile(result.rows[0]);
+};
+
+const getProfileActivityStatus = async (userId) => {
+  if (!uuidPattern.test(String(userId || ""))) return null;
+
+  const result = await pool.query(
+    `
+      select last_active_at, show_activity_status
+      from public.profiles
+      where id = $1
+      limit 1
+    `,
+    [userId],
+  );
+
+  if (result.rowCount === 0) return null;
+  const row = result.rows[0];
+  const showStatus = row.show_activity_status === null || row.show_activity_status === undefined
+    ? true
+    : row.show_activity_status;
+
+  return {
+    last_active_at: showStatus ? row.last_active_at || null : null,
+    show_activity_status: showStatus,
   };
 };
 
@@ -1061,6 +1156,14 @@ const serializePet = (row) => {
     is_dangerous_breed: row.is_dangerous_breed || false,
     license_conditions: row.license_conditions || null,
     license_expiry_date: row.license_expiry_date || null,
+    is_lost: row.is_lost || false,
+    lost_since: row.lost_since || null,
+    lost_reward_text: row.lost_reward_text || null,
+    lost_temperament: row.lost_temperament || null,
+    lost_medication_note: row.lost_medication_note || null,
+    lost_allergy_note: row.lost_allergy_note || null,
+    lost_show_phone: row.lost_show_phone || false,
+    lost_contact_phone: row.lost_contact_phone || null,
     archived: row.archived || false,
     archived_at: row.archived_at || null,
     created_at: row.created_at || null,
@@ -1108,6 +1211,11 @@ const normalizePetPayload = (body, { partial = false } = {}) => {
     "vet_clinic_address",
     "microchip_number",
     "license_conditions",
+    "lost_reward_text",
+    "lost_temperament",
+    "lost_medication_note",
+    "lost_allergy_note",
+    "lost_contact_phone",
   ];
   for (const field of simpleTextFields) {
     if (has(field)) payload[field] = body[field] === null ? null : String(body[field] || "").trim() || null;
@@ -1118,10 +1226,15 @@ const normalizePetPayload = (body, { partial = false } = {}) => {
   if (has("next_vet_visit") || has("nextVetVisit")) payload.next_vet_visit = normalizeDateOnly(body.next_vet_visit || body.nextVetVisit);
   if (has("insurance_expiry_date") || has("insuranceExpiryDate")) payload.insurance_expiry_date = normalizeDateOnly(body.insurance_expiry_date || body.insuranceExpiryDate);
   if (has("license_expiry_date") || has("licenseExpiryDate")) payload.license_expiry_date = normalizeDateOnly(body.license_expiry_date || body.licenseExpiryDate);
+  if (has("lost_since") || has("lostSince")) {
+    payload.lost_since = body.lost_since || body.lostSince ? new Date(String(body.lost_since || body.lostSince)).toISOString() : null;
+  }
   if (has("weight")) payload.weight = toNumber(body.weight);
   if (has("is_neutered")) payload.is_neutered = body.is_neutered === null ? null : Boolean(body.is_neutered);
   if (has("has_insurance")) payload.has_insurance = body.has_insurance === null ? null : Boolean(body.has_insurance);
   if (has("is_dangerous_breed")) payload.is_dangerous_breed = Boolean(body.is_dangerous_breed);
+  if (has("is_lost")) payload.is_lost = Boolean(body.is_lost);
+  if (has("lost_show_phone")) payload.lost_show_phone = Boolean(body.lost_show_phone);
   if (has("is_mixed")) payload.is_mixed = Boolean(body.is_mixed);
   if (has("breed_confidence")) {
     const confidence = Number(body.breed_confidence);
@@ -2869,7 +2982,7 @@ const attachOrderItems = async (orders) => {
   return orders.map((order) => mapOrder(order, itemsByOrder.get(order.id) || []));
 };
 
-const createOrder = async (body) => {
+const createOrder = async (body, currentUser = null) => {
   const orderItems = normalizeOrderItems(body.items);
   const shippingAddress = normalizeShippingAddress(body.shipping_address || body.shippingData);
   const paymentMethod = String(body.payment_method || "credit-card");
@@ -2901,6 +3014,7 @@ const createOrder = async (body) => {
         insert into public.orders (
           order_number,
           customer_id,
+          user_id,
           customer_name,
           customer_email,
           customer_phone,
@@ -2922,16 +3036,17 @@ const createOrder = async (body) => {
           medical_urgency
         )
         values (
-          $1, $2, $3, $4, $5,
-          'pending', $6, $7, $8,
-          $9, $10, $11, $12, $13, $14, $15, $16,
-          $17, $18, $19, $20
+          $1, $2, $3, $4, $5, $6,
+          'pending', $7, $8, $9,
+          $10, $11, $12, $13, $14, $15, $16, $17,
+          $18, $19, $20, $21
         )
         returning *
       `,
       [
         orderNumber,
         customerResult.rows[0].id,
+        currentUser?.id || null,
         shippingAddress.fullName,
         amounts.customerEmail,
         shippingAddress.phone,
@@ -3029,6 +3144,210 @@ const listOrders = async ({ ids = [], email = null, limit = 200 } = {}) => {
 
   const result = await pool.query(sql, values);
   return attachOrderItems(result.rows);
+};
+
+const listUserOrders = async (userId, email, limit = 100) => {
+  const values = [userId, normalizeEmail(email), Math.min(200, Math.max(1, Number(limit) || 100))];
+  const result = await pool.query(
+    `
+      select *
+      from public.orders
+      where user_id = $1
+        or lower(customer_email) = $2
+      order by order_date desc nulls last, created_at desc
+      limit $3
+    `,
+    values,
+  );
+  return attachOrderItems(result.rows);
+};
+
+const exportMyData = async (userId, email) => {
+  const pets = await listUserPets(userId, "all");
+  const petIds = pets.map((pet) => pet.id);
+
+  const [
+    profile,
+    documents,
+    claims,
+    bookings,
+    notifications,
+    orders,
+    vetVisitsResult,
+    vaccinationsResult,
+  ] = await Promise.all([
+    getProfileByUserId(userId),
+    listUserDocuments(userId, { limit: 500 }),
+    listUserInsuranceClaims(userId, { limit: 200 }),
+    listUserServiceBookings(userId, { limit: 200 }),
+    listUserNotifications(userId, { limit: 500 }),
+    listUserOrders(userId, email, 200),
+    petIds.length > 0
+      ? pool.query(
+        "select * from public.pet_vet_visits where user_id = $1 and pet_id = any($2::uuid[]) order by created_at desc",
+        [userId, petIds],
+      )
+      : Promise.resolve({ rows: [] }),
+    petIds.length > 0
+      ? pool.query(
+        "select * from public.pet_vaccinations where user_id = $1 and pet_id = any($2::uuid[]) order by created_at desc",
+        [userId, petIds],
+      )
+      : Promise.resolve({ rows: [] }),
+  ]);
+
+  return {
+    exported_at: new Date().toISOString(),
+    profile,
+    pets,
+    documents,
+    insurance_claims: claims,
+    service_bookings: bookings,
+    notifications,
+    orders,
+    vet_visits: vetVisitsResult.rows.map(serializeVetVisit),
+    vaccinations: vaccinationsResult.rows.map(serializeVaccination),
+  };
+};
+
+const deleteMyAccount = async (userId, email) => {
+  const dataExport = await exportMyData(userId, email);
+  const documentUrls = dataExport.documents.map((document) => document.file_url).filter(Boolean);
+  const normalizedEmail = normalizeEmail(email);
+  const client = await pool.connect();
+
+  try {
+    await client.query("begin");
+    await client.query(
+      `
+        update public.orders
+        set
+          user_id = null,
+          customer_name = 'Deleted user',
+          customer_email = null,
+          customer_phone = null,
+          shipping_address = '{}'::jsonb,
+          updated_at = now()
+        where user_id = $1
+          or lower(customer_email) = $2
+      `,
+      [userId, normalizedEmail],
+    );
+    await client.query("delete from public.shop_customers where lower(email) = $1", [normalizedEmail]);
+    await client.query("delete from public.app_users where id = $1", [userId]);
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
+
+  await Promise.all(documentUrls.map((fileUrl) => deleteUploadedFileFromUrl(fileUrl)));
+  return { deleted: true, export: dataExport };
+};
+
+const queryOptionalRows = async (sql, values = []) => {
+  try {
+    const result = await pool.query(sql, values);
+    return result.rows;
+  } catch (error) {
+    if (["42P01", "42703"].includes(error.code)) return [];
+    throw error;
+  }
+};
+
+const listAdminAnalytics = async (daysInput) => {
+  const days = Math.min(365, Math.max(1, Number(daysInput) || 30));
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+  const prevSince = new Date(Date.now() - days * 2 * 24 * 60 * 60 * 1000).toISOString();
+
+  const [
+    orders,
+    pets,
+    profiles,
+    products,
+    petDocuments,
+    chatFeedback,
+    dogBreeds,
+    catBreeds,
+  ] = await Promise.all([
+    queryOptionalRows(
+      `
+        select id, total, status, coalesce(order_date, created_at) as created_at, user_id
+        from public.orders
+        where coalesce(order_date, created_at) >= $1
+        order by coalesce(order_date, created_at) desc
+        limit 1000
+      `,
+      [prevSince],
+    ),
+    queryOptionalRows(
+      `
+        select
+          id,
+          type,
+          breed,
+          birth_date,
+          medical_conditions,
+          is_lost,
+          is_neutered,
+          last_vet_visit,
+          created_at,
+          user_id
+        from public.pets
+        order by created_at desc
+        limit 5000
+      `,
+    ),
+    queryOptionalRows(
+      `
+        select id, city, created_at
+        from public.profiles
+        order by created_at desc
+        limit 5000
+      `,
+    ),
+    listProducts().catch((error) => {
+      if (["42P01", "42703"].includes(error.code)) return [];
+      throw error;
+    }),
+    queryOptionalRows(
+      `
+        select id, false as needs_review, uploaded_at as created_at
+        from public.pet_documents
+        where uploaded_at >= $1
+        order by uploaded_at desc
+        limit 1000
+      `,
+      [since],
+    ),
+    queryOptionalRows(
+      `
+        select id, user_id, message_content, rating, created_at
+        from public.chat_message_feedback
+        where created_at >= $1
+        order by created_at desc
+        limit 500
+      `,
+      [since],
+    ),
+    listBreeds("dog"),
+    listBreeds("cat"),
+  ]);
+
+  return {
+    orders: orders.map((order) => ({
+      ...order,
+      total: toMoney(order.total),
+    })),
+    pets,
+    profiles,
+    products,
+    pet_documents: petDocuments,
+    chat_feedback: chatFeedback,
+    breeds: [...dogBreeds, ...catBreeds],
+  };
 };
 
 const getOrder = async (id) => {
@@ -3804,6 +4123,28 @@ const handleRequest = async (request, response) => {
       return;
     }
 
+    if (request.method === "PATCH" && url.pathname === "/api/me/marketing-consent") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      sendJson(response, 200, { profile: await updateMyMarketingConsent(auth.user.id, await readBody(request)) });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/me/export") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      sendJson(response, 200, { export: await exportMyData(auth.user.id, auth.user.email) });
+      return;
+    }
+
+    if (request.method === "DELETE" && url.pathname === "/api/me/account") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      const result = await deleteMyAccount(auth.user.id, auth.user.email);
+      sendJson(response, 200, result, { "set-cookie": buildClearUserCookie(request) });
+      return;
+    }
+
     if (request.method === "GET" && url.pathname === "/api/me/notifications") {
       const auth = await requireUser(request, response);
       if (!auth) return;
@@ -4022,6 +4363,31 @@ const handleRequest = async (request, response) => {
       return;
     }
 
+    if (request.method === "GET" && url.pathname === "/api/me/orders") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      const limit = Math.min(200, Math.max(1, Number(url.searchParams.get("limit") || 100)));
+      sendJson(response, 200, { orders: await listUserOrders(auth.user.id, auth.user.email, limit) });
+      return;
+    }
+
+    const profileActivityMatch = url.pathname.match(/^\/api\/profiles\/([0-9a-fA-F-]{36})\/activity$/);
+    if (profileActivityMatch && request.method === "GET") {
+      const activity = await getProfileActivityStatus(profileActivityMatch[1]);
+      if (!activity) {
+        sendError(response, 404, "Profile not found");
+        return;
+      }
+      sendJson(response, 200, { activity });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/analytics") {
+      if (!(await requireAdmin(request, response))) return;
+      sendJson(response, 200, await listAdminAnalytics(url.searchParams.get("days")));
+      return;
+    }
+
     if (request.method === "GET" && url.pathname === "/api/admin/orders") {
       if (!(await requireAdmin(request, response))) return;
       const limit = Math.min(500, Math.max(1, Number(url.searchParams.get("limit") || 200)));
@@ -4094,7 +4460,8 @@ const handleRequest = async (request, response) => {
     }
 
     if (request.method === "POST" && url.pathname === "/api/orders") {
-      sendJson(response, 201, { order: await createOrder(await readBody(request)) });
+      const auth = await getUserFromSession(request).catch(() => null);
+      sendJson(response, 201, { order: await createOrder(await readBody(request), auth?.user || null) });
       return;
     }
 
