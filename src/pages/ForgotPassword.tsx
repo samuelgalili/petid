@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { confirmPasswordReset, requestPasswordReset } from "@/lib/mipoApi";
 import { Loader2, ArrowLeft, Mail, KeyRound, Eye, EyeOff, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PetidLogo } from "@/components/PetidLogo";
@@ -17,7 +17,7 @@ const emailSchema = z.object({
 });
 
 const passwordSchema = z.object({
-  password: z.string().min(6, "הסיסמה חייבת להכיל לפחות 6 תווים"),
+  password: z.string().min(8, "הסיסמה חייבת להכיל לפחות 8 תווים"),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "הסיסמאות אינן תואמות",
@@ -53,17 +53,17 @@ const ForgotPassword = () => {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke("send-otp", {
-        body: { email, type: "password_reset" },
-      });
-
-      if (error) throw error;
+      const reset = await requestPasswordReset(email);
 
       setStep("otp");
       toast({
-        title: "קוד נשלח",
-        description: "קוד אימות נשלח לאימייל שלך",
+        title: reset.email_delivery === "not_configured" ? "מנגנון המייל לא מוגדר" : "קוד נשלח",
+        description: reset.email_delivery === "not_configured"
+          ? "פנה למנהל כדי לקבל קוד איפוס."
+          : "קוד אימות נשלח לאימייל שלך",
+        variant: reset.email_delivery === "not_configured" ? "destructive" : "default",
       });
+      if (reset.debug_otp) setOtp(reset.debug_otp);
     } catch (error: any) {
       console.error("Error sending OTP:", error);
       setError(error.message || "שגיאה בשליחת הקוד");
@@ -99,12 +99,7 @@ const ForgotPassword = () => {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke("verify-otp", {
-        body: { email, otp, newPassword: password },
-      });
-
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
+      await confirmPasswordReset({ email, otp, newPassword: password });
 
       setStep("success");
       toast({
@@ -127,13 +122,13 @@ const ForgotPassword = () => {
   const handleResendOtp = async () => {
     setLoading(true);
     try {
-      await supabase.functions.invoke("send-otp", {
-        body: { email, type: "password_reset" },
-      });
+      const reset = await requestPasswordReset(email);
       toast({
-        title: "קוד נשלח מחדש",
-        description: "בדוק את האימייל שלך",
+        title: reset.email_delivery === "not_configured" ? "מנגנון המייל לא מוגדר" : "קוד נשלח מחדש",
+        description: reset.email_delivery === "not_configured" ? "פנה למנהל כדי לקבל קוד איפוס." : "בדוק את האימייל שלך",
+        variant: reset.email_delivery === "not_configured" ? "destructive" : "default",
       });
+      if (reset.debug_otp) setOtp(reset.debug_otp);
     } catch (error: any) {
       toast({
         title: "שגיאה",

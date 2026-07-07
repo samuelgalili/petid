@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { confirmPasswordReset } from "@/lib/mipoApi";
 import { Loader2, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PetidLogo } from "@/components/PetidLogo";
@@ -12,10 +12,10 @@ import { PasswordStrengthIndicator } from "@/components/PasswordStrengthIndicato
 import { z } from "zod";
 
 const passwordSchema = z.object({
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(8, "הסיסמה חייבת להכיל לפחות 8 תווים"),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
+  message: "הסיסמאות אינן תואמות",
   path: ["confirmPassword"],
 });
 
@@ -30,20 +30,20 @@ const ResetPassword = () => {
   const [videoEnded, setVideoEnded] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const email = searchParams.get("email") || "";
+  const otp = searchParams.get("otp") || "";
 
   useEffect(() => {
-    // Check if user has access token (from email link)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        toast({
-          title: "Invalid or Expired Link",
-          description: "Please request a new password reset link",
-          variant: "destructive",
-        });
-        navigate("/forgot-password");
-      }
+    if (email && otp) return;
+
+    toast({
+      title: "קישור לא תקין",
+      description: "בקש קישור איפוס סיסמה חדש",
+      variant: "destructive",
     });
-  }, [navigate, toast]);
+    navigate("/forgot-password");
+  }, [email, navigate, otp, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,16 +66,12 @@ const ResetPassword = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: password,
-      });
-
-      if (error) throw error;
+      await confirmPasswordReset({ email, otp, newPassword: password });
 
       setSuccess(true);
       toast({
-        title: "Password Updated",
-        description: "Your password has been successfully updated",
+        title: "הסיסמה עודכנה",
+        description: "הסיסמה שלך עודכנה בהצלחה",
       });
 
       // Redirect to login after 2 seconds
@@ -85,7 +81,7 @@ const ResetPassword = () => {
     } catch (error: any) {
       toast({
         title: "שגיאה",
-        description: error.message,
+        description: error.message || "שגיאה באיפוס הסיסמה",
         variant: "destructive",
       });
     } finally {
@@ -96,14 +92,15 @@ const ResetPassword = () => {
   return (
     <div 
       className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" 
-      dir="ltr"
+      dir="rtl"
     >
       {/* Background Video */}
       <video
         autoPlay
         muted
         playsInline
-        onEnded={() => setVideoEnded(true)}
+        loop
+        onCanPlay={() => setVideoEnded(true)}
         className="absolute inset-0 w-full h-full object-cover"
       >
         <source src="/videos/background-pup-story.mp4" type="video/mp4" />
@@ -147,7 +144,7 @@ const ResetPassword = () => {
                           id="password"
                           name="password"
                           type={showPassword ? "text" : "password"}
-                          placeholder="לפחות 6 תווים"
+                          placeholder="לפחות 8 תווים"
                           value={password}
                           onChange={(e) => {
                             setPassword(e.target.value);

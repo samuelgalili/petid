@@ -521,6 +521,28 @@ export async function logoutUser() {
   });
 }
 
+export async function requestPasswordReset(email: string): Promise<{
+  ok: boolean;
+  email_delivery?: "sent" | "not_configured" | "send_failed" | string;
+  debug_otp?: string;
+}> {
+  return apiFetch("/auth/password-reset/request", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function confirmPasswordReset(input: {
+  email: string;
+  otp: string;
+  newPassword: string;
+}): Promise<{ ok: boolean }> {
+  return apiFetch("/auth/password-reset/confirm", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
 export async function updateMyProfile(input: Partial<MipoProfile> & {
   fullName?: string;
   whatsappNumber?: string | null;

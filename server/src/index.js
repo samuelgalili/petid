@@ -24,6 +24,11 @@ const maxUploadBytes = Number(process.env.MAX_UPLOAD_BYTES || 5 * 1024 * 1024);
 const maxDocumentUploadBytes = Number(process.env.MAX_DOCUMENT_UPLOAD_BYTES || 10 * 1024 * 1024);
 const adminCookieName = "mipo_admin_session";
 const userCookieName = "mipo_user_session";
+const passwordResetOtpMinutes = Number(process.env.PASSWORD_RESET_OTP_MINUTES || 10);
+const passwordResetOtpTtlMs = Math.max(1, passwordResetOtpMinutes) * 60 * 1000;
+const passwordResetDebug = process.env.PASSWORD_RESET_DEBUG === "true";
+const resendApiKey = process.env.RESEND_API_KEY;
+const passwordResetFromEmail = process.env.PASSWORD_RESET_FROM_EMAIL || "MIPO <onboarding@resend.dev>";
 const configuredAdminSessionHours = Number(process.env.ADMIN_SESSION_HOURS || 8);
 const adminSessionHours = Number.isFinite(configuredAdminSessionHours) && configuredAdminSessionHours > 0
   ? configuredAdminSessionHours
@@ -705,6 +710,200 @@ const loginUser = async (request, body) => {
     profile,
     token,
   };
+};
+
+const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
+
+const hashPasswordResetOtp = (email, otp) => createHmac("sha256", adminApiKey || databaseUrl)
+  .update(`${normalizeEmail(email)}:${String(otp || "")}`)
+  .digest("hex");
+
+const sendPasswordResetEmail = async (request, email, otp) => {
+  if (!resendApiKey) return { sent: false, reason: "not_configured" };
+
+  const resetUrl = new URL("/reset-password", `${getPublicBaseUrl(request)}/`);
+  resetUrl.searchParams.set("email", email);
+  resetUrl.searchParams.set("otp", otp);
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${resendApiKey}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      from: passwordResetFromEmail,
+      to: [email],
+      subject: "קוד איפוס הסיסמה שלך - MIPO",
+      html: `
+        <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; background: #f8f8fb;">
+          <div style="background: #ffffff; border-radius: 20px; padding: 32px; text-align: center;">
+            <h1 style="margin: 0 0 12px; color: #111827;">MIPO</h1>
+            <p style="margin: 0 0 24px; color: #4b5563;">קוד איפוס הסיסמה שלך תקף ל-${Math.max(1, passwordResetOtpMinutes)} דקות.</p>
+            <div style="font-size: 34px; letter-spacing: 8px; font-weight: 700; color: #6C63FF; margin: 24px 0;">${otp}</div>
+            <a href="${resetUrl.toString()}" style="display: inline-block; background: #6C63FF; color: #ffffff; text-decoration: none; padding: 12px 22px; border-radius: 999px; font-weight: 700;">הגדרת סיסמה חדשה</a>
+            <p style="margin: 24px 0 0; color: #6b7280; font-size: 13px;">אם לא ביקשת לאפס את הסיסמה, אפשר להתעלם מההודעה.</p>
+          </div>
+        </div>
+      `,
+    }),
+  });
+
+  if (!response.ok) {
+    const details = await response.text().catch(() => "");
+    console.error("Password reset email failed:", response.status, details.slice(0, 300));
+    return { sent: false, reason: "send_failed" };
+  }
+
+  return { sent: true, reason: "sent" };
+};
+
+const requestPasswordReset = async (request, body) => {
+  const email = normalizeEmail(body.email);
+  if (!email || !email.includes("@")) {
+    const error = new Error("A valid email is required");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const userResult = await pool.query(
+    "select id from public.app_users where lower(email) = $1 and is_active = true limit 1",
+    [email],
+  );
+
+  let emailDelivery = resendApiKey ? "sent" : "not_configured";
+  let debugOtp;
+
+  if (userResult.rowCount > 0) {
+    const otp = generateOtp();
+    const expiresAt = new Date(Date.now() + passwordResetOtpTtlMs).toISOString();
+
+    await pool.query(
+      `
+        insert into public.password_reset_otps (
+          email,
+          otp_hash,
+          expires_at,
+          used,
+          attempts,
+          created_at,
+          updated_at
+        )
+        values ($1, $2, $3, false, 0, now(), now())
+        on conflict (email) do update set
+          otp_hash = excluded.otp_hash,
+          expires_at = excluded.expires_at,
+          used = false,
+          attempts = 0,
+          updated_at = now()
+      `,
+      [email, hashPasswordResetOtp(email, otp), expiresAt],
+    );
+
+    await pool.query(
+      "update public.app_users set password_reset_last_requested_at = now(), updated_at = now() where id = $1",
+      [userResult.rows[0].id],
+    );
+
+    const delivery = await sendPasswordResetEmail(request, email, otp);
+    emailDelivery = delivery.reason;
+    if (passwordResetDebug) debugOtp = otp;
+  }
+
+  return {
+    ok: true,
+    email_delivery: emailDelivery,
+    ...(debugOtp ? { debug_otp: debugOtp } : {}),
+  };
+};
+
+const confirmPasswordReset = async (body) => {
+  const email = normalizeEmail(body.email);
+  const otp = String(body.otp || "").trim();
+  const password = String(body.newPassword || body.new_password || body.password || "");
+
+  if (!email || !email.includes("@")) {
+    const error = new Error("A valid email is required");
+    error.statusCode = 400;
+    throw error;
+  }
+  if (!/^\d{6}$/.test(otp)) {
+    const error = new Error("A valid 6-digit code is required");
+    error.statusCode = 400;
+    throw error;
+  }
+  if (password.length < 8) {
+    const error = new Error("Password must be at least 8 characters");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const client = await pool.connect();
+  let committed = false;
+  try {
+    await client.query("begin");
+
+    const otpResult = await client.query(
+      "select * from public.password_reset_otps where email = $1 for update",
+      [email],
+    );
+    const row = otpResult.rows[0];
+    if (!row || row.used || new Date(row.expires_at).getTime() < Date.now()) {
+      const error = new Error("Invalid or expired reset code");
+      error.statusCode = 400;
+      throw error;
+    }
+    if (row.attempts >= 5) {
+      const error = new Error("Too many invalid reset attempts");
+      error.statusCode = 429;
+      throw error;
+    }
+
+    const expectedHash = hashPasswordResetOtp(email, otp);
+    if (!secretsEqual(expectedHash, row.otp_hash)) {
+      await client.query(
+        "update public.password_reset_otps set attempts = attempts + 1, updated_at = now() where email = $1",
+        [email],
+      );
+      await client.query("commit");
+      committed = true;
+      const error = new Error("Invalid or expired reset code");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const userResult = await client.query(
+      `
+        update public.app_users
+        set
+          password_hash = $2,
+          password_reset_required = false,
+          updated_at = now()
+        where lower(email) = $1 and is_active = true
+        returning id
+      `,
+      [email, hashPassword(password)],
+    );
+    if (userResult.rowCount === 0) {
+      const error = new Error("User not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    await client.query("delete from public.user_sessions where user_id = $1", [userResult.rows[0].id]);
+    await client.query(
+      "update public.password_reset_otps set used = true, updated_at = now() where email = $1",
+      [email],
+    );
+    await client.query("commit");
+    committed = true;
+    return { ok: true };
+  } catch (error) {
+    if (!committed) await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
 const logoutUser = async (request) => {
@@ -3568,6 +3767,16 @@ const handleRequest = async (request, response) => {
     if (request.method === "POST" && url.pathname === "/api/auth/login") {
       const result = await loginUser(request, await readBody(request));
       sendJson(response, 200, { user: result.user, profile: result.profile }, { "set-cookie": buildUserCookie(request, result.token) });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/auth/password-reset/request") {
+      sendJson(response, 200, await requestPasswordReset(request, await readBody(request)));
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/auth/password-reset/confirm") {
+      sendJson(response, 200, await confirmPasswordReset(await readBody(request)));
       return;
     }
 
