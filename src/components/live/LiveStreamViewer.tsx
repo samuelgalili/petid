@@ -17,6 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { createClientId } from "@/lib/randomId";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -168,7 +169,7 @@ export const LiveStreamViewer = () => {
         },
         () => {
           // Show floating heart
-          const heartId = crypto.randomUUID();
+          const heartId = createClientId("heart");
           const x = Math.random() * 60 + 20; // 20-80% from left
           setFloatingHearts((prev) => [...prev, { id: heartId, x }]);
           setTimeout(() => {

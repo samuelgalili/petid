@@ -7,6 +7,7 @@
 import { useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { createClientId } from "@/lib/randomId";
 
 /* ─── Types ─── */
 
@@ -33,7 +34,7 @@ interface UseDataIntakeOptions {
 /* ─── Helpers ─── */
 
 function generateId() {
-  return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return createClientId("intake");
 }
 
 async function uploadToStorage(file: File, userId: string, petId: string): Promise<string | null> {

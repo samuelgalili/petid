@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { createClientId } from "@/lib/randomId";
 
 // ─── Agent Config ───────────────────────────────────────────
 const AGENT_DEFS = [
@@ -304,8 +305,8 @@ const BrainCommandPrompt = () => {
 
   const sendCommand = async () => {
     if (!input.trim() || isStreaming) return;
-    const userMsg: ChatMsg = { id: crypto.randomUUID(), role: "user", content: input };
-    const assistantId = crypto.randomUUID();
+    const userMsg: ChatMsg = { id: createClientId("message"), role: "user", content: input };
+    const assistantId = createClientId("message");
     setMessages(prev => [...prev, userMsg, { id: assistantId, role: "assistant", content: "" }]);
     setInput("");
     setIsStreaming(true);

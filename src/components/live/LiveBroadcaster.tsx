@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { createClientId } from "@/lib/randomId";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -210,7 +211,7 @@ export const LiveBroadcaster = () => {
           filter: `stream_id=eq.${streamId}`,
         },
         () => {
-          const heartId = crypto.randomUUID();
+          const heartId = createClientId("heart");
           const x = Math.random() * 60 + 20;
           setFloatingHearts((prev) => [...prev, { id: heartId, x }]);
           setTimeout(() => {

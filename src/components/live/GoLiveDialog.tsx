@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { createClientId } from "@/lib/randomId";
 
 interface GoLiveDialogProps {
   open: boolean;
@@ -40,7 +41,7 @@ export const GoLiveDialog = ({ open, onOpenChange }: GoLiveDialogProps) => {
 
     try {
       // Generate unique stream key
-      const streamKey = crypto.randomUUID();
+      const streamKey = createClientId("stream");
 
       const { data, error } = await (supabase.from("live_streams") as any)
         .insert({

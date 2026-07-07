@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MessageSquare, Star, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { createClientId } from "@/lib/randomId";
 
 /**
  * UXGuardian — Floating feedback widget with glassmorphism style.
@@ -23,7 +24,7 @@ export const UXGuardian = () => {
 
   // Rage-click tracking
   const clickMapRef = useRef<Map<string, { count: number; timer: ReturnType<typeof setTimeout> }>>(new Map());
-  const sessionIdRef = useRef(crypto.randomUUID());
+  const sessionIdRef = useRef(createClientId("ux"));
 
   // ─── Rage-Click Detector ──────────────────────────────────
   useEffect(() => {

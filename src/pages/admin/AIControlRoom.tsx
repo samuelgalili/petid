@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { createClientId } from "@/lib/randomId";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -185,13 +186,13 @@ const AIControlRoom = () => {
     if (!messageToSend.trim() || isStreaming) return;
 
     const userMessage: ChatMessage = {
-      id: crypto.randomUUID(), role: 'user', content: messageToSend, created_at: new Date().toISOString()
+      id: createClientId('message'), role: 'user', content: messageToSend, created_at: new Date().toISOString()
     };
     setChatMessages(prev => [...prev, userMessage]);
     setInputMessage("");
     setIsStreaming(true);
 
-    const assistantId = crypto.randomUUID();
+    const assistantId = createClientId('message');
     setChatMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '', created_at: new Date().toISOString() }]);
 
     try {

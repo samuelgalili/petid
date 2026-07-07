@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { createClientId } from "@/lib/randomId";
 
 export interface AiOsMessage {
   id: string;
@@ -40,7 +41,7 @@ export const useAiOsChat = () => {
     if (!user || !content.trim()) return;
 
     const userMsg: AiOsMessage = {
-      id: crypto.randomUUID(),
+      id: createClientId("message"),
       role: "user",
       content: content.trim(),
       createdAt: new Date().toISOString(),
@@ -84,7 +85,7 @@ export const useAiOsChat = () => {
       }
 
       let assistantContent = "";
-      const assistantId = crypto.randomUUID();
+      const assistantId = createClientId("message");
       
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
@@ -137,7 +138,7 @@ export const useAiOsChat = () => {
       if (err.name !== "AbortError") {
         console.error("AI OS chat error:", err);
         setMessages(prev => [...prev, {
-          id: crypto.randomUUID(),
+          id: createClientId("message"),
           role: "system",
           content: `שגיאה: ${err.message}`,
           createdAt: new Date().toISOString(),

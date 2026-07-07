@@ -7,13 +7,14 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { createClientId } from '@/lib/randomId';
 
 const SESSION_KEY = 'petid_session_id';
 
 function getSessionId(): string {
   let sid = sessionStorage.getItem(SESSION_KEY);
   if (!sid) {
-    sid = crypto.randomUUID();
+    sid = createClientId('session');
     sessionStorage.setItem(SESSION_KEY, sid);
   }
   return sid;
