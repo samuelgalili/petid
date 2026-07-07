@@ -13,6 +13,7 @@ import {
   searchProductImage,
   smartScrapeProduct,
 } from "./productIntel.js";
+import { fallbackBreeds } from "./referenceData.js";
 
 const port = Number(process.env.PORT || 3000);
 const databaseUrl = process.env.DATABASE_URL;
@@ -2037,6 +2038,53 @@ const listProducts = async () => {
   ];
 };
 
+const listBreeds = async (petType) => {
+  const normalizedPetType = ["dog", "cat"].includes(petType) ? petType : "dog";
+
+  try {
+    const result = await pool.query(
+      `
+        select
+          id::text,
+          breed_name,
+          breed_name_he,
+          pet_type,
+          life_expectancy_years,
+          description_he,
+          affection_family,
+          kids_friendly,
+          dog_friendly,
+          shedding_level,
+          grooming_freq,
+          drooling_level,
+          stranger_openness,
+          playfulness,
+          watchdog_nature,
+          trainability,
+          energy_level,
+          barking_level,
+          mental_needs,
+          size_category,
+          weight_range_kg,
+          image_url
+        from public.breed_information
+        where pet_type = $1
+          and coalesce(is_active, true) = true
+        order by coalesce(breed_name_he, breed_name) asc
+      `,
+      [normalizedPetType],
+    );
+
+    if (result.rows.length > 0) return result.rows;
+  } catch (error) {
+    if (error.code !== "42P01" && error.code !== "42703") throw error;
+  }
+
+  return fallbackBreeds
+    .filter((breed) => breed.pet_type === normalizedPetType)
+    .sort((a, b) => (a.breed_name_he || a.breed_name).localeCompare(b.breed_name_he || b.breed_name, "he"));
+};
+
 const ensureDefaultBusinessProfile = async () => {
   await pool.query(
     `
@@ -3863,6 +3911,11 @@ const handleRequest = async (request, response) => {
         return;
       }
       sendJson(response, 200, { order });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/breeds") {
+      sendJson(response, 200, { breeds: await listBreeds(url.searchParams.get("pet_type")) });
       return;
     }
 

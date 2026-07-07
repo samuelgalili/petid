@@ -7,9 +7,9 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ShoppingCart, Sparkles, ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
+import { getCurrentUser, getMyPets, getShopProducts } from "@/lib/mipoApi";
 
 interface SmartProduct {
   id: string;
@@ -30,50 +30,39 @@ export const FeedProductCards = () => {
 
   useEffect(() => {
     const fetch = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setLoading(false); return; }
+      try {
+        const auth = await getCurrentUser();
+        if (!auth?.user) {
+          setLoading(false);
+          return;
+        }
 
-      // Get user's primary pet for personalization
-      const { data: pets } = await (supabase as any)
-        .from("pets")
-        .select("name, breed, birth_date, type, medical_conditions, current_food")
-        .eq("user_id", user.id)
-        .eq("archived", false)
-        .order("created_at", { ascending: false })
-        .limit(1);
+        const pets = await getMyPets().catch(() => []);
+        const pet = pets[0];
+        setPetName(pet?.name || null);
 
-      const pet = pets?.[0];
-      setPetName(pet?.name || null);
+        const prods = await getShopProducts();
+        const petType = pet?.pet_type || pet?.type;
+        const relevant = prods
+          .filter((product) => product.in_stock !== false)
+          .filter((product) => !petType || !product.pet_type || product.pet_type === "all" || product.pet_type === petType)
+          .slice(0, 4);
 
-      // Build category filter based on pet data
-      let categoryFilter: string[] = [];
-      if (pet?.pet_type === "cat") {
-        categoryFilter = ["חתולים", "cat", "cats"];
-      } else {
-        categoryFilter = ["כלבים", "dog", "dogs"];
-      }
-
-      // Fetch relevant products
-      const { data: prods } = await supabase
-        .from("business_products")
-        .select("id, name, price, sale_price, image_url, category, life_stage, pet_type")
-        .eq("in_stock", true)
-        .order("average_rating", { ascending: false })
-        .limit(6);
-
-      if (prods?.length) {
-        const mapped: SmartProduct[] = prods.slice(0, 4).map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          price: p.price,
-          sale_price: p.sale_price,
-          image_url: p.image_url,
-          category: p.category,
+        const mapped: SmartProduct[] = relevant.map((product) => ({
+          id: product.id,
+          name: product.name,
+          price: Number(product.original_price || product.price || 0),
+          sale_price: product.sale_price ? Number(product.sale_price) : null,
+          image_url: product.image_url || "/placeholder.svg",
+          category: product.category,
           relevance_reason: pet?.name ? `מותאם ל${pet.name}` : "פופולרי",
         }));
         setProducts(mapped);
+      } catch (error) {
+        console.error("Error loading feed product cards:", error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     fetch();
   }, []);

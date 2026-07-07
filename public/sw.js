@@ -1,6 +1,6 @@
-// PetID Service Worker - PWA + Push Notifications + Offline Support
-// Version 9 - Proper offline caching
-const CACHE_VERSION = 'petid-v9';
+// MIPO Service Worker - PWA + Push Notifications + Offline Support
+// Version 10 - AWS API caching
+const CACHE_VERSION = 'mipo-v10';
 const OFFLINE_URL = '/offline.html';
 
 // App shell files to pre-cache
@@ -14,7 +14,7 @@ const APP_SHELL = [
 
 // ===== INSTALL =====
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing service worker v9...');
+  console.log('[SW] Installing service worker v10...');
   event.waitUntil(
     caches.open(CACHE_VERSION).then((cache) => {
       console.log('[SW] Caching app shell');
@@ -26,7 +26,7 @@ self.addEventListener('install', (event) => {
 
 // ===== ACTIVATE =====
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating service worker v9...');
+  console.log('[SW] Activating service worker v10...');
   event.waitUntil(
     Promise.all([
       // Remove old caches
@@ -51,9 +51,6 @@ self.addEventListener('fetch', (event) => {
 
   // Never cache OAuth redirects
   if (url.pathname.startsWith('/~oauth')) return;
-
-  // Never cache Supabase Edge Functions (chat, AI, etc.)
-  if (url.pathname.includes('/functions/v1/')) return;
 
   // For navigation requests: network-first with offline fallback
   if (event.request.mode === 'navigate') {
@@ -89,25 +86,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For Supabase storage (images): cache-first
-  if (url.hostname.includes('supabase.co') && url.pathname.includes('/storage/')) {
-    event.respondWith(
-      caches.match(event.request).then((cached) => {
-        if (cached) return cached;
-        return fetch(event.request).then((response) => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_VERSION).then((cache) => cache.put(event.request, clone));
-          }
-          return response;
-        }).catch(() => new Response('', { status: 408 }));
-      })
-    );
-    return;
-  }
-
-  // For API calls: network-first with short timeout
-  if (url.hostname.includes('supabase.co') && url.pathname.includes('/rest/')) {
+  // For same-origin AWS API calls: network-first with short timeout
+  if (url.origin === self.location.origin && url.pathname.startsWith('/api/')) {
     event.respondWith(
       Promise.race([
         fetch(event.request).then((response) => {
@@ -118,7 +98,10 @@ self.addEventListener('fetch', (event) => {
           return response;
         }),
         new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
-      ]).catch(() => caches.match(event.request).then((cached) => cached || new Response('[]', { headers: { 'Content-Type': 'application/json' } })))
+      ]).catch(() => caches.match(event.request).then((cached) => cached || new Response('{"error":"offline"}', {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' },
+      })))
     );
     return;
   }
@@ -132,7 +115,7 @@ self.addEventListener('fetch', (event) => {
 // ===== PUSH NOTIFICATIONS =====
 self.addEventListener('push', (event) => {
   let data = {
-    title: 'Petid',
+    title: 'MIPO',
     body: 'יש לך התראה חדשה',
     icon: '/pwa-192x192.png',
     badge: '/pwa-192x192.png',

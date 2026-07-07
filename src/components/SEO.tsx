@@ -23,8 +23,8 @@ interface SEOProps {
 }
 
 const DEFAULT_IMAGE = appUrl('/pwa-512x512.png');
-const SITE_NAME = 'Petid';
-const DEFAULT_DESCRIPTION = 'Petid — האפליקציה לחיים עם חיית המחמד שלך 🐶✨ שמרו רגעים, עקבו אחר טיפול, קבלו תזכורות וגלו מקומות ידידותיים לחיות מחמד.';
+const SITE_NAME = 'MIPO';
+const DEFAULT_DESCRIPTION = 'MIPO היא אפליקציה לניהול החיים עם חיית המחמד: פרופיל, טיפול, תזכורות, קהילה וחנות.';
 
 export const SEO = ({
   title,
@@ -39,7 +39,7 @@ export const SEO = ({
   publishedTime,
   author,
 }: SEOProps) => {
-  const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} — האפליקציה לחיים עם חיית המחמד שלך`;
+  const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} — My Precious One`;
   const fullUrl = url ? appUrl(url) : APP_URL;
   const fullImage = image.startsWith('http') ? image : appUrl(image);
 
@@ -113,7 +113,7 @@ export const SEO = ({
     // Cleanup function
     return () => {
       // Reset title when component unmounts
-      document.title = `${SITE_NAME} — האפליקציה לחיים עם חיית המחמד שלך`;
+      document.title = `${SITE_NAME} — My Precious One`;
     };
   }, [fullTitle, description, fullImage, fullUrl, type, noIndex, price, currency, availability, publishedTime, author]);
 
@@ -188,11 +188,11 @@ function getStructuredData(props: {
         datePublished: props.publishedTime,
         author: {
           '@type': 'Person',
-          name: props.author || 'PetID',
+          name: props.author || 'MIPO',
         },
         publisher: {
           '@type': 'Organization',
-          name: 'PetID',
+          name: 'MIPO',
           logo: {
             '@type': 'ImageObject',
             url: appUrl('/pwa-512x512.png'),
@@ -220,7 +220,7 @@ function getStructuredData(props: {
         url: props.url,
         isPartOf: {
           '@type': 'WebSite',
-          name: 'Petid',
+          name: 'MIPO',
           url: APP_URL,
         },
       };
@@ -291,12 +291,12 @@ export const SEO_CONFIG: Record<string, SEOProps> = {
   },
   '/science': {
     title: 'מדע ואמון',
-    description: 'המחקר המדעי מאחורי ההמלצות של PetID — מבוסס NRC 2006',
+    description: 'המחקר המדעי מאחורי ההמלצות של MIPO — מבוסס NRC 2006',
     url: '/science',
   },
   '/chat': {
     title: 'צ\'אט',
-    description: 'שוחחו עם הסוכנים החכמים של PetID — שירות, תזונה, ביטוח ועוד',
+    description: 'שוחחו עם הסוכנים החכמים של MIPO — שירות, תזונה, ביטוח ועוד',
     url: '/chat',
   },
 };

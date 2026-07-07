@@ -4,7 +4,6 @@
 
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Filter, Dog, Cat, Heart, Baby, Zap, Brain, Scissors, Volume2, Shield, ChevronDown, X, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -16,31 +15,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
 import { SEO } from "@/components/SEO";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getBreedInfo, type MipoBreedInfo } from "@/lib/mipoApi";
 
-interface BreedInfo {
-  id: string;
-  breed_name: string;
-  breed_name_he: string | null;
-  pet_type: string;
-  life_expectancy_years: string | null;
-  description_he: string | null;
-  affection_family: number | null;
-  kids_friendly: number | null;
-  dog_friendly: number | null;
-  shedding_level: number | null;
-  grooming_freq: number | null;
-  drooling_level: number | null;
-  stranger_openness: number | null;
-  playfulness: number | null;
-  watchdog_nature: number | null;
-  trainability: number | null;
-  energy_level: number | null;
-  barking_level: number | null;
-  mental_needs: number | null;
-  size_category: string | null;
-  weight_range_kg: string | null;
-  image_url: string | null;
-}
+type BreedInfo = MipoBreedInfo;
 
 const RatingBar = ({ value, label, icon: Icon }: { value: number | null; label: string; icon: React.ElementType }) => {
   if (value === null) return null;
@@ -180,17 +157,7 @@ const Breeds = () => {
 
   const { data: breeds, isLoading } = useQuery({
     queryKey: ["breeds-encyclopedia", petType],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("breed_information")
-        .select("*")
-        .eq("pet_type", petType)
-        .eq("is_active", true)
-        .order("breed_name_he", { ascending: true });
-
-      if (error) throw error;
-      return data as BreedInfo[];
-    },
+    queryFn: () => getBreedInfo(petType),
   });
 
   const filteredBreeds = useMemo(() => {

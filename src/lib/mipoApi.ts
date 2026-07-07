@@ -44,6 +44,31 @@ export interface MipoProduct {
   source?: "manual" | "scraped";
 }
 
+export interface MipoBreedInfo {
+  id: string;
+  breed_name: string;
+  breed_name_he: string | null;
+  pet_type: string;
+  life_expectancy_years: string | null;
+  description_he: string | null;
+  affection_family: number | null;
+  kids_friendly: number | null;
+  dog_friendly: number | null;
+  shedding_level: number | null;
+  grooming_freq: number | null;
+  drooling_level: number | null;
+  stranger_openness: number | null;
+  playfulness: number | null;
+  watchdog_nature: number | null;
+  trainability: number | null;
+  energy_level: number | null;
+  barking_level: number | null;
+  mental_needs: number | null;
+  size_category: string | null;
+  weight_range_kg: string | null;
+  image_url: string | null;
+}
+
 export interface MipoAdmin {
   id: string;
   email: string;
@@ -345,6 +370,25 @@ export interface MipoServiceBooking {
 }
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/+$/, "");
+const userSessionHintKey = "mipo_user_session_hint";
+const adminSessionHintKey = "mipo_admin_session_hint";
+
+const hasStorageHint = (key: string) => {
+  try {
+    return localStorage.getItem(key) === "true";
+  } catch {
+    return false;
+  }
+};
+
+const setStorageHint = (key: string, value: boolean) => {
+  try {
+    if (value) localStorage.setItem(key, "true");
+    else localStorage.removeItem(key);
+  } catch {
+    // Session hints are only an optimization for public pages.
+  }
+};
 
 async function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -397,6 +441,8 @@ async function adminApiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export async function getCurrentAdmin(): Promise<MipoAdmin | null> {
+  if (!hasStorageHint(adminSessionHintKey)) return null;
+
   const response = await fetch(`${API_BASE_URL}/admin/me`, {
     credentials: "same-origin",
     headers: {
@@ -404,7 +450,10 @@ export async function getCurrentAdmin(): Promise<MipoAdmin | null> {
     },
   });
 
-  if (response.status === 401) return null;
+  if (response.status === 401) {
+    setStorageHint(adminSessionHintKey, false);
+    return null;
+  }
 
   const body = await response.json().catch(() => null);
   if (!response.ok) {
@@ -415,6 +464,8 @@ export async function getCurrentAdmin(): Promise<MipoAdmin | null> {
 }
 
 export async function getCurrentUser(): Promise<MipoAuthResult | null> {
+  if (!hasStorageHint(userSessionHintKey)) return null;
+
   const response = await fetch(`${API_BASE_URL}/auth/me`, {
     credentials: "same-origin",
     headers: {
@@ -422,7 +473,10 @@ export async function getCurrentUser(): Promise<MipoAuthResult | null> {
     },
   });
 
-  if (response.status === 401) return null;
+  if (response.status === 401) {
+    setStorageHint(userSessionHintKey, false);
+    return null;
+  }
 
   const body = await response.json().catch(() => null);
   if (!response.ok) {
@@ -436,10 +490,12 @@ export async function getCurrentUser(): Promise<MipoAuthResult | null> {
 }
 
 export async function loginUser(email: string, password: string): Promise<MipoAuthResult> {
-  return apiFetch<MipoAuthResult>("/auth/login", {
+  const auth = await apiFetch<MipoAuthResult>("/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
   });
+  setStorageHint(userSessionHintKey, true);
+  return auth;
 }
 
 export async function signupUser(input: {
@@ -449,13 +505,16 @@ export async function signupUser(input: {
   birthdate?: string | null;
   phone?: string | null;
 }): Promise<MipoAuthResult> {
-  return apiFetch<MipoAuthResult>("/auth/signup", {
+  const auth = await apiFetch<MipoAuthResult>("/auth/signup", {
     method: "POST",
     body: JSON.stringify(input),
   });
+  setStorageHint(userSessionHintKey, true);
+  return auth;
 }
 
 export async function logoutUser() {
+  setStorageHint(userSessionHintKey, false);
   return apiFetch<{ ok: boolean }>("/auth/logout", {
     method: "POST",
     body: JSON.stringify({}),
@@ -712,10 +771,12 @@ export async function loginAdmin(email: string, password: string): Promise<MipoA
     method: "POST",
     body: JSON.stringify({ email, password }),
   });
+  setStorageHint(adminSessionHintKey, true);
   return result.admin;
 }
 
 export async function logoutAdmin() {
+  setStorageHint(adminSessionHintKey, false);
   return apiFetch<{ ok: boolean }>("/admin/logout", {
     method: "POST",
     body: JSON.stringify({}),
@@ -816,6 +877,11 @@ export async function bulkUpdateAdminOrders(ids: string[], updates: Partial<Pick
 export async function getShopProducts(): Promise<MipoProduct[]> {
   const result = await apiFetch<{ products: MipoProduct[] }>("/products");
   return result.products;
+}
+
+export async function getBreedInfo(petType: "dog" | "cat"): Promise<MipoBreedInfo[]> {
+  const result = await apiFetch<{ breeds: MipoBreedInfo[] }>(`/breeds?pet_type=${encodeURIComponent(petType)}`);
+  return result.breeds;
 }
 
 export async function getAdminProducts(): Promise<MipoProduct[]> {

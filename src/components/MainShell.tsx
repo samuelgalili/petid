@@ -1,9 +1,8 @@
 /**
  * MainShell — Persistent Feed + Overlay Navigation
  * ==================================================
- * The Feed (SoundtrackFeed) is always mounted as the base layer.
+ * The Feed (SoundtrackFeed) is mounted as the base layer for feed-like routes.
  * Chat, Shop, and Dashboard render as full-screen overlays on top.
- * This ensures Feed scroll position is preserved and never unmounts.
  */
 import { lazy, Suspense } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -45,13 +44,16 @@ const MainShell = () => {
 
   const showChat = location.pathname === "/chat";
   const showShop = location.pathname === "/shop" || location.pathname.startsWith("/shop/");
+  const shouldMountFeed = !showShop;
 
   return (
     <div className="relative min-h-screen">
-      {/* ═══ BASE LAYER: Feed (always mounted) ═══ */}
-      <Suspense fallback={<LoadingFallback />}>
-        <SoundtrackFeed />
-      </Suspense>
+      {/* ═══ BASE LAYER: Feed ═══ */}
+      {shouldMountFeed && (
+        <Suspense fallback={<LoadingFallback />}>
+          <SoundtrackFeed />
+        </Suspense>
+      )}
 
       {/* ═══ OVERLAY: AI Chat ═══ */}
       <AnimatePresence>

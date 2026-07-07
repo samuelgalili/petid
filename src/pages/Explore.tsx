@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BottomNav from "@/components/BottomNav";
-import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +15,8 @@ import { CreatePostDialog } from "@/components/CreatePostDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
+import { getMyPets, getShopProducts } from "@/lib/mipoApi";
+import { PROMO_POSTS } from "@/data/promoPostsConfig";
 
 // Park images
 import parkImage1 from "@/assets/parks/dog-park-1.jpg";
@@ -157,6 +158,74 @@ const trendingTags = [
   { tag: "גורים", posts: 9300 },
 ];
 
+const fallbackParks: DogPark[] = [
+  {
+    id: "park-yarkon",
+    name: "גינת כלבים פארק הירקון",
+    address: "פארק הירקון, ליד רוקח",
+    city: "תל אביב",
+    rating: 4.8,
+    total_reviews: 156,
+    water: true,
+    shade: true,
+    fencing: true,
+    latitude: 32.1133,
+    longitude: 34.8050,
+  },
+  {
+    id: "park-independence",
+    name: "גינת כלבים גן העצמאות",
+    address: "גן העצמאות, רחוב דיזנגוף",
+    city: "תל אביב",
+    rating: 4.5,
+    total_reviews: 94,
+    water: true,
+    shade: true,
+    fencing: true,
+    latitude: 32.0749,
+    longitude: 34.7743,
+  },
+  {
+    id: "park-sacher",
+    name: "גינת כלבים גן סאקר",
+    address: "גן סאקר",
+    city: "ירושלים",
+    rating: 4.6,
+    total_reviews: 122,
+    water: true,
+    shade: true,
+    fencing: false,
+    latitude: 31.7644,
+    longitude: 35.2097,
+  },
+  {
+    id: "park-carmel",
+    name: "גינת כלבים כרמל",
+    address: "מרכז הכרמל",
+    city: "חיפה",
+    rating: 4.4,
+    total_reviews: 71,
+    water: true,
+    shade: true,
+    fencing: true,
+    latitude: 32.8047,
+    longitude: 34.9908,
+  },
+];
+
+const promoPosts: Post[] = PROMO_POSTS.map((post) => ({
+  id: post.id,
+  image_url: post.image_url,
+  media_type: post.media_type,
+  likes_count: post.likes_count,
+  comments_count: post.comments_count,
+  user_id: post.user_id,
+  profiles: {
+    full_name: post.user_profile.full_name,
+    avatar_url: post.user_profile.avatar_url,
+  },
+}));
+
 interface AIInsight {
   type: "trend" | "recommendation" | "highlight";
   title: string;
@@ -204,17 +273,12 @@ const Explore = () => {
   useEffect(() => {
     const fetchUserPet = async () => {
       if (!user) return;
-      const { data } = await supabase
-        .from('pets')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('archived', false)
-        .limit(1);
-      if (data?.[0]) {
-        setUserPetId(data[0].id);
+      const pets = await getMyPets();
+      if (pets[0]) {
+        setUserPetId(pets[0].id);
       }
     };
-    fetchUserPet();
+    fetchUserPet().catch(() => undefined);
   }, [user]);
 
   // Calculate distance between two coordinates in km
@@ -251,62 +315,64 @@ const Explore = () => {
   }, []);
 
   const fetchSmartDiscovery = async (type: string) => {
-    try {
-      setLoadingInsights(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      const response = await supabase.functions.invoke("smart-discovery", {
-        body: { type, userId: user?.id },
-      });
-
-      if (response.data?.ai_insights) {
-        setAiInsights(response.data.ai_insights);
-      }
-    } catch (error) {
-      console.error("Error fetching smart discovery:", error);
-    } finally {
-      setLoadingInsights(false);
-    }
+    setLoadingInsights(true);
+    const labels: Record<string, string> = {
+      pets: "פרופילים",
+      parks: "גינות",
+      deals: "מבצעים",
+      posts: "קהילה",
+    };
+    setAiInsights({
+      insights: [
+        {
+          type: "highlight",
+          title: `${labels[type] || "תוכן"} מומלצים`,
+          description: "תוכן מקומי מתוך סביבת AWS של MIPO, ללא תלות ב-Supabase.",
+          relevance_score: 92,
+        },
+      ],
+      trending_topics: trendingTags.slice(0, 3).map((item) => item.tag),
+      summary: "תצוגת גילוי זמינה בזמן שמאגר הקהילה עובר ל-AWS.",
+    });
+    setLoadingInsights(false);
   };
 
   // Fetch pets based on filters
   const fetchPets = useCallback(async () => {
     try {
       setLoading(true);
-      let query = supabase
-        .from("pets")
-        .select(`
-          id,
-          name,
-          type,
-          breed,
-          avatar_url,
-          user_id,
-          gender,
-          age
-        `)
-        .eq("archived", false);
+      if (!user) {
+        setPets([]);
+        return;
+      }
 
-      // Apply type filter
+      const myPets = await getMyPets();
+      let nextPets = myPets.map((pet) => ({
+        id: pet.id,
+        name: pet.name,
+        type: pet.type || pet.pet_type || "dog",
+        breed: pet.breed || null,
+        avatar_url: pet.avatar_url || null,
+        user_id: pet.user_id || user.id,
+        gender: pet.gender || null,
+        age: pet.age_years ?? null,
+      }));
+
       if (petTypeFilter !== "all") {
-        query = query.eq("type", petTypeFilter);
+        nextPets = nextPets.filter((pet) => pet.type === petTypeFilter);
       }
 
-      // Apply breed filter
       if (breedFilter !== "כל הגזעים") {
-        query = query.ilike("breed", `%${breedFilter}%`);
+        nextPets = nextPets.filter((pet) => pet.breed?.toLowerCase().includes(breedFilter.toLowerCase()));
       }
 
-      const { data, error } = await query.limit(50);
-
-      if (error) throw error;
-      setPets(data || []);
+      setPets(nextPets);
     } catch (error) {
       console.error("Error fetching pets:", error);
     } finally {
       setLoading(false);
     }
-  }, [petTypeFilter, breedFilter]);
+  }, [petTypeFilter, breedFilter, user]);
 
   useEffect(() => {
     if (activeTab === "pets") {
@@ -327,15 +393,7 @@ const Explore = () => {
   const fetchParks = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("dog_parks")
-        .select("id, name, address, city, rating, total_reviews, water, shade, fencing, latitude, longitude")
-        .eq("status", "approved")
-        .limit(50);
-
-      if (error) throw error;
-      
-      let parksData = data || [];
+      let parksData = [...fallbackParks];
       
       // Calculate distance and sort by proximity if user location is available
       if (userLocation && parksData.length > 0) {
@@ -361,16 +419,25 @@ const Explore = () => {
   const fetchDeals = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("business_products")
-        .select("id, name, price, sale_price, image_url, category")
-        .not("sale_price", "is", null)
-        .eq("in_stock", true)
-        .order("created_at", { ascending: false })
-        .limit(20);
-
-      if (error) throw error;
-      setDeals(data || []);
+      const products = await getShopProducts();
+      setDeals(products
+        .filter((product) => product.in_stock !== false)
+        .map((product) => {
+          const price = Number(product.original_price || product.price || 0);
+          const salePrice = product.sale_price === null || product.sale_price === undefined
+            ? null
+            : Number(product.sale_price);
+          return {
+            id: product.id,
+            name: product.name,
+            price,
+            sale_price: salePrice && salePrice < price ? salePrice : null,
+            image_url: product.image_url,
+            category: product.category,
+          };
+        })
+        .filter((product) => product.sale_price !== null)
+        .slice(0, 20));
     } catch (error) {
       console.error("Error fetching deals:", error);
     } finally {
@@ -381,41 +448,7 @@ const Explore = () => {
   const fetchExplorePosts = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("posts")
-        .select(`
-          id,
-          image_url,
-          media_type,
-          user_id,
-          profiles!posts_user_id_fkey_profiles (
-            full_name,
-            avatar_url
-          )
-        `)
-        .order("created_at", { ascending: false })
-        .limit(30);
-
-      if (error) throw error;
-
-      // Get likes and comments count for each post
-      const postsWithCounts = await Promise.all(
-        (data || []).map(async (post) => {
-          const [likesRes, commentsRes] = await Promise.all([
-            supabase.from("post_likes").select("id", { count: "exact" }).eq("post_id", post.id),
-            supabase.from("post_comments").select("id", { count: "exact" }).eq("post_id", post.id)
-          ]);
-          
-          return {
-            ...post,
-            likes_count: likesRes.count || 0,
-            comments_count: commentsRes.count || 0,
-            profiles: post.profiles as Post["profiles"]
-          };
-        })
-      );
-
-      setPosts(postsWithCounts);
+      setPosts(promoPosts);
     } catch (error) {
       console.error("Error fetching explore posts:", error);
     } finally {
@@ -429,18 +462,7 @@ const Explore = () => {
       return;
     }
 
-    try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, avatar_url")
-        .ilike("full_name", `%${query}%`)
-        .limit(10);
-
-      if (error) throw error;
-      setUsers(data || []);
-    } catch (error) {
-      console.error("Error searching users:", error);
-    }
+    setUsers([]);
   };
 
   useEffect(() => {
@@ -462,40 +484,12 @@ const Explore = () => {
   const handleDoubleTap = useCallback(async (postId: string) => {
     if (!checkAuth("כדי לסמן לייק, יש להתחבר")) return;
     
-    // Show animation
     setDoubleTapPostId(postId);
-    
-    // Like the post
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      
-      // Check if already liked
-      const { data: existingLike } = await supabase
-        .from("post_likes")
-        .select("id")
-        .eq("post_id", postId)
-        .eq("user_id", user.id)
-        .single();
-      
-      if (!existingLike) {
-        await supabase.from("post_likes").insert({
-          post_id: postId,
-          user_id: user.id
-        });
-        
-        // Update local state
-        setPosts(prev => prev.map(post => 
-          post.id === postId 
-            ? { ...post, likes_count: post.likes_count + 1, is_liked: true }
-            : post
-        ));
-      }
-    } catch (error) {
-      console.error("Error liking post:", error);
-    }
-    
-    // Hide animation after delay
+    setPosts(prev => prev.map(post =>
+      post.id === postId && !post.is_liked
+        ? { ...post, likes_count: post.likes_count + 1, is_liked: true }
+        : post
+    ));
     setTimeout(() => setDoubleTapPostId(null), 1000);
   }, [checkAuth]);
 

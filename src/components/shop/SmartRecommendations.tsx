@@ -5,13 +5,13 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, ShoppingCart, Shield, Star } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Sparkles, ShoppingCart, Shield } from "lucide-react";
 import { useActivePet } from "@/hooks/useActivePet";
 import { useCart } from "@/contexts/CartContext";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { getShopProducts } from "@/lib/mipoApi";
 
 interface RecommendedProduct {
   id: string;
@@ -146,29 +146,42 @@ export const SmartRecommendations = () => {
 
     const fetchAndScore = async () => {
       setLoading(true);
-      const { data } = await supabase
-        .from("business_products")
-        .select("id, name, price, image_url, category, pet_type, description, dog_size, ingredients")
-        .eq("in_stock", true)
-        .limit(50);
+      try {
+        const data = await getShopProducts();
 
-      if (!data || data.length === 0) {
+        if (!data || data.length === 0) {
+          setProducts([]);
+          return;
+        }
+
+        const scored = data
+          .filter((p) => p.in_stock !== false)
+          .map(p => {
+            const enriched = { ...p, price: Number(p.sale_price || p.price || 0), _petWeight: pet.weight };
+            const { score, reason } = scoreProduct(enriched, pet.pet_type, pet.ageWeeks, pet.breed, pet.medical_conditions);
+            return {
+              id: p.id,
+              name: p.name,
+              price: Number(p.sale_price || p.price || 0),
+              image_url: p.image_url || "/placeholder.svg",
+              category: p.category,
+              pet_type: p.pet_type || null,
+              description: p.description || null,
+              relevanceScore: score,
+              relevanceReason: reason,
+            };
+          })
+          .filter(p => p.relevanceScore > 0)
+          .sort((a, b) => b.relevanceScore - a.relevanceScore)
+          .slice(0, 3);
+
+        setProducts(scored);
+      } catch (error) {
+        console.error("Error loading smart recommendations:", error);
+        setProducts([]);
+      } finally {
         setLoading(false);
-        return;
       }
-
-      const scored = data
-        .map(p => {
-          const enriched = { ...p, _petWeight: pet.weight };
-          const { score, reason } = scoreProduct(enriched, pet.pet_type, pet.ageWeeks, pet.breed, pet.medical_conditions);
-          return { ...p, relevanceScore: score, relevanceReason: reason };
-        })
-        .filter(p => p.relevanceScore > 0)
-        .sort((a, b) => b.relevanceScore - a.relevanceScore)
-        .slice(0, 3);
-
-      setProducts(scored);
-      setLoading(false);
     };
 
     fetchAndScore();

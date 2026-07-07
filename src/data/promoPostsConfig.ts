@@ -41,7 +41,7 @@ export const PROMO_POSTS: PromoPostConfig[] = [
     likes_count: 156,
     comments_count: 23,
     user_profile: {
-      full_name: "PetID Shop",
+      full_name: "MIPO Shop",
       avatar_url: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=100",
       is_verified: true,
     },
@@ -69,7 +69,7 @@ export const PROMO_POSTS: PromoPostConfig[] = [
     likes_count: 523,
     comments_count: 67,
     user_profile: {
-      full_name: "PetID Featured",
+      full_name: "MIPO Featured",
       avatar_url: "https://images.unsplash.com/photo-1552053831-71594a27632d?w=100",
       is_verified: true,
     },
@@ -81,11 +81,11 @@ export const PROMO_POSTS: PromoPostConfig[] = [
     id: "promo-challenge-1",
     user_id: "petid-community",
     image_url: "https://images.unsplash.com/photo-1587559045816-8b0a54d1f2b7?w=800",
-    caption: "🏆 אתגר #PetidCutePhoto - שתפו את התמונה הכי חמודה של חיית המחמד שלכם וזכו ב-500 נקודות!",
+    caption: "🏆 אתגר #MipoCutePhoto - שתפו את התמונה הכי חמודה של חיית המחמד שלכם וזכו ב-500 נקודות!",
     likes_count: 342,
     comments_count: 89,
     user_profile: {
-      full_name: "PetID Community",
+      full_name: "MIPO Community",
       avatar_url: "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=100",
       is_verified: true,
     },
@@ -103,7 +103,7 @@ export const PROMO_POSTS: PromoPostConfig[] = [
     likes_count: 278,
     comments_count: 45,
     user_profile: {
-      full_name: "PetID Adoption",
+      full_name: "MIPO Adoption",
       avatar_url: "https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=100",
       is_verified: true,
     },

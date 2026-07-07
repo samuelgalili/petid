@@ -5,13 +5,13 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Pill, ShieldCheck, ShoppingCart, ChevronLeft } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Pill, ShieldCheck, ShoppingCart } from "lucide-react";
 import { useActivePet } from "@/hooks/useActivePet";
 import { useCart } from "@/contexts/CartContext";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { getShopProducts } from "@/lib/mipoApi";
 
 interface MedicalCategory {
   id: string;
@@ -51,35 +51,40 @@ export const MedicalPharmacy = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
-      const { data } = await supabase
-        .from("business_products")
-        .select("id, name, price, image_url, category, description")
-        .eq("in_stock", true)
-        .limit(100);
+      try {
+        const data = (await getShopProducts()).filter((product) => product.in_stock !== false);
 
-      if (!data) { setLoading(false); return; }
+        const petConditions = pet?.medical_conditions?.map(c => c.toLowerCase()) || [];
 
-      const petConditions = pet?.medical_conditions?.map(c => c.toLowerCase()) || [];
+        const grouped: Record<string, PharmacyProduct[]> = {};
+        for (const cat of MEDICAL_CATEGORIES) {
+          const matching = data.filter(p => {
+            const text = `${p.name || ""} ${p.description || ""} ${p.category || ""}`.toLowerCase();
+            return cat.keywords.some(kw => text.includes(kw));
+          });
 
-      const grouped: Record<string, PharmacyProduct[]> = {};
-      for (const cat of MEDICAL_CATEGORIES) {
-        const matching = data.filter(p => {
-          const text = `${p.name || ""} ${p.description || ""} ${p.category || ""}`.toLowerCase();
-          return cat.keywords.some(kw => text.includes(kw));
-        });
-
-        if (matching.length > 0) {
-          grouped[cat.id] = matching.map(p => ({
-            ...p,
-            isVetRecommended: petConditions.some(cond =>
-              cat.keywords.some(kw => cond.includes(kw) || cond.includes(cat.nameHe))
-            ),
-          }));
+          if (matching.length > 0) {
+            grouped[cat.id] = matching.map(p => ({
+              id: p.id,
+              name: p.name,
+              price: Number(p.sale_price || p.price || 0),
+              image_url: p.image_url || "/placeholder.svg",
+              category: p.category,
+              description: p.description || null,
+              isVetRecommended: petConditions.some(cond =>
+                cat.keywords.some(kw => cond.includes(kw) || cond.includes(cat.nameHe))
+              ),
+            }));
+          }
         }
-      }
 
-      setProductsByCategory(grouped);
-      setLoading(false);
+        setProductsByCategory(grouped);
+      } catch (error) {
+        console.error("Error loading medical pharmacy products:", error);
+        setProductsByCategory({});
+      } finally {
+        setLoading(false);
+      }
     };
     fetchProducts();
   }, [pet]);

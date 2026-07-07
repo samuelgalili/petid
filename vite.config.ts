@@ -17,11 +17,11 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "robots.txt", "apple-touch-icon.png"],
       manifest: {
-        name: "Petid - אפליקציית חיות מחמד",
-        short_name: "Petid",
-        description: "אפליקציה לניהול ומעקב אחר חיות המחמד שלכם - יומן מעקב, חנות, אימוצים ועוד",
-        theme_color: "#0099E6",
-        background_color: "#0099E6",
+        name: "MIPO - My Precious One",
+        short_name: "MIPO",
+        description: "אפליקציה לניהול ומעקב אחר חיות המחמד שלכם - פרופיל, טיפול, חנות וקהילה",
+        theme_color: "#6C63FF",
+        background_color: "#FFFFFF",
         display: "standalone",
         orientation: "portrait",
         scope: "/",
@@ -80,33 +80,6 @@ export default defineConfig(({ mode }) => ({
               expiration: {
                 maxEntries: 50,
                 maxAgeSeconds: 60 * 60 * 24 * 30,
-              },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
-            // Cache Supabase REST/PostgREST (feed posts, profiles)
-            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/.*/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "supabase-api-cache",
-              networkTimeoutSeconds: 8,
-              expiration: {
-                maxEntries: 60,
-                maxAgeSeconds: 60 * 5,
-              },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
-            // Cache Supabase storage (avatars, post images)
-            urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/v1\/.*/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "supabase-storage-cache",
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 7,
               },
               cacheableResponse: { statuses: [0, 200] },
             },

@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { toast } from "sonner";
@@ -44,71 +43,9 @@ export interface FeedPost {
   music_artist?: string | null;
 }
 
-// Health-keyword scoring for OCR-driven ranking
-const HEALTH_RANK_KEYWORDS: Record<string, string[]> = {
-  "סוכרת": ["סוכרת", "diabetic", "diabetes", "insulin", "סוכר בדם"],
-  "כליות": ["כליות", "renal", "kidney", "חלבון מופחת"],
-  "אלרגיה": ["אלרגיה", "allergy", "היפואלרגני", "hypoallergenic", "רגישות"],
-  "עיכול": ["עיכול", "digestive", "gastro", "פרוביוטיקה"],
-  "עור": ["עור", "skin", "derma", "אומגה", "omega", "פרווה"],
-  "משקל": ["משקל", "weight", "דיאטה", "diet", "obesity"],
-  "מפרקים": ["מפרקים", "joint", "mobility", "glucosamine"],
-  "לב": ["לב", "cardiac", "heart", "taurine"],
-};
-
-function scorePostForPet(
-  caption: string | null,
-  petType: string | null,
-  breed: string | null,
-  ageWeeks: number | null,
-  conditions: string[]
-): number {
-  if (!caption) return 0;
-  const lower = caption.toLowerCase();
-  let score = 0;
-
-  // Species match
-  if (petType === "dog" && (lower.includes("כלב") || lower.includes("dog"))) score += 5;
-  if (petType === "cat" && (lower.includes("חתול") || lower.includes("cat"))) score += 5;
-
-  // Breed match
-  if (breed && lower.includes(breed.toLowerCase())) score += 15;
-
-  // Age match
-  if (ageWeeks !== null) {
-    if (ageWeeks < 26 && (lower.includes("גור") || lower.includes("puppy"))) score += 10;
-    if (ageWeeks > 364 && (lower.includes("מבוגר") || lower.includes("senior"))) score += 10;
-  }
-
-  // Medical condition match (strongest signal)
-  for (const cond of conditions) {
-    const condLower = cond.toLowerCase();
-    for (const [key, keywords] of Object.entries(HEALTH_RANK_KEYWORDS)) {
-      if (condLower.includes(key)) {
-        for (const kw of keywords) {
-          if (lower.includes(kw)) { score += 20; break; }
-        }
-      }
-    }
-  }
-
-  // Engagement-based boost from liked topics
-  try {
-    const likedTopics = JSON.parse(localStorage.getItem("petid_liked_topics") || "{}");
-    for (const [topic, count] of Object.entries(likedTopics)) {
-      const topicLower = topic.toLowerCase();
-      if (lower.includes(topicLower)) {
-        score += Math.min(Number(count) * 2, 10);
-      }
-    }
-  } catch { /* noop */ }
-
-  return score;
-}
-
 export function useSoundtrackFeed() {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
   const { pet: activePet } = useActivePet();
   const [activeTab, setActiveTab] = useState<"discover" | "following">("discover");
   const [discoverPosts, setDiscoverPosts] = useState<FeedPost[]>([]);
@@ -152,163 +89,26 @@ export function useSoundtrackFeed() {
     setLoading(true);
     setError(null);
     try {
-      // ── Fetch base posts ──
-      let postsQuery = (supabase as any)
-        .from("posts")
-        .select("id, user_id, image_url, media_urls, video_url, caption, created_at, music_url, music_title, music_artist")
-        .order("created_at", { ascending: false })
-        .limit(30);
+      const now = new Date().toISOString();
+      const petReason = activePet?.name ? `מתאים ל${activePet.name}` : "בשבילך";
+      const promoPosts: FeedPost[] = PROMO_POSTS.map((promo, index) => ({
+        ...promo,
+        created_at: now,
+        is_liked: false,
+        is_saved: false,
+        is_following: false,
+        recommendation_reason: index === 0 ? petReason : "מומלץ",
+      }));
 
-      // For "following" tab, filter by followed users
-      let followingUserIds: string[] = [];
-      if (user) {
-        const { data: following } = await supabase
-          .from("user_follows")
-          .select("following_id")
-          .eq("follower_id", user.id);
-        followingUserIds = following?.map((f) => f.following_id) || [];
-      }
-
-      const { data: postsData, error: fetchError } = await postsQuery;
-      if (fetchError) throw fetchError;
-
-      if (!postsData || postsData.length === 0) {
-        setDiscoverPosts([]);
-        setFollowingPosts([]);
-        return;
-      }
-
-      const userIds = [...new Set((postsData as any[]).map((p: any) => p.user_id))] as string[];
-      const postIds = (postsData as any[]).map((p: any) => p.id) as string[];
-
-      // Parallel fetches
-      const [profilesRes, likesCountRes, commentsCountRes, ...userDataRes] = await Promise.all([
-        supabase.from("profiles").select("id, full_name, avatar_url").in("id", userIds),
-        supabase.from("post_likes").select("post_id").in("post_id", postIds),
-        supabase.from("post_comments").select("post_id").in("post_id", postIds),
-        ...(user
-          ? [
-              supabase.from("post_likes").select("post_id").eq("user_id", user.id),
-              supabase.from("saved_posts").select("post_id").eq("user_id", user.id),
-              supabase.from("user_follows").select("following_id").eq("follower_id", user.id),
-            ]
-          : []),
-      ]);
-
-      const profiles = profilesRes.data || [];
-
-      const likesMap: Record<string, number> = {};
-      likesCountRes.data?.forEach((l) => {
-        likesMap[l.post_id] = (likesMap[l.post_id] || 0) + 1;
-      });
-      const commentsMap: Record<string, number> = {};
-      commentsCountRes.data?.forEach((c) => {
-        commentsMap[c.post_id] = (commentsMap[c.post_id] || 0) + 1;
-      });
-
-      const likedPostIds = user ? userDataRes[0]?.data?.map((l: any) => l.post_id) || [] : [];
-      const savedPostIds = user ? userDataRes[1]?.data?.map((s: any) => s.post_id) || [] : [];
-      const followingIdsFromData = user ? userDataRes[2]?.data?.map((f: any) => f.following_id) || [] : [];
-
-      const enrichPost = (post: any, reason?: string): FeedPost => {
-        const mediaUrls = post.media_urls as string[] | null;
-        const hasVideo = !!post.video_url;
-        const hasMultipleImages = mediaUrls && mediaUrls.length > 1;
-
-        let mediaType: "image" | "gallery" | "video" = "image";
-        if (hasVideo) mediaType = "video";
-        else if (hasMultipleImages) mediaType = "gallery";
-
-        return {
-          id: post.id,
-          user_id: post.user_id,
-          image_url: post.image_url,
-          media_urls: mediaUrls,
-          video_url: post.video_url,
-          caption: post.caption,
-          created_at: post.created_at,
-          likes_count: likesMap[post.id] || 0,
-          comments_count: commentsMap[post.id] || 0,
-          user_profile: profiles.find((p) => p.id === post.user_id) || undefined,
-          is_liked: likedPostIds.includes(post.id),
-          is_saved: savedPostIds.includes(post.id),
-          is_following: followingIdsFromData.includes(post.user_id),
-          recommendation_reason: reason,
-          media_type: mediaType,
-          post_type: post.post_type || "regular",
-          is_pinned: post.is_pinned || false,
-        };
-      };
-
-      // ── FOLLOWING FEED: Chronological, lost pets pinned to top ──
-      const followingFiltered = (postsData as any[])
-        .filter((p: any) => followingUserIds.includes(p.user_id))
-        .map((p: any) => enrichPost(p))
-        .sort((a: any, b: any) => {
-          // Pin lost pet posts to top
-          const aLost = a.post_type === 'lost_pet' && a.is_pinned ? 1 : 0;
-          const bLost = b.post_type === 'lost_pet' && b.is_pinned ? 1 : 0;
-          if (aLost !== bLost) return bLost - aLost;
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        });
-      setFollowingPosts(followingFiltered);
-
-      // ── FOR YOU FEED: AI-ranked with product spotlights, lost pets pinned ──
-      const discoverEnriched = (postsData as any[]).map((p: any) => enrichPost(p, "בשבילך"));
-
-      // Pet-aware ranking with lost pet priority
-      const petConditions = [...(activePet?.medical_conditions || [])];
-      if (activePet) {
-        discoverEnriched.sort((a: any, b: any) => {
-          // Lost pet posts always float to top
-          const aLost = a.post_type === 'lost_pet' && a.is_pinned ? 1 : 0;
-          const bLost = b.post_type === 'lost_pet' && b.is_pinned ? 1 : 0;
-          if (aLost !== bLost) return bLost - aLost;
-
-          const scoreA = scorePostForPet(a.caption, activePet.pet_type, activePet.breed, activePet.ageWeeks ?? null, petConditions);
-          const scoreB = scorePostForPet(b.caption, activePet.pet_type, activePet.breed, activePet.ageWeeks ?? null, petConditions);
-          if (scoreA !== scoreB) return scoreB - scoreA;
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        });
-
-        // Add pet-match badge to posts that score well
-        const petName = activePet.name;
-        if (petName) {
-          discoverEnriched.forEach((post) => {
-            const score = scorePostForPet(post.caption, activePet.pet_type, activePet.breed, activePet.ageWeeks ?? null, petConditions);
-            if (score >= 10) {
-              post.recommendation_reason = `מתאים ל${petName} 🐾`;
-            }
-          });
-        }
-      }
-
-      // Insert promo posts at configured positions (For You only)
-      const allDiscover = [...discoverEnriched];
-      const sortedPromos = [...PROMO_POSTS].sort((a, b) => a.insertAt - b.insertAt);
-      for (const promo of sortedPromos) {
-        const promoPost: FeedPost = {
-          ...promo,
-          created_at: new Date().toISOString(),
-          is_liked: false,
-          is_saved: false,
-          is_following: false,
-        };
-        if (allDiscover.length > promo.insertAt) {
-          allDiscover.splice(promo.insertAt, 0, promoPost);
-        } else {
-          allDiscover.push(promoPost);
-        }
-      }
-
-      setDiscoverPosts(allDiscover);
+      setDiscoverPosts(promoPosts);
+      setFollowingPosts([]);
     } catch (err) {
       console.error("Error fetching posts:", err);
       setError("שגיאה בטעינת הפיד. נסו שוב.");
     } finally {
       setLoading(false);
     }
-  }, [user, activePet]);
+  }, [activePet]);
 
   // Pull-to-refresh
   const {
@@ -323,26 +123,11 @@ export function useSoundtrackFeed() {
     fetchPostsInner();
   }, [fetchPostsInner]);
 
-  // Realtime listener for new posts
-  useEffect(() => {
-    const channel = supabase
-      .channel("feed-new-posts")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "posts" }, () => {
-        setNewPostCount((c) => c + 1);
-      })
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
   const handleNewPostTap = () => {
     setNewPostCount(0);
     containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
     fetchPostsInner();
   };
-
-  const isPromoId = (id: string) => id.startsWith("promo-") || id.startsWith("petid-");
 
   const handleLike = async (postId: string) => {
     if (!user) {
@@ -363,25 +148,7 @@ export function useSoundtrackFeed() {
     setDiscoverPosts(updater);
     setFollowingPosts(updater);
 
-    // Skip DB operation for promo posts
-    if (isPromoId(postId)) return;
-
-    try {
-      if (wasLiked) {
-        await supabase.from("post_likes").delete().eq("post_id", postId).eq("user_id", user.id);
-      } else {
-        await supabase.from("post_likes").insert({ post_id: postId, user_id: user.id });
-      }
-    } catch {
-      const rollback = (prev: FeedPost[]) =>
-        prev.map((p) =>
-          p.id === postId
-            ? { ...p, is_liked: wasLiked, likes_count: p.likes_count + (wasLiked ? 1 : -1) }
-            : p
-        );
-      setDiscoverPosts(rollback);
-      setFollowingPosts(rollback);
-    }
+    toast.success(wasLiked ? "הוסר הלייק" : "אהבת!");
   };
 
 
@@ -400,25 +167,7 @@ export function useSoundtrackFeed() {
     setDiscoverPosts(updater);
     setFollowingPosts(updater);
 
-    // Skip DB operation for promo posts
-    if (isPromoId(postId)) {
-      toast.success(!wasSaved ? "נשמר!" : "הוסר מהשמורים");
-      return;
-    }
-
-    try {
-      if (wasSaved) {
-        await supabase.from("saved_posts").delete().eq("post_id", postId).eq("user_id", user.id);
-      } else {
-        await supabase.from("saved_posts").insert({ post_id: postId, user_id: user.id });
-      }
-      toast.success(wasSaved ? "הוסר מהשמורים" : "נשמר!");
-    } catch {
-      const rollback = (prev: FeedPost[]) =>
-        prev.map((p) => (p.id === postId ? { ...p, is_saved: wasSaved } : p));
-      setDiscoverPosts(rollback);
-      setFollowingPosts(rollback);
-    }
+    toast.success(wasSaved ? "הוסר מהשמורים" : "נשמר!");
   };
 
   const handleFollow = async (targetUserId: string) => {
@@ -433,27 +182,7 @@ export function useSoundtrackFeed() {
     setDiscoverPosts(updater);
     setFollowingPosts(updater);
 
-    // Skip DB operation for promo users
-    if (isPromoId(targetUserId)) return;
-
-    try {
-      if (isFollowing) {
-        await supabase
-          .from("user_follows")
-          .delete()
-          .eq("follower_id", user.id)
-          .eq("following_id", targetUserId);
-      } else {
-        await supabase
-          .from("user_follows")
-          .insert({ follower_id: user.id, following_id: targetUserId });
-      }
-    } catch {
-      const rollback = (prev: FeedPost[]) =>
-        prev.map((p) => (p.user_id === targetUserId ? { ...p, is_following: isFollowing } : p));
-      setDiscoverPosts(rollback);
-      setFollowingPosts(rollback);
-    }
+    toast.success(isFollowing ? "הוסרה העקיבה" : "נוספה עקיבה");
   };
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
