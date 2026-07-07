@@ -67,14 +67,14 @@ jobs:
       - name: Prepare remote directories
         run: |
           set -euo pipefail
-          ssh -i ~/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new "${MIPO_AWS_USER}@${MIPO_AWS_HOST}" \
+          ssh -i ~/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 "${MIPO_AWS_USER}@${MIPO_AWS_HOST}" \
             "sudo mkdir -p '${MIPO_REMOTE_PATH}/server' '${MIPO_REMOTE_PATH}/deploy/aws' '${MIPO_REMOTE_PATH}/dist' '${MIPO_REMOTE_PATH}/uploads' && sudo chown -R '${MIPO_AWS_USER}:${MIPO_AWS_USER}' '${MIPO_REMOTE_PATH}'"
 
       - name: Sync files
         run: |
           set -euo pipefail
           remote="${MIPO_AWS_USER}@${MIPO_AWS_HOST}"
-          ssh_args="-i $HOME/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new"
+          ssh_args="-i $HOME/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20"
 
           rsync -az --delete \
             -e "ssh ${ssh_args}" \
@@ -94,7 +94,7 @@ jobs:
       - name: Run migrations and restart services
         run: |
           set -euo pipefail
-          ssh -i ~/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new "${MIPO_AWS_USER}@${MIPO_AWS_HOST}" \
+          ssh -i ~/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 "${MIPO_AWS_USER}@${MIPO_AWS_HOST}" \
             "MIPO_REMOTE_PATH='${MIPO_REMOTE_PATH}' bash -s" <<'REMOTE'
           set -euo pipefail
           cd "$MIPO_REMOTE_PATH"
