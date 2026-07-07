@@ -291,7 +291,6 @@ ${petType} ראיתי שיש לך את ${petNames}${mainPet.breed ? ` (${mainPet
 
   // Stream AI response
   const streamAIChat = async (messages: AIMessage[]) => {
-    const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
     setIsTyping(true);
     
     // Build user context for personalized responses
@@ -307,118 +306,20 @@ ${petType} ראיתי שיש לך את ${petNames}${mainPet.breed ? ` (${mainPet
       }))
     };
     
-    const resp = await fetch(CHAT_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-      },
-      body: JSON.stringify({ messages, userContext }),
-    });
-
-    if (!resp.ok || !resp.body) {
-      setIsTyping(false);
-      if (resp.status === 429) {
-        throw new Error("חרגת ממכסת הבקשות, אנא נסה שוב מאוחר יותר");
-      }
-      if (resp.status === 402) {
-        throw new Error("נדרש תשלום, אנא הוסף כספים לחשבון שלך");
-      }
-      throw new Error("שגיאה בתקשורת עם השרת");
-    }
-
-    // Get products data from header if available
-    const productsHeader = resp.headers.get("X-Products-Data");
-    let availableProducts: ChatProduct[] = [];
-    if (productsHeader) {
-      try {
-        availableProducts = JSON.parse(decodeURIComponent(productsHeader));
-      } catch {
-        console.error("Failed to parse products header");
-      }
-    }
-
-    const reader = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let textBuffer = "";
-    let assistantContent = "";
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      textBuffer += decoder.decode(value, { stream: true });
-
-      let newlineIndex: number;
-      while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
-        let line = textBuffer.slice(0, newlineIndex);
-        textBuffer = textBuffer.slice(newlineIndex + 1);
-
-        if (line.endsWith("\r")) line = line.slice(0, -1);
-        if (line.startsWith(":") || line.trim() === "") continue;
-        if (!line.startsWith("data: ")) continue;
-
-        const jsonStr = line.slice(6).trim();
-        if (jsonStr === "[DONE]") break;
-
-        try {
-          const parsed = JSON.parse(jsonStr);
-          const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-          if (content) {
-            setIsTyping(false);
-            assistantContent += content;
-            
-            // Parse product IDs from content - support multiple formats
-            // Format 1: [PRODUCTS:id1,id2,id3]
-            // Format 2: PRODUCTS:id1,id2,id3]
-            // Format 3: [PRODUCTS:id1, id2, id3]
-            const productMatch = assistantContent.match(/\[?PRODUCTS:([^\]]+)\]?/i);
-            let recommendedProducts: ChatProduct[] = [];
-            let displayContent = assistantContent;
-            
-            if (productMatch && availableProducts.length > 0) {
-              const productIds = productMatch[1].split(",").map(id => id.trim().replace(/[\[\]]/g, ''));
-              recommendedProducts = availableProducts.filter(p => productIds.includes(p.id));
-              // Remove the product tag from display content - handle all variations
-              displayContent = assistantContent
-                .replace(/\[?PRODUCTS:[^\]]+\]?/gi, "")
-                .replace(/\s+/g, " ")
-                .trim();
-            } else if (availableProducts.length > 0 && !productMatch) {
-              // If AI didn't include product tag but we have products available,
-              // check if this looks like a product recommendation response
-              const lowerContent = assistantContent.toLowerCase();
-              const isProductRecommendation = 
-                lowerContent.includes("ממליץ") || 
-                lowerContent.includes("המלצה") ||
-                lowerContent.includes("מזון") ||
-                lowerContent.includes("מומלץ") ||
-                lowerContent.includes("מוצר") ||
-                lowerContent.includes("רויאל") ||
-                lowerContent.includes("אוכל");
-              
-              if (isProductRecommendation) {
-                // Show first 3 available products automatically
-                recommendedProducts = availableProducts.slice(0, 3);
-              }
-            }
-            
-            setAiMessages((prev) => {
-              const last = prev[prev.length - 1];
-              if (last?.role === "assistant") {
-                return prev.map((m, i) =>
-                  i === prev.length - 1 ? { ...m, content: displayContent, products: recommendedProducts.length > 0 ? recommendedProducts : undefined } : m
-                );
-              }
-              return [...prev, { role: "assistant", content: displayContent, products: recommendedProducts.length > 0 ? recommendedProducts : undefined }];
-            });
-          }
-        } catch {
-          textBuffer = line + "\n" + textBuffer;
-          break;
-        }
-      }
-    }
+    const { data, error } = await supabase.functions.invoke<{
+      content?: string;
+      response?: string;
+      products?: ChatProduct[];
+    }>("chat", { body: { messages, userContext } });
     setIsTyping(false);
+
+    if (error) throw new Error(error.message);
+    const content = (data?.content || data?.response || "").trim();
+    setAiMessages((prev) => [...prev, {
+      role: "assistant",
+      content: content || "הצ'אט עדיין עובר לסביבת AWS. נוכל להמשיך מכאן אחרי שנחבר את שירות ה-AI החדש.",
+      products: data?.products,
+    }]);
   };
 
   const sendMessage = async () => {

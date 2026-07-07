@@ -196,45 +196,15 @@ const AIControlRoom = () => {
     setChatMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '', created_at: new Date().toISOString() }]);
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/orchestrator-chat`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-          body: JSON.stringify({ messages: chatMessages.concat(userMessage).map(m => ({ role: m.role, content: m.content })) })
-        }
+      const { data, error } = await supabase.functions.invoke<{ content?: string; response?: string }>(
+        'orchestrator-chat',
+        { body: { messages: chatMessages.concat(userMessage).map(m => ({ role: m.role, content: m.content })) } },
       );
-
-      if (!response.ok) throw new Error('Failed to get response');
-
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let fullContent = '';
-      let buffer = '';
-
-      while (reader) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          const trimmedLine = line.trim();
-          if (!trimmedLine || !trimmedLine.startsWith('data: ') || trimmedLine === 'data: [DONE]') continue;
-          try {
-            const jsonStr = trimmedLine.slice(6);
-            if (!jsonStr.startsWith('{')) continue;
-            const data = JSON.parse(jsonStr);
-            const content = data.choices?.[0]?.delta?.content;
-            if (content) {
-              fullContent += content;
-              const displayContent = fullContent.replace(/<task>[\s\S]*?<\/task>/g, '').trim();
-              setChatMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: displayContent || 'מעבד...' } : m));
-            }
-          } catch (e) { /* skip parse errors */ }
-        }
-      }
+      if (error) throw new Error(error.message);
+      setChatMessages(prev => prev.map(m => m.id === assistantId ? {
+        ...m,
+        content: data?.content || data?.response || 'Brain Bot עדיין עובר לסביבת AWS.',
+      } : m));
       refetchTasks();
     } catch (error) {
       setChatMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: 'מצטער, אירעה שגיאה. נסה שוב.' } : m));

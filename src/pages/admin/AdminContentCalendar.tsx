@@ -89,26 +89,16 @@ const AdminContentCalendar = () => {
   // Generate calendar
   const generateMutation = useMutation({
     mutationFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
-
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/content-calendar`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ week_start: weekStart }),
-        }
-      );
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || "Calendar generation failed");
-      }
-      return response.json();
+      const { data, error } = await supabase.functions.invoke<{
+        total_items?: number;
+        message?: string;
+        unavailable?: boolean;
+      }>("content-calendar", {
+        body: { week_start: weekStart },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.unavailable) throw new Error(data.message || "Calendar generation failed");
+      return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["content-calendar-tasks"] });

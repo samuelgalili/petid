@@ -1,6 +1,6 @@
-# PetID Vercel + Supabase Migration Checklist
+# PetID AWS Migration Checklist
 
-This repo is now targeting the `pet-id` Supabase project as the only backend.
+This checklist is historical for the earlier Vercel/Supabase plan. The active target is AWS Lightsail + RDS, with Supabase kept only as the one-time source database for migration/export tooling.
 
 ## Current State
 
@@ -40,11 +40,11 @@ This repo is now targeting the `pet-id` Supabase project as the only backend.
 - [ ] Existing storage files must be migrated: yes / no
 - [ ] Old Loveable-managed Supabase project export access available: yes / no
 
-## 3. Frontend Env Vars (Vercel)
+## 3. Frontend Env Vars (AWS)
 
-- [ ] `VITE_APP_URL`
-- [ ] `VITE_SUPABASE_URL`
-- [ ] `VITE_SUPABASE_PUBLISHABLE_KEY`
+- [x] `VITE_APP_URL`
+- [x] `VITE_API_URL=/api`
+- [x] Supabase frontend env vars removed from the AWS build
 - [ ] `VITE_GOOGLE_MAPS_API_KEY`
 - [ ] `VITE_VAPID_PUBLIC_KEY`
 

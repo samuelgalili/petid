@@ -74,23 +74,15 @@ export const InsuranceLeadsPanel = () => {
 
   const forwardMutation = useMutation({
     mutationFn: async ({ leadId, email, notes }: { leadId: string; email: string; notes: string }) => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/forward-insurance-lead`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({ leadId, forwardToEmail: email, adminNotes: notes }),
-        }
-      );
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Failed to forward lead');
-      }
-      return res.json();
+      const { data, error } = await supabase.functions.invoke<{
+        message?: string;
+        unavailable?: boolean;
+      }>('forward-insurance-lead', {
+        body: { leadId, forwardToEmail: email, adminNotes: notes },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.unavailable) throw new Error(data.message || 'Failed to forward lead');
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-insurance-leads'] });

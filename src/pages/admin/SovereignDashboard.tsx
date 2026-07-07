@@ -313,57 +313,19 @@ const BrainCommandPrompt = () => {
     setIsExpanded(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { toast.error("נדרשת התחברות"); return; }
-
       const allMessages = [...messages, userMsg].map(m => ({ role: m.role, content: m.content }));
-
-      const resp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/orchestrator-chat`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
-          body: JSON.stringify({ messages: allMessages }),
-        }
+      const { data, error } = await supabase.functions.invoke<{ content?: string; response?: string }>(
+        "orchestrator-chat",
+        { body: { messages: allMessages } },
       );
 
-      if (!resp.ok) {
-        if (resp.status === 429) { toast.error("יותר מדי בקשות"); return; }
-        if (resp.status === 402) { toast.error("נדרש תשלום — הוסף קרדיטים"); return; }
-        throw new Error("Failed");
-      }
-
-      const reader = resp.body?.getReader();
-      const decoder = new TextDecoder();
-      let fullContent = "";
-      let buffer = "";
-
-      while (reader) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed || !trimmed.startsWith("data: ") || trimmed === "data: [DONE]") continue;
-          try {
-            const jsonStr = trimmed.slice(6);
-            if (!jsonStr.startsWith("{")) continue;
-            const data = JSON.parse(jsonStr);
-            const content = data.choices?.[0]?.delta?.content;
-            if (content) {
-              fullContent += content;
-              const display = fullContent
-                .replace(/<task>[\s\S]*?<\/task>/g, "")
-                .replace(/<action>[\s\S]*?<\/action>/g, "")
-                .trim();
-              setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: display || "מעבד..." } : m));
-            }
-          } catch { /* skip */ }
-        }
-      }
+      if (error) throw new Error(error.message);
+      const fullContent = data?.content || data?.response || "Brain Bot עדיין עובר לסביבת AWS.";
+      const display = fullContent
+        .replace(/<task>[\s\S]*?<\/task>/g, "")
+        .replace(/<action>[\s\S]*?<\/action>/g, "")
+        .trim();
+      setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: display || "מעבד..." } : m));
 
       // Count created actions/tasks
       const taskCount = (fullContent.match(/<task>/g) || []).length;

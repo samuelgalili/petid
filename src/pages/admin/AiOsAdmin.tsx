@@ -171,19 +171,15 @@ const SecurityTab = () => {
   };
 
   const handleApprove = async (id: string) => {
-    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-os-gateway`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-      body: JSON.stringify({ action: "approve", execution_id: id }),
+    await supabase.functions.invoke("ai-os-gateway", {
+      body: { action: "approve", execution_id: id },
     });
     fetchSecurity();
   };
 
   const handleReject = async (id: string) => {
-    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-os-gateway`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-      body: JSON.stringify({ action: "reject", execution_id: id, reason: "Rejected by admin" }),
+    await supabase.functions.invoke("ai-os-gateway", {
+      body: { action: "reject", execution_id: id, reason: "Rejected by admin" },
     });
     fetchSecurity();
   };

@@ -19,6 +19,7 @@ import { RecommendedProducts } from "@/components/pet/RecommendedProducts";
 
 import { CategoryRecommendations } from "@/components/pet/CategoryRecommendations";
 import { PetProductCarousels } from "@/components/pet/PetProductCarousels";
+import { updateMyPet, uploadMyImage } from "@/lib/mipoApi";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -250,32 +251,9 @@ const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
 
     setIsUploadingImage(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("User not authenticated");
-
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("type", "pet");
-      formData.append("petId", pet.id);
-
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-avatar`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: formData,
-        }
-      );
-
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error || "Upload failed");
-      }
-
-      setPet(prev => prev ? { ...prev, avatar_url: result.url } : null);
+      const upload = await uploadMyImage(file);
+      const updatedPet = await updateMyPet(pet.id, { avatar_url: upload.url });
+      setPet(prev => prev ? { ...prev, avatar_url: updatedPet.avatar_url || upload.url } : null);
       sonnerToast.success("תמונת חיית המחמד עודכנה בהצלחה!");
     } catch (error: any) {
       console.error("Error uploading pet image:", error);

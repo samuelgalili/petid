@@ -58,32 +58,22 @@ const AdminContentBot = () => {
 
   const generateMutation = useMutation({
     mutationFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
+      const { data, error } = await supabase.functions.invoke<{
+        content?: string;
+        message?: string;
+        unavailable?: boolean;
+      }>("content-bot", {
+        body: {
+          content_type: contentType,
+          topic: topic || undefined,
+          pet_id: selectedPetId || undefined,
+          extra_instructions: extraInstructions || undefined,
+        },
+      });
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/content-bot`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            content_type: contentType,
-            topic: topic || undefined,
-            pet_id: selectedPetId || undefined,
-            extra_instructions: extraInstructions || undefined,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || "Generation failed");
-      }
-
-      return response.json();
+      if (error) throw new Error(error.message);
+      if (data?.unavailable) throw new Error(data.message || "Generation failed");
+      return data;
     },
     onSuccess: (data) => {
       setGeneratedContent(data.content);

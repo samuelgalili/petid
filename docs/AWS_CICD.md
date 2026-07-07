@@ -19,7 +19,7 @@ On push to `aws-migration`, the workflow:
 
 1. Installs frontend dependencies.
 2. Checks server JavaScript syntax.
-3. Builds the frontend with `VITE_DISABLE_SUPABASE=true`.
+3. Builds the frontend with `VITE_APP_URL` and `VITE_API_URL=/api`.
 4. Syncs `server/`, `deploy/aws/`, and `dist/` to the Lightsail instance.
 5. Builds the API Docker image.
 6. Runs `server/sql/*.sql` migrations through `node src/applyMigrations.js`.

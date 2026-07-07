@@ -350,7 +350,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       timestamp: new Date().toISOString(),
       suggestions: ["סריקת מסמך", "צילום תמונה", "שאלה על תזונה"],
     };
-    const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
     setIsTyping(true);
 
     const petsToSend = selectedPet
@@ -368,132 +367,30 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       ? messagesToSend.slice(-MAX_CONTEXT_MESSAGES)
       : messagesToSend;
 
-    const resp = await fetch(CHAT_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-      },
-      body: JSON.stringify({ messages: contextMessages, userContext }),
-    });
-
-    if (!resp.ok || !resp.body) {
-      setIsTyping(false);
-      if (resp.status === 429) throw new Error("חרגת ממכסת הבקשות, אנא נסה שוב מאוחר יותר");
-      if (resp.status === 402) throw new Error("נדרש תשלום, אנא הוסף כספים לחשבון שלך");
-      throw new Error("שגיאה בתקשורת עם השרת");
-    }
-
-    const contentType = resp.headers.get("content-type") || "";
-
-    // Handle non-streaming JSON response (product intents)
-    if (contentType.includes("application/json")) {
-      setIsTyping(false);
-      const json = await resp.json();
-      const content = json.content || (json.role === "assistant" ? json.content : "");
-
-      let products: Product[] = [];
-      const productsHeader = resp.headers.get("X-Products-Data");
-      if (productsHeader) {
-        try { products = JSON.parse(decodeURIComponent(productsHeader)); } catch { /* ignore */ }
-      }
-
-      const assistantMessage: Message = content.trim()
-        ? { role: "assistant", content, products }
-        : { ...fallbackAssistantMessage, products };
-      setMessages((prev) => [...prev, assistantMessage]);
-      return;
-    }
-
-    // Streaming response
-    const reader = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let textBuffer = "";
-    let streamDone = false;
-    let assistantContent = "";
-
-    while (!streamDone) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      textBuffer += decoder.decode(value, { stream: true });
-
-      let newlineIndex: number;
-      while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
-        let line = textBuffer.slice(0, newlineIndex);
-        textBuffer = textBuffer.slice(newlineIndex + 1);
-
-        if (line.endsWith("\r")) line = line.slice(0, -1);
-        if (line.startsWith(":") || line.trim() === "") continue;
-        if (!line.startsWith("data: ")) continue;
-
-        const jsonStr = line.slice(6).trim();
-        if (jsonStr === "[DONE]") { streamDone = true; break; }
-
-        try {
-          const parsed = JSON.parse(jsonStr);
-          const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-          if (content) {
-            setIsTyping(false);
-            assistantContent += content;
-            setMessages((prev) => {
-              const last = prev[prev.length - 1];
-              if (last?.role === "assistant") {
-                return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantContent } : m);
-              }
-              return [...prev, { role: "assistant", content: assistantContent, timestamp: new Date().toISOString() }];
-            });
-          }
-        } catch {
-          textBuffer = line + "\n" + textBuffer;
-          break;
-        }
-      }
-    }
-
-    // Final flush
-    if (textBuffer.trim()) {
-      for (let raw of textBuffer.split("\n")) {
-        if (!raw) continue;
-        if (raw.endsWith("\r")) raw = raw.slice(0, -1);
-        if (raw.startsWith(":") || raw.trim() === "") continue;
-        if (!raw.startsWith("data: ")) continue;
-        const jsonStr = raw.slice(6).trim();
-        if (jsonStr === "[DONE]") continue;
-        try {
-          const parsed = JSON.parse(jsonStr);
-          const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-          if (content) {
-            assistantContent += content;
-            setMessages((prev) => {
-              const last = prev[prev.length - 1];
-              if (last?.role === "assistant") {
-                return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantContent } : m);
-              }
-              return [...prev, { role: "assistant", content: assistantContent }];
-            });
-          }
-        } catch { /* ignore */ }
-      }
-    }
+    const { data, error } = await supabase.functions.invoke<{
+      content?: string;
+      response?: string;
+      products?: Product[];
+      suggestions?: string[];
+    }>("chat", { body: { messages: contextMessages, userContext } });
     setIsTyping(false);
 
-    if (!assistantContent.trim()) {
+    if (error) throw new Error(error.message);
+
+    const assistantContent = (data?.content || data?.response || "").trim();
+    if (!assistantContent) {
       setMessages((prev) => [...prev, fallbackAssistantMessage]);
       return;
     }
 
-    // Extract suggestions and add to last assistant message
-    const suggestions = extractSuggestions(assistantContent);
-    if (suggestions.length > 0) {
-      setMessages((prev) => {
-        const updated = [...prev];
-        const lastIdx = updated.length - 1;
-        if (updated[lastIdx]?.role === "assistant") {
-          updated[lastIdx] = { ...updated[lastIdx], suggestions };
-        }
-        return updated;
-      });
-    }
+    const suggestions = data?.suggestions?.length ? data.suggestions : extractSuggestions(assistantContent);
+    setMessages((prev) => [...prev, {
+      role: "assistant",
+      content: assistantContent,
+      timestamp: new Date().toISOString(),
+      products: data?.products || [],
+      suggestions: suggestions.length > 0 ? suggestions : undefined,
+    }]);
   }, [selectedPet, userPets, userName]);
 
   /** Send a message programmatically */

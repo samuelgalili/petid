@@ -48,7 +48,7 @@ jobs:
         run: |
           set -euo pipefail
           public_base_url="${MIPO_PUBLIC_BASE_URL:-http://${MIPO_AWS_HOST}}"
-          VITE_DISABLE_SUPABASE=true VITE_APP_URL="$public_base_url" VITE_API_URL=/api npm run build
+          VITE_APP_URL="$public_base_url" VITE_API_URL=/api npm run build
 
       - name: Configure SSH
         env:

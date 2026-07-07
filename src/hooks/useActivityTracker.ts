@@ -91,19 +91,12 @@ export const useActivityTracker = () => {
     const handleExit = () => {
       if (!userId) return;
       const spent = Math.floor((Date.now() - enteredAt.current) / 1000);
-      const payload = JSON.stringify({
-        user_id: userId,
-        session_id: getSessionId(),
+      void log({
         event_type: 'exit',
         route: location.pathname,
         time_spent_seconds: spent,
         scroll_depth: maxScroll.current,
       });
-      // sendBeacon for reliable exit tracking
-      navigator.sendBeacon(
-        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/user_activity_logs`,
-        new Blob([payload], { type: 'application/json' }),
-      );
     };
     window.addEventListener('beforeunload', handleExit);
     document.addEventListener('visibilitychange', () => {
@@ -112,7 +105,7 @@ export const useActivityTracker = () => {
     return () => {
       window.removeEventListener('beforeunload', handleExit);
     };
-  }, [userId, location.pathname]);
+  }, [userId, location.pathname, log]);
 
   // ─── Public: track a click ───
   const trackClick = useCallback(

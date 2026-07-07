@@ -79,7 +79,7 @@ export const FactoryApiSettings = ({ supplierId }: Props) => {
     toast({ title: "Copied!" });
   };
 
-  const baseUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/factory-api`;
+  const baseUrl = `${window.location.origin}/api/factory-api`;
 
   if (loading) return <div className="animate-pulse space-y-4"><div className="h-32 bg-muted rounded-xl" /><div className="h-32 bg-muted rounded-xl" /></div>;
 
