@@ -104,35 +104,35 @@ export default {
   				'1.3125rem',
   				{
   					lineHeight: '1.5',
-  					letterSpacing: '-0.005em'
+  					letterSpacing: '0'
   				}
   			],
   			'2xl': [
   				'1.625rem',
   				{
   					lineHeight: '1.35',
-  					letterSpacing: '-0.01em'
+  					letterSpacing: '0'
   				}
   			],
   			'3xl': [
   				'2rem',
   				{
   					lineHeight: '1.3',
-  					letterSpacing: '-0.015em'
+  					letterSpacing: '0'
   				}
   			],
   			'4xl': [
   				'2.5rem',
   				{
   					lineHeight: '1.2',
-  					letterSpacing: '-0.02em'
+  					letterSpacing: '0'
   				}
   			],
   			'5xl': [
   				'3.25rem',
   				{
   					lineHeight: '1.1',
-  					letterSpacing: '-0.02em'
+  					letterSpacing: '0'
   				}
   			]
   		},
@@ -143,6 +143,18 @@ export default {
   			'30': '7.5rem'
   		},
 		colors: {
+			mipo: {
+				ink: 'hsl(var(--mipo-ink))',
+				muted: 'hsl(var(--mipo-muted))',
+				soft: 'hsl(var(--mipo-soft))',
+				line: 'hsl(var(--mipo-line))',
+				coral: 'hsl(var(--mipo-coral))',
+				peach: 'hsl(var(--mipo-peach))',
+				pink: 'hsl(var(--mipo-pink))',
+				violet: 'hsl(var(--mipo-violet))',
+				blue: 'hsl(var(--mipo-blue))',
+				cyan: 'hsl(var(--mipo-cyan))'
+			},
 			border: 'hsl(var(--border))',
 			input: 'hsl(var(--input))',
 			ring: 'hsl(var(--ring))',

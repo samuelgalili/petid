@@ -1,6 +1,6 @@
-import { useState, useCallback, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import splashGif from "@/assets/splash-animation.gif";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { PetidLogo } from "@/components/PetidLogo";
 
 interface SplashScreenProps {
   onFinish: () => void;
@@ -17,18 +17,9 @@ export const SplashScreen = ({ onFinish }: SplashScreenProps) => {
     setTimeout(onFinish, 500);
   }, [onFinish]);
 
-  // Safety timeout — never stay on splash more than 5 seconds
   useEffect(() => {
-    const timer = setTimeout(startFadeOut, 5000);
+    const timer = setTimeout(startFadeOut, 2400);
     return () => clearTimeout(timer);
-  }, [startFadeOut]);
-
-  const handleLoad = useCallback(() => {
-    setTimeout(startFadeOut, 3500);
-  }, [startFadeOut]);
-
-  const handleError = useCallback(() => {
-    startFadeOut();
   }, [startFadeOut]);
 
   return (
@@ -36,17 +27,17 @@ export const SplashScreen = ({ onFinish }: SplashScreenProps) => {
       {!fadeOut && (
         <motion.div
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-white"
-          style={{ backgroundColor: '#ffffff' }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
-          <img
-            src={splashGif}
-            alt="PetID"
-            onLoad={handleLoad}
-            onError={handleError}
-            className="w-full h-auto max-h-screen object-cover"
-          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            className="flex min-h-[320px] flex-col items-center justify-center px-8"
+          >
+            <PetidLogo size="lg" showAnimals />
+          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>

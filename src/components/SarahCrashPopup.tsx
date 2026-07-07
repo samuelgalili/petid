@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, HeartHandshake } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 /**
@@ -9,17 +10,25 @@ import { cn } from "@/lib/utils";
  * Shows once per session, auto-dismisses after 8s.
  */
 export const SarahCrashPopup = () => {
+  const location = useLocation();
   const [visible, setVisible] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const shownRef = { current: false };
+  const shownRef = useRef(false);
+  const hiddenRoute = ["/auth", "/signup", "/forgot-password", "/reset-password", "/onboarding", "/add-pet"]
+    .some((path) => location.pathname.startsWith(path));
 
   const showPopup = useCallback((msg: string) => {
+    if (hiddenRoute) return;
     if (shownRef.current) return;
     shownRef.current = true;
     setErrorMsg(msg);
     setVisible(true);
     setTimeout(() => setVisible(false), 8000);
-  }, []);
+  }, [hiddenRoute]);
+
+  useEffect(() => {
+    if (hiddenRoute) setVisible(false);
+  }, [hiddenRoute]);
 
   useEffect(() => {
     const handleError = (event: ErrorEvent) => {
@@ -41,6 +50,8 @@ export const SarahCrashPopup = () => {
       window.removeEventListener("unhandledrejection", handleRejection);
     };
   }, [showPopup]);
+
+  if (hiddenRoute) return null;
 
   return (
     <AnimatePresence>

@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { PetidLogo } from "@/components/PetidLogo";
 import { cn } from "@/lib/utils";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
@@ -192,7 +193,7 @@ const Onboarding = () => {
 
   /* ════════ RENDER ════════ */
   return (
-    <div className="h-screen bg-background overflow-hidden" dir="rtl">
+    <div className="h-screen mipo-screen overflow-hidden" dir="rtl">
       <AnimatePresence mode="wait">
 
         {/* ═══════ PHASE: INTRO SWIPER ═══════ */}
@@ -231,12 +232,15 @@ const Onboarding = () => {
                   </div>
 
                   {/* Text */}
-                  <div className="px-8 py-6 text-center space-y-3">
+                  <div className="px-8 py-6 text-center space-y-4">
+                    {slideIdx === 0 && (
+                      <PetidLogo size="sm" showAnimals={false} className="mx-auto mb-1" />
+                    )}
                     <motion.h2
                       initial={{ y: 20, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ delay: 0.15 }}
-                      className="text-2xl font-bold text-foreground"
+                      className="text-2xl font-semibold text-mipo-ink"
                     >
                       {SLIDES[slideIdx].title}
                     </motion.h2>
@@ -244,7 +248,7 @@ const Onboarding = () => {
                       initial={{ y: 20, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ delay: 0.25 }}
-                      className="text-muted-foreground leading-relaxed max-w-xs mx-auto"
+                      className="text-mipo-muted leading-relaxed max-w-xs mx-auto"
                     >
                       {SLIDES[slideIdx].subtitle}
                     </motion.p>
@@ -262,7 +266,7 @@ const Onboarding = () => {
                     key={i}
                     animate={{
                       width: i === slideIdx ? 24 : 8,
-                      backgroundColor: i === slideIdx ? "hsl(var(--primary))" : "hsl(var(--muted))",
+                      backgroundColor: i === slideIdx ? "hsl(var(--mipo-cyan))" : "hsl(var(--mipo-line))",
                     }}
                     className="h-2 rounded-full"
                     transition={{ type: "spring", stiffness: 300, damping: 25 }}
@@ -275,8 +279,7 @@ const Onboarding = () => {
                 <Button
                   onClick={goToSetup}
                   size="lg"
-                  className="w-full h-14 rounded-2xl text-lg font-bold text-primary-foreground shadow-lg shadow-primary/30"
-                  style={{ background: "var(--gradient-primary)" }}
+                  className="mipo-gradient-button w-full h-14 text-lg"
                 >
                   בואו נתחיל 🐾
                 </Button>
@@ -285,7 +288,7 @@ const Onboarding = () => {
                   onClick={() => { haptic("selection"); setSlideIdx(s => s + 1); }}
                   variant="ghost"
                   size="lg"
-                  className="w-full h-14 rounded-2xl text-lg font-semibold text-primary"
+                  className="w-full h-14 rounded-full text-lg font-semibold text-mipo-violet"
                 >
                   הבא
                 </Button>
@@ -294,7 +297,7 @@ const Onboarding = () => {
               {slideIdx < SLIDES.length - 1 && (
                 <button
                   onClick={goToSetup}
-                  className="w-full text-center text-sm text-muted-foreground/60"
+                  className="w-full text-center text-sm text-mipo-muted/70"
                 >
                   דלג
                 </button>
@@ -322,8 +325,8 @@ const Onboarding = () => {
               🐾
             </motion.div>
             <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold text-foreground">מי הולך להצטרף?</h2>
-              <p className="text-muted-foreground">בחרו את סוג חיית המחמד</p>
+              <h2 className="text-2xl font-semibold text-mipo-ink">מי הולך להצטרף?</h2>
+              <p className="text-mipo-muted">בחרו את סוג חיית המחמד</p>
             </div>
 
             <div className="grid grid-cols-2 gap-6 w-full max-w-sm">
@@ -337,14 +340,14 @@ const Onboarding = () => {
                   whileTap={{ scale: 0.96 }}
                   onClick={() => selectType(type)}
                   className={cn(
-                    "flex flex-col items-center justify-center p-6 rounded-3xl border-2 transition-all bg-card shadow-md",
+                    "mipo-soft-card flex flex-col items-center justify-center p-6 transition-all",
                     selectedType === type
-                      ? "border-primary shadow-lg shadow-primary/20"
-                      : "border-border/40 hover:border-primary/40"
+                      ? "border-mipo-cyan shadow-shop"
+                      : "hover:border-mipo-cyan/50"
                   )}
                 >
                   <img src={icon} alt={label} className={`${size} object-contain mb-3`} />
-                  <span className="font-semibold text-foreground text-lg">{label}</span>
+                  <span className="font-semibold text-mipo-ink text-lg">{label}</span>
                 </motion.button>
               ))}
             </div>
@@ -364,14 +367,14 @@ const Onboarding = () => {
             {/* Back */}
             <button
               onClick={() => { setPhase("petType"); setImagePreview(""); setDetectedBreed(""); }}
-              className="absolute top-6 right-6 p-2 rounded-xl bg-muted/60 hover:bg-muted transition-colors z-10"
+              className="absolute top-6 right-6 p-2 rounded-full bg-white/80 hover:bg-white transition-colors z-10 shadow-xs"
             >
-              <ChevronRight className="w-5 h-5 text-foreground" />
+              <ChevronRight className="w-5 h-5 text-mipo-ink" />
             </button>
 
             <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold text-foreground">צלמו או העלו תמונה</h2>
-              <p className="text-muted-foreground text-sm">ה-AI שלנו יזהה את הגזע אוטומטית</p>
+              <h2 className="text-2xl font-semibold text-mipo-ink">צלמו או העלו תמונה</h2>
+              <p className="text-mipo-muted text-sm">ה-AI שלנו יזהה את הגזע אוטומטית</p>
             </div>
 
             {/* Avatar circle */}
@@ -381,13 +384,13 @@ const Onboarding = () => {
                 transition={breedDetecting ? { duration: 2, repeat: Infinity, ease: "linear" } : {}}
                 className={cn(
                   "w-44 h-44 rounded-full border-[3px] border-dashed overflow-hidden flex items-center justify-center",
-                  imagePreview ? "border-primary" : "border-border/60 bg-muted/40"
+                  imagePreview ? "border-mipo-cyan" : "border-mipo-line bg-mipo-soft"
                 )}
               >
                 {imagePreview ? (
                   <img src={imagePreview} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                  <div className="flex flex-col items-center gap-2 text-mipo-muted">
                     <Camera className="w-12 h-12" />
                     <span className="text-xs">צלם או העלה</span>
                   </div>
@@ -408,7 +411,8 @@ const Onboarding = () => {
                 <motion.div
                   initial={{ scale: 0, y: 10 }}
                   animate={{ scale: 1, y: 0 }}
-                  className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1.5 rounded-full text-sm font-bold shadow-lg shadow-primary/30 flex items-center gap-1.5 whitespace-nowrap"
+                  className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-sm font-semibold text-white shadow-shop flex items-center gap-1.5 whitespace-nowrap"
+                  style={{ background: "var(--gradient-primary)" }}
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                   {detectedBreed}
@@ -426,7 +430,7 @@ const Onboarding = () => {
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={handleCameraCapture}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-primary text-primary-foreground font-medium shadow-md"
+                className="mipo-gradient-button flex-1 px-4 py-3 text-sm"
               >
                 <Camera className="w-5 h-5" />
                 צלם
@@ -435,7 +439,7 @@ const Onboarding = () => {
               <label className="flex-1">
                 <motion.div
                   whileTap={{ scale: 0.95 }}
-                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-muted text-foreground font-medium cursor-pointer"
+                  className="mipo-pill-button flex px-4 py-3 text-sm cursor-pointer"
                 >
                   <ImagePlus className="w-5 h-5" />
                   גלריה
@@ -449,8 +453,7 @@ const Onboarding = () => {
               onClick={proceedToName}
               disabled={breedDetecting}
               size="lg"
-              className="w-full max-w-xs h-14 rounded-2xl text-lg font-bold text-primary-foreground shadow-lg shadow-primary/30"
-              style={{ background: "var(--gradient-primary)" }}
+              className="mipo-gradient-button w-full max-w-xs h-14 text-lg"
             >
               {imagePreview ? "המשך" : "דלג בינתיים"}
             </Button>
@@ -474,9 +477,9 @@ const Onboarding = () => {
                 animate={{ scale: 1 }}
                 transition={{ type: "spring", delay: 0.1 }}
               >
-                <Avatar className="w-20 h-20 border-2 border-primary/30 shadow-lg">
+                <Avatar className="w-20 h-20 border-2 border-white shadow-card">
                   <AvatarImage src={imagePreview} />
-                  <AvatarFallback className="bg-muted text-2xl">🐾</AvatarFallback>
+                  <AvatarFallback className="bg-mipo-soft text-2xl">🐾</AvatarFallback>
                 </Avatar>
               </motion.div>
             )}
@@ -489,8 +492,8 @@ const Onboarding = () => {
               className="w-full max-w-sm"
             >
               {/* Chat bubble */}
-              <div className="bg-muted/60 backdrop-blur-xl rounded-2xl rounded-br-md p-5 mb-6 border border-border/20">
-                <p className="text-foreground text-lg leading-relaxed">
+              <div className="mipo-soft-card p-5 mb-6">
+                <p className="text-mipo-ink text-lg leading-relaxed">
                   {selectedType === "dog" ? "🐕" : "🐱"}{" "}
                   {detectedBreed
                     ? `יופי! זיהינו ${detectedBreed}. מה השם שלו?`
@@ -506,7 +509,7 @@ const Onboarding = () => {
                   onChange={(e) => setPetName(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && petName.trim() && createPet()}
                   placeholder="הקלידו שם..."
-                  className="h-14 rounded-2xl text-lg pr-5 pl-14 bg-card border-border/30 shadow-sm text-right"
+                  className="mipo-input h-14 text-lg pr-5 pl-14 text-right"
                   dir="rtl"
                   autoComplete="off"
                 />
@@ -514,7 +517,7 @@ const Onboarding = () => {
                   onClick={createPet}
                   disabled={!petName.trim()}
                   size="icon"
-                  className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl shadow-md"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full shadow-md"
                   style={{ background: petName.trim() ? "var(--gradient-primary)" : undefined }}
                 >
                   <ArrowLeft className="w-5 h-5 text-primary-foreground" />
@@ -529,9 +532,9 @@ const Onboarding = () => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="text-sm text-muted-foreground"
+                  className="text-sm text-mipo-muted"
                 >
-                  הדאשבורד של <span className="font-bold text-foreground">{petName}</span> כמעט מוכן ✨
+                  הדאשבורד של <span className="font-bold text-mipo-ink">{petName}</span> כמעט מוכן
                 </motion.p>
               )}
             </AnimatePresence>
@@ -555,9 +558,9 @@ const Onboarding = () => {
               }}
               transition={{ duration: 1.2, ease: "easeInOut" }}
             >
-              <Avatar className="w-28 h-28 border-4 border-primary shadow-2xl shadow-primary/30">
+              <Avatar className="w-28 h-28 border-4 border-white shadow-shop">
                 <AvatarImage src={imagePreview} />
-                <AvatarFallback className="bg-primary/10 text-4xl">🐾</AvatarFallback>
+                <AvatarFallback className="bg-mipo-soft text-4xl">🐾</AvatarFallback>
               </Avatar>
             </motion.div>
 
@@ -567,8 +570,8 @@ const Onboarding = () => {
               transition={{ delay: 0.3 }}
               className="text-center space-y-2"
             >
-              <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto" />
-              <p className="text-lg font-semibold text-foreground">
+              <Loader2 className="w-6 h-6 animate-spin text-mipo-cyan mx-auto" />
+              <p className="text-lg font-semibold text-mipo-ink">
                 יוצרים את הפרופיל של {petName}...
               </p>
             </motion.div>
@@ -589,7 +592,7 @@ const Onboarding = () => {
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="w-full max-w-sm bg-card rounded-3xl p-8 shadow-2xl border border-border/20 text-center space-y-5"
+              className="mipo-flow-card w-full max-w-sm p-8 text-center space-y-5"
             >
               {/* Golden health ring */}
               <div className="relative w-32 h-32 mx-auto">
@@ -600,7 +603,7 @@ const Onboarding = () => {
                   animate={{ rotate: -90 }}
                 >
                   {/* Background ring */}
-                  <circle cx="60" cy="60" r="52" fill="none" stroke="hsl(var(--muted))" strokeWidth="6" />
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="hsl(var(--mipo-line))" strokeWidth="6" />
                   {/* Golden progress ring */}
                   <motion.circle
                     cx="60" cy="60" r="52"
@@ -615,8 +618,9 @@ const Onboarding = () => {
                   />
                   <defs>
                     <linearGradient id="goldGradient" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stopColor="hsl(var(--primary))" />
-                      <stop offset="100%" stopColor="hsl(var(--accent))" />
+                      <stop offset="0%" stopColor="hsl(var(--mipo-peach))" />
+                      <stop offset="50%" stopColor="hsl(var(--mipo-violet))" />
+                      <stop offset="100%" stopColor="hsl(var(--mipo-cyan))" />
                     </linearGradient>
                   </defs>
                 </motion.svg>
@@ -625,7 +629,7 @@ const Onboarding = () => {
                 <div className="absolute inset-0 flex items-center justify-center">
                   <Avatar className="w-20 h-20 border-2 border-background shadow-lg">
                     <AvatarImage src={imagePreview} />
-                    <AvatarFallback className="bg-primary/10 text-3xl">🐾</AvatarFallback>
+                    <AvatarFallback className="bg-mipo-soft text-3xl">🐾</AvatarFallback>
                   </Avatar>
                 </div>
 
@@ -635,7 +639,7 @@ const Onboarding = () => {
                   transition={{ duration: 2, repeat: Infinity }}
                   className="absolute inset-0 rounded-full"
                   style={{
-                    background: "radial-gradient(circle, rgba(255,215,0,0.3) 0%, transparent 70%)",
+                    background: "radial-gradient(circle, hsl(var(--mipo-cyan) / 0.18) 0%, transparent 70%)",
                   }}
                 />
               </div>
@@ -645,15 +649,15 @@ const Onboarding = () => {
                   initial={{ y: 10, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.5 }}
-                  className="text-2xl font-bold text-foreground"
+                  className="text-2xl font-semibold text-mipo-ink"
                 >
-                  🎉 {petName} רשום!
+                  {petName} רשום!
                 </motion.h2>
                 <motion.p
                   initial={{ y: 10, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.7 }}
-                  className="text-muted-foreground mt-1"
+                  className="text-mipo-muted mt-1"
                 >
                   {detectedBreed && `${detectedBreed} · `}הפרופיל מוכן
                 </motion.p>
@@ -666,11 +670,11 @@ const Onboarding = () => {
                 transition={{ delay: 0.9, type: "spring" }}
                 className="flex items-center justify-center gap-3"
               >
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-600 text-sm font-medium">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-mipo-muted text-sm font-medium border border-mipo-line">
                   <Sparkles className="w-3.5 h-3.5" />
                   50 נקודות
                 </div>
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-mipo-muted text-sm font-medium border border-mipo-line">
                   <PawPrint className="w-3.5 h-3.5" />
                   באדג׳ ברוך הבא
                 </div>
@@ -687,10 +691,9 @@ const Onboarding = () => {
               <Button
                 onClick={revealDashboard}
                 size="lg"
-                className="w-full h-14 rounded-2xl text-lg font-bold text-primary-foreground shadow-lg shadow-primary/30"
-                style={{ background: "var(--gradient-primary)" }}
+                className="mipo-gradient-button w-full h-14 text-lg"
               >
-                גלו את הדאשבורד של {petName} 🐾
+                גלו את הדאשבורד של {petName}
               </Button>
             </motion.div>
           </motion.div>

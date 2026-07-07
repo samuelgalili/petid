@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Heart, Stethoscope, Users, ChevronRight, ChevronLeft, Sparkles } from "lucide-react";
-import petidIcon from "@/assets/petid-icon.png";
+import { PetidLogo } from "@/components/PetidLogo";
 
 interface OnboardingStep {
   id: number;
@@ -17,23 +17,23 @@ interface OnboardingStep {
 const steps: OnboardingStep[] = [
   {
     id: 1,
-    title: "הכל מתחיל באחריות",
-    subtitle: "כי הם סומכים עליך — ואנחנו כאן לעזור",
-    icon: <img src={petidIcon} alt="Petid" className="w-12 h-12 object-contain" />,
-    iconBg: "bg-white shadow-xl",
+    title: "MIPO",
+    subtitle: "My Precious One",
+    icon: <PetidLogo variant="mark" size="sm" showAnimals={false} />,
+    iconBg: "bg-white",
     features: [
       { emoji: "🐾", text: "ניהול פרופיל מלא לחיית המחמד" },
       { emoji: "📋", text: "מעקב בריאות וחיסונים" },
       { emoji: "💛", text: "קהילה תומכת של בעלי חיות" }
     ],
-    socialProof: "50,000+ בעלי חיות כבר איתנו"
+    socialProof: "כל מה שחשוב לחיית המחמד במקום אחד"
   },
   {
     id: 2,
-    title: "כרטיס הזהות של החבר שלך",
+    title: "הפרופיל של החבר שלך",
     subtitle: "כל המידע החשוב במקום אחד",
     icon: <Heart className="w-12 h-12" />,
-    iconBg: "bg-gradient-to-br from-rose-400 via-pink-500 to-rose-500",
+    iconBg: "mipo-gradient-button",
     features: [
       { emoji: "📸", text: "זיהוי גזע אוטומטי בעזרת AI" },
       { emoji: "📁", text: "שמירת מסמכים וטרינריים" },
@@ -45,7 +45,7 @@ const steps: OnboardingStep[] = [
     title: "דאגה לטווח ארוך",
     subtitle: "לא חנות — מערכת ליווי",
     icon: <Stethoscope className="w-12 h-12" />,
-    iconBg: "bg-gradient-to-br from-teal-400 via-cyan-500 to-teal-500",
+    iconBg: "mipo-gradient-button",
     features: [
       { emoji: "🎯", text: "המלצות מותאמות לגיל ולגזע" },
       { emoji: "⏰", text: "תזכורות להזמנה חוזרת" },
@@ -57,7 +57,7 @@ const steps: OnboardingStep[] = [
     title: "חלק ממשפחה גדולה",
     subtitle: "קהילה שמבינה אותך",
     icon: <Users className="w-12 h-12" />,
-    iconBg: "bg-gradient-to-br from-orange-400 via-amber-500 to-orange-500",
+    iconBg: "mipo-gradient-button",
     features: [
       { emoji: "🌳", text: "מציאת גינות כלבים קרובות" },
       { emoji: "🏥", text: "המלצות על וטרינרים" },
@@ -114,16 +114,7 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: () => void }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-background z-[100] flex flex-col overflow-hidden" dir="rtl">
-      {/* Background gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-primary/10" />
-      
-      {/* Decorative background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-10 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-40 left-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
-      </div>
+    <div className="fixed inset-0 z-[100] flex flex-col overflow-hidden mipo-screen" dir="rtl">
 
       {/* Header with skip and progress */}
       <div className="relative flex items-center justify-between px-5 pt-safe pt-4">
@@ -131,7 +122,7 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: () => void }) => {
           variant="ghost"
           size="sm"
           onClick={handleSkip}
-          className="text-muted-foreground hover:text-foreground text-sm font-normal"
+          className="text-mipo-muted hover:text-mipo-ink text-sm font-normal"
         >
           אולי אחר כך
         </Button>
@@ -147,10 +138,10 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: () => void }) => {
               }}
               className={`h-1.5 rounded-full transition-all duration-300 ${
                 index === currentStep 
-                  ? "bg-primary w-6" 
+                  ? "w-6 bg-gradient-primary" 
                   : index < currentStep 
-                    ? "bg-primary/40 w-1.5" 
-                    : "bg-muted-foreground/20 w-1.5"
+                    ? "bg-mipo-cyan/40 w-1.5" 
+                    : "bg-mipo-line w-1.5"
               }`}
               whileHover={{ scale: 1.2 }}
               whileTap={{ scale: 0.9 }}
@@ -174,7 +165,7 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: () => void }) => {
           >
             {/* Icon with gradient background */}
             <motion.div
-              className={`relative w-24 h-24 rounded-3xl ${step.iconBg} flex items-center justify-center text-white mb-8 shadow-lg`}
+              className={`relative w-24 h-24 rounded-lg ${step.iconBg} flex items-center justify-center text-white mb-8 shadow-card`}
               initial={{ scale: 0, rotate: -30 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ type: "spring", delay: 0.1, stiffness: 200 }}
@@ -182,18 +173,18 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: () => void }) => {
               {step.icon}
               {/* Sparkle effect */}
               <motion.div
-                className="absolute -top-1 -right-1"
+                className="absolute -top-1 -right-1 rounded-full bg-white p-1 shadow-xs"
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.4 }}
               >
-                <Sparkles className="w-5 h-5 text-primary" />
+                <Sparkles className="w-4 h-4 text-mipo-violet" />
               </motion.div>
             </motion.div>
 
             {/* Title */}
             <motion.h1
-              className="text-2xl font-bold text-gray-900 dark:text-white mb-2 leading-tight"
+              className="text-2xl font-semibold text-mipo-ink mb-2 leading-tight"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
@@ -203,7 +194,7 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: () => void }) => {
 
             {/* Subtitle */}
             <motion.p
-              className="text-gray-600 dark:text-gray-300 mb-8 text-base leading-relaxed"
+              className="text-mipo-muted mb-8 text-base leading-relaxed"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
@@ -221,14 +212,14 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: () => void }) => {
               {step.features.map((feature, index) => (
                 <motion.div
                   key={index}
-                  className="flex items-center gap-4 bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm"
+                  className="mipo-soft-card flex items-center gap-4 p-4"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 + index * 0.08 }}
                   whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
                 >
                   <span className="text-2xl">{feature.emoji}</span>
-                  <span className="text-sm text-gray-900 dark:text-white font-medium text-right flex-1">{feature.text}</span>
+                  <span className="text-sm text-mipo-ink font-medium text-right flex-1">{feature.text}</span>
                 </motion.div>
               ))}
             </motion.div>
@@ -236,12 +227,12 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: () => void }) => {
             {/* Social proof */}
             {step.socialProof && (
               <motion.div
-                className="mt-8 flex items-center gap-2 text-sm text-primary font-medium bg-primary/10 px-4 py-2 rounded-full"
+                className="mt-8 flex items-center gap-2 text-sm text-mipo-muted font-medium bg-white px-4 py-2 rounded-full border border-mipo-line shadow-xs"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.6 }}
               >
-                <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-mipo-cyan" />
                 {step.socialProof}
               </motion.div>
             )}
@@ -256,14 +247,14 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: () => void }) => {
             <Button
               onClick={handlePrev}
               variant="outline"
-              className="h-14 px-5 rounded-2xl"
+              className="h-14 px-5 rounded-full"
             >
               <ChevronLeft className="w-5 h-5" />
             </Button>
           )}
           <Button
             onClick={handleNext}
-            className="flex-1 h-14 text-base font-semibold rounded-2xl shadow-lg bg-primary hover:bg-primary/90"
+            className="mipo-gradient-button flex-1 h-14 text-base"
           >
             {isLastStep ? "בואו נתחיל" : "הבא"}
             <ChevronRight className="w-5 h-5 mr-2" />
@@ -274,12 +265,12 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: () => void }) => {
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-center text-xs text-muted-foreground"
+            className="text-center text-xs text-mipo-muted"
           >
             בלחיצה על "בואו נתחיל" אתה מסכים ל
-            <a href="/terms" className="text-primary hover:underline mx-1">תנאי השימוש</a>
+            <a href="/terms" className="text-mipo-violet hover:underline mx-1">תנאי השימוש</a>
             ול
-            <a href="/privacy-policy" className="text-primary hover:underline mx-1">מדיניות הפרטיות</a>
+            <a href="/privacy-policy" className="text-mipo-violet hover:underline mx-1">מדיניות הפרטיות</a>
           </motion.p>
         )}
       </div>

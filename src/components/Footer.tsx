@@ -9,25 +9,25 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="w-full bg-muted/30 border-t border-border/30 py-6 pb-20 mt-auto" dir="rtl">
+    <footer className="w-full bg-mipo-soft/60 border-t border-mipo-line/70 py-6 pb-20 mt-auto" dir="rtl">
       <div className="max-w-md mx-auto px-4">
         <div className="flex justify-center items-center gap-3 flex-wrap text-xs">
           {footerLinks.map((link, index) => (
             <span key={link.path} className="flex items-center gap-3">
               <Link
                 to={link.path}
-                className="text-muted-foreground hover:text-primary hover:underline font-jakarta transition-colors"
+                className="text-mipo-muted hover:text-mipo-violet hover:underline font-jakarta transition-colors"
               >
                 {link.label}
               </Link>
               {index < footerLinks.length - 1 && (
-                <span className="text-border">|</span>
+                <span className="text-mipo-line">|</span>
               )}
             </span>
           ))}
         </div>
-        <p className="text-center text-[10px] text-muted-foreground/60 mt-3 font-jakarta">
-          © {new Date().getFullYear()} Petid. כל הזכויות שמורות.
+        <p className="text-center text-[10px] text-mipo-muted/70 mt-3 font-jakarta">
+          © {new Date().getFullYear()} MIPO. כל הזכויות שמורות.
         </p>
       </div>
     </footer>

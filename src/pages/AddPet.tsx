@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload, Sparkles, ArrowLeft, ArrowRight, Calendar as CalendarIcon, Camera, Check, Heart, MapPin, ImagePlus } from "lucide-react";
+import { Loader2, Sparkles, ArrowLeft, ArrowRight, Calendar as CalendarIcon, Camera, Check, Heart, ImagePlus } from "lucide-react";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { useGuest } from "@/contexts/GuestContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,6 +21,7 @@ import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
+import { PetidLogo } from "@/components/PetidLogo";
 
 const MEDICAL_CONDITIONS = [
   { value: "gastrointestinal", label: "בעיות עיכול / גסטרו", emoji: "🤢", categoryEn: "Gastrointestinal" },
@@ -475,14 +476,14 @@ const AddPet = () => {
   };
 
   const stepTitles = [
-    "ברוכים הבאים!", // 0
-    "בחר את חיית המחמד", // 1
-    "פרטי חיית המחמד", // 2
-    "תאריך לידה ומין", // 3
+    "ברוכים הבאים ל-MIPO", // 0
+    "מי מצטרף אלינו?", // 1
+    "ספרו לנו על חיית המחמד", // 2
+    "פרטים בסיסיים", // 3
     "אופי ואישיות", // 4
     "פעילויות אהובות", // 5
     "מידע בריאותי", // 6
-    "סקירה ואישור", // 7
+    "הפרופיל מוכן", // 7
   ];
 
   const actualSteps = isOnboarding ? TOTAL_STEPS + 1 : TOTAL_STEPS;
@@ -490,10 +491,10 @@ const AddPet = () => {
   const progressSteps = isOnboarding ? actualSteps : TOTAL_STEPS;
 
   return (
-    <div className="min-h-screen bg-background pb-20" dir="rtl">
-      {/* Instagram-style Header */}
+    <div className="min-h-screen mipo-screen pb-24" dir="rtl">
+      {/* MIPO Header */}
       <motion.div 
-        className="sticky top-0 z-40 bg-background/98 backdrop-blur-xl border-b border-border/40"
+        className="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-mipo-line/70"
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
       >
@@ -503,25 +504,20 @@ const AddPet = () => {
               <button
                 type="button"
                 onClick={prevStep}
-                className="p-2 rounded-xl hover:bg-muted transition-colors"
+                className="p-2 rounded-full hover:bg-mipo-soft transition-colors"
               >
-                <ArrowRight className="w-5 h-5 text-foreground" />
+                <ArrowRight className="w-5 h-5 text-mipo-ink" />
               </button>
             ) : (
               <button
                 type="button"
                 onClick={() => navigate('/')}
-                className="p-2 rounded-xl hover:bg-muted transition-colors"
+                className="p-2 rounded-full hover:bg-mipo-soft transition-colors"
               >
-                <ArrowRight className="w-5 h-5 text-foreground" />
+                <ArrowRight className="w-5 h-5 text-mipo-ink" />
               </button>
             )}
-            <div className="flex items-center gap-2">
-              <span className="text-xl">🐾</span>
-              <h1 className="text-lg font-semibold text-foreground">
-                {isOnboarding ? "ברוכים הבאים" : "הוספת חיית מחמד"}
-              </h1>
-            </div>
+            <PetidLogo variant="horizontal" showAnimals={false} size="sm" />
             <div className="w-9" />
           </div>
           
@@ -529,18 +525,19 @@ const AddPet = () => {
           {currentStep > 0 && (
             <div className="mt-3">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-mipo-muted">
                   שלב {displayStep} מתוך {progressSteps}
                 </span>
                 {autoSaveStatus === 'saved' && (
-                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <span className="text-xs text-mipo-muted flex items-center gap-1">
                     <Check className="w-3 h-3" /> נשמר
                   </span>
                 )}
               </div>
-              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+              <div className="h-1.5 bg-mipo-soft rounded-full overflow-hidden">
                 <motion.div 
-                  className="h-full bg-primary rounded-full"
+                  className="h-full rounded-full"
+                  style={{ background: "var(--gradient-primary)" }}
                   initial={{ width: 0 }}
                   animate={{ width: `${(displayStep / progressSteps) * 100}%` }}
                   transition={{ duration: 0.4, ease: "easeOut" }}
@@ -556,48 +553,47 @@ const AddPet = () => {
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-6"
+          className="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center p-6"
         >
           <motion.div 
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-card rounded-3xl p-8 max-w-sm w-full space-y-6 shadow-2xl"
+            className="mipo-flow-card p-8 max-w-sm w-full space-y-6"
           >
             <div 
-              className="w-16 h-16 mx-auto rounded-full flex items-center justify-center"
+              className="w-16 h-16 mx-auto rounded-full flex items-center justify-center shadow-shop"
               style={{ background: 'var(--gradient-primary)' }}
             >
               <Sparkles className="w-8 h-8 text-white" />
             </div>
-            <h3 className="text-2xl font-bold text-foreground text-center">החלקה לניווט</h3>
+            <h3 className="text-2xl font-semibold text-mipo-ink text-center">החלקה לניווט</h3>
             <div className="space-y-4">
-              <div className="flex items-center gap-4 p-3 bg-muted rounded-xl">
+              <div className="flex items-center gap-4 p-3 bg-mipo-soft rounded-xl">
                 <div 
                   className="w-10 h-10 rounded-full flex items-center justify-center"
                   style={{ background: 'var(--gradient-primary)' }}
                 >
                   <ArrowRight className="w-5 h-5 text-white" />
                 </div>
-                <p className="text-muted-foreground text-sm">
-                  החלק <span className="font-semibold text-foreground">ימינה</span> לחזור
+                <p className="text-mipo-muted text-sm">
+                  החלק <span className="font-semibold text-mipo-ink">ימינה</span> לחזור
                 </p>
               </div>
-              <div className="flex items-center gap-4 p-3 bg-muted rounded-xl">
+              <div className="flex items-center gap-4 p-3 bg-mipo-soft rounded-xl">
                 <div 
                   className="w-10 h-10 rounded-full flex items-center justify-center"
                   style={{ background: 'var(--gradient-primary)' }}
                 >
                   <ArrowLeft className="w-5 h-5 text-white" />
                 </div>
-                <p className="text-muted-foreground text-sm">
-                  החלק <span className="font-semibold text-foreground">שמאלה</span> להמשיך
+                <p className="text-mipo-muted text-sm">
+                  החלק <span className="font-semibold text-mipo-ink">שמאלה</span> להמשיך
                 </p>
               </div>
             </div>
             <Button 
               onClick={dismissTutorial} 
-              className="w-full text-white border-0"
-              style={{ background: 'var(--gradient-primary)' }}
+              className="mipo-gradient-button w-full"
             >
               הבנתי!
             </Button>
@@ -613,7 +609,7 @@ const AddPet = () => {
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-6"
           >
-            <h2 className="text-2xl font-bold text-foreground">
+            <h2 className="text-2xl font-semibold text-mipo-ink">
               {stepTitles[currentStep]}
             </h2>
           </motion.div>
@@ -634,23 +630,17 @@ const AddPet = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="bg-card rounded-3xl p-8 shadow-[var(--shadow-elevated)] text-center space-y-6 border border-border/50"
+                className="mipo-flow-card p-8 text-center space-y-7"
               >
-                <div 
-                  className="w-24 h-24 mx-auto rounded-full flex items-center justify-center shadow-[var(--shadow-shop)]"
-                  style={{ background: 'var(--gradient-primary)' }}
-                >
-                  <span className="text-5xl">🐾</span>
-                </div>
-                <h1 className="text-3xl font-bold text-foreground">ברוכים הבאים!</h1>
-                <p className="text-muted-foreground text-lg">
-                  הבית הדיגיטלי של החבר על ארבע שלכם
+                <PetidLogo size="md" showAnimals className="mx-auto" />
+                <h1 className="text-2xl font-semibold text-mipo-ink">ברוכים הבאים ל-MIPO</h1>
+                <p className="text-mipo-muted text-base">
+                  הבית השקט והחכם של חיית המחמד שלכם
                 </p>
                 <Button 
                   onClick={nextStep} 
                   size="lg" 
-                  className="w-full text-white border-0 shadow-[var(--shadow-shop)]"
-                  style={{ background: 'var(--gradient-primary)' }}
+                  className="mipo-gradient-button w-full"
                 >
                   בואו נתחיל
                 </Button>
@@ -667,7 +657,7 @@ const AddPet = () => {
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 className="space-y-6"
               >
-                <p className="text-center text-muted-foreground">בחר את סוג חיית המחמד</p>
+                <p className="text-center text-mipo-muted">בחרו את סוג חיית המחמד</p>
                 <div className="grid grid-cols-2 gap-6 py-4">
                   <motion.button 
                     type="button" 
@@ -678,14 +668,14 @@ const AddPet = () => {
                       forceNextStep();
                     }} 
                     className={cn(
-                      "flex flex-col items-center justify-center p-6 bg-card rounded-3xl border-2 transition-all shadow-[var(--shadow-card)]",
+                      "mipo-soft-card flex flex-col items-center justify-center p-6 transition-all",
                       petType === "cat" 
-                        ? "border-primary shadow-[var(--shadow-shop)]" 
-                        : "border-border hover:border-primary/50 hover:shadow-[var(--shadow-elevated)]"
+                        ? "border-mipo-cyan shadow-shop" 
+                        : "hover:border-mipo-cyan/50 hover:shadow-elevated"
                     )}
                   >
                     <img src={catIcon} alt="חתול" className="w-24 h-24 object-contain mb-3" />
-                    <span className="font-semibold text-foreground text-lg">חתול</span>
+                    <span className="font-semibold text-mipo-ink text-lg">חתול</span>
                   </motion.button>
                   
                   <motion.button 
@@ -697,14 +687,14 @@ const AddPet = () => {
                       forceNextStep();
                     }} 
                     className={cn(
-                      "flex flex-col items-center justify-center p-6 bg-card rounded-3xl border-2 transition-all shadow-[var(--shadow-card)]",
+                      "mipo-soft-card flex flex-col items-center justify-center p-6 transition-all",
                       petType === "dog" 
-                        ? "border-primary shadow-[var(--shadow-shop)]" 
-                        : "border-border hover:border-primary/50 hover:shadow-[var(--shadow-elevated)]"
+                        ? "border-mipo-cyan shadow-shop" 
+                        : "hover:border-mipo-cyan/50 hover:shadow-elevated"
                     )}
                   >
                     <img src={dogIcon} alt="כלב" className="w-28 h-28 object-contain mb-3" />
-                    <span className="font-semibold text-foreground text-lg">כלב</span>
+                    <span className="font-semibold text-mipo-ink text-lg">כלב</span>
                   </motion.button>
                 </div>
               </motion.div>
@@ -718,27 +708,27 @@ const AddPet = () => {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: slideDirection === 'left' ? -100 : 100, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="bg-card rounded-3xl p-6 shadow-[var(--shadow-elevated)] space-y-6 border border-border/50"
+                className="mipo-flow-card p-6 space-y-6"
               >
                 {/* Image Upload */}
                 <div className="text-center space-y-3">
-                  <Label className="block font-semibold">תמונת פרופיל</Label>
+                  <Label className="block font-semibold text-mipo-ink">תמונת פרופיל</Label>
                   
                   {/* Preview circle */}
                   <div className="relative w-32 h-32 mx-auto">
                     <div 
                       className="w-32 h-32 rounded-full border-3 border-dashed transition-all flex items-center justify-center overflow-hidden"
                       style={{ 
-                        borderColor: imagePreview ? 'hsl(var(--primary))' : 'hsl(var(--border))',
-                        background: imagePreview ? 'transparent' : 'hsl(var(--muted))'
+                        borderColor: imagePreview ? 'hsl(var(--mipo-cyan))' : 'hsl(var(--mipo-line))',
+                        background: imagePreview ? 'transparent' : 'hsl(var(--mipo-soft))'
                       }}
                     >
                       {imagePreview ? (
                         <img src={imagePreview} alt="תצוגה מקדימה" className="w-full h-full object-cover" />
                       ) : (
                         <div className="flex flex-col items-center gap-1">
-                          <Camera className="w-10 h-10 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">צלם או העלה</span>
+                          <Camera className="w-10 h-10 text-mipo-muted" />
+                          <span className="text-xs text-mipo-muted">צלם או העלה</span>
                         </div>
                       )}
                     </div>
@@ -759,7 +749,7 @@ const AddPet = () => {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={handleCameraCapture}
-                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium shadow-sm"
+                      className="mipo-gradient-button min-h-0 px-4 py-2.5 text-sm"
                     >
                       <Camera className="w-4 h-4" />
                       צלם
@@ -768,7 +758,7 @@ const AddPet = () => {
                       <motion.div
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-muted text-foreground text-sm font-medium cursor-pointer"
+                        className="mipo-pill-button min-h-0 px-4 py-2.5 text-sm cursor-pointer"
                       >
                         <ImagePlus className="w-4 h-4" />
                         גלריה
@@ -790,7 +780,7 @@ const AddPet = () => {
                       className="flex items-start gap-2 px-4 py-3 rounded-xl bg-warning/10 border border-warning/30 text-sm"
                     >
                       <Camera className="w-4 h-4 text-warning mt-0.5 shrink-0" />
-                      <span className="text-foreground">
+                      <span className="text-mipo-ink">
                         {photoQualityFeedback.includes('dark') || photoQualityFeedback.includes('blur') 
                           ? 'צלם תמונה ברורה יותר באור טוב יותר לזיהוי מדויק.'
                           : photoQualityFeedback}
@@ -806,17 +796,17 @@ const AddPet = () => {
                       className="space-y-3"
                     >
                       <div
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm"
-                        style={{ background: breedConfidence > 0.8 ? 'var(--gradient-primary)' : 'hsl(var(--muted))' }}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm shadow-xs"
+                        style={{ background: breedConfidence > 0.8 ? 'var(--gradient-primary)' : 'hsl(var(--mipo-soft))' }}
                       >
                         <Sparkles className={cn("w-4 h-4", breedConfidence > 0.8 ? "text-white" : "text-warning")} />
-                        <span className={cn("font-medium", breedConfidence > 0.8 ? "text-white" : "text-foreground")}>
+                        <span className={cn("font-medium", breedConfidence > 0.8 ? "text-white" : "text-mipo-ink")}>
                           זוהה: {formData.breed} ({Math.round(breedConfidence * 100)}%)
                         </span>
                       </div>
                       {breedConfidence <= 0.8 && (
-                        <p className="text-xs text-muted-foreground">
-                          רמת הוודאות נמוכה — אנא אשר או ערוך את הגזע למטה
+                        <p className="text-xs text-mipo-muted">
+                          רמת הוודאות נמוכה. אנא אשרו או ערכו את הגזע למטה
                         </p>
                       )}
 
@@ -825,9 +815,9 @@ const AddPet = () => {
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
-                          className="bg-muted/50 rounded-xl p-3 space-y-2"
+                          className="bg-mipo-soft rounded-xl p-3 space-y-2"
                         >
-                          <p className="text-xs font-semibold text-foreground flex items-center gap-1">
+                          <p className="text-xs font-semibold text-mipo-ink flex items-center gap-1">
                             <Heart className="w-3.5 h-3.5 text-destructive" />
                             סיכונים בריאותיים לגזע
                           </p>
@@ -839,7 +829,7 @@ const AddPet = () => {
                                   "text-[11px] px-2 py-1 rounded-full font-medium",
                                   risk.severity === 'high' ? "bg-destructive/15 text-destructive" :
                                   risk.severity === 'medium' ? "bg-warning/15 text-warning" :
-                                  "bg-muted text-muted-foreground"
+                                  "bg-white text-mipo-muted"
                                 )}
                               >
                                 {risk.risk_he || risk.risk}
@@ -867,22 +857,22 @@ const AddPet = () => {
 
                 {/* Name */}
                 <div className="space-y-2">
-                  <Label htmlFor="name">שם חיית המחמד *</Label>
+                  <Label htmlFor="name" className="text-mipo-ink">שם חיית המחמד *</Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="מה השם?"
-                    className="text-lg h-12 rounded-xl"
+                    className="mipo-input text-lg h-12"
                   />
                 </div>
 
                 {/* Breed Section */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="breed">גזע</Label>
+                    <Label htmlFor="breed" className="text-mipo-ink">גזע</Label>
                     {breedSource === 'ai' && (
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <span className="text-xs text-mipo-muted flex items-center gap-1">
                         <Sparkles className="w-3 h-3 text-warning" />
                         זוהה אוטומטית
                       </span>
@@ -905,8 +895,8 @@ const AddPet = () => {
                     className={cn(
                       "flex items-center gap-2 px-3 py-2 rounded-xl border text-sm transition-all w-full",
                       formData.is_mixed 
-                        ? "border-primary bg-primary/10 text-primary font-medium" 
-                        : "border-border bg-muted/50 text-muted-foreground"
+                        ? "border-mipo-cyan bg-mipo-cyan/10 text-mipo-ink font-medium" 
+                        : "border-mipo-line bg-mipo-soft text-mipo-muted"
                     )}
                     whileTap={{ scale: 0.98 }}
                   >
@@ -937,20 +927,20 @@ const AddPet = () => {
                       onBlur={() => setTimeout(() => setShowBreedSearch(false), 200)}
                       placeholder={breedDetecting ? "מזהה גזע..." : formData.is_mixed ? "גזע ראשי" : "חפש גזע..."}
                       disabled={breedDetecting}
-                      className="h-12 rounded-xl"
+                      className="mipo-input h-12"
                     />
                     {/* Search results dropdown */}
                     {showBreedSearch && breedSearchField === 'primary' && breedSearchResults.length > 0 && (
                       <motion.div
                         initial={{ opacity: 0, y: -5 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="absolute z-20 top-full mt-1 w-full bg-card rounded-xl border border-border shadow-lg max-h-48 overflow-y-auto"
+                        className="absolute z-20 top-full mt-1 w-full bg-white rounded-xl border border-mipo-line shadow-lg max-h-48 overflow-y-auto"
                       >
                         {breedSearchResults.map((b, i) => (
                           <button
                             key={i}
                             type="button"
-                            className="w-full text-right px-4 py-2.5 text-sm hover:bg-muted transition-colors border-b border-border/30 last:border-0"
+                            className="w-full text-right px-4 py-2.5 text-sm hover:bg-mipo-soft transition-colors border-b border-mipo-line/60 last:border-0"
                             onMouseDown={() => {
                               setFormData(prev => ({ ...prev, breed: b.breed_name_he || b.breed_name }));
                               setBreedSource('user');
@@ -959,7 +949,7 @@ const AddPet = () => {
                           >
                             <span className="font-medium">{b.breed_name_he || b.breed_name}</span>
                             {b.breed_name_he && (
-                              <span className="text-muted-foreground mr-2 text-xs">({b.breed_name})</span>
+                              <span className="text-mipo-muted mr-2 text-xs">({b.breed_name})</span>
                             )}
                           </button>
                         ))}
@@ -993,19 +983,19 @@ const AddPet = () => {
                         }}
                         onBlur={() => setTimeout(() => setShowBreedSearch(false), 200)}
                         placeholder="גזע משני (אופציונלי)"
-                        className="h-12 rounded-xl"
+                        className="mipo-input h-12"
                       />
                       {showBreedSearch && breedSearchField === 'secondary' && breedSearchResults.length > 0 && (
                         <motion.div
                           initial={{ opacity: 0, y: -5 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="absolute z-20 top-full mt-1 w-full bg-card rounded-xl border border-border shadow-lg max-h-48 overflow-y-auto"
+                          className="absolute z-20 top-full mt-1 w-full bg-white rounded-xl border border-mipo-line shadow-lg max-h-48 overflow-y-auto"
                         >
                           {breedSearchResults.map((b, i) => (
                             <button
                               key={i}
                               type="button"
-                              className="w-full text-right px-4 py-2.5 text-sm hover:bg-muted transition-colors border-b border-border/30 last:border-0"
+                              className="w-full text-right px-4 py-2.5 text-sm hover:bg-mipo-soft transition-colors border-b border-mipo-line/60 last:border-0"
                               onMouseDown={() => {
                                 setFormData(prev => ({ ...prev, secondary_breed: b.breed_name_he || b.breed_name }));
                                 setShowBreedSearch(false);
@@ -1013,7 +1003,7 @@ const AddPet = () => {
                             >
                               <span className="font-medium">{b.breed_name_he || b.breed_name}</span>
                               {b.breed_name_he && (
-                                <span className="text-muted-foreground mr-2 text-xs">({b.breed_name})</span>
+                                <span className="text-mipo-muted mr-2 text-xs">({b.breed_name})</span>
                               )}
                             </button>
                           ))}
@@ -1024,12 +1014,11 @@ const AddPet = () => {
                 </div>
 
                 <div className="flex gap-3 pt-4">
-                  <Button onClick={prevStep} variant="outline" className="flex-1 h-12 rounded-xl">חזור</Button>
+                  <Button onClick={prevStep} variant="outline" className="mipo-pill-button flex-1 h-12">חזור</Button>
                   <Button 
                     onClick={nextStep} 
                     disabled={!formData.name.trim()} 
-                    className="flex-1 h-12 rounded-xl text-white border-0"
-                    style={{ background: 'var(--gradient-primary)' }}
+                    className="mipo-gradient-button flex-1 h-12"
                   >
                     המשך
                   </Button>
@@ -1045,14 +1034,14 @@ const AddPet = () => {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: slideDirection === 'left' ? -100 : 100, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="bg-card rounded-3xl p-6 shadow-[var(--shadow-elevated)] space-y-6 border border-border/50"
+                className="mipo-flow-card p-6 space-y-6"
               >
                 {/* Birth Date */}
                 <div className="space-y-2">
-                  <Label>תאריך לידה</Label>
+                  <Label className="text-mipo-ink">תאריך לידה</Label>
                   <Popover open={showCalendar} onOpenChange={setShowCalendar}>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-full justify-start text-right h-12 rounded-xl">
+                      <Button variant="outline" className="mipo-input w-full justify-start text-right h-12">
                         <CalendarIcon className="ml-2 h-4 w-4" />
                         {formData.birthDate ? format(formData.birthDate, "PPP", { locale: he }) : "בחר תאריך"}
                       </Button>
@@ -1073,9 +1062,9 @@ const AddPet = () => {
 
                 {/* Gender */}
                 <div className="space-y-2">
-                  <Label>מין</Label>
+                  <Label className="text-mipo-ink">מין</Label>
                   <Select value={formData.gender} onValueChange={(val) => setFormData(prev => ({ ...prev, gender: val }))}>
-                    <SelectTrigger className="h-12 rounded-xl">
+                    <SelectTrigger className="mipo-input h-12">
                       <SelectValue placeholder="בחר מין" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1087,9 +1076,9 @@ const AddPet = () => {
 
                 {/* Neutered */}
                 <div className="space-y-2">
-                  <Label>מעוקר/מסורס?</Label>
+                  <Label className="text-mipo-ink">מעוקר/מסורס?</Label>
                   <Select value={formData.is_neutered} onValueChange={(val) => setFormData(prev => ({ ...prev, is_neutered: val }))}>
-                    <SelectTrigger className="h-12 rounded-xl">
+                    <SelectTrigger className="mipo-input h-12">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1100,11 +1089,10 @@ const AddPet = () => {
                 </div>
 
                 <div className="flex gap-3 pt-4">
-                  <Button onClick={prevStep} variant="outline" className="flex-1 h-12 rounded-xl">חזור</Button>
+                  <Button onClick={prevStep} variant="outline" className="mipo-pill-button flex-1 h-12">חזור</Button>
                   <Button 
                     onClick={nextStep} 
-                    className="flex-1 h-12 rounded-xl text-white border-0"
-                    style={{ background: 'var(--gradient-primary)' }}
+                    className="mipo-gradient-button flex-1 h-12"
                   >
                     המשך
                   </Button>
@@ -1120,9 +1108,9 @@ const AddPet = () => {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: slideDirection === 'left' ? -100 : 100, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="bg-card rounded-3xl p-6 shadow-[var(--shadow-elevated)] space-y-6 border border-border/50"
+                className="mipo-flow-card p-6 space-y-6"
               >
-                <p className="text-muted-foreground text-center text-sm">
+                <p className="text-mipo-muted text-center text-sm">
                   בחר תגיות שמתארות את {formData.name || "חיית המחמד"}
                 </p>
                 <div className="grid grid-cols-2 gap-3">
@@ -1134,28 +1122,27 @@ const AddPet = () => {
                       whileTap={{ scale: 0.98 }}
                       onClick={() => toggleTag(tag.value, setPersonalityTags)}
                       className={cn(
-                        "p-4 rounded-xl border-2 transition-all text-center",
+                        "p-4 rounded-xl border transition-all text-center",
                         personalityTags.includes(tag.value)
-                          ? "border-transparent shadow-[var(--shadow-shop)]"
-                          : "border-border hover:border-primary/50 bg-card"
+                          ? "border-transparent shadow-shop"
+                          : "border-mipo-line hover:border-mipo-cyan/50 bg-white"
                       )}
                       style={personalityTags.includes(tag.value) ? { background: 'var(--gradient-primary)' } : {}}
                     >
                       <div className="text-2xl mb-1">{tag.emoji}</div>
                       <div className={cn(
                         "text-sm font-medium",
-                        personalityTags.includes(tag.value) ? "text-white" : "text-foreground"
+                        personalityTags.includes(tag.value) ? "text-white" : "text-mipo-ink"
                       )}>{tag.label}</div>
                     </motion.button>
                   ))}
                 </div>
 
                 <div className="flex gap-3 pt-4">
-                  <Button onClick={prevStep} variant="outline" className="flex-1 h-12 rounded-xl">חזור</Button>
+                  <Button onClick={prevStep} variant="outline" className="mipo-pill-button flex-1 h-12">חזור</Button>
                   <Button 
                     onClick={nextStep} 
-                    className="flex-1 h-12 rounded-xl text-white border-0"
-                    style={{ background: 'var(--gradient-primary)' }}
+                    className="mipo-gradient-button flex-1 h-12"
                   >
                     המשך
                   </Button>
@@ -1171,9 +1158,9 @@ const AddPet = () => {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: slideDirection === 'left' ? -100 : 100, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="bg-card rounded-3xl p-6 shadow-[var(--shadow-elevated)] space-y-6 border border-border/50"
+                className="mipo-flow-card p-6 space-y-6"
               >
-                <p className="text-muted-foreground text-center text-sm">
+                <p className="text-mipo-muted text-center text-sm">
                   {petType === 'cat' 
                     ? `מה רמת הפעילות של ${formData.name || "החתול"}?`
                     : `מה ${formData.name || "חיית המחמד"} אוהב/ת לעשות?`
@@ -1190,17 +1177,17 @@ const AddPet = () => {
                         whileTap={{ scale: 0.99 }}
                         onClick={() => toggleTag(activity.value, setActivities)}
                         className={cn(
-                          "w-full p-4 rounded-xl border-2 transition-all flex items-center gap-3",
+                          "w-full p-4 rounded-xl border transition-all flex items-center gap-3",
                           activities.includes(activity.value)
-                            ? "border-transparent shadow-[var(--shadow-shop)]"
-                            : "border-border hover:border-primary/50 bg-card"
+                            ? "border-transparent shadow-shop"
+                            : "border-mipo-line hover:border-mipo-cyan/50 bg-white"
                         )}
                         style={activities.includes(activity.value) ? { background: 'var(--gradient-primary)' } : {}}
                       >
                         <div className="text-2xl">{activity.emoji}</div>
                         <div className={cn(
                           "text-base font-medium",
-                          activities.includes(activity.value) ? "text-white" : "text-foreground"
+                          activities.includes(activity.value) ? "text-white" : "text-mipo-ink"
                         )}>{activity.label}</div>
                         {activities.includes(activity.value) && (
                           <Check className="w-5 h-5 text-white mr-auto" />
@@ -1218,17 +1205,17 @@ const AddPet = () => {
                         whileTap={{ scale: 0.99 }}
                         onClick={() => toggleTag(activity.value, setActivities)}
                         className={cn(
-                          "w-full p-4 rounded-xl border-2 transition-all flex items-center gap-3",
+                          "w-full p-4 rounded-xl border transition-all flex items-center gap-3",
                           activities.includes(activity.value)
-                            ? "border-transparent shadow-[var(--shadow-shop)]"
-                            : "border-border hover:border-primary/50 bg-card"
+                            ? "border-transparent shadow-shop"
+                            : "border-mipo-line hover:border-mipo-cyan/50 bg-white"
                         )}
                         style={activities.includes(activity.value) ? { background: 'var(--gradient-primary)' } : {}}
                       >
                         <div className="text-2xl">{activity.emoji}</div>
                         <div className={cn(
                           "text-lg font-medium",
-                          activities.includes(activity.value) ? "text-white" : "text-foreground"
+                          activities.includes(activity.value) ? "text-white" : "text-mipo-ink"
                         )}>{activity.label}</div>
                         {activities.includes(activity.value) && (
                           <Check className="w-5 h-5 text-white mr-auto" />
@@ -1239,11 +1226,10 @@ const AddPet = () => {
                 )}
 
                 <div className="flex gap-3 pt-4">
-                  <Button onClick={prevStep} variant="outline" className="flex-1 h-12 rounded-xl">חזור</Button>
+                  <Button onClick={prevStep} variant="outline" className="mipo-pill-button flex-1 h-12">חזור</Button>
                   <Button 
                     onClick={nextStep} 
-                    className="flex-1 h-12 rounded-xl text-white border-0"
-                    style={{ background: 'var(--gradient-primary)' }}
+                    className="mipo-gradient-button flex-1 h-12"
                   >
                     המשך
                   </Button>
@@ -1259,16 +1245,16 @@ const AddPet = () => {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: slideDirection === 'left' ? -100 : 100, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="bg-card rounded-3xl p-6 shadow-[var(--shadow-elevated)] space-y-6 border border-border/50"
+                className="mipo-flow-card p-6 space-y-6"
               >
                 <div className="text-center">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-muted text-muted-foreground text-sm mb-2">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-mipo-soft text-mipo-muted text-sm mb-2">
                     <Heart className="w-4 h-4" />
                     אופציונלי
                   </div>
                 </div>
                 <div className="space-y-4">
-                  <Label className="text-base font-semibold">
+                  <Label className="text-base font-semibold text-mipo-ink">
                     האם {formData.name || 'חיית המחמד'} סובל/ת מרגישות או בעיה רפואית?
                   </Label>
                   <div className="flex flex-wrap gap-2">
@@ -1296,8 +1282,8 @@ const AddPet = () => {
                             className={cn(
                               'flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all border',
                               isSelected
-                                ? 'border-primary bg-primary/10 text-primary'
-                                : 'border-border bg-card text-muted-foreground hover:border-primary/50'
+                                ? 'border-mipo-cyan bg-mipo-cyan/10 text-mipo-ink'
+                                : 'border-mipo-line bg-white text-mipo-muted hover:border-mipo-cyan/50'
                             )}
                           >
                             <span>{condition.emoji}</span>
@@ -1314,7 +1300,7 @@ const AddPet = () => {
                       onChange={(e) => setOtherConditionText(e.target.value)}
                       placeholder="פרט/י את הבעיה הרפואית..."
                       rows={2}
-                      className="rounded-xl resize-none"
+                      className="mipo-input rounded-xl resize-none"
                     />
                   )}
 
@@ -1322,22 +1308,21 @@ const AddPet = () => {
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="rounded-xl p-3 bg-primary/5 border border-primary/20 text-sm text-foreground"
+                      className="rounded-xl p-3 bg-mipo-soft border border-mipo-line text-sm text-mipo-ink"
                     >
                       <p className="font-medium mb-1">💡 שימי לב</p>
-                      <p className="text-muted-foreground">
-                        ב-PetID תוכל/י למצוא מידע על תזונה רפואית מותאמת לבעיות שציינת.
+                      <p className="text-mipo-muted">
+                        ב-MIPO תוכל/י למצוא מידע על תזונה רפואית מותאמת לבעיות שציינת.
                       </p>
                     </motion.div>
                   )}
                 </div>
 
                 <div className="flex gap-3 pt-4">
-                  <Button onClick={prevStep} variant="outline" className="flex-1 h-12 rounded-xl">חזור</Button>
+                  <Button onClick={prevStep} variant="outline" className="mipo-pill-button flex-1 h-12">חזור</Button>
                   <Button 
                     onClick={nextStep} 
-                    className="flex-1 h-12 rounded-xl text-white border-0"
-                    style={{ background: 'var(--gradient-primary)' }}
+                    className="mipo-gradient-button flex-1 h-12"
                   >
                     המשך
                   </Button>
@@ -1353,10 +1338,10 @@ const AddPet = () => {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: slideDirection === 'left' ? -100 : 100, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="bg-card rounded-3xl p-6 shadow-[var(--shadow-elevated)] space-y-6 text-center border border-border/50"
+                className="mipo-flow-card p-6 space-y-6 text-center"
               >
                 <div 
-                  className="w-16 h-16 mx-auto rounded-full flex items-center justify-center"
+                  className="w-16 h-16 mx-auto rounded-full flex items-center justify-center shadow-shop"
                   style={{ background: 'var(--gradient-primary)' }}
                 >
                   <span className="text-3xl">🎉</span>
@@ -1367,8 +1352,8 @@ const AddPet = () => {
                     <img 
                       src={imagePreview} 
                       alt={formData.name}
-                      className="w-28 h-28 rounded-full object-cover shadow-[var(--shadow-shop)]"
-                      style={{ border: '4px solid hsl(var(--primary))' }}
+                      className="w-28 h-28 rounded-full object-cover shadow-shop"
+                      style={{ border: '4px solid hsl(0 0% 100%)' }}
                     />
                   </div>
                 ) : (
@@ -1380,28 +1365,28 @@ const AddPet = () => {
                   </div>
                 )}
                 
-                <h2 className="text-2xl font-bold text-foreground">{formData.name}</h2>
+                <h2 className="text-2xl font-semibold text-mipo-ink">{formData.name}</h2>
                 
-                <div className="text-right space-y-3 bg-muted/50 rounded-xl p-4">
+                <div className="text-right space-y-3 bg-mipo-soft rounded-xl p-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-foreground font-medium">{petType === "dog" ? "כלב" : "חתול"}</span>
-                    <span className="text-muted-foreground text-sm">סוג</span>
+                    <span className="text-mipo-ink font-medium">{petType === "dog" ? "כלב" : "חתול"}</span>
+                    <span className="text-mipo-muted text-sm">סוג</span>
                   </div>
                   {formData.breed && (
                     <div className="flex justify-between items-center">
-                      <span className="text-foreground font-medium">{formData.breed}</span>
-                      <span className="text-muted-foreground text-sm">גזע</span>
+                      <span className="text-mipo-ink font-medium">{formData.breed}</span>
+                      <span className="text-mipo-muted text-sm">גזע</span>
                     </div>
                   )}
                   {formData.gender && (
                     <div className="flex justify-between items-center">
-                      <span className="text-foreground font-medium">{formData.gender === "male" ? "זכר" : "נקבה"}</span>
-                      <span className="text-muted-foreground text-sm">מין</span>
+                      <span className="text-mipo-ink font-medium">{formData.gender === "male" ? "זכר" : "נקבה"}</span>
+                      <span className="text-mipo-muted text-sm">מין</span>
                     </div>
                   )}
                   {personalityTags.length > 0 && (
-                    <div className="pt-2 border-t border-border">
-                      <span className="text-muted-foreground text-sm block mb-2">אישיות</span>
+                    <div className="pt-2 border-t border-mipo-line">
+                      <span className="text-mipo-muted text-sm block mb-2">אישיות</span>
                       <div className="flex flex-wrap gap-2">
                         {personalityTags.map(t => {
                           const tag = (petType === 'cat' ? PERSONALITY_TAGS_CAT : PERSONALITY_TAGS_DOG).find(pt => pt.value === t);
@@ -1425,7 +1410,7 @@ const AddPet = () => {
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.2 }}
-                    className="rounded-2xl p-4 space-y-2 shadow-[var(--shadow-shop)]"
+                    className="rounded-xl p-4 space-y-2 shadow-shop"
                     style={{ background: 'var(--gradient-primary)' }}
                   >
                     <div className="text-3xl">🎁</div>
@@ -1435,12 +1420,11 @@ const AddPet = () => {
                 )}
 
                 <div className="flex gap-3 pt-4">
-                  <Button onClick={prevStep} variant="outline" className="flex-1 h-12 rounded-xl">חזור</Button>
+                  <Button onClick={prevStep} variant="outline" className="mipo-pill-button flex-1 h-12">חזור</Button>
                   <Button 
                     onClick={handleSubmit} 
                     disabled={loading} 
-                    className="flex-1 h-12 rounded-xl text-white border-0 shadow-[var(--shadow-shop)]"
-                    style={{ background: 'var(--gradient-primary)' }}
+                    className="mipo-gradient-button flex-1 h-12"
                   >
                     {loading ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : null}
                     {loading ? "שומר..." : "סיום 🐾"}

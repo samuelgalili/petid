@@ -13,11 +13,10 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 
- * PETID DESIGN SYSTEM
+/*
+ * MIPO DESIGN SYSTEM
  * ==============================
- * Warm, caring, organic design
- * Differentiated from Instagram with teal/gold palette
+ * Quiet white surfaces, soft gray controls, and pastel gradient accents.
  */
 
 @layer base {
@@ -64,95 +63,105 @@
   
   :root {
     /* ===========================
-     * PETID BRAND COLORS - LIGHT BLUE (תכלת) PALETTE
-     * Clean, professional, calming
+     * MIPO BRAND COLORS
      * =========================== */
+
+    --mipo-ink: 222 18% 14%;
+    --mipo-muted: 220 7% 48%;
+    --mipo-soft: 220 22% 97%;
+    --mipo-line: 220 16% 91%;
+    --mipo-coral: 10 94% 71%;
+    --mipo-peach: 33 100% 68%;
+    --mipo-pink: 319 80% 66%;
+    --mipo-violet: 264 82% 68%;
+    --mipo-blue: 221 86% 66%;
+    --mipo-cyan: 188 77% 57%;
     
-    /* Primary - Light Blue (תכלת) */
-    --petid-blue: 204 100% 48%;              /* #0099E6 - Light Blue */
-    --petid-blue-hover: 204 100% 42%;
-    --petid-blue-light: 204 100% 58%;
+    /* Primary - MIPO cyan */
+    --petid-blue: 188 77% 50%;
+    --petid-blue-hover: 188 77% 44%;
+    --petid-blue-light: 188 77% 62%;
     --petid-blue-foreground: 0 0% 100%;
 
-    /* Secondary - Deep Blue */
-    --petid-deep-blue: 210 85% 45%;          /* Deep Blue */
-    --petid-deep-blue-light: 210 85% 55%;
+    /* Secondary - soft blue */
+    --petid-deep-blue: 221 86% 62%;
+    --petid-deep-blue-light: 221 86% 70%;
     --petid-deep-blue-foreground: 0 0% 100%;
 
-    /* Accent - Sky Blue */
-    --petid-sky: 200 95% 55%;                /* Sky Blue */
-    --petid-sky-light: 200 95% 65%;
+    /* Accent - cyan */
+    --petid-sky: 188 77% 57%;
+    --petid-sky-light: 188 77% 68%;
     --petid-sky-foreground: 0 0% 100%;
 
     /* Legacy Teal - Maps to Light Blue */
-    --petid-teal: 204 100% 48%;
-    --petid-teal-hover: 204 100% 42%;
-    --petid-teal-light: 204 100% 58%;
+    --petid-teal: 188 77% 50%;
+    --petid-teal-hover: 188 77% 44%;
+    --petid-teal-light: 188 77% 62%;
     --petid-teal-foreground: 0 0% 100%;
 
     /* Legacy Cyan - Maps to Light Blue */
-    --petid-cyan: 204 100% 48%;
-    --petid-cyan-hover: 204 100% 42%;
-    --petid-cyan-light: 204 100% 58%;
+    --petid-cyan: 188 77% 50%;
+    --petid-cyan-hover: 188 77% 44%;
+    --petid-cyan-light: 188 77% 62%;
     --petid-cyan-foreground: 0 0% 100%;
 
     /* Secondary - Warm Gold (loyalty, premium) */
-    --petid-gold: 42 100% 50%;                /* #FFB800 - Warm Gold */
-    --petid-gold-light: 42 100% 60%;
+    --petid-gold: 33 100% 68%;
+    --petid-gold-light: 33 100% 74%;
     --petid-gold-foreground: 0 0% 10%;
 
     /* Accent - Coral (love, warmth) */
-    --petid-coral: 12 76% 61%;                /* #E8725A - Soft Coral */
-    --petid-coral-light: 12 76% 70%;
+    --petid-coral: 10 94% 71%;
+    --petid-coral-light: 10 94% 78%;
     --petid-coral-foreground: 0 0% 100%;
 
     /* Pink - For accents */
-    --petid-pink: 330 85% 55%;                /* Vibrant Pink */
-    --petid-pink-light: 330 85% 65%;
+    --petid-pink: 319 80% 66%;
+    --petid-pink-light: 319 80% 74%;
     --petid-pink-foreground: 0 0% 100%;
 
     /* Purple - For gradients */
-    --petid-purple: 260 75% 55%;              /* Purple */
-    --petid-purple-light: 260 75% 65%;
+    --petid-purple: 264 82% 68%;
+    --petid-purple-light: 264 82% 76%;
     --petid-purple-foreground: 0 0% 100%;
 
     /* Like/Heart - Vibrant Pink */
-    --petid-heart: 330 85% 55%;               /* Vibrant Pink */
+    --petid-heart: 319 80% 66%;
     --petid-heart-foreground: 0 0% 100%;
 
     /* Neutral Palette - Warm undertones */
-    --petid-black: 210 10% 10%;               /* Slightly blue-black */
-    --petid-gray-900: 210 8% 18%;
-    --petid-gray-700: 210 6% 40%;
-    --petid-gray-500: 210 4% 55%;
-    --petid-gray-400: 210 4% 72%;
-    --petid-gray-300: 210 6% 88%;
-    --petid-gray-100: 210 20% 98%;            /* Cool off-white */
-    --petid-white: 210 20% 99%;               /* Clean white */
+    --petid-black: 222 18% 14%;
+    --petid-gray-900: 222 16% 19%;
+    --petid-gray-700: 220 8% 36%;
+    --petid-gray-500: 220 7% 48%;
+    --petid-gray-400: 220 7% 70%;
+    --petid-gray-300: 220 16% 91%;
+    --petid-gray-100: 220 22% 97%;
+    --petid-white: 0 0% 100%;
 
     /* ===========================
      * SEMANTIC TOKENS
      * =========================== */
 
-    /* Primary - Light Blue (תכלת) (main color) */
-    --primary: 204 100% 48%;
+    /* Primary - MIPO cyan */
+    --primary: 188 77% 50%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 204 100% 42%;
-    --primary-light: 204 100% 58%;
-    --primary-dark: 204 100% 38%;
-    --primary-pressed: 204 100% 35%;
+    --primary-hover: 188 77% 44%;
+    --primary-light: 188 77% 62%;
+    --primary-dark: 188 77% 38%;
+    --primary-pressed: 188 77% 34%;
 
     /* Secondary - Soft Gray */
-    --secondary: 210 15% 96%;
-    --secondary-foreground: 210 10% 15%;
-    --secondary-light: 210 15% 98%;
-    --secondary-dark: 210 15% 94%;
+    --secondary: 220 22% 96%;
+    --secondary-foreground: 222 18% 14%;
+    --secondary-light: 220 22% 98%;
+    --secondary-dark: 220 18% 93%;
 
-    /* Accent - Deep Blue */
-    --accent: 210 85% 45%;
+    /* Accent - violet */
+    --accent: 264 82% 68%;
     --accent-foreground: 0 0% 100%;
-    --accent-hover: 210 85% 40%;
-    --accent-light: 210 85% 55%;
+    --accent-hover: 264 82% 60%;
+    --accent-light: 264 82% 76%;
 
     /* Success - Friendly Green */
     --success: 152 60% 45%;
@@ -173,32 +182,32 @@
     --destructive-foreground: 0 0% 100%;
 
     /* Info - Light Blue */
-    --info: 204 100% 48%;
+    --info: 188 77% 50%;
     --info-foreground: 0 0% 100%;
     --info-light: 204 100% 58%;
 
     /* Ring - Light Blue */
-    --ring: 204 100% 48%;
+    --ring: 188 77% 50%;
 
     /* Background & Surface - Clean whites */
-    --background: 210 20% 99%;
-    --foreground: 210 10% 10%;
-    --surface: 210 20% 99%;
+    --background: 220 25% 99%;
+    --foreground: 222 18% 14%;
+    --surface: 220 25% 99%;
     --surface-elevated: 0 0% 100%;
 
     /* Muted - Cool gray */
-    --muted: 210 15% 96%;
-    --muted-foreground: 210 10% 38%;  /* bumped contrast for readability */
+    --muted: 220 22% 96%;
+    --muted-foreground: 220 7% 48%;
 
     /* Border - Cool subtle */
-    --border: 210 10% 88%;
-    --border-light: 210 10% 92%;
-    --input: 210 15% 97%;
+    --border: 220 16% 91%;
+    --border-light: 220 18% 94%;
+    --input: 0 0% 100%;
 
     /* Card & Popover */
     --card: 0 0% 100%;
-    --card-foreground: 210 10% 10%;
-    --card-border: 210 10% 88%;
+    --card-foreground: 222 18% 14%;
+    --card-border: 220 16% 91%;
     --popover: 0 0% 100%;
     --popover-foreground: 210 10% 10%;
 
@@ -208,13 +217,13 @@
     --chat-bubble-user: 0 0% 100%;
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 210 10% 10%;
-    --sidebar-primary: 204 100% 48%;
+    --sidebar-foreground: 222 18% 14%;
+    --sidebar-primary: 188 77% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 210 15% 96%;
     --sidebar-accent-foreground: 210 10% 10%;
     --sidebar-border: 210 10% 88%;
-    --sidebar-ring: 204 100% 48%;
+    --sidebar-ring: 188 77% 50%;
     --sidebar: 0 0% 100%;
 
     /* Header/Footer */
@@ -233,28 +242,29 @@
     --tag-text: 210 10% 10%;
     --tag-border: 210 10% 88%;
 
-    /* PETID Gradients - Light Blue dominant */
-    --gradient-primary: linear-gradient(135deg, hsl(204 100% 48%) 0%, hsl(210 85% 45%) 100%);
-    --gradient-petid: linear-gradient(135deg, hsl(204 100% 48%) 0%, hsl(200 95% 55%) 100%);
-    --gradient-warm: linear-gradient(135deg, hsl(204 100% 52%) 0%, hsl(210 80% 50%) 100%);
-    --gradient-story: linear-gradient(135deg, hsl(330 85% 55%) 0%, hsl(280 75% 55%) 50%, hsl(204 100% 48%) 100%);
-    --gradient-instagram: linear-gradient(135deg, hsl(330 85% 55%) 0%, hsl(280 75% 55%) 50%, hsl(204 100% 48%) 100%);
-    --gradient-subtle: linear-gradient(135deg, hsl(204 30% 97%) 0%, hsl(210 30% 98%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(204 10% 99%) 100%);
+    /* MIPO gradients */
+    --gradient-primary: linear-gradient(120deg, hsl(var(--mipo-peach)) 0%, hsl(var(--mipo-coral)) 22%, hsl(var(--mipo-pink)) 45%, hsl(var(--mipo-violet)) 62%, hsl(var(--mipo-blue)) 78%, hsl(var(--mipo-cyan)) 100%);
+    --gradient-petid: var(--gradient-primary);
+    --gradient-warm: linear-gradient(120deg, hsl(var(--mipo-peach)) 0%, hsl(var(--mipo-coral)) 45%, hsl(var(--mipo-pink)) 100%);
+    --gradient-story: var(--gradient-primary);
+    --gradient-instagram: var(--gradient-primary);
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(220 22% 98%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(220 25% 99%) 100%);
 
-    /* Soft Shadows - With blue tint */
-    --shadow-sm: 0 2px 4px rgba(0, 120, 200, 0.08);
-    --shadow-md: 0 4px 8px rgba(0, 120, 200, 0.1);
-    --shadow-lg: 0 8px 16px rgba(0, 120, 200, 0.12);
-    --shadow-xl: 0 12px 24px rgba(0, 120, 200, 0.15);
-    --shadow-card: 0 2px 8px rgba(0, 120, 200, 0.08);
-    --shadow-elevated: 0 8px 24px rgba(0, 120, 200, 0.15);
-    --shadow-button: 0 2px 4px rgba(0, 120, 200, 0.2);
-    --shadow-button-hover: 0 4px 12px rgba(0, 120, 200, 0.25);
-    --shadow-2xs: 0 1px 2px rgba(0, 120, 200, 0.05);
-    --shadow-xs: 0 1px 3px rgba(0, 120, 200, 0.08);
-    --shadow: 0 2px 6px rgba(0, 120, 200, 0.1);
-    --shadow-2xl: 0 20px 40px rgba(0, 120, 200, 0.2);
+    /* Soft shadows */
+    --shadow-sm: 0 2px 8px rgba(47, 58, 89, 0.06);
+    --shadow-md: 0 8px 18px rgba(47, 58, 89, 0.08);
+    --shadow-lg: 0 16px 32px rgba(47, 58, 89, 0.1);
+    --shadow-xl: 0 24px 48px rgba(47, 58, 89, 0.12);
+    --shadow-card: 0 8px 24px rgba(47, 58, 89, 0.08);
+    --shadow-elevated: 0 22px 44px rgba(47, 58, 89, 0.12);
+    --shadow-button: 0 10px 24px rgba(103, 136, 247, 0.16), 0 8px 22px rgba(255, 126, 129, 0.12);
+    --shadow-button-hover: 0 14px 30px rgba(103, 136, 247, 0.2), 0 10px 26px rgba(255, 126, 129, 0.16);
+    --shadow-shop: 0 18px 42px rgba(103, 136, 247, 0.15), 0 12px 30px rgba(255, 126, 129, 0.12);
+    --shadow-2xs: 0 1px 2px rgba(47, 58, 89, 0.04);
+    --shadow-xs: 0 2px 6px rgba(47, 58, 89, 0.06);
+    --shadow: 0 8px 18px rgba(47, 58, 89, 0.08);
+    --shadow-2xl: 0 30px 60px rgba(47, 58, 89, 0.14);
 
     /* Radius - More rounded, organic feel */
     --radius: 0.875rem;
@@ -270,7 +280,7 @@
 
     /* Typography */
     --font-sans: 'Assistant', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    --tracking-normal: -0.011em;
+    --tracking-normal: 0;
     --spacing: 0.25rem;
 
     /* Legacy support - Blue palette */
@@ -520,14 +530,14 @@
     font-weight: 400;
     direction: rtl;
     text-align: right;
-    letter-spacing: -0.011em;
+    letter-spacing: 0;
   }
 
   /* Typography System - Assistant Font for Hebrew */
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Assistant', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     font-weight: 600;
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
   }
 
   h1 { @apply text-3xl font-bold leading-tight; }
@@ -616,6 +626,99 @@
     @apply bg-transparent font-medium rounded-lg px-4 py-2 text-sm
            transition-colors duration-200 hover:bg-muted/30 active:opacity-70;
     color: hsl(var(--foreground));
+  }
+
+  /* ===========================
+   * MIPO SURFACES
+   * =========================== */
+
+  .mipo-screen {
+    background:
+      linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(220 25% 99%) 45%, hsl(220 22% 97%) 100%);
+    color: hsl(var(--mipo-ink));
+  }
+
+  .mipo-soft-card {
+    border: 1px solid hsl(var(--mipo-line) / 0.8);
+    border-radius: 0.5rem;
+    background: hsl(0 0% 100% / 0.96);
+    box-shadow: var(--shadow-card);
+  }
+
+  .mipo-flow-card {
+    border: 1px solid hsl(var(--mipo-line) / 0.78);
+    border-radius: 0.75rem;
+    background: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(220 25% 99%) 100%);
+    box-shadow: var(--shadow-elevated);
+  }
+
+  .mipo-pill-button {
+    @apply inline-flex items-center justify-center gap-2 font-semibold transition-all duration-200 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+    min-height: 3.25rem;
+    border-radius: 999px;
+    color: hsl(var(--mipo-ink));
+    background: hsl(0 0% 100%);
+    border: 1px solid hsl(var(--mipo-line) / 0.8);
+    box-shadow: var(--shadow-button);
+  }
+
+  .mipo-pill-button:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-button-hover);
+  }
+
+  .mipo-gradient-button {
+    @apply inline-flex items-center justify-center gap-2 font-semibold text-white transition-all duration-200 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+    min-height: 3.25rem;
+    border-radius: 999px;
+    border: 0;
+    background: var(--gradient-primary);
+    box-shadow: var(--shadow-button);
+  }
+
+  .mipo-input {
+    border: 1px solid hsl(var(--mipo-line));
+    border-radius: 0.875rem;
+    background: hsl(0 0% 100%);
+    box-shadow: inset 0 1px 2px rgba(47, 58, 89, 0.03);
+  }
+
+  .mipo-input:focus,
+  .mipo-input:focus-visible {
+    border-color: hsl(var(--mipo-cyan));
+    box-shadow: 0 0 0 3px hsl(var(--mipo-cyan) / 0.18);
+  }
+
+  .mipo-segmented {
+    display: grid;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 2.75rem;
+    border: 1px solid hsl(var(--mipo-line));
+    border-radius: 999px;
+    background: hsl(0 0% 100%);
+    padding: 0.25rem;
+    box-shadow: var(--shadow-xs);
+  }
+
+  .mipo-segment {
+    @apply inline-flex items-center justify-center gap-2 text-sm font-semibold transition-all duration-200;
+    min-height: 2.15rem;
+    border-radius: 999px;
+    color: hsl(var(--mipo-muted));
+  }
+
+  .mipo-segment[data-active="true"] {
+    color: hsl(var(--mipo-ink));
+    background: hsl(var(--mipo-soft));
+    box-shadow: var(--shadow-xs);
+  }
+
+  .mipo-gradient-text {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 
   /* Instagram gradient only for stories */
@@ -1228,6 +1331,38 @@
   right: auto;
   bottom: auto;
   animation-delay: 1.5s;
+}
+
+/* Final MIPO helper overrides. These intentionally sit after Tailwind utilities. */
+.mipo-pill-button {
+  min-height: 3.25rem;
+  border-radius: 999px !important;
+  color: hsl(var(--mipo-ink)) !important;
+  background: hsl(0 0% 100%) !important;
+  border: 1px solid hsl(var(--mipo-line) / 0.8) !important;
+  box-shadow: var(--shadow-button) !important;
+}
+
+.mipo-gradient-button {
+  min-height: 3.25rem;
+  border-radius: 999px !important;
+  color: white !important;
+  background: var(--gradient-primary) !important;
+  border: 0 !important;
+  box-shadow: var(--shadow-button) !important;
+}
+
+.mipo-pill-button:hover,
+.mipo-gradient-button:hover {
+  box-shadow: var(--shadow-button-hover) !important;
+  opacity: 1 !important;
+}
+
+.mipo-input {
+  border-color: hsl(var(--mipo-line)) !important;
+  border-radius: 0.875rem !important;
+  background: hsl(0 0% 100%) !important;
+  color: hsl(var(--mipo-ink)) !important;
 }
 
 /* ===========================
