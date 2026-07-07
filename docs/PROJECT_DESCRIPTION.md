@@ -43,13 +43,13 @@ React Router (Navigation)
 
 ### Backend
 ```
-Lovable Cloud (Supabase)
+AWS Lightsail + RDS
+├── Node API
 ├── PostgreSQL Database
-├── Row Level Security (RLS)
-├── Realtime Subscriptions
-├── Edge Functions (Deno)
-├── Storage (Files & Images)
-└── Authentication
+├── Docker Compose services
+├── Caddy static frontend/proxy
+├── Local uploaded-file storage on the instance
+└── Runtime secrets from AWS SSM
 ```
 
 ### אינטגרציות
@@ -479,13 +479,9 @@ petid/
 │   │   └── utils.ts         # פונקציות עזר
 │   ├── pages/               # דפים
 │   ├── routes/              # הגדרת ניתובים
-│   ├── integrations/
-│   │   └── supabase/        # Supabase client
 │   └── App.tsx              # קומפוננטה ראשית
-├── supabase/
-│   ├── functions/           # Edge Functions (52)
-│   ├── migrations/          # Database migrations
-│   └── config.toml          # הגדרות
+├── server/                  # AWS Node API
+├── deploy/aws/              # Docker/Caddy deployment files
 ├── package.json
 ├── tailwind.config.ts
 ├── tsconfig.json

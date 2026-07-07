@@ -42,7 +42,6 @@ jobs:
         run: |
           node --check server/src/index.js
           node --check server/src/applyMigrations.js
-          node --check server/src/migrateSupabaseToAws.js
 
       - name: Build frontend
         run: |

@@ -96,6 +96,33 @@ interface DuplicateResult {
   reason: string;
 }
 
+const RED_FLAG_INGREDIENTS = [
+  "BHA", "BHT", "ethoxyquin", "propylene glycol",
+  "sodium nitrite", "sodium nitrate", "menadione",
+  "artificial color", "artificial flavour", "artificial flavor",
+  "by-product", "by product", "meat meal",
+  "corn syrup", "MSG", "TBHQ",
+];
+
+const determineCurationStatus = (safetyScore: number | null, ingredients: string | null) => {
+  const hasRedFlags = ingredients
+    ? RED_FLAG_INGREDIENTS.some((flag) => ingredients.toLowerCase().includes(flag.toLowerCase()))
+    : false;
+
+  if ((safetyScore !== null && safetyScore < 5) || hasRedFlags) {
+    const reasons: string[] = [];
+    if (safetyScore !== null && safetyScore < 5) reasons.push(`SafeScore נמוך (${safetyScore})`);
+    if (hasRedFlags) reasons.push("זוהו רכיבים בעייתיים");
+    return { status: "pending_review", reason: reasons.join(" + ") };
+  }
+
+  if (safetyScore !== null && safetyScore >= 7) {
+    return { status: "auto_published", reason: `SafeScore גבוה (${safetyScore})` };
+  }
+
+  return { status: "draft", reason: "ללא ציון SafeScore מספיק" };
+};
+
 const STEP_LABELS = [
   { num: 1, icon: Search, label: "הצייד", desc: "סריקה וזיהוי כפילויות" },
   { num: 2, icon: FlaskConical, label: "המומחה", desc: "ניתוח רכיבים וסיכונים" },
@@ -295,8 +322,6 @@ const AdminQuickImport = () => {
         weight_unit: editData.variants?.find((v: any) => v.weight_unit)?.weight_unit || null,
       };
 
-      // Apply automated curation logic
-      const { determineCurationStatus } = await import("@/hooks/admin/useProductCuration");
       const curation = determineCurationStatus(
         productData.safety_score,
         productData.ingredients

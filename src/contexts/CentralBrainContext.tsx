@@ -6,8 +6,8 @@
  * Exposes brainSnapshot for the admin Visual Debugger overlay.
  */
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { usePetPreference, type PetProfile } from "./PetPreferenceContext";
+import { usePetPreference } from "./PetPreferenceContext";
+import { getMyDocuments, getMyPet, getMyVetVisits } from "@/lib/mipoApi";
 
 // ============= Types =============
 export interface NrcCalculation {
@@ -152,40 +152,31 @@ export const CentralBrainProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const petId = activePet.id;
 
     try {
-      const [petResult, ocrResult, vetResult, docResult] = await Promise.all([
-        // Full pet profile
-        (supabase as any)
-          .from("pets")
-          .select("*")
-          .eq("id", petId)
-          .maybeSingle(),
-        // OCR extracted data
-        (supabase as any)
-          .from("pet_document_extracted_data")
-          .select("vaccination_type, vaccination_date, vaccination_expiry, treatment_type, treatment_date, diagnosis, chip_number, provider_name")
-          .eq("pet_id", petId)
-          .order("created_at", { ascending: false })
-          .limit(20),
-        // Vet visits
-        (supabase as any)
-          .from("pet_vet_visits")
-          .select("visit_date, visit_type, clinic_name, vet_name, diagnosis, treatment, vaccines, medications, is_recovery_mode, next_visit_date")
-          .eq("pet_id", petId)
-          .order("visit_date", { ascending: false })
-          .limit(10),
-        // Documents vault
-        (supabase as any)
-          .from("pet_documents")
-          .select("title, description, document_type")
-          .eq("pet_id", petId)
-          .order("uploaded_at", { ascending: false })
-          .limit(15),
+      const [petResult, vetResult, docResult] = await Promise.all([
+        getMyPet(petId).catch(() => activePet || null),
+        getMyVetVisits(petId).catch(() => []),
+        getMyDocuments({ pet_id: petId, limit: 15 }).catch(() => []),
       ]);
 
-      setPetData(petResult.data || null);
-      setOcrRecords(ocrResult.data || []);
-      setVetVisits(vetResult.data || []);
-      setDocuments(docResult.data || []);
+      setPetData(petResult ? { ...petResult } : null);
+      setOcrRecords([]);
+      setVetVisits(vetResult.map((visit) => ({
+        visit_date: visit.visit_date || "",
+        visit_type: visit.visit_type || "",
+        clinic_name: visit.clinic_name || null,
+        vet_name: visit.vet_name || null,
+        diagnosis: visit.diagnosis || null,
+        treatment: visit.treatment || null,
+        vaccines: visit.vaccines || null,
+        medications: null,
+        is_recovery_mode: visit.is_recovery_mode || null,
+        next_visit_date: visit.next_visit_date || null,
+      })));
+      setDocuments(docResult.map((document) => ({
+        title: document.title || null,
+        description: document.description || null,
+        document_type: document.document_type || null,
+      })));
     } catch (err) {
       console.error("CentralBrain fetch error:", err);
     } finally {

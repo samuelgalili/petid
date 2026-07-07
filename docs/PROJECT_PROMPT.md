@@ -297,10 +297,7 @@ USING (user_id = auth.uid());
 
 ### Realtime
 ```typescript
-supabase
-  .channel('notifications')
-  .on('postgres_changes', { event: 'INSERT', table: 'notifications' }, handler)
-  .subscribe()
+const notifications = await mipoApi.getMyNotifications()
 ```
 
 ---
@@ -370,14 +367,11 @@ src/
 ├── lib/                 # utilities ו-helpers
 │   ├── brandValues.ts   # ערכי מותג
 │   └── brandVoice.ts    # שפה מותגית
-├── integrations/
-│   └── supabase/        # Supabase client & types
 └── routes/              # הגדרת routes
 
-supabase/
-├── functions/           # Edge Functions
-├── migrations/          # Database migrations
-└── config.toml          # Supabase config
+server/
+├── src/                 # AWS Node API
+└── sql/                 # RDS migrations
 ```
 
 ---

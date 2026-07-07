@@ -5,9 +5,9 @@
  */
 
 import { useCallback, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { createClientId } from "@/lib/randomId";
+import { useAuth } from "@/hooks/useAuth";
+import { createMyDocument, uploadMyImage } from "@/lib/mipoApi";
 
 /* ─── Types ─── */
 
@@ -33,42 +33,6 @@ interface UseDataIntakeOptions {
 
 /* ─── Helpers ─── */
 
-function generateId() {
-  return createClientId("intake");
-}
-
-async function uploadToStorage(file: File, userId: string, petId: string): Promise<string | null> {
-  const ext = file.name.split(".").pop() || "jpg";
-  const path = `${userId}/${petId}/${generateId()}.${ext}`;
-  const bucket = "pet-documents";
-
-  const { error } = await supabase.storage.from(bucket).upload(path, file, {
-    cacheControl: "3600",
-    upsert: false,
-  });
-
-  if (error) {
-    console.error("Storage upload error:", error);
-    return null;
-  }
-
-  const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path);
-  return urlData?.publicUrl ?? null;
-}
-
-function readAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-}
-
-function base64FromDataUrl(dataUrl: string): string {
-  return dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl;
-}
-
 /** Classify file by MIME type */
 function triageFile(file: File): "document" | "photo" | "video" {
   if (file.type.startsWith("image/")) return "photo";
@@ -81,6 +45,7 @@ function triageFile(file: File): "document" | "photo" | "video" {
 
 export function useDataIntake({ petId, petName, isSOSActive = false }: UseDataIntakeOptions) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const scanInputRef = useRef<HTMLInputElement | null>(null);
@@ -97,60 +62,25 @@ export function useDataIntake({ petId, petName, isSOSActive = false }: UseDataIn
 
     toast({ title: "🔍 סורק מסמך...", description: `מעבד את הקובץ עבור ${petName}` });
 
-    const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       toast({ title: "נדרשת התחברות", description: "התחבר כדי לשמור מסמכים", variant: "destructive" });
       return { type: "scan", userMessage: "", aiPrompt: "" };
     }
 
-    const dataUrl = await readAsDataUrl(file);
-    const fileUrl = await uploadToStorage(file, user.id, petId);
-    if (!fileUrl) {
+    let fileUrl = "";
+    try {
+      const document = await createMyDocument({
+        pet_id: petId,
+        document_type: "vet_report",
+        title: `סריקת מסמך - ${file.name}`,
+        description: null,
+        file,
+      });
+      fileUrl = document.file_url;
+    } catch (error) {
+      console.error("Document upload error:", error);
       toast({ title: "שגיאה בהעלאה", description: "נסה שוב", variant: "destructive" });
       return { type: "scan", userMessage: "", aiPrompt: "" };
-    }
-
-    const { data: serviceDoc } = await supabase
-      .from("pet_service_documents")
-      .insert({
-        user_id: user.id,
-        pet_id: petId,
-        category: "health",
-        document_name: `סריקת מסמך - ${file.name}`,
-        document_url: dataUrl,
-        document_type: file.type || "application/octet-stream",
-        file_size: file.size,
-      })
-      .select("id")
-      .single();
-
-    const { autoSaveToDocuments } = await import("@/lib/autoSaveUpload");
-    await autoSaveToDocuments({
-      userId: user.id,
-      petId,
-      fileUrl,
-      fileName: file.name,
-      fileSize: file.size,
-      documentType: "vet_report",
-      title: `סריקת מסמך - ${file.name}`,
-    });
-
-    if (file.type.startsWith("image/")) {
-      const { error: scanError } = await supabase.functions.invoke("scan-vet-document", {
-        body: {
-          petId,
-          userId: user.id,
-          imageBase64: base64FromDataUrl(dataUrl),
-          imageBase64ForSave: base64FromDataUrl(dataUrl),
-          fileName: file.name,
-          documentId: serviceDoc?.id,
-          saveToDb: true,
-        },
-      });
-
-      if (scanError) {
-        console.error("OCR scan error:", scanError);
-      }
     }
 
     toast({
@@ -162,9 +92,9 @@ export function useDataIntake({ petId, petName, isSOSActive = false }: UseDataIn
       type: "scan",
       fileUrl,
       userMessage: `📄 סרקתי מסמך רפואי חדש עבור ${petName}`,
-      aiPrompt: `[DOCUMENT_UPLOADED: url=${fileUrl}, pet=${petName}, petId=${petId}]\nהמשתמש העלה מסמך רפואי חדש. המסמך נשמר בכספת ועיבוד OCR הופעל אם זהו קובץ תמונה. סכם למשתמש מה לעשות בהמשך ושאל אם לעבור על הנתונים שחולצו.`,
+      aiPrompt: `[DOCUMENT_UPLOADED: url=${fileUrl}, pet=${petName}, petId=${petId}]\nהמשתמש העלה מסמך רפואי חדש. המסמך נשמר בכספת. סכם למשתמש מה לעשות בהמשך ושאל אם לעבור על הנתונים.`,
     };
-  }, [petId, petName, toast]);
+  }, [petId, petName, toast, user]);
 
   /**
    * Handle photo/video — triggers visual analysis
@@ -188,27 +118,19 @@ export function useDataIntake({ petId, petName, isSOSActive = false }: UseDataIn
 
     toast({ title: "📸 מעלה תמונה...", description: `מעבד עבור ${petName}` });
 
-    const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       toast({ title: "נדרשת התחברות", description: "התחבר כדי לשמור קבצים", variant: "destructive" });
       return { type: source, userMessage: "", aiPrompt: "" };
     }
 
-    const fileUrl = await uploadToStorage(file, user.id, petId);
-    if (!fileUrl) {
+    let fileUrl = "";
+    try {
+      fileUrl = (await uploadMyImage(file)).url;
+    } catch (error) {
+      console.error("Media upload error:", error);
       toast({ title: "שגיאה בהעלאה", description: "נסה שוב", variant: "destructive" });
       return { type: source, userMessage: "", aiPrompt: "" };
     }
-
-    // Auto-save to album or documents
-    const { autoSaveToAlbum } = await import("@/lib/autoSaveUpload");
-    await autoSaveToAlbum({
-      userId: user.id,
-      petId,
-      mediaUrl: fileUrl,
-      caption: null,
-      mediaType: fileType === "video" ? "video" : "image",
-    });
 
     toast({
       title: "🔒 הקובץ נשמר בצורה מאובטחת",
@@ -225,7 +147,7 @@ export function useDataIntake({ petId, petName, isSOSActive = false }: UseDataIn
         : `📸 שלחתי תמונה של ${petName} לבדיקה`,
       aiPrompt: `[VISUAL_UPLOADED: url=${fileUrl}, pet=${petName}, petId=${petId}, type=${fileType}]\nהמשתמש העלה ${isVideo ? "וידאו" : "תמונה"}. נתח ויזואלית וחפש תסמינים (אדמומיות, צליעה, פצעים). תמיד הוסף הסתייגות: "⚕️ אני AI, לא וטרינר. למצבי חירום, השתמש בכפתור SOS."`,
     };
-  }, [petId, petName, toast, handleScan]);
+  }, [petId, petName, toast, handleScan, user]);
 
   /**
    * Handle location sharing — emergency detection

@@ -1,12 +1,8 @@
-/**
- * useCarePlan — Manage pet care plan items with realtime sync
- */
-import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import confetti from "canvas-confetti";
 import { haptic } from "@/lib/haptics";
+import { createClientId } from "@/lib/randomId";
 
 export interface CarePlanItem {
   id: string;
@@ -21,59 +17,30 @@ export interface CarePlanItem {
   created_at: string;
 }
 
+const storageKey = (petId: string) => `mipo-care-plan:${petId}`;
+
+const readItems = (petId: string): CarePlanItem[] => {
+  try {
+    return JSON.parse(localStorage.getItem(storageKey(petId)) || "[]") as CarePlanItem[];
+  } catch {
+    return [];
+  }
+};
+
+const writeItems = (petId: string, items: CarePlanItem[]) => {
+  try {
+    localStorage.setItem(storageKey(petId), JSON.stringify(items));
+  } catch {
+    // Local care-plan persistence is best-effort.
+  }
+};
+
 export function useCarePlan(petId: string | undefined) {
-  const { user } = useAuth();
   const [items, setItems] = useState<CarePlanItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [totalPoints, setTotalPoints] = useState(0);
 
-  // Fetch care plan items
   useEffect(() => {
-    if (!user?.id || !petId) return;
-
-    const fetch = async () => {
-      const { data } = await (supabase as any)
-        .from("pet_care_plans")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("pet_id", petId)
-        .order("created_at", { ascending: false });
-
-      if (data) {
-        setItems(data);
-        setTotalPoints(data.reduce((sum: number, i: any) => sum + (i.points_awarded || 0), 0));
-      }
-      setLoading(false);
-    };
-    fetch();
-
-    // Realtime subscription
-    const channel = supabase
-      .channel(`care-plan-${petId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "pet_care_plans",
-          filter: `pet_id=eq.${petId}`,
-        },
-        (payload) => {
-          if (payload.eventType === "INSERT") {
-            setItems((prev) => [payload.new as CarePlanItem, ...prev]);
-            setTotalPoints((prev) => prev + ((payload.new as any).points_awarded || 0));
-          } else if (payload.eventType === "DELETE") {
-            setItems((prev) => prev.filter((i) => i.id !== (payload.old as any).id));
-            setTotalPoints((prev) => prev - ((payload.old as any).points_awarded || 0));
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id, petId]);
+    setItems(petId ? readItems(petId) : []);
+  }, [petId]);
 
   const addToCarePlan = useCallback(
     async (product: {
@@ -84,43 +51,37 @@ export function useCarePlan(petId: string | undefined) {
       safetyScore?: number | null;
       category?: string;
     }) => {
-      if (!user?.id || !petId) return;
+      if (!petId) return;
 
       const isApproved = (product.safetyScore ?? 0) >= 8;
       const points = isApproved ? 8 : 3;
+      const nextItem: CarePlanItem = {
+        id: createClientId("care"),
+        product_id: product.id,
+        product_name: product.name,
+        product_image: product.image || null,
+        product_price: product.price || null,
+        safety_score: product.safetyScore ?? null,
+        is_scientist_approved: isApproved,
+        category: product.category || null,
+        points_awarded: points,
+        created_at: new Date().toISOString(),
+      };
 
-      const { error } = await (supabase as any)
-        .from("pet_care_plans")
-        .insert({
-          user_id: user.id,
-          pet_id: petId,
-          product_id: product.id,
-          product_name: product.name,
-          product_image: product.image || null,
-          product_price: product.price || null,
-          safety_score: product.safetyScore ?? null,
-          is_scientist_approved: isApproved,
-          category: product.category || null,
-          points_awarded: points,
-        });
-
-      if (error) {
-        toast({ title: "שגיאה בהוספה לתוכנית", variant: "destructive" });
-        return;
-      }
+      setItems((current) => {
+        if (current.some((item) => item.product_id === product.id)) return current;
+        const next = [nextItem, ...current];
+        writeItems(petId, next);
+        return next;
+      });
 
       haptic("success");
-
-      // Toast with bone icon
       toast({
         title: "✨🦴 נוסף לתוכנית הטיפול!",
-        description: isApproved
-          ? `+${points} נקודות — מאושר על ידי המומחה`
-          : `+${points} נקודות`,
+        description: isApproved ? `+${points} נקודות — מאושר על ידי המומחה` : `+${points} נקודות`,
         duration: 2500,
       });
 
-      // Confetti for approved products
       if (isApproved) {
         confetti({
           particleCount: 40,
@@ -132,29 +93,30 @@ export function useCarePlan(petId: string | undefined) {
         });
       }
 
-      // Dispatch event for dashboard to listen
       window.dispatchEvent(
         new CustomEvent("care-plan-updated", {
           detail: { petId, productName: product.name, points, isApproved },
-        })
+        }),
       );
-
-      // Trigger gamification: update streak and check for care plan badges
       window.dispatchEvent(
         new CustomEvent("care-plan-game-trigger", {
           detail: { points, conditionType: "care_plan_items", currentValue: items.length + 1 },
-        })
+        }),
       );
     },
-    [user?.id, petId]
+    [items.length, petId],
   );
 
   const hasProduct = useCallback(
-    (productId: string) => items.some((i) => i.product_id === productId),
-    [items]
+    (productId: string) => items.some((item) => item.product_id === productId),
+    [items],
   );
 
-  const foodAdded = items.some((i) => i.category === "food" || i.is_scientist_approved);
+  const totalPoints = useMemo(
+    () => items.reduce((sum, item) => sum + (item.points_awarded || 0), 0),
+    [items],
+  );
+  const foodAdded = items.some((item) => item.category === "food" || item.is_scientist_approved);
 
-  return { items, loading, totalPoints, addToCarePlan, hasProduct, foodAdded };
+  return { items, loading: false, totalPoints, addToCarePlan, hasProduct, foodAdded };
 }

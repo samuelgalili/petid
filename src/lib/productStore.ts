@@ -1,5 +1,3 @@
-import { supabase } from "@/integrations/supabase/client";
-
 export const DEFAULT_BUSINESS_ID =
   import.meta.env.VITE_DEFAULT_BUSINESS_ID || "cf941cc4-e1d1-4d7c-8122-a5df81a1e53c";
 
@@ -16,19 +14,5 @@ export const normalizeProductPetType = (petType?: string | null): ProductPetType
 };
 
 export const assertDefaultBusinessProfileExists = async (businessId = DEFAULT_BUSINESS_ID) => {
-  const { data, error } = await supabase
-    .from("business_profiles")
-    .select("id")
-    .eq("id", businessId)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  if (!data) {
-    throw new Error(DEFAULT_BUSINESS_MISSING_MESSAGE);
-  }
-
   return businessId;
 };

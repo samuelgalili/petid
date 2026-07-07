@@ -1,124 +1,24 @@
-/**
- * useActivityTracker — Global user activity tracking
- * Tracks page views, time spent, scroll depth, clicks, and exit events.
- * Mount once in AnimatedRoutes or App level.
- */
-import { useEffect, useRef, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
-import { createClientId } from '@/lib/randomId';
-
-const SESSION_KEY = 'petid_session_id';
-
-function getSessionId(): string {
-  let sid = sessionStorage.getItem(SESSION_KEY);
-  if (!sid) {
-    sid = createClientId('session');
-    sessionStorage.setItem(SESSION_KEY, sid);
-  }
-  return sid;
-}
+import { useCallback, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
+import { useAuth } from "./useAuth";
+import { updateMyActivityStatus } from "@/lib/mipoApi";
 
 export const useActivityTracker = () => {
   const { user } = useAuth();
   const location = useLocation();
-  const enteredAt = useRef<number>(Date.now());
-  const prevRoute = useRef<string>(location.pathname);
-  const maxScroll = useRef<number>(0);
-  const userId = user?.id;
+  const lastUpdate = useRef(0);
 
-  const log = useCallback(
-    async (event: {
-      event_type: 'page_view' | 'click' | 'scroll' | 'exit' | 'stay';
-      route: string;
-      time_spent_seconds?: number;
-      scroll_depth?: number;
-      element_id?: string;
-      element_label?: string;
-      metadata?: Record<string, unknown>;
-    }) => {
-      if (!userId) return;
-      try {
-        await (supabase as any).from('user_activity_logs').insert({
-          user_id: userId,
-          session_id: getSessionId(),
-          ...event,
-        });
-      } catch {
-        // silent
-      }
-    },
-    [userId],
-  );
-
-  // ─── Track page transitions & time spent ───
   useEffect(() => {
+    if (!user?.id) return;
     const now = Date.now();
-    const spent = Math.floor((now - enteredAt.current) / 1000);
+    if (now - lastUpdate.current < 60_000) return;
+    lastUpdate.current = now;
+    updateMyActivityStatus().catch(() => {});
+  }, [location.pathname, user?.id]);
 
-    // Log previous page time
-    if (prevRoute.current !== location.pathname && spent >= 1) {
-      log({
-        event_type: 'page_view',
-        route: prevRoute.current,
-        time_spent_seconds: spent,
-        scroll_depth: maxScroll.current,
-      });
-    }
-
-    prevRoute.current = location.pathname;
-    enteredAt.current = Date.now();
-    maxScroll.current = 0;
-  }, [location.pathname, log]);
-
-  // ─── Track scroll depth ───
-  useEffect(() => {
-    const handler = () => {
-      const scrollTop = window.scrollY;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      if (docHeight > 0) {
-        const pct = Math.round((scrollTop / docHeight) * 100);
-        if (pct > maxScroll.current) maxScroll.current = pct;
-      }
-    };
-    window.addEventListener('scroll', handler, { passive: true });
-    return () => window.removeEventListener('scroll', handler);
+  const trackClick = useCallback((_elementId: string, _elementLabel?: string) => {
+    // Click analytics endpoint is not available on AWS yet.
   }, []);
-
-  // ─── Track exit (tab close / navigate away) ───
-  useEffect(() => {
-    const handleExit = () => {
-      if (!userId) return;
-      const spent = Math.floor((Date.now() - enteredAt.current) / 1000);
-      void log({
-        event_type: 'exit',
-        route: location.pathname,
-        time_spent_seconds: spent,
-        scroll_depth: maxScroll.current,
-      });
-    };
-    window.addEventListener('beforeunload', handleExit);
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') handleExit();
-    });
-    return () => {
-      window.removeEventListener('beforeunload', handleExit);
-    };
-  }, [userId, location.pathname, log]);
-
-  // ─── Public: track a click ───
-  const trackClick = useCallback(
-    (elementId: string, elementLabel?: string) => {
-      log({
-        event_type: 'click',
-        route: location.pathname,
-        element_id: elementId,
-        element_label: elementLabel,
-      });
-    },
-    [log, location.pathname],
-  );
 
   return { trackClick };
 };

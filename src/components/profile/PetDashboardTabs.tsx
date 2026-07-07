@@ -4,11 +4,10 @@
  */
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, Stethoscope, Info, MoreHorizontal, Shield, Scissors, GraduationCap, FileText, Building2, Footprints, ShoppingBag, Flame, AlertTriangle } from "lucide-react";
+import { Shield, Scissors, GraduationCap, FileText, Building2, Footprints, ShoppingBag, Flame } from "lucide-react";
 import { PetHealthScore } from "./PetHealthScore";
 import { RecoveryBanner } from "./RecoveryBanner";
 import { DangerousBreedBanner } from "./DangerousBreedBanner";
-import { DiscoveryCards } from "./DiscoveryCards";
 import { MemoryCard } from "./MemoryCard";
 import { VaccineCountdown } from "./VaccineCountdown";
 import { PuppyVaccineScheduler } from "./PuppyVaccineScheduler";
@@ -16,7 +15,6 @@ import { MedicalTimeline } from "./MedicalTimeline";
 import { MedicalDocumentFAB } from "./MedicalDocumentFAB";
 import { PreventiveCareEngine } from "./PreventiveCareEngine";
 import { BreedHealthTips } from "./BreedHealthTips";
-import { BreedStatsCard } from "./BreedStatsCard";
 import { MyClinicCard } from "./MyClinicCard";
 import { ClaimsHistory } from "./ClaimsHistory";
 import { TopRecommendation } from "./TopRecommendation";
@@ -34,7 +32,6 @@ interface PetDashboardTabsProps {
   onOpenInsurance: () => void;
   onOpenPetShop: () => void;
   onOpenSheet?: (id: string) => void;
-  onOpenEmergency?: () => void;
 }
 
 const TABS = [
@@ -74,7 +71,6 @@ export const PetDashboardTabs = ({
   onOpenInsurance,
   onOpenPetShop,
   onOpenSheet,
-  onOpenEmergency,
 }: PetDashboardTabsProps) => {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
 
@@ -145,7 +141,6 @@ export const PetDashboardTabs = ({
             <ServicesTab
               selectedPet={selectedPet}
               onOpenSheet={onOpenSheet}
-              onOpenEmergency={onOpenEmergency}
             />
           )}
         </motion.div>
@@ -185,11 +180,6 @@ const OverviewTab = ({
         licenseConditions={selectedPet.license_conditions}
       />
     )}
-    <DiscoveryCards
-      petId={selectedPet.id}
-      petName={selectedPet.name}
-      petType={selectedPet.type}
-    />
     <MemoryCard petId={selectedPet.id} petName={selectedPet.name} />
   </div>
 );
@@ -252,7 +242,6 @@ const InfoTab = ({
       ageYears={selectedPet.age_years}
       petType={selectedPet.type}
     />
-    <BreedStatsCard pet={selectedPet} />
     {selectedPet.vet_clinic_name && (
       <MyClinicCard
         clinicName={selectedPet.vet_clinic_name}
@@ -280,11 +269,9 @@ const InfoTab = ({
 const ServicesTab = ({
   selectedPet,
   onOpenSheet,
-  onOpenEmergency,
 }: {
   selectedPet: any;
   onOpenSheet?: (id: string) => void;
-  onOpenEmergency?: () => void;
 }) => (
   <div className="space-y-6">
     {/* Services Grid */}
@@ -315,25 +302,6 @@ const ServicesTab = ({
         })}
       </div>
     </div>
-
-    {/* Emergency */}
-    {onOpenEmergency && (
-      <motion.button
-        onClick={onOpenEmergency}
-        className="w-full flex items-center gap-3 p-3.5 rounded-2xl border border-destructive/15 bg-destructive/[0.03] hover:bg-destructive/[0.06] transition-colors"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-      >
-        <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
-          <AlertTriangle className="w-4.5 h-4.5 text-destructive" strokeWidth={1.5} />
-        </div>
-        <div className="text-right flex-1">
-          <span className="text-sm font-semibold text-destructive">מרכז חירום</span>
-          <p className="text-[11px] text-muted-foreground/60 mt-0.5">וטרינרים, הרעלות, מוקדי חירום</p>
-        </div>
-      </motion.button>
-    )}
 
     {/* Utilities */}
     <div className="space-y-4 pt-1">

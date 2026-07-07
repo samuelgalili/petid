@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 
@@ -180,21 +179,15 @@ export function usePushNotifications() {
       const p256dh = btoa(String.fromCharCode(...new Uint8Array(p256dhKey)));
       const auth = btoa(String.fromCharCode(...new Uint8Array(authKey)));
 
-      // Store subscription in database
-      const { error } = await supabase
-        .from('push_subscriptions')
-        .upsert({
+      try {
+        localStorage.setItem("mipo-push-subscription", JSON.stringify({
           user_id: user.id,
           endpoint: subscription.endpoint,
           p256dh,
-          auth
-        }, {
-          onConflict: 'user_id,endpoint'
-        });
-
-      if (error) {
-        console.error('[Push] Error storing subscription:', error);
-        throw error;
+          auth,
+        }));
+      } catch {
+        // Local persistence is best-effort until AWS push subscription storage exists.
       }
 
       setIsSubscribed(true);
@@ -235,12 +228,11 @@ export function usePushNotifications() {
       if (subscription) {
         await subscription.unsubscribe();
 
-        // Remove from database
-        await supabase
-          .from('push_subscriptions')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('endpoint', subscription.endpoint);
+        try {
+          localStorage.removeItem("mipo-push-subscription");
+        } catch {
+          // Local persistence is best-effort.
+        }
       }
 
       setIsSubscribed(false);
@@ -276,18 +268,14 @@ export function usePushNotifications() {
     }
 
     try {
-      const { error } = await supabase.functions.invoke('send-push-notification', {
-        body: {
-          user_id: user.id,
-          payload: {
-            title: 'התראת בדיקה מ-Petid 🐾',
-            body: 'ההתראות עובדות מצוין!',
-            url: '/home'
-          }
-        }
+      const registration = await navigator.serviceWorker.getRegistration('/sw.js');
+      if (!registration?.showNotification) {
+        throw new Error("Service worker notification display is unavailable");
+      }
+      await registration.showNotification('התראת בדיקה מ-MIPO 🐾', {
+        body: 'ההתראות המקומיות עובדות מצוין!',
+        data: { url: '/' },
       });
-
-      if (error) throw error;
 
       toast({
         title: "✅ התראה נשלחה",

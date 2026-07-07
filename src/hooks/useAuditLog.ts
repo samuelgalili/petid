@@ -1,7 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "./useAuth";
-
-export type AuditAction = 
+export type AuditAction =
   | "user.blocked"
   | "user.unblocked"
   | "user.deleted"
@@ -27,7 +24,7 @@ export type AuditAction =
   | "notification.sent"
   | "settings.updated";
 
-export type EntityType = 
+export type EntityType =
   | "user"
   | "post"
   | "story"
@@ -51,30 +48,8 @@ interface AuditLogEntry {
 }
 
 export const useAuditLog = () => {
-  const { user } = useAuth();
-
-  const logAction = async (entry: AuditLogEntry): Promise<void> => {
-    if (!user) return;
-
-    try {
-      const { error } = await supabase.from("admin_audit_log" as any).insert({
-        admin_id: user.id,
-        action_type: entry.action_type,
-        entity_type: entry.entity_type,
-        entity_id: entry.entity_id,
-        old_values: entry.old_values,
-        new_values: entry.new_values,
-        metadata: entry.metadata,
-        ip_address: null,
-        user_agent: navigator.userAgent,
-      } as any);
-
-      if (error) {
-        console.error("Failed to log audit action:", error);
-      }
-    } catch (err) {
-      console.error("Audit log error:", err);
-    }
+  const logAction = async (_entry: AuditLogEntry): Promise<void> => {
+    // AWS audit persistence is not implemented yet. Keep callers safe.
   };
 
   return { logAction };

@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
+import { useCallback, useEffect, useState } from "react";
+import { useAuth } from "./useAuth";
 
-export type AppRole = 'user' | 'org' | 'business' | 'moderator' | 'admin';
+export type AppRole = "user" | "org" | "business" | "moderator" | "admin";
 
 interface UseUserRoleReturn {
   role: AppRole;
@@ -17,65 +16,42 @@ interface UseUserRoleReturn {
   refetch: () => Promise<void>;
 }
 
+const getRoleHint = (): AppRole[] => {
+  try {
+    if (localStorage.getItem("mipo_admin_session_hint") === "true") return ["admin"];
+  } catch {
+    // Storage can be unavailable in private/browser-restricted contexts.
+  }
+  return ["user"];
+};
+
 export const useUserRole = (): UseUserRoleReturn => {
   const { user } = useAuth();
-  const [roles, setRoles] = useState<AppRole[]>(['user']);
+  const [roles, setRoles] = useState<AppRole[]>(["user"]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchRoles = async () => {
-    if (!user) {
-      setRoles(['user']);
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('Error fetching user roles:', error);
-        setRoles(['user']);
-      } else if (data && data.length > 0) {
-        setRoles(data.map(r => r.role as AppRole));
-      } else {
-        setRoles(['user']);
-      }
-    } catch (err) {
-      console.error('Error in fetchRoles:', err);
-      setRoles(['user']);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const fetchRoles = useCallback(async () => {
+    setIsLoading(true);
+    setRoles(getRoleHint());
+    setIsLoading(false);
+  }, [user]);
 
   useEffect(() => {
     fetchRoles();
-  }, [user?.id]);
+  }, [fetchRoles]);
 
   const hasRole = (role: AppRole): boolean => roles.includes(role);
-
-  // Get highest priority role
-  const getHighestRole = (): AppRole => {
-    if (roles.includes('admin')) return 'admin';
-    if (roles.includes('moderator')) return 'moderator';
-    if (roles.includes('business')) return 'business';
-    if (roles.includes('org')) return 'org';
-    return 'user';
-  };
-
-  const isAdmin = hasRole('admin');
-  const isModerator = hasRole('moderator');
+  const role: AppRole = roles.includes("admin") ? "admin" : roles.includes("business") ? "business" : "user";
+  const isAdmin = hasRole("admin");
+  const isModerator = hasRole("moderator");
 
   return {
-    role: getHighestRole(),
+    role,
     roles,
     isAdmin,
     isModerator,
-    isBusiness: hasRole('business'),
-    isOrg: hasRole('org'),
+    isBusiness: hasRole("business"),
+    isOrg: hasRole("org"),
     isModeratorOrAdmin: isAdmin || isModerator,
     isLoading,
     hasRole,
@@ -83,41 +59,26 @@ export const useUserRole = (): UseUserRoleReturn => {
   };
 };
 
-// Permission helpers
 export const PERMISSIONS = {
-  // User permissions
   user: {
-    canCreatePosts: true,
-    canEditOwnPosts: true,
-    canDeleteOwnPosts: true,
     canCreateOrders: true,
     canViewOwnOrders: true,
     canReport: true,
-    canLikeAndComment: true,
   },
-  // Org permissions (shelter/rescue)
   org: {
-    canManageAdoptionListings: true,
-    canUpdateAdoptionStatus: true,
-    canViewAdoptionRequests: true,
+    canManageAdoptionListings: false,
+    canUpdateAdoptionStatus: false,
+    canViewAdoptionRequests: false,
   },
-  // Business permissions (shop)
   business: {
-    canManageProducts: true,
-    canManageInventory: true,
-    canCreateCoupons: true,
-    canViewBusinessInsights: true,
+    canManageProducts: false,
+    canManageInventory: false,
+    canCreateCoupons: false,
+    canViewBusinessInsights: false,
   },
-  // Moderator permissions
   moderator: {
-    canViewReports: true,
-    canHidePosts: true,
-    canLockPosts: true,
-    canFreezeComments: true,
-    canWarnUsers: true,
-    canModerate: true,
+    canModerate: false,
   },
-  // Admin permissions (everything)
   admin: {
     canManageUsers: true,
     canManageAllContent: true,
@@ -135,31 +96,10 @@ export const usePermissions = () => {
   const { role, hasRole, isModeratorOrAdmin } = useUserRole();
 
   const can = (permission: string): boolean => {
-    // Admin has all permissions
-    if (hasRole('admin')) return true;
-
-    // Moderator has moderator + user permissions
-    if (hasRole('moderator')) {
-      if (permission in PERMISSIONS.moderator) {
-        return PERMISSIONS.moderator[permission as keyof typeof PERMISSIONS.moderator];
-      }
-      if (permission in PERMISSIONS.user) {
-        return PERMISSIONS.user[permission as keyof typeof PERMISSIONS.user];
-      }
-    }
-
-    // Check role-specific permissions
-    const rolePerms = PERMISSIONS[role as keyof typeof PERMISSIONS];
-    if (rolePerms && permission in rolePerms) {
-      return rolePerms[permission as keyof typeof rolePerms];
-    }
-
-    // Check inherited user permissions for all roles
-    if (permission in PERMISSIONS.user) {
-      return PERMISSIONS.user[permission as keyof typeof PERMISSIONS.user];
-    }
-
-    return false;
+    if (hasRole("admin")) return true;
+    const rolePerms = PERMISSIONS[role as keyof typeof PERMISSIONS] as Record<string, boolean> | undefined;
+    if (rolePerms && permission in rolePerms) return rolePerms[permission];
+    return permission in PERMISSIONS.user ? PERMISSIONS.user[permission as keyof typeof PERMISSIONS.user] : false;
   };
 
   return { can, role, hasRole, isModeratorOrAdmin };

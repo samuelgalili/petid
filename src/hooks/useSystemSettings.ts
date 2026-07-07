@@ -1,8 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { useAuditLog } from '@/hooks/useAuditLog';
+import { useCallback, useEffect, useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { useAuditLog } from "@/hooks/useAuditLog";
 
 export interface GeneralSettings {
   siteName: string;
@@ -49,10 +47,12 @@ export interface SystemSettings {
   moderation: ModerationSettings;
 }
 
+const STORAGE_KEY = "mipo-system-settings";
+
 const defaultSettings: SystemSettings = {
   general: {
-    siteName: 'PetID',
-    defaultLanguage: 'he',
+    siteName: "MIPO",
+    defaultLanguage: "he",
     maintenanceMode: false,
   },
   security: {
@@ -70,111 +70,80 @@ const defaultSettings: SystemSettings = {
   },
   features: {
     enableShop: true,
-    enableAdoption: true,
-    enableStories: true,
-    enableReels: true,
+    enableAdoption: false,
+    enableStories: false,
+    enableReels: false,
     enableChat: true,
   },
   moderation: {
     allowReportUsers: true,
-    allowReportPosts: true,
+    allowReportPosts: false,
     requireVerificationForPosting: false,
     autoHideReportedContent: false,
     reportThreshold: 3,
   },
 };
 
+const readSettings = (): SystemSettings => {
+  try {
+    return { ...defaultSettings, ...JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") };
+  } catch {
+    return defaultSettings;
+  }
+};
+
 export const useSystemSettings = () => {
   const { toast } = useToast();
   const { logAction } = useAuditLog();
-  const queryClient = useQueryClient();
+  const [settings, setSettings] = useState<SystemSettings>(defaultSettings);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const { data: settings, isLoading, error } = useQuery({
-    queryKey: ['system-settings'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('system_settings')
-        .select('key, value');
+  useEffect(() => {
+    setSettings(readSettings());
+    setIsLoading(false);
+  }, []);
 
-      if (error) throw error;
-
-      const settingsMap: SystemSettings = JSON.parse(JSON.stringify(defaultSettings));
-      
-      (data || []).forEach((row: { key: string; value: unknown }) => {
-        const key = row.key as keyof SystemSettings;
-        if (key in settingsMap && row.value) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (settingsMap as any)[key] = row.value;
-        }
-      });
-
-      return settingsMap;
-    },
-  });
-
-  const updateSettingsMutation = useMutation({
-    mutationFn: async ({ key, value }: { key: string; value: unknown }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      // Convert to plain object for Supabase
-      const jsonValue = JSON.parse(JSON.stringify(value));
-      
-      const { error } = await supabase
-        .from('system_settings')
-        .update({ 
-          value: jsonValue,
-          updated_at: new Date().toISOString(),
-          updated_by: user?.id,
-        })
-        .eq('key', key);
-
-      if (error) throw error;
-
+  const saveAllSettings = useCallback(async (newSettings: SystemSettings) => {
+    setIsSaving(true);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
+      setSettings(newSettings);
       await logAction({
-        action_type: 'settings.updated',
-        entity_type: 'settings',
-        entity_id: key,
-        new_values: jsonValue,
+        action_type: "settings.updated",
+        entity_type: "settings",
+        entity_id: "local",
+        new_values: newSettings as unknown as Record<string, unknown>,
       });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['system-settings'] });
-    },
-    onError: (error) => {
-      console.error('Failed to update settings:', error);
+      toast({ title: "ההגדרות נשמרו בהצלחה" });
+    } catch (error) {
+      console.error("Failed to save settings:", error);
       toast({
-        title: 'שגיאה',
-        description: 'נכשל בעדכון ההגדרות',
-        variant: 'destructive',
+        title: "שגיאה",
+        description: "נכשל בעדכון ההגדרות",
+        variant: "destructive",
       });
-    },
-  });
-
-  const saveAllSettings = async (newSettings: SystemSettings) => {
-    const keys = Object.keys(newSettings) as (keyof SystemSettings)[];
-    
-    for (const key of keys) {
-      const settingValue = newSettings[key];
-      await updateSettingsMutation.mutateAsync({ 
-        key, 
-        value: settingValue 
-      });
+    } finally {
+      setIsSaving(false);
     }
+  }, [logAction, toast]);
 
-    toast({ title: 'ההגדרות נשמרו בהצלחה' });
-  };
+  const updateSettings = useCallback((key: keyof SystemSettings, value: SystemSettings[keyof SystemSettings]) => {
+    const next = { ...settings, [key]: value };
+    setSettings(next);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  }, [settings]);
 
   return {
-    settings: settings || defaultSettings,
+    settings,
     isLoading,
-    error,
-    updateSettings: updateSettingsMutation.mutate,
+    error: null,
+    updateSettings,
     saveAllSettings,
-    isSaving: updateSettingsMutation.isPending,
+    isSaving,
   };
 };
 
-// Hook for checking specific feature flags (can be used anywhere in the app)
 export const useFeatureFlag = (feature: keyof FeatureSettings) => {
   const { settings, isLoading } = useSystemSettings();
   return {
@@ -183,7 +152,6 @@ export const useFeatureFlag = (feature: keyof FeatureSettings) => {
   };
 };
 
-// Hook for checking moderation settings
 export const useModerationSettings = () => {
   const { settings, isLoading } = useSystemSettings();
   return {

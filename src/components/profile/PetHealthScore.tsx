@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Activity, Syringe, Calendar, Shield, ChevronLeft, AlertTriangle, CreditCard, Banknote } from "lucide-react";
-import { PetIdCard } from "./PetIdCard";
+import { Activity, Syringe, Calendar, Shield, ChevronLeft, AlertTriangle, Banknote } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { GlowRing } from "@/components/ui/GlowRing";
 import { AdaptiveBackground } from "@/components/ui/AdaptiveBackground";
@@ -59,7 +58,6 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
   const [inRecovery, setInRecovery] = useState(false);
   const [showVaccineBoost, setShowVaccineBoost] = useState(false);
   const [showInsurancePitch, setShowInsurancePitch] = useState(false);
-  const [showIdCard, setShowIdCard] = useState(false);
   const [hasRecentWeight, setHasRecentWeight] = useState(false);
   const [hasParasitePrevention, setHasParasitePrevention] = useState(false);
   const [hasRegisteredClinic, setHasRegisteredClinic] = useState(false);
@@ -123,7 +121,7 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
 
 	        setInRecovery(!!summary.active_recovery);
 
-	        // Claims are still pending migration from Supabase.
+	        // Claims are still pending implementation on the AWS API.
 	        setPendingClaimsCount(0);
 	        setTotalVetSpend(0);
       } catch (error) {
@@ -399,10 +397,6 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
               )}
             </div>
 
-            {/* Actions — single button */}
-            <button onClick={() => setShowIdCard(true)} className="p-1.5 hover:bg-muted/60 rounded-lg transition-colors" title="תעודת זיהוי">
-              <CreditCard className="w-4 h-4 text-primary/70" strokeWidth={1.5} />
-            </button>
           </div>
         </div>
       </motion.div>
@@ -486,17 +480,6 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Pet ID Card */}
-      <PetIdCard
-        petId={pet.id}
-        petName={pet.name}
-        petType={pet.type}
-        breed={pet.breed}
-        avatarUrl={pet.avatar_url}
-        open={showIdCard}
-        onClose={() => setShowIdCard(false)}
-      />
     </>
   );
 };

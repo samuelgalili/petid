@@ -46,9 +46,6 @@ import { toast } from "sonner";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { QRCodeProfile } from "@/components/QRCodeProfile";
 import { QuietModeSettings } from "@/components/QuietModeSettings";
-import { CloseFriendsManager } from "@/components/CloseFriendsManager";
-import { DraftPostsManager } from "@/components/DraftPostsManager";
-import { ScheduledPostsManager } from "@/components/ScheduledPostsManager";
 import { motion } from "framer-motion";
 import { SEO } from "@/components/SEO";
 import {
@@ -236,9 +233,6 @@ const Settings = () => {
   // Dialogs
   const [showQRCode, setShowQRCode] = useState(false);
   const [showQuietMode, setShowQuietMode] = useState(false);
-  const [showCloseFriends, setShowCloseFriends] = useState(false);
-  const [showDrafts, setShowDrafts] = useState(false);
-  const [showScheduled, setShowScheduled] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -498,12 +492,6 @@ const Settings = () => {
               action={() => setShowQRCode(true)}
             />
             <SettingRow
-              icon={Star}
-              label="חברים קרובים"
-              description="נהל רשימת חברים קרובים לסטוריז"
-              action={() => setShowCloseFriends(true)}
-            />
-            <SettingRow
               icon={Store}
               label="עבור לחשבון עסקי"
               description="הפוך לפרופיל עסקי"
@@ -611,18 +599,6 @@ const Settings = () => {
               action={handleExportData}
             />
             <SettingRow
-              icon={FileText}
-              label="טיוטות"
-              description="פוסטים שנשמרו כטיוטה"
-              action={() => setShowDrafts(true)}
-            />
-            <SettingRow
-              icon={Calendar}
-              label="פוסטים מתוזמנים"
-              description="פוסטים שממתינים לפרסום"
-              action={() => setShowScheduled(true)}
-            />
-            <SettingRow
               icon={Smartphone}
               label="ניקוי מטמון"
               description="שמור על מהירות האפליקציה"
@@ -726,13 +702,6 @@ const Settings = () => {
         profile={{ id: user?.id || "", full_name: user?.user_metadata?.full_name, avatar_url: null }}
       />
       <QuietModeSettings open={showQuietMode} onOpenChange={setShowQuietMode} />
-      <CloseFriendsManager open={showCloseFriends} onOpenChange={setShowCloseFriends} />
-      <DraftPostsManager
-        open={showDrafts}
-        onOpenChange={setShowDrafts}
-        onEditDraft={() => toast.info("פתיחת טיוטה לעריכה")}
-      />
-      <ScheduledPostsManager open={showScheduled} onOpenChange={setShowScheduled} />
 
       <BottomNav />
     </div>

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
-import { EmergencyHub } from "@/components/emergency/EmergencyHub";
 import { SEO } from "@/components/SEO";
 import { PageTransition } from "@/components/PageTransition";
 import BottomNav from "@/components/BottomNav";
@@ -15,7 +14,7 @@ import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { ProfileSkeleton } from "@/components/profile/ProfileSkeleton";
 import { PetShopView } from "@/components/profile/PetShopView";
 import { PetWeatherAlert } from "@/components/profile/PetWeatherAlert";
-import { InsuranceSheet, TrainingSheet, GroomingSheet, BoardingSheet, BreedInfoSheet, FoodSheet, ToysSheet, DogWalkerSheet, ProductsSheet, EnergySheet, GroomingProductsSheet, FeedingSheet, MemorialSheet, ComingSoonSheet } from "@/components/pet-services";
+import { InsuranceSheet, TrainingSheet, GroomingSheet, BoardingSheet, FoodSheet, ToysSheet, DogWalkerSheet, ProductsSheet, EnergySheet, GroomingProductsSheet, FeedingSheet, MemorialSheet, ComingSoonSheet } from "@/components/pet-services";
 import { PetVaultDrawer } from "@/components/pet-services/PetVaultDrawer";
 import { SmartRecommendationSheet } from "@/components/pet-services/SmartRecommendationSheet";
 import { HealthScoreBreakdown } from "@/components/profile/HealthScoreBreakdown";
@@ -51,7 +50,6 @@ const Profile = () => {
   const [smartRecCategory, setSmartRecCategory] = useState<'coat' | 'energy' | 'health' | 'feeding' | 'mobility' | 'digestion' | null>(null);
   const [healthRefreshKey, setHealthRefreshKey] = useState(0);
   const [healthBreakdownOpen, setHealthBreakdownOpen] = useState(false);
-  const [showEmergencyHub, setShowEmergencyHub] = useState(false);
   const [heartRainActive, setHeartRainActive] = useState(false);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -151,7 +149,6 @@ const Profile = () => {
   return (
     <PageTransition>
       <HeartRain active={heartRainActive} />
-      <EmergencyHub open={showEmergencyHub} onOpenChange={setShowEmergencyHub} />
 
       <SEO title="הפרופיל שלי" description="נהלו את חיית המחמד שלכם" url="/profile" type="profile" />
 
@@ -373,7 +370,6 @@ const Profile = () => {
                     onOpenInsurance={() => setActiveSheet('insurance')}
                     onOpenPetShop={() => setShowPetShop(true)}
                     onOpenSheet={(id) => handleCategoryClick(id)}
-                    onOpenEmergency={() => setShowEmergencyHub(true)}
                   />
                 )}
               </motion.div>
@@ -396,7 +392,6 @@ const Profile = () => {
         <GroomingSheet isOpen={activeSheet === 'grooming'} onClose={handleCloseSheet} pet={selectedPet} />
         <FoodSheet isOpen={activeSheet === 'food'} onClose={handleCloseSheet} pet={selectedPet} />
         <ToysSheet isOpen={activeSheet === 'toys'} onClose={handleCloseSheet} pet={selectedPet} />
-        <BreedInfoSheet isOpen={activeSheet === 'breed_info'} onClose={handleCloseSheet} pet={selectedPet} />
         <BoardingSheet isOpen={activeSheet === 'boarding'} onClose={handleCloseSheet} pet={selectedPet} />
         <PetVaultDrawer isOpen={activeSheet === 'documents'} onClose={handleCloseSheet} pet={selectedPet} />
         <DogWalkerSheet isOpen={activeSheet === 'dog_walker'} onClose={handleCloseSheet} pet={selectedPet} />
@@ -405,6 +400,7 @@ const Profile = () => {
         <ComingSoonSheet isOpen={activeSheet === 'calendar'} onClose={handleCloseSheet} title="יומן" />
         <ComingSoonSheet isOpen={activeSheet === 'adoption'} onClose={handleCloseSheet} title="למסירה" />
         <ComingSoonSheet isOpen={activeSheet === 'life_story'} onClose={handleCloseSheet} title="סיפור חיים" />
+        <ComingSoonSheet isOpen={activeSheet === 'breed_info'} onClose={handleCloseSheet} title="מידע על הגזע" />
 
         {/* Trait Sheets */}
         <EnergySheet isOpen={activeSheet === 'energy'} onClose={handleCloseSheet} pet={selectedPet} />

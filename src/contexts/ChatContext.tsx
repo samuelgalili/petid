@@ -1,5 +1,11 @@
 import { createContext, useContext, useState, useCallback, useRef, useEffect, type ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  getCurrentUser,
+  getMyNotifications,
+  getMyPets,
+  markMyNotificationRead,
+  type MipoNotification,
+} from "@/lib/mipoApi";
 
 // ============= Types =============
 export interface Product {
@@ -109,13 +115,6 @@ export function useChatContext() {
   return ctx;
 }
 
-// Helper function to fetch pets
-async function fetchUserPets(userId: string): Promise<Pet[]> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const result = await (supabase as any).from("pets").select("id, name, type, breed, avatar_url").eq("user_id", userId);
-  return (result.data || []) as Pet[];
-}
-
 // ============= Provider =============
 export function ChatProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -140,83 +139,43 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // Load user pets on mount
   useEffect(() => {
     const loadPets = async () => {
-      const authResult = await supabase.auth.getUser();
-      const user = authResult.data?.user;
-      if (!user) return;
+      const authResult = await getCurrentUser().catch(() => null);
+      const user = authResult?.user;
+      const profile = authResult?.profile;
+      if (!user) {
+        setMessages([{
+          role: "assistant",
+          content: "היי! 🐾 אפשר לשאול אותי על תזונה, בריאות, קניות או מסמכים. להתחברות מלאה, היכנס/י לחשבון.",
+          timestamp: new Date().toISOString(),
+          suggestions: ["שאלה על תזונה", "סריקת מסמך", "חנות"],
+        }]);
+        return;
+      }
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", user.id)
-        .single();
-
-      const fullName = profile?.full_name || "";
+      const fullName = profile?.full_name || user.full_name || "";
       const firstName = fullName.split(" ")[0] || user.email?.split("@")[0] || "חבר";
       setUserName(firstName);
 
-      const pets = await fetchUserPets(user.id);
+      const pets = (await getMyPets().catch(() => [])).map((pet) => ({
+        id: pet.id,
+        name: pet.name,
+        type: pet.type || pet.pet_type || "dog",
+        breed: pet.breed || null,
+        avatar_url: pet.avatar_url || null,
+      }));
 
       if (pets && pets.length > 0) {
         setUserPets(pets);
         if (pets.length === 1) {
           setSelectedPet(pets[0]);
           
-          // Fetch medical context + recent events + unread notifications for proactive greeting
-          const [petDataResult, recentEventsResult, recentDocsResult, unreadNotifsResult] = await Promise.all([
-            (supabase as any).from("pets").select("medical_conditions, health_notes, weight, breed, city").eq("id", pets[0].id).maybeSingle(),
-            (supabase as any).from("system_events").select("title, description, created_at").order("created_at", { ascending: false }).limit(3),
-            (supabase as any).from("admin_data_sources").select("title, extracted_data, created_at").eq("is_processed", true).order("created_at", { ascending: false }).limit(1),
-            supabase.from("notifications").select("id, title, message, type, category, data, created_at").eq("user_id", user.id).eq("is_read", false).order("created_at", { ascending: false }).limit(5),
-          ]);
-
-          const petData = petDataResult.data;
-          const recentEvents = recentEventsResult.data || [];
-          const recentDoc = recentDocsResult.data?.[0];
-          const unreadNotifs = (unreadNotifsResult.data || []) as Array<{ id: string; title: string; message: string; type: string; category: string | null; data: any; created_at: string }>;
-          
-          const conditions = petData?.medical_conditions as string[] | null;
-          const petWeight = petData?.weight;
-          const petBreed = petData?.breed;
+          const unreadNotifs = (await getMyNotifications({ unread: true, limit: 5 }).catch(() => ({ notifications: [] })))
+            .notifications as MipoNotification[];
           
           let greeting = `היי ${firstName}! מה שלום ${pets[0].name}? 🐾\n\nאיך אוכל לעזור היום?`;
           const now = new Date().toISOString();
-          // Proactive updates
           const updates: string[] = [];
-          
-          // Recent document processed
-          if (recentDoc?.extracted_data) {
-            const extracted = recentDoc.extracted_data as Record<string, any>;
-            if (extracted.address) {
-              updates.push(`📄 ניתחתי מסמך חדש ועדכנתי את הכתובת ל-${extracted.address}`);
-            } else {
-              updates.push(`📄 עיבדתי מסמך חדש: "${recentDoc.title}"`);
-            }
-          }
-          
-          // NRC plan based on weight
-          if (petWeight && petWeight > 0) {
-            const mer = Math.round(110 * Math.pow(petWeight, 0.75));
-            updates.push(`🧬 תוכנית תזונה NRC 2006: ${mer} kcal/יום (${petWeight} ק"ג)`);
-          }
-          
-          // Medical follow-up
-          if (conditions && conditions.length > 0) {
-            const conditionLabels: Record<string, string> = {
-              diabetes: "הסוכרת", allergies: "האלרגיות", skin_issues: "בעיות העור",
-              joint_issues: "בעיות המפרקים", digestive: "בעיות העיכול",
-              heart: "בעיות הלב", epilepsy: "האפילפסיה", kidney: "בעיות הכליות",
-              urinary: "בעיות השתן", dental: "בעיות השיניים",
-            };
-            const firstCondition = conditions[0];
-            const label = conditionLabels[firstCondition] || firstCondition;
-            updates.push(`💊 איך ${pets[0].name} מרגיש/ה עם ${label}?`);
-          }
-          
-          // Recent bot events
-          if (recentEvents.length > 0) {
-            updates.push(`🤖 ${recentEvents[0].title}`);
-          }
-          
+
           if (updates.length > 0) {
             greeting = `היי ${firstName}! 🐾\n\n${updates.join("\n")}\n\nבמה נתמקד?`;
           }
@@ -238,7 +197,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             );
 
             const buildNotifMessage = (notifs: typeof unreadNotifs, prefix: string): string => {
-              const lines = notifs.map(n => {
+              const lines = notifs.map((n) => {
                 const icon = NOTIF_ICON_MAP[n.type] || "📌";
                 return `${icon} ${n.message}`;
               });
@@ -274,7 +233,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
             // Mark displayed notifications as read
             const notifIds = unreadNotifs.map(n => n.id);
-            supabase.from("notifications").update({ is_read: true } as any).in("id", notifIds).then(() => {});
+            notifIds.forEach((id) => {
+              markMyNotificationRead(id).catch(() => {});
+            });
           }
         } else {
           setMessages([{
@@ -367,30 +328,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       ? messagesToSend.slice(-MAX_CONTEXT_MESSAGES)
       : messagesToSend;
 
-    const { data, error } = await supabase.functions.invoke<{
-      content?: string;
-      response?: string;
-      products?: Product[];
-      suggestions?: string[];
-    }>("chat", { body: { messages: contextMessages, userContext } });
+    void contextMessages;
+    void userContext;
     setIsTyping(false);
 
-    if (error) throw new Error(error.message);
-
-    const assistantContent = (data?.content || data?.response || "").trim();
-    if (!assistantContent) {
-      setMessages((prev) => [...prev, fallbackAssistantMessage]);
-      return;
-    }
-
-    const suggestions = data?.suggestions?.length ? data.suggestions : extractSuggestions(assistantContent);
-    setMessages((prev) => [...prev, {
-      role: "assistant",
-      content: assistantContent,
-      timestamp: new Date().toISOString(),
-      products: data?.products || [],
-      suggestions: suggestions.length > 0 ? suggestions : undefined,
-    }]);
+    setMessages((prev) => [...prev, fallbackAssistantMessage]);
   }, [selectedPet, userPets, userName]);
 
   /** Send a message programmatically */

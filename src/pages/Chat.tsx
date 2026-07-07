@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronRight, Sparkles, MessageCircle, ChevronDown } from "lucide-react";
+import { ChevronRight, Sparkles, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import petidIcon from "@/assets/petid-icon.png";
 import BottomNav from "@/components/BottomNav";
@@ -10,11 +10,8 @@ import HorizontalDatePicker from "@/components/chat/HorizontalDatePicker";
 import ChatInputBar from "@/components/chat/ChatInputBar";
 import { ChatActionButton, extractActionTags, cleanActionTags } from "@/components/chat/ChatActionButton";
 import { ChatProductCards } from "@/components/chat/ChatProductCards";
-import { InsurancePlanCards, InsuranceLoadingAnimation } from "@/components/chat/InsurancePlanCards";
-import { InsuranceCallbackForm } from "@/components/chat/InsuranceCallbackForm";
 import { GroomingServicePicker } from "@/components/chat/GroomingServicePicker";
 import { QuickReplySuggestions } from "@/components/chat/QuickReplySuggestions";
-import { MessageFeedback } from "@/components/chat/MessageFeedback";
 import { AppointmentPicker } from "@/components/chat/AppointmentPicker";
 import { TrainingCategoryPicker } from "@/components/chat/TrainingCategoryPicker";
 import { TrainingSubPicker } from "@/components/chat/TrainingSubPicker";
@@ -27,7 +24,6 @@ import { AdoptionRequirementPicker } from "@/components/chat/AdoptionRequirement
 import { OcrApprovalCard, QuickCheckoutCard, InsuranceLeadCard, AddressUpdateCard, NrcPlanCard, PendingApprovalCard } from "@/components/chat/ChatActionCards";
 import { ChatProvider, useChatContext, type Message } from "@/contexts/ChatContext";
 import { useDataIntake, type IntakeType } from "@/hooks/useDataIntake";
-import { ChatHubMessages } from "@/components/chat/ChatHubMessages";
 
 const ChatContent = () => {
   const {
@@ -50,7 +46,6 @@ const ChatContent = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [headerHidden, setHeaderHidden] = useState(false);
-  const [activeHubTab, setActiveHubTab] = useState<"scientist" | "messages">("scientist");
   const [showScrollDown, setShowScrollDown] = useState(false);
   const lastScrollTop = useRef(0);
 
@@ -329,7 +324,7 @@ const ChatContent = () => {
 
   // Check if message has expanded content (pickers, cards etc.)
   const hasExpandedContent = (message: Message) => 
-    message.insuranceData || message.insuranceCallback || message.showGroomingPicker || 
+    message.showGroomingPicker ||
     message.showAppointmentPicker || message.showTrainingPicker || message.trainingSubOptions || 
     message.showDogParkPicker || message.showDocumentPicker || message.showBoardingPicker || 
     message.showStorePicker || message.showAdoptionTraits || message.showAdoptionRequirements;
@@ -358,45 +353,9 @@ const ChatContent = () => {
           
           <div className="w-8" />
         </div>
-        
-        {/* Tab Switcher — subtle underline style */}
-        <div className="flex px-6">
-          <button
-            onClick={() => setActiveHubTab("scientist")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-[13px] font-medium transition-colors relative ${
-              activeHubTab === "scientist" ? "text-foreground" : "text-muted-foreground"
-            }`}
-          >
-            <Sparkles className="w-3 h-3" />
-            המומחה
-            {activeHubTab === "scientist" && (
-              <motion.div layoutId="hub-tab-indicator" className="absolute bottom-0 inset-x-4 h-[2px] bg-primary rounded-full" />
-            )}
-          </button>
-          <button
-            onClick={() => setActiveHubTab("messages")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-[13px] font-medium transition-colors relative ${
-              activeHubTab === "messages" ? "text-foreground" : "text-muted-foreground"
-            }`}
-          >
-            <MessageCircle className="w-3 h-3" />
-            הודעות
-            {activeHubTab === "messages" && (
-              <motion.div layoutId="hub-tab-indicator" className="absolute bottom-0 inset-x-4 h-[2px] bg-primary rounded-full" />
-            )}
-          </button>
-        </div>
       </div>
 
-      {/* Messages Tab */}
-      {activeHubTab === "messages" && (
-        <div className="flex-1 overflow-hidden">
-          <ChatHubMessages />
-        </div>
-      )}
-
       {/* Scientist Tab — ChatGPT/Gemini style */}
-      {activeHubTab === "scientist" && (
       <div className="flex flex-col h-[calc(100dvh-120px-env(safe-area-inset-bottom,0px))]">
         {/* Messages Container — clean white/dark bg */}
         <div 
@@ -501,16 +460,6 @@ const ChatContent = () => {
 
                     {message.role === "assistant" && message.pendingApproval && (
                       <PendingApprovalCard title={message.pendingApproval.title} />
-                    )}
-
-                    {/* Insurance Plan Cards */}
-                    {message.role === "assistant" && message.insuranceData && (
-                      <InsurancePlanCards {...message.insuranceData} />
-                    )}
-
-                    {/* Insurance Callback Form */}
-                    {message.role === "assistant" && message.insuranceCallback && (
-                      <InsuranceCallbackForm {...message.insuranceCallback} />
                     )}
 
                     {/* Grooming Service Picker */}
@@ -652,10 +601,6 @@ const ChatContent = () => {
                       />
                     )}
 
-                    {/* Message Feedback */}
-                    {message.role === "assistant" && index > 0 && !isTyping && (
-                      <MessageFeedback messageContent={message.content} messageIndex={index} />
-                    )}
                   </div>
                 </div>
               </motion.div>
@@ -675,19 +620,6 @@ const ChatContent = () => {
                     onChange={handleDateSelect}
                     minDate={new Date()}
                   />
-                </div>
-              </motion.div>
-            )}
-
-            {/* Insurance Loading Animation */}
-            {showInsuranceLoading && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex justify-end mb-3"
-              >
-                <div className="bg-card border border-border/40 rounded-2xl rounded-bl-md px-4 py-2 max-w-[85%]">
-                  <InsuranceLoadingAnimation />
                 </div>
               </motion.div>
             )}
@@ -756,7 +688,6 @@ const ChatContent = () => {
           }}
         />
       </div>
-      )}
 
       <BottomNav />
     </div>

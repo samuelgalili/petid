@@ -3,7 +3,6 @@ export { InsuranceSheet } from './InsuranceSheet';
 export { TrainingSheet } from './TrainingSheet';
 export { GroomingSheet } from './GroomingSheet';
 export { BoardingSheet } from './BoardingSheet';
-export { BreedInfoSheet } from './BreedInfoSheet';
 export { FoodSheet } from './FoodSheet';
 export { ToysSheet } from './ToysSheet';
 export { DocumentsSection } from './DocumentsSection';

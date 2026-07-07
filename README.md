@@ -31,6 +31,6 @@ The repo contains both frontend and backend code. The AWS deploy workflow builds
 
 ## Migration Notes
 
-- The repo previously pointed at Supabase and still contains the legacy `supabase/` folder for reference and one-time migration history.
+- Legacy Supabase source code was removed from the AWS branch after the RDS migration. Historical files remain available in older commits if needed for audit/reference.
 - The cutover checklist lives in `docs/MIGRATION_CHECKLIST.md`.
 - Real `.env` files should stay out of git. `.env.example` is the committed template.

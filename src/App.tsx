@@ -23,7 +23,6 @@ import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { PetPreferenceProvider } from "@/contexts/PetPreferenceContext";
 import { CentralBrainProvider } from "@/contexts/CentralBrainContext";
-import { BrainDebuggerOverlay } from "@/components/admin/BrainDebuggerOverlay";
 import { OverlayNavProvider } from "@/contexts/OverlayNavContext";
 import { GuestProvider } from "@/contexts/GuestContext";
 import { GameProvider } from "@/contexts/GameContext";
@@ -39,10 +38,7 @@ import { LoginPromptDialog } from "@/components/LoginPromptDialog";
 import ScrollToTop from "@/components/ScrollToTop";
 import { LegalDrawer } from "@/components/LegalDrawer";
 import CompleteProfilePrompt from "@/components/CompleteProfilePrompt";
-import SarahDataGapAlert from "@/components/SarahDataGapAlert";
-import { UXGuardian } from "@/components/UXGuardian";
 import { SarahCrashPopup } from "@/components/SarahCrashPopup";
-import { PrivacyConsentPopup } from "@/components/PrivacyConsentPopup";
 
 // Route configuration - modular lazy-loaded routes
 import { allRoutes } from "@/routes";
@@ -87,7 +83,6 @@ const AnimatedRoutes = () => {
       <LoginPromptDialog />
       <PWAInstallPrompt />
       <CompleteProfilePrompt />
-      <SarahDataGapAlert />
       
       <div className="flex-1">
         <AnimatePresence mode="wait">
@@ -103,9 +98,7 @@ const AnimatedRoutes = () => {
         </AnimatePresence>
       </div>
       <LegalDrawer />
-      <UXGuardian />
       <SarahCrashPopup />
-      <PrivacyConsentPopup />
     </div>
   );
 };
@@ -128,7 +121,6 @@ const GlobalProviders = ({ children }: { children: React.ReactNode }) => (
                       <FlyingCartProvider>
                         <TooltipProvider>
                           {children}
-                          <BrainDebuggerOverlay />
                         </TooltipProvider>
                       </FlyingCartProvider>
                     </CartProvider>
