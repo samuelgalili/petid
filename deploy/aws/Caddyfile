@@ -1,4 +1,8 @@
-:80 {
+www.mipo.pet {
+  redir https://mipo.pet{uri} permanent
+}
+
+mipo.pet {
   encode zstd gzip
 
   handle /api/* {
