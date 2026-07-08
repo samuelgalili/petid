@@ -44,6 +44,29 @@ export interface MipoProduct {
   source?: "manual" | "scraped";
 }
 
+export interface MipoAiChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface MipoAiChatProduct {
+  id: string;
+  name: string;
+  price?: number | null;
+  sale_price?: number | null;
+  image_url?: string | null;
+  category?: string | null;
+}
+
+export interface MipoAiChatResponseMessage {
+  role: "assistant";
+  content: string;
+  timestamp?: string;
+  suggestions?: string[];
+  products?: MipoAiChatProduct[];
+  botSource?: string;
+}
+
 export interface MipoBreedInfo {
   id: string;
   breed_name: string;
@@ -698,6 +721,27 @@ export async function deleteMyPet(petId: string) {
   });
   window.dispatchEvent(new Event("mipo:pets-changed"));
   return result;
+}
+
+export async function sendAiChat(input: {
+  messages: MipoAiChatMessage[];
+  userContext?: {
+    userName?: string | null;
+    selectedPetId?: string | null;
+    selectedPetName?: string | null;
+    pets?: Array<{
+      id: string;
+      name: string;
+      type?: string | null;
+      breed?: string | null;
+    }>;
+  };
+}): Promise<MipoAiChatResponseMessage> {
+  const result = await apiFetch<{ message: MipoAiChatResponseMessage }>("/ai/chat", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  return result.message;
 }
 
 export async function uploadMyImage(file: File) {

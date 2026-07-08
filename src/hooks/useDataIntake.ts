@@ -92,7 +92,7 @@ export function useDataIntake({ petId, petName, isSOSActive = false }: UseDataIn
       type: "scan",
       fileUrl,
       userMessage: `📄 סרקתי מסמך רפואי חדש עבור ${petName}`,
-      aiPrompt: `[DOCUMENT_UPLOADED: url=${fileUrl}, pet=${petName}, petId=${petId}]\nהמשתמש העלה מסמך רפואי חדש. המסמך נשמר בכספת. סכם למשתמש מה לעשות בהמשך ושאל אם לעבור על הנתונים.`,
+      aiPrompt: `[DOCUMENT_UPLOADED: url=${fileUrl}, pet=${petName}, petId=${petId}]\nהמשתמש העלה מסמך רפואי חדש. המסמך נשמר בכספת. בצע OCR וניתוח עכשיו: סכם ממצאים חשובים, תאר תאריכים/חיסונים/תרופות/המלצות שנראים במסמך, ציין אי-ודאות, והצע כרטיס אישור לעדכון נתונים אם נמצאו שדות ברורים.`,
     };
   }, [petId, petName, toast, user]);
 

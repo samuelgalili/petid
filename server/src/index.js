@@ -1,6 +1,6 @@
 import http from "node:http";
 import { createHash, createHmac, randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
-import { mkdir, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Pool } from "pg";
 import {
@@ -45,6 +45,9 @@ const cardcomApiPassword = process.env.CARDCOM_API_PASSWORD;
 const cardcomWebhookSecret = process.env.CARDCOM_WEBHOOK_SECRET;
 const cardcomLowProfileUrl = "https://secure.cardcom.solutions/Interface/LowProfile.aspx";
 const cardcomIndicatorUrl = "https://secure.cardcom.solutions/Interface/BillGoldGetLowProfileIndicator.aspx";
+const geminiApiKey = process.env.GEMINI_API_KEY || "";
+const geminiModel = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const maxAiAttachmentBytes = Number(process.env.MAX_AI_ATTACHMENT_BYTES || 15 * 1024 * 1024);
 
 if (!databaseUrl) {
   throw new Error("DATABASE_URL is required");
@@ -93,6 +96,16 @@ const readRawBody = async (request, maxBytes = 1024 * 1024) => {
   }
 
   return chunks.length > 0 ? Buffer.concat(chunks).toString("utf8") : "";
+};
+
+const fetchWithTimeout = async (url, init = {}, timeoutMs = 60000) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
 };
 
 const sendJson = (response, statusCode, body, headers = {}) => {
@@ -1902,6 +1915,370 @@ const getUserPetHealthSummary = async (userId, petId) => {
     vaccinations,
     documents,
     active_recovery: activeRecovery,
+  };
+};
+
+const parseGeminiJson = (text) => {
+  const raw = String(text || "").trim();
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    const candidate = fenced?.[1] || raw.match(/\{[\s\S]*\}/)?.[0];
+    if (!candidate) return null;
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      return null;
+    }
+  }
+};
+
+const callGeminiPetJson = async (parts, { temperature = 0.25 } = {}) => {
+  if (!geminiApiKey) {
+    const error = new Error("GEMINI_API_KEY is not configured");
+    error.statusCode = 503;
+    throw error;
+  }
+
+  const response = await fetchWithTimeout(
+    `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiApiKey}`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts }],
+        generationConfig: {
+          temperature,
+          responseMimeType: "application/json",
+        },
+      }),
+    },
+    65000,
+  );
+
+  if (!response.ok) {
+    const error = new Error(`Gemini request failed (${response.status})`);
+    error.statusCode = 502;
+    throw error;
+  }
+
+  const data = await response.json();
+  const text = data.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("") || "";
+  const parsed = parseGeminiJson(text);
+  if (!parsed) {
+    const error = new Error("Gemini returned an empty response");
+    error.statusCode = 502;
+    throw error;
+  }
+  return parsed;
+};
+
+const safeText = (value, maxLength = 1200) => String(value || "")
+  .replace(/\r\n/g, "\n")
+  .replace(/[ \t]+/g, " ")
+  .replace(/\n{4,}/g, "\n\n\n")
+  .trim()
+  .slice(0, maxLength);
+
+const normalizeAiMessages = (messages) => (Array.isArray(messages) ? messages : [])
+  .map((message) => ({
+    role: message?.role === "assistant" ? "assistant" : "user",
+    content: safeText(message?.content, 4000),
+  }))
+  .filter((message) => message.content)
+  .slice(-50);
+
+const parseAiTagMetadata = (raw) => {
+  const metadata = {};
+  String(raw || "")
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .forEach((part) => {
+      const separatorIndex = part.indexOf("=");
+      if (separatorIndex === -1) return;
+      const key = part.slice(0, separatorIndex).trim();
+      const value = part.slice(separatorIndex + 1).trim().replace(/^["']|["']$/g, "");
+      if (key) metadata[key] = value;
+    });
+  return metadata;
+};
+
+const extractAiAttachmentReferences = (messages) => {
+  const references = [];
+  const pattern = /\[(DOCUMENT_UPLOADED|VISUAL_UPLOADED):([^\]]+)\]/g;
+
+  for (const message of messages) {
+    let match = pattern.exec(message.content);
+    while (match) {
+      const metadata = parseAiTagMetadata(match[2]);
+      if (metadata.url) {
+        references.push({
+          kind: match[1] === "DOCUMENT_UPLOADED" ? "document" : "visual",
+          url: metadata.url,
+          petName: metadata.pet || null,
+          petId: metadata.petId || null,
+          type: metadata.type || null,
+        });
+      }
+      match = pattern.exec(message.content);
+    }
+  }
+
+  return references.slice(-3);
+};
+
+const contentTypeForFileName = (fileName, fallback = "application/octet-stream") => {
+  const extension = path.extname(String(fileName || "")).toLowerCase();
+  if (extension === ".jpg" || extension === ".jpeg") return "image/jpeg";
+  if (extension === ".png") return "image/png";
+  if (extension === ".webp") return "image/webp";
+  if (extension === ".gif") return "image/gif";
+  if (extension === ".heic") return "image/heic";
+  if (extension === ".heif") return "image/heif";
+  if (extension === ".pdf") return "application/pdf";
+  if (extension === ".mp4") return "video/mp4";
+  if (extension === ".mov" || extension === ".qt") return "video/quicktime";
+  if (extension === ".webm") return "video/webm";
+  if (extension === ".txt") return "text/plain";
+  return fallback;
+};
+
+const normalizeUploadPath = (fileUrl) => {
+  const value = String(fileUrl || "").trim();
+  if (!value) return null;
+  try {
+    return new URL(value, "http://localhost").pathname;
+  } catch {
+    return value;
+  }
+};
+
+const loadAiAttachmentPart = async (reference) => {
+  const uploadPath = normalizeUploadPath(reference.url);
+  if (!uploadPath || !uploadPath.startsWith("/uploads/")) {
+    return {
+      text: `Attachment ${reference.kind} could not be analyzed because it is not a local MIPO upload.`,
+    };
+  }
+
+  const fileName = path.basename(decodeURIComponent(uploadPath));
+  const filePath = path.join(uploadDir, fileName);
+  try {
+    const buffer = await readFile(filePath);
+    if (buffer.length > maxAiAttachmentBytes) {
+      return {
+        text: `Attachment ${fileName} is too large for AI analysis. Ask the user to upload a smaller image or PDF.`,
+      };
+    }
+
+    const mimeType = contentTypeForFileName(fileName);
+    const supported = mimeType.startsWith("image/")
+      || mimeType.startsWith("video/")
+      || mimeType === "application/pdf"
+      || mimeType === "text/plain";
+    if (!supported) {
+      return {
+        text: `Attachment ${fileName} has unsupported type ${mimeType}.`,
+      };
+    }
+
+    return {
+      inlineData: {
+        mimeType,
+        data: buffer.toString("base64"),
+      },
+    };
+  } catch {
+    return {
+      text: `Attachment ${fileName} could not be read from storage. Tell the user the upload was saved, but analysis is unavailable.`,
+    };
+  }
+};
+
+const compactPetForAi = (pet) => pet ? {
+  id: pet.id,
+  name: pet.name,
+  type: pet.type,
+  breed: pet.breed,
+  age_years: pet.age_years,
+  age_months: pet.age_months,
+  gender: pet.gender,
+  weight: pet.weight,
+  medical_conditions: pet.medical_conditions,
+  current_food: pet.current_food,
+  last_vet_visit: pet.last_vet_visit,
+  next_vet_visit: pet.next_vet_visit,
+  has_insurance: pet.has_insurance,
+} : null;
+
+const compactHealthSummaryForAi = (summary) => summary ? {
+  recent_vet_visits: (summary.vet_visits || []).slice(0, 5).map((visit) => ({
+    visit_type: visit.visit_type,
+    visit_date: visit.visit_date,
+    next_visit_date: visit.next_visit_date,
+    clinic_name: visit.clinic_name,
+    reason: visit.reason,
+    diagnosis: visit.diagnosis,
+    treatment: visit.treatment,
+    vaccines: visit.vaccines,
+    notes: safeText(visit.notes || visit.raw_summary, 500),
+  })),
+  vaccinations: (summary.vaccinations || []).slice(0, 8).map((vaccination) => ({
+    vaccine_name: vaccination.vaccine_name,
+    administered_at: vaccination.administered_at,
+    expires_at: vaccination.expires_at,
+  })),
+  documents: (summary.documents || []).slice(0, 8).map((document) => ({
+    title: document.title,
+    document_type: document.document_type,
+    uploaded_at: document.uploaded_at,
+    content_type: document.content_type,
+  })),
+  active_recovery: summary.active_recovery ? {
+    recovery_until: summary.active_recovery.recovery_until,
+    reason: summary.active_recovery.reason,
+    treatment: summary.active_recovery.treatment,
+  } : null,
+} : null;
+
+const normalizeAiProducts = (products) => (Array.isArray(products) ? products : [])
+  .map((product) => ({
+    id: String(product?.id || "").trim(),
+    name: String(product?.name || "").trim(),
+    price: product?.price === null || product?.price === undefined ? null : Number(product.price),
+    sale_price: product?.sale_price === null || product?.sale_price === undefined ? null : Number(product.sale_price),
+    image_url: product?.image_url || null,
+    category: product?.category || null,
+  }))
+  .filter((product) => product.id && product.name)
+  .slice(0, 6);
+
+const buildPetAiPrompt = ({
+  auth,
+  messages,
+  pets,
+  selectedPet,
+  selectedPetSummary,
+  attachmentReferences,
+}) => {
+  const conversation = messages
+    .map((message) => `${message.role === "assistant" ? "Assistant" : "User"}: ${message.content}`)
+    .join("\n");
+
+  const profile = auth.profile || {};
+  const userName = profile.first_name || profile.full_name || auth.user.full_name || auth.user.email;
+
+  return `You are MIPO AI, a practical pet-care assistant for an Israeli pet app.
+Reply in the user's language. Hebrew is the default when unclear.
+
+Safety:
+- You are not a veterinarian. For urgent symptoms, poisoning, breathing trouble, seizures, heavy bleeding, collapse, inability to urinate, severe pain, or rapidly worsening condition, tell the user to contact an emergency veterinarian immediately.
+- For medical images/documents, summarize and triage. Do not diagnose with certainty.
+- Do not invent facts that are not visible in the document, image, or profile.
+- If OCR/vision is uncertain, explicitly say what is uncertain.
+- If the user asks about shopping, training, grooming, boarding, insurance, documents, parks, or appointments, you may include an action tag.
+
+Available UI action tags inside content when useful:
+[ACTION:UPLOAD_DOCUMENT]
+[ACTION:UPLOAD_PHOTO]
+[ACTION:SHOW_DOCUMENT_TYPES]
+[ACTION:SHOW_STORE_CATEGORIES]
+[ACTION:SHOW_GROOMING_SERVICES]
+[ACTION:SHOW_APPOINTMENT_PICKER]
+[ACTION:SHOW_TRAINING_CATEGORIES]
+[ACTION:SHOW_PARK_OPTIONS]
+[ACTION:SHOW_BOARDING_TYPES]
+[ACTION:SHOW_INSURANCE_PLANS]
+[ACTION:SHOW_INSURANCE_CALLBACK]
+[ACTION:ESCALATE]
+
+OCR approval card:
+When a document/image clearly contains pet profile or medical fields worth saving, append one card tag:
+[CARD:OCR_APPROVAL:{"petName":"Pet name","changes":{"field label":"value"}}]
+Use only simple string values in the changes object.
+
+Return JSON only with this shape:
+{
+  "content": "assistant message text, optionally with UI tags",
+  "suggestions": ["short quick reply 1", "short quick reply 2"],
+  "products": [],
+  "botSource": "gemini"
+}
+
+User context:
+${JSON.stringify({
+    user: { id: auth.user.id, name: userName, city: profile.city || null },
+    pets: pets.map(compactPetForAi),
+    selected_pet: compactPetForAi(selectedPet),
+    selected_pet_health: compactHealthSummaryForAi(selectedPetSummary),
+    attachments: attachmentReferences,
+  }, null, 2)}
+
+Conversation:
+${conversation}`;
+};
+
+const createAiChatReply = async (auth, body) => {
+  const messages = normalizeAiMessages(body.messages);
+  if (messages.length === 0) {
+    const error = new Error("At least one chat message is required");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const userContext = body.userContext || {};
+  const pets = await listUserPets(auth.user.id, "false");
+  const selectedPetId = String(userContext.selectedPetId || "").trim();
+  const selectedPetName = String(userContext.selectedPetName || "").trim().toLowerCase();
+  const selectedPet = pets.find((pet) => pet.id === selectedPetId)
+    || pets.find((pet) => pet.name.toLowerCase() === selectedPetName)
+    || (pets.length === 1 ? pets[0] : null);
+  const selectedPetSummary = selectedPet
+    ? await getUserPetHealthSummary(auth.user.id, selectedPet.id).catch(() => null)
+    : null;
+
+  const attachmentReferences = extractAiAttachmentReferences(messages);
+  const attachmentParts = [];
+  for (const reference of attachmentReferences) {
+    attachmentParts.push({
+      text: `Analyze attached ${reference.kind} for ${reference.petName || selectedPet?.name || "the selected pet"}. Metadata: ${JSON.stringify(reference)}`,
+    });
+    attachmentParts.push(await loadAiAttachmentPart(reference));
+  }
+
+  const prompt = buildPetAiPrompt({
+    auth,
+    messages,
+    pets,
+    selectedPet,
+    selectedPetSummary,
+    attachmentReferences,
+  });
+
+  const result = await callGeminiPetJson([
+    { text: prompt },
+    ...attachmentParts,
+  ]);
+
+  const content = safeText(result.content || result.message, 12000);
+  if (!content) {
+    const error = new Error("Gemini returned no chat content");
+    error.statusCode = 502;
+    throw error;
+  }
+
+  return {
+    role: "assistant",
+    content,
+    timestamp: new Date().toISOString(),
+    suggestions: Array.isArray(result.suggestions)
+      ? result.suggestions.map((suggestion) => safeText(suggestion, 80)).filter(Boolean).slice(0, 4)
+      : [],
+    products: normalizeAiProducts(result.products),
+    botSource: result.botSource || "gemini",
   };
 };
 
@@ -3998,6 +4375,11 @@ const fileExtensionForContentType = (contentType) => {
   if (contentType === "image/png") return ".png";
   if (contentType === "image/webp") return ".webp";
   if (contentType === "image/gif") return ".gif";
+  if (contentType === "image/heic") return ".heic";
+  if (contentType === "image/heif") return ".heif";
+  if (contentType === "video/mp4") return ".mp4";
+  if (contentType === "video/quicktime") return ".mov";
+  if (contentType === "video/webm") return ".webm";
   if (contentType === "application/pdf") return ".pdf";
   if (contentType === "text/plain") return ".txt";
   if (contentType === "application/msword") return ".doc";
@@ -4059,6 +4441,24 @@ const uploadImage = async (body) => uploadDataUrlFile(body, {
   defaultExtension: ".img",
 });
 
+const userMediaContentTypes = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/heic",
+  "image/heif",
+  "video/mp4",
+  "video/quicktime",
+  "video/webm",
+]);
+
+const uploadUserMedia = async (body) => uploadDataUrlFile(body, {
+  maxBytes: maxUploadBytes,
+  allowedContentTypes: userMediaContentTypes,
+  defaultExtension: ".bin",
+});
+
 const documentContentTypes = new Set([
   "application/pdf",
   "application/octet-stream",
@@ -4066,6 +4466,8 @@ const documentContentTypes = new Set([
   "image/png",
   "image/webp",
   "image/gif",
+  "image/heic",
+  "image/heif",
   "text/plain",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -4166,6 +4568,13 @@ const handleRequest = async (request, response) => {
       }
 
       sendJson(response, 200, auth);
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/ai/chat") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      sendJson(response, 200, { message: await createAiChatReply(auth, await readBody(request, 512 * 1024)) });
       return;
     }
 
@@ -4431,7 +4840,7 @@ const handleRequest = async (request, response) => {
     if (request.method === "POST" && url.pathname === "/api/me/uploads") {
       const auth = await requireUser(request, response);
       if (!auth) return;
-      sendJson(response, 201, { upload: await uploadImage(await readBody(request, maxUploadBytes + 1024 * 1024)) });
+      sendJson(response, 201, { upload: await uploadUserMedia(await readBody(request, maxUploadBytes + 1024 * 1024)) });
       return;
     }
 

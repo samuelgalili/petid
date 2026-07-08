@@ -4,6 +4,7 @@ import {
   getMyNotifications,
   getMyPets,
   markMyNotificationRead,
+  sendAiChat,
   type MipoNotification,
 } from "@/lib/mipoApi";
 
@@ -187,13 +188,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             const NOTIF_ICON_MAP: Record<string, string> = {
               medical: "💉", insurance: "🛡️", care: "🎉", shop: "🍖",
             };
+            const getNotificationTrigger = (notification: MipoNotification): string | null => {
+              const trigger = notification.data?.trigger;
+              return typeof trigger === "string" ? trigger : null;
+            };
 
             // Build proactive messages grouped by urgency
             const urgentNotifs = unreadNotifs.filter(n => 
-              n.type === "medical" || (n.data as any)?.trigger === "restock_alert"
+              n.type === "medical" || getNotificationTrigger(n) === "restock_alert"
             );
             const otherNotifs = unreadNotifs.filter(n => 
-              n.type !== "medical" && (n.data as any)?.trigger !== "restock_alert"
+              n.type !== "medical" && getNotificationTrigger(n) !== "restock_alert"
             );
 
             const buildNotifMessage = (notifs: typeof unreadNotifs, prefix: string): string => {
@@ -213,7 +218,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                   timestamp: new Date().toISOString(),
                   suggestions: urgentNotifs.some(n => n.type === "medical") 
                     ? ["קבע תור לוטרינר", "הצג פרטים"] 
-                    : urgentNotifs.some(n => (n.data as any)?.trigger === "restock_alert")
+                    : urgentNotifs.some(n => getNotificationTrigger(n) === "restock_alert")
                       ? ["הזמן מזון חדש", "הצג פרטים"]
                       : undefined,
                 }]);
@@ -319,6 +324,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
     const userContext = {
       userName,
+      selectedPetId: selectedPet?.id || null,
       pets: petsToSend,
       selectedPetName: selectedPet?.name || null,
     };
@@ -328,11 +334,36 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       ? messagesToSend.slice(-MAX_CONTEXT_MESSAGES)
       : messagesToSend;
 
-    void contextMessages;
-    void userContext;
-    setIsTyping(false);
+    try {
+      const response = await sendAiChat({
+        messages: contextMessages.map((message) => ({
+          role: message.role,
+          content: message.content,
+        })),
+        userContext,
+      });
 
-    setMessages((prev) => [...prev, fallbackAssistantMessage]);
+      const tagSuggestions = extractSuggestions(response.content);
+      const suggestions = response.suggestions && response.suggestions.length > 0
+        ? response.suggestions
+        : tagSuggestions.length > 0
+          ? tagSuggestions
+          : undefined;
+
+      setMessages((prev) => [...prev, {
+        role: "assistant",
+        content: response.content,
+        timestamp: response.timestamp || new Date().toISOString(),
+        suggestions,
+        products: response.products,
+        botSource: response.botSource || "gemini",
+      }]);
+    } catch (error) {
+      console.error("AI chat error:", error);
+      setMessages((prev) => [...prev, fallbackAssistantMessage]);
+    } finally {
+      setIsTyping(false);
+    }
   }, [selectedPet, userPets, userName]);
 
   /** Send a message programmatically */
