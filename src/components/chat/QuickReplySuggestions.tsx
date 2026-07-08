@@ -25,7 +25,7 @@ export const QuickReplySuggestions = ({ suggestions, petAvatars, onSelect }: Qui
       <motion.div
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex gap-4 justify-center mt-3 overflow-x-auto scrollbar-hide"
+        className="flex max-w-full gap-4 justify-start sm:justify-center mt-3 overflow-x-auto overflow-y-hidden scrollbar-hide pb-1"
       >
         {suggestions.map((text, i) => {
           const pet = getPetAvatar(text);
@@ -38,7 +38,8 @@ export const QuickReplySuggestions = ({ suggestions, petAvatars, onSelect }: Qui
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => onSelect(text)}
-              className="flex flex-col items-center gap-1.5"
+              className="flex min-h-20 min-w-16 flex-shrink-0 flex-col items-center justify-center gap-1.5 rounded-2xl px-1"
+              aria-label={text}
             >
               <div className="w-14 h-14 rounded-full bg-primary p-[2px]">
                 <div className="w-full h-full rounded-full overflow-hidden bg-card">
@@ -53,7 +54,7 @@ export const QuickReplySuggestions = ({ suggestions, petAvatars, onSelect }: Qui
                   )}
                 </div>
               </div>
-              <span className="text-xs font-medium text-foreground">{text}</span>
+              <span className="max-w-16 truncate text-xs font-medium text-foreground">{text}</span>
             </motion.button>
           );
         })}
@@ -65,7 +66,7 @@ export const QuickReplySuggestions = ({ suggestions, petAvatars, onSelect }: Qui
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-wrap gap-2 mt-1.5"
+      className="mt-2 flex max-w-full flex-wrap gap-2 overflow-hidden"
     >
       {suggestions.map((text, i) => (
         <motion.button
@@ -75,9 +76,9 @@ export const QuickReplySuggestions = ({ suggestions, petAvatars, onSelect }: Qui
           transition={{ delay: i * 0.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => onSelect(text)}
-          className="px-3 py-1.5 text-xs font-medium rounded-full border border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 transition-colors"
+          className="inline-flex min-h-11 max-w-full items-center rounded-full border border-primary/30 bg-primary/5 px-4 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
         >
-          {text}
+          <span className="truncate">{text}</span>
         </motion.button>
       ))}
     </motion.div>

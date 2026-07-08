@@ -22,6 +22,7 @@ import { PetDashboardTabs } from "@/components/profile/PetDashboardTabs";
 import { HeartRain } from "@/components/profile/HeartRain";
 import { haptic } from "@/lib/haptics";
 import { getCurrentUser, getMyPets, type MipoProfile } from "@/lib/mipoApi";
+import { useGuest } from "@/contexts/GuestContext";
 
 interface Pet {
   id: string;
@@ -37,6 +38,7 @@ interface Pet {
 const Profile = () => {
   const navigate = useNavigate();
   const { switchPet: contextSwitchPet, activePet: globalActivePet } = usePetPreference();
+  const { isGuest } = useGuest();
 
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<MipoProfile | null>(null);
@@ -93,7 +95,24 @@ const Profile = () => {
     try {
       setLoading(true);
       const auth = await getCurrentUser();
-      if (!auth?.user) { navigate('/auth'); return; }
+      if (!auth?.user) {
+        if (isGuest) {
+          setProfile({
+            id: "guest",
+            email: "",
+            full_name: "אורח",
+            phone: null,
+            avatar_url: null,
+          });
+          setPets([]);
+          setSelectedPetId(null);
+          setIsExpanded(false);
+          return;
+        }
+
+        navigate('/auth', { replace: true });
+        return;
+      }
 
       setProfile(auth.profile || {
         id: auth.user.id,
@@ -161,7 +180,7 @@ const Profile = () => {
         >
           <button
             onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/')}
-            className="p-2 -mr-2"
+            className="-mr-2 flex h-11 w-11 items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
             aria-label="חזרה"
           >
             <ChevronRight className="w-5 h-5 text-foreground" strokeWidth={1.5} />
@@ -180,7 +199,7 @@ const Profile = () => {
 
           <button
             onClick={() => navigate('/messages')}
-            className="p-2 relative"
+            className="relative flex h-11 w-11 items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
             aria-label="הודעות"
           >
             <MessageCircle className="w-5 h-5 text-foreground" strokeWidth={1.5} />
@@ -387,44 +406,54 @@ const Profile = () => {
 	        />
 
         {/* Service Bottom Sheets */}
-        <InsuranceSheet isOpen={activeSheet === 'insurance'} onClose={handleCloseSheet} pet={selectedPet} />
-        <TrainingSheet isOpen={activeSheet === 'training'} onClose={handleCloseSheet} pet={selectedPet} />
-        <GroomingSheet isOpen={activeSheet === 'grooming'} onClose={handleCloseSheet} pet={selectedPet} />
-        <FoodSheet isOpen={activeSheet === 'food'} onClose={handleCloseSheet} pet={selectedPet} />
-        <ToysSheet isOpen={activeSheet === 'toys'} onClose={handleCloseSheet} pet={selectedPet} />
-        <BoardingSheet isOpen={activeSheet === 'boarding'} onClose={handleCloseSheet} pet={selectedPet} />
-        <PetVaultDrawer isOpen={activeSheet === 'documents'} onClose={handleCloseSheet} pet={selectedPet} />
-        <DogWalkerSheet isOpen={activeSheet === 'dog_walker'} onClose={handleCloseSheet} pet={selectedPet} />
-        <ProductsSheet isOpen={activeSheet === 'products'} onClose={handleCloseSheet} pet={selectedPet} />
-        <MemorialSheet isOpen={activeSheet === 'memorial'} onClose={handleCloseSheet} pet={selectedPet} />
+        {selectedPet && (
+          <>
+            <InsuranceSheet isOpen={activeSheet === 'insurance'} onClose={handleCloseSheet} pet={selectedPet} />
+            <TrainingSheet isOpen={activeSheet === 'training'} onClose={handleCloseSheet} pet={selectedPet} />
+            <GroomingSheet isOpen={activeSheet === 'grooming'} onClose={handleCloseSheet} pet={selectedPet} />
+            <FoodSheet isOpen={activeSheet === 'food'} onClose={handleCloseSheet} pet={selectedPet} />
+            <ToysSheet isOpen={activeSheet === 'toys'} onClose={handleCloseSheet} pet={selectedPet} />
+            <BoardingSheet isOpen={activeSheet === 'boarding'} onClose={handleCloseSheet} pet={selectedPet} />
+            <PetVaultDrawer isOpen={activeSheet === 'documents'} onClose={handleCloseSheet} pet={selectedPet} />
+            <DogWalkerSheet isOpen={activeSheet === 'dog_walker'} onClose={handleCloseSheet} pet={selectedPet} />
+            <ProductsSheet isOpen={activeSheet === 'products'} onClose={handleCloseSheet} pet={selectedPet} />
+            <MemorialSheet isOpen={activeSheet === 'memorial'} onClose={handleCloseSheet} pet={selectedPet} />
+          </>
+        )}
         <ComingSoonSheet isOpen={activeSheet === 'calendar'} onClose={handleCloseSheet} title="יומן" />
         <ComingSoonSheet isOpen={activeSheet === 'adoption'} onClose={handleCloseSheet} title="למסירה" />
         <ComingSoonSheet isOpen={activeSheet === 'life_story'} onClose={handleCloseSheet} title="סיפור חיים" />
         <ComingSoonSheet isOpen={activeSheet === 'breed_info'} onClose={handleCloseSheet} title="מידע על הגזע" />
 
         {/* Trait Sheets */}
-        <EnergySheet isOpen={activeSheet === 'energy'} onClose={handleCloseSheet} pet={selectedPet} />
-        <GroomingProductsSheet isOpen={activeSheet === 'grooming_products'} onClose={handleCloseSheet} pet={selectedPet} />
-        <FeedingSheet isOpen={activeSheet === 'feeding'} onClose={handleCloseSheet} pet={selectedPet} />
+        {selectedPet && (
+          <>
+            <EnergySheet isOpen={activeSheet === 'energy'} onClose={handleCloseSheet} pet={selectedPet} />
+            <GroomingProductsSheet isOpen={activeSheet === 'grooming_products'} onClose={handleCloseSheet} pet={selectedPet} />
+            <FeedingSheet isOpen={activeSheet === 'feeding'} onClose={handleCloseSheet} pet={selectedPet} />
+          </>
+        )}
 
         {/* Smart Recommendation */}
-        {smartRecCategory && (
+        {smartRecCategory && selectedPet && (
           <SmartRecommendationSheet
             isOpen={!!smartRecCategory}
             onClose={() => setSmartRecCategory(null)}
-            petId={selectedPet!.id}
-            petName={selectedPet!.name}
+            petId={selectedPet.id}
+            petName={selectedPet.name}
             category={smartRecCategory}
             title=""
           />
         )}
 
         {/* Health Score Breakdown */}
-        <HealthScoreBreakdown
-          pet={selectedPet}
-          isOpen={healthBreakdownOpen}
-          onClose={() => setHealthBreakdownOpen(false)}
-        />
+        {selectedPet && (
+          <HealthScoreBreakdown
+            pet={selectedPet}
+            isOpen={healthBreakdownOpen}
+            onClose={() => setHealthBreakdownOpen(false)}
+          />
+        )}
 
         <AnimatePresence>
           {showPetShop && selectedPet && <PetShopView pet={selectedPet} onBack={() => setShowPetShop(false)} />}

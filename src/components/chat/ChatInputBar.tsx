@@ -228,12 +228,13 @@ const ChatInputBar = ({
 
       {/* Gemini-style Input Bar */}
       <div className="px-3 py-3 bg-background border-t border-border/40">
-        <div className="max-w-2xl mx-auto flex items-end gap-2">
+        <div className="mx-auto flex max-w-2xl items-end gap-2 overflow-hidden">
           {/* Emoji / Plus toggle */}
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => setShowPills(!showPills)}
-            className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground transition-colors"
+            className="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground transition-colors"
+            aria-label={showPills ? "סגור פעולות" : "פתח פעולות"}
           >
             <motion.div animate={{ rotate: showPills ? 45 : 0 }} transition={{ type: "spring", stiffness: 300 }}>
               <Plus className="w-5 h-5" strokeWidth={2} />
@@ -242,7 +243,7 @@ const ChatInputBar = ({
 
           {/* Input field */}
           <div className={cn(
-            "flex-1 flex items-end bg-card rounded-3xl border transition-all duration-200 px-3 py-1",
+            "flex min-w-0 flex-1 items-end rounded-3xl border bg-card px-2 py-1 transition-all duration-200 sm:px-3",
             isFocused ? "border-primary/25 shadow-sm" : "border-border/60"
           )}>
             <textarea
@@ -259,7 +260,7 @@ const ChatInputBar = ({
               onBlur={() => setIsFocused(false)}
               placeholder={placeholder}
               rows={1}
-              className="flex-1 bg-transparent border-0 focus:outline-none focus:ring-0 text-[15px] placeholder:text-muted-foreground/60 resize-none py-1.5 max-h-[120px] leading-relaxed"
+              className="min-h-11 min-w-0 flex-1 resize-none border-0 bg-transparent py-2.5 text-[15px] leading-relaxed placeholder:text-muted-foreground/60 focus:outline-none focus:ring-0"
               disabled={isLoading || isRecording}
               dir="rtl"
             />
@@ -274,7 +275,8 @@ const ChatInputBar = ({
                   exit={{ opacity: 0, scale: 0 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={handleImageClick}
-                  className="w-8 h-8 flex items-center justify-center text-muted-foreground/60 hover:text-muted-foreground rounded-full transition-colors mb-0.5"
+                  className="w-11 h-11 flex items-center justify-center text-muted-foreground/60 hover:text-muted-foreground rounded-full transition-colors"
+                  aria-label="הוסף תמונה"
                 >
                   <Camera className="w-[18px] h-[18px]" />
                 </motion.button>
@@ -293,7 +295,8 @@ const ChatInputBar = ({
                 whileTap={{ scale: 0.9 }}
                 onClick={onSend}
                 disabled={isLoading}
-                className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-primary rounded-full text-primary-foreground disabled:opacity-50 shadow-sm"
+                className="w-11 h-11 flex-shrink-0 flex items-center justify-center bg-primary rounded-full text-primary-foreground disabled:opacity-50 shadow-sm"
+                aria-label="שלח הודעה"
               >
                 <Send className="w-4 h-4" />
               </motion.button>
@@ -306,11 +309,12 @@ const ChatInputBar = ({
                 whileTap={{ scale: 0.9 }}
                 onClick={handleMicPress}
                 className={cn(
-                  "w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full transition-colors",
+                  "w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full transition-colors",
                   isRecording 
                     ? "bg-destructive text-destructive-foreground" 
                     : "bg-primary text-primary-foreground"
                 )}
+                aria-label={isRecording ? "עצור הקלטה" : "הקלט הודעה"}
               >
                 <Mic className="w-4.5 h-4.5" />
               </motion.button>
@@ -339,7 +343,7 @@ const ChatInputBar = ({
                       onChange(suggestion);
                       inputRef.current?.focus();
                     }}
-                    className="flex-shrink-0 px-3 py-1.5 bg-card rounded-full text-xs text-muted-foreground hover:text-foreground transition-colors border border-border/60 shadow-sm"
+                    className="inline-flex min-h-11 flex-shrink-0 items-center rounded-full border border-border/60 bg-card px-4 py-2 text-xs text-muted-foreground shadow-sm transition-colors hover:text-foreground"
                   >
                     {suggestion}
                   </motion.button>

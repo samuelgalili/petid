@@ -504,7 +504,8 @@ const AddPet = () => {
               <button
                 type="button"
                 onClick={prevStep}
-                className="p-2 rounded-full hover:bg-mipo-soft transition-colors"
+                className="flex h-11 w-11 items-center justify-center rounded-full hover:bg-mipo-soft transition-colors"
+                aria-label="חזרה"
               >
                 <ArrowRight className="w-5 h-5 text-mipo-ink" />
               </button>
@@ -512,13 +513,14 @@ const AddPet = () => {
               <button
                 type="button"
                 onClick={() => navigate('/')}
-                className="p-2 rounded-full hover:bg-mipo-soft transition-colors"
+                className="flex h-11 w-11 items-center justify-center rounded-full hover:bg-mipo-soft transition-colors"
+                aria-label="חזרה"
               >
                 <ArrowRight className="w-5 h-5 text-mipo-ink" />
               </button>
             )}
             <PetidLogo variant="horizontal" showAnimals={false} size="sm" />
-            <div className="w-9" />
+            <div className="w-11" />
           </div>
           
           {/* Progress Bar */}

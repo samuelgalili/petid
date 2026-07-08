@@ -355,7 +355,7 @@ const Shop = () => {
               <motion.button
                 whileTap={{ scale: 0.9 }}
                 onClick={() => navigate("/feed")}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
+                className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
                 aria-label="חזרה לפיד"
               >
                 <ChevronRight className="w-5 h-5 text-foreground" />
@@ -367,7 +367,8 @@ const Shop = () => {
               <motion.button
                 whileTap={{ scale: 0.9 }}
                 onClick={() => navigate('/messages')}
-                className="p-2.5 rounded-xl hover:bg-muted/80 transition-colors"
+                className="flex h-11 w-11 items-center justify-center rounded-xl hover:bg-muted/80 transition-colors"
+                aria-label="הודעות"
               >
                 <MessageCircle className="w-5 h-5 text-foreground" strokeWidth={1.5} />
               </motion.button>
@@ -375,7 +376,8 @@ const Shop = () => {
                 ref={cartIconRef}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => navigate('/cart')}
-                className={`p-2.5 relative rounded-xl bg-muted hover:bg-muted/80 transition-colors ${cartShake ? 'animate-[wiggle_0.3s_ease-in-out]' : ''}`}
+                className={`relative flex h-11 w-11 items-center justify-center rounded-xl bg-muted hover:bg-muted/80 transition-colors ${cartShake ? 'animate-[wiggle_0.3s_ease-in-out]' : ''}`}
+                aria-label="עגלת קניות"
                 onAnimationComplete={() => {
                   if (cartIconRef.current) {
                     const rect = cartIconRef.current.getBoundingClientRect();
@@ -403,7 +405,7 @@ const Shop = () => {
           
           {/* Search Bar */}
           <div className="relative">
-            <div className={`flex items-center gap-3 bg-muted rounded-xl px-4 py-2.5 transition-all ${
+            <div className={`flex min-h-12 items-center gap-3 bg-muted rounded-xl px-4 py-2 transition-all ${
               isSearchFocused ? 'ring-2 ring-primary/20' : ''
             }`}>
               <Search className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
@@ -424,10 +426,10 @@ const Shop = () => {
                   setTimeout(() => setShowSearchResults(false), 200);
                 }}
                 placeholder="חפש מוצרים..."
-                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+                className="h-11 flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
               />
               {searchQuery && (
-                <button onClick={clearSearch} className="p-1 rounded-full hover:bg-background transition-colors">
+                <button onClick={clearSearch} className="flex h-11 w-11 items-center justify-center rounded-full hover:bg-background transition-colors" aria-label="נקה חיפוש">
                   <X className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
                 </button>
               )}
@@ -494,7 +496,7 @@ const Shop = () => {
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.label)}
-                className={`px-4 py-2 rounded-2xl text-sm font-medium whitespace-nowrap transition-all ${
+                className={`min-h-11 px-4 py-2.5 rounded-2xl text-sm font-medium whitespace-nowrap transition-all ${
                   selectedCategory === category.label
                     ? "bg-primary text-primary-foreground shadow-md"
                     : "bg-card border border-border/30 text-foreground hover:bg-muted/50 hover:border-primary/30"
@@ -537,7 +539,7 @@ const Shop = () => {
                   {/* Category Header */}
                   <div className="flex items-center justify-between px-4 py-3">
                     <h2 className="text-base font-bold text-foreground">{category}</h2>
-                    <button className="text-sm text-primary font-medium">הכל ←</button>
+                    <button className="min-h-11 px-3 text-sm text-primary font-medium">הכל ←</button>
                   </div>
                   
                   {/* Horizontal Carousel - Compact for quick shopping */}
@@ -571,10 +573,11 @@ const Shop = () => {
                             {/* Wishlist button - smaller */}
                             <button
                               onClick={(e) => toggleFavorite(product.id, e)}
-                              className="absolute top-1 right-1 bg-white/80 backdrop-blur-sm rounded-full p-1 shadow-sm"
+                              className="absolute top-1 right-1 flex h-11 w-11 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm shadow-sm"
+                              aria-label={favorites.includes(product.id) ? "הסר ממועדפים" : "הוסף למועדפים"}
                             >
                               <Heart 
-                                className={`w-3 h-3 ${favorites.includes(product.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`} 
+                                className={`w-4 h-4 ${favorites.includes(product.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`}
                                 strokeWidth={2} 
                               />
                             </button>

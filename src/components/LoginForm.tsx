@@ -102,7 +102,7 @@ export const LoginForm = () => {
               setFieldErrors({ ...fieldErrors, email: undefined });
             }}
             disabled={loading}
-            className={`h-10 bg-muted/50 border border-border rounded-lg text-sm pr-10 text-right transition-colors ${
+            className={`h-11 bg-muted/50 border border-border rounded-lg text-sm pr-10 text-right transition-colors ${
               fieldErrors.email ? "border-destructive" : ""
             }`}
             autoComplete="email"
@@ -136,7 +136,7 @@ export const LoginForm = () => {
               setFieldErrors({ ...fieldErrors, password: undefined });
             }}
             disabled={loading}
-            className={`h-10 bg-muted/50 border border-border rounded-lg text-sm pr-10 pl-10 text-right transition-colors ${
+            className={`h-11 bg-muted/50 border border-border rounded-lg text-sm pr-10 pl-14 text-right transition-colors ${
               fieldErrors.password ? "border-destructive" : ""
             }`}
             autoComplete="current-password"
@@ -145,8 +145,9 @@ export const LoginForm = () => {
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            className="absolute left-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:text-foreground transition-colors"
             tabIndex={-1}
+            aria-label={showPassword ? "הסתר סיסמה" : "הצג סיסמה"}
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
@@ -169,7 +170,7 @@ export const LoginForm = () => {
       <div className="text-left">
         <Link
           to="/forgot-password"
-          className="text-xs text-primary hover:text-primary/80 transition-colors"
+          className="inline-flex min-h-11 items-center text-xs text-primary transition-colors hover:text-primary/80"
         >
           שכחת סיסמה?
         </Link>
@@ -181,7 +182,7 @@ export const LoginForm = () => {
         variant="instagram"
         size="default"
         disabled={loading || !formData.email || !formData.password}
-        className="w-full h-10"
+        className="w-full h-11"
       >
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "התחברות"}
       </Button>

@@ -106,7 +106,7 @@ const Signup = () => {
       >
         <p className="text-sm text-foreground">
           יש לך חשבון?{" "}
-          <Link to="/auth" className="text-mipo-violet font-semibold hover:text-mipo-violet/80 transition-colors">
+          <Link to="/auth" className="inline-flex min-h-11 min-w-11 items-center justify-center text-mipo-violet font-semibold transition-colors hover:text-mipo-violet/80">
             התחברות
           </Link>
         </p>
@@ -117,15 +117,15 @@ const Signup = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4, duration: 0.3 }}
-        className="mt-8 text-xs text-muted-foreground text-center space-x-4 rtl:space-x-reverse"
+        className="mt-8 flex flex-wrap items-center justify-center gap-x-3 text-center text-xs text-muted-foreground"
       >
-        <Link to="/terms" className="hover:text-foreground transition-colors">תנאי שימוש</Link>
+        <Link to="/terms" className="inline-flex min-h-11 items-center transition-colors hover:text-foreground">תנאי שימוש</Link>
         <span className="text-border">•</span>
-        <Link to="/privacy-policy" className="hover:text-foreground transition-colors">פרטיות</Link>
+        <Link to="/privacy-policy" className="inline-flex min-h-11 items-center transition-colors hover:text-foreground">פרטיות</Link>
         <span className="text-border">•</span>
-        <Link to="/support" className="hover:text-foreground transition-colors">עזרה</Link>
+        <Link to="/support" className="inline-flex min-h-11 items-center transition-colors hover:text-foreground">עזרה</Link>
         <span className="text-border">•</span>
-        <span>© 2025 MIPO</span>
+        <span className="inline-flex min-h-11 items-center">© 2025 MIPO</span>
       </motion.footer>
     </div>
   );

@@ -1,16 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { format, differenceInYears } from "date-fns";
-import { he } from "date-fns/locale";
 import { CalendarIcon, Eye, EyeOff, Loader2, Lock, Mail, User } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { cn } from "@/lib/utils";
 
 const validateAge = (birthdate: Date): boolean => differenceInYears(new Date(), birthdate) >= 13;
 
@@ -50,6 +46,8 @@ export const SignupForm = () => {
   const { toast } = useToast();
   const { signUp } = useAuth();
   const navigate = useNavigate();
+  const todayInputValue = format(new Date(), "yyyy-MM-dd");
+  const birthdateInputValue = birthdate ? format(birthdate, "yyyy-MM-dd") : "";
 
   const validateForm = (): boolean => {
     const result = signupSchema.safeParse({ ...formData, birthdate });
@@ -123,7 +121,7 @@ export const SignupForm = () => {
               setFieldErrors({ ...fieldErrors, fullName: undefined });
             }}
             disabled={loading}
-            className={`h-10 bg-muted/50 border border-border rounded-lg text-sm pr-10 text-right ${
+            className={`h-11 bg-muted/50 border border-border rounded-lg text-sm pr-10 text-right ${
               fieldErrors.fullName ? "border-destructive" : ""
             }`}
             autoComplete="name"
@@ -134,40 +132,26 @@ export const SignupForm = () => {
       </div>
 
       <div>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={loading}
-              className={cn(
-                "w-full h-10 justify-start text-right bg-muted/50 border border-border rounded-lg text-sm hover:bg-muted",
-                !birthdate && "text-muted-foreground",
-                fieldErrors.birthdate && "border-destructive"
-              )}
-            >
-              <CalendarIcon className="ml-2 h-4 w-4" />
-              {birthdate ? format(birthdate, "dd/MM/yyyy") : "תאריך לידה"}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={birthdate}
-              onSelect={(date) => {
-                setBirthdate(date);
-                setFieldErrors({ ...fieldErrors, birthdate: undefined });
-              }}
-              disabled={(date) => date > new Date()}
-              initialFocus
-              className={cn("p-3 pointer-events-auto")}
-              captionLayout="dropdown-buttons"
-              fromYear={1920}
-              toYear={new Date().getFullYear()}
-              locale={he}
-            />
-          </PopoverContent>
-        </Popover>
+        <div className="relative">
+          <CalendarIcon className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="date"
+            aria-label="תאריך לידה"
+            value={birthdateInputValue}
+            min="1920-01-01"
+            max={todayInputValue}
+            onChange={(e) => {
+              const nextDate = e.target.value ? new Date(`${e.target.value}T00:00:00`) : undefined;
+              setBirthdate(nextDate);
+              setFieldErrors({ ...fieldErrors, birthdate: undefined });
+            }}
+            disabled={loading}
+            className={`h-11 bg-muted/50 border border-border rounded-lg text-sm pr-10 text-right ${
+              fieldErrors.birthdate ? "border-destructive" : ""
+            }`}
+            dir="rtl"
+          />
+        </div>
         {fieldErrors.birthdate && <p className="text-xs text-destructive mt-1 text-right">{fieldErrors.birthdate}</p>}
       </div>
 
@@ -183,7 +167,7 @@ export const SignupForm = () => {
               setFieldErrors({ ...fieldErrors, email: undefined });
             }}
             disabled={loading}
-            className={`h-10 bg-muted/50 border border-border rounded-lg text-sm pr-10 text-right ${
+            className={`h-11 bg-muted/50 border border-border rounded-lg text-sm pr-10 text-right ${
               fieldErrors.email ? "border-destructive" : ""
             }`}
             autoComplete="email"
@@ -205,7 +189,7 @@ export const SignupForm = () => {
               setFieldErrors({ ...fieldErrors, password: undefined });
             }}
             disabled={loading}
-            className={`h-10 bg-muted/50 border border-border rounded-lg text-sm pr-10 pl-10 text-right ${
+            className={`h-11 bg-muted/50 border border-border rounded-lg text-sm pr-10 pl-14 text-right ${
               fieldErrors.password ? "border-destructive" : ""
             }`}
             autoComplete="new-password"
@@ -214,8 +198,9 @@ export const SignupForm = () => {
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            className="absolute left-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
             tabIndex={-1}
+            aria-label={showPassword ? "הסתר סיסמה" : "הצג סיסמה"}
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
@@ -235,7 +220,7 @@ export const SignupForm = () => {
               setFieldErrors({ ...fieldErrors, confirmPassword: undefined });
             }}
             disabled={loading}
-            className={`h-10 bg-muted/50 border border-border rounded-lg text-sm pr-10 text-right ${
+            className={`h-11 bg-muted/50 border border-border rounded-lg text-sm pr-10 text-right ${
               fieldErrors.confirmPassword ? "border-destructive" : ""
             }`}
             autoComplete="new-password"
@@ -250,16 +235,16 @@ export const SignupForm = () => {
         variant="instagram"
         size="default"
         disabled={loading || !isFormValid}
-        className="w-full h-10"
+        className="w-full h-11"
       >
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "הרשמה"}
       </Button>
 
       <p className="text-xs text-muted-foreground text-center leading-relaxed">
         בהרשמה, אתה מסכים ל{" "}
-        <a href="/terms" className="text-primary">תנאי שימוש</a>,{" "}
-        <a href="/privacy-policy" className="text-primary">מדיניות פרטיות</a> ו{" "}
-        <a href="/privacy-policy" className="text-primary">מדיניות עוגיות</a>.
+        <a href="/terms" className="inline-flex min-h-11 items-center text-primary">תנאי שימוש</a>,{" "}
+        <a href="/privacy-policy" className="inline-flex min-h-11 items-center text-primary">מדיניות פרטיות</a> ו{" "}
+        <a href="/privacy-policy" className="inline-flex min-h-11 items-center text-primary">מדיניות עוגיות</a>.
       </p>
     </form>
   );

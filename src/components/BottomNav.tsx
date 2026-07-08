@@ -438,13 +438,13 @@ function NavButton({
   return (
     <button
       onClick={onClick}
-      className="flex flex-col items-center justify-center flex-1 py-1.5 active:opacity-60 transition-opacity"
+      className="flex min-h-11 flex-1 flex-col items-center justify-center py-1.5 transition-opacity active:opacity-60"
       aria-label={label}
     >
       <motion.div
         whileTap={{ scale: 0.85 }}
         transition={{ type: "spring", stiffness: 500, damping: 20 }}
-        className="relative flex flex-col items-center gap-0.5"
+        className="relative flex min-h-11 min-w-11 flex-col items-center justify-center gap-0.5"
       >
         {active && (
           <motion.div

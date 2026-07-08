@@ -128,6 +128,11 @@ const ChatContent = () => {
   // Expert sphere selection removed — handled via NLP
 
   const scrollToBottom = () => {
+    const container = messagesContainerRef.current;
+    if (container) {
+      container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+      return;
+    }
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
@@ -330,17 +335,17 @@ const ChatContent = () => {
     message.showStorePicker || message.showAdoptionTraits || message.showAdoptionRequirements;
 
   return (
-    <div className="min-h-screen bg-background pb-[calc(5rem+env(safe-area-inset-bottom,0px))]" dir="rtl" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+    <div className="min-h-screen w-full overflow-x-hidden bg-background pb-[calc(5rem+env(safe-area-inset-bottom,0px))]" dir="rtl" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
       <SEO title="צ'אט AI" description="שאלו את העוזר החכם שלנו כל שאלה על חיות מחמד - אילוף, תזונה, בריאות" url="/chat" />
       
       {/* ═══ Gemini-style minimal header ═══ */}
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/40">
         <div className="flex items-center justify-between px-4 py-3">
-	          <button
-	            onClick={handleBack}
-	            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted/60 transition-colors"
-	            aria-label="חזרה"
-	          >
+          <button
+            onClick={handleBack}
+            className="flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-muted/60"
+            aria-label="חזרה"
+          >
             <ChevronRight className="w-5 h-5 text-foreground" />
           </button>
           
@@ -351,19 +356,19 @@ const ChatContent = () => {
             <span className="text-[15px] font-semibold text-foreground">Petid AI</span>
           </div>
           
-          <div className="w-8" />
+          <div className="w-11" />
         </div>
       </div>
 
       {/* Scientist Tab — ChatGPT/Gemini style */}
       <div className="flex flex-col h-[calc(100dvh-120px-env(safe-area-inset-bottom,0px))]">
         {/* Messages Container — clean white/dark bg */}
-        <div 
+        <div
           ref={messagesContainerRef} 
           onScroll={handleMessagesScroll} 
           className="flex-1 overflow-y-auto overflow-x-hidden"
         >
-          <div className="max-w-2xl mx-auto">
+          <div className="mx-auto max-w-2xl overflow-x-hidden">
           <AnimatePresence>
             {messages.map((message, index) => {
               const isUser = message.role === "user";
@@ -374,7 +379,7 @@ const ChatContent = () => {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2, ease: "easeOut" }}
-                className={`py-5 px-4 ${!isUser ? "bg-muted/30" : ""}`}
+                className={`max-w-full overflow-hidden px-3 py-5 sm:px-4 ${!isUser ? "bg-muted/30" : ""}`}
               >
                 <div className="flex gap-3 items-start">
                   {/* Icon */}

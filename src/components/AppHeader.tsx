@@ -94,7 +94,7 @@ export const AppHeader = ({
       <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
       <div
-        className="fixed top-0 left-0 right-0 h-11 z-40 flex items-center justify-between px-4"
+        className="fixed top-0 left-0 right-0 h-12 z-40 flex items-center justify-between px-3"
         style={{
           backdropFilter: "blur(15px)",
           WebkitBackdropFilter: "blur(15px)",
@@ -106,13 +106,13 @@ export const AppHeader = ({
         dir={isRtl ? "rtl" : "ltr"}
       >
         {/* Left (RTL: Right) — Navigation */}
-        <div className="flex items-center gap-1 w-10">
+        <div className="flex items-center gap-1 w-11">
           {shouldShowBack && (
             <Button
               variant="ghost"
               size="icon"
               onClick={handleBack}
-              className="rounded-full h-8 w-8"
+              className="rounded-full h-11 w-11"
               aria-label="חזור"
             >
               <ArrowRight
@@ -127,7 +127,7 @@ export const AppHeader = ({
               variant="ghost"
               size="icon"
               onClick={() => setIsMenuOpen(true)}
-              className="rounded-full h-8 w-8"
+              className="rounded-full h-11 w-11"
               aria-label="תפריט"
             >
               <Menu
@@ -163,13 +163,13 @@ export const AppHeader = ({
         </div>
 
         {/* Right (RTL: Left) — Role Action */}
-        <div className="flex items-center gap-1 w-10 justify-end">
+        <div className="flex items-center gap-1 w-11 justify-end">
           {extraAction ? (
             <Button
               variant="ghost"
               size="icon"
               onClick={extraAction.onClick}
-              className="rounded-full h-8 w-8"
+              className="rounded-full h-11 w-11"
               aria-label="פעולה"
             >
               <extraAction.icon
@@ -183,7 +183,7 @@ export const AppHeader = ({
               variant="ghost"
               size="icon"
               onClick={roleAction.onClick}
-              className="rounded-full h-8 w-8 relative"
+              className="rounded-full h-11 w-11 relative"
               aria-label={roleAction.label}
             >
               <roleAction.icon
@@ -210,7 +210,7 @@ export const AppHeader = ({
       </div>
 
       {/* Spacer */}
-      <div className="h-11" />
+      <div className="h-12" />
     </>
   );
 };

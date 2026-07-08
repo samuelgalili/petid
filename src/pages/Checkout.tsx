@@ -83,6 +83,12 @@ const Checkout = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (!ageCheckLoading && !isUnder18 && items.length === 0) {
+      navigate("/cart", { replace: true });
+    }
+  }, [ageCheckLoading, isUnder18, items.length, navigate]);
+
   const subtotal = getSubtotal();
   const baseShipping = subtotal >= 199 ? 0 : 25;
   
@@ -184,8 +190,15 @@ const Checkout = () => {
   }
 
   if (items.length === 0) {
-    navigate("/cart");
-    return null;
+    return (
+      <div className="min-h-screen pb-20 bg-background" dir="rtl">
+        <AppHeader title="תשלום" showBackButton={true} />
+        <div className="flex min-h-[60vh] flex-col items-center justify-center px-6 text-center">
+          <Loader2 className="mb-4 h-8 w-8 animate-spin text-accent" />
+          <p className="text-sm font-medium text-muted-foreground">מעבירים אותך לעגלה...</p>
+        </div>
+      </div>
+    );
   }
 
   const validateShipping = () => {

@@ -53,7 +53,7 @@ export const ChatActionButton = ({ actionTag, onAction }: ChatActionButtonProps)
       animate={{ opacity: 1, y: 0 }}
       whileTap={{ scale: 0.97 }}
       onClick={handleClick}
-      className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors ${config.color} hover:opacity-80`}
+      className={`inline-flex min-h-11 items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors ${config.color} hover:opacity-80`}
     >
       <Icon className="w-4 h-4" />
       {config.label}

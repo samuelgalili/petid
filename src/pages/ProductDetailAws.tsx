@@ -89,11 +89,11 @@ const ProductDetailAws = () => {
 
       <header className="sticky top-0 z-20 bg-background/90 backdrop-blur border-b border-border/50">
         <div className="mx-auto flex max-w-5xl items-center justify-between p-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/shop")} className="gap-2">
+          <Button variant="ghost" size="sm" onClick={() => navigate("/shop")} className="min-h-11 gap-2 px-4">
             <ArrowRight className="h-4 w-4" />
             חזרה
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => navigate("/cart")} aria-label="עגלת קניות">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/cart")} aria-label="עגלת קניות" className="h-11 w-11">
             <ShoppingCart className="h-5 w-5" />
           </Button>
         </div>
