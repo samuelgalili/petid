@@ -100,7 +100,7 @@ jobs:
           compose_file="$MIPO_REMOTE_PATH/deploy/aws/docker-compose.yml"
 
           docker compose -f "$compose_file" build mipo-api
-          docker compose -f "$compose_file" run --rm --no-deps mipo-api node src/applyMigrations.js
+          docker compose -f "$compose_file" run --rm --no-deps -T mipo-api node src/applyMigrations.js </dev/null
           docker compose -f "$compose_file" up -d --force-recreate --no-deps mipo-api
           docker compose -f "$compose_file" up -d --force-recreate --no-deps caddy
           docker compose -f "$compose_file" ps
