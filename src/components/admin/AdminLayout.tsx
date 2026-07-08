@@ -154,7 +154,7 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
           </div>
           {!collapsed && (
             <div>
-              <span className="font-bold text-sm text-foreground">PetID</span>
+              <span className="font-bold text-sm text-foreground">MIPO</span>
               <span className="text-[9px] text-muted-foreground block leading-none mt-0.5">ניהול מערכת</span>
             </div>
           )}

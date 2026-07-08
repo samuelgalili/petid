@@ -1,6 +1,6 @@
 /**
  * CentralBrainContext — Multi-Agent Mesh Central Brain Hub.
- * Pre-loads ALL pet data (PetID, Breed, Chip Number, NRC, documents, medical)
+ * Pre-loads ALL pet data (MIPO, Breed, Chip Number, NRC, documents, medical)
  * so every agent (Danny/Sarah/Roni/etc.) queries the Brain before responding.
  * 
  * Exposes brainSnapshot for the admin Visual Debugger overlay.

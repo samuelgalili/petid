@@ -20,7 +20,7 @@ export const ChatHeaderMenu = ({ userName, onBlock, onReport, onDelete }: ChatHe
       color: "text-destructive",
       action: () => {
         onReport?.();
-        toast.success("הדיווח נשלח. צוות PetID יבדוק את הפנייה.");
+        toast.success("הדיווח נשלח. צוות MIPO יבדוק את הפנייה.");
         setOpen(false);
       },
     },

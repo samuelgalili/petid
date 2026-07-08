@@ -54,7 +54,7 @@ export const DashboardSidebar = () => {
           <PawPrint className="w-5 h-5 text-white" />
         </div>
         <div>
-          <span className="font-bold text-lg">PetID</span>
+          <span className="font-bold text-lg">MIPO</span>
           <span className="text-sky-400 text-lg font-light"> Admin</span>
         </div>
       </div>

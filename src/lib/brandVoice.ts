@@ -1,5 +1,5 @@
 /**
- * PetID Brand Voice Guide
+ * MIPO Brand Voice Guide
  * ספר שפה מותגית - Tone of Voice
  * 
  * מהות: חם, אנושי, אחראי, מרגיע, לא דוחף, לא מוכר בכוח

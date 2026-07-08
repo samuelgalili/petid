@@ -27,7 +27,7 @@ const Privacy = () => {
       {/* Content */}
       <div className="max-w-2xl mx-auto px-4 py-6">
         <div className="prose prose-sm max-w-none text-foreground">
-          <h2 className="text-lg font-bold mb-4 font-jakarta">מדיניות הפרטיות של Petid</h2>
+          <h2 className="text-lg font-bold mb-4 font-jakarta">מדיניות הפרטיות של MIPO</h2>
           
           <p className="text-muted-foreground mb-4 font-jakarta leading-relaxed">
             פרטיותכם חשובה לנו. מדיניות זו מסבירה כיצד אנו אוספים, משתמשים ומגנים על המידע שלכם.
@@ -56,7 +56,7 @@ const Privacy = () => {
 
           <h3 className="text-base font-bold mt-6 mb-3 font-jakarta">יצירת קשר</h3>
           <p className="text-muted-foreground font-jakarta leading-relaxed">
-            לשאלות בנושא פרטיות: privacy@petid.co.il
+            לשאלות בנושא פרטיות: privacy@mipo.pet
           </p>
 
           <p className="text-xs text-muted-foreground/60 mt-8 font-jakarta">

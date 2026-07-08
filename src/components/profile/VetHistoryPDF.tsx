@@ -65,7 +65,7 @@ export const VetHistoryPDF = ({ petId, petName, petBreed, petType }: VetHistoryP
 </head>
 <body>
   <div class="header">
-    <h1>🐾 PetID — היסטוריה רפואית</h1>
+    <h1>🐾 MIPO — היסטוריה רפואית</h1>
     <p>${petName} · ${petBreed || typeHe} · תאריך הפקה: ${new Date().toLocaleDateString("he-IL")}</p>
   </div>
 
@@ -104,7 +104,7 @@ export const VetHistoryPDF = ({ petId, petName, petBreed, petType }: VetHistoryP
 	  }).join("")}
 
   <div class="footer">
-    מסמך זה הופק אוטומטית על ידי PetID · אין לראות במידע זה תחליף לייעוץ וטרינרי מקצועי
+    מסמך זה הופק אוטומטית על ידי MIPO · אין לראות במידע זה תחליף לייעוץ וטרינרי מקצועי
   </div>
 </body>
 </html>`;

@@ -640,7 +640,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
     const text = `🐾 הכירו את ${pet.name}!\n${pet.breed ? `גזע: ${pet.breed}\n` : ''}${getAgeDisplay() !== 'לא צוין' ? `גיל: ${getAgeDisplay()}\n` : ''}`;
 	    if (navigator.share) {
 	      try {
-	        await navigator.share({ title: `${pet.name} - PetID`, text });
+	        await navigator.share({ title: `${pet.name} - MIPO`, text });
 	      } catch {
 	        // User cancelled native share.
 	      }

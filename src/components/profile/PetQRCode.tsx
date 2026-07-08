@@ -66,7 +66,7 @@ export const PetQRCode = ({ petId, petName, petAvatar }: PetQRCodeProps) => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${petName} - PetID`,
+          title: `${petName} - MIPO`,
           text: `צפה בפרופיל של ${petName}`,
           url: qrUrl,
         });

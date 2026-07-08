@@ -1,4 +1,4 @@
-# PetID AWS Migration Checklist
+# MIPO AWS Migration Checklist
 
 This branch targets AWS Lightsail + RDS. Supabase/Vercel are no longer part of the active deployment path.
 

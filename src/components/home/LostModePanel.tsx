@@ -151,7 +151,7 @@ ${reward ? `🎁 פרס: ${reward}` : ""}
 ${showPhone && contactPhone ? `טלפון: ${contactPhone}` : ""}
 
 סרקו את קוד ה-QR בתג של ${pet.name} או פנו ישירות לבעלים.
-PetID - שומרים על חיות המחמד שלנו
+MIPO - שומרים על חיות המחמד שלנו
       `.trim();
 
       const blob = new Blob([posterContent], { type: "text/plain;charset=utf-8" });
@@ -172,7 +172,7 @@ PetID - שומרים על חיות המחמד שלנו
 
   const shareToFacebook = () => {
     const text = encodeURIComponent(
-      `🚨 נעדר/ת! ${pet.name} (${pet.breed || pet.type}) הלך/ה לאיבוד. ${pet.color ? `צבע: ${pet.color}.` : ""} ${medication ? `⚠️ צריך/ה תרופות!` : ""} אם ראיתם — בבקשה צרו קשר! #PetID #חיפוש`
+      `🚨 נעדר/ת! ${pet.name} (${pet.breed || pet.type}) הלך/ה לאיבוד. ${pet.color ? `צבע: ${pet.color}.` : ""} ${medication ? `⚠️ צריך/ה תרופות!` : ""} אם ראיתם — בבקשה צרו קשר! #MIPO #חיפוש`
     );
     window.open(`https://www.facebook.com/sharer/sharer.php?quote=${text}`, "_blank");
   };

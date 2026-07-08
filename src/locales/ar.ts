@@ -107,7 +107,7 @@ export const ar = {
     aboutDesc: "الإصدار 1.0.0",
     logout: "تسجيل الخروج",
     edit: "تعديل",
-    appName: "PetID",
+    appName: "MIPO",
     version: "الإصدار 1.0.0",
     convertToBusiness: "التحويل لحساب تجاري",
     convertToBusinessDesc: "حوّل ملفك الشخصي إلى ملف تجاري",

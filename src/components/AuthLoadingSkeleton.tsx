@@ -33,7 +33,7 @@ export const AuthLoadingSkeleton = () => {
           />
           <motion.img
             src={splashPaw}
-            alt="Petid"
+            alt="MIPO"
             className="w-64 h-64 sm:w-80 sm:h-80 object-contain relative z-10 drop-shadow-2xl"
             animate={{
               scale: [1, 1.03, 1],

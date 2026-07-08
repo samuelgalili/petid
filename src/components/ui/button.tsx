@@ -17,7 +17,7 @@ const buttonVariants = cva(
         ghost: "bg-transparent hover:bg-muted/50 active:bg-muted active:scale-[0.98] transform",
         link: "text-primary underline-offset-4 hover:underline hover:opacity-80 active:opacity-60",
         success: "bg-success text-success-foreground hover:bg-success-dark hover:opacity-95 active:opacity-80 active:scale-[0.98] transform",
-        // PetID specific variants
+        // MIPO specific variants
         petid: "bg-gradient-petid text-white font-semibold shadow-button hover:shadow-button-hover hover:opacity-95 active:opacity-80 active:scale-[0.98] transform",
         warm: "bg-gradient-warm text-white font-semibold shadow-button hover:shadow-button-hover hover:opacity-95 active:opacity-80 active:scale-[0.98] transform",
         gold: "bg-petid-gold text-petid-gold-foreground font-semibold shadow-button hover:opacity-95 active:opacity-80 active:scale-[0.98] transform",

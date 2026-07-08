@@ -27,8 +27,8 @@ const Support = () => {
     {
       icon: Mail,
       title: "שלחו אימייל",
-      description: "support@petid.co.il",
-      action: () => window.open("mailto:support@petid.co.il"),
+      description: "support@mipo.pet",
+      action: () => window.open("mailto:support@mipo.pet"),
       color: "bg-icon-orange/10",
       iconColor: "text-icon-orange",
     },

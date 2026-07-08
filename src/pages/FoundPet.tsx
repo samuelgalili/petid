@@ -405,7 +405,7 @@ const FoundPet = () => {
         <div className="mt-8 text-center">
           <div className="inline-flex items-center gap-1.5 text-[10px] text-muted-foreground/50">
             <PawPrint className="w-3 h-3" strokeWidth={1.5} />
-            <span>PetID — שומרים על חיות המחמד שלנו</span>
+            <span>MIPO — שומרים על חיות המחמד שלנו</span>
           </div>
         </div>
       </div>

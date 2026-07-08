@@ -22,7 +22,7 @@ export const QuickShareSheet = ({ open, onClose, postId, caption }: QuickShareSh
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'PetID',
+          title: 'MIPO',
           text: caption || 'צפה בפוסט הזה!',
           url: shareUrl,
         });

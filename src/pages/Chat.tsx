@@ -353,7 +353,7 @@ const ChatContent = () => {
             <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
               <Sparkles className="w-3.5 h-3.5 text-primary-foreground" />
             </div>
-            <span className="text-[15px] font-semibold text-foreground">Petid AI</span>
+            <span className="text-[15px] font-semibold text-foreground">MIPO AI</span>
           </div>
           
           <div className="w-11" />
@@ -401,7 +401,7 @@ const ChatContent = () => {
                   <div className={`flex-1 min-w-0 ${hasExpandedContent(message) ? 'max-w-full' : ''}`}>
                     {/* Role label */}
                     <p className="text-[12px] font-semibold text-muted-foreground mb-1">
-                      {isUser ? "את/ה" : "Petid AI"}
+                      {isUser ? "את/ה" : "MIPO AI"}
                     </p>
                     
                     {/* Message text — no bubble, clean prose */}
@@ -641,7 +641,7 @@ const ChatContent = () => {
                     <Sparkles className="w-3.5 h-3.5 text-primary-foreground" />
                   </div>
                   <div className="pt-1">
-                    <p className="text-[12px] font-semibold text-muted-foreground mb-2">Petid AI</p>
+                    <p className="text-[12px] font-semibold text-muted-foreground mb-2">MIPO AI</p>
                     <div className="flex items-center gap-1.5">
                       {[0, 1, 2].map((i) => (
                         <motion.div

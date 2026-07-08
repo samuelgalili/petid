@@ -355,7 +355,7 @@ export const SmartSyncReviewModal = ({
                 ) : (
                   <>
                     <PawPrint className="w-4 h-4" />
-                    <span>עדכון הפרופיל ו-PetID</span>
+                    <span>עדכון הפרופיל ו-MIPO</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </>
                 )}

@@ -533,7 +533,7 @@ const Explore = () => {
           {/* Title Bar */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <img src={petidIcon} alt="PetID" className="w-7 h-7 object-contain" />
+              <img src={petidIcon} alt="MIPO" className="w-7 h-7 object-contain" />
               <h1 className="text-lg font-semibold text-foreground">גלה</h1>
             </div>
             <Button
@@ -876,7 +876,7 @@ const Explore = () => {
               onClick={() => {
                 if (!checkAuth("כדי להזמין חברים, יש להתחבר")) return;
                 const referralLink = `${window.location.origin}/signup?ref=${user?.id}`;
-                const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`הצטרפו אליי ב-PetID! 🐾\n${referralLink}`)}`;
+                const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`הצטרפו אליי ב-MIPO! 🐾\n${referralLink}`)}`;
                 window.open(whatsappUrl, '_blank');
                 toast.success("לינק ההזמנה נשלח!", { description: "תקבל נקודות כשהחבר יצטרף" });
               }}

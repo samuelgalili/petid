@@ -18,7 +18,7 @@ interface FelineUrinarySupportProps {
   weight?: number;
 }
 
-// PetID Pharmacy Cat Struvite feeding matrix (grams/day)
+// MIPO Pharmacy Cat Struvite feeding matrix (grams/day)
 const FEEDING_MATRIX = [
   { weight: 2, dry: 30, wet: 150 },
   { weight: 3, dry: 40, wet: 200 },

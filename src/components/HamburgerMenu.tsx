@@ -84,7 +84,7 @@ const menuStrings = {
     activePet: "חיית מחמד פעילה",
     noPet: "לא נבחרה חיית מחמד",
     new: "חדש",
-    version: "PetID v1.0",
+    version: "MIPO v1.0",
     notificationSettings: "הגדרות התראות",
     privacy: "פרטיות",
     // Admin section
@@ -126,7 +126,7 @@ const menuStrings = {
     activePet: "Active Pet",
     noPet: "No pet selected",
     new: "New",
-    version: "PetID v1.0",
+    version: "MIPO v1.0",
     notificationSettings: "Notification Settings",
     privacy: "Privacy",
     // Admin section
@@ -168,7 +168,7 @@ const menuStrings = {
     activePet: "الحيوان النشط",
     noPet: "لم يتم اختيار حيوان",
     new: "جديد",
-    version: "PetID v1.0",
+    version: "MIPO v1.0",
     notificationSettings: "إعدادات الإشعارات",
     privacy: "الخصوصية",
     controlCenter: "مركز التحكم",
@@ -542,7 +542,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                   </div>
                   <div className="flex-1 min-w-0" style={{ textAlign: isRtl ? "right" : "left" }}>
                     <p className="text-xs font-semibold text-foreground">
-                      {language === "he" ? "התקן את PetID" : "Install PetID"}
+                      {language === "he" ? "התקן את MIPO" : "Install MIPO"}
                     </p>
                     <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">
                       {language === "he" ? "גישה מהירה ממסך הבית" : "Quick access from home screen"}
@@ -605,7 +605,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
               </div>
 
               <p className="text-[10px] text-muted-foreground/40 text-center">
-                © {new Date().getFullYear()} PetID. {language === "he" ? "כל הזכויות שמורות." : "All rights reserved."}
+                © {new Date().getFullYear()} MIPO. {language === "he" ? "כל הזכויות שמורות." : "All rights reserved."}
               </p>
             </div>
           </motion.div>

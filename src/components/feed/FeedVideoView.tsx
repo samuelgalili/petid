@@ -88,7 +88,7 @@ export const FeedVideoView = ({ items, currentUserId, onLike, onSave }: FeedVide
       case 'adoption':
         return 'עמותת הצלה';
       case 'challenge':
-        return 'PetID אתגר';
+        return 'MIPO אתגר';
       case 'product':
         return item.data.business_name || 'חנות';
       default:
@@ -433,7 +433,7 @@ export const FeedVideoView = ({ items, currentUserId, onLike, onSave }: FeedVide
                   transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
                   className="text-xs whitespace-nowrap inline-block"
                 >
-                  🐾 PetID • Original Sound &nbsp;&nbsp;&nbsp;&nbsp; 🐾 PetID • Original Sound
+                  🐾 MIPO • Original Sound &nbsp;&nbsp;&nbsp;&nbsp; 🐾 MIPO • Original Sound
                 </motion.span>
               </div>
             </div>

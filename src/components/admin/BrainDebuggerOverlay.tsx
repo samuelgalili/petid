@@ -94,7 +94,7 @@ export const BrainDebuggerOverlay = () => {
 
             {/* Meta */}
             <div className="px-4 py-2 bg-slate-800/50 text-xs text-slate-400 border-b border-slate-700 flex items-center justify-between">
-              <span>PetID: {brainSnapshot.petId?.slice(0, 8) || "none"}...</span>
+              <span>MIPO: {brainSnapshot.petId?.slice(0, 8) || "none"}...</span>
               <span>{new Date(brainSnapshot.timestamp).toLocaleTimeString("he-IL")}</span>
             </div>
 

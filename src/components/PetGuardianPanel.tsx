@@ -165,7 +165,7 @@ export const PetGuardianPanel = ({ isOpen, onClose }: PetGuardianPanelProps) => 
               <div className="flex items-center justify-center gap-1.5 py-2.5 border-t border-border/30">
                 <Shield className="w-3.5 h-3.5 text-primary/50" />
                 <span className="text-[10px] text-muted-foreground/60">
-                  {isHe ? "מוגן ומאובטח על ידי PetID" : "Protected & secured by PetID"}
+                  {isHe ? "מוגן ומאובטח על ידי MIPO" : "Protected & secured by MIPO"}
                 </span>
               </div>
             </div>
@@ -193,15 +193,15 @@ function generateInsights(
 ): Insight[] {
   const insights: Insight[] = [];
 
-  // Nutrition insight (PetID Scientific Standard)
+  // Nutrition insight (MIPO Scientific Standard)
   if (snapshot.nrc) {
     insights.push({
       icon: Sparkles,
       type: "nutrition",
       title: isHe ? `צריכת אנרגיה יומית של ${petName}` : `${petName}'s daily energy needs`,
       description: isHe
-        ? `לפי התקן המדעי של PetID, ${petName} צריך/ה בערך ${snapshot.nrc.mer} קק"ל ביום. אנחנו עוקבים בשבילך.`
-        : `Based on PetID's Scientific Standard, ${petName} needs around ${snapshot.nrc.mer} kcal/day. We're tracking for you.`,
+        ? `לפי התקן המדעי של MIPO, ${petName} צריך/ה בערך ${snapshot.nrc.mer} קק"ל ביום. אנחנו עוקבים בשבילך.`
+        : `Based on MIPO's Scientific Standard, ${petName} needs around ${snapshot.nrc.mer} kcal/day. We're tracking for you.`,
     });
   }
 

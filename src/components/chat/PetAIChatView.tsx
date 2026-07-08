@@ -1,5 +1,5 @@
 /**
- * PetAIChatView — PetID's flagship AI chat interface.
+ * PetAIChatView — MIPO's flagship AI chat interface.
  * V70: Paw-print wallpaper, rich media cards, action buttons,
  * Send/Voice toggle, intelligence typing indicator, full RTL.
  */
@@ -87,7 +87,7 @@ const VerifiedBadge = ({ text }: { text: string }) => (
       </TooltipTrigger>
       <TooltipContent side="top" className="text-xs max-w-[200px]">
         <p className="font-medium">Brain-verified data</p>
-        <p className="text-muted-foreground">Source: PetID Central Brain</p>
+        <p className="text-muted-foreground">Source: MIPO Central Brain</p>
       </TooltipContent>
     </Tooltip>
   </TooltipProvider>
@@ -400,7 +400,7 @@ export const PetAIChatView = ({
 
         <div className="flex-1">
           <div className="flex items-center gap-1.5">
-            <h2 className="text-sm font-bold text-foreground">PetID AI</h2>
+            <h2 className="text-sm font-bold text-foreground">MIPO AI</h2>
             <Sparkles className="w-3.5 h-3.5 text-primary" strokeWidth={1.5} />
           </div>
           <p className="text-[11px] text-muted-foreground">מומחה אישי ל{petName}</p>

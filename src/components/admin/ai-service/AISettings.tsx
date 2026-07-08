@@ -26,8 +26,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 const AISettings = () => {
   const [settings, setSettings] = useState({
     // General
-    botName: "PetID Assistant",
-    welcomeMessage: "שלום! אני העוזר הווירטואלי של PetID. איך אוכל לעזור לך היום?",
+    botName: "MIPO Assistant",
+    welcomeMessage: "שלום! אני העוזר הווירטואלי של MIPO. איך אוכל לעזור לך היום?",
     language: "he",
     
     // Notifications

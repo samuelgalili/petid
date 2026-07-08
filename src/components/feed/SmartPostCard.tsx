@@ -1,5 +1,5 @@
 /**
- * SmartPostCard — PetID's flagship UGC post card.
+ * SmartPostCard — MIPO's flagship UGC post card.
  * V69: Visual Information Density — icon consistency, smart overlay positioning,
  * save micro-animation, and breed-specific silhouette.
  */

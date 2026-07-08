@@ -92,9 +92,9 @@ export const Header = () => {
             {/* Left Side: Logo with Icon - Bold Font */}
             <div className="flex items-center gap-1.5">
               <span className="text-[20px] font-black tracking-tight text-foreground" style={{ fontFamily: 'Assistant, sans-serif' }}>
-                PetID
+                MIPO
               </span>
-              <img src={petidIcon} alt="PetID" className="h-7 w-7 object-contain" />
+              <img src={petidIcon} alt="MIPO" className="h-7 w-7 object-contain" />
             </div>
           </div>
         </div>

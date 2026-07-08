@@ -90,7 +90,7 @@ export const SignupForm = () => {
       }
 
       localStorage.removeItem("onboardingCompleted");
-      toast({ title: "החשבון נוצר!", description: "ברוכים הבאים ל-Petid!" });
+      toast({ title: "החשבון נוצר!", description: "ברוכים הבאים ל-MIPO!" });
       navigate("/onboarding");
     } catch {
       setGeneralError("אירעה שגיאה לא צפויה");

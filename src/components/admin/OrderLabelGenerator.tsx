@@ -267,7 +267,7 @@ export const OrderLabelGenerator = ({ orders, open, onClose, initialFormat = "li
       <html dir="rtl" lang="he">
       <head>
         <meta charset="UTF-8" />
-        <title>PetID — תוויות ${format === "lite" ? "Logistics Lite" : "Premium A5"}</title>
+        <title>MIPO — תוויות ${format === "lite" ? "Logistics Lite" : "Premium A5"}</title>
         <style>
           @page { size: ${pageSize}; margin: ${format === "lite" ? "2mm" : "0"}; }
           * { box-sizing: border-box; margin: 0; padding: 0; }

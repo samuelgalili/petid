@@ -84,10 +84,10 @@ export const FelineDashboard = ({ petName, weight, breed, currentFood, isIndoor 
   const shopRecommendations = useMemo(() => {
     const recs: Array<{ name: string; reason: string; icon: React.ElementType }> = [];
     if (weightStatus.status === 'overweight') {
-      recs.push({ name: 'PetID Pharmacy — Obesity', reason: 'לירידה במשקל עם L-Carnitine', icon: Weight });
+      recs.push({ name: 'MIPO Pharmacy — Obesity', reason: 'לירידה במשקל עם L-Carnitine', icon: Weight });
     }
     if (ageYears && ageYears >= 7) {
-      recs.push({ name: 'PetID Pharmacy — Renal', reason: 'הגנה כלייתית לחתול מבוגר', icon: Droplets });
+      recs.push({ name: 'MIPO Pharmacy — Renal', reason: 'הגנה כלייתית לחתול מבוגר', icon: Droplets });
     }
     if (hairballRisk.level === 'high') {
       recs.push({ name: 'Malt Paste', reason: 'משחת מאלט לכדורי שיער', icon: Wind });

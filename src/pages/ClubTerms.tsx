@@ -27,10 +27,10 @@ const ClubTerms = () => {
         {/* Content */}
         <div className="max-w-2xl mx-auto px-4 py-6">
           <div className="prose prose-sm max-w-none text-foreground">
-            <h2 className="text-lg font-bold mb-4 font-jakarta">מועדון הלקוחות של Petid</h2>
+            <h2 className="text-lg font-bold mb-4 font-jakarta">מועדון הלקוחות של MIPO</h2>
             
             <p className="text-muted-foreground mb-4 font-jakarta leading-relaxed">
-              ברוכים הבאים למועדון הלקוחות של Petid! להלן תנאי החברות במועדון.
+              ברוכים הבאים למועדון הלקוחות של MIPO! להלן תנאי החברות במועדון.
             </p>
 
             <h3 className="text-base font-bold mt-6 mb-3 font-jakarta">הצטרפות למועדון</h3>

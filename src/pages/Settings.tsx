@@ -1,5 +1,5 @@
 /**
- * Settings & Privacy Page - PetID V48
+ * Settings & Privacy Page - MIPO V48
  * Sections: Notifications, Account & Security, Localization, Data Management, About
  */
 
@@ -412,7 +412,7 @@ const Settings = () => {
             <SettingRow
               icon={Users}
               label="קהילה"
-              description="עדכונים מהפיד של PetID"
+              description="עדכונים מהפיד של MIPO"
               type="toggle"
               value={communityAlerts}
               action={() => toggle("pref_community_alerts", setCommunityAlerts, communityAlerts)}
@@ -614,8 +614,8 @@ const Settings = () => {
             />
           </SettingsSection>
 
-          {/* ═══ 5. About PetID ═══ */}
-          <SettingsSection title="אודות PetID" icon={Info} defaultOpen={false}>
+          {/* ═══ 5. About MIPO ═══ */}
+          <SettingsSection title="אודות MIPO" icon={Info} defaultOpen={false}>
             <SettingRow
               icon={Info}
               label="תנאי שימוש"
@@ -689,7 +689,7 @@ const Settings = () => {
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50">
               <Sparkles className="w-4 h-4 text-primary" />
-              <span className="text-xs text-muted-foreground">PetID • גרסה 2.48.0</span>
+              <span className="text-xs text-muted-foreground">MIPO • גרסה 2.48.0</span>
             </div>
           </motion.div>
         </div>

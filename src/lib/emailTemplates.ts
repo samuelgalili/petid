@@ -116,12 +116,12 @@ const baseTemplate = (content: string, title: string) => `
   <div class="container">
     <div class="card">
       <div class="header">
-        <img src="${appUrl("/petid-icon.png")}" alt="PetID" class="logo">
+        <img src="${appUrl("/petid-icon.png")}" alt="MIPO" class="logo">
         <h1 class="title">${title}</h1>
       </div>
       ${content}
       <div class="footer">
-        <p>PetID - המקום לכל מה שחיית המחמד שלך צריכה 🐾</p>
+        <p>MIPO - המקום לכל מה שחיית המחמד שלך צריכה 🐾</p>
         <p style="margin-top: 8px;">
           <a href="${APP_URL}" style="color: #d4a574;">${APP_HOST}</a>
         </p>
@@ -277,10 +277,10 @@ export const welcomeEmail = (data: {
   const content = `
     <div class="content">
       <p>שלום ${data.userName},</p>
-      <p style="margin-top: 12px;">ברוכים הבאים ל-PetID! 🐾</p>
+      <p style="margin-top: 12px;">ברוכים הבאים ל-MIPO! 🐾</p>
       <p>אנחנו שמחים שהצטרפת למשפחה שלנו.</p>
       
-      <h3 style="margin-top: 24px; margin-bottom: 16px;">מה אפשר לעשות ב-PetID?</h3>
+      <h3 style="margin-top: 24px; margin-bottom: 16px;">מה אפשר לעשות ב-MIPO?</h3>
       
       <div class="info-box">
         <p>🐕 <strong>ניהול חיות מחמד</strong> - שמרו את כל המידע במקום אחד</p>
@@ -295,7 +295,7 @@ export const welcomeEmail = (data: {
     </div>
   `;
 
-  return baseTemplate(content, 'ברוכים הבאים ל-PetID! 🎉');
+  return baseTemplate(content, 'ברוכים הבאים ל-MIPO! 🎉');
 };
 
 // Password Reset Email

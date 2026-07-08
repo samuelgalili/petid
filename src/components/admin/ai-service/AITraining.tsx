@@ -57,7 +57,7 @@ const AITraining = () => {
   const [search, setSearch] = useState("");
   const [isAddFaqOpen, setIsAddFaqOpen] = useState(false);
   const [systemPrompt, setSystemPrompt] = useState(
-    `אתה נציג שירות לקוחות של PetID. תפקידך לעזור ללקוחות בצורה ידידותית ומקצועית.
+    `אתה נציג שירות לקוחות של MIPO. תפקידך לעזור ללקוחות בצורה ידידותית ומקצועית.
 
 כללים:
 1. תמיד התייחס ללקוח בכבוד ונימוס

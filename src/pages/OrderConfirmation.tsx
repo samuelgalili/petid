@@ -229,7 +229,7 @@ const PeaceOfMindSummary = ({ pet, items }: { pet: ConfirmationPet; items: Confi
 
 const SocialHealthCard = ({ pet }: { pet: ConfirmationPet }) => {
   const handleShare = async () => {
-    const shareText = `✅ ${pet.name} (${pet.breed || pet.pet_type}) — מעודכנ/ת בחיסונים ותזונה! ציון בריאות: 100% 🐾 #PetID #HealthyPet`;
+    const shareText = `✅ ${pet.name} (${pet.breed || pet.pet_type}) — מעודכנ/ת בחיסונים ותזונה! ציון בריאות: 100% 🐾 #MIPO #HealthyPet`;
 
     if (navigator.share) {
       try {

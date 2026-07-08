@@ -100,7 +100,7 @@ export const QRCodeProfile = ({ open, onOpenChange, profile }: QRCodeProfileProp
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${profile?.full_name || "פרופיל"} - Petid`,
+          title: `${profile?.full_name || "פרופיל"} - MIPO`,
           url: profileUrl
         });
       } catch {

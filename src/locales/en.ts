@@ -107,7 +107,7 @@ export const en = {
     aboutDesc: "Version 1.0.0",
     logout: "Logout",
     edit: "Edit",
-    appName: "PetID",
+    appName: "MIPO",
     version: "Version 1.0.0",
     convertToBusiness: "Convert to Business Account",
     convertToBusinessDesc: "Turn your profile into a business profile",

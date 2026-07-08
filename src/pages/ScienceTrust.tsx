@@ -65,10 +65,10 @@ const ScienceTrust = () => {
           </div>
 
           <h1 className="text-[28px] sm:text-[34px] font-bold leading-tight tracking-tight">
-            The PetID Scientific Standard
+            The MIPO Scientific Standard
           </h1>
           <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl mx-auto">
-            Why Data Matters — כל החלטה ב-PetID מבוססת על מידע מדעי מאומת,
+            Why Data Matters — כל החלטה ב-MIPO מבוססת על מידע מדעי מאומת,
             לא על שיווק או ניחושים.
           </p>
         </motion.div>
@@ -119,7 +119,7 @@ const ScienceTrust = () => {
           <div className="flex justify-center gap-4 flex-wrap">
             <ScienceBadge size="sm" />
             <ScienceBadge size="md" label="Science-Verified" />
-            <ScienceBadge size="lg" label="PetID Verified · NRC 2006" />
+            <ScienceBadge size="lg" label="MIPO Verified · NRC 2006" />
           </div>
           <p className="text-sm text-muted-foreground leading-relaxed max-w-md mx-auto">
             התג הזה מופיע על מוצרים, המלצות, ותכנים שעברו את תהליך האימות המדעי שלנו.

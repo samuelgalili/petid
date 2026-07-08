@@ -260,7 +260,7 @@ const BusinessSettings = () => {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label className="text-xs text-muted-foreground">שם החנות</Label>
-                    <Input className="rounded-xl h-11" placeholder="שם החנות שלך" defaultValue="PetID Premium Shop" />
+                    <Input className="rounded-xl h-11" placeholder="שם החנות שלך" defaultValue="MIPO Premium Shop" />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-xs text-muted-foreground">אימייל תמיכה</Label>

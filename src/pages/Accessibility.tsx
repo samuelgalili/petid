@@ -29,7 +29,7 @@ const Accessibility = () => {
         <div className="prose prose-sm max-w-none text-foreground">
           <h2 className="text-lg font-bold mb-4 font-jakarta">התחייבות לנגישות</h2>
           <p className="text-muted-foreground mb-4 font-jakarta leading-relaxed">
-            Petid מחויבת להנגשת האפליקציה לכלל המשתמשים, כולל אנשים עם מוגבלויות.
+            MIPO מחויבת להנגשת האפליקציה לכלל המשתמשים, כולל אנשים עם מוגבלויות.
             אנו פועלים בהתאם לתקן הישראלי ת"י 5568 ולהנחיות WCAG 2.1 ברמת AA.
           </p>
 
@@ -47,7 +47,7 @@ const Accessibility = () => {
           <p className="text-muted-foreground font-jakarta leading-relaxed">
             נתקלתם בבעיית נגישות? נשמח לשמוע ולטפל בהקדם.
             <br />
-            דוא"ל: accessibility@petid.co.il
+            דוא"ל: accessibility@mipo.pet
           </p>
 
           <p className="text-xs text-muted-foreground/60 mt-8 font-jakarta">

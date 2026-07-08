@@ -49,7 +49,7 @@ const appActions = [
     onClick: async (url: string, caption?: string) => {
       if (navigator.share) {
         try {
-          await navigator.share({ title: caption || "PetID", url });
+          await navigator.share({ title: caption || "MIPO", url });
         } catch { /* cancelled */ }
       }
     },

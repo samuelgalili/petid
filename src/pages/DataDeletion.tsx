@@ -45,7 +45,7 @@ const DataDeletion = () => {
 
     try {
       // For now, just show success - deletion requests will be handled via email
-      // The user can also contact privacy@petid.co.il directly
+      // The user can also contact privacy@mipo.pet directly
       console.log("Data deletion request:", { email, reason });
       
       setIsSubmitted(true);
@@ -252,8 +252,8 @@ const DataDeletion = () => {
           {/* Contact */}
           <p className="text-center text-sm text-muted-foreground font-jakarta">
             לשאלות נוספות:{" "}
-            <a href="mailto:privacy@petid.co.il" className="text-primary hover:underline">
-              privacy@petid.co.il
+            <a href="mailto:privacy@mipo.pet" className="text-primary hover:underline">
+              privacy@mipo.pet
             </a>
           </p>
         </motion.div>

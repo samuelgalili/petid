@@ -1,6 +1,6 @@
-# PetID
+# MIPO
 
-PetID is a Vite + React frontend backed by the MIPO AWS API on Lightsail/RDS.
+MIPO is a Vite + React frontend backed by the MIPO AWS API on Lightsail/RDS.
 
 ## Runtime Split
 

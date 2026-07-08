@@ -1,5 +1,5 @@
 /**
- * SmartProductPage — PetID's flagship product detail component.
+ * SmartProductPage — MIPO's flagship product detail component.
  * V70: Hero carousel, medical badge, "Why Wendy?" AI card,
  * subscription toggle, expandable specs, sticky footer, full RTL,
  * conflict warning, restock prediction, cross-sell.

@@ -109,7 +109,7 @@ function getNextSteps(trigger: CelebrationTrigger, petType: "dog" | "cat"): Next
       ];
     default:
       return [
-        { id: "shop", label: "חנות PetID", icon: ShoppingBag, path: "/shop" },
+        { id: "shop", label: "חנות MIPO", icon: ShoppingBag, path: "/shop" },
       ];
   }
 }
@@ -349,7 +349,7 @@ async function generateShareableCard(
     // Footer
     ctx.font = "16px Assistant, sans-serif";
     ctx.fillStyle = "rgba(255,255,255,0.8)";
-    ctx.fillText("ציון בריאות • PetID", 300, 310);
+    ctx.fillText("ציון בריאות • MIPO", 300, 310);
 
     return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
   } catch {
@@ -419,7 +419,7 @@ export const CelebrationScreen = ({
   const handleShare = useCallback(async () => {
     const cardBlob = await generateShareableCard(petName, petType, scoreTo);
 
-    const shareText = `${emoji} ${petName} בציון בריאות ${scoreTo}%! 🐾✨ מנוהל באמצעות PetID`;
+    const shareText = `${emoji} ${petName} בציון בריאות ${scoreTo}%! 🐾✨ מנוהל באמצעות MIPO`;
 
     if (cardBlob && navigator.share && navigator.canShare?.({
       files: [new File([cardBlob], "petid-health-card.png", { type: "image/png" })],
@@ -439,7 +439,7 @@ export const CelebrationScreen = ({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${petName} - PetID`,
+          title: `${petName} - MIPO`,
           text: shareText,
           url: window.location.origin,
         });

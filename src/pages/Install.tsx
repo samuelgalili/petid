@@ -283,7 +283,7 @@ const Install = () => {
                 )}
               </div>
               <p className="text-foreground text-lg md:text-xl leading-relaxed mb-6 italic">
-                "מאז שהתחלנו להשתמש ב-PetID, הטיפול בשבע השתדרג משמעותית. ה-AI זיהה לנו רגישות למזון שלא ידענו עליה."
+                "מאז שהתחלנו להשתמש ב-MIPO, הטיפול בשבע השתדרג משמעותית. ה-AI זיהה לנו רגישות למזון שלא ידענו עליה."
               </p>
               <div className="text-sm text-muted-foreground">— מיכל ושבע 🐕</div>
             </div>
@@ -307,7 +307,7 @@ const Install = () => {
               מוכנים להתחיל?
             </h2>
             <p className="text-muted-foreground mb-8">
-              הוסיפו את PetID למסך הבית — בלחיצה אחת
+              הוסיפו את MIPO למסך הבית — בלחיצה אחת
             </p>
 
             {isInstalled ?
@@ -390,7 +390,7 @@ const Install = () => {
                       <span className="text-primary font-bold text-xs">3</span>
                     </div>
                     <p>
-                      לחצו <strong className="text-foreground">הוסף</strong> — וזהו! PetID יופיע על המסך הראשי שלכם
+                      לחצו <strong className="text-foreground">הוסף</strong> — וזהו! MIPO יופיע על המסך הראשי שלכם
                     </p>
                   </div>
                 </div>
@@ -403,7 +403,7 @@ const Install = () => {
       {/* ===== FOOTER ===== */}
       <footer className="py-8 px-6 border-t border-border text-center">
         <p className="text-xs text-muted-foreground">
-          © {new Date().getFullYear()} PetID — כל הזכויות שמורות
+          © {new Date().getFullYear()} MIPO — כל הזכויות שמורות
         </p>
       </footer>
     </div>);

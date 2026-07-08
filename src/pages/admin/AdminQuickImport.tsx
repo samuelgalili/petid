@@ -1490,7 +1490,7 @@ const AdminQuickImport = () => {
                         {stepStatus[4] === "loading" ? (
                           <><Loader2 className="animate-spin" size={18} /> שומר...</>
                         ) : (
-                          <><Save size={18} /> פרסם ב-PetID</>
+                          <><Save size={18} /> פרסם ב-MIPO</>
                         )}
                       </Button>
                     </div>
