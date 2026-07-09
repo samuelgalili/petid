@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AdminLayout } from "@/components/admin/AdminLayout";
 import { cn } from "@/lib/utils";
 import { getAdminAnalytics, type MipoAdminAnalytics } from "@/lib/mipoApi";
 import type { LucideIcon } from "lucide-react";
@@ -429,7 +430,8 @@ const AdminAnalytics = () => {
   );
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto" dir="rtl">
+    <AdminLayout title="אנליטיקות" icon={BarChart3} breadcrumbs={[{ label: "אנליטיקות" }]}>
+      <div className="space-y-6 max-w-7xl mx-auto" dir="rtl">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -1013,7 +1015,8 @@ const AdminAnalytics = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
+      </div>
+    </AdminLayout>
   );
 };
 
