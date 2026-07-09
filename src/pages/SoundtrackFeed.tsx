@@ -166,7 +166,7 @@ const SoundtrackFeed = () => {
             {isAdmin && (
               <motion.button
                 whileTap={{ scale: 0.85 }}
-                onClick={() => navigate("/admin/growo")}
+                onClick={() => navigate("/admin/products")}
                 className="w-8 h-8 rounded-full flex items-center justify-center"
                 style={{
                   background: "rgba(0,0,0,0.2)",

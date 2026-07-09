@@ -22,7 +22,7 @@ const AdminLogin = () => {
 
   const redirectTo = useMemo(() => {
     const state = location.state as AdminLoginLocationState | null;
-    return state?.from && state.from !== "/admin/login" ? state.from : "/admin/growo";
+    return state?.from && state.from !== "/admin/login" ? state.from : "/admin/products";
   }, [location.state]);
 
   useEffect(() => {

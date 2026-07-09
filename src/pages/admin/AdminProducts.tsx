@@ -1,12 +1,13 @@
-import { useState, useRef, useEffect } from "react";
+import { useCallback, useState, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { 
-  Package, Plus, Edit, Trash2, MoreHorizontal, 
-  Upload, Download, AlertCircle, Flag, CheckCircle, Globe,
-  TrendingUp, ShoppingCart, Eye, Star
+import {
+  Package, Plus, Edit, Trash2, MoreHorizontal,
+  Upload, Download, AlertCircle, Flag, CheckCircle,
+  ShoppingCart, Eye, Star, Sparkles, FileSpreadsheet
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { BulkProductImport, type ParsedProduct } from "@/components/admin/BulkProductImport";
 import { ProductImportWizard } from "@/components/admin/ProductImportWizard";
 import { DataTable, Column, FilterOption } from "@/components/admin/DataTable";
 import { ProductFormDialog } from "@/components/admin/ProductFormDialog";
@@ -103,7 +104,6 @@ const AdminProducts = () => {
   const { toast } = useToast();
   const { logAction } = useAuditLog();
   const queryClient = useQueryClient();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [editingProduct, setEditingProduct] = useState<Partial<ProductData> | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -115,14 +115,17 @@ const AdminProducts = () => {
   const [showScrapedOnly, setShowScrapedOnly] = useState(false);
   const [showManualOnly, setShowManualOnly] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const openManualProductDialog = useCallback(() => {
+    setEditingProduct({ ...emptyProduct });
+    setIsDialogOpen(true);
+  }, []);
 
   // Keyboard shortcuts
   const { shortcuts } = useProductKeyboardShortcuts({
-    onNewProduct: () => {
-      setEditingProduct(emptyProduct);
-      setIsDialogOpen(true);
-    },
+    onNewProduct: openManualProductDialog,
     onSearch: () => searchInputRef.current?.focus(),
     onSelectAll: () => setSelectedProducts(displayProducts.map(p => p.id)),
     onDeselectAll: () => setSelectedProducts([]),
@@ -141,6 +144,8 @@ const AdminProducts = () => {
     onEscape: () => {
       setSelectedProducts([]);
       setIsDialogOpen(false);
+      setWizardOpen(false);
+      setBulkImportOpen(false);
     },
     enabled: !isDialogOpen,
   });
@@ -173,12 +178,21 @@ const AdminProducts = () => {
     },
   });
 
-  // Check URL param for needs_review filter
+  // Check URL params for direct admin actions.
   useEffect(() => {
     if (searchParams.get("filter") === "needs_review") {
       setShowNeedsReview(true);
     }
-  }, [searchParams]);
+
+    if (searchParams.get("new") === "true") {
+      openManualProductDialog();
+
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete("new");
+      const nextQuery = nextParams.toString();
+      navigate(nextQuery ? `/admin/products?${nextQuery}` : "/admin/products", { replace: true });
+    }
+  }, [navigate, openManualProductDialog, searchParams]);
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["admin-products-unified"],
@@ -302,6 +316,64 @@ const AdminProducts = () => {
     onError: (error) => {
       console.error("Bulk delete error:", error);
       toast({ title: "שגיאה", description: "המחיקה נכשלה", variant: "destructive" });
+    },
+  });
+
+  const bulkImportMutation = useMutation({
+    mutationFn: async (importedProducts: ParsedProduct[]) => {
+      let created = 0;
+      let failed = 0;
+
+      for (const product of importedProducts) {
+        try {
+          await createAdminProduct({
+            name: product.name,
+            description: product.description || null,
+            price: product.price,
+            original_price: product.original_price || null,
+            sale_price: product.sale_price || null,
+            image_url: product.image_url || "/placeholder.svg",
+            images: product.images || null,
+            category: product.category || "other",
+            in_stock: product.in_stock,
+            is_featured: false,
+            sku: product.sku || null,
+            pet_type: normalizeProductPetType(product.petType),
+            brand: product.brand || null,
+            source_url: product.sourceUrl || null,
+            ingredients: product.ingredients || null,
+            benefits: product.benefits || [],
+            feeding_guide: product.feeding_guide || [],
+            product_attributes: product.product_attributes || {},
+            life_stage: product.life_stage || null,
+            dog_size: product.dog_size || null,
+            special_diet: product.special_diet || [],
+          });
+          created++;
+        } catch (error) {
+          console.error("Bulk import product failed:", error);
+          failed++;
+        }
+      }
+
+      if (created === 0) {
+        throw new Error("לא נוצרו מוצרים. בדוק את נתוני הקובץ ונסה שוב.");
+      }
+
+      await logAction({
+        action_type: "product.created",
+        entity_type: "product",
+        metadata: { bulk: true, created_count: created, failed_count: failed },
+      });
+
+      return { created, failed };
+    },
+    onSuccess: ({ created, failed }) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-products-unified"] });
+      toast({
+        title: `${created} מוצרים נוספו לחנות`,
+        description: failed > 0 ? `${failed} מוצרים נכשלו` : "ייבוא המוצרים הסתיים בהצלחה",
+      });
     },
   });
 
@@ -546,7 +618,6 @@ const AdminProducts = () => {
   const scrapedCount = products.filter(p => p.source === 'scraped').length;
   const manualCount = products.filter(p => p.source === 'manual').length;
   const outOfStockCount = products.filter(p => !p.in_stock).length;
-  const featuredCount = products.filter(p => p.is_featured).length;
   const flaggedCount = products.filter(p => p.is_flagged).length;
   const needsReviewCount = products.filter(p => p.needs_image_review || p.needs_price_review).length;
 
@@ -603,13 +674,21 @@ const AdminProducts = () => {
       {/* Action Bar */}
       <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
         <div className="flex gap-2 flex-wrap">
-          <Button onClick={() => setWizardOpen(true)}>
+          <Button onClick={openManualProductDialog}>
             <Plus className="w-4 h-4 ml-2" />
-            הוסף מוצר
+            מוצר ידני חדש
           </Button>
-          <Button variant="outline" onClick={() => navigate('/admin/data-import')}>
+          <Button variant="outline" onClick={() => setBulkImportOpen(true)}>
+            <FileSpreadsheet className="w-4 h-4 ml-2" />
+            ייבוא מקובץ
+          </Button>
+          <Button variant="outline" onClick={() => setWizardOpen(true)}>
             <Upload className="w-4 h-4 ml-2" />
-            ייבוא CSV
+            ייבוא מקישור
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/admin/smart-editor')}>
+            <Sparkles className="w-4 h-4 ml-2" />
+            עורך חכם
           </Button>
           <Button 
             variant="outline"
@@ -705,6 +784,33 @@ const AdminProducts = () => {
         </div>
       </div>
 
+      {!isLoading && products.length === 0 && (
+        <Card className="mb-4 border-primary/20 bg-primary/5">
+          <CardContent className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-semibold text-foreground">עוד אין מוצרים בחנות</p>
+              <p className="text-sm text-muted-foreground">
+                אפשר להוסיף מוצר ידנית, לייבא קובץ מוצרים, או לסרוק מוצר מקישור.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" onClick={openManualProductDialog}>
+                <Plus className="w-4 h-4 ml-2" />
+                מוצר חדש
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setBulkImportOpen(true)}>
+                <FileSpreadsheet className="w-4 h-4 ml-2" />
+                ייבוא קובץ
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setWizardOpen(true)}>
+                <Upload className="w-4 h-4 ml-2" />
+                ייבוא מקישור
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <DataTable
         data={displayProducts}
         columns={columns}
@@ -786,6 +892,13 @@ const AdminProducts = () => {
         open={wizardOpen}
         onOpenChange={setWizardOpen}
         onSuccess={() => queryClient.invalidateQueries({ queryKey: ["admin-products-unified"] })}
+      />
+
+      <BulkProductImport
+        open={bulkImportOpen}
+        onOpenChange={setBulkImportOpen}
+        onImportComplete={(importedProducts) => bulkImportMutation.mutateAsync(importedProducts)}
+        onUploadComplete={() => queryClient.invalidateQueries({ queryKey: ["admin-products-unified"] })}
       />
     </AdminLayout>
   );

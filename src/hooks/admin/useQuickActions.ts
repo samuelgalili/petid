@@ -43,7 +43,7 @@ export const useQuickActions = (navigate: (path: string) => void) => {
     
     // Tools
     { id: 'export-data', label: 'ייצוא נתונים', icon: 'Download', action: () => navigate('/admin/backup'), category: 'tools' },
-    { id: 'import-data', label: 'ייבוא נתונים', icon: 'Upload', action: () => navigate('/admin/data-import'), category: 'tools' },
+    { id: 'import-data', label: 'ייבוא נתונים', icon: 'Upload', action: () => navigate('/admin/quick-import'), category: 'tools' },
     { id: 'scraper', label: 'סקראפר מוצרים', icon: 'Bot', action: () => navigate('/admin/scraper'), category: 'tools' },
   ];
 

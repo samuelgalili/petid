@@ -280,11 +280,23 @@ const legacyAdminPaths = [
   "/admin/sovereign",
   "/admin/ai-os",
   "/admin/ai-os-admin",
-].map((path) => ({ path, element: <Navigate to="/admin/analytics" replace /> }));
+];
+
+const legacyAdminRedirects = legacyAdminPaths.map((path) => {
+  if (path === "/admin/growo") {
+    return { path, element: <Navigate to="/admin/products" replace /> };
+  }
+
+  if (path === "/admin/data-import") {
+    return { path, element: <Navigate to="/admin/quick-import" replace /> };
+  }
+
+  return { path, element: <Navigate to="/admin/analytics" replace /> };
+});
 
 export const adminRoutes: RouteObject[] = [
   { path: "/admin/login", element: <LazyPage component={AdminLogin} pageName="כניסת מנהל" /> },
-  { path: "/admin", element: <Navigate to="/admin/analytics" replace /> },
+  { path: "/admin", element: <Navigate to="/admin/products" replace /> },
   { path: "/admin/analytics", element: <AdminPage component={AdminAnalytics} pageName="אנליטיקס" /> },
   { path: "/admin/orders", element: <AdminPage component={AdminOrders} pageName="הזמנות" /> },
   { path: "/admin/products", element: <AdminPage component={AdminProducts} pageName="מוצרים" /> },
@@ -295,7 +307,7 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/smart-editor", element: <AdminPage component={AdminSmartProductEditor} pageName="עורך מוצר חכם" /> },
   { path: "/admin/review-queue", element: <Navigate to="/admin/products?filter=needs_review" replace /> },
   { path: "/admin/scraper", element: <Navigate to="/admin/quick-import" replace /> },
-  ...legacyAdminPaths,
+  ...legacyAdminRedirects,
 ];
 
 export const factoryRoutes: RouteObject[] = [

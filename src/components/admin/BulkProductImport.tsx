@@ -35,7 +35,7 @@ import { normalizeProductPetType } from "@/lib/productStore";
 import { createAdminProduct, invokeProductIntelFunction } from "@/lib/mipoApi";
 import * as XLSX from "@e965/xlsx";
 
-interface ParsedProduct {
+export interface ParsedProduct {
   id: string;
   name: string;
   description: string;
@@ -172,7 +172,8 @@ const importProductsFromResponse = (data: ProductIntelListResponse): ProductInte
 interface BulkProductImportProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onImportComplete: (products: ParsedProduct[]) => void;
+  onImportComplete: (products: ParsedProduct[]) => void | Promise<void>;
+  onUploadComplete?: () => void | Promise<void>;
 }
 
 const categories = [
@@ -193,6 +194,7 @@ export const BulkProductImport = ({
   open,
   onOpenChange,
   onImportComplete,
+  onUploadComplete,
 }: BulkProductImportProps) => {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -580,7 +582,7 @@ export const BulkProductImport = ({
     setParsedProducts(prev => prev.filter(p => p.id !== productId));
   };
 
-  const handleImport = () => {
+  const handleImport = async () => {
     const validProducts = parsedProducts.filter(p => p.isValid);
     if (validProducts.length === 0) {
       toast({
@@ -591,13 +593,25 @@ export const BulkProductImport = ({
       return;
     }
 
-    onImportComplete(validProducts);
-    handleClose();
+    setIsUploadingToStore(true);
 
-    toast({
-      title: `${validProducts.length} מוצרים יובאו בהצלחה`,
-      description: "המוצרים נוספו לחנות",
-    });
+    try {
+      await onImportComplete(validProducts);
+      handleClose();
+
+      toast({
+        title: `${validProducts.length} מוצרים עובדו בהצלחה`,
+        description: "הנתונים נשמרו ומוכנים להמשך עבודה",
+      });
+    } catch (error) {
+      toast({
+        title: "שגיאה בייבוא",
+        description: errorMessage(error, "אירעה שגיאה בייבוא המוצרים"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingToStore(false);
+    }
   };
 
   const handleClose = () => {
@@ -912,6 +926,7 @@ export const BulkProductImport = ({
       });
 
       if (successCount > 0) {
+        await onUploadComplete?.();
         handleClose();
       }
     } catch (err) {
@@ -1576,11 +1591,20 @@ export const BulkProductImport = ({
             </Button>
             <Button 
               onClick={handleImport}
-              disabled={validCount === 0}
+              disabled={validCount === 0 || isUploadingToStore}
               className="gap-2"
             >
-              <Check className="w-4 h-4" />
-              ייבא {validCount} מוצרים
+              {isUploadingToStore ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  מייבא...
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4" />
+                  ייבא {validCount} מוצרים
+                </>
+              )}
             </Button>
           </DialogFooter>
         )}

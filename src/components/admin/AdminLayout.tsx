@@ -68,7 +68,7 @@ const navGroups: NavGroup[] = [
 
 // Quick actions for the dashboard header
 const quickActions = [
-  { icon: Plus, label: "מוצר חדש", href: "/admin/quick-import", color: "bg-primary text-primary-foreground" },
+  { icon: Plus, label: "מוצר חדש", href: "/admin/products?new=true", color: "bg-primary text-primary-foreground" },
   { icon: Eye, label: "הזמנות", href: "/admin/orders", color: "bg-muted text-foreground" },
   { icon: PackageSearch, label: "ייבוא מהיר", href: "/admin/quick-import", color: "bg-muted text-foreground" },
 ];
@@ -87,8 +87,8 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
   const [openGroups, setOpenGroups] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('admin_sidebar_open_groups_v2');
-      return saved ? JSON.parse(saved) : ["ראשי"];
-    } catch { return ["ראשי"]; }
+      return saved ? JSON.parse(saved) : ["חנות ומכירות"];
+    } catch { return ["חנות ומכירות"]; }
   });
   const activeItemRef = useRef<HTMLAnchorElement>(null);
 
@@ -148,7 +148,7 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
         "flex items-center border-b border-border/20 h-14 shrink-0",
         collapsed ? "justify-center px-2" : "px-4 gap-3"
       )}>
-        <Link to="/admin/analytics" className="flex items-center gap-2.5 group">
+        <Link to="/admin/products" className="flex items-center gap-2.5 group">
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-sm">
             <Shield className="w-4 h-4 text-primary-foreground" />
           </div>
@@ -411,7 +411,7 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
                 <div className="min-w-0">
                   {breadcrumbs.length > 0 ? (
                     <nav className="flex items-center gap-1 text-xs">
-                      <Link to="/admin/analytics" className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
+                      <Link to="/admin/products" className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
                         ניהול
                       </Link>
                       {breadcrumbs.map((crumb, i) => (

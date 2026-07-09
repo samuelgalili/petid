@@ -43,7 +43,7 @@ const quickActions: QuickAction[] = [
   
   // Tools
   { id: 'export', label: 'ייצוא נתונים', icon: Download, href: '/admin/backup', category: 'tools' },
-  { id: 'import', label: 'ייבוא נתונים', icon: Upload, href: '/admin/data-import', category: 'tools' },
+  { id: 'import', label: 'ייבוא נתונים', icon: Upload, href: '/admin/quick-import', category: 'tools' },
   { id: 'scraper', label: 'סקראפר מוצרים', icon: Bot, href: '/admin/scraper', category: 'tools' },
 ];
 

@@ -68,7 +68,7 @@ export const AppHeader = ({
       return {
         icon: Shield,
         label: "ניהול",
-        onClick: () => navigate("/admin/growo"),
+        onClick: () => navigate("/admin/products"),
         badge: null as string | null,
       };
     }
