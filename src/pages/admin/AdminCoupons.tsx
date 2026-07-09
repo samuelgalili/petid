@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   Ticket, Plus, Edit, Trash2, MoreHorizontal, 
@@ -59,6 +60,7 @@ const emptyCoupon: Partial<CouponData> = {
 const AdminCoupons = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedCoupons, setSelectedCoupons] = useState<string[]>([]);
   const [editingCoupon, setEditingCoupon] = useState<Partial<CouponData> | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -69,6 +71,20 @@ const AdminCoupons = () => {
     queryKey: ["admin-coupons"],
     queryFn: getAdminCoupons,
   });
+
+  const openCreateCouponDialog = useCallback(() => {
+    setEditingCoupon({ ...emptyCoupon });
+    setIsDialogOpen(true);
+  }, []);
+
+  useEffect(() => {
+    if (searchParams.get("new") !== "true") return;
+
+    openCreateCouponDialog();
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("new");
+    setSearchParams(nextParams, { replace: true });
+  }, [openCreateCouponDialog, searchParams, setSearchParams]);
 
   const saveMutation = useMutation({
     mutationFn: async (coupon: Partial<CouponData>) => {
@@ -293,10 +309,7 @@ const AdminCoupons = () => {
   return (
     <AdminLayout title="ניהול קופונים" breadcrumbs={[{ label: "קופונים" }]}>
       <div className="flex justify-between items-center mb-4">
-        <Button onClick={() => {
-          setEditingCoupon(emptyCoupon);
-          setIsDialogOpen(true);
-        }}>
+        <Button onClick={openCreateCouponDialog}>
           <Plus className="w-4 h-4 ml-2" />
           צור קופון
         </Button>

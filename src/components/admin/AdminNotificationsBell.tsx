@@ -13,16 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
 import { he } from "date-fns/locale";
-
-const getLinkByCategory = (category: string) => {
-  switch (category) {
-    case 'insurance': return '/admin/pet-services';
-    case 'moderation': return '/admin/reports';
-    case 'adoption': return '/admin/adoption';
-    case 'sales': return '/admin/orders';
-    default: return '/admin/notifications';
-  }
-};
+import { getAdminNotificationLink } from "@/lib/adminNotificationLinks";
 
 export const AdminNotificationsBell = () => {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useAdminNotifications();
@@ -31,7 +22,7 @@ export const AdminNotificationsBell = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative w-9 h-9">
+        <Button variant="ghost" size="icon" className="relative w-9 h-9" aria-label="התראות מנהל">
           <Bell className="w-5 h-5 text-muted-foreground" />
           {unreadCount > 0 && (
             <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-background">
@@ -72,7 +63,7 @@ export const AdminNotificationsBell = () => {
                   }`}
                   onClick={() => {
                     markAsRead(notification.id);
-                    navigate(getLinkByCategory(notification.category));
+                    navigate(getAdminNotificationLink(notification.category));
                   }}
                 >
                   <div className="flex w-full justify-between items-start gap-2">
@@ -94,6 +85,7 @@ export const AdminNotificationsBell = () => {
           <Button 
             variant="ghost" 
             className="w-full text-xs h-8 justify-center text-muted-foreground"
+            aria-label="פתח מרכז התראות"
             onClick={() => navigate('/admin/notifications')}
           >
             צפה בכל ההתראות

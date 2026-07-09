@@ -5,7 +5,7 @@ import { APP_URL, appUrl } from "@/lib/app-url";
 
 export interface EmailTemplateData {
   recipientName?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 const APP_HOST = new URL(APP_URL).host;
@@ -345,7 +345,7 @@ export const lowStockAlertEmail = (data: {
       </div>
       
       <div style="text-align: center; margin-top: 32px;">
-        <a href="${appUrl("/admin/inventory")}" class="button">נהל מלאי</a>
+        <a href="${appUrl("/admin/products")}" class="button">נהל מלאי</a>
       </div>
     </div>
   `;

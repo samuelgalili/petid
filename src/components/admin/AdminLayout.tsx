@@ -15,7 +15,7 @@ import {
 import { Database as DatabaseIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useAwsAdminAuth } from "@/hooks/useAwsAdminAuth";
@@ -43,6 +43,7 @@ const navGroups: NavGroup[] = [
     icon: LayoutDashboard,
     items: [
       { icon: BarChart3, label: "אנליטיקות", href: "/admin/analytics" },
+      { icon: Bell, label: "התראות", href: "/admin/notifications" },
     ]
   },
   {
@@ -66,6 +67,9 @@ const navGroups: NavGroup[] = [
   },
 ];
 
+const defaultOpenGroups = navGroups.map((group) => group.label);
+const openGroupsStorageKey = "admin_sidebar_open_groups_v3";
+
 // Quick actions for the dashboard header
 const quickActions = [
   { icon: Plus, label: "מוצר חדש", href: "/admin/products?new=true", color: "bg-primary text-primary-foreground" },
@@ -82,13 +86,12 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
   const [isCollapsed, setIsCollapsed] = useState(() => {
     try { return localStorage.getItem('admin_sidebar_collapsed') === 'true'; } catch { return false; }
   });
-  const [pendingReports, setPendingReports] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [openGroups, setOpenGroups] = useState<string[]>(() => {
     try {
-      const saved = localStorage.getItem('admin_sidebar_open_groups_v2');
-      return saved ? JSON.parse(saved) : ["חנות ומכירות"];
-    } catch { return ["חנות ומכירות"]; }
+      const saved = localStorage.getItem(openGroupsStorageKey);
+      return saved ? JSON.parse(saved) : defaultOpenGroups;
+    } catch { return defaultOpenGroups; }
   });
   const activeItemRef = useRef<HTMLAnchorElement>(null);
 
@@ -97,16 +100,17 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
   }, [isCollapsed]);
 
   useEffect(() => {
-    localStorage.setItem('admin_sidebar_open_groups_v2', JSON.stringify(openGroups));
+    localStorage.setItem(openGroupsStorageKey, JSON.stringify(openGroups));
   }, [openGroups]);
 
   useEffect(() => {
-    fetchPendingCounts();
     const currentGroup = navGroups.find(group => 
       group.items.some(item => location.pathname === item.href)
     );
-    if (currentGroup && !openGroups.includes(currentGroup.label)) {
-      setOpenGroups(prev => [...prev, currentGroup.label]);
+    if (currentGroup) {
+      setOpenGroups(prev => (
+        prev.includes(currentGroup.label) ? prev : [...prev, currentGroup.label]
+      ));
     }
   }, [location.pathname]);
 
@@ -116,10 +120,6 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
     }, 100);
     return () => clearTimeout(timer);
   }, [location.pathname]);
-
-  const fetchPendingCounts = async () => {
-    setPendingReports(0);
-  };
 
   const handleSignOut = async () => {
     await logout();
@@ -190,7 +190,6 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
                   {group.items.map((item) => {
                     const isActive = location.pathname === item.href;
                     const ItemIcon = item.icon;
-                    const showBadge = item.href === "/admin/reports" && pendingReports > 0;
                     return (
                       <TooltipProvider key={item.href} delayDuration={0}>
                         <Tooltip>
@@ -205,11 +204,6 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
                               )}
                             >
                               <ItemIcon className="w-4 h-4" strokeWidth={1.5} />
-                              {showBadge && (
-                                <span className="absolute -top-0.5 -left-0.5 min-w-3.5 h-3.5 bg-destructive text-destructive-foreground text-[9px] rounded-full flex items-center justify-center px-0.5">
-                                  {pendingReports}
-                                </span>
-                              )}
                             </Link>
                           </TooltipTrigger>
                           <TooltipContent side="left" className="text-xs font-medium">
@@ -248,7 +242,6 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
                   {group.items.map((item) => {
                     const isActive = location.pathname === item.href;
                     const ItemIcon = item.icon;
-                    const showBadge = item.href === "/admin/reports" && pendingReports > 0;
 
                     return (
                       <Link
@@ -268,11 +261,6 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
                           isActive ? "text-primary" : "text-muted-foreground/60 group-hover:text-foreground"
                         )} strokeWidth={1.5} />
                         <span className="truncate">{item.label}</span>
-                        {showBadge && (
-                          <span className="mr-auto min-w-4 h-4 bg-destructive text-destructive-foreground text-[9px] rounded-full flex items-center justify-center px-1">
-                            {pendingReports}
-                          </span>
-                        )}
                         {isActive && (
                           <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[2.5px] h-4 bg-primary rounded-full" />
                         )}
@@ -355,6 +343,7 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="p-0 w-64 border-l border-border/20">
+              <SheetTitle className="sr-only">תפריט ניהול</SheetTitle>
               <NavContent />
             </SheetContent>
           </Sheet>

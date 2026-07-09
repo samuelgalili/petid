@@ -2,19 +2,24 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { 
-  ShoppingCart, Package, UserPlus, ListTodo, Target, Ticket, Clock, 
-  AlertTriangle, Flag, Calendar, Truck, RotateCcw, CreditCard, Download,
-  Upload, Bot, ChevronLeft
+  BarChart3,
+  Clock,
+  FolderTree,
+  Package,
+  PackageSearch,
+  Settings,
+  ShoppingCart,
+  Sparkles,
+  Ticket,
+  Upload
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface QuickAction {
   id: string;
   label: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<{ className?: string }>;
   href: string;
   category: 'create' | 'view' | 'manage' | 'tools';
   badge?: string;
@@ -23,28 +28,22 @@ interface QuickAction {
 
 const quickActions: QuickAction[] = [
   // Create
-  { id: 'new-order', label: 'הזמנה חדשה', icon: ShoppingCart, href: '/admin/orders?new=true', category: 'create' },
   { id: 'new-product', label: 'מוצר חדש', icon: Package, href: '/admin/products?new=true', category: 'create' },
-  { id: 'new-user', label: 'משתמש חדש', icon: UserPlus, href: '/admin/users?new=true', category: 'create' },
-  { id: 'new-task', label: 'משימה חדשה', icon: ListTodo, href: '/admin/tasks?new=true', category: 'create' },
-  { id: 'new-lead', label: 'ליד חדש', icon: Target, href: '/admin/leads?new=true', category: 'create' },
   { id: 'new-coupon', label: 'קופון חדש', icon: Ticket, href: '/admin/coupons?new=true', category: 'create' },
   
   // View
+  { id: 'orders', label: 'הזמנות', icon: ShoppingCart, href: '/admin/orders', category: 'view' },
   { id: 'pending-orders', label: 'הזמנות ממתינות', icon: Clock, href: '/admin/orders?status=pending', category: 'view' },
-  { id: 'low-stock', label: 'מלאי נמוך', icon: AlertTriangle, href: '/admin/inventory?filter=low', category: 'view' },
-  { id: 'pending-reports', label: 'דיווחים ממתינים', icon: Flag, href: '/admin/reports?status=pending', category: 'view' },
-  { id: 'today-activity', label: 'פעילות היום', icon: Calendar, href: '/admin/audit?date=today', category: 'view' },
+  { id: 'products-review', label: 'מוצרים לבדיקה', icon: PackageSearch, href: '/admin/products?filter=needs_review', category: 'view' },
+  { id: 'analytics', label: 'אנליטיקות', icon: BarChart3, href: '/admin/analytics', category: 'view' },
   
   // Manage
-  { id: 'shipping', label: 'עדכון משלוחים', icon: Truck, href: '/admin/shipping', category: 'manage' },
-  { id: 'returns', label: 'טיפול בהחזרות', icon: RotateCcw, href: '/admin/returns?status=pending', category: 'manage' },
-  { id: 'debts', label: 'גביית חובות', icon: CreditCard, href: '/admin/debts', category: 'manage' },
+  { id: 'categories', label: 'קטגוריות', icon: FolderTree, href: '/admin/categories', category: 'manage' },
+  { id: 'settings', label: 'הגדרות', icon: Settings, href: '/admin/settings', category: 'manage' },
   
   // Tools
-  { id: 'export', label: 'ייצוא נתונים', icon: Download, href: '/admin/backup', category: 'tools' },
-  { id: 'import', label: 'ייבוא נתונים', icon: Upload, href: '/admin/quick-import', category: 'tools' },
-  { id: 'scraper', label: 'סקראפר מוצרים', icon: Bot, href: '/admin/scraper', category: 'tools' },
+  { id: 'import', label: 'ייבוא מהיר', icon: Upload, href: '/admin/quick-import', category: 'tools' },
+  { id: 'smart-editor', label: 'עורך חכם', icon: Sparkles, href: '/admin/smart-editor', category: 'tools' },
 ];
 
 const categoryLabels: Record<string, string> = {

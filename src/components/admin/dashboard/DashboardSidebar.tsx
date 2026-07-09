@@ -4,9 +4,9 @@ import {
   LayoutDashboard,
   Package,
   ShoppingCart,
-  Users,
-  Bot,
+  Bell,
   BarChart3,
+  Ticket,
   Settings,
   ChevronDown,
   LogOut,
@@ -27,12 +27,11 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { icon: LayoutDashboard, label: 'Dashboard', href: '/admin/dashboard' },
+  { icon: LayoutDashboard, label: 'Analytics', href: '/admin/analytics' },
+  { icon: Bell, label: 'Notifications', href: '/admin/notifications' },
   { icon: Package, label: 'Products', href: '/admin/products' },
   { icon: ShoppingCart, label: 'Orders', href: '/admin/orders' },
-  { icon: Users, label: 'Customers', href: '/admin/crm' },
-  { icon: Bot, label: 'AI Assistant', href: '/admin/ai-service' },
-  { icon: BarChart3, label: 'Reports', href: '/admin/reports' },
+  { icon: Ticket, label: 'Coupons', href: '/admin/coupons' },
   { icon: Settings, label: 'Settings', href: '/admin/settings', isExpandable: true },
 ];
 

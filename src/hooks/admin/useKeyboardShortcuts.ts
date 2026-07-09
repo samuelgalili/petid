@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface Shortcut {
@@ -13,16 +13,16 @@ interface Shortcut {
 export const useKeyboardShortcuts = () => {
   const navigate = useNavigate();
 
-  const shortcuts: Shortcut[] = [
+  const shortcuts: Shortcut[] = useMemo(() => [
     { key: 'd', ctrl: true, action: () => navigate('/admin/products'), description: 'מוצרים' },
     { key: 'o', ctrl: true, action: () => navigate('/admin/orders'), description: 'הזמנות' },
     { key: 'p', ctrl: true, action: () => navigate('/admin/products'), description: 'מוצרים' },
-    { key: 'u', ctrl: true, action: () => navigate('/admin/users'), description: 'משתמשים' },
-    { key: 't', ctrl: true, action: () => navigate('/admin/tasks'), description: 'משימות' },
-    { key: 'l', ctrl: true, action: () => navigate('/admin/leads'), description: 'לידים' },
+    { key: 'c', ctrl: true, action: () => navigate('/admin/coupons'), description: 'קופונים' },
+    { key: 'i', ctrl: true, action: () => navigate('/admin/quick-import'), description: 'ייבוא מהיר' },
+    { key: 'e', ctrl: true, action: () => navigate('/admin/smart-editor'), description: 'עורך חכם' },
     { key: 'a', ctrl: true, action: () => navigate('/admin/analytics'), description: 'אנליטיקות' },
     { key: 's', ctrl: true, shift: true, action: () => navigate('/admin/settings'), description: 'הגדרות' },
-  ];
+  ], [navigate]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     // Ignore when typing in inputs

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 
 export interface QuickAction {
   id: string;
@@ -21,31 +21,25 @@ export const useQuickActions = (navigate: (path: string) => void) => {
     }
   }, []);
 
-  const actions: QuickAction[] = [
+  const actions: QuickAction[] = useMemo(() => [
     // Create actions
-    { id: 'new-order', label: 'הזמנה חדשה', icon: 'ShoppingCart', action: () => navigate('/admin/orders?new=true'), category: 'create' },
     { id: 'new-product', label: 'מוצר חדש', icon: 'Package', action: () => navigate('/admin/products?new=true'), category: 'create' },
-    { id: 'new-user', label: 'משתמש חדש', icon: 'UserPlus', action: () => navigate('/admin/users?new=true'), category: 'create' },
-    { id: 'new-task', label: 'משימה חדשה', icon: 'ListTodo', action: () => navigate('/admin/tasks?new=true'), category: 'create' },
-    { id: 'new-lead', label: 'ליד חדש', icon: 'Target', action: () => navigate('/admin/leads?new=true'), category: 'create' },
     { id: 'new-coupon', label: 'קופון חדש', icon: 'Ticket', action: () => navigate('/admin/coupons?new=true'), category: 'create' },
     
     // View actions
-    { id: 'view-orders', label: 'הזמנות ממתינות', icon: 'Clock', action: () => navigate('/admin/orders?status=pending'), category: 'view' },
-    { id: 'view-low-stock', label: 'מלאי נמוך', icon: 'AlertTriangle', action: () => navigate('/admin/inventory?filter=low'), category: 'view' },
-    { id: 'view-reports', label: 'דיווחים ממתינים', icon: 'Flag', action: () => navigate('/admin/reports?status=pending'), category: 'view' },
-    { id: 'view-today', label: 'פעילות היום', icon: 'Calendar', action: () => navigate('/admin/audit?date=today'), category: 'view' },
+    { id: 'view-orders', label: 'הזמנות', icon: 'ShoppingCart', action: () => navigate('/admin/orders'), category: 'view' },
+    { id: 'view-pending-orders', label: 'הזמנות ממתינות', icon: 'Clock', action: () => navigate('/admin/orders?status=pending'), category: 'view' },
+    { id: 'view-products-review', label: 'מוצרים לבדיקה', icon: 'PackageSearch', action: () => navigate('/admin/products?filter=needs_review'), category: 'view' },
+    { id: 'view-analytics', label: 'אנליטיקות', icon: 'BarChart3', action: () => navigate('/admin/analytics'), category: 'view' },
     
     // Manage actions
-    { id: 'manage-shipping', label: 'עדכון משלוחים', icon: 'Truck', action: () => navigate('/admin/shipping'), category: 'manage' },
-    { id: 'manage-returns', label: 'טיפול בהחזרות', icon: 'RotateCcw', action: () => navigate('/admin/returns?status=pending'), category: 'manage' },
-    { id: 'manage-debts', label: 'גביית חובות', icon: 'CreditCard', action: () => navigate('/admin/debts'), category: 'manage' },
+    { id: 'manage-categories', label: 'קטגוריות', icon: 'FolderTree', action: () => navigate('/admin/categories'), category: 'manage' },
+    { id: 'manage-settings', label: 'הגדרות', icon: 'Settings', action: () => navigate('/admin/settings'), category: 'manage' },
     
     // Tools
-    { id: 'export-data', label: 'ייצוא נתונים', icon: 'Download', action: () => navigate('/admin/backup'), category: 'tools' },
-    { id: 'import-data', label: 'ייבוא נתונים', icon: 'Upload', action: () => navigate('/admin/quick-import'), category: 'tools' },
-    { id: 'scraper', label: 'סקראפר מוצרים', icon: 'Bot', action: () => navigate('/admin/scraper'), category: 'tools' },
-  ];
+    { id: 'import-data', label: 'ייבוא מהיר', icon: 'Upload', action: () => navigate('/admin/quick-import'), category: 'tools' },
+    { id: 'smart-editor', label: 'עורך חכם', icon: 'Sparkles', action: () => navigate('/admin/smart-editor'), category: 'tools' },
+  ], [navigate]);
 
   const getActionsByCategory = useCallback((category: QuickAction['category']) => {
     return actions.filter(a => a.category === category);

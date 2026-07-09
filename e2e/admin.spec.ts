@@ -1,114 +1,93 @@
-import { test, expect } from '@playwright/test';
+import { expect, test, type Page } from "@playwright/test";
 
-// Admin E2E Tests - 5 Critical Flows
-// These tests require an admin user to be logged in
+const adminEmail = process.env.ADMIN_E2E_EMAIL;
+const adminPassword = process.env.ADMIN_E2E_PASSWORD;
 
-test.describe('Admin Panel', () => {
-  test.beforeEach(async ({ page }) => {
-    // Navigate to auth page and login as admin
-    await page.goto('/auth');
-    
-    // Fill login form (adjust selectors based on actual auth page)
-    await page.fill('input[type="email"]', 'samuelgalili@gmaol.com');
-    await page.fill('input[type="password"]', 'admin123');
-    await page.click('button[type="submit"]');
-    
-    // Wait for redirect
-    await page.waitForURL('/');
+async function loginAsAdmin(page: Page) {
+  if (!adminEmail || !adminPassword) {
+    throw new Error("ADMIN_E2E_EMAIL and ADMIN_E2E_PASSWORD are required for authenticated admin tests");
+  }
+
+  await page.goto("/admin/login");
+  await page.getByLabel("אימייל").fill(adminEmail);
+  await page.getByLabel("סיסמה").fill(adminPassword);
+  await page.getByRole("button", { name: "התחברות" }).click();
+  await expect(page).toHaveURL(/\/admin\/products/, { timeout: 15_000 });
+}
+
+test.describe("Admin panel", () => {
+  test("redirects unauthenticated visitors to admin login", async ({ page }) => {
+    await page.goto("/admin/products");
+    await expect(page).toHaveURL(/\/admin\/login/);
+    await expect(page.getByRole("heading", { name: "כניסת מנהל" })).toBeVisible();
   });
 
-  test('1. Admin can access dashboard', async ({ page }) => {
-    await page.goto('/admin/dashboard');
-    
-    // Should see dashboard title
-    await expect(page.locator('h1')).toContainText('דשבורד');
-    
-    // Should see stats cards
-    await expect(page.locator('[data-testid="stat-card"]').first()).toBeVisible();
-  });
+  test.describe("authenticated admin routes", () => {
+    test.skip(!adminEmail || !adminPassword, "Set ADMIN_E2E_EMAIL and ADMIN_E2E_PASSWORD to run authenticated admin coverage");
 
-  test('2. Admin can view and filter users', async ({ page }) => {
-    await page.goto('/admin/users');
-    
-    // Should see users table
-    await expect(page.locator('table')).toBeVisible();
-    
-    // Search for user
-    await page.fill('input[placeholder*="חיפוש"]', 'test');
-    
-    // Should filter results
-    await expect(page.locator('tbody tr')).toHaveCount(await page.locator('tbody tr').count());
-  });
+    test.beforeEach(async ({ page }) => {
+      await loginAsAdmin(page);
+    });
 
-  test('3. Admin can manage reports', async ({ page }) => {
-    await page.goto('/admin/reports');
-    
-    // Should see reports page
-    await expect(page.locator('h1')).toContainText('דיווחים');
-    
-    // Check for filter options
-    await expect(page.locator('select, [role="combobox"]').first()).toBeVisible();
-  });
+    test("opens current admin pages without legacy redirects", async ({ page }) => {
+      const routes = [
+        { path: "/admin/products", text: "סה״כ מוצרים" },
+        { path: "/admin/orders", text: "ניהול הזמנות" },
+        { path: "/admin/coupons", text: "צור קופון" },
+        { path: "/admin/notifications", text: "מרכז התראות" },
+        { path: "/admin/quick-import", text: "הדבק קישור או ברקוד" },
+        { path: "/admin/smart-editor", text: "פרטי מוצר" },
+        { path: "/admin/categories", text: "קטגוריות ומותגים" },
+        { path: "/admin/settings", text: "הגדרות כלליות" },
+        { path: "/admin/analytics", text: "סה״כ הכנסות" },
+      ];
 
-  test('4. Admin can view orders', async ({ page }) => {
-    await page.goto('/admin/orders');
-    
-    // Should see orders page
-    await expect(page.getByRole('heading')).toContainText(/Orders|הזמנות/i);
-    
-    // Should have status filter
-    await expect(page.locator('[role="combobox"]').first()).toBeVisible();
-  });
+      for (const route of routes) {
+        await page.goto(route.path);
+        await expect(page).toHaveURL(new RegExp(`${route.path.replace(/\//g, "\\/")}$`));
+        await expect(page.getByText(route.text).filter({ visible: true }).first()).toBeVisible();
+      }
+    });
 
-  test('5. Admin can access coupons management', async ({ page }) => {
-    await page.goto('/admin/coupons');
-    
-    // Should see coupons page
-    await expect(page.locator('h1, h2').first()).toContainText(/קופונים|Coupons/i);
-    
-    // Should see add coupon button
-    await expect(page.getByRole('button', { name: /הוסף|צור|Create|Add/i })).toBeVisible();
-  });
+    test("honors supported admin query actions", async ({ page }) => {
+      await page.goto("/admin/products?new=true");
+      await expect(page.getByRole("dialog")).toContainText("הוספת מוצר חכמה");
+      await expect(page).toHaveURL(/\/admin\/products/);
 
-  test('Admin navigation works correctly', async ({ page }) => {
-    await page.goto('/admin/dashboard');
-    
-    // Navigate to different admin pages via sidebar/nav
-    const navLinks = [
-      { path: '/admin/users', text: 'משתמשים' },
-      { path: '/admin/content', text: 'תוכן' },
-      { path: '/admin/products', text: 'מוצרים' },
-      { path: '/admin/audit', text: 'לוג' },
-    ];
+      await page.goto("/admin/coupons?new=true");
+      await expect(page.getByRole("dialog")).toContainText("יצירת קופון");
+      await expect(page).toHaveURL(/\/admin\/coupons/);
 
-    for (const link of navLinks) {
-      // Click navigation link or go directly
-      await page.goto(link.path);
-      
-      // Verify page loaded
-      await expect(page).toHaveURL(link.path);
-    }
-  });
+      await page.goto("/admin/orders?status=pending");
+      await expect(page).toHaveURL(/\/admin\/orders\?status=pending/);
+      await expect(page.getByText("ממתין").first()).toBeVisible();
 
-  test('Unauthorized users cannot access admin', async ({ page }) => {
-    // Clear auth state
-    await page.context().clearCookies();
-    await page.evaluate(() => localStorage.clear());
-    
-    // Try to access admin page directly
-    await page.goto('/admin/dashboard');
-    
-    // Should redirect to auth or show error
-    await expect(page).toHaveURL(/auth|login|\//);
-  });
+      await page.goto("/admin/orders?new=true");
+      await expect(page).toHaveURL(/\/admin\/orders$/);
+      await expect(page.getByText("יצירת הזמנה ידנית אינה זמינה", { exact: true }).first()).toBeVisible();
+    });
 
-  test('Admin audit log records actions', async ({ page }) => {
-    await page.goto('/admin/audit');
-    
-    // Should see audit log page
-    await expect(page.locator('h1, h2').first()).toContainText(/לוג|Audit|פעילות/i);
-    
-    // Should have filter options
-    await expect(page.locator('select, [role="combobox"], input').first()).toBeVisible();
+    test("mobile menu exposes only active admin destinations", async ({ page }, testInfo) => {
+      test.skip(!testInfo.project.name.toLowerCase().includes("mobile"), "Mobile navigation check");
+
+      await page.goto("/admin/products");
+      await page.locator("header.lg\\:hidden button").first().click();
+      const mobileMenu = page.getByRole("dialog");
+      await expect(mobileMenu).toBeVisible();
+
+      for (const href of [
+        "/admin/analytics",
+        "/admin/notifications",
+        "/admin/products",
+        "/admin/quick-import",
+        "/admin/smart-editor",
+        "/admin/orders",
+        "/admin/coupons",
+        "/admin/settings",
+        "/admin/categories",
+      ]) {
+        await expect(mobileMenu.locator(`a[href="${href}"]`).filter({ visible: true }).first()).toBeVisible();
+      }
+    });
   });
 });

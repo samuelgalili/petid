@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   Package, Clock, CheckCircle, Truck, XCircle, RefreshCw,
   ShoppingCart, DollarSign, Eye, AlertCircle, Printer,
@@ -117,6 +118,7 @@ const URGENCY_CONFIG: Record<string, { label: string; dot: string }> = {
 const AdminOrders = () => {
   const { toast } = useToast();
   useAdminNotifications();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,6 +131,34 @@ const AdminOrders = () => {
   const [outOfStockItems, setOutOfStockItems] = useState<Set<string>>(new Set());
   const [showLabels, setShowLabels] = useState(false);
   const [labelFormat, setLabelFormat] = useState<LabelFormat>("lite");
+
+  useEffect(() => {
+    let nextParams: URLSearchParams | null = null;
+    const requestedStatus = searchParams.get("status");
+
+    if (requestedStatus) {
+      if (STATUS_CONFIG[requestedStatus]) {
+        setStatusFilter(requestedStatus);
+      } else {
+        setStatusFilter("all");
+        nextParams = new URLSearchParams(searchParams);
+        nextParams.delete("status");
+      }
+    }
+
+    if (searchParams.get("new") === "true") {
+      toast({
+        title: "יצירת הזמנה ידנית אינה זמינה",
+        description: "הזמנות חדשות נוצרות דרך תהליך הצ'קאאוט.",
+      });
+      nextParams = nextParams || new URLSearchParams(searchParams);
+      nextParams.delete("new");
+    }
+
+    if (nextParams) {
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams, toast]);
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -163,6 +193,17 @@ const AdminOrders = () => {
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
+
+  const handleStatusFilterChange = useCallback((value: string) => {
+    setStatusFilter(value);
+    const nextParams = new URLSearchParams(searchParams);
+    if (value === "all") {
+      nextParams.delete("status");
+    } else {
+      nextParams.set("status", value);
+    }
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const filteredOrders = useMemo(() => {
     let result = [...orders];
@@ -269,7 +310,7 @@ const AdminOrders = () => {
           onRefresh={fetchOrders}
           isRefreshing={loading}
         >
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
             <SelectTrigger className="w-36">
               <SelectValue placeholder="סטטוס" />
             </SelectTrigger>

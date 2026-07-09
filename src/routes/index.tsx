@@ -205,6 +205,7 @@ const AdminSettings = lazy(() => import("@/pages/admin/AdminSettings"));
 const AdminCategories = lazy(() => import("@/pages/admin/AdminCategories"));
 const AdminQuickImport = lazy(() => import("@/pages/admin/AdminQuickImport"));
 const AdminSmartProductEditor = lazy(() => import("@/pages/admin/AdminSmartProductEditor"));
+const AdminNotifications = lazy(() => import("@/pages/admin/AdminNotifications"));
 
 const AdminPage = ({ component: Component, pageName }: { component: ComponentType; pageName: string }) => (
   <Admin>
@@ -244,7 +245,6 @@ const legacyAdminPaths = [
   "/admin/blog",
   "/admin/stories",
   "/admin/feed-manager",
-  "/admin/notifications",
   "/admin/pet-services",
   "/admin/notification-rules",
   "/admin/automations",
@@ -303,6 +303,7 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/coupons", element: <AdminPage component={AdminCoupons} pageName="קופונים" /> },
   { path: "/admin/settings", element: <AdminPage component={AdminSettings} pageName="הגדרות" /> },
   { path: "/admin/categories", element: <AdminPage component={AdminCategories} pageName="קטגוריות" /> },
+  { path: "/admin/notifications", element: <AdminPage component={AdminNotifications} pageName="התראות" /> },
   { path: "/admin/quick-import", element: <AdminPage component={AdminQuickImport} pageName="ייבוא מהיר" /> },
   { path: "/admin/smart-editor", element: <AdminPage component={AdminSmartProductEditor} pageName="עורך מוצר חכם" /> },
   { path: "/admin/review-queue", element: <Navigate to="/admin/products?filter=needs_review" replace /> },
