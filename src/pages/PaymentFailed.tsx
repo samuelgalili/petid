@@ -4,6 +4,7 @@ import { XCircle, RefreshCw, MessageCircle, ArrowLeft } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getShopOrder } from "@/lib/mipoApi";
+import { getOrderAccessToken } from "@/lib/orderAccess";
 
 const PaymentFailed = () => {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ const PaymentFailed = () => {
       if (!orderId) return;
 
       try {
-        const data = await getShopOrder(orderId);
+        const data = await getShopOrder(orderId, getOrderAccessToken(orderId));
         setOrderNumber(data.order_number);
       } catch (err) {
         console.error('Error fetching order:', err);
@@ -35,7 +36,7 @@ const PaymentFailed = () => {
       // Go back to checkout to retry
       navigate('/cart');
     } else {
-      navigate('/pricing');
+      navigate('/shop');
     }
   };
 

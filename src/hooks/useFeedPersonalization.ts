@@ -198,7 +198,6 @@ export const useFeedPersonalization = () => {
   // Apply spacing rules and ad limits
   const applyFeedRules = <T extends { type: string }>(items: T[]): T[] => {
     const result: T[] = [];
-    let nonOrganicCount = 0;
     let lastWasNonOrganic = false;
     let adsInLastTen = 0;
 

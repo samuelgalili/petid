@@ -1,11 +1,10 @@
 /**
- * MedicalPharmacy — Products grouped by medical condition.
- * Adds "Vet-Recommended for [Pet Name]" badge when product matches pet's diagnosis.
+ * Products grouped by health-related catalog keywords.
  */
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Pill, ShieldCheck, ShoppingCart } from "lucide-react";
+import { Info, Pill, ShoppingCart } from "lucide-react";
 import { useActivePet } from "@/hooks/useActivePet";
 import { useCart } from "@/contexts/CartContext";
 import { OptimizedImage } from "@/components/OptimizedImage";
@@ -37,7 +36,7 @@ interface PharmacyProduct {
   image_url: string;
   category: string | null;
   description: string | null;
-  isVetRecommended: boolean;
+  matchesProfileTopic: boolean;
 }
 
 export const MedicalPharmacy = () => {
@@ -71,7 +70,7 @@ export const MedicalPharmacy = () => {
               image_url: p.image_url || "/placeholder.svg",
               category: p.category,
               description: p.description || null,
-              isVetRecommended: petConditions.some(cond =>
+              matchesProfileTopic: petConditions.some(cond =>
                 cat.keywords.some(kw => cond.includes(kw) || cond.includes(cat.nameHe))
               ),
             }));
@@ -112,8 +111,8 @@ export const MedicalPharmacy = () => {
           <Pill className="w-3.5 h-3.5 text-blue-600" strokeWidth={2} />
         </div>
         <div>
-          <h2 className="text-sm font-bold text-foreground">בית מרקחת רפואי</h2>
-          <p className="text-[10px] text-muted-foreground">מזון ותוספי תזונה רפואיים</p>
+          <h2 className="text-sm font-bold text-foreground">מוצרים לפי נושא בריאותי</h2>
+          <p className="text-[10px] text-muted-foreground">קיבוץ לפי מונחים בתיאור המוצר בלבד</p>
         </div>
       </div>
 
@@ -137,7 +136,7 @@ export const MedicalPharmacy = () => {
               <span>{cat.icon}</span>
               <span>{cat.nameHe}</span>
               {hasMatch && !isActive && (
-                <ShieldCheck className="w-3 h-3 text-primary" strokeWidth={2} />
+                <Info className="w-3 h-3 text-primary" strokeWidth={2} />
               )}
             </button>
           );
@@ -171,14 +170,13 @@ export const MedicalPharmacy = () => {
                       objectFit="cover"
                       sizes="120px"
                     />
-                    {/* Vet-Recommended Badge */}
-                    {product.isVetRecommended && pet && (
+                    {product.matchesProfileTopic && pet && (
                       <div
                         className="absolute bottom-1 left-1 right-1 px-1.5 py-1 rounded-lg text-[8px] font-bold text-white text-center"
                         style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.9), rgba(22,163,74,0.8))", backdropFilter: "blur(8px)" }}
                       >
-                        <ShieldCheck className="w-2.5 h-2.5 inline mr-0.5" />
-                        מותאם ל{pet.name}
+                        <Info className="w-2.5 h-2.5 inline mr-0.5" />
+                        קשור לנושא בפרופיל של {pet.name}
                       </div>
                     )}
                   </div>
@@ -190,10 +188,11 @@ export const MedicalPharmacy = () => {
                         whileTap={{ scale: 0.85 }}
                         onClick={(e) => {
                           e.stopPropagation();
-                          addToCart({ id: product.id, name: product.name, price: product.price, image: product.image_url, quantity: 1 });
+                          addToCart({ productId: product.id, name: product.name, price: product.price, image: product.image_url, quantity: 1 });
                           toast.success("נוסף לעגלה! 🛒");
                         }}
                         className="w-6 h-6 rounded-full bg-primary flex items-center justify-center"
+                        aria-label={`הוספת ${product.name} לעגלה`}
                       >
                         <ShoppingCart className="w-3 h-3 text-primary-foreground" strokeWidth={2} />
                       </motion.button>
@@ -205,6 +204,9 @@ export const MedicalPharmacy = () => {
           </div>
         </motion.div>
       )}
+      <p className="mt-3 text-[10px] leading-relaxed text-muted-foreground">
+        הסינון אינו המלצה רפואית. יש לבדוק את תווית המוצר ולהתייעץ עם וטרינר לפני שינוי תזונתי רפואי.
+      </p>
     </motion.div>
   );
 };

@@ -1,4 +1,5 @@
 import { load } from "cheerio";
+import { fetchValidatedRemoteUrl, validateRemoteHttpUrl } from "./urlSafety.js";
 
 const firecrawlApiKey = process.env.FIRECRAWL_API_KEY || "";
 const geminiApiKey = process.env.GEMINI_API_KEY || "";
@@ -84,6 +85,7 @@ const fetchWithTimeout = async (url, init = {}, timeoutMs = 35000) => {
 };
 
 const scrapeUrl = async (url) => {
+  const safeUrl = (await validateRemoteHttpUrl(url)).toString();
   if (firecrawlApiKey) {
     const response = await fetchWithTimeout("https://api.firecrawl.dev/v1/scrape", {
       method: "POST",
@@ -92,7 +94,7 @@ const scrapeUrl = async (url) => {
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        url,
+        url: safeUrl,
         formats: ["html", "rawHtml", "markdown", "links"],
         onlyMainContent: false,
         waitFor: 3000,
@@ -102,18 +104,26 @@ const scrapeUrl = async (url) => {
     if (response.ok) {
       const data = await response.json();
       const payload = data.data || data;
+      let sourceUrl = safeUrl;
+      if (payload.sourceUrl) {
+        try {
+          sourceUrl = (await validateRemoteHttpUrl(payload.sourceUrl)).toString();
+        } catch {
+          // Keep the validated requested URL when provider metadata is unsafe.
+        }
+      }
       return {
         html: payload.rawHtml || payload.html || "",
         markdown: payload.markdown || "",
         metadata: payload.metadata || {},
-        sourceUrl: payload.sourceUrl || url,
+        sourceUrl,
         statusCode: payload.statusCode,
         provider: "firecrawl",
       };
     }
   }
 
-  const response = await fetchWithTimeout(url, {
+  const { response, finalUrl } = await fetchValidatedRemoteUrl(safeUrl, {
     headers: {
       "user-agent": "Mozilla/5.0 (compatible; MipoProductImporter/1.0)",
       accept: "text/html,application/xhtml+xml",
@@ -125,7 +135,7 @@ const scrapeUrl = async (url) => {
     html,
     markdown: "",
     metadata: {},
-    sourceUrl: response.url || url,
+    sourceUrl: finalUrl,
     statusCode: response.status,
     provider: "direct",
   };
@@ -605,7 +615,7 @@ Rules:
 
 export const importProductsFromUrl = async (body) => {
   const { url, maxProducts = 30, maxPages = 5, sameDomainOnly = true } = body;
-  if (!url || typeof url !== "string" || !url.startsWith("http")) {
+  if (!url || typeof url !== "string") {
     throw Object.assign(new Error("Valid URL is required"), { statusCode: 400 });
   }
 
@@ -653,7 +663,7 @@ export const scrapeProduct = async (body) => {
 
   let finalUrl = url;
   const input = mode === "url" ? url : sku;
-  if (mode === "url" && (!url || !url.startsWith("http"))) {
+  if (mode === "url" && (!url || typeof url !== "string")) {
     throw Object.assign(new Error("Valid URL is required"), { statusCode: 400 });
   }
   if (mode === "sku") {
@@ -684,7 +694,7 @@ export const scrapeProduct = async (body) => {
 
 export const smartScrapeProduct = async (body) => {
   const { url } = body;
-  if (!url || !url.startsWith("http")) {
+  if (!url || typeof url !== "string") {
     throw Object.assign(new Error("Valid URL is required"), { statusCode: 400 });
   }
 

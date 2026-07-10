@@ -13,8 +13,100 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  quality:
+    name: Quality gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      MIPO_AWS_HOST: ${{ vars.MIPO_AWS_HOST || '63.183.241.110' }}
+      MIPO_PUBLIC_BASE_URL: ${{ vars.MIPO_PUBLIC_BASE_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Reject tracked environment files
+        shell: bash
+        run: |
+          set -euo pipefail
+          tracked_env="$(git ls-files | awk -F/ '{ name=$NF; if ((name == ".env" || name ~ /^\.env\./) && name != ".env.example") print }')"
+          if [ -n "$tracked_env" ]; then
+            echo "Tracked environment files are forbidden:" >&2
+            printf '%s\n' "$tracked_env" >&2
+            exit 1
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19.0"
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install server dependencies
+        run: npm ci --prefix server
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Audit server dependencies
+        run: npm audit --prefix server --omit=dev --audit-level=high
+
+      - name: Check server scripts
+        run: |
+          find server/src server/test -type f -name '*.js' -print0 |
+            xargs -0 -n 1 node --check
+
+      - name: Test server
+        run: npm test --prefix server
+
+      - name: Lint active code
+        run: npm run lint
+
+      - name: Typecheck active application
+        run: npm run typecheck
+
+      - name: Build production frontend
+        shell: bash
+        run: |
+          set -euo pipefail
+          public_base_url="${MIPO_PUBLIC_BASE_URL:-http://${MIPO_AWS_HOST}}"
+          VITE_APP_URL="$public_base_url" VITE_API_URL=/api npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run AWS smoke tests against preview
+        run: npm run test:e2e
+
+      - name: Upload tested frontend
+        uses: actions/upload-artifact@v4
+        with:
+          name: aws-frontend-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload Playwright diagnostics
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: aws-playwright-${{ github.sha }}
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
   deploy:
-    name: Build and deploy
+    name: Deploy tested build
+    needs: quality
     runs-on: ubuntu-latest
     timeout-minutes: 30
     if: github.ref_name == 'aws-migration'
@@ -32,22 +124,18 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: npm
-
-      - name: Install frontend dependencies
-        run: npm ci
+          node-version: "20.19.0"
 
       - name: Check server scripts
         run: |
-          node --check server/src/index.js
-          node --check server/src/applyMigrations.js
+          find server/src -type f -name '*.js' -print0 |
+            xargs -0 -n 1 node --check
 
-      - name: Build frontend
-        run: |
-          set -euo pipefail
-          public_base_url="${MIPO_PUBLIC_BASE_URL:-http://${MIPO_AWS_HOST}}"
-          VITE_APP_URL="$public_base_url" VITE_API_URL=/api npm run build
+      - name: Download tested frontend
+        uses: actions/download-artifact@v4
+        with:
+          name: aws-frontend-${{ github.sha }}
+          path: dist
 
       - name: Configure SSH
         env:
@@ -67,7 +155,7 @@ jobs:
         run: |
           set -euo pipefail
           ssh -i ~/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 "${MIPO_AWS_USER}@${MIPO_AWS_HOST}" \
-            "sudo mkdir -p '${MIPO_REMOTE_PATH}/server' '${MIPO_REMOTE_PATH}/deploy/aws' '${MIPO_REMOTE_PATH}/dist' '${MIPO_REMOTE_PATH}/uploads' && sudo chown -R '${MIPO_AWS_USER}:${MIPO_AWS_USER}' '${MIPO_REMOTE_PATH}'"
+            "sudo mkdir -p '${MIPO_REMOTE_PATH}/server' '${MIPO_REMOTE_PATH}/deploy/aws' '${MIPO_REMOTE_PATH}/dist' '${MIPO_REMOTE_PATH}/uploads' '${MIPO_REMOTE_PATH}/private-uploads' && sudo chown -R '${MIPO_AWS_USER}:${MIPO_AWS_USER}' '${MIPO_REMOTE_PATH}' && sudo chmod 700 '${MIPO_REMOTE_PATH}/private-uploads'"
 
       - name: Sync files
         run: |
@@ -99,6 +187,7 @@ jobs:
           cd "$MIPO_REMOTE_PATH"
           compose_file="$MIPO_REMOTE_PATH/deploy/aws/docker-compose.yml"
 
+          sudo MIPO_REMOTE_PATH="$MIPO_REMOTE_PATH" bash "$MIPO_REMOTE_PATH/deploy/aws/prepare-host.sh"
           docker compose -f "$compose_file" build mipo-api
           docker compose -f "$compose_file" run --rm --no-deps -T mipo-api node src/applyMigrations.js </dev/null
           docker compose -f "$compose_file" up -d --force-recreate --no-deps mipo-api

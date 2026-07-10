@@ -877,7 +877,7 @@ const Explore = () => {
                 if (!checkAuth("כדי להזמין חברים, יש להתחבר")) return;
                 const referralLink = `${window.location.origin}/signup?ref=${user?.id}`;
                 const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`הצטרפו אליי ב-MIPO! 🐾\n${referralLink}`)}`;
-                window.open(whatsappUrl, '_blank');
+                window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
                 toast.success("לינק ההזמנה נשלח!", { description: "תקבל נקודות כשהחבר יצטרף" });
               }}
               className="flex-shrink-0 flex items-center gap-2.5 bg-card border border-border/50 rounded-full px-3 py-2 hover:bg-muted/50 transition-colors"

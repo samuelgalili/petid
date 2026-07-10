@@ -27,7 +27,7 @@ const ResetPassword = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errors, setErrors] = useState<{ password?: string; confirmPassword?: string }>({});
-  const [videoEnded, setVideoEnded] = useState(false);
+  const [videoEnded, setVideoEnded] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();

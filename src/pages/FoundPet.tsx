@@ -55,22 +55,7 @@ const FoundPet = () => {
   const [showMedical, setShowMedical] = useState(false);
 
   const logQrScan = (petId: string) => {
-    const doLog = (lat?: number, lng?: number) => {
-      logPublicPetScan(petId, {
-        latitude: lat ?? null,
-        longitude: lng ?? null,
-        user_agent: navigator.userAgent,
-      }).catch(() => {});
-    };
-
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => doLog(pos.coords.latitude, pos.coords.longitude),
-        () => doLog()
-      );
-    } else {
-      doLog();
-    }
+    logPublicPetScan(petId, {}).catch(() => {});
   };
 
   useEffect(() => {
@@ -105,30 +90,37 @@ const FoundPet = () => {
     const phone = pet?.lost_contact_phone || (pet?.lost_show_phone !== false ? owner?.phone : null);
     if (!phone) return;
 
-    // Try getting finder's location to send via WhatsApp
+    const openWhatsApp = (mapLink?: string) => {
+      const cleanPhone = phone.replace(/[^0-9+]/g, "").replace(/^0/, "972");
+      const message = mapLink
+        ? `שלום! מצאתי את ${pet?.name || "חיית המחמד שלך"}. אני כאן: ${mapLink}`
+        : `שלום! מצאתי את ${pet?.name || "חיית המחמד שלך"}.`;
+      window.open(
+        `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`,
+        "_blank",
+        "noopener,noreferrer",
+      );
+    };
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const { latitude, longitude } = pos.coords;
-          const mapLink = `https://maps.google.com/maps?q=${latitude},${longitude}`;
-          const cleanPhone = phone.replace(/[^0-9+]/g, "").replace(/^0/, "972");
-          const msg = encodeURIComponent(
-            `שלום! מצאתי את ${pet?.name || "חיית המחמד שלך"}. אני כאן: ${mapLink}`
-          );
-          window.open(`https://wa.me/${cleanPhone}?text=${msg}`, "_blank");
+          openWhatsApp(`https://maps.google.com/maps?q=${latitude},${longitude}`);
         },
-        () => {
-          // Fallback without location
-          const cleanPhone = phone.replace(/[^0-9+]/g, "").replace(/^0/, "972");
-          const msg = encodeURIComponent(`שלום! מצאתי את ${pet?.name || "חיית המחמד שלך"}.`);
-          window.open(`https://wa.me/${cleanPhone}?text=${msg}`, "_blank");
-        }
+        () => openWhatsApp(),
       );
+    } else {
+      openWhatsApp();
     }
   };
 
   const handleNavigateVet = () => {
-    window.open("https://www.google.com/maps/search/veterinary+clinic+near+me", "_blank");
+    window.open(
+      "https://www.google.com/maps/search/veterinary+clinic+near+me",
+      "_blank",
+      "noopener,noreferrer",
+    );
   };
 
   const contactPhone = pet?.lost_contact_phone || (pet?.lost_show_phone !== false ? owner?.phone : null);

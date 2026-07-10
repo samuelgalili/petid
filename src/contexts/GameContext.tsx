@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, ReactNode } fr
 import { useToast } from "@/hooks/use-toast";
 import confetti from "canvas-confetti";
 import { createClientId } from "@/lib/randomId";
+import { formatLocalDate } from "@/lib/dateOnly";
 
 interface Badge {
   id: string;
@@ -142,7 +143,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateStreak = async () => {
-    const today = new Date().toISOString().split("T")[0];
+    const today = formatLocalDate(new Date());
     if (streak?.last_activity_date === today) return;
 
     const lastDate = streak?.last_activity_date ? new Date(streak.last_activity_date) : null;

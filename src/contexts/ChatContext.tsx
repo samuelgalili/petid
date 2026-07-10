@@ -23,23 +23,6 @@ export interface Message {
   content: string;
   timestamp?: string;
   products?: Product[];
-  insuranceData?: {
-    petName: string;
-    petType: string;
-    breed: string | null;
-    ageYears: number | null;
-    petId?: string | null;
-    healthAnswer1?: string;
-    healthAnswer2?: string;
-  };
-  insuranceCallback?: {
-    petName: string;
-    petType: string;
-    breed: string | null;
-    ageYears: number | null;
-    petId?: string | null;
-    healthIssue?: string;
-  };
   showGroomingPicker?: boolean;
   showAppointmentPicker?: boolean;
   showTrainingPicker?: boolean;
@@ -51,13 +34,6 @@ export interface Message {
   showAdoptionTraits?: boolean;
   showAdoptionRequirements?: boolean;
   suggestions?: string[];
-  // Omni-Bot Action Cards
-  ocrApproval?: { petName: string; changes: Record<string, string> };
-  quickCheckout?: { productName: string; price: number; imageUrl?: string; productId?: string };
-  insuranceLead?: { petName: string; breed?: string };
-  addressUpdate?: { newAddress: string; petName: string };
-  nrcPlan?: { petName: string; weight?: number; dailyKcal?: number; recommendations: string[] };
-  pendingApproval?: { title: string; queueId: string };
   botSource?: string; // which bot generated this message
 }
 
@@ -91,8 +67,6 @@ interface ChatContextType {
   setShowCategories: (val: boolean) => void;
   showDatePicker: boolean;
   setShowDatePicker: (val: boolean) => void;
-  showInsuranceLoading: boolean;
-  setShowInsuranceLoading: (val: boolean) => void;
   selectedDate: Date;
   setSelectedDate: (val: Date) => void;
   pendingDateContext: string | null;
@@ -127,7 +101,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [showPetSelection, setShowPetSelection] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showInsuranceLoading, setShowInsuranceLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [pendingDateContext, setPendingDateContext] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
@@ -401,7 +374,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         showPetSelection, setShowPetSelection,
         showCategories, setShowCategories,
         showDatePicker, setShowDatePicker,
-        showInsuranceLoading, setShowInsuranceLoading,
         selectedDate, setSelectedDate,
         pendingDateContext, setPendingDateContext,
         userName,

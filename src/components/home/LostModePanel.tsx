@@ -174,7 +174,7 @@ MIPO - שומרים על חיות המחמד שלנו
     const text = encodeURIComponent(
       `🚨 נעדר/ת! ${pet.name} (${pet.breed || pet.type}) הלך/ה לאיבוד. ${pet.color ? `צבע: ${pet.color}.` : ""} ${medication ? `⚠️ צריך/ה תרופות!` : ""} אם ראיתם — בבקשה צרו קשר! #MIPO #חיפוש`
     );
-    window.open(`https://www.facebook.com/sharer/sharer.php?quote=${text}`, "_blank");
+    window.open(`https://www.facebook.com/sharer/sharer.php?quote=${text}`, "_blank", "noopener,noreferrer");
   };
 
   const shareToFeed = async () => {

@@ -568,17 +568,21 @@ const OwnerProfile = () => {
         {/* ═══ 6. Support & Authorities ═══ */}
         <Section title="תמיכה ורשויות" icon={Stethoscope} defaultOpen={false}>
           <div className="space-y-2">
-            {/* Municipal Vet */}
+            {/* Municipal veterinary service search */}
             <Button
               variant="outline"
               size="sm"
-              className="w-full justify-start text-xs gap-2 h-10"
-              onClick={() => window.open("tel:*6553", "_self")}
+              className="w-full min-h-12 h-auto justify-start gap-2 py-2 text-xs"
+              onClick={() => window.open(
+                "https://www.google.com/maps/search/שירות+וטרינרי+עירוני",
+                "_blank",
+                "noopener,noreferrer",
+              )}
             >
               <Building2 className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
               <div className="text-right">
-                <p className="font-medium">שירות וטרינרי עירוני</p>
-                <p className="text-[10px] text-muted-foreground">*6553</p>
+                <p className="font-medium">חיפוש שירות וטרינרי עירוני</p>
+                <p className="text-[10px] text-muted-foreground">פתיחה במפות</p>
               </div>
             </Button>
 
@@ -603,17 +607,21 @@ const OwnerProfile = () => {
               </Button>
             ))}
 
-            {/* Emergency */}
+            {/* Emergency clinic search */}
             <Button
               variant="outline"
               size="sm"
-              className="w-full justify-start text-xs gap-2 h-10 border-destructive/30 text-destructive"
-              onClick={() => window.open("tel:1800600060", "_self")}
+              className="w-full min-h-12 h-auto justify-start gap-2 border-destructive/30 py-2 text-xs text-destructive"
+              onClick={() => window.open(
+                "https://www.google.com/maps/search/וטרינר+חירום+24+שעות",
+                "_blank",
+                "noopener,noreferrer",
+              )}
             >
               <Phone className="w-4 h-4" strokeWidth={1.5} />
               <div className="text-right">
-                <p className="font-medium">חירום וטרינרי 24/7</p>
-                <p className="text-[10px]">1-800-600-060</p>
+                <p className="font-medium">חיפוש מרפאת חירום פתוחה</p>
+                <p className="text-[10px]">יש להתקשר למרפאה ולאמת זמינות לפני הגעה</p>
               </div>
             </Button>
           </div>

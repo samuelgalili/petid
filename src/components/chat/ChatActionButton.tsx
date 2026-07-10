@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Calendar, Shield, GraduationCap, Upload, Hotel, Truck, Camera, Phone } from "lucide-react";
+import { Calendar, Upload, Camera } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface ChatActionButtonProps {
@@ -9,16 +9,8 @@ interface ChatActionButtonProps {
 
 const ACTION_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string }> = {
   "SHOW_CALENDAR": { label: "בחר תאריך", icon: Calendar, color: "bg-primary/10 text-primary border-primary/20" },
-  "CONFIRM_BOOKING": { label: "אשר והמשך", icon: Calendar, color: "bg-success/10 text-success border-success/20" },
-  "INSURANCE_LINK": { label: "המשך לביטוח", icon: Shield, color: "bg-primary/10 text-primary border-primary/20" },
-  "SHOW_INSURANCE_PLANS": { label: "הצג תוכניות ביטוח", icon: Shield, color: "bg-[hsl(210,90%,45%)]/10 text-[hsl(210,90%,45%)] border-[hsl(210,90%,45%)]/20" },
-  "SHOW_INSURANCE_CALLBACK": { label: "השאר פרטים לנציג", icon: Phone, color: "bg-[hsl(210,90%,45%)]/10 text-[hsl(210,90%,45%)] border-[hsl(210,90%,45%)]/20" },
-  "SCHEDULE_TRAINING": { label: "תאם מפגש אילוף", icon: GraduationCap, color: "bg-primary/10 text-primary border-primary/20" },
   "UPLOAD_DOCUMENT": { label: "העלה מסמך", icon: Upload, color: "bg-primary/10 text-primary border-primary/20" },
-  "SHOW_BOARDING_OPTIONS": { label: "הצג פנסיונים", icon: Hotel, color: "bg-primary/10 text-primary border-primary/20" },
-  "ORDER_STATUS": { label: "בדוק סטטוס הזמנה", icon: Truck, color: "bg-primary/10 text-primary border-primary/20" },
   "UPLOAD_PHOTO": { label: "העלה תמונה", icon: Camera, color: "bg-primary/10 text-primary border-primary/20" },
-  "ESCALATE": { label: "דבר עם נציג", icon: Phone, color: "bg-destructive/10 text-destructive border-destructive/20" },
 };
 
 export const ChatActionButton = ({ actionTag, onAction }: ChatActionButtonProps) => {
@@ -34,13 +26,13 @@ export const ChatActionButton = ({ actionTag, onAction }: ChatActionButtonProps)
       return;
     }
 
-    // Default navigation for some actions
+    // Default navigation is only used outside the main Chat page.
     switch (actionTag) {
       case "UPLOAD_DOCUMENT":
         navigate("/documents");
         break;
       case "UPLOAD_PHOTO":
-        navigate("/photos");
+        navigate("/chat");
         break;
       default:
         break;

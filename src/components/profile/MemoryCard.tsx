@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { ShoppingBag, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getCurrentUser, getShopOrders } from "@/lib/mipoApi";
+import { getMyOrders } from "@/lib/mipoApi";
 
 interface MemoryCardProps {
   petId: string;
@@ -19,10 +19,7 @@ export const MemoryCard = ({ petId, petName }: MemoryCardProps) => {
   const { data: latestProduct } = useQuery({
     queryKey: ["memory-product", petId],
     queryFn: async () => {
-      const auth = await getCurrentUser();
-      const email = auth?.user.email || auth?.profile?.email;
-      if (!email) return null;
-      const orders = await getShopOrders({ email });
+      const orders = await getMyOrders({ limit: 1 });
       const latestOrder = orders[0];
       return latestOrder?.items?.[0] || latestOrder?.order_items?.[0] || null;
     },

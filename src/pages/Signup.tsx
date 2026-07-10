@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { SignupForm } from "@/components/SignupForm";
@@ -16,7 +16,6 @@ const cardVariants = {
 const Signup = () => {
   const { isAuthenticated, loading: authLoading, user } = useAuth();
   const navigate = useNavigate();
-  const [pageLoading, setPageLoading] = useState(true);
 
   useEffect(() => {
     const checkUserPets = async () => {
@@ -39,12 +38,7 @@ const Signup = () => {
     checkUserPets().catch(() => navigate("/onboarding"));
   }, [isAuthenticated, authLoading, navigate, user]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setPageLoading(false), 3000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (authLoading || pageLoading) {
+  if (authLoading) {
     return <AuthLoadingSkeleton />;
   }
 
@@ -125,7 +119,7 @@ const Signup = () => {
         <span className="text-border">•</span>
         <Link to="/support" className="inline-flex min-h-11 items-center transition-colors hover:text-foreground">עזרה</Link>
         <span className="text-border">•</span>
-        <span className="inline-flex min-h-11 items-center">© 2025 MIPO</span>
+        <span className="inline-flex min-h-11 items-center">© {new Date().getFullYear()} MIPO</span>
       </motion.footer>
     </div>
   );

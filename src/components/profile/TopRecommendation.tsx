@@ -13,7 +13,8 @@ import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
 import { PetQRCode } from "@/components/profile/PetQRCode";
 import { useCelebration } from "@/hooks/useCelebration";
-import { getShopOrders, updateMyPet } from "@/lib/mipoApi";
+import { getMyOrders, updateMyPet } from "@/lib/mipoApi";
+import { formatLocalDate } from "@/lib/dateOnly";
 
 interface Pet {
   id: string;
@@ -139,8 +140,8 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
   // Fetch recent purchases
   useEffect(() => {
     const fetchRecentPurchases = async () => {
-      if (!user?.email) return;
-      const orders = await getShopOrders({ email: user.email });
+      if (!user) return;
+      const orders = await getMyOrders({ limit: 50 });
       const items = orders
         .flatMap((order) => (order.items || order.order_items || []).map((item) => ({
           id: item.id,
@@ -445,7 +446,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
       
       if (editField === 'age') {
         // Save birth_date
-        const formattedDate = birthDate.toISOString().split('T')[0];
+        const formattedDate = formatLocalDate(birthDate);
         updateData = { birth_date: formattedDate };
       } else if (editField === 'size') {
         updateData = { size: sizeValue || null };
@@ -645,7 +646,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
 	        // User cancelled native share.
 	      }
     } else {
-      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
     }
   };
 

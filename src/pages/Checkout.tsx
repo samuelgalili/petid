@@ -1,15 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, CreditCard, MapPin, Package, Truck, Smartphone, Wallet, Tag, X, Loader2, Heart, Shield, Bell, AlertTriangle } from "lucide-react";
+import { Check, CreditCard, MapPin, Package, Truck, Smartphone, Wallet, Tag, X, Loader2, Heart, AlertTriangle } from "lucide-react";
 import { CheckoutSafetyCheck } from "@/components/shop/CheckoutSafetyCheck";
-import { InsuranceUpsell } from "@/components/shop/InsuranceUpsell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,6 +15,7 @@ import { z } from "zod";
 import { AppHeader } from "@/components/AppHeader";
 import { CHECKOUT } from "@/lib/brandVoice";
 import { createShopOrder, createShopPaymentSession, MipoCoupon, validateCouponCode } from "@/lib/mipoApi";
+import { rememberOrderAccess } from "@/lib/orderAccess";
 
 const shippingSchema = z.object({
   fullName: z.string().trim().min(2, "שם מלא חייב להכיל לפחות 2 תווים").max(100, "שם מלא חייב להכיל פחות מ-100 תווים"),
@@ -37,7 +36,6 @@ const Checkout = () => {
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<MipoCoupon | null>(null);
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
-  const [wantRecurringOrder, setWantRecurringOrder] = useState(false);
   const [shippingData, setShippingData] = useState({
     fullName: "",
     email: "",
@@ -64,10 +62,10 @@ const Checkout = () => {
     }
   }, []);
 
-  // Pre-fill the guest checkout form from the last AWS order/contact on this browser.
+  // Keep checkout contact details only for this browser tab/session.
   useEffect(() => {
     try {
-      const savedContact = localStorage.getItem("mipo_checkout_contact");
+      const savedContact = sessionStorage.getItem("mipo_checkout_contact");
       if (!savedContact) return;
       const contact = JSON.parse(savedContact);
       setShippingData((prev) => ({
@@ -84,10 +82,10 @@ const Checkout = () => {
   }, []);
 
   useEffect(() => {
-    if (!ageCheckLoading && !isUnder18 && items.length === 0) {
+    if (!ageCheckLoading && !isUnder18 && !isProcessing && items.length === 0) {
       navigate("/cart", { replace: true });
     }
-  }, [ageCheckLoading, isUnder18, items.length, navigate]);
+  }, [ageCheckLoading, isProcessing, isUnder18, items.length, navigate]);
 
   const subtotal = getSubtotal();
   const baseShipping = subtotal >= 199 ? 0 : 25;
@@ -262,10 +260,10 @@ const Checkout = () => {
         return;
       }
 
-      const order = await createShopOrder({
+      const { order, access_token: orderAccessToken } = await createShopOrder({
         items: items.map(item => ({
-          id: item.id,
-          product_id: item.id,
+          id: item.productId,
+          product_id: item.productId,
           name: item.name,
           price: item.price,
           quantity: item.quantity,
@@ -275,17 +273,29 @@ const Checkout = () => {
         })),
         shipping_address: shippingData,
         payment_method: paymentMethod,
+        expected_total: orderTotal,
         installments: installments,
         coupon_code: appliedCoupon?.code,
-        want_recurring_order: wantRecurringOrder,
       });
+
+      rememberOrderAccess(order, orderAccessToken);
 
       const orderDetails = {
         orderId: order.order_number,
         orderUuid: order.id,
-        items,
+        items: order.items.map((item) => ({
+          id: item.product_id || item.id,
+          productId: item.product_id || item.id,
+          name: item.product_name,
+          image: item.product_image,
+          price: item.price,
+          quantity: item.quantity,
+          variant: item.variant,
+          size: item.size,
+        })),
         shippingData: order.shipping_address || shippingData,
         paymentMethod: order.payment_method,
+        paymentStatus: order.payment_status,
         subtotal: order.subtotal,
         shipping: order.shipping,
         tax: order.tax,
@@ -295,16 +305,8 @@ const Checkout = () => {
         orderDate: order.order_date,
       };
 
-      localStorage.setItem("lastOrder", JSON.stringify(orderDetails));
-      localStorage.setItem("mipo_checkout_contact", JSON.stringify(shippingData));
-
-      try {
-        const existingIds = JSON.parse(localStorage.getItem("mipo_order_ids") || "[]");
-        const nextIds = Array.from(new Set([order.id, ...(Array.isArray(existingIds) ? existingIds : [])])).slice(0, 50);
-        localStorage.setItem("mipo_order_ids", JSON.stringify(nextIds));
-      } catch {
-        localStorage.setItem("mipo_order_ids", JSON.stringify([order.id]));
-      }
+      sessionStorage.setItem("lastOrder", JSON.stringify(orderDetails));
+      sessionStorage.setItem("mipo_checkout_contact", JSON.stringify(shippingData));
 
       if (paymentMethod === "cash-on-delivery") {
         clearCart();
@@ -316,11 +318,12 @@ const Checkout = () => {
         return;
       }
 
-      localStorage.setItem("pendingOrder", JSON.stringify(orderDetails));
+      sessionStorage.setItem("pendingOrder", JSON.stringify(orderDetails));
       const paymentSession = await createShopPaymentSession({
         order_id: order.id,
         success_url: `${window.location.origin}/payment-success`,
         cancel_url: `${window.location.origin}/payment-failed`,
+        access_token: orderAccessToken,
       });
 
       if (paymentSession.dev_mode) {
@@ -957,40 +960,6 @@ const Checkout = () => {
               {/* Safety Check */}
               <CheckoutSafetyCheck items={items} />
 
-              {/* Insurance Upsell */}
-              <InsuranceUpsell />
-
-              {/* Recurring Order Option - Brand Voice */}
-              <Card className="p-4 border-dashed border-primary/30 bg-primary/5 max-w-md mx-auto">
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    id="recurring"
-                    checked={wantRecurringOrder}
-                    onCheckedChange={(checked) => setWantRecurringOrder(checked as boolean)}
-                    className="mt-1"
-                  />
-                  <div className="flex-1">
-                    <Label htmlFor="recurring" className="font-medium cursor-pointer">
-                      שמרו להזמנה קבועה
-                    </Label>
-                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                      {CHECKOUT.saveForRecurring}
-                    </p>
-                    
-                    {/* Trust indicators */}
-                    <div className="flex flex-wrap gap-3 mt-3">
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Bell className="w-3 h-3 text-primary" />
-                        <span>{CHECKOUT.reminderBeforeCharge}</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Shield className="w-3 h-3 text-primary" />
-                        <span>{CHECKOUT.noAutoCharge}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Card>
             </motion.div>
           )}
         </AnimatePresence>

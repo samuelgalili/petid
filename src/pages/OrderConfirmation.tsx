@@ -44,6 +44,7 @@ interface OrderDetails {
   items: ConfirmationItem[];
   shippingData: ConfirmationShippingData;
   paymentMethod: string;
+  paymentStatus?: string;
   subtotal: number;
   shipping: number;
   tax: number;
@@ -52,6 +53,16 @@ interface OrderDetails {
   total: number;
   orderDate: string;
 }
+
+const paymentMethodLabels: Record<string, string> = {
+  "credit-card": "כרטיס אשראי",
+  "apple-pay": "Apple Pay",
+  "google-pay": "Google Pay",
+  bit: "Bit",
+  paybox: "PayBox",
+  paypal: "PayPal",
+  "cash-on-delivery": "מזומן במשלוח",
+};
 
 // ── Helpers ──
 
@@ -297,7 +308,7 @@ const OrderConfirmation = () => {
     const stateOrder = location.state?.order as OrderDetails | undefined;
     if (stateOrder) return stateOrder;
     try {
-      const savedOrder = localStorage.getItem("lastOrder");
+      const savedOrder = sessionStorage.getItem("lastOrder");
       return savedOrder ? JSON.parse(savedOrder) as OrderDetails : null;
     } catch {
       return null;
@@ -315,6 +326,8 @@ const OrderConfirmation = () => {
   if (!order) return null;
 
   const orderTotal = order.total;
+  const isCashOnDelivery = order.paymentMethod === "cash-on-delivery";
+  const isPaid = order.paymentStatus === "paid" || (import.meta.env.DEV && order.paymentStatus === "dev_approved");
 
   return (
     <div className="min-h-screen pb-20 bg-background" dir="rtl">
@@ -332,10 +345,14 @@ const OrderConfirmation = () => {
             <Heart className="w-12 h-12 text-primary" strokeWidth={1.5} />
           </div>
           <h1 className="text-2xl font-bold text-foreground mb-2 text-center">
-            {confirmationPet ? `${confirmationPet.name} מודה לך!` : "הזמנה אושרה!"}
+            {isCashOnDelivery
+              ? "ההזמנה התקבלה"
+              : isPaid
+                ? "התשלום אושר וההזמנה התקבלה"
+                : "ההזמנה נשמרה"}
           </h1>
           <p className="text-muted-foreground text-center text-sm">
-            {confirmationPet ? "מדד הבריאות השתפר בזכות הרכישה" : "תודה על ההזמנה שלך"}
+            {confirmationPet ? `${confirmationPet.name} מודה לך` : "תודה על ההזמנה שלך"}
           </p>
         </motion.div>
       </div>
@@ -354,20 +371,11 @@ const OrderConfirmation = () => {
           </Card>
         </motion.div>
 
-        {/* Health Score Update */}
-        {confirmationPet && <HealthScoreUpdate pet={confirmationPet} items={order.items} />}
-
-        {/* Peace of Mind Summary */}
-        {confirmationPet && <PeaceOfMindSummary pet={confirmationPet} items={order.items} />}
-
-        {/* Social Health ID Card */}
-        {confirmationPet && <SocialHealthCard pet={confirmationPet} />}
-
-        {/* Confirmation Email */}
+        {/* Order contact */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
           <Card className="p-4 bg-primary/5 border-0 rounded-2xl">
             <p className="text-sm text-foreground text-center">
-              📧 אימייל אישור נשלח ל{" "}
+              כתובת האימייל בהזמנה:{" "}
               <span className="font-semibold">{order.shippingData.email}</span>
             </p>
           </Card>
@@ -397,8 +405,7 @@ const OrderConfirmation = () => {
               <h3 className="font-bold text-foreground">אמצעי תשלום</h3>
             </div>
             <p className="text-sm text-muted-foreground mr-7">
-              {order.paymentMethod === "credit-card" ? "כרטיס אשראי" :
-               order.paymentMethod === "paypal" ? "PayPal" : "מזומן במשלוח"}
+              {paymentMethodLabels[order.paymentMethod] || order.paymentMethod}
             </p>
           </Card>
         </motion.div>
@@ -445,28 +452,20 @@ const OrderConfirmation = () => {
                 {order.shipping === 0 ? <span className="text-primary font-bold">חינם</span> : `₪${order.shipping.toFixed(2)}`}
               </span>
             </div>
-            {order.paymentMethod === "cash-on-delivery" && (
+            {isCashOnDelivery && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">עמלת מזומן</span>
-                <span className="font-semibold text-foreground">₪{(order.cashOnDeliveryFee || 5).toFixed(2)}</span>
+                <span className="font-semibold text-foreground">₪{(order.cashOnDeliveryFee ?? 0).toFixed(2)}</span>
               </div>
             )}
             <div className="text-xs text-muted-foreground">* המחירים כוללים מע״מ</div>
             <Separator />
             <div className="flex justify-between pt-2">
-              <span className="text-lg font-bold text-foreground">סה״כ ששולם</span>
+              <span className="text-lg font-bold text-foreground">
+                {isCashOnDelivery ? "סה״כ לתשלום במסירה" : isPaid ? "סה״כ ששולם" : "סה״כ הזמנה"}
+              </span>
               <span className="text-2xl font-bold text-primary">₪{orderTotal.toFixed(2)}</span>
             </div>
-          </Card>
-        </motion.div>
-
-        {/* Delivery Estimate */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
-          <Card className="p-4 bg-primary/5 border-0 rounded-2xl">
-            <p className="text-sm text-foreground text-center">
-              🚚 זמן אספקה משוער: <span className="font-bold">2-4 ימי עסקים</span>
-            </p>
-            <p className="text-xs text-muted-foreground text-center mt-1">תקבל מידע על המשלוח במייל</p>
           </Card>
         </motion.div>
 
@@ -478,7 +477,7 @@ const OrderConfirmation = () => {
             onClick={() => navigate("/")}
           >
             <Home className="w-5 h-5 ml-2" strokeWidth={1.5} />
-            חזרה לדשבורד הבריאות
+            חזרה לדף הבית
           </Button>
           <Button
             variant="outline"

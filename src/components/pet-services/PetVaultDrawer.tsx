@@ -7,7 +7,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  X, FileText, Upload, Eye, Share2, Loader2, Shield, Stethoscope,
+  X, FileText, Upload, Eye, Loader2, Shield, Stethoscope,
   Receipt, FolderOpen, ChevronDown, Camera, Syringe, CheckCircle2,
   Sparkles, Scan, Trash2,
 } from 'lucide-react';
@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { createMyDocument, deleteMyDocument, getMyDocuments, type MipoDocument, type MipoPet } from '@/lib/mipoApi';
+import { openSafeExternalUrl } from '@/lib/safeExternalUrl';
 
 type VaultCategory = 'vaccinations' | 'insurance' | 'invoices' | 'general';
 
@@ -129,7 +130,7 @@ export const PetVaultDrawer = ({ isOpen, onClose, pet }: PetVaultDrawerProps) =>
       toast({ title: 'המסמך הועלה בהצלחה' });
     } catch (error) {
       console.error('Upload error:', error);
-      toast({ title: 'שגיאה בהעלאת המסמך', variant: 'destructive' });
+      toast({ title: 'שגיאה בהעלאת המסמך', description: error instanceof Error ? error.message : undefined, variant: 'destructive' });
     } finally {
       setIsUploading(false);
     }
@@ -177,22 +178,7 @@ export const PetVaultDrawer = ({ isOpen, onClose, pet }: PetVaultDrawerProps) =>
     }
   }, [pet, queryClient, toast]);
 
-  const handleView = (url: string) => window.open(url, '_blank');
-
-  const handleShare = async (doc: VaultDocument) => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: doc.document_name,
-          text: `מסמך של ${pet?.name}: ${doc.document_name}`,
-          url: doc.document_url,
-        });
-      } catch { /* cancelled */ }
-    } else {
-      await navigator.clipboard.writeText(doc.document_url);
-      toast({ title: 'הקישור הועתק' });
-    }
-  };
+  const handleView = (url: string) => openSafeExternalUrl(url);
 
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
@@ -319,7 +305,7 @@ export const PetVaultDrawer = ({ isOpen, onClose, pet }: PetVaultDrawerProps) =>
                               <input
                                 type="file"
                                 className="hidden"
-                                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                accept=".pdf,.jpg,.jpeg,.png,.docx"
                                 onChange={(e) => handleFileUpload(e, group.id)}
                                 disabled={isUploading}
                               />
@@ -386,13 +372,6 @@ export const PetVaultDrawer = ({ isOpen, onClose, pet }: PetVaultDrawerProps) =>
                                         aria-label="צפייה"
                                       >
                                         <Eye className="w-4 h-4 text-muted-foreground" />
-                                      </button>
-                                      <button
-                                        onClick={() => handleShare(doc)}
-                                        className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
-                                        aria-label="שיתוף"
-                                      >
-                                        <Share2 className="w-4 h-4 text-muted-foreground" />
                                       </button>
                                       <button
                                         onClick={() => deleteMutation.mutate(doc.id)}

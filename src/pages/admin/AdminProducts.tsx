@@ -897,7 +897,9 @@ const AdminProducts = () => {
       <BulkProductImport
         open={bulkImportOpen}
         onOpenChange={setBulkImportOpen}
-        onImportComplete={(importedProducts) => bulkImportMutation.mutateAsync(importedProducts)}
+        onImportComplete={async (importedProducts) => {
+          await bulkImportMutation.mutateAsync(importedProducts);
+        }}
         onUploadComplete={() => queryClient.invalidateQueries({ queryKey: ["admin-products-unified"] })}
       />
     </AdminLayout>

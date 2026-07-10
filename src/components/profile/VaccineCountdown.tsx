@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Syringe, Calendar, AlertCircle, MapPin, CalendarPlus, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getMyPetHealthSummary } from "@/lib/mipoApi";
+import { formatLocalDate } from "@/lib/dateOnly";
 
 interface VaccineCountdownProps {
   petId: string;
@@ -29,7 +30,7 @@ export const VaccineCountdown = ({ petId, petName }: VaccineCountdownProps) => {
 
 	  useEffect(() => {
 	    const fetch = async () => {
-	      const today = new Date().toISOString().split("T")[0];
+	      const today = formatLocalDate(new Date());
 	      const summary = await getMyPetHealthSummary(petId);
 	      const visitItems: UpcomingVaccine[] = summary.vet_visits
 	        .filter((visit) => visit.next_visit_date && visit.next_visit_date >= today && (visit.vaccines || []).length > 0)
@@ -200,7 +201,7 @@ export const VaccineCountdown = ({ petId, petName }: VaccineCountdownProps) => {
                   whileTap={{ scale: 0.97 }}
                   onClick={() => {
                     setSelectedVaccine(null);
-                    navigate('/tracker');
+                    navigate('/chat');
                   }}
                   className="flex items-center gap-3 w-full p-3 bg-primary/10 rounded-xl hover:bg-primary/15 transition-colors"
                 >

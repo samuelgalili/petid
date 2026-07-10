@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { CheckCircle, Package, Truck, ArrowLeft } from "lucide-react";
+import { AlertTriangle, CheckCircle, Package, Truck, ArrowLeft, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { getShopOrder, type MipoOrder } from "@/lib/mipoApi";
+import { getOrderAccessToken, rememberOrderAccess } from "@/lib/orderAccess";
 
 type ShippingAddress = {
   fullName?: string;
@@ -16,6 +17,7 @@ type ShippingAddress = {
 };
 
 const getShippingAddress = (order: MipoOrder): ShippingAddress => order.shipping_address || {};
+const isConfirmedPayment = (status: string) => status === "paid" || (import.meta.env.DEV && status === "dev_approved");
 
 const toConfirmationOrder = (order: MipoOrder) => {
   const shippingAddress = getShippingAddress(order);
@@ -40,6 +42,7 @@ const toConfirmationOrder = (order: MipoOrder) => {
       zipCode: shippingAddress.zipCode || "",
     },
     paymentMethod: order.payment_method,
+    paymentStatus: order.payment_status,
     subtotal: order.subtotal,
     shipping: order.shipping,
     tax: order.tax,
@@ -55,47 +58,100 @@ const PaymentSuccess = () => {
   const [searchParams] = useSearchParams();
   const { clearCart } = useCart();
   const orderId = searchParams.get('order_id');
-  const paymentId = searchParams.get('payment_id');
-  const subscriptionId = searchParams.get('subscription_id');
-  
   const [order, setOrder] = useState<MipoOrder | null>(null);
-  const [loading, setLoading] = useState(!!orderId);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchOrder = async () => {
       if (!orderId) {
+        setError("לא נמצא מזהה הזמנה בקישור התשלום.");
         setLoading(false);
         return;
       }
 
       try {
-        const data = await getShopOrder(orderId);
-        setOrder(data);
+        const accessToken = getOrderAccessToken(orderId);
+        let data: MipoOrder | null = null;
 
-        clearCart();
-
-        const pendingOrder = localStorage.getItem("pendingOrder");
-        if (pendingOrder) {
-          localStorage.setItem("lastOrder", pendingOrder);
-        } else {
-          localStorage.setItem("lastOrder", JSON.stringify(toConfirmationOrder(data)));
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+          data = await getShopOrder(orderId, accessToken);
+          if (isConfirmedPayment(data.payment_status)) break;
+          if (["failed", "refunded"].includes(data.payment_status)) {
+            throw new Error("PAYMENT_FAILED");
+          }
+          if (attempt < 4) {
+            await new Promise((resolve) => window.setTimeout(resolve, 1000));
+          }
         }
 
-        localStorage.removeItem("pendingOrder");
-        localStorage.setItem("mipo_checkout_contact", JSON.stringify(toConfirmationOrder(data).shippingData));
+        if (!data || !isConfirmedPayment(data.payment_status)) {
+          throw new Error("PAYMENT_NOT_CONFIRMED");
+        }
+        if (cancelled) return;
 
-        const existingIds = JSON.parse(localStorage.getItem("mipo_order_ids") || "[]");
-        const nextIds = Array.from(new Set([data.id, ...(Array.isArray(existingIds) ? existingIds : [])])).slice(0, 50);
-        localStorage.setItem("mipo_order_ids", JSON.stringify(nextIds));
+        setOrder(data);
+        clearCart();
+        rememberOrderAccess(data, accessToken);
+
+        const pendingOrder = sessionStorage.getItem("pendingOrder");
+        if (pendingOrder) {
+          sessionStorage.setItem("lastOrder", pendingOrder);
+        } else {
+          sessionStorage.setItem("lastOrder", JSON.stringify(toConfirmationOrder(data)));
+        }
+
+        sessionStorage.removeItem("pendingOrder");
+        sessionStorage.setItem("mipo_checkout_contact", JSON.stringify(toConfirmationOrder(data).shippingData));
       } catch (err) {
-        console.error('Error fetching order:', err);
+        if (cancelled) return;
+        console.error("Error verifying payment:", err);
+        setError(
+          err instanceof Error && err.message === "PAYMENT_FAILED"
+            ? "התשלום לא אושר. אפשר לחזור לעגלה ולנסות שוב."
+            : "עדיין לא הצלחנו לאמת את התשלום. לא בוצעו שינויים בעגלה.",
+        );
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
-    fetchOrder();
+    void fetchOrder();
+    return () => {
+      cancelled = true;
+    };
   }, [orderId, clearCart]);
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
+        <div className="text-center space-y-3" role="status">
+          <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
+          <p className="font-medium">מאמתים את התשלום...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (error || !order) {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
+        <Card className="max-w-md w-full text-center">
+          <CardHeader>
+            <AlertTriangle className="h-14 w-14 text-amber-600 mx-auto mb-3" />
+            <CardTitle>לא ניתן לאמת את התשלום</CardTitle>
+            <CardDescription>{error}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button className="w-full" onClick={() => window.location.reload()}>בדיקה מחדש</Button>
+            <Button className="w-full" variant="outline" onClick={() => navigate("/cart")}>חזרה לעגלה</Button>
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-success/10 to-background flex items-center justify-center p-4" dir="rtl">
@@ -107,15 +163,14 @@ const PaymentSuccess = () => {
               <CheckCircle className="h-20 w-20 text-green-500 relative" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">התשלום בוצע בהצלחה! 🎉</CardTitle>
+          <CardTitle className="text-2xl font-bold">התשלום בוצע בהצלחה!</CardTitle>
           <CardDescription className="text-base mt-2">
-            תודה על הרכישה שלך. קבלה תישלח לכתובת הדוא״ל שלך.
+            תודה על הרכישה שלך. ההזמנה התקבלה ותועבר לטיפול.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Order Details */}
-          {order && (
-            <div className="bg-muted/50 rounded-xl p-4 space-y-3">
+          <div className="bg-muted/50 rounded-xl p-4 space-y-3">
               <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground">מספר הזמנה:</span>
                 <span className="font-bold">{order.order_number}</span>
@@ -124,26 +179,13 @@ const PaymentSuccess = () => {
                 <span className="text-muted-foreground">סכום ששולם:</span>
                 <span className="font-bold text-green-600">₪{order.total.toFixed(2)}</span>
               </div>
-              {getShippingAddress(order).email && (
+              {getShippingAddress(order).email && order.payment_status === "paid" && (
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted-foreground">אישור נשלח ל:</span>
                   <span className="font-medium">{getShippingAddress(order).email}</span>
                 </div>
               )}
-            </div>
-          )}
-
-          {/* Legacy payment/subscription IDs */}
-          {paymentId && !orderId && (
-            <p className="text-sm text-muted-foreground">
-              מספר עסקה: {paymentId}
-            </p>
-          )}
-          {subscriptionId && (
-            <p className="text-sm text-muted-foreground">
-              מספר מנוי: {subscriptionId}
-            </p>
-          )}
+          </div>
 
           {/* Status Timeline */}
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">

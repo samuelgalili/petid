@@ -34,6 +34,7 @@ import { useToast } from "@/hooks/use-toast";
 import { normalizeProductPetType } from "@/lib/productStore";
 import { createAdminProduct, invokeProductIntelFunction } from "@/lib/mipoApi";
 import { BulkProductImport } from "./BulkProductImport";
+import { toSafeHttpUrl } from "@/lib/safeExternalUrl";
 
 interface ScrapedProductVariant {
   label: string;
@@ -1042,6 +1043,14 @@ export const ProductFormDialog = ({
 
   if (!product) return null;
 
+  const safeBrandWebsite = toSafeHttpUrl(
+    enrichedData?.brandWebsite
+      ? enrichedData.brandWebsite.includes("://")
+        ? enrichedData.brandWebsite
+        : `https://${enrichedData.brandWebsite}`
+      : null,
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" dir="rtl">
@@ -1640,11 +1649,11 @@ export const ProductFormDialog = ({
                     </div>
                   )}
                   
-                  {enrichedData.brandWebsite && (
+                  {safeBrandWebsite && enrichedData.brandWebsite && (
                     <div className="col-span-2">
                       <span className="text-muted-foreground">אתר המותג הרשמי:</span>
                       <a 
-                        href={enrichedData.brandWebsite.startsWith("http") ? enrichedData.brandWebsite : `https://${enrichedData.brandWebsite}`} 
+                        href={safeBrandWebsite}
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="text-primary hover:underline flex items-center gap-1 text-xs mt-1"

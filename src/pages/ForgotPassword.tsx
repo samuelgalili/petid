@@ -36,7 +36,7 @@ const ForgotPassword = () => {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<Step>("email");
   const [error, setError] = useState("");
-  const [videoEnded, setVideoEnded] = useState(false);
+  const [videoEnded, setVideoEnded] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
 

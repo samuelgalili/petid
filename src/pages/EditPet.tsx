@@ -74,7 +74,7 @@ const EditPet = () => {
       await updateMyPet(petId, {
         name: formData.name.trim(),
         breed: formData.breed || null,
-        birth_date: formData.birthDate ? formData.birthDate.toISOString().split('T')[0] : null,
+        birth_date: formData.birthDate ? format(formData.birthDate, "yyyy-MM-dd") : null,
         gender: formData.gender || null,
         is_neutered: formData.is_neutered === "true"
       });

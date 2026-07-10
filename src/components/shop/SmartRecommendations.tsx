@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, ShoppingCart, Shield } from "lucide-react";
+import { Info, Sparkles, ShoppingCart } from "lucide-react";
 import { useActivePet } from "@/hooks/useActivePet";
 import { useCart } from "@/contexts/CartContext";
 import { OptimizedImage } from "@/components/OptimizedImage";
@@ -45,7 +45,7 @@ function scoreProduct(
   medicalConditions: string[] | null
 ): { score: number; reason: string } {
   let score = 0;
-  let reason = "מותאם אישית";
+  let reason = "תואם לסוג חיית המחמד";
   const text = `${product.name || ""} ${product.description || ""} ${product.category || ""}`.toLowerCase();
 
   // Pet type match
@@ -61,7 +61,7 @@ function scoreProduct(
       // Puppy
       if (PUPPY_CATEGORIES.some(kw => text.includes(kw))) {
         score += 40;
-        reason = "מושלם לגורים 🐾";
+        reason = "תיאור המוצר מזכיר התאמה לגורים";
       }
       // Penalize adult/senior food
       if (text.includes("senior") || text.includes("מבוגר")) score -= 20;
@@ -69,7 +69,7 @@ function scoreProduct(
       // Senior
       if (SENIOR_CATEGORIES.some(kw => text.includes(kw))) {
         score += 40;
-        reason = "תמיכה לגיל מבוגר 💛";
+        reason = "תיאור המוצר מזכיר גיל מבוגר";
       }
       if (text.includes("puppy") || text.includes("גורים")) score -= 20;
     }
@@ -83,7 +83,7 @@ function scoreProduct(
         if (condLower.includes(key)) {
           if (keywords.some(kw => text.includes(kw))) {
             score += 50;
-            reason = `מותאם למצב רפואי ✅`;
+            reason = "קשור לצורך שסומן בפרופיל";
             break;
           }
         }
@@ -121,7 +121,7 @@ function scoreProduct(
   // NRC 2006 compliance signal
   if (text.includes("nrc") || text.includes("aafco") || text.includes("fediaf")) {
     score += 15;
-    reason = "עומד בתקני NRC 2006 ✅";
+    reason = "תיאור הקטלוג מזכיר תקן תזונתי";
   }
 
   // General quality signals
@@ -202,13 +202,13 @@ export const SmartRecommendations = () => {
             <Sparkles className="w-3.5 h-3.5 text-primary" strokeWidth={2} />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-foreground">מומלץ ל{pet.name}</h2>
-            <p className="text-[10px] text-muted-foreground">מותאם לגיל, גזע ומצב בריאותי</p>
+            <h2 className="text-sm font-bold text-foreground">מיון לפי הפרופיל של {pet.name}</h2>
+            <p className="text-[10px] text-muted-foreground">מבוסס על פרטי הפרופיל ותיאורי הקטלוג</p>
           </div>
         </div>
         <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/5">
-          <Shield className="w-3 h-3 text-primary" strokeWidth={2} />
-          <span className="text-[10px] font-semibold text-primary">AI מותאם</span>
+          <Info className="w-3 h-3 text-primary" strokeWidth={2} />
+          <span className="text-[10px] font-semibold text-primary">סינון כללי</span>
         </div>
       </div>
 
@@ -253,10 +253,11 @@ export const SmartRecommendations = () => {
                     whileTap={{ scale: 0.85 }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      addToCart({ id: product.id, name: product.name, price: product.price, image: product.image_url, quantity: 1 });
+                      addToCart({ productId: product.id, name: product.name, price: product.price, image: product.image_url, quantity: 1 });
                       toast.success("נוסף לעגלה! 🛒");
                     }}
                     className="w-7 h-7 rounded-full bg-primary flex items-center justify-center"
+                    aria-label={`הוספת ${product.name} לעגלה`}
                   >
                     <ShoppingCart className="w-3.5 h-3.5 text-primary-foreground" strokeWidth={2} />
                   </motion.button>
@@ -266,6 +267,9 @@ export const SmartRecommendations = () => {
           </motion.div>
         ))}
       </div>
+      <p className="mt-3 text-[10px] leading-relaxed text-muted-foreground">
+        המיון אינו קובע התאמה רפואית ואינו מחליף בדיקה של תווית המוצר או ייעוץ וטרינרי.
+      </p>
     </motion.div>
   );
 };

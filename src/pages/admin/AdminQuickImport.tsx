@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { toSafeHttpUrl } from "@/lib/safeExternalUrl";
 
 type WizardStep = 1 | 2 | 3 | 4;
 type StepStatus = "idle" | "loading" | "done" | "error";
@@ -404,6 +405,8 @@ const AdminQuickImport = () => {
 
   const progressPct = ((step - 1) / 3) * 100;
 
+  const safeSourceUrl = toSafeHttpUrl(editData?.source_url);
+
   return (
     <AdminLayout title="אשף ייבוא מוצר" icon={Download} breadcrumbs={[{ label: "מוצרים", href: "/admin/products" }, { label: "ייבוא מהיר" }]}>
       <div className="max-w-5xl mx-auto space-y-6" dir="rtl">
@@ -600,8 +603,8 @@ const AdminQuickImport = () => {
                         <div className="w-32 h-32 rounded-xl overflow-hidden bg-muted border-2 border-border shadow-sm">
                           <img src={editData.image_url} alt={editData.name} className="w-full h-full object-cover" />
                         </div>
-                        {editData.source_url && (
-                          <a href={editData.source_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-primary mt-2 hover:underline font-medium">
+                        {safeSourceUrl && (
+                          <a href={safeSourceUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-primary mt-2 hover:underline font-medium">
                             <ExternalLink size={12} /> מקור
                           </a>
                         )}

@@ -60,7 +60,7 @@ export const LibraClaimForm = ({ petId, claimData, open, onClose, onSubmitted }:
         pet_name: claimData.petName,
         pet_microchip: claimData.microchipNumber,
         owner_name: claimData.ownerName,
-        owner_id_number: claimData.ownerIdNumber,
+        owner_id_number: claimData.ownerIdNumber?.slice(-4) || null,
         clinic_name: claimData.clinicName,
         visit_date: claimData.visitDate,
         diagnosis: claimData.diagnosis,
@@ -73,7 +73,7 @@ export const LibraClaimForm = ({ petId, claimData, open, onClose, onSubmitted }:
 
       // Brief animation then close
       setTimeout(() => {
-        toast({ title: "הבקשה נשלחה בהצלחה ✅", description: "הסטטוס יתעדכן בכרטיסיית הבריאות" });
+        toast({ title: "טיוטת התביעה נשמרה", description: "הרשומה נשמרה בחשבון שלך ולא נשלחה לחברת ביטוח" });
         onSubmitted?.();
         onClose();
         setSubmitted(false);
@@ -81,7 +81,7 @@ export const LibraClaimForm = ({ petId, claimData, open, onClose, onSubmitted }:
       }, 2500);
     } catch (error) {
       console.error("Claim submission error:", error);
-      toast({ title: "שגיאה בשליחת הבקשה", variant: "destructive" });
+      toast({ title: "שגיאה בשמירת הטיוטה", variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
@@ -130,8 +130,8 @@ export const LibraClaimForm = ({ petId, claimData, open, onClose, onSubmitted }:
                 {submitting && !submitted && (
                   <>
                     <Loader2 className="w-10 h-10 text-primary animate-spin" />
-                    <p className="text-sm font-semibold text-foreground">שולח את הבקשה...</p>
-                    <p className="text-xs text-muted-foreground">הסטטוס יתעדכן בכרטיסיית הבריאות</p>
+                    <p className="text-sm font-semibold text-foreground">שומר טיוטה...</p>
+                    <p className="text-xs text-muted-foreground">הרשומה נשמרת בחשבון MIPO בלבד</p>
                   </>
                 )}
                 {submitted && (
@@ -144,8 +144,8 @@ export const LibraClaimForm = ({ petId, claimData, open, onClose, onSubmitted }:
                     <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
                       <CheckCircle2 className="w-8 h-8 text-green-500" />
                     </div>
-                    <p className="text-sm font-bold text-foreground">הבקשה נשלחה בהצלחה!</p>
-                    <p className="text-xs text-muted-foreground">מספר התביעה נשמר במערכת</p>
+                    <p className="text-sm font-bold text-foreground">טיוטת התביעה נשמרה</p>
+                    <p className="text-xs text-muted-foreground">הטיוטה לא נשלחה לחברת ביטוח</p>
                   </motion.div>
                 )}
               </motion.div>
@@ -160,7 +160,7 @@ export const LibraClaimForm = ({ petId, claimData, open, onClose, onSubmitted }:
                   <Shield className="w-5 h-5 text-primary" strokeWidth={1.5} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-foreground">בקשת החזר ביטוחי</h3>
+                  <h3 className="font-bold text-foreground">טיוטת תביעה ביטוחית</h3>
                   <p className="text-[10px] text-muted-foreground">הנתונים מולאו אוטומטית מהסריקה</p>
                 </div>
               </div>
@@ -189,7 +189,7 @@ export const LibraClaimForm = ({ petId, claimData, open, onClose, onSubmitted }:
 
             {/* Verification Checklist */}
             <div className="space-y-2.5">
-              <p className="text-xs font-semibold text-foreground">אימות לפני שליחה:</p>
+              <p className="text-xs font-semibold text-foreground">אימות לפני שמירה:</p>
               {CHECKLIST_ITEMS.map(({ key, label }) => (
                 <button
                   key={key}
@@ -219,7 +219,7 @@ export const LibraClaimForm = ({ petId, claimData, open, onClose, onSubmitted }:
               disabled={!allChecked || submitting}
             >
               <Send className="w-4 h-4 ml-2" />
-              שלח בקשת החזר
+              שמור טיוטת תביעה
             </Button>
           </div>
         </motion.div>

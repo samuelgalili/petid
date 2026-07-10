@@ -77,7 +77,7 @@ export const SignupForm = () => {
         full_name: formData.fullName.trim(),
         email: formData.email.trim(),
         password: formData.password,
-        birthdate: birthdate.toISOString().split("T")[0],
+        birthdate: format(birthdate, "yyyy-MM-dd"),
       });
 
       if (error) {
@@ -113,8 +113,11 @@ export const SignupForm = () => {
         <div className="relative">
           <User className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
+            id="signup-full-name"
             type="text"
             placeholder="שם מלא"
+            aria-label="שם מלא"
+            aria-invalid={!!fieldErrors.fullName}
             value={formData.fullName}
             onChange={(e) => {
               setFormData({ ...formData, fullName: e.target.value });
@@ -135,6 +138,7 @@ export const SignupForm = () => {
         <div className="relative">
           <CalendarIcon className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
+            id="signup-birthdate"
             type="date"
             aria-label="תאריך לידה"
             value={birthdateInputValue}
@@ -159,8 +163,11 @@ export const SignupForm = () => {
         <div className="relative">
           <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
+            id="signup-email"
             type="email"
             placeholder="אימייל"
+            aria-label="אימייל"
+            aria-invalid={!!fieldErrors.email}
             value={formData.email}
             onChange={(e) => {
               setFormData({ ...formData, email: e.target.value });
@@ -181,8 +188,11 @@ export const SignupForm = () => {
         <div className="relative">
           <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
+            id="signup-password"
             type={showPassword ? "text" : "password"}
             placeholder="סיסמה"
+            aria-label="סיסמה"
+            aria-invalid={!!fieldErrors.password}
             value={formData.password}
             onChange={(e) => {
               setFormData({ ...formData, password: e.target.value });
@@ -199,7 +209,6 @@ export const SignupForm = () => {
             type="button"
             onClick={() => setShowPassword(!showPassword)}
             className="absolute left-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
-            tabIndex={-1}
             aria-label={showPassword ? "הסתר סיסמה" : "הצג סיסמה"}
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -212,8 +221,11 @@ export const SignupForm = () => {
         <div className="relative">
           <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
+            id="signup-confirm-password"
             type={showPassword ? "text" : "password"}
             placeholder="אימות סיסמה"
+            aria-label="אימות סיסמה"
+            aria-invalid={!!fieldErrors.confirmPassword}
             value={formData.confirmPassword}
             onChange={(e) => {
               setFormData({ ...formData, confirmPassword: e.target.value });

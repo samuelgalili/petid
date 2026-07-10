@@ -1,200 +1,135 @@
-import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
-import {
-  ArrowRight, Package, Plane, Truck, MapPin,
-  CheckCircle2, Clock, ShoppingBag, AlertTriangle
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { getShopOrder } from '@/lib/mipoApi';
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
+import { AlertTriangle, ArrowRight, CreditCard, Hash, Package } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { getShopOrder } from "@/lib/mipoApi";
+import { getOrderAccessToken } from "@/lib/orderAccess";
 
-const milestoneSteps = [
-  { key: 'label_created', label: 'ההזמנה התקבלה', sublabel: 'Order Placed', icon: ShoppingBag },
-  { key: 'in_transit_origin', label: 'מחסן גלובלי', sublabel: 'Global Warehouse', icon: Package },
-  { key: 'in_transit', label: 'משלוח בינלאומי', sublabel: 'International Transit', icon: Plane },
-  { key: 'arrived_destination', label: 'הגיע לישראל', sublabel: 'Arrived in Israel', icon: MapPin },
-  { key: 'delivered', label: 'נמסר', sublabel: 'Delivered', icon: CheckCircle2 },
-];
+const ORDER_STATUS: Record<string, string> = {
+  pending: "התקבלה",
+  processing: "בטיפול",
+  shipped: "נשלחה",
+  delivered: "נמסרה",
+  cancelled: "בוטלה",
+};
 
-const statusOrder = [
-  'label_created', 'picked_up', 'in_transit_origin', 'departed_origin',
-  'in_transit', 'arrived_destination', 'customs', 'out_for_delivery', 'delivered',
-];
-
-function getStepIndex(status: string): number {
-  const idx = statusOrder.indexOf(status);
-  if (idx <= 1) return 0; // label_created / picked_up → step 0
-  if (idx <= 3) return 1; // in_transit_origin / departed_origin → step 1
-  if (idx === 4) return 2; // in_transit → step 2
-  if (idx <= 6) return 3; // arrived_destination / customs → step 3
-  return 4; // out_for_delivery / delivered → step 4
-}
+const PAYMENT_STATUS: Record<string, string> = {
+  pending: "ממתין לאישור",
+  paid: "שולם",
+  failed: "נכשל",
+  awaiting_cod: "לתשלום במסירה",
+  refunded: "הוחזר",
+  dev_approved: "אושר בסביבת פיתוח",
+};
 
 const OrderTrackingPage = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
-
-  const { data: order, isLoading: orderLoading } = useQuery({
-    queryKey: ['order-detail', orderId],
-    queryFn: async () => {
-      return getShopOrder(orderId!);
-    },
+  const accessToken = getOrderAccessToken(orderId);
+  const { data: order, isLoading, isError } = useQuery({
+    queryKey: ["order-detail", orderId],
+    queryFn: () => getShopOrder(orderId!, accessToken),
     enabled: !!orderId,
+    retry: false,
   });
 
-  const currentStatus = order?.shipping_status || 'label_created';
-  const activeStep = getStepIndex(currentStatus);
-  const isFailed = currentStatus === 'delivery_failed';
-
-  if (orderLoading) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="max-w-lg mx-auto px-5 py-20">
-          <div className="space-y-4">
-            <div className="h-6 w-40 rounded-lg bg-muted animate-pulse" />
-            <div className="h-32 rounded-[20px] bg-muted animate-pulse" />
-            <div className="h-64 rounded-[20px] bg-muted animate-pulse" />
-          </div>
+      <main className="min-h-screen bg-background" dir="rtl">
+        <div className="max-w-lg mx-auto px-5 py-20 space-y-4" role="status">
+          <div className="h-6 w-40 rounded bg-muted animate-pulse" />
+          <div className="h-32 rounded-lg bg-muted animate-pulse" />
+          <span className="sr-only">טוען הזמנה</span>
         </div>
-      </div>
+      </main>
+    );
+  }
+
+  if (isError || !order) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background p-6" dir="rtl">
+        <div className="w-full max-w-sm rounded-lg border bg-card p-6 text-center shadow-sm">
+          <AlertTriangle className="mx-auto mb-3 h-10 w-10 text-amber-600" />
+          <h1 className="text-lg font-bold">לא ניתן להציג את ההזמנה</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            הקישור אינו תקין, פג תוקף או שאינך מורשה לצפות בהזמנה הזו.
+          </p>
+          <Button className="mt-5 w-full" onClick={() => navigate("/order-history")}>
+            להיסטוריית ההזמנות
+          </Button>
+        </div>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
-      {/* Header */}
+    <main className="min-h-screen bg-background" dir="rtl">
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/40">
         <div className="flex items-center justify-between px-5 h-14 max-w-lg mx-auto">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="חזרה">
             <ArrowRight className="w-5 h-5" />
           </Button>
-          <span className="text-[15px] font-semibold tracking-tight">מעקב הזמנה</span>
+          <h1 className="text-[15px] font-semibold">פרטי הזמנה</h1>
           <div className="w-10" />
         </div>
       </header>
 
-      <div className="max-w-lg mx-auto px-5 py-6 space-y-8">
-
-        {/* ─── Order Summary Card ─── */}
-        <motion.div
+      <div className="max-w-lg mx-auto px-5 py-6 space-y-4">
+        <motion.section
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-[20px] bg-card border border-border/50 p-6 shadow-sm"
+          className="rounded-lg bg-card border border-border/50 p-5 shadow-sm"
         >
-          <div className="flex items-start gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center">
-              <Package className="w-6 h-6 text-muted-foreground/40" strokeWidth={1.5} />
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 rounded-md bg-muted flex items-center justify-center">
+              <Package className="w-6 h-6 text-muted-foreground" />
             </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-base font-semibold leading-snug truncate">
-                {order?.special_instructions || order?.order_number || 'הזמנה'}
-              </h2>
-              {order?.pet_name && (
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  🐾 עבור {order.pet_name}
-                </p>
-              )}
-              <p className="text-xs text-muted-foreground mt-1">
-                #{order?.order_number || orderId?.slice(0, 8)}
-              </p>
+            <div>
+              <p className="text-xs text-muted-foreground">מספר הזמנה</p>
+              <p className="font-bold">{order.order_number}</p>
             </div>
           </div>
-        </motion.div>
-
-        {/* ─── Delivery Failed Banner ─── */}
-        {isFailed && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="rounded-[16px] bg-destructive/10 border border-destructive/20 p-4 flex items-center gap-3"
-          >
-            <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0" strokeWidth={1.5} />
-            <div>
-              <p className="text-sm font-medium text-destructive">ניסיון מסירה נכשל</p>
-              <p className="text-xs text-muted-foreground mt-0.5">נא לתאם מסירה מחדש עם חברת השילוח</p>
+          <dl className="space-y-3 text-sm">
+            <div className="flex justify-between gap-4">
+              <dt className="text-muted-foreground">סטטוס הזמנה</dt>
+              <dd className="font-semibold">{ORDER_STATUS[order.status] || order.status}</dd>
             </div>
-          </motion.div>
+            <div className="flex justify-between gap-4">
+              <dt className="text-muted-foreground">סטטוס תשלום</dt>
+              <dd className="font-semibold">{PAYMENT_STATUS[order.payment_status] || order.payment_status}</dd>
+            </div>
+            <div className="flex justify-between gap-4">
+              <dt className="text-muted-foreground">תאריך הזמנה</dt>
+              <dd className="font-semibold">{new Date(order.order_date).toLocaleDateString("he-IL")}</dd>
+            </div>
+            <div className="flex justify-between gap-4">
+              <dt className="text-muted-foreground">סכום</dt>
+              <dd className="font-semibold">₪{order.total.toFixed(2)}</dd>
+            </div>
+          </dl>
+        </motion.section>
+
+        {order.tracking_number && (
+          <motion.section
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-lg bg-card border border-border/50 p-5 shadow-sm"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <Hash className="w-4 h-4 text-primary" />
+              <h2 className="font-semibold">מספר מעקב שנמסר להזמנה</h2>
+            </div>
+            <p className="font-mono text-sm break-all" dir="ltr">{order.tracking_number}</p>
+          </motion.section>
         )}
 
-        {/* ─── Visual Timeline ─── */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.15em] mb-5">
-            DELIVERY PROGRESS
-          </p>
-
-          <div className="relative pr-8">
-            {/* Vertical line */}
-            <div className="absolute right-[15px] top-2 bottom-2 w-px bg-border" />
-            {/* Filled progress */}
-            <div
-              className="absolute right-[15px] top-2 w-px bg-primary transition-all duration-700"
-              style={{
-                height: `${(activeStep / (milestoneSteps.length - 1)) * 100}%`,
-              }}
-            />
-
-            <div className="space-y-8">
-              {milestoneSteps.map((step, i) => {
-                const isCompleted = i <= activeStep;
-                const isCurrent = i === activeStep && !isFailed;
-                const Icon = step.icon;
-
-                return (
-                  <motion.div
-                    key={step.key}
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.15 + i * 0.06 }}
-                    className="relative flex items-start gap-5"
-                  >
-                    {/* Dot / icon */}
-                    <div className="absolute right-[-32px]">
-                      <div
-                        className={`
-                          w-[30px] h-[30px] rounded-full flex items-center justify-center
-                          transition-all duration-500
-                          ${isCurrent
-                            ? 'bg-primary text-primary-foreground shadow-md shadow-primary/25 scale-110'
-                            : isCompleted
-                              ? 'bg-primary/15 text-primary'
-                              : 'bg-muted text-muted-foreground/40'
-                          }
-                        `}
-                      >
-                        <Icon className="w-3.5 h-3.5" strokeWidth={1.5} />
-                      </div>
-                    </div>
-
-                    {/* Text */}
-                    <div className="pt-1">
-                      <p className={`text-[15px] font-medium leading-snug ${
-                        isCompleted ? 'text-foreground' : 'text-muted-foreground/50'
-                      }`}>
-                        {step.label}
-                      </p>
-                      <p className={`text-[11px] mt-0.5 ${
-                        isCompleted ? 'text-muted-foreground' : 'text-muted-foreground/30'
-                      }`}>
-                        {step.sublabel}
-                      </p>
-                      {isCurrent && currentStatus === 'label_created' && (
-                        <p className="text-xs text-primary mt-1.5 font-medium">
-                          פרטי שילוח יופיעו לאחר העברת ההזמנה לטיפול
-                        </p>
-                      )}
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
-        </motion.div>
+        <Button variant="outline" className="w-full" onClick={() => navigate("/order-history")}>
+          <CreditCard className="w-4 h-4 ml-2" />
+          להיסטוריית ההזמנות
+        </Button>
       </div>
-    </div>
+    </main>
   );
 };
 

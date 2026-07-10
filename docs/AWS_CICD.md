@@ -27,3 +27,5 @@ On push to `aws-migration`, the workflow:
 8. Smoke-tests `/api/health` and `/`.
 
 Runtime secrets are still sourced from `/opt/mipo/.env`, which is populated from AWS SSM by `deploy/aws/sync-ssm-env.sh`.
+
+An existing RDS database without a `schema_migrations` ledger must be explicitly baselined before its first ledger-aware deployment. Verify the schema against the release migrations, then run the migration container once with `MIGRATION_BASELINE_THROUGH` set to the last already-present migration and `MIGRATION_BASELINE_CONFIRM=existing-schema-reviewed`. Do not leave either variable in the production environment.

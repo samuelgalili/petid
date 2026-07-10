@@ -336,7 +336,7 @@ const BottomNav = () => {
       <nav
         className={cn(
           "fixed bottom-0 left-0 right-0 z-[9999]",
-          "bg-background/80 dark:bg-[hsl(0,0%,5%)]/80 backdrop-blur-xl backdrop-saturate-150",
+          "bg-background/95 dark:bg-[hsl(0,0%,5%)]/95 backdrop-blur-xl backdrop-saturate-150",
           "shadow-[0_-1px_8px_rgba(0,0,0,0.06)]",
           "pb-[env(safe-area-inset-bottom)]"
         )}
@@ -361,12 +361,20 @@ const BottomNav = () => {
 
           {/* Center: Pet Avatar */}
           <div className="flex flex-col items-center justify-center relative">
-            <motion.div
+            <motion.button
+              type="button"
               whileTap={{ scale: 0.9 }}
               onPointerDown={handlePetPointerDown}
               onPointerUp={handlePetPointerUp}
               onPointerLeave={handlePetPointerLeave}
+              onPointerCancel={handlePetPointerLeave}
+              onClick={(event) => {
+                if (event.detail !== 0) return;
+                triggerRandom();
+                setShowPetSwitcher(true);
+              }}
               className="relative -mt-8 flex flex-col items-center cursor-pointer select-none"
+              aria-label={activePet?.name ? `פתיחת בורר חיות מחמד עבור ${activePet.name}` : labels.addPet}
             >
               <div
                 className="w-[58px] h-[58px] rounded-full p-[2.5px] bg-background shadow-lg"
@@ -390,7 +398,7 @@ const BottomNav = () => {
                 />
               )}
               <PetButtonOverlay activeAnim={activeAnim} />
-            </motion.div>
+            </motion.button>
             <span
               className="text-[10px] font-semibold mt-0.5 transition-colors truncate max-w-[56px]"
               style={{ color: petAccent || "hsl(var(--primary))" }}

@@ -1,16 +1,26 @@
 services:
   mipo-api:
     build:
-      context: /opt/mipo/server
+      context: ${MIPO_REMOTE_PATH:-/opt/mipo}/server
     restart: unless-stopped
     env_file:
-      - /opt/mipo/.env
+      - ${MIPO_REMOTE_PATH:-/opt/mipo}/.env
     environment:
       NODE_ENV: production
       PORT: "3000"
       UPLOAD_DIR: /app/uploads
+      PRIVATE_UPLOAD_DIR: /app/private-uploads
     volumes:
-      - /opt/mipo/uploads:/app/uploads
+      - type: bind
+        source: ${MIPO_REMOTE_PATH:-/opt/mipo}/uploads
+        target: /app/uploads
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${MIPO_REMOTE_PATH:-/opt/mipo}/private-uploads
+        target: /app/private-uploads
+        bind:
+          create_host_path: false
     networks:
       - mipo
 
@@ -23,9 +33,8 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - /opt/mipo/deploy/aws/Caddyfile:/etc/caddy/Caddyfile:ro
-      - /opt/mipo/dist:/srv/www:ro
-      - /opt/mipo/uploads:/srv/uploads:ro
+      - ${MIPO_REMOTE_PATH:-/opt/mipo}/deploy/aws/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${MIPO_REMOTE_PATH:-/opt/mipo}/dist:/srv/www:ro
       - caddy_data:/data
       - caddy_config:/config
     networks:

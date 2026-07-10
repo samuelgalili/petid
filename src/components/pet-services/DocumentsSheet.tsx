@@ -10,6 +10,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createMyDocument, deleteMyDocument, getMyDocuments, type MipoDocument, type MipoPet } from '@/lib/mipoApi';
+import { openSafeExternalUrl } from '@/lib/safeExternalUrl';
 
 interface DocumentsSheetProps {
   isOpen: boolean;
@@ -77,7 +78,7 @@ export const DocumentsSheet = ({ isOpen, onClose, pet }: DocumentsSheetProps) =>
       toast({ title: 'המסמך הועלה בהצלחה' });
     } catch (error) {
       console.error('Upload error:', error);
-      toast({ title: 'שגיאה בהעלאת המסמך', variant: 'destructive' });
+      toast({ title: 'שגיאה בהעלאת המסמך', description: error instanceof Error ? error.message : undefined, variant: 'destructive' });
     } finally {
       setIsUploading(false);
     }
@@ -107,7 +108,7 @@ export const DocumentsSheet = ({ isOpen, onClose, pet }: DocumentsSheetProps) =>
   };
 
   const handleViewDocument = (url: string) => {
-    window.open(url, '_blank');
+    openSafeExternalUrl(url);
   };
 
   return (
@@ -119,7 +120,7 @@ export const DocumentsSheet = ({ isOpen, onClose, pet }: DocumentsSheetProps) =>
             <input
               type="file"
               className="hidden"
-              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+              accept=".pdf,.jpg,.jpeg,.png,.docx"
               onChange={handleFileUpload}
               disabled={isUploading}
             />

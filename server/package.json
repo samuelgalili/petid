@@ -3,11 +3,16 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "scripts": {
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "test": "node --test"
   },
   "dependencies": {
     "cheerio": "^1.2.0",
-    "pg": "^8.13.1"
+    "pg": "^8.13.1",
+    "undici": "^7.28.0"
   }
 }

@@ -30,7 +30,7 @@ const appActions = [
     label: "WhatsApp",
     color: "bg-green-500",
     onClick: (url: string) => {
-      window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, "_blank");
+      window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, "_blank", "noopener,noreferrer");
     },
   },
   {

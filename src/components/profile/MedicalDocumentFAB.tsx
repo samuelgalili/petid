@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Camera, FileUp, PenLine, X, Loader2,
   Syringe, Building2, Calendar, CheckCircle2, AlertTriangle,
-  CalendarPlus, Weight, Shield, Pill, User, MapPin, Phone, Hash,
+  CalendarPlus, Weight, Pill, User, MapPin, Phone, Hash,
   PawPrint, Palette, Tag, Cpu
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ import {
   updateMyPet,
   updateMyProfile,
 } from "@/lib/mipoApi";
+import { formatLocalDate, parseLocalDate } from "@/lib/dateOnly";
 
 interface MedicalDocumentFABProps {
   petId: string;
@@ -85,7 +86,7 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
 
   // Manual entry state
   const [manualSummary, setManualSummary] = useState('');
-  const [manualDate, setManualDate] = useState(new Date().toISOString().split('T')[0]);
+  const [manualDate, setManualDate] = useState(() => formatLocalDate(new Date()));
   const [manualClinic, setManualClinic] = useState('');
   const [manualSubmitting, setManualSubmitting] = useState(false);
 
@@ -111,30 +112,34 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
   // Calculate next due date based on puppy series
   const calculateNextDue = useCallback((vaccines: string[], visitDate: string): string | null => {
     if (!petBirthDate || vaccines.length === 0) return null;
-    const birth = new Date(petBirthDate);
+    const birth = parseLocalDate(petBirthDate);
     const now = new Date();
     const ageWeeks = Math.floor((now.getTime() - birth.getTime()) / (1000 * 60 * 60 * 24 * 7));
 
     if (ageWeeks > 26) {
-      const next = new Date(visitDate);
+      const next = parseLocalDate(visitDate);
       next.setFullYear(next.getFullYear() + 1);
-      return next.toISOString().split('T')[0];
+      return formatLocalDate(next);
     }
 
     const milestones = [6, 9, 12, 16];
     for (const w of milestones) {
       const d = new Date(birth);
       d.setDate(d.getDate() + w * 7);
-      if (d > now) return d.toISOString().split('T')[0];
+      if (d > now) return formatLocalDate(d);
     }
     return null;
   }, [petBirthDate]);
 
-	  const extractLocalSummary = (value: string, date: string): ScanResult => {
-	    const normalized = value.toLowerCase();
-	    const vaccineKeywords = ["כלבת", "משושה", "מרובעת", "תילוע", "fvrcp", "felv", "rabies"];
-	    const vaccines = vaccineKeywords.filter((keyword) => normalized.includes(keyword.toLowerCase()));
-	    const nextDueDate = vaccines.length > 0 ? calculateNextDue(vaccines, date) || new Date(new Date(date).setFullYear(new Date(date).getFullYear() + 1)).toISOString().slice(0, 10) : null;
+		  const extractLocalSummary = (value: string, date: string): ScanResult => {
+		    const normalized = value.toLowerCase();
+		    const vaccineKeywords = ["כלבת", "משושה", "מרובעת", "תילוע", "fvrcp", "felv", "rabies"];
+		    const vaccines = vaccineKeywords.filter((keyword) => normalized.includes(keyword.toLowerCase()));
+		    const annualDue = parseLocalDate(date);
+		    annualDue.setFullYear(annualDue.getFullYear() + 1);
+		    const nextDueDate = vaccines.length > 0
+		      ? calculateNextDue(vaccines, date) || formatLocalDate(annualDue)
+		      : null;
 	    return {
 	      clinicName: manualClinic || null,
 	      clinicPhone: null,
@@ -217,7 +222,7 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
 	      if (scanResult.visitDate || scanResult.diagnoses.length > 0 || scanResult.vaccines.length > 0) {
 	        await createMyVetVisit(petId, {
 	          visit_type: scanResult.vaccines.length > 0 ? "vaccination" : "checkup",
-	          visit_date: scanResult.visitDate || new Date().toISOString().slice(0, 10),
+		          visit_date: scanResult.visitDate || formatLocalDate(new Date()),
 	          next_visit_date: scanResult.nextDueDate || null,
 	          clinic_name: scanResult.clinicName,
 	          diagnosis: scanResult.diagnoses.join(", ") || null,
@@ -228,13 +233,13 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
 	        });
 	        await Promise.all(scanResult.vaccines.map((vaccineName) => createMyVaccination(petId, {
 	          vaccine_name: vaccineName,
-	          administered_at: scanResult.visitDate || new Date().toISOString().slice(0, 10),
+		          administered_at: scanResult.visitDate || formatLocalDate(new Date()),
 	          expires_at: scanResult.nextDueDate || null,
 	          veterinarian: scanResult.clinicName,
 	        })));
 	      }
 
-      toast({ title: "הנתונים אושרו ✅", description: "ציון הבריאות ולוח החיסונים עודכנו" });
+      toast({ title: "הנתונים אושרו", description: "המסמך ופרטי הביקור נשמרו בפרופיל" });
 
       // Check if pet identity data was extracted — offer update
       const hasPetData = scanResult.petName || scanResult.petBreed || scanResult.petColor || 
@@ -350,9 +355,9 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
 	    setManualSubmitting(true);
 	    try {
 	      const result = extractLocalSummary(manualSummary, manualDate);
-	      const recoveryUntil = result.diagnoses.length > 0
-	        ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
-	        : null;
+		      const recoveryDate = new Date();
+		      recoveryDate.setDate(recoveryDate.getDate() + 14);
+		      const recoveryUntil = result.diagnoses.length > 0 ? formatLocalDate(recoveryDate) : null;
 	      await createMyVetVisit(petId, {
 	        visit_type: result.vaccines.length > 0 ? "vaccination" : "checkup",
 	        visit_date: manualDate,
@@ -390,7 +395,7 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
 	    setLastFile(null);
 	    setLastFileName('');
     setManualSummary('');
-    setManualDate(new Date().toISOString().split('T')[0]);
+    setManualDate(formatLocalDate(new Date()));
     setManualClinic('');
     if (cameraInputRef.current) cameraInputRef.current.value = '';
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -401,7 +406,7 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
     const end = new Date(d);
     end.setHours(end.getHours() + 1);
     const fmt = (dt: Date) => dt.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-    window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${fmt(d)}/${fmt(end)}`, '_blank');
+    window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${fmt(d)}/${fmt(end)}`, '_blank', 'noopener,noreferrer');
   };
 
   const weightStatus = scanResult?.weight ? getWeightStatus(scanResult.weight) : null;
@@ -622,7 +627,7 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
                       </div>
                     )}
 
-                    {/* Diagnoses with insurance CTA */}
+                    {/* Diagnoses */}
                     {scanResult.diagnoses.length > 0 && (
                       <div className="space-y-2">
                         <div className="flex items-start gap-3">
@@ -631,27 +636,6 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
                             <p className="text-xs font-medium text-amber-600">אבחנות</p>
                             <p className="text-xs text-muted-foreground">{scanResult.diagnoses.join(", ")}</p>
                           </div>
-                        </div>
-                        {/* Insurance claim offer */}
-                        <div className="p-3 bg-primary/5 rounded-xl border border-primary/20">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Shield className="w-4 h-4 text-primary" strokeWidth={1.5} />
-                            <span className="text-xs font-semibold text-primary">שליחה לביטוח ליברה</span>
-                          </div>
-                          <p className="text-[10px] text-muted-foreground mb-2">
-                            זוהתה אבחנה — ניתן לשלוח את המסמך ישירות לביטוח לצורך תביעה
-                          </p>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 text-xs border-primary/30 text-primary w-full"
-                            onClick={() => {
-                              toast({ title: "📋 המסמך נשלח לליברה", description: "נציג ביטוח ייצור קשר בקרוב" });
-                            }}
-                          >
-                            <Shield className="w-3.5 h-3.5 ml-1" />
-                            שלח לביטוח
-                          </Button>
                         </div>
                       </div>
                     )}
@@ -682,17 +666,6 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
                     </Button>
                    </div>
 
-                  {/* Libra Claim CTA - shows when diagnosis or cost detected */}
-	                  {(scanResult.diagnoses?.length > 0 || scanResult.cost) && (
-	                    <Button
-	                      variant="outline"
-	                      className="w-full h-11 rounded-2xl text-xs font-semibold border-primary/30 text-primary"
-	                      onClick={() => toast({ title: "תביעות ביטוח יועברו ל-AWS בשלב הבא" })}
-	                    >
-	                      <Shield className="w-4 h-4 ml-2" strokeWidth={1.5} />
-	                      הגש בקשה להחזר מ-Libra
-                    </Button>
-                  )}
                 </div>
               )}
 

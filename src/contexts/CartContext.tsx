@@ -2,7 +2,10 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { playAddToCartSound } from "@/lib/sounds";
 
 export interface CartItem {
+  /** Stable cart-line identity: product + variant + size. */
   id: string;
+  /** Catalog identity sent to the order API. */
+  productId: string;
   name: string;
   price: number;
   image: string;
@@ -13,7 +16,11 @@ export interface CartItem {
 
 interface CartContextType {
   items: CartItem[];
-  addToCart: (item: Omit<CartItem, "quantity"> & { quantity?: number }) => void;
+  addToCart: (item: Omit<CartItem, "id" | "productId" | "quantity"> & {
+    id?: string;
+    productId?: string;
+    quantity?: number;
+  }) => void;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
@@ -24,11 +31,34 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+const getLegacyProductId = (item: Partial<CartItem> & { id?: string }) => {
+  if (item.productId) return item.productId;
+  const id = item.id || "";
+  const legacySuffix = `-${item.size || "default"}`;
+  return id.endsWith(legacySuffix) ? id.slice(0, -legacySuffix.length) : id;
+};
+
+const getLineId = (productId: string, variant?: string, size?: string) => (
+  JSON.stringify([productId, variant || "", size || ""])
+);
+
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>(() => {
     try {
       const savedCart = localStorage.getItem("petid-cart");
-      return savedCart ? JSON.parse(savedCart) : [];
+      const parsed = savedCart ? JSON.parse(savedCart) : [];
+      if (!Array.isArray(parsed)) return [];
+
+      return parsed.flatMap((item) => {
+        if (!item || typeof item !== "object") return [];
+        const productId = getLegacyProductId(item);
+        if (!productId) return [];
+        return [{
+          ...item,
+          id: getLineId(productId, item.variant, item.size),
+          productId,
+        } as CartItem];
+      });
     } catch {
       return [];
     }
@@ -39,21 +69,34 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem("petid-cart", JSON.stringify(items));
   }, [items]);
 
-  const addToCart = (item: Omit<CartItem, "quantity"> & { quantity?: number }) => {
+  useEffect(() => {
+    const clearUserData = () => setItems([]);
+    window.addEventListener("mipo:user-data-cleared", clearUserData);
+    return () => window.removeEventListener("mipo:user-data-cleared", clearUserData);
+  }, []);
+
+  const addToCart: CartContextType["addToCart"] = (item) => {
+    const productId = item.productId || item.id;
+    if (!productId) return;
+    const lineId = getLineId(productId, item.variant, item.size);
+
     setItems((prevItems) => {
-      const existingItem = prevItems.find(
-        (i) => i.id === item.id && i.variant === item.variant && i.size === item.size
-      );
+      const existingItem = prevItems.find((cartItem) => cartItem.id === lineId);
 
       if (existingItem) {
         return prevItems.map((i) =>
-          i.id === item.id && i.variant === item.variant && i.size === item.size
+          i.id === lineId
             ? { ...i, quantity: i.quantity + (item.quantity || 1) }
             : i
         );
       }
 
-      return [...prevItems, { ...item, quantity: item.quantity || 1 }];
+      return [...prevItems, {
+        ...item,
+        id: lineId,
+        productId,
+        quantity: item.quantity || 1,
+      }];
     });
     
     // Trigger shake animation and sound

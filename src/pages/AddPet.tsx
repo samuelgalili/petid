@@ -338,7 +338,7 @@ const AddPet = () => {
       const petData = await createMyPet({
         name: formData.name,
         type: petType,
-        birth_date: formData.birthDate ? formData.birthDate.toISOString().split('T')[0] : null,
+        birth_date: formData.birthDate ? format(formData.birthDate, "yyyy-MM-dd") : null,
         gender: formData.gender || null,
         breed: breedValue,
         breed_confidence: breedConfidence !== null ? Math.round(breedConfidence * 100) : null,

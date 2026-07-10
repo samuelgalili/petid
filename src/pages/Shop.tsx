@@ -2,10 +2,9 @@ import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import BottomNav from "@/components/BottomNav";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ShoppingCart, ShoppingBag, Plus, Minus, SlidersHorizontal, TrendingUp, Tag, Heart, Grid3X3, Bookmark, X, Search, Clock, Share2, Truck, Shield, Star, ChevronLeft, ChevronRight, Dog, Cat, Info, Loader2, Flag, AlertTriangle, MessageCircle, RefreshCw } from "lucide-react";
+import { ShoppingCart, ShoppingBag, Plus, Minus, SlidersHorizontal, TrendingUp, Tag, Heart, Grid3X3, Bookmark, X, Search, Clock, Share2, Truck, Shield, Star, ChevronLeft, ChevronRight, Dog, Cat, Info, Loader2, Flag, AlertTriangle, Sparkles, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { useFlyingCart } from "@/components/FlyingCartAnimation";
@@ -33,6 +32,30 @@ import { ProductInfoDrawer } from "@/components/shop/ProductInfoDrawer";
 import { useCarePlan } from "@/hooks/useCarePlan";
 import { createContentReport, getShopProducts } from "@/lib/mipoApi";
 
+const asPrice = (value: number | string | null | undefined) => {
+  const parsed = typeof value === "string" ? Number.parseFloat(value) : value;
+  return typeof parsed === "number" && Number.isFinite(parsed) ? parsed : 0;
+};
+
+const readStoredStrings = (key: string): string[] => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(key) || "[]");
+    return Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === "string") : [];
+  } catch {
+    return [];
+  }
+};
+
+const subCategories = [
+  { id: "all", label: "הכל" },
+  { id: "food", label: "מזון" },
+  { id: "treats", label: "חטיפים" },
+  { id: "toys", label: "צעצועים" },
+  { id: "beds", label: "מיטות" },
+  { id: "grooming", label: "טיפוח" },
+  { id: "accessories", label: "אביזרים" },
+];
+
 const Shop = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -43,7 +66,7 @@ const Shop = () => {
   const { addToCarePlan } = useCarePlan(activePet?.id);
   const cartIconRef = useRef<HTMLButtonElement>(null);
   const productImageRef = useRef<HTMLDivElement>(null);
-  const [selectedCategory, setSelectedCategory] = useState("הכל");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [selectedPetType, setSelectedPetType] = useState<"all" | "dog" | "cat">("all");
   const [quantity, setQuantity] = useState(1);
@@ -57,14 +80,8 @@ const Shop = () => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [infoDrawerProduct, setInfoDrawerProduct] = useState<any>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const [searchHistory, setSearchHistory] = useState<string[]>(() => {
-    const saved = localStorage.getItem("petid-search-history");
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [favorites, setFavorites] = useState<string[]>(() => {
-    const saved = localStorage.getItem("petid-favorites");
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [searchHistory, setSearchHistory] = useState<string[]>(() => readStoredStrings("petid-search-history"));
+  const [favorites, setFavorites] = useState<string[]>(() => readStoredStrings("petid-favorites"));
 
   // Report dialog state
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
@@ -131,16 +148,6 @@ const Shop = () => {
     { id: "accessories", label: "אביזרים", icon: "🎀", color: "#3498DB" },
   ];
 
-  const subCategories = [
-    { id: "all", label: "הכל" },
-    { id: "food", label: "מזון" },
-    { id: "treats", label: "חטיפים" },
-    { id: "toys", label: "צעצועים" },
-    { id: "beds", label: "מיטות" },
-    { id: "grooming", label: "טיפוח" },
-    { id: "accessories", label: "אביזרים" },
-  ];
-
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -166,31 +173,38 @@ const Shop = () => {
   // Transform database products to the format expected by the UI
   const products = useMemo(() => {
     console.log("Transforming products, dbProducts count:", dbProducts.length);
-    return dbProducts.map((p) => ({
-      id: p.id,
-      name: p.name,
-      description: p.description || "",
-      price: typeof p.price === 'string' ? parseFloat(p.price) : (p.price || 0),
-      originalPrice: p.original_price || p.sale_price ? (typeof p.price === 'string' ? parseFloat(p.price) : p.price) : null,
-      salePrice: p.sale_price,
-      images: p.images?.length ? p.images : [p.image_url],
-      image: p.image_url || "/placeholder.svg",
-      popularity: 80, // Default values for now
-      likes: Math.floor(Math.random() * 1000) + 100,
-      rating: 4.5,
-      reviews: Math.floor(Math.random() * 200) + 50,
-      inStock: p.in_stock ?? true,
-      freeShipping: (typeof p.price === 'string' ? parseFloat(p.price) : p.price) > 200,
-      category: p.category,
-      petType: p.pet_type,
-      isFlagged: p.is_flagged || false,
-      flaggedReason: p.flagged_reason,
-      flavors: p.flavors || [],
-      safetyScore: (p as any).safety_score ?? null,
-      brand: (p as any).brand || null,
-      ingredients: (p as any).ingredients || null,
-      weightUnit: (p as any).weight_unit || null,
-    }));
+    return dbProducts.map((p) => {
+      const regularPrice = asPrice(p.price);
+      const salePrice = asPrice(p.sale_price);
+      const listedOriginalPrice = asPrice(p.original_price);
+      const price = salePrice > 0 ? salePrice : regularPrice;
+      const originalPrice = salePrice > 0 && regularPrice > salePrice
+        ? regularPrice
+        : listedOriginalPrice > price
+          ? listedOriginalPrice
+          : null;
+
+      return {
+        id: p.id,
+        name: p.name,
+        description: p.description || "",
+        price,
+        originalPrice,
+        images: p.images?.length ? p.images : [p.image_url],
+        image: p.image_url || "/placeholder.svg",
+        inStock: p.in_stock ?? true,
+        freeShipping: price >= 199,
+        category: p.category,
+        petType: p.pet_type,
+        isFlagged: p.is_flagged || false,
+        flaggedReason: p.flagged_reason,
+        flavors: p.flavors || [],
+        safetyScore: p.safety_score ?? null,
+        brand: p.brand || null,
+        ingredients: p.ingredients || null,
+        weightUnit: p.weight_unit || null,
+      };
+    });
   }, [dbProducts]);
 
   // Search suggestions based on query
@@ -212,6 +226,17 @@ const Shop = () => {
       result = result.filter(p => p.name.toLowerCase().includes(query));
     }
 
+    if (selectedCategory !== "all") {
+      const selected = subCategories.find((category) => category.id === selectedCategory);
+      const categoryTerms = [selectedCategory, selected?.label || ""]
+        .map((term) => term.toLowerCase())
+        .filter(Boolean);
+      result = result.filter((product) => {
+        const category = product.category?.toLowerCase() || "";
+        return categoryTerms.some((term) => category === term || category.includes(term));
+      });
+    }
+
     if (showDealsOnly) {
       result = result.filter(p => p.originalPrice);
     }
@@ -228,13 +253,12 @@ const Shop = () => {
         result.sort((a, b) => b.price - a.price);
         break;
       case "popularity":
-        result.sort((a, b) => b.popularity - a.popularity);
         break;
     }
 
     console.log("Filtered products:", result.length);
     return result;
-  }, [products, sortBy, showDealsOnly, activeTab, favorites, searchQuery]);
+  }, [products, sortBy, showDealsOnly, activeTab, favorites, searchQuery, selectedCategory]);
 
   const addToSearchHistory = useCallback((query: string) => {
     if (!query.trim()) return;
@@ -305,12 +329,12 @@ const Shop = () => {
     }
 
     addToCart({
-      id: `${selectedProduct.id}-${selectedSize || 'default'}`,
+      productId: selectedProduct.id,
       name: selectedProduct.name,
       price: selectedProduct.price,
       image: selectedProduct.image,
       quantity: quantity,
-      size: selectedSize || undefined,
+      variant: selectedSize || undefined,
     });
 
     confetti({
@@ -341,14 +365,14 @@ const Shop = () => {
         description="מוצרים איכותיים לחיות מחמד במחירים משתלמים - מזון, צעצועים, ציוד ועוד"
         url="/shop"
       />
-      <div className="h-full overflow-y-auto pb-[70px]">
+      <div className="h-full overflow-y-auto pb-[calc(80px+env(safe-area-inset-bottom))]">
       {/* Instagram-style Header */}
       <motion.div 
         className="sticky top-0 z-50 bg-background/98 backdrop-blur-xl border-b border-border/40"
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
       >
-        <div className="max-w-lg mx-auto px-4 py-3">
+        <div className="mx-auto max-w-6xl px-4 py-3 sm:px-6">
           {/* Top Row: Back + Logo + Cart */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -366,11 +390,11 @@ const Shop = () => {
             <div className="flex items-center gap-1">
               <motion.button
                 whileTap={{ scale: 0.9 }}
-                onClick={() => navigate('/messages')}
+                onClick={() => navigate('/chat')}
                 className="flex h-11 w-11 items-center justify-center rounded-xl hover:bg-muted/80 transition-colors"
-                aria-label="הודעות"
+                aria-label="MIPO AI"
               >
-                <MessageCircle className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+                <Sparkles className="w-5 h-5 text-foreground" strokeWidth={1.5} />
               </motion.button>
               <motion.button 
                 ref={cartIconRef}
@@ -468,7 +492,7 @@ const Shop = () => {
 
       {/* Tabs - Instagram style */}
       <div className="sticky top-[104px] z-40 bg-background border-b border-border">
-        <div className="max-w-lg mx-auto flex px-4">
+        <div className="mx-auto flex max-w-6xl px-4 sm:px-6">
           {[
             { id: "grid", label: "חנות" },
             { id: "saved", label: "מועדפים" },
@@ -490,14 +514,14 @@ const Shop = () => {
 
       {/* Categories - Clean pill style */}
       <div className="bg-background">
-        <div className="max-w-lg mx-auto">
-          <div className="flex gap-2 px-4 py-3 overflow-x-auto scrollbar-hide">
+        <div className="mx-auto max-w-6xl">
+          <div className="flex gap-2 overflow-x-auto px-4 py-3 scrollbar-hide sm:px-6">
             {subCategories.map((category) => (
               <button
                 key={category.id}
-                onClick={() => setSelectedCategory(category.label)}
+                onClick={() => setSelectedCategory(category.id)}
                 className={`min-h-11 px-4 py-2.5 rounded-2xl text-sm font-medium whitespace-nowrap transition-all ${
-                  selectedCategory === category.label
+                  selectedCategory === category.id
                     ? "bg-primary text-primary-foreground shadow-md"
                     : "bg-card border border-border/30 text-foreground hover:bg-muted/50 hover:border-primary/30"
                 }`}
@@ -513,7 +537,7 @@ const Shop = () => {
       <FleetSafetyAlert />
 
       {/* Instagram-style Category Carousels */}
-      <div className="max-w-lg mx-auto pb-24">
+      <div className="mx-auto max-w-6xl pb-28">
         {/* Smart Recommendations — Top Priority */}
         {activeTab === "grid" && <SmartRecommendations />}
 
@@ -537,18 +561,18 @@ const Shop = () => {
               return Object.entries(productsByCategory).map(([category, categoryProducts]) => (
                 <div key={category} className="mb-6">
                   {/* Category Header */}
-                  <div className="flex items-center justify-between px-4 py-3">
+                  <div className="flex items-center justify-between px-4 py-3 sm:px-6">
                     <h2 className="text-base font-bold text-foreground">{category}</h2>
                     <button className="min-h-11 px-3 text-sm text-primary font-medium">הכל ←</button>
                   </div>
                   
                   {/* Horizontal Carousel - Compact for quick shopping */}
-                  <div className="flex gap-2 overflow-x-auto scrollbar-hide px-4 pb-2 snap-x snap-mandatory">
+                  <div className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide snap-x snap-mandatory sm:px-6">
                     {categoryProducts.slice(0, 10).map((product) => (
                       <div
                         key={product.id}
                         onClick={() => handleProductClick(product)}
-                        className="flex-shrink-0 w-28 cursor-pointer snap-start"
+                        className="w-32 flex-shrink-0 cursor-pointer snap-start sm:w-40"
                       >
                         {/* Compact Card */}
                         <div className="relative rounded-lg overflow-hidden bg-card shadow-sm border border-border/30">
@@ -567,7 +591,7 @@ const Shop = () => {
                                 checkProductSafety(`${product.name} ${product.description}`, activePet).level === "unsafe" ? 'opacity-40 grayscale' : ''
                               }`}
                               objectFit="cover"
-                              sizes="112px"
+                              sizes="(max-width: 639px) 128px, 160px"
                             />
                             
                             {/* Wishlist button - smaller */}
@@ -592,7 +616,7 @@ const Shop = () => {
                           
                           {/* Minimal Product Info */}
                           <div className="p-2">
-                            <h3 className="text-[11px] font-medium text-foreground line-clamp-1 mb-0.5">
+                            <h3 className="mb-0.5 line-clamp-1 text-xs font-medium text-foreground sm:text-sm">
                               {product.name}
                             </h3>
                             <div className="flex items-center justify-between">
@@ -643,7 +667,7 @@ const Shop = () => {
       <Sheet open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
         <SheetContent 
           side="bottom" 
-          className="rounded-t-[28px] bg-background p-0 border-0 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] z-[60] !pb-0"
+          className="rounded-t-[28px] bg-background p-0 border-0 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] !pb-0"
           aria-describedby="product-details-description"
         >
           {/* Background extension to cover gap above BottomNav */}
@@ -823,7 +847,6 @@ const Shop = () => {
       </AnimatePresence>
       </div>
 
-      <BottomNav />
     </div>
   );
 };

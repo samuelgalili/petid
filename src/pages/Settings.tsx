@@ -4,12 +4,10 @@
  */
 
 import {
-  Bell, Globe, Lock, Info, LogOut, Moon, Sun, Languages, Monitor,
-  Type, Contrast, Zap, BellOff, ChevronLeft, Store, QrCode, Star,
-  FileText, Calendar, Sparkles, Shield, ShieldCheck, Eye, EyeOff,
-  Download, Trash2, HardDrive, Smartphone, Heart, Siren, Mail,
-  ShoppingBag, Users, Link2, ChevronDown, ChevronUp, Thermometer,
-  Weight, Palette, ExternalLink, StarIcon,
+  Globe, Lock, Info, LogOut, Moon, Sun, Languages, Monitor,
+  Type, Contrast, Zap, ChevronLeft, Sparkles, Shield, Eye, EyeOff,
+  Download, Trash2, HardDrive, Smartphone, Mail,
+  ChevronDown, ChevronUp,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,9 +41,6 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useAccessibility } from "@/contexts/AccessibilityContext";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { usePushNotifications } from "@/hooks/usePushNotifications";
-import { QRCodeProfile } from "@/components/QRCodeProfile";
-import { QuietModeSettings } from "@/components/QuietModeSettings";
 import { motion } from "framer-motion";
 import { SEO } from "@/components/SEO";
 import {
@@ -53,6 +48,7 @@ import {
   getCurrentUser,
   getMyDataExport,
   updateMyMarketingConsent,
+  updateMyProfile,
 } from "@/lib/mipoApi";
 
 // ─── Collapsible Section ─────────────────────────
@@ -208,31 +204,13 @@ const Settings = () => {
   const { fontSize, highContrast, reduceMotion, setFontSize, setHighContrast, setReduceMotion } =
     useAccessibility();
   const { user, signOut } = useAuth();
-  const { isSubscribed, subscribe, unsubscribe } = usePushNotifications();
 
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
   const [profileName, setProfileName] = useState<string | null>(null);
   const [marketingConsent, setMarketingConsent] = useState(false);
 
-  // Notification preferences (local state, persisted via localStorage)
-  const [healthAlerts, setHealthAlerts] = useState(() => localStorage.getItem("pref_health_alerts") !== "false");
-  const [shopAlerts, setShopAlerts] = useState(() => localStorage.getItem("pref_shop_alerts") !== "false");
-  const [communityAlerts, setCommunityAlerts] = useState(() => localStorage.getItem("pref_community_alerts") !== "false");
-  const [sosAlerts, setSosAlerts] = useState(() => localStorage.getItem("pref_sos_alerts") !== "false");
-
-  // Privacy
-  const [privacyMode, setPrivacyMode] = useState<"public" | "private">(() => {
-    const stored = localStorage.getItem("pref_privacy_mode");
-    return stored === "private" ? "private" : "public";
-  });
-
-  // Units
-  const [weightUnit, setWeightUnit] = useState(() => localStorage.getItem("pref_weight_unit") || "kg");
-  const [tempUnit, setTempUnit] = useState(() => localStorage.getItem("pref_temp_unit") || "celsius");
-
-  // Dialogs
-  const [showQRCode, setShowQRCode] = useState(false);
-  const [showQuietMode, setShowQuietMode] = useState(false);
+  const [privacyMode, setPrivacyMode] = useState<"public" | "private">("private");
+  const [aiConsent, setAiConsent] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -242,6 +220,8 @@ const Settings = () => {
         setProfileAvatar(data.avatar_url || null);
         setProfileName(data.full_name || null);
         setMarketingConsent(data.marketing_consent ?? false);
+        setPrivacyMode(data.profile_visibility === "public" ? "public" : "private");
+        setAiConsent(data.ai_consent_given === true);
       }
     };
     fetchProfile();
@@ -261,29 +241,54 @@ const Settings = () => {
     }
   };
 
-  // Persist toggles
-  const toggle = (key: string, setter: (v: boolean) => void, current: boolean) => {
-    const next = !current;
-    setter(next);
-    localStorage.setItem(key, String(next));
+  const handlePrivacyModeChange = async (value: string) => {
+    if (value !== "public" && value !== "private") return;
+    const previous = privacyMode;
+    setPrivacyMode(value);
+    try {
+      const result = await updateMyProfile({ profile_visibility: value });
+      setPrivacyMode(result.profile?.profile_visibility === "public" ? "public" : "private");
+      toast.success(value === "private" ? "הפרופיל הוגדר כפרטי" : "הפרופיל הוגדר כציבורי");
+    } catch {
+      setPrivacyMode(previous);
+      toast.error("שגיאה בעדכון הפרטיות");
+    }
+  };
+
+  const handleAiConsentChange = async (enabled?: boolean) => {
+    const next = Boolean(enabled);
+    const previous = aiConsent;
+    setAiConsent(next);
+    try {
+      const result = await updateMyProfile({ ai_consent_given: next });
+      setAiConsent(result.profile?.ai_consent_given === true);
+      toast.success(next ? "הסכמה לעיבוד AI נשמרה" : "הסכמה לעיבוד AI בוטלה");
+    } catch {
+      setAiConsent(previous);
+      toast.error("שגיאה בעדכון הסכמת AI");
+    }
   };
 
   const handleLogout = async () => {
-    try {
-      await signOut();
-      toast.success("התנתקת בהצלחה");
-      navigate("/auth");
-    } catch {
-      toast.error("שגיאה בהתנתקות");
+    const result = await signOut();
+    if (result.error) {
+      toast.error(result.error.message || "שגיאה בהתנתקות");
+      return;
     }
+    toast.success("התנתקת בהצלחה");
+    navigate("/auth");
   };
 
-  const handleClearCache = () => {
-    if ("caches" in window) {
-      caches.keys().then((names) => names.forEach((name) => caches.delete(name)));
+  const handleClearCache = async () => {
+    try {
+      if ("caches" in window) {
+        const names = await caches.keys();
+        await Promise.all(names.map((name) => caches.delete(name)));
+      }
+      toast.success("המטמון נוקה בהצלחה");
+    } catch {
+      toast.error("לא ניתן לנקות את המטמון כרגע");
     }
-    localStorage.removeItem("sb-xcauajpfrmalzhhiodcb-auth-token");
-    toast.success("המטמון נוקה בהצלחה");
   };
 
   const handleExportData = async () => {
@@ -306,7 +311,7 @@ const Settings = () => {
 
   const handleDeleteAccount = async () => {
     const confirmed = window.confirm(
-      "האם את/ה בטוח/ה? כל הנתונים ימחקו לצמיתות — כולל פרופיל, חיות מחמד, פוסטים ולוגים.\n\nפעולה זו אינה הפיכה."
+      "האם את/ה בטוח/ה? החשבון, פרטי חיות המחמד והמידע הפרטי יימחקו לצמיתות. רשומות הזמנה שנדרש לשמור לצרכים תפעוליים או חוקיים יעברו אנונימיזציה.\n\nפעולה זו אינה הפיכה."
     );
     if (!confirmed) return;
 
@@ -391,54 +396,26 @@ const Settings = () => {
         </div>
 
         <div className="max-w-lg mx-auto px-4 space-y-1">
-          {/* ═══ 1. Notification Preferences ═══ */}
-          <SettingsSection title="התראות" icon={Bell}>
+          <SettingsSection title="פרטיות ותקשורת" icon={Shield}>
             <SettingRow
-              icon={Heart}
-              label="התראות בריאות"
-              description="חיסונים, תרופות ותזכורות ווטרינר"
-              type="toggle"
-              value={healthAlerts}
-              action={() => toggle("pref_health_alerts", setHealthAlerts, healthAlerts)}
+              icon={privacyMode === "private" ? EyeOff : Eye}
+              label="נראות הפרופיל"
+              description={privacyMode === "private" ? "הפרופיל פרטי" : "הפרופיל זמין בתצוגות ציבוריות נתמכות"}
+              type="select"
+              value={privacyMode}
+              options={[
+                { value: "public", label: "ציבורי" },
+                { value: "private", label: "פרטי" },
+              ]}
+              action={handlePrivacyModeChange}
             />
             <SettingRow
-              icon={ShoppingBag}
-              label="חנות ומלאי"
-              description="תזכורות להזמנה חוזרת של מזון"
+              icon={Sparkles}
+              label="עיבוד באמצעות AI"
+              description="שליחת פרטי פרופיל, חיית מחמד וקבצים מצורפים ל-Google Gemini בעת שימוש בצ'אט"
               type="toggle"
-              value={shopAlerts}
-              action={() => toggle("pref_shop_alerts", setShopAlerts, shopAlerts)}
-            />
-            <SettingRow
-              icon={Users}
-              label="קהילה"
-              description="עדכונים מהפיד של MIPO"
-              type="toggle"
-              value={communityAlerts}
-              action={() => toggle("pref_community_alerts", setCommunityAlerts, communityAlerts)}
-            />
-            <SettingRow
-              icon={Siren}
-              label="חירום (SOS)"
-              description="התראות קריטיות — עוקפות מצב שקט"
-              type="toggle"
-              value={sosAlerts}
-              action={() => toggle("pref_sos_alerts", setSosAlerts, sosAlerts)}
-              badge="קריטי"
-            />
-            <SettingRow
-              icon={Bell}
-              label="התראות Push"
-              description={isSubscribed ? "התראות Push מופעלות" : "הפעל התראות Push"}
-              type="toggle"
-              value={isSubscribed}
-              action={async () => (isSubscribed ? unsubscribe() : subscribe())}
-            />
-            <SettingRow
-              icon={BellOff}
-              label="מצב שקט"
-              description="השתק התראות זמנית"
-              action={() => setShowQuietMode(true)}
+              value={aiConsent}
+              action={handleAiConsentChange}
             />
             <SettingRow
               icon={Mail}
@@ -451,56 +428,7 @@ const Settings = () => {
             />
           </SettingsSection>
 
-          {/* ═══ 2. Account & Security ═══ */}
-          <SettingsSection title="חשבון ואבטחה" icon={Shield}>
-            <SettingRow
-              icon={ShieldCheck}
-              label="אימות דו-שלבי (2FA)"
-              description="הגן על מידע רפואי וביטוחי"
-              action={() => {
-                toast.info("2FA יהיה זמין בקרוב");
-              }}
-              badge="בקרוב"
-            />
-            <SettingRow
-              icon={Link2}
-              label="חשבונות מקושרים"
-              description="שותף ביטוח, Google, Apple ID"
-              action={() => navigate("/privacy-settings")}
-            />
-            <SettingRow
-              icon={privacyMode === "private" ? EyeOff : Eye}
-              label="מצב פרטיות"
-              description={privacyMode === "private" ? "הפרופיל מוסתר מהפיד" : "הפרופיל גלוי לכולם"}
-              type="select"
-              value={privacyMode}
-              options={[
-                { value: "public", label: "ציבורי" },
-                { value: "private", label: "פרטי" },
-              ]}
-              action={(val: string) => {
-                if (val !== "public" && val !== "private") return;
-                setPrivacyMode(val);
-                localStorage.setItem("pref_privacy_mode", val);
-                toast.success(val === "private" ? "הפרופיל הוסתר" : "הפרופיל גלוי");
-              }}
-            />
-            <SettingRow
-              icon={QrCode}
-              label="קוד QR שלי"
-              description="שתף את הפרופיל שלך בקלות"
-              action={() => setShowQRCode(true)}
-            />
-            <SettingRow
-              icon={Store}
-              label="עבור לחשבון עסקי"
-              description="הפוך לפרופיל עסקי"
-              action={() => navigate("/convert-to-business")}
-              showSeparator={false}
-            />
-          </SettingsSection>
-
-          {/* ═══ 3. App Localization ═══ */}
+          {/* App Localization */}
           <SettingsSection title="שפה ותצוגה" icon={Globe}>
             <SettingRow
               icon={Languages}
@@ -514,36 +442,6 @@ const Settings = () => {
                 { value: "ar", label: "عربية" },
               ]}
               action={(val: string) => setLanguage(val as "he" | "en" | "ar")}
-            />
-            <SettingRow
-              icon={Weight}
-              label="יחידות משקל"
-              description="ק״ג או פאונד"
-              type="select"
-              value={weightUnit}
-              options={[
-                { value: "kg", label: "ק״ג (KG)" },
-                { value: "lbs", label: "פאונד (Lbs)" },
-              ]}
-              action={(val: string) => {
-                setWeightUnit(val);
-                localStorage.setItem("pref_weight_unit", val);
-              }}
-            />
-            <SettingRow
-              icon={Thermometer}
-              label="יחידות טמפרטורה"
-              description="צלזיוס או פרנהייט"
-              type="select"
-              value={tempUnit}
-              options={[
-                { value: "celsius", label: "צלזיוס (°C)" },
-                { value: "fahrenheit", label: "פרנהייט (°F)" },
-              ]}
-              action={(val: string) => {
-                setTempUnit(val);
-                localStorage.setItem("pref_temp_unit", val);
-              }}
             />
             <SettingRow
               icon={getThemeIcon()}
@@ -595,7 +493,7 @@ const Settings = () => {
             <SettingRow
               icon={Download}
               label="ייצוא נתונים"
-              description="הורד את כל הרשומות הרפואיות כקובץ ZIP"
+              description="הורד עותק של נתוני החשבון כקובץ JSON"
               action={handleExportData}
             />
             <SettingRow
@@ -646,13 +544,6 @@ const Settings = () => {
               description="צ'אט, טלפון, שאלות נפוצות"
               action={() => navigate("/support")}
             />
-            <SettingRow
-              icon={Star}
-              label="דרג את האפליקציה"
-              description="עזור לנו להשתפר — השאר דירוג"
-              action={() => toast.info("תודה! נפנה אותך לחנות בקרוב")}
-              showSeparator={false}
-            />
           </SettingsSection>
 
           {/* Logout */}
@@ -680,28 +571,8 @@ const Settings = () => {
             </Card>
           </motion.div>
 
-          {/* Version */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="text-center py-6"
-          >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50">
-              <Sparkles className="w-4 h-4 text-primary" />
-              <span className="text-xs text-muted-foreground">MIPO • גרסה 2.48.0</span>
-            </div>
-          </motion.div>
         </div>
       </div>
-
-      {/* Dialogs */}
-      <QRCodeProfile
-        open={showQRCode}
-        onOpenChange={setShowQRCode}
-        profile={{ id: user?.id || "", full_name: user?.user_metadata?.full_name, avatar_url: null }}
-      />
-      <QuietModeSettings open={showQuietMode} onOpenChange={setShowQuietMode} />
 
       <BottomNav />
     </div>

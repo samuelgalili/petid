@@ -21,6 +21,7 @@ export const useAwsAdminAuth = () => {
 
   const logout = useCallback(async () => {
     await logoutAdmin();
+    queryClient.clear();
     queryClient.setQueryData<MipoAdmin | null>(adminSessionQueryKey, null);
   }, [queryClient]);
 

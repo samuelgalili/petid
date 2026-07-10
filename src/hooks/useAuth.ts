@@ -4,6 +4,7 @@ import {
   loginUser,
   logoutUser,
   signupUser,
+  MipoApiError,
   type MipoAuthResult,
   type MipoUser,
 } from "@/lib/mipoApi";
@@ -59,42 +60,19 @@ export const useAuth = () => {
   }, []);
 
   const signIn = async (email: string, password: string, rememberMe: boolean) => {
-    const now = Date.now();
-    const attemptsKey = "login_attempts";
-    const windowMs = 60000;
-    const maxAttempts = 5;
-
     try {
-      const stored = JSON.parse(localStorage.getItem(attemptsKey) || "{\"c\":0,\"t\":0}");
-      if (now - stored.t < windowMs && stored.c >= maxAttempts) {
-        const waitSec = Math.ceil((windowMs - (now - stored.t)) / 1000);
-        return {
-          data: { user: null, session: null },
-          error: { message: `יותר מדי ניסיונות. נסה שוב בעוד ${waitSec} שניות`, status: 429 },
-        };
-      }
-      if (now - stored.t >= windowMs) {
-        localStorage.setItem(attemptsKey, JSON.stringify({ c: 1, t: now }));
-      } else {
-        localStorage.setItem(attemptsKey, JSON.stringify({ c: stored.c + 1, t: stored.t }));
-      }
-    } catch {
-      // localStorage is a soft client-side guard only.
-    }
-
-    try {
-      const auth = await loginUser(email, password);
+      const auth = await loginUser(email, password, rememberMe);
       const nextSession = toSession(auth);
       applyAuth(auth);
-      localStorage.removeItem(attemptsKey);
-      if (rememberMe && nextSession) localStorage.setItem("rememberMe", "true");
-      else localStorage.removeItem("rememberMe");
       window.dispatchEvent(new Event(authChangedEvent));
       return { data: { user: auth.user, session: nextSession }, error: null };
     } catch (error: unknown) {
       return {
         data: { user: null, session: null },
-        error: { message: errorMessage(error, "Invalid email or password"), status: 401 },
+        error: {
+          message: errorMessage(error, "Invalid email or password"),
+          status: error instanceof MipoApiError ? error.status : 0,
+        },
       };
     }
   };
@@ -110,7 +88,6 @@ export const useAuth = () => {
       const auth = await signupUser(input);
       const nextSession = toSession(auth);
       applyAuth(auth);
-      localStorage.removeItem("rememberMe");
       window.dispatchEvent(new Event(authChangedEvent));
       return { data: { user: auth.user, session: nextSession }, error: null };
     } catch (error: unknown) {
@@ -122,10 +99,20 @@ export const useAuth = () => {
   };
 
   const signOut = async () => {
-    localStorage.removeItem("rememberMe");
     try {
       await logoutUser();
+      [
+        "activePetId",
+        "addPetDraft",
+        "mipo_order_ids",
+        "mipo_order_access_tokens",
+        "petid-cart",
+        "chat_pending_intent",
+      ].forEach((key) => localStorage.removeItem(key));
+      ["lastOrder", "pendingOrder", "mipo_checkout_contact", "appliedCoupon"]
+        .forEach((key) => sessionStorage.removeItem(key));
       applyAuth(null);
+      window.dispatchEvent(new Event("mipo:user-data-cleared"));
       window.dispatchEvent(new Event(authChangedEvent));
       return { error: null };
     } catch (error: unknown) {

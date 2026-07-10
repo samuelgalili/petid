@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import { FileText, Download, Trash2, Syringe, Stethoscope, Shield, FlaskConical, Pill, ClipboardList, Paperclip, File } from "lucide-react";
+import { openSafeExternalUrl } from "@/lib/safeExternalUrl";
 
 interface SwipeableDocumentCardProps {
   doc: {
@@ -119,7 +120,7 @@ export function SwipeableDocumentCard({
             if (onView) {
               onView(doc.file_url, doc.file_name);
             } else {
-              window.open(doc.file_url, '_blank');
+              openSafeExternalUrl(doc.file_url);
             }
           }}
         >

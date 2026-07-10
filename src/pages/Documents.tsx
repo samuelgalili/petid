@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
 import { createMyDocument, deleteMyDocument, getMyDocuments, getMyPets } from "@/lib/mipoApi";
+import { openSafeExternalUrl } from "@/lib/safeExternalUrl";
 
 interface PetDocument {
   id: string;
@@ -25,7 +26,7 @@ interface PetDocument {
   file_name: string;
   file_size: number | null;
   uploaded_at: string;
-  updated_at: string;
+  updated_at?: string | null;
 }
 
 interface Pet {
@@ -204,7 +205,7 @@ export default function Documents() {
       console.error("Error uploading document:", error);
       toast({
         title: "שגיאה",
-        description: "לא ניתן להעלות את המסמך",
+        description: error instanceof Error ? error.message : "לא ניתן להעלות את המסמך",
         variant: "destructive",
       });
     } finally {
@@ -577,7 +578,7 @@ export default function Documents() {
                     <input
                       id="upload-file"
                       type="file"
-                      accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                      accept=".pdf,.jpg,.jpeg,.png,.docx"
                       onChange={handleFileChange}
                       className="hidden"
                     />
@@ -701,7 +702,7 @@ export default function Documents() {
                       onView={async (fileUrl) => {
                         try {
                           const resolvedUrl = await resolveDocumentUrl(fileUrl);
-                          window.open(resolvedUrl, '_blank');
+                          openSafeExternalUrl(resolvedUrl);
                         } catch (error) {
                           console.error("Error opening document:", error);
                           toast({

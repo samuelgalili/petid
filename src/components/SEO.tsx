@@ -25,6 +25,18 @@ interface SEOProps {
 const DEFAULT_IMAGE = appUrl('/pwa-512x512.png');
 const SITE_NAME = 'MIPO';
 const DEFAULT_DESCRIPTION = 'MIPO היא אפליקציה לניהול החיים עם חיית המחמד: פרופיל, טיפול, תזכורות, קהילה וחנות.';
+const JSON_LD_ESCAPES: Record<string, string> = {
+  '<': '\\u003c',
+  '>': '\\u003e',
+  '&': '\\u0026',
+  '\u2028': '\\u2028',
+  '\u2029': '\\u2029',
+};
+
+const serializeJsonLd = (value: unknown) => JSON.stringify(value).replace(
+  /[<>&\u2028\u2029]/g,
+  (character) => JSON_LD_ESCAPES[character],
+);
 
 export const SEO = ({
   title,
@@ -134,7 +146,7 @@ export const SEO = ({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      dangerouslySetInnerHTML={{ __html: serializeJsonLd(structuredData) }}
     />
   );
 };

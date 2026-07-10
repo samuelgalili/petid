@@ -4,14 +4,21 @@ www.mipo.pet {
 
 mipo.pet {
 	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "camera=(), microphone=(), geolocation=(self)"
+		+Content-Security-Policy "base-uri 'self'; object-src 'none'; frame-ancestors 'none'"
+	}
 
 	handle /api/* {
 		reverse_proxy mipo-api:3000
 	}
 
-	handle_path /uploads/* {
-		root * /srv/uploads
-		file_server
+	handle /uploads/* {
+		reverse_proxy mipo-api:3000
 	}
 
 	handle {

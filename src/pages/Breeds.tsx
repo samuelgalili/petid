@@ -163,7 +163,7 @@ const Breeds = () => {
   const filteredBreeds = useMemo(() => {
     if (!breeds) return [];
     
-    let result = breeds.filter(breed => {
+    const result = breeds.filter(breed => {
       const searchLower = searchQuery.toLowerCase();
       return (
         breed.breed_name.toLowerCase().includes(searchLower) ||

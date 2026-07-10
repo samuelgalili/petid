@@ -16,7 +16,6 @@ import { isToday, isYesterday, isThisWeek } from "date-fns";
 import { timeAgo } from "@/utils/timeAgo";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { useAuth } from "@/hooks/useAuth";
-import { useOverlayNav } from "@/contexts/OverlayNavContext";
 import BottomNav from "@/components/BottomNav";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SEO } from "@/components/SEO";
@@ -35,6 +34,7 @@ interface NotificationData {
   pet_type?: string;
   product_id?: string;
   trigger?: string;
+  action_url?: string;
   [key: string]: unknown;
 }
 
@@ -82,7 +82,6 @@ const filterMatch = (n: NotificationItem, tab: FilterTab) => {
 const Notifications = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { openPublicPet } = useOverlayNav();
   const {
     markAsRead: markNotificationAsRead,
     markAllAsRead: markAllNotificationsAsRead,
@@ -93,32 +92,26 @@ const Notifications = () => {
   const [activeFilter, setActiveFilter] = useState<FilterTab>("all");
 
   const fetchNotifications = useCallback(async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    if (!user) return;
 
     try {
       const result = await getMyNotifications({ limit: 100 });
       const nextNotifications = result.notifications as NotificationItem[];
       setNotifications(nextNotifications);
-      if (nextNotifications.length > 0) {
-        await markAllNotificationsAsRead();
-        setNotifications(nextNotifications.map((item) => ({ ...item, is_read: true })));
-      }
     } finally {
       setLoading(false);
     }
-  }, [markAllNotificationsAsRead, user]);
+  }, [user]);
 
   useEffect(() => {
     if (authLoading) return;
     if (!user) { navigate("/auth"); return; }
     fetchNotifications();
   }, [authLoading, fetchNotifications, navigate, user]);
-
-  const handleFollowBack = async (_userId: string) => {
-    if (!user) return;
-    haptic("success");
-  };
 
   const filtered = useMemo(
     () => notifications.filter((n) => filterMatch(n, activeFilter)),
@@ -156,14 +149,14 @@ const Notifications = () => {
 
     const t = n.category || n.type || "";
 
-    // Follow → open public pet profile
-    if ((t === "follow" || t === "new_follower") && n.data?.pet_id) {
-      openPublicPet(n.data.pet_id);
+    if (n.data?.action_url?.startsWith("/") && !n.data.action_url.startsWith("//")) {
+      navigate(n.data.action_url);
       return;
     }
-    // Follower without pet → user profile
-    if ((t === "follow" || t === "new_follower") && n.data?.user_id) {
-      navigate(`/user/${n.data.user_id}`);
+
+    // Pet profile and product pages are the supported notification destinations.
+    if ((t === "follow" || t === "new_follower") && n.data?.pet_id) {
+      navigate(`/found-pet/${n.data.pet_id}`);
       return;
     }
     // Scientist / product → shop product
@@ -171,14 +164,8 @@ const Notifications = () => {
       navigate(`/product/${n.data.product_id}`);
       return;
     }
-    // Post-related
-    if (n.data?.post_id) {
-      navigate(`/post/${n.data.post_id}`);
-      return;
-    }
-    // Pet-related
     if (n.data?.pet_id) {
-      openPublicPet(n.data.pet_id);
+      navigate(`/found-pet/${n.data.pet_id}`);
       return;
     }
   };
@@ -222,6 +209,7 @@ const Notifications = () => {
               <button
                 onClick={() => navigate(-1)}
                 className="p-2 rounded-xl hover:bg-muted/60 transition-all active:scale-95"
+                aria-label="חזרה"
               >
                 <ChevronRight className="w-5 h-5 text-foreground" />
               </button>
@@ -285,7 +273,6 @@ const Notifications = () => {
                       notification={n}
                       index={i}
                       onTap={handleTap}
-                      onFollowBack={handleFollowBack}
                     />
                   ))}
                 </div>
@@ -305,27 +292,25 @@ function NotificationCard({
   notification: n,
   index,
   onTap,
-  onFollowBack,
 }: {
   notification: NotificationItem;
   index: number;
   onTap: (n: NotificationItem) => void;
-  onFollowBack: (userId: string) => void;
 }) {
   const meta = getCategoryMeta(n.category, n.type);
   const CatIcon = meta.icon;
-  const isFollowType = n.type === "follow" || n.type === "new_follower";
   const hasPet = !!n.data?.pet_name;
   const PetIcon = n.data?.pet_type === "cat" ? Cat : Dog;
 
   return (
-    <motion.div
+    <motion.button
+      type="button"
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.03, duration: 0.25 }}
       whileTap={{ scale: 0.985 }}
       onClick={() => onTap(n)}
-      className={`relative flex items-start gap-3 p-3.5 rounded-2xl cursor-pointer transition-all
+      className={`relative flex w-full text-right items-start gap-3 p-3.5 rounded-2xl cursor-pointer transition-all
         bg-gradient-to-br ${meta.gradient} backdrop-blur-xl
         border border-white/10 dark:border-white/5
         ${!n.is_read ? "shadow-md shadow-primary/10" : "opacity-80"}
@@ -389,23 +374,12 @@ function NotificationCard({
       </div>
 
       {/* Action / Thumbnail */}
-      {isFollowType ? (
-        <Button
-          size="sm"
-          className="rounded-xl px-4 h-8 text-xs font-bold bg-primary hover:bg-primary/90 shadow-md shadow-primary/20 self-center shrink-0"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (n.data?.user_id) onFollowBack(n.data.user_id);
-          }}
-        >
-          עקוב
-        </Button>
-      ) : n.data?.post_image ? (
+      {n.data?.post_image ? (
         <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 self-center border border-white/10">
           <img src={n.data.post_image} alt="" className="w-full h-full object-cover" />
         </div>
       ) : null}
-    </motion.div>
+    </motion.button>
   );
 }
 

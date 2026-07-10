@@ -7,6 +7,7 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { Syringe, CalendarPlus, CheckCircle2, Circle } from "lucide-react";
+import { formatLocalDate, parseLocalDate } from "@/lib/dateOnly";
 
 interface PuppyVaccineSchedulerProps {
   petName: string;
@@ -26,7 +27,7 @@ interface ScheduleItem {
 export const PuppyVaccineScheduler = ({ petName, birthDate, breed, petType }: PuppyVaccineSchedulerProps) => {
   const schedule = useMemo(() => {
     if (!birthDate) return [];
-    const birth = new Date(birthDate);
+    const birth = parseLocalDate(birthDate);
     const now = new Date();
     const ageWeeks = Math.floor((now.getTime() - birth.getTime()) / (1000 * 60 * 60 * 24 * 7));
 
@@ -45,7 +46,7 @@ export const PuppyVaccineScheduler = ({ petName, birthDate, breed, petType }: Pu
       vaccineDate.setDate(vaccineDate.getDate() + item.weekAge * 7);
       return {
         ...item,
-        date: vaccineDate.toISOString().split('T')[0],
+        date: formatLocalDate(vaccineDate),
         isPast: vaccineDate < now,
       };
     });
@@ -64,7 +65,7 @@ export const PuppyVaccineScheduler = ({ petName, birthDate, breed, petType }: Pu
     const end = endDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 
     const url = `https://calendar.google.com/calendar/event?action=TEMPLATE&text=${title}&details=${details}&dates=${start}/${end}`;
-    window.open(url, '_blank');
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (

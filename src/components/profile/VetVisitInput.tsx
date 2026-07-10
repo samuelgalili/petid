@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { createMyVaccination, createMyVetVisit } from "@/lib/mipoApi";
+import { formatLocalDate, parseLocalDate } from "@/lib/dateOnly";
 
 interface VetVisitInputProps {
   petId: string;
@@ -33,7 +34,7 @@ export const VetVisitInput = ({ petId, petName, onVisitLogged }: VetVisitInputPr
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [summary, setSummary] = useState("");
-  const [visitDate, setVisitDate] = useState(new Date().toISOString().split("T")[0]);
+  const [visitDate, setVisitDate] = useState(() => formatLocalDate(new Date()));
   const [clinicName, setClinicName] = useState("");
 	  const [loading, setLoading] = useState(false);
 	  const [extracted, setExtracted] = useState<ExtractedData | null>(null);
@@ -43,9 +44,9 @@ export const VetVisitInput = ({ petId, petName, onVisitLogged }: VetVisitInputPr
 	    const vaccineKeywords = ["כלבת", "משושה", "מרובעת", "תילוע", "fvrcp", "felv", "rabies"];
 	    const vaccines = vaccineKeywords.filter((keyword) => normalized.includes(keyword.toLowerCase()));
 	    const isRecoveryMode = ["ניתוח", "החלמה", "זיהום", "פציעה", "infection", "surgery"].some((keyword) => normalized.includes(keyword));
-	    const nextVisitDate = vaccines.length > 0
-	      ? new Date(new Date(visitDate).setFullYear(new Date(visitDate).getFullYear() + 1)).toISOString().slice(0, 10)
-	      : null;
+		    const annualDue = parseLocalDate(visitDate);
+		    annualDue.setFullYear(annualDue.getFullYear() + 1);
+		    const nextVisitDate = vaccines.length > 0 ? formatLocalDate(annualDue) : null;
 
 	    return {
 	      diagnoses: isRecoveryMode ? ["מעקב החלמה"] : [],
@@ -69,9 +70,9 @@ export const VetVisitInput = ({ petId, petName, onVisitLogged }: VetVisitInputPr
 	    try {
 	      const localExtraction = extractLocalSummary(summary.trim());
 	      setExtracted(localExtraction);
-	      const recoveryUntil = localExtraction.isRecoveryMode
-	        ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
-	        : null;
+		      const recoveryDate = new Date();
+		      recoveryDate.setDate(recoveryDate.getDate() + 14);
+		      const recoveryUntil = localExtraction.isRecoveryMode ? formatLocalDate(recoveryDate) : null;
 
 	      await createMyVetVisit(petId, {
 	        visit_type: localExtraction.vaccines.length > 0 ? "vaccination" : "checkup",

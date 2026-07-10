@@ -39,7 +39,13 @@ const CompleteProfilePrompt = () => {
       const data = (await getCurrentUser())?.profile;
 
       if (!data) return;
-      setProfile(data);
+      setProfile({
+        full_name: data.full_name,
+        first_name: data.first_name ?? null,
+        last_name: data.last_name ?? null,
+        phone: data.phone ?? null,
+        city: data.city ?? null,
+      });
 
       const missing: string[] = [];
       if (!data.first_name) missing.push("first_name");

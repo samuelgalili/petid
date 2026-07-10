@@ -36,12 +36,12 @@ export const QuickShareSheet = ({ open, onClose, postId, caption }: QuickShareSh
   };
 
   const handleWhatsApp = () => {
-    window.open(`https://wa.me/?text=${encodeURIComponent(caption ? `${caption}\n${shareUrl}` : shareUrl)}`, '_blank');
+    window.open(`https://wa.me/?text=${encodeURIComponent(caption ? `${caption}\n${shareUrl}` : shareUrl)}`, '_blank', 'noopener,noreferrer');
     onClose();
   };
 
   const handleTelegram = () => {
-    window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(caption || '')}`, '_blank');
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(caption || '')}`, '_blank', 'noopener,noreferrer');
     onClose();
   };
 

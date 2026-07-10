@@ -1,4 +1,4 @@
-import { ArrowRight, MessageCircle, Phone, Mail, FileText, HelpCircle, ChevronLeft } from "lucide-react";
+import { ArrowRight, Mail, FileText, HelpCircle, ChevronLeft, Shield, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
@@ -9,36 +9,36 @@ const Support = () => {
 
   const supportOptions = [
     {
-      icon: MessageCircle,
-      title: "צ'אט עם נציג",
-      description: "זמין בימים א'-ה' 9:00-18:00",
-      action: () => navigate("/chat"),
+      icon: Mail,
+      title: "תמיכה באימייל",
+      description: "support@mipo.pet",
+      action: () => window.open("mailto:support@mipo.pet"),
       color: "bg-icon-blue/10",
       iconColor: "text-icon-blue",
     },
     {
-      icon: Phone,
-      title: "התקשרו אלינו",
-      description: "*5678",
-      action: () => window.open("tel:*5678"),
+      icon: Shield,
+      title: "פרטיות ומחיקת מידע",
+      description: "privacy@mipo.pet",
+      action: () => window.open("mailto:privacy@mipo.pet"),
       color: "bg-icon-green/10",
       iconColor: "text-icon-green",
     },
     {
-      icon: Mail,
-      title: "שלחו אימייל",
-      description: "support@mipo.pet",
-      action: () => window.open("mailto:support@mipo.pet"),
+      icon: Settings,
+      title: "ניהול החשבון",
+      description: "ייצוא נתונים, פרטיות ומחיקת חשבון",
+      action: () => navigate("/settings"),
       color: "bg-icon-orange/10",
       iconColor: "text-icon-orange",
     },
   ];
 
   const faqItems = [
-    { question: "איך מצטרפים למועדון?", answer: "ההצטרפות למועדון חינמית ומתבצעת באפליקציה." },
-    { question: "איך צוברים נקודות?", answer: "על כל רכישה תקבלו נקודות בהתאם לסכום." },
-    { question: "איך מממשים הטבות?", answer: "גשו לעמוד ההטבות ובחרו את ההטבה הרצויה." },
-    { question: "מה תוקף הנקודות?", answer: "נקודות תקפות ל-12 חודשים מיום הצבירה." },
+    { question: "איך מאפסים סיסמה?", answer: "במסך הכניסה בחרו 'שכחת סיסמה' והזינו את הקוד שנשלח לכתובת האימייל של החשבון." },
+    { question: "איך מייצאים או מוחקים נתונים?", answer: "הפעולות זמינות בהגדרות החשבון תחת 'ניהול מידע'. מחיקה דורשת חשבון מחובר." },
+    { question: "איך משתמשים בתג של חיית המחמד?", answer: "קוד ה-QR מפנה לעמוד החיה הציבורי. פרטי קשר מופיעים רק בהתאם להגדרות מצב אבוד ושיתוף הטלפון." },
+    { question: "מה עושים כשלא ניתן לאמת תשלום?", answer: "אין לבצע תשלום נוסף לפני בדיקת סטטוס ההזמנה. שלחו לתמיכה את מספר ההזמנה בלבד, ללא פרטי כרטיס." },
   ];
 
   return (

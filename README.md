@@ -12,14 +12,31 @@ The repo contains both frontend and backend code. The AWS deploy workflow builds
 
 ## Local Development
 
-1. Install dependencies with `npm install`
-2. Copy `.env.example` to a local env file that is not committed
-3. Set the required frontend vars:
+Node.js 20.19 or newer is required.
+
+1. Install frontend and API dependencies with `npm ci` and `npm ci --prefix server`.
+2. Copy `.env.example` to a local `.env` file. The file is ignored and must not be committed.
+3. Set the required frontend values:
    - `VITE_APP_URL`
    - `VITE_API_URL`
-   - `VITE_GOOGLE_MAPS_API_KEY`
-   - `VITE_VAPID_PUBLIC_KEY`
-4. Start the app with `npm run dev`
+4. Set `DATABASE_URL` and the server-side provider credentials needed by the flow you are testing.
+5. Apply pending migrations with `npm run db:migrate`. The migration ledger verifies previously applied checksums and serializes concurrent runs.
+6. Start the API with `npm run dev:api`.
+7. In a second terminal, start Vite with `npm run dev`. Requests to `/api` are proxied to `VITE_API_PROXY_TARGET`, which defaults to `http://127.0.0.1:3000`.
+
+For a pre-existing database that predates `schema_migrations`, the runner refuses to replay historical migrations. After auditing the existing schema, baseline it exactly once with `MIGRATION_BASELINE_THROUGH=<last-existing-file>` and `MIGRATION_BASELINE_CONFIRM=existing-schema-reviewed`; later runs must omit both variables.
+
+Uploaded pet media is stored under `UPLOAD_DIR`. Identity and medical documents are stored under `PRIVATE_UPLOAD_DIR` and are served only by authenticated API routes. Do not expose the private directory through Caddy or another static file server.
+
+## Verification
+
+- `npm run lint`
+- `npm run typecheck`
+- `npm run build`
+- `npm test --prefix server`
+- `npm run test:e2e`
+
+The active browser suite uses mocked API responses for deterministic UI smoke coverage. Server tests cover the security helpers directly; a live PostgreSQL/provider integration suite is still a separate deployment concern.
 
 ## Deployment
 

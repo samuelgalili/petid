@@ -1,6 +1,6 @@
 import http from "node:http";
-import { createHash, createHmac, randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
-import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
+import { createHash, createHmac, randomBytes, randomInt, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
+import { chmod, mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Pool } from "pg";
 import {
@@ -14,12 +14,26 @@ import {
   smartScrapeProduct,
 } from "./productIntel.js";
 import { fallbackBreeds } from "./referenceData.js";
+import {
+  getCardcomString,
+  parseCardcomReturnValue,
+  parseVerifiedCardcomIndicator,
+} from "./cardcom.js";
+import {
+  FixedWindowRateLimiter,
+  contentTypeForSafeExtension,
+  createOpaqueToken,
+  decodeAndValidateDataUrl,
+  hashOpaqueToken,
+  verifyOpaqueToken,
+} from "./security.js";
 
 const port = Number(process.env.PORT || 3000);
 const databaseUrl = process.env.DATABASE_URL;
 const adminApiKey = process.env.ADMIN_API_KEY;
 const defaultBusinessId = process.env.DEFAULT_BUSINESS_ID || "cf941cc4-e1d1-4d7c-8122-a5df81a1e53c";
 const uploadDir = process.env.UPLOAD_DIR || "/app/uploads";
+const privateUploadDir = process.env.PRIVATE_UPLOAD_DIR || "/app/private-uploads";
 const maxUploadBytes = Number(process.env.MAX_UPLOAD_BYTES || 5 * 1024 * 1024);
 const maxDocumentUploadBytes = Number(process.env.MAX_DOCUMENT_UPLOAD_BYTES || 10 * 1024 * 1024);
 const adminCookieName = "mipo_admin_session";
@@ -39,29 +53,72 @@ const userSessionDays = Number.isFinite(configuredUserSessionDays) && configured
   ? configuredUserSessionDays
   : 30;
 const userSessionMs = userSessionDays * 24 * 60 * 60 * 1000;
+const transientUserSessionMs = 24 * 60 * 60 * 1000;
 const cardcomTerminal = process.env.CARDCOM_TERMINAL_NUMBER;
 const cardcomUsername = process.env.CARDCOM_USERNAME || process.env.CARDCOM_API_NAME;
 const cardcomApiPassword = process.env.CARDCOM_API_PASSWORD;
 const cardcomWebhookSecret = process.env.CARDCOM_WEBHOOK_SECRET;
+const cardcomConfiguration = [cardcomTerminal, cardcomUsername, cardcomApiPassword, cardcomWebhookSecret];
+const cardcomConfigured = cardcomConfiguration.every(Boolean);
+const cardcomPartiallyConfigured = cardcomConfiguration.some(Boolean) && !cardcomConfigured;
+const configuredPublicAppUrl = String(
+  process.env.PUBLIC_APP_URL || process.env.APP_URL || process.env.VITE_APP_URL || "",
+).trim() || null;
 const cardcomLowProfileUrl = "https://secure.cardcom.solutions/Interface/LowProfile.aspx";
 const cardcomIndicatorUrl = "https://secure.cardcom.solutions/Interface/BillGoldGetLowProfileIndicator.aspx";
 const geminiApiKey = process.env.GEMINI_API_KEY || "";
 const geminiModel = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 const maxAiAttachmentBytes = Number(process.env.MAX_AI_ATTACHMENT_BYTES || 15 * 1024 * 1024);
+const isProduction = process.env.NODE_ENV === "production";
 
 if (!databaseUrl) {
   throw new Error("DATABASE_URL is required");
 }
 
+if (isProduction) {
+  const missingRequiredConfiguration = [
+    ["ADMIN_API_KEY", adminApiKey],
+    ["RESEND_API_KEY", resendApiKey],
+    ["GEMINI_API_KEY", geminiApiKey],
+  ].filter(([, value]) => !value).map(([name]) => name);
+  if (missingRequiredConfiguration.length > 0) {
+    throw new Error(`Missing required production configuration: ${missingRequiredConfiguration.join(", ")}`);
+  }
+  if (passwordResetDebug) {
+    throw new Error("PASSWORD_RESET_DEBUG must be disabled in production");
+  }
+  if (cardcomPartiallyConfigured) {
+    throw new Error("CardCom configuration must include terminal, username, API password, and webhook secret");
+  }
+  if (!configuredPublicAppUrl) {
+    throw new Error("PUBLIC_APP_URL is required in production");
+  }
+  let parsedPublicAppUrl;
+  try {
+    parsedPublicAppUrl = new URL(configuredPublicAppUrl);
+  } catch {
+    throw new Error("PUBLIC_APP_URL must be a valid absolute URL");
+  }
+  if (parsedPublicAppUrl.protocol !== "https:") {
+    throw new Error("PUBLIC_APP_URL must use HTTPS in production");
+  }
+  if (parsedPublicAppUrl.username || parsedPublicAppUrl.password || parsedPublicAppUrl.search || parsedPublicAppUrl.hash) {
+    throw new Error("PUBLIC_APP_URL must not contain credentials, query parameters, or a fragment");
+  }
+}
+
 const pool = new Pool({
   connectionString: databaseUrl,
-  ssl: process.env.DB_SSL === "false" ? false : { rejectUnauthorized: false },
+  ssl: process.env.DB_SSL === "false"
+    ? false
+    : { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== "false" },
   max: Number(process.env.DB_POOL_MAX || 8),
 });
 
 const jsonHeaders = {
   "content-type": "application/json; charset=utf-8",
   "cache-control": "no-store",
+  "x-content-type-options": "nosniff",
 };
 
 const readBody = async (request, maxBytes = 1024 * 1024) => {
@@ -79,7 +136,14 @@ const readBody = async (request, maxBytes = 1024 * 1024) => {
 
   if (chunks.length === 0) return {};
   const raw = Buffer.concat(chunks).toString("utf8");
-  return raw ? JSON.parse(raw) : {};
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch {
+    const error = new Error("Invalid JSON");
+    error.statusCode = 400;
+    throw error;
+  }
 };
 
 const readRawBody = async (request, maxBytes = 1024 * 1024) => {
@@ -188,9 +252,36 @@ const getRequestIp = (request) => {
   return request.socket?.remoteAddress || null;
 };
 
+const rateLimiter = new FixedWindowRateLimiter();
+
+const enforceRateLimit = (request, response, scope, options, identity = "") => {
+  const identifier = identity ? String(identity).trim().toLowerCase() : getRequestIp(request) || "unknown";
+  const result = rateLimiter.check(`${scope}:${identifier}`, options);
+  if (result.allowed) return true;
+
+  const retryAfter = Math.max(1, Math.ceil((result.resetAt - Date.now()) / 1000));
+  sendJson(response, 429, { error: "Too many requests" }, { "retry-after": String(retryAfter) });
+  return false;
+};
+
+const rateLimits = {
+  adminLogin: { limit: 8, windowMs: 15 * 60 * 1000 },
+  userLogin: { limit: 20, windowMs: 15 * 60 * 1000 },
+  signup: { limit: 8, windowMs: 60 * 60 * 1000 },
+  passwordResetRequest: { limit: 5, windowMs: 60 * 60 * 1000 },
+  passwordResetConfirm: { limit: 10, windowMs: 15 * 60 * 1000 },
+  orderCreate: { limit: 20, windowMs: 10 * 60 * 1000 },
+  paymentCreate: { limit: 20, windowMs: 10 * 60 * 1000 },
+  reportCreate: { limit: 10, windowMs: 60 * 60 * 1000 },
+  aiChat: { limit: 30, windowMs: 60 * 60 * 1000 },
+  mediaUpload: { limit: 30, windowMs: 60 * 60 * 1000 },
+  documentUpload: { limit: 20, windowMs: 60 * 60 * 1000 },
+  couponValidate: { limit: 30, windowMs: 10 * 60 * 1000 },
+  publicPetScan: { limit: 60, windowMs: 60 * 60 * 1000 },
+};
+
 const getPublicBaseUrl = (request) => {
-  const configuredUrl = process.env.PUBLIC_APP_URL || process.env.APP_URL || process.env.VITE_APP_URL;
-  if (configuredUrl) return configuredUrl.replace(/\/+$/, "");
+  if (configuredPublicAppUrl) return configuredPublicAppUrl.replace(/\/+$/, "");
 
   const proto = request.headers["x-forwarded-proto"] || "http";
   const host = request.headers["x-forwarded-host"] || request.headers.host || "localhost";
@@ -202,6 +293,16 @@ const absoluteAppUrl = (request, urlOrPath) => {
   const value = String(urlOrPath);
   if (/^https?:\/\//i.test(value)) return value;
   return new URL(value.replace(/^\/+/, ""), `${getPublicBaseUrl(request)}/`).toString();
+};
+
+const safeAppRedirectUrl = (request, candidate, fallbackPath) => {
+  const base = new URL(`${getPublicBaseUrl(request)}/`);
+  try {
+    const resolved = new URL(String(candidate || fallbackPath), base);
+    return resolved.origin === base.origin ? resolved.toString() : new URL(fallbackPath, base).toString();
+  } catch {
+    return new URL(fallbackPath, base).toString();
+  }
 };
 
 const buildAdminCookie = (request, token) => {
@@ -324,6 +425,11 @@ const bootstrapAdmin = async (body) => {
     error.statusCode = 400;
     throw error;
   }
+  if (password.length > 256) {
+    const error = new Error("Password is too long");
+    error.statusCode = 400;
+    throw error;
+  }
 
   const result = await pool.query(
     `
@@ -351,6 +457,12 @@ const bootstrapAdmin = async (body) => {
 const loginAdmin = async (request, body) => {
   const email = normalizeEmail(body.email);
   const password = String(body.password || "");
+
+  if (password.length > 256) {
+    const error = new Error("Invalid email or password");
+    error.statusCode = 401;
+    throw error;
+  }
 
   const result = await pool.query(
     `
@@ -431,10 +543,13 @@ const serializeProfile = (row) => row ? ({
   marketing_consent: row.marketing_consent || false,
   marketing_consent_date: row.marketing_consent_date || null,
   marketing_unsubscribed_at: row.marketing_unsubscribed_at || null,
+  ai_consent_given: row.ai_consent_given === true,
+  ai_consent_date: row.ai_consent_date || null,
   quiet_mode_until: row.quiet_mode_until || null,
   last_active_at: row.last_active_at || null,
+  profile_visibility: row.profile_visibility === "public" ? "public" : "private",
   show_activity_status: row.show_activity_status === null || row.show_activity_status === undefined
-    ? true
+    ? false
     : row.show_activity_status,
   created_at: row.created_at || null,
   updated_at: row.updated_at || null,
@@ -478,14 +593,14 @@ const getProfileByUserId = async (userId) => {
   return result.rows[0] ? serializeProfile(result.rows[0]) : null;
 };
 
-const buildUserCookie = (request, token) => {
+const buildUserCookie = (request, token, { persistent = false } = {}) => {
   const isHttps = request.headers["x-forwarded-proto"] === "https";
   return [
     `${userCookieName}=${encodeURIComponent(token)}`,
     "HttpOnly",
     "Path=/",
     "SameSite=Lax",
-    `Max-Age=${Math.floor(userSessionMs / 1000)}`,
+    persistent ? `Max-Age=${Math.floor(userSessionMs / 1000)}` : "",
     isHttps ? "Secure" : "",
   ].filter(Boolean).join("; ");
 };
@@ -502,10 +617,10 @@ const buildClearUserCookie = (request) => {
   ].filter(Boolean).join("; ");
 };
 
-const createUserSession = async (request, userId, db = pool) => {
+const createUserSession = async (request, userId, db = pool, { persistent = false } = {}) => {
   const token = randomBytes(32).toString("base64url");
   const tokenHash = hashSessionToken(token);
-  const expiresAt = new Date(Date.now() + userSessionMs).toISOString();
+  const expiresAt = new Date(Date.now() + (persistent ? userSessionMs : transientUserSessionMs)).toISOString();
 
   await db.query(
     `
@@ -563,8 +678,11 @@ const getUserFromSession = async (request) => {
         p.marketing_consent as profile_marketing_consent,
         p.marketing_consent_date as profile_marketing_consent_date,
         p.marketing_unsubscribed_at as profile_marketing_unsubscribed_at,
+        p.ai_consent_given as profile_ai_consent_given,
+        p.ai_consent_date as profile_ai_consent_date,
         p.quiet_mode_until as profile_quiet_mode_until,
         p.last_active_at as profile_last_active_at,
+        p.profile_visibility as profile_visibility,
         p.show_activity_status as profile_show_activity_status,
         p.created_at as profile_created_at,
         p.updated_at as profile_updated_at
@@ -604,8 +722,11 @@ const getUserFromSession = async (request) => {
     marketing_consent: row.profile_marketing_consent,
     marketing_consent_date: row.profile_marketing_consent_date,
     marketing_unsubscribed_at: row.profile_marketing_unsubscribed_at,
+    ai_consent_given: row.profile_ai_consent_given,
+    ai_consent_date: row.profile_ai_consent_date,
     quiet_mode_until: row.profile_quiet_mode_until,
     last_active_at: row.profile_last_active_at,
+    profile_visibility: row.profile_visibility,
     show_activity_status: row.profile_show_activity_status,
     created_at: row.profile_created_at,
     updated_at: row.profile_updated_at,
@@ -643,6 +764,11 @@ const signupUser = async (request, body) => {
   }
   if (password.length < 8) {
     const error = new Error("Password must be at least 8 characters");
+    error.statusCode = 400;
+    throw error;
+  }
+  if (password.length > 256) {
+    const error = new Error("Password is too long");
     error.statusCode = 400;
     throw error;
   }
@@ -714,6 +840,13 @@ const signupUser = async (request, body) => {
 const loginUser = async (request, body) => {
   const email = normalizeEmail(body.email);
   const password = String(body.password || "");
+  const rememberMe = body.remember_me === true || body.rememberMe === true;
+
+  if (password.length > 256) {
+    const error = new Error("Invalid email or password");
+    error.statusCode = 401;
+    throw error;
+  }
 
   const result = await pool.query(
     `
@@ -732,7 +865,7 @@ const loginUser = async (request, body) => {
     throw error;
   }
 
-  const token = await createUserSession(request, row.id);
+  const token = await createUserSession(request, row.id, pool, { persistent: rememberMe });
   const updated = await pool.query(
     `update public.app_users set last_login_at = now(), updated_at = now() where id = $1 returning ${userSelect}`,
     [row.id],
@@ -743,10 +876,11 @@ const loginUser = async (request, body) => {
     user: serializeUser(updated.rows[0], profile),
     profile,
     token,
+    rememberMe,
   };
 };
 
-const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
+const generateOtp = () => String(randomInt(100000, 1000000));
 
 const hashPasswordResetOtp = (email, otp) => createHmac("sha256", adminApiKey || databaseUrl)
   .update(`${normalizeEmail(email)}:${String(otp || "")}`)
@@ -759,29 +893,35 @@ const sendPasswordResetEmail = async (request, email, otp) => {
   resetUrl.searchParams.set("email", email);
   resetUrl.searchParams.set("otp", otp);
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      authorization: `Bearer ${resendApiKey}`,
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      from: passwordResetFromEmail,
-      to: [email],
-      subject: "קוד איפוס הסיסמה שלך - MIPO",
-      html: `
-        <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; background: #f8f8fb;">
-          <div style="background: #ffffff; border-radius: 20px; padding: 32px; text-align: center;">
-            <h1 style="margin: 0 0 12px; color: #111827;">MIPO</h1>
-            <p style="margin: 0 0 24px; color: #4b5563;">קוד איפוס הסיסמה שלך תקף ל-${Math.max(1, passwordResetOtpMinutes)} דקות.</p>
-            <div style="font-size: 34px; letter-spacing: 8px; font-weight: 700; color: #6C63FF; margin: 24px 0;">${otp}</div>
-            <a href="${resetUrl.toString()}" style="display: inline-block; background: #6C63FF; color: #ffffff; text-decoration: none; padding: 12px 22px; border-radius: 999px; font-weight: 700;">הגדרת סיסמה חדשה</a>
-            <p style="margin: 24px 0 0; color: #6b7280; font-size: 13px;">אם לא ביקשת לאפס את הסיסמה, אפשר להתעלם מההודעה.</p>
+  let response;
+  try {
+    response = await fetchWithTimeout("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${resendApiKey}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        from: passwordResetFromEmail,
+        to: [email],
+        subject: "קוד איפוס הסיסמה שלך - MIPO",
+        html: `
+          <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; background: #f8f8fb;">
+            <div style="background: #ffffff; border-radius: 20px; padding: 32px; text-align: center;">
+              <h1 style="margin: 0 0 12px; color: #111827;">MIPO</h1>
+              <p style="margin: 0 0 24px; color: #4b5563;">קוד איפוס הסיסמה שלך תקף ל-${Math.max(1, passwordResetOtpMinutes)} דקות.</p>
+              <div style="font-size: 34px; letter-spacing: 8px; font-weight: 700; color: #6C63FF; margin: 24px 0;">${otp}</div>
+              <a href="${resetUrl.toString()}" style="display: inline-block; background: #6C63FF; color: #ffffff; text-decoration: none; padding: 12px 22px; border-radius: 999px; font-weight: 700;">הגדרת סיסמה חדשה</a>
+              <p style="margin: 24px 0 0; color: #6b7280; font-size: 13px;">אם לא ביקשת לאפס את הסיסמה, אפשר להתעלם מההודעה.</p>
+            </div>
           </div>
-        </div>
-      `,
-    }),
-  });
+        `,
+      }),
+    }, 15_000);
+  } catch (error) {
+    console.error("Password reset email request failed:", error.message);
+    return { sent: false, reason: "send_failed" };
+  }
 
   if (!response.ok) {
     const details = await response.text().catch(() => "");
@@ -846,7 +986,7 @@ const requestPasswordReset = async (request, body) => {
 
   return {
     ok: true,
-    email_delivery: emailDelivery,
+    email_delivery: isProduction ? "sent" : emailDelivery,
     ...(debugOtp ? { debug_otp: debugOtp } : {}),
   };
 };
@@ -868,6 +1008,11 @@ const confirmPasswordReset = async (body) => {
   }
   if (password.length < 8) {
     const error = new Error("Password must be at least 8 characters");
+    error.statusCode = 400;
+    throw error;
+  }
+  if (password.length > 256) {
+    const error = new Error("Password is too long");
     error.statusCode = 400;
     throw error;
   }
@@ -978,6 +1123,12 @@ const updateMyProfile = async (userId, body) => {
   const showActivityStatus = Object.prototype.hasOwnProperty.call(body, "show_activity_status")
     ? Boolean(body.show_activity_status)
     : undefined;
+  const profileVisibility = Object.prototype.hasOwnProperty.call(body, "profile_visibility")
+    ? body.profile_visibility === "public" ? "public" : "private"
+    : undefined;
+  const aiConsentGiven = Object.prototype.hasOwnProperty.call(body, "ai_consent_given")
+    ? body.ai_consent_given === true
+    : undefined;
   const idNumberLast4 = Object.prototype.hasOwnProperty.call(body, "id_number_last4")
     ? String(body.id_number_last4 || "").replace(/\D/g, "").slice(-4) || null
     : undefined;
@@ -1024,6 +1175,11 @@ const updateMyProfile = async (userId, body) => {
   if (quietModeUntil !== undefined) pushProfile("quiet_mode_until", quietModeUntil);
   if (lastActiveAt !== undefined) pushProfile("last_active_at", lastActiveAt);
   if (showActivityStatus !== undefined) pushProfile("show_activity_status", showActivityStatus);
+  if (profileVisibility !== undefined) pushProfile("profile_visibility", profileVisibility);
+  if (aiConsentGiven !== undefined) {
+    pushProfile("ai_consent_given", aiConsentGiven);
+    pushProfile("ai_consent_date", aiConsentGiven ? new Date().toISOString() : null);
+  }
   if (birthdate !== undefined) {
     pushProfile("birthdate", birthdate);
     pushApp("birthdate", birthdate);
@@ -1109,7 +1265,7 @@ const getProfileActivityStatus = async (userId) => {
   if (result.rowCount === 0) return null;
   const row = result.rows[0];
   const showStatus = row.show_activity_status === null || row.show_activity_status === undefined
-    ? true
+    ? false
     : row.show_activity_status;
 
   return {
@@ -1365,10 +1521,12 @@ const getPublicPet = async (petId) => {
         p.*,
         pr.full_name as owner_full_name,
         pr.phone as owner_phone,
-        pr.city as owner_city
+        pr.city as owner_city,
+        pr.profile_visibility,
+        pr.show_location
       from public.pets p
       left join public.profiles pr on pr.id = p.user_id
-      where p.id = $1
+      where p.id = $1 and p.archived = false
       limit 1
     `,
     [petId],
@@ -1376,32 +1534,52 @@ const getPublicPet = async (petId) => {
 
   const row = result.rows[0];
   if (!row) return null;
+  const isLost = Boolean(row.is_lost);
+  const profileIsPublic = row.profile_visibility === "public";
+  const showPhone = isLost && Boolean(row.lost_show_phone);
+  const owner = {
+    full_name: isLost || profileIsPublic ? row.owner_full_name || null : null,
+    phone: showPhone ? row.lost_contact_phone || row.owner_phone || null : null,
+    city: (isLost || profileIsPublic) && row.show_location === true ? row.owner_city || null : null,
+  };
+
   return {
-    pet: serializePet(row),
-    owner: {
-      full_name: row.owner_full_name || null,
-      phone: row.owner_phone || null,
-      city: row.owner_city || null,
+    pet: {
+      id: row.id,
+      name: row.name,
+      type: row.type,
+      pet_type: row.type,
+      breed: row.breed || null,
+      secondary_breed: row.secondary_breed || null,
+      is_mixed: Boolean(row.is_mixed),
+      avatar_url: row.avatar_url || null,
+      gender: row.gender || null,
+      color: row.color || null,
+      personality_tags: row.personality_tags || null,
+      theme_color: row.theme_color || null,
+      is_lost: isLost,
+      lost_since: isLost ? row.lost_since || null : null,
+      lost_reward_text: isLost ? row.lost_reward_text || null : null,
+      lost_temperament: isLost ? row.lost_temperament || null : null,
+      lost_medication_note: isLost ? row.lost_medication_note || null : null,
+      lost_allergy_note: isLost ? row.lost_allergy_note || null : null,
+      lost_show_phone: showPhone,
+      lost_contact_phone: showPhone ? row.lost_contact_phone || row.owner_phone || null : null,
     },
+    owner: Object.values(owner).some(Boolean) ? owner : null,
   };
 };
 
-const logPublicPetQrScan = async (petId, body, request) => {
+const logPublicPetQrScan = async (petId) => {
   if (!uuidPattern.test(String(petId || ""))) return false;
 
   try {
     await pool.query(
       `
         insert into public.qr_scan_logs (pet_id, latitude, longitude, ip_address, user_agent)
-        values ($1, $2, $3, $4, $5)
+        values ($1, null, null, null, null)
       `,
-      [
-        petId,
-        body.latitude === undefined || body.latitude === null ? null : Number(body.latitude),
-        body.longitude === undefined || body.longitude === null ? null : Number(body.longitude),
-        request.headers["x-forwarded-for"]?.split(",")[0]?.trim() || request.socket.remoteAddress || null,
-        body.user_agent || request.headers["user-agent"] || null,
-      ],
+      [petId],
     );
     return true;
   } catch (error) {
@@ -1557,13 +1735,25 @@ const serializeDocument = (row) => ({
   document_type: row.document_type,
   title: row.title,
   description: row.description || null,
-  file_url: row.file_url,
+  file_url: `/api/me/documents/${row.id}/file`,
   file_name: row.file_name,
   file_size: row.file_size,
   content_type: row.content_type || null,
   uploaded_at: row.uploaded_at || null,
   updated_at: row.updated_at || null,
 });
+
+const sanitizeDownloadFileName = (value, extension = "") => {
+  const rawName = path.basename(String(value || "document"));
+  const rawStem = rawName.slice(0, rawName.length - path.extname(rawName).length) || "document";
+  const stem = rawStem
+    .replace(/[^A-Za-z0-9 ._()-]/g, "_")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 120) || "document";
+  const safeExtension = /^\.[a-z0-9]{1,8}$/.test(extension) ? extension : "";
+  return `${stem}${safeExtension}`;
+};
 
 const ensureUserPet = async (userId, petId) => {
   if (!uuidPattern.test(String(petId || ""))) {
@@ -1618,74 +1808,93 @@ const createUserDocument = async (userId, body) => {
     throw error;
   }
 
-  const upload = body.data_url
-    ? await uploadDocumentFile(body)
-    : {
-      url: String(body.file_url || ""),
-      file_name: String(body.file_name || body.title || "document"),
-      size: Number(body.file_size || 0) || null,
-      content_type: body.content_type || null,
-    };
-
-  if (!upload.url) {
+  if (!body.data_url) {
     const error = new Error("Document file is required");
     error.statusCode = 400;
     throw error;
   }
+  const documentId = randomUUID();
+  const upload = await uploadDocumentFile(body);
 
-  const result = await pool.query(
-    `
-      insert into public.pet_documents (
-        user_id,
-        pet_id,
-        document_type,
+  let result;
+  try {
+    result = await pool.query(
+      `
+        insert into public.pet_documents (
+          id,
+          user_id,
+          pet_id,
+          document_type,
+          title,
+          description,
+          file_url,
+          file_name,
+          file_size,
+          content_type,
+          storage_key
+        )
+        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        returning *
+      `,
+      [
+        documentId,
+        userId,
+        body.pet_id,
+        String(body.document_type || "other").trim() || "other",
         title,
-        description,
-        file_url,
-        file_name,
-        file_size,
-        content_type
-      )
-      values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      returning *
-    `,
-    [
-      userId,
-      body.pet_id,
-      String(body.document_type || "other").trim() || "other",
-      title,
-      body.description ? String(body.description).trim() : null,
-      upload.url,
-      upload.file_name,
-      upload.size,
-      upload.content_type,
-    ],
-  );
+        body.description ? String(body.description).trim() : null,
+        `/api/me/documents/${documentId}/file`,
+        sanitizeDownloadFileName(body.file_name || title, upload.extension),
+        upload.size,
+        upload.content_type,
+        upload.storage_key,
+      ],
+    );
+  } catch (error) {
+    await unlink(path.join(privateUploadDir, upload.storage_key)).catch(() => {});
+    throw error;
+  }
 
   return serializeDocument(result.rows[0]);
 };
 
 const deleteUploadedFileFromUrl = async (fileUrl) => {
-  const value = String(fileUrl || "");
+  const value = normalizeUploadPath(fileUrl);
+  if (!value) return;
   if (!value.startsWith("/uploads/")) return;
   const fileName = path.basename(value);
   if (!fileName || fileName === "." || fileName === "..") return;
   try {
     await unlink(path.join(uploadDir, fileName));
-  } catch {
-    // Missing files should not block metadata deletion.
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
   }
+};
+
+const deleteStoredDocument = async (document) => {
+  if (document?.storage_key) {
+    try {
+      await unlink(path.join(privateUploadDir, path.basename(document.storage_key)));
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+    }
+    return;
+  }
+  await deleteUploadedFileFromUrl(document?.file_url);
 };
 
 const deleteUserDocument = async (userId, documentId) => {
   if (!uuidPattern.test(documentId)) return false;
-  const result = await pool.query(
-    "delete from public.pet_documents where id = $1 and user_id = $2 returning file_url",
+  const documentResult = await pool.query(
+    "select file_url, storage_key from public.pet_documents where id = $1 and user_id = $2 limit 1",
     [documentId, userId],
   );
-  if (result.rows[0]?.file_url) {
-    await deleteUploadedFileFromUrl(result.rows[0].file_url);
-  }
+  if (!documentResult.rows[0]) return false;
+  await deleteStoredDocument(documentResult.rows[0]);
+  const result = await pool.query(
+    "delete from public.pet_documents where id = $1 and user_id = $2",
+    [documentId, userId],
+  );
   return result.rowCount > 0;
 };
 
@@ -2030,22 +2239,6 @@ const extractAiAttachmentReferences = (messages) => {
   return references.slice(-3);
 };
 
-const contentTypeForFileName = (fileName, fallback = "application/octet-stream") => {
-  const extension = path.extname(String(fileName || "")).toLowerCase();
-  if (extension === ".jpg" || extension === ".jpeg") return "image/jpeg";
-  if (extension === ".png") return "image/png";
-  if (extension === ".webp") return "image/webp";
-  if (extension === ".gif") return "image/gif";
-  if (extension === ".heic") return "image/heic";
-  if (extension === ".heif") return "image/heif";
-  if (extension === ".pdf") return "application/pdf";
-  if (extension === ".mp4") return "video/mp4";
-  if (extension === ".mov" || extension === ".qt") return "video/quicktime";
-  if (extension === ".webm") return "video/webm";
-  if (extension === ".txt") return "text/plain";
-  return fallback;
-};
-
 const normalizeUploadPath = (fileUrl) => {
   const value = String(fileUrl || "").trim();
   if (!value) return null;
@@ -2056,29 +2249,80 @@ const normalizeUploadPath = (fileUrl) => {
   }
 };
 
-const loadAiAttachmentPart = async (reference) => {
+const loadAiAttachmentPart = async (reference, userId) => {
   const uploadPath = normalizeUploadPath(reference.url);
-  if (!uploadPath || !uploadPath.startsWith("/uploads/")) {
+  if (!uploadPath) {
     return {
       text: `Attachment ${reference.kind} could not be analyzed because it is not a local MIPO upload.`,
     };
   }
 
-  const fileName = path.basename(decodeURIComponent(uploadPath));
-  const filePath = path.join(uploadDir, fileName);
+  let fileName;
+  let mimeType;
+  let loadBuffer;
+
+  const documentMatch = uploadPath.match(/^\/api\/me\/documents\/([0-9a-fA-F-]{36})\/file$/);
+  if (documentMatch) {
+    const result = await pool.query(
+      "select * from public.pet_documents where id = $1 and user_id = $2 limit 1",
+      [documentMatch[1], userId],
+    );
+    const document = result.rows[0];
+    if (!document) {
+      return { text: "This document is unavailable or does not belong to the signed-in user." };
+    }
+    loadBuffer = async () => {
+      const stored = await readDocumentFile(document);
+      fileName = stored.storageKey;
+      return stored.buffer;
+    };
+  } else if (uploadPath.startsWith("/uploads/")) {
+    const storageKey = safeStorageKey(uploadPath.slice("/uploads/".length));
+    if (!storageKey) return { text: "This attachment has an invalid storage path." };
+
+    const [ownedUpload, legacyDocument] = await Promise.all([
+      pool.query(
+        "select content_type from public.user_uploads where storage_key = $1 and user_id = $2 limit 1",
+        [storageKey, userId],
+      ),
+      pool.query(
+        `
+          select *
+          from public.pet_documents
+          where user_id = $2
+            and (file_url = $1 or right(file_url, length($1)) = $1)
+          limit 1
+        `,
+        [`/uploads/${storageKey}`, userId],
+      ),
+    ]);
+    if (ownedUpload.rowCount === 0 && legacyDocument.rowCount === 0) {
+      return { text: "This attachment is unavailable or does not belong to the signed-in user." };
+    }
+    fileName = storageKey;
+    mimeType = ownedUpload.rows[0]?.content_type || legacyDocument.rows[0]?.content_type || null;
+    loadBuffer = () => readFile(path.join(uploadDir, storageKey));
+  } else {
+    return {
+      text: `Attachment ${reference.kind} could not be analyzed because it is not a local MIPO upload.`,
+    };
+  }
+
   try {
-    const buffer = await readFile(filePath);
+    const buffer = await loadBuffer();
     if (buffer.length > maxAiAttachmentBytes) {
       return {
         text: `Attachment ${fileName} is too large for AI analysis. Ask the user to upload a smaller image or PDF.`,
       };
     }
 
-    const mimeType = contentTypeForFileName(fileName);
-    const supported = mimeType.startsWith("image/")
+    mimeType = contentTypeForSafeExtension(path.extname(fileName)) || mimeType;
+    const supported = typeof mimeType === "string" && (
+      mimeType.startsWith("image/")
       || mimeType.startsWith("video/")
       || mimeType === "application/pdf"
-      || mimeType === "text/plain";
+      || mimeType === "text/plain"
+    );
     if (!supported) {
       return {
         text: `Attachment ${fileName} has unsupported type ${mimeType}.`,
@@ -2103,6 +2347,10 @@ const compactPetForAi = (pet) => pet ? {
   name: pet.name,
   type: pet.type,
   breed: pet.breed,
+} : null;
+
+const compactSelectedPetForAi = (pet) => pet ? {
+  ...compactPetForAi(pet),
   age_years: pet.age_years,
   age_months: pet.age_months,
   gender: pet.gender,
@@ -2169,7 +2417,7 @@ const buildPetAiPrompt = ({
     .join("\n");
 
   const profile = auth.profile || {};
-  const userName = profile.first_name || profile.full_name || auth.user.full_name || auth.user.email;
+  const userName = profile.first_name || profile.full_name || auth.user.full_name || "User";
 
   return `You are MIPO AI, a practical pet-care assistant for an Israeli pet app.
 Reply in the user's language. Hebrew is the default when unclear.
@@ -2179,9 +2427,10 @@ Safety:
 - For medical images/documents, summarize and triage. Do not diagnose with certainty.
 - Do not invent facts that are not visible in the document, image, or profile.
 - If OCR/vision is uncertain, explicitly say what is uncertain.
-- If the user asks about shopping, training, grooming, boarding, insurance, documents, parks, or appointments, you may include an action tag.
+- If the user asks about shopping, training, grooming, boarding, documents, parks, adoption, or appointments, you may include an action tag.
 
 Available UI action tags inside content when useful:
+[ACTION:SHOW_CALENDAR]
 [ACTION:UPLOAD_DOCUMENT]
 [ACTION:UPLOAD_PHOTO]
 [ACTION:SHOW_DOCUMENT_TYPES]
@@ -2189,16 +2438,11 @@ Available UI action tags inside content when useful:
 [ACTION:SHOW_GROOMING_SERVICES]
 [ACTION:SHOW_APPOINTMENT_PICKER]
 [ACTION:SHOW_TRAINING_CATEGORIES]
+[ACTION:SHOW_TRAINING_OPTIONS:Option one|Option two]
 [ACTION:SHOW_PARK_OPTIONS]
 [ACTION:SHOW_BOARDING_TYPES]
-[ACTION:SHOW_INSURANCE_PLANS]
-[ACTION:SHOW_INSURANCE_CALLBACK]
-[ACTION:ESCALATE]
-
-OCR approval card:
-When a document/image clearly contains pet profile or medical fields worth saving, append one card tag:
-[CARD:OCR_APPROVAL:{"petName":"Pet name","changes":{"field label":"value"}}]
-Use only simple string values in the changes object.
+[ACTION:SHOW_ADOPTION_TRAITS]
+[ACTION:SHOW_ADOPTION_REQUIREMENTS]
 
 Return JSON only with this shape:
 {
@@ -2210,11 +2454,15 @@ Return JSON only with this shape:
 
 User context:
 ${JSON.stringify({
-    user: { id: auth.user.id, name: userName, city: profile.city || null },
+    user: { name: userName },
     pets: pets.map(compactPetForAi),
-    selected_pet: compactPetForAi(selectedPet),
+    selected_pet: compactSelectedPetForAi(selectedPet),
     selected_pet_health: compactHealthSummaryForAi(selectedPetSummary),
-    attachments: attachmentReferences,
+    attachments: attachmentReferences.map((attachment) => ({
+      kind: attachment.kind,
+      petName: attachment.petName,
+      type: attachment.type,
+    })),
   }, null, 2)}
 
 Conversation:
@@ -2234,8 +2482,8 @@ const createAiChatReply = async (auth, body) => {
   const selectedPetId = String(userContext.selectedPetId || "").trim();
   const selectedPetName = String(userContext.selectedPetName || "").trim().toLowerCase();
   const selectedPet = pets.find((pet) => pet.id === selectedPetId)
-    || pets.find((pet) => pet.name.toLowerCase() === selectedPetName)
-    || (pets.length === 1 ? pets[0] : null);
+    || (selectedPetName ? pets.find((pet) => pet.name.toLowerCase() === selectedPetName) : null)
+    || null;
   const selectedPetSummary = selectedPet
     ? await getUserPetHealthSummary(auth.user.id, selectedPet.id).catch(() => null)
     : null;
@@ -2243,10 +2491,15 @@ const createAiChatReply = async (auth, body) => {
   const attachmentReferences = extractAiAttachmentReferences(messages);
   const attachmentParts = [];
   for (const reference of attachmentReferences) {
+    const attachmentMetadata = {
+      kind: reference.kind,
+      petName: reference.petName,
+      type: reference.type,
+    };
     attachmentParts.push({
-      text: `Analyze attached ${reference.kind} for ${reference.petName || selectedPet?.name || "the selected pet"}. Metadata: ${JSON.stringify(reference)}`,
+      text: `Analyze attached ${reference.kind} for ${reference.petName || selectedPet?.name || "the selected pet"}. Metadata: ${JSON.stringify(attachmentMetadata)}`,
     });
-    attachmentParts.push(await loadAiAttachmentPart(reference));
+    attachmentParts.push(await loadAiAttachmentPart(reference, auth.user.id));
   }
 
   const prompt = buildPetAiPrompt({
@@ -2288,6 +2541,11 @@ const toNumber = (value) => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
+const idNumberLast4 = (value) => {
+  const digits = String(value || "").replace(/\D/g, "");
+  return digits.length >= 4 ? digits.slice(-4) : null;
+};
+
 const serializeInsuranceClaim = (row) => ({
   id: row.id,
   user_id: row.user_id,
@@ -2295,7 +2553,7 @@ const serializeInsuranceClaim = (row) => ({
   pet_name: row.pet_name || null,
   pet_microchip: row.pet_microchip || null,
   owner_name: row.owner_name || null,
-  owner_id_number: row.owner_id_number || null,
+  owner_id_number: idNumberLast4(row.owner_id_number),
   clinic_name: row.clinic_name || null,
   visit_date: row.visit_date || null,
   diagnosis: row.diagnosis || null,
@@ -2307,8 +2565,6 @@ const serializeInsuranceClaim = (row) => ({
   submitted_at: row.submitted_at || null,
   updated_at: row.updated_at || null,
 });
-
-const insuranceClaimStatuses = new Set(["pending", "approved", "paid", "denied"]);
 
 const listUserInsuranceClaims = async (userId, { petId = null, limit = 100 } = {}) => {
   const values = [userId];
@@ -2339,10 +2595,6 @@ const createUserInsuranceClaim = async (userId, body) => {
   const petId = body.pet_id ? String(body.pet_id) : null;
   if (petId) await ensureUserPet(userId, petId);
 
-  const status = insuranceClaimStatuses.has(String(body.status || "pending"))
-    ? String(body.status || "pending")
-    : "pending";
-
   const result = await pool.query(
     `
       insert into public.insurance_claims (
@@ -2370,14 +2622,14 @@ const createUserInsuranceClaim = async (userId, body) => {
       body.pet_name ? String(body.pet_name).trim() : null,
       body.pet_microchip ? String(body.pet_microchip).trim() : null,
       body.owner_name ? String(body.owner_name).trim() : null,
-      body.owner_id_number ? String(body.owner_id_number).trim() : null,
+      idNumberLast4(body.owner_id_number),
       body.clinic_name ? String(body.clinic_name).trim() : null,
       normalizeDateOnly(body.visit_date),
       body.diagnosis ? String(body.diagnosis).trim() : null,
       body.treatment ? String(body.treatment).trim() : null,
       toNumber(body.total_amount),
       toNumber(body.paid_amount),
-      status,
+      "pending",
       body.status_note ? String(body.status_note).trim() : null,
     ],
   );
@@ -3043,7 +3295,15 @@ const bulkDeleteProducts = async (ids) => {
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const orderStatuses = new Set(["pending", "processing", "shipped", "delivered", "cancelled"]);
-const paymentStatuses = new Set(["pending", "paid", "failed", "awaiting_cod", "dev_approved", "refunded", "libra_credit"]);
+const paymentStatuses = new Set([
+  "pending",
+  "paid",
+  "failed",
+  "awaiting_cod",
+  "refunded",
+  "libra_credit",
+  ...(isProduction ? [] : ["dev_approved"]),
+]);
 const couponDiscountTypes = new Set(["percentage", "percent", "fixed", "amount", "free_shipping"]);
 
 const toMoney = (value, fallback = 0) => {
@@ -3094,6 +3354,7 @@ const findValidCoupon = async (client, code, subtotal) => {
       where upper(code) = $1
         and is_active = true
       limit 1
+      for update
     `,
     [normalizedCode],
   );
@@ -3149,6 +3410,11 @@ const normalizeCouponBody = (body, { partial = false } = {}) => {
     const discountValue = toMoney(body.discount_value);
     if (discountValue < 0) {
       const error = new Error("Coupon discount value must be positive");
+      error.statusCode = 400;
+      throw error;
+    }
+    if (normalized.discount_type === "percentage" && discountValue > 100) {
+      const error = new Error("Percentage discount cannot exceed 100");
       error.statusCode = 400;
       throw error;
     }
@@ -3229,6 +3495,16 @@ const createAdminCoupon = async (body) => {
 
 const updateAdminCoupon = async (id, body) => {
   const coupon = normalizeCouponBody(body, { partial: true });
+  if (coupon.discount_value !== undefined || coupon.discount_type !== undefined) {
+    const current = await pool.query("select discount_type, discount_value from public.coupons where id = $1 limit 1", [id]);
+    const effectiveType = normalizeCouponDiscountType(coupon.discount_type || current.rows[0]?.discount_type);
+    const effectiveValue = coupon.discount_value ?? toMoney(current.rows[0]?.discount_value);
+    if (effectiveType === "percentage" && effectiveValue > 100) {
+      const error = new Error("Percentage discount cannot exceed 100");
+      error.statusCode = 400;
+      throw error;
+    }
+  }
   const assignments = [];
   const values = [id];
 
@@ -3259,42 +3535,132 @@ const deleteAdminCoupon = async (id) => {
   return result.rowCount > 0;
 };
 
-const normalizeOrderItems = (items) => {
+const normalizeRequestedOrderItems = (items) => {
   if (!Array.isArray(items) || items.length === 0) {
     const error = new Error("Order items are required");
+    error.statusCode = 400;
+    throw error;
+  }
+  if (items.length > 100) {
+    const error = new Error("An order cannot contain more than 100 items");
     error.statusCode = 400;
     throw error;
   }
 
   return items.map((item) => {
     const quantity = toPositiveInteger(item.quantity);
-    const price = toMoney(item.price);
-    const name = String(item.name || item.product_name || "").trim();
-
-    if (!name) {
-      const error = new Error("Each order item requires a product name");
-      error.statusCode = 400;
-      throw error;
-    }
-
-    if (price <= 0) {
-      const error = new Error("Each order item requires a positive price");
+    if (quantity > 99) {
+      const error = new Error("Item quantity cannot exceed 99");
       error.statusCode = 400;
       throw error;
     }
 
     const productId = String(item.product_id || item.id || "").trim();
+    if (!uuidPattern.test(productId)) {
+      const error = new Error("Each order item requires a valid product_id");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const requestedSource = String(item.product_source || item.source || "").trim().toLowerCase();
+    const productSource = requestedSource === "business" ? "manual" : requestedSource || null;
+    if (productSource && !["manual", "scraped"].includes(productSource)) {
+      const error = new Error("Invalid product source");
+      error.statusCode = 400;
+      throw error;
+    }
+
     return {
-      product_id: uuidPattern.test(productId) ? productId : null,
-      product_source: item.product_source || item.source || null,
-      product_name: name,
-      product_image: item.image || item.product_image || "/placeholder.svg",
+      product_id: productId,
+      requested_source: productSource,
       quantity,
-      price,
-      variant: item.variant || null,
-      size: item.size || null,
+      variant: item.variant ? String(item.variant).trim().slice(0, 120) : null,
+      size: item.size ? String(item.size).trim().slice(0, 120) : null,
     };
   });
+};
+
+const resolveCatalogOrderItem = async (client, requestedItem) => {
+  const findManual = () => client.query(
+    `
+      select id, name, image_url, price, sale_price, in_stock
+      from public.business_products
+      where id = $1
+      for share
+    `,
+    [requestedItem.product_id],
+  );
+  const findScraped = () => client.query(
+    `
+      select id, product_name, main_image_url, final_price, regular_price, sale_price, stock_status
+      from public.scraped_products
+      where id = $1
+      for share
+    `,
+    [requestedItem.product_id],
+  );
+
+  let source = requestedItem.requested_source;
+  let row = null;
+  if (source === "manual") row = (await findManual()).rows[0] || null;
+  if (source === "scraped") row = (await findScraped()).rows[0] || null;
+  if (!source) {
+    const manual = (await findManual()).rows[0] || null;
+    const scraped = (await findScraped()).rows[0] || null;
+    if (manual && scraped) {
+      const error = new Error("Product source is required for an ambiguous product id");
+      error.statusCode = 409;
+      throw error;
+    }
+    row = manual || scraped;
+    source = manual ? "manual" : scraped ? "scraped" : null;
+  }
+
+  if (!row || !source) {
+    const error = new Error("Product not found");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const inStock = source === "manual"
+    ? row.in_stock === true
+    : ["in_stock", "limited"].includes(row.stock_status);
+  if (!inStock) {
+    const error = new Error("Product is out of stock");
+    error.statusCode = 409;
+    throw error;
+  }
+
+  const price = source === "manual"
+    ? toMoney(Number(row.sale_price) > 0 ? row.sale_price : row.price)
+    : toMoney(Number(row.final_price) > 0
+      ? row.final_price
+      : Number(row.sale_price) > 0
+        ? row.sale_price
+        : row.regular_price);
+  if (price <= 0) {
+    const error = new Error("Product does not have a valid catalog price");
+    error.statusCode = 409;
+    throw error;
+  }
+
+  return {
+    product_id: row.id,
+    product_source: source,
+    product_name: source === "manual" ? row.name : row.product_name,
+    product_image: (source === "manual" ? row.image_url : row.main_image_url) || "/placeholder.svg",
+    quantity: requestedItem.quantity,
+    price,
+    variant: requestedItem.variant,
+    size: requestedItem.size,
+  };
+};
+
+const resolveCatalogOrderItems = async (client, items) => {
+  const requestedItems = normalizeRequestedOrderItems(items);
+  const resolved = [];
+  for (const item of requestedItems) resolved.push(await resolveCatalogOrderItem(client, item));
+  return resolved;
 };
 
 const normalizeShippingAddress = (shippingAddress) => {
@@ -3308,8 +3674,18 @@ const normalizeShippingAddress = (shippingAddress) => {
     zipCode: String(address.zipCode || address.zip_code || address.postal_code || "").trim(),
   };
 
-  if (!normalized.fullName || !normalized.email || !normalized.phone || !normalized.address || !normalized.city) {
-    const error = new Error("Shipping name, email, phone, address, and city are required");
+  const isValid = normalized.fullName.length >= 2
+    && normalized.fullName.length <= 100
+    && normalized.email.length <= 255
+    && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized.email)
+    && /^[0-9]{9,15}$/.test(normalized.phone)
+    && normalized.address.length >= 5
+    && normalized.address.length <= 200
+    && normalized.city.length >= 2
+    && normalized.city.length <= 50
+    && /^[0-9]{5,7}$/.test(normalized.zipCode);
+  if (!isValid) {
+    const error = new Error("Invalid shipping details");
     error.statusCode = 400;
     throw error;
   }
@@ -3319,15 +3695,21 @@ const normalizeShippingAddress = (shippingAddress) => {
 
 const calculateOrderAmounts = async (client, body, orderItems, shippingAddress) => {
   const subtotal = toMoney(orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0));
-  const coupon = body.coupon_code || body.coupon?.code
-    ? await findValidCoupon(client, body.coupon_code || body.coupon?.code, subtotal)
+  const requestedCouponCode = body.coupon_code || body.coupon?.code;
+  const coupon = requestedCouponCode
+    ? await findValidCoupon(client, requestedCouponCode, subtotal)
     : null;
+  if (requestedCouponCode && !coupon) {
+    const error = new Error("Coupon not found or no longer valid");
+    error.statusCode = 409;
+    throw error;
+  }
 
   const couponType = coupon ? normalizeCouponDiscountType(coupon.discount_type) : null;
   const couponValue = coupon ? toMoney(coupon.discount_value) : 0;
   const discountAmount = coupon && couponType !== "free_shipping"
     ? couponType === "percentage"
-      ? toMoney((subtotal * couponValue) / 100)
+      ? Math.min(subtotal, toMoney((subtotal * couponValue) / 100))
       : Math.min(subtotal, couponValue)
     : 0;
 
@@ -3345,7 +3727,7 @@ const calculateOrderAmounts = async (client, body, orderItems, shippingAddress) 
     cashOnDeliveryFee,
     total,
     coupon,
-    customerEmail: normalizeEmail(body.customer_email || shippingAddress.email),
+    customerEmail: shippingAddress.email,
   };
 };
 
@@ -3413,17 +3795,53 @@ const attachOrderItems = async (orders) => {
 };
 
 const createOrder = async (body, currentUser = null) => {
-  const orderItems = normalizeOrderItems(body.items);
   const shippingAddress = normalizeShippingAddress(body.shipping_address || body.shippingData);
   const paymentMethod = String(body.payment_method || "credit-card");
+  if (!["credit-card", "apple-pay", "google-pay", "bit", "paybox", "paypal", "cash-on-delivery"].includes(paymentMethod)) {
+    const error = new Error("Unsupported payment method");
+    error.statusCode = 400;
+    throw error;
+  }
   const paymentStatus = paymentMethod === "cash-on-delivery" ? "awaiting_cod" : "pending";
   const paymentInstallments = toPositiveInteger(body.installments || body.payment_installments);
+  if (paymentInstallments > 12) {
+    const error = new Error("Payment installments cannot exceed 12");
+    error.statusCode = 400;
+    throw error;
+  }
+  const requestedOrderType = String(body.order_type || (body.want_recurring_order ? "auto-restock" : "regular"));
+  if (!["regular", "auto-restock"].includes(requestedOrderType)) {
+    const error = new Error("Unsupported order type");
+    error.statusCode = 400;
+    throw error;
+  }
+  const medicalUrgency = String(body.medical_urgency || "none");
+  if (!["none", "medium", "high"].includes(medicalUrgency)) {
+    const error = new Error("Invalid medical urgency");
+    error.statusCode = 400;
+    throw error;
+  }
+  const accessToken = currentUser ? null : createOpaqueToken();
   const client = await pool.connect();
 
   try {
     await client.query("begin");
 
+    const orderItems = await resolveCatalogOrderItems(client, body.items);
     const amounts = await calculateOrderAmounts(client, body, orderItems, shippingAddress);
+    const expectedTotal = Number(body.expected_total);
+    if (!Object.prototype.hasOwnProperty.call(body, "expected_total")
+      || !Number.isFinite(expectedTotal)
+      || expectedTotal < 0) {
+      const error = new Error("A valid expected_total is required");
+      error.statusCode = 400;
+      throw error;
+    }
+    if (Math.round(expectedTotal * 100) !== Math.round(amounts.total * 100)) {
+      const error = new Error("The order total changed; refresh the cart and confirm the updated price");
+      error.statusCode = 409;
+      throw error;
+    }
     const customerResult = await client.query(
       `
         insert into public.shop_customers (email, full_name, phone, last_order_at)
@@ -3463,13 +3881,14 @@ const createOrder = async (body, currentUser = null) => {
           order_type,
           pet_name,
           special_instructions,
-          medical_urgency
+          medical_urgency,
+          access_token_hash
         )
         values (
           $1, $2, $3, $4, $5, $6,
           'pending', $7, $8, $9,
           $10, $11, $12, $13, $14, $15, $16, $17,
-          $18, $19, $20, $21
+          $18, $19, $20, $21, $22
         )
         returning *
       `,
@@ -3491,10 +3910,11 @@ const createOrder = async (body, currentUser = null) => {
         amounts.total,
         amounts.coupon?.id || null,
         JSON.stringify(shippingAddress),
-        body.order_type || (body.want_recurring_order ? "auto-restock" : "regular"),
-        body.pet_name || null,
-        body.special_instructions || null,
-        body.medical_urgency || "none",
+        requestedOrderType,
+        safeText(body.pet_name, 100) || null,
+        safeText(body.special_instructions, 2000) || null,
+        medicalUrgency,
+        accessToken ? hashOpaqueToken(accessToken) : null,
       ],
     );
 
@@ -3540,7 +3960,10 @@ const createOrder = async (body, currentUser = null) => {
     }
 
     await client.query("commit");
-    return mapOrder(order, itemsResult.rows.map(mapOrderItem));
+    return {
+      order: mapOrder(order, itemsResult.rows.map(mapOrderItem)),
+      accessToken,
+    };
   } catch (error) {
     await client.query("rollback");
     throw error;
@@ -3576,16 +3999,15 @@ const listOrders = async ({ ids = [], email = null, limit = 200 } = {}) => {
   return attachOrderItems(result.rows);
 };
 
-const listUserOrders = async (userId, email, limit = 100) => {
-  const values = [userId, normalizeEmail(email), Math.min(200, Math.max(1, Number(limit) || 100))];
+const listUserOrders = async (userId, limit = 100) => {
+  const values = [userId, Math.min(200, Math.max(1, Number(limit) || 100))];
   const result = await pool.query(
     `
       select *
       from public.orders
       where user_id = $1
-        or lower(customer_email) = $2
       order by order_date desc nulls last, created_at desc
-      limit $3
+      limit $2
     `,
     values,
   );
@@ -3611,7 +4033,7 @@ const exportMyData = async (userId, email) => {
     listUserInsuranceClaims(userId, { limit: 200 }),
     listUserServiceBookings(userId, { limit: 200 }),
     listUserNotifications(userId, { limit: 500 }),
-    listUserOrders(userId, email, 200),
+    listUserOrders(userId, 200),
     petIds.length > 0
       ? pool.query(
         "select * from public.pet_vet_visits where user_id = $1 and pet_id = any($2::uuid[]) order by created_at desc",
@@ -3641,11 +4063,25 @@ const exportMyData = async (userId, email) => {
 };
 
 const deleteMyAccount = async (userId, email) => {
-  const dataExport = await exportMyData(userId, email);
-  const documentUrls = dataExport.documents.map((document) => document.file_url).filter(Boolean);
+  const [dataExport, documentFiles, userUploads] = await Promise.all([
+    exportMyData(userId, email),
+    pool.query("select file_url, storage_key from public.pet_documents where user_id = $1", [userId]),
+    pool.query("select storage_key from public.user_uploads where user_id = $1", [userId]),
+  ]);
   const normalizedEmail = normalizeEmail(email);
-  const client = await pool.connect();
 
+  await Promise.all([
+    ...documentFiles.rows.map((document) => deleteStoredDocument(document)),
+    ...userUploads.rows.map(async (upload) => {
+      try {
+        await unlink(path.join(uploadDir, path.basename(upload.storage_key)));
+      } catch (error) {
+        if (error.code !== "ENOENT") throw error;
+      }
+    }),
+  ]);
+
+  const client = await pool.connect();
   try {
     await client.query("begin");
     await client.query(
@@ -3673,7 +4109,6 @@ const deleteMyAccount = async (userId, email) => {
     client.release();
   }
 
-  await Promise.all(documentUrls.map((fileUrl) => deleteUploadedFileFromUrl(fileUrl)));
   return { deleted: true, export: dataExport };
 };
 
@@ -3786,7 +4221,27 @@ const getOrder = async (id) => {
     : await pool.query("select * from public.orders where order_number = $1 limit 1", [id]);
   if (result.rowCount === 0) return null;
   const [order] = await attachOrderItems(result.rows);
+  Object.defineProperty(order, "accessTokenHash", {
+    value: result.rows[0].access_token_hash || null,
+    enumerable: false,
+  });
+  Object.defineProperties(order, {
+    paymentTransactionId: {
+      value: result.rows[0].payment_transaction_id || null,
+      enumerable: false,
+    },
+    paymentUrl: {
+      value: result.rows[0].payment_url || null,
+      enumerable: false,
+    },
+  });
   return order;
+};
+
+const canAccessOrder = async (request, order, accessToken) => {
+  const auth = await getUserFromSession(request).catch(() => null);
+  if (auth?.user?.id && order.user_id === auth.user.id) return true;
+  return verifyOpaqueToken(accessToken, order.accessTokenHash);
 };
 
 const updateOrder = async (id, body) => {
@@ -3863,51 +4318,8 @@ const bulkUpdateOrders = async (ids, updates) => {
   return { updated: result.rowCount };
 };
 
-const getStringValue = (source, keys) => {
-  for (const key of keys) {
-    const value = source?.[key];
-    if (value === null || value === undefined) continue;
-    const normalized = String(value).trim();
-    if (normalized) return normalized;
-  }
-  return null;
-};
-
-const getNumberValue = (source, keys) => {
-  const raw = getStringValue(source, keys);
-  if (raw === null) return null;
-  const parsed = Number(raw);
-  return Number.isFinite(parsed) ? parsed : null;
-};
-
-const parseCardcomReturnValue = (rawReturnValue) => {
-  if (!rawReturnValue) return { orderId: null, orderNumber: null };
-
-  const tryParse = (value) => {
-    try {
-      const parsed = JSON.parse(value);
-      return {
-        orderId: parsed?.order_id ? String(parsed.order_id) : null,
-        orderNumber: parsed?.order_number ? String(parsed.order_number) : null,
-      };
-    } catch {
-      return null;
-    }
-  };
-
-  const direct = tryParse(rawReturnValue);
-  if (direct) return direct;
-
-  try {
-    const decoded = decodeURIComponent(rawReturnValue);
-    return tryParse(decoded) || { orderId: null, orderNumber: null };
-  } catch {
-    return { orderId: null, orderNumber: null };
-  }
-};
-
 const verifyCardcomSignature = (rawBody, signature) => {
-  if (!cardcomWebhookSecret) return true;
+  if (!cardcomWebhookSecret) return false;
   if (!rawBody || !signature) return false;
 
   const expected = createHmac("sha256", cardcomWebhookSecret)
@@ -3982,7 +4394,18 @@ const fetchCardcomLowProfileIndicator = async (lowProfileCode) => {
     LowProfileCode: lowProfileCode,
   });
 
-  const indicatorResponse = await fetch(`${cardcomIndicatorUrl}?${params.toString()}`, { method: "GET" });
+  let indicatorResponse;
+  try {
+    indicatorResponse = await fetchWithTimeout(
+      `${cardcomIndicatorUrl}?${params.toString()}`,
+      { method: "GET" },
+      15_000,
+    );
+  } catch {
+    const error = new Error("Payment provider is unavailable");
+    error.statusCode = 502;
+    throw error;
+  }
   const indicatorText = await indicatorResponse.text();
   if (!indicatorResponse.ok) {
     const error = new Error(`CardCom indicator request failed (${indicatorResponse.status})`);
@@ -4008,6 +4431,12 @@ const createShopPayment = async (request, body) => {
     error.statusCode = 404;
     throw error;
   }
+  const accessToken = body.access_token || request.headers["x-order-access-token"];
+  if (!(await canAccessOrder(request, order, accessToken))) {
+    const error = new Error("Order not found");
+    error.statusCode = 404;
+    throw error;
+  }
 
   if (toMoney(order.total) <= 0) {
     const error = new Error("Invalid payment amount");
@@ -4015,8 +4444,8 @@ const createShopPayment = async (request, body) => {
     throw error;
   }
 
-  const successUrl = absoluteAppUrl(request, body.success_url || "/payment-success");
-  const cancelUrl = absoluteAppUrl(request, body.cancel_url || "/payment-failed");
+  const successUrl = safeAppRedirectUrl(request, body.success_url, "/payment-success");
+  const cancelUrl = safeAppRedirectUrl(request, body.cancel_url, "/payment-failed");
   const successRedirect = `${successUrl}${successUrl.includes("?") ? "&" : "?"}order_id=${encodeURIComponent(order.id)}`;
   const errorRedirect = `${cancelUrl}${cancelUrl.includes("?") ? "&" : "?"}order_id=${encodeURIComponent(order.id)}`;
 
@@ -4044,7 +4473,12 @@ const createShopPayment = async (request, body) => {
     };
   }
 
-  if (!cardcomTerminal || !cardcomUsername || !cardcomApiPassword) {
+  if (!cardcomConfigured) {
+    if (isProduction) {
+      const error = new Error("Payment provider is not configured");
+      error.statusCode = 503;
+      throw error;
+    }
     await pool.query(
       "update public.orders set payment_status = 'dev_approved', updated_at = now() where id = $1",
       [order.id],
@@ -4058,14 +4492,72 @@ const createShopPayment = async (request, body) => {
     };
   }
 
+  if (order.payment_status === "pending" && order.paymentTransactionId) {
+    if (order.paymentUrl) {
+      return {
+        success: true,
+        order_id: order.id,
+        order_number: order.order_number,
+        payment_url: order.paymentUrl,
+        low_profile_code: order.paymentTransactionId,
+        reused: true,
+      };
+    }
+    const error = new Error("A payment session is already pending for this order");
+    error.statusCode = 409;
+    throw error;
+  }
+
+  const reservationToken = `creating:${randomUUID()}`;
+  const reservation = await pool.query(
+    `
+      update public.orders
+      set payment_status = 'creating',
+          payment_transaction_id = $2,
+          payment_url = null,
+          updated_at = now()
+      where id = $1
+        and (
+          (payment_status = 'pending' and payment_transaction_id is null)
+          or payment_status = 'failed'
+          or (payment_status = 'creating' and updated_at < now() - interval '5 minutes')
+        )
+      returning id
+    `,
+    [order.id, reservationToken],
+  );
+  if (reservation.rowCount === 0) {
+    const error = new Error("A payment session is already being created for this order");
+    error.statusCode = 409;
+    throw error;
+  }
+
+  const releaseReservation = async () => {
+    await pool.query(
+      `
+        update public.orders
+        set payment_status = 'failed',
+            payment_transaction_id = null,
+            payment_url = null,
+            updated_at = now()
+        where id = $1
+          and payment_status = 'creating'
+          and payment_transaction_id = $2
+      `,
+      [order.id, reservationToken],
+    );
+  };
+
   const { lines, lineCount, sum } = buildCardcomInvoiceLines(order);
   if (sum <= 0) {
+    await releaseReservation();
     const error = new Error("Invalid CardCom invoice amount");
     error.statusCode = 400;
     throw error;
   }
 
-  const webhookUrl = absoluteAppUrl(request, "/api/payments/cardcom/webhook");
+  const webhookUrl = new URL(absoluteAppUrl(request, "/api/payments/cardcom/webhook"));
+  webhookUrl.searchParams.set("token", cardcomWebhookSecret);
   const customerName = String(order.shipping_address?.fullName || order.customer_name || "Customer").trim();
   const customerEmail = String(order.shipping_address?.email || order.customer_email || "").trim();
   const customerAddress = String(order.shipping_address?.address || order.shipping_address?.street || "").trim() || customerName;
@@ -4097,9 +4589,13 @@ const createShopPayment = async (request, body) => {
   formData.append("InvoiceHead.SendByEmail", customerEmail ? "true" : "false");
   if (customerEmail) formData.append("InvoiceHead.Email", customerEmail);
   if (customerPhone) formData.append("InvoiceHead.CustMobilePH", customerPhone);
-  formData.append("WebHookUrl", webhookUrl);
-  formData.append("IndicatorUrl", webhookUrl);
-  formData.append("ReturnValue", JSON.stringify({ order_id: order.id, order_number: order.order_number }));
+  formData.append("WebHookUrl", webhookUrl.toString());
+  formData.append("IndicatorUrl", webhookUrl.toString());
+  formData.append("ReturnValue", JSON.stringify({
+    order_id: order.id,
+    order_number: order.order_number,
+    attempt_token: reservationToken,
+  }));
   formData.append("MaxNumOfPayments", String(order.payment_installments || 1));
   formData.append("ProductName", itemsDescription);
   formData.append("HideSumField", "true");
@@ -4109,39 +4605,78 @@ const createShopPayment = async (request, body) => {
     formData.append(key, value);
   }
 
-  const cardcomResponse = await fetch(cardcomLowProfileUrl, {
-    method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded" },
-    body: formData.toString(),
-  });
+  let cardcomResponse;
+  try {
+    cardcomResponse = await fetchWithTimeout(cardcomLowProfileUrl, {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: formData.toString(),
+    }, 30_000);
+  } catch {
+    await releaseReservation();
+    const error = new Error("Payment provider is unavailable");
+    error.statusCode = 502;
+    throw error;
+  }
+  if (!cardcomResponse.ok) {
+    await releaseReservation();
+    const error = new Error("Payment provider rejected the request");
+    error.statusCode = 502;
+    throw error;
+  }
   const responseText = await cardcomResponse.text();
   const cardcomParams = new URLSearchParams(responseText);
   const responseCode = Number(cardcomParams.get("ResponseCode") || cardcomParams.get("OperationResponse") || "-1");
   const lowProfileId = cardcomParams.get("LowProfileCode") || cardcomParams.get("LowProfileId") || "";
   const paymentUrl = cardcomParams.get("Url") || cardcomParams.get("url") || cardcomParams.get("LowProfileUrl") || "";
   const description = cardcomParams.get("Description") || cardcomParams.get("ErrorDescription") || "";
-  const isSuccess = responseCode === 0 || (paymentUrl.length > 0 && responseCode === -1);
+  const isSuccess = responseCode === 0 && lowProfileId.length > 0;
 
-  if (!isSuccess) {
-    await pool.query(
-      "update public.orders set payment_status = 'failed', updated_at = now() where id = $1",
-      [order.id],
-    );
-    const error = new Error(description || "CardCom failed to create a payment page");
-    error.statusCode = 400;
+  let parsedPaymentUrl = null;
+  try {
+    parsedPaymentUrl = new URL(paymentUrl);
+  } catch {
+    // Handled as a failed provider response below.
+  }
+  const hasTrustedPaymentUrl = parsedPaymentUrl?.protocol === "https:"
+    && (parsedPaymentUrl.hostname === "cardcom.solutions" || parsedPaymentUrl.hostname.endsWith(".cardcom.solutions"));
+
+  if (!isSuccess || !hasTrustedPaymentUrl) {
+    await releaseReservation();
+    const error = new Error(description || "CardCom returned an invalid payment session");
+    error.statusCode = isSuccess ? 502 : 400;
     throw error;
   }
 
-  await pool.query(
+  const savedSession = await pool.query(
     `
       update public.orders
       set payment_status = 'pending',
-          payment_transaction_id = coalesce(nullif($2, ''), payment_transaction_id),
+          payment_transaction_id = $2,
+          payment_url = $3,
           updated_at = now()
       where id = $1
+        and payment_status = 'creating'
+        and payment_transaction_id = $4
+      returning id
     `,
-    [order.id, lowProfileId],
+    [order.id, lowProfileId, paymentUrl, reservationToken],
   );
+  if (savedSession.rowCount === 0) {
+    const currentOrder = await getOrder(order.id);
+    if (currentOrder?.payment_status === "paid") {
+      return {
+        success: true,
+        order_id: order.id,
+        order_number: order.order_number,
+        already_paid: true,
+        redirect_url: successRedirect,
+      };
+    }
+    const error = new Error("Payment session state changed; retry the order lookup");
+    error.statusCode = 409;
+    throw error;
+  }
 
   await pool.query(
     `
@@ -4162,7 +4697,6 @@ const createShopPayment = async (request, body) => {
         stage: "create_payment",
         response_code: responseCode,
         description,
-        raw_response: responseText.slice(0, 1000),
         invoice_line_count: lineCount,
         sum_to_bill: formatCardcomMoney(sum),
       }),
@@ -4195,16 +4729,26 @@ const parseCardcomWebhookPayload = (rawBody, queryPayload) => {
 };
 
 const handleCardcomWebhook = async (request, url) => {
+  if (!cardcomConfigured) {
+    const error = new Error("Payment provider is not configured");
+    error.statusCode = 503;
+    throw error;
+  }
   const rawBody = request.method === "GET" ? "" : await readRawBody(request);
   const signature = request.headers["x-cardcom-signature"];
-  if (rawBody && !verifyCardcomSignature(rawBody, signature)) {
+  const queryToken = url.searchParams.get("token");
+  const authenticated = secretsEqual(queryToken, cardcomWebhookSecret)
+    || (rawBody && verifyCardcomSignature(rawBody, signature));
+  if (!authenticated) {
     const error = new Error("Invalid CardCom signature");
     error.statusCode = 401;
     throw error;
   }
 
-  const payload = parseCardcomWebhookPayload(rawBody, Object.fromEntries(url.searchParams.entries()));
-  const lowProfileCode = getStringValue(payload, [
+  const queryPayload = Object.fromEntries(url.searchParams.entries());
+  delete queryPayload.token;
+  const payload = parseCardcomWebhookPayload(rawBody, queryPayload);
+  const lowProfileCode = getCardcomString(payload, [
     "LowProfileCode",
     "lowprofilecode",
     "LowProfileId",
@@ -4218,42 +4762,80 @@ const handleCardcomWebhook = async (request, url) => {
   }
 
   const indicatorPayload = await fetchCardcomLowProfileIndicator(lowProfileCode);
-  const operationResponse = getNumberValue(indicatorPayload, ["OperationResponse", "operationresponse"]);
-  if (operationResponse === null) {
-    const error = new Error("Invalid CardCom indicator response");
-    error.statusCode = 502;
-    throw error;
-  }
-
-  const dealResponse = getNumberValue(indicatorPayload, ["DealResponse", "dealresponse"]);
-  const returnValue = getStringValue(indicatorPayload, ["ReturnValue", "returnvalue"]) ||
-    getStringValue(payload, ["ReturnValue", "returnvalue"]);
-  const { orderId: parsedOrderId } = parseCardcomReturnValue(returnValue);
-  const transactionId = getStringValue(indicatorPayload, [
+  const {
+    chargedAmountMinor,
+    operationResponse,
+    dealResponse,
+    returnValue,
+  } = parseVerifiedCardcomIndicator(indicatorPayload, {
+    requestedLowProfileCode: lowProfileCode,
+    terminalNumber: cardcomTerminal,
+  });
+  const { orderId: parsedOrderId, attemptToken } = parseCardcomReturnValue(returnValue);
+  const transactionId = getCardcomString(indicatorPayload, [
     "TranzactionId",
     "TransactionId",
     "InternalDealNumber",
     "DealNumber",
     "LowProfileDealId",
-  ]) || getStringValue(payload, [
+  ]) || getCardcomString(payload, [
     "TranzactionId",
     "TransactionId",
     "InternalDealNumber",
     "LowProfileDealId",
   ]) || lowProfileCode;
 
-  let orderResult = parsedOrderId && uuidPattern.test(parsedOrderId)
-    ? await pool.query("select id, order_number, payment_status from public.orders where id = $1 limit 1", [parsedOrderId])
-    : { rowCount: 0, rows: [] };
-
-  if (orderResult.rowCount === 0) {
-    orderResult = await pool.query(
-      "select id, order_number, payment_status from public.orders where payment_transaction_id = $1 limit 1",
-      [lowProfileCode],
-    );
+  if (!parsedOrderId || !uuidPattern.test(parsedOrderId)) {
+    const error = new Error("Invalid CardCom order reference");
+    error.statusCode = 400;
+    throw error;
   }
 
+  const validAttemptToken = /^creating:[0-9a-fA-F-]{36}$/.test(String(attemptToken || ""))
+    ? attemptToken
+    : null;
+  const acceptedPaymentIdentifiers = validAttemptToken
+    ? [lowProfileCode, validAttemptToken]
+    : [lowProfileCode];
+  const orderResult = await pool.query(
+    `
+      select id, order_number, payment_status, payment_transaction_id, total
+      from public.orders
+      where id = $1
+        and payment_transaction_id = any($2::text[])
+      limit 1
+    `,
+    [parsedOrderId, acceptedPaymentIdentifiers],
+  );
+
   const order = orderResult.rows[0] || null;
+  if (!order) {
+    const error = new Error("Order not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const expectedAmountMinor = Math.round(toMoney(order.total) * 100);
+  if (chargedAmountMinor !== expectedAmountMinor) {
+    await pool.query(
+      `
+        insert into public.cardcom_events (
+          order_id, low_profile_code, operation_response, deal_response, is_success, payload_json
+        )
+        values ($1, $2, $3, $4, false, $5::jsonb)
+      `,
+      [
+        order.id,
+        lowProfileCode,
+        operationResponse,
+        dealResponse,
+        JSON.stringify({ stage: "rejected_indicator", reason: "amount_mismatch" }),
+      ],
+    );
+    const error = new Error("CardCom payment amount does not match the order");
+    error.statusCode = 409;
+    throw error;
+  }
   const isSuccess = operationResponse === 0 && (dealResponse === null || dealResponse === 0);
 
   await pool.query(
@@ -4277,18 +4859,11 @@ const handleCardcomWebhook = async (request, url) => {
       dealResponse,
       isSuccess,
       JSON.stringify({
+        stage: "verified_indicator",
         method: request.method,
-        incoming: payload,
-        indicator: indicatorPayload,
       }),
     ],
   );
-
-  if (!order) {
-    const error = new Error("Order not found");
-    error.statusCode = 404;
-    throw error;
-  }
 
   if (isSuccess) {
     if (order.payment_status !== "paid") {
@@ -4300,25 +4875,37 @@ const handleCardcomWebhook = async (request, url) => {
               status = 'processing',
               updated_at = now()
           where id = $1
+            and payment_transaction_id = any($3::text[])
+            and payment_status <> 'paid'
         `,
-        [order.id, transactionId],
+        [order.id, lowProfileCode, acceptedPaymentIdentifiers],
       );
     }
   } else if (order.payment_status !== "paid") {
     await pool.query(
-      "update public.orders set payment_status = 'failed', updated_at = now() where id = $1",
-      [order.id],
+      `
+        update public.orders
+        set payment_status = 'failed',
+            payment_transaction_id = null,
+            payment_url = null,
+            updated_at = now()
+        where id = $1
+          and payment_transaction_id = any($2::text[])
+          and payment_status <> 'paid'
+      `,
+      [order.id, acceptedPaymentIdentifiers],
     );
   }
 
+  const paymentStatus = order.payment_status === "paid" || isSuccess ? "paid" : "failed";
   return {
     received: true,
     order_id: order.id,
-    payment_status: isSuccess ? "paid" : "failed",
+    payment_status: paymentStatus,
   };
 };
 
-const createReport = async (body) => {
+const createReport = async (body, reporterId = null) => {
   const id = randomUUID();
   await pool.query(
     `
@@ -4333,7 +4920,7 @@ const createReport = async (body) => {
       body.content_id || null,
       body.reason || "other",
       body.description || null,
-      body.reporter_id || null,
+      reporterId,
     ],
   );
   return { id };
@@ -4370,66 +4957,32 @@ const runProductIntelFunction = async (functionName, body) => {
   throw error;
 };
 
-const fileExtensionForContentType = (contentType) => {
-  if (contentType === "image/jpeg") return ".jpg";
-  if (contentType === "image/png") return ".png";
-  if (contentType === "image/webp") return ".webp";
-  if (contentType === "image/gif") return ".gif";
-  if (contentType === "image/heic") return ".heic";
-  if (contentType === "image/heif") return ".heif";
-  if (contentType === "video/mp4") return ".mp4";
-  if (contentType === "video/quicktime") return ".mov";
-  if (contentType === "video/webm") return ".webm";
-  if (contentType === "application/pdf") return ".pdf";
-  if (contentType === "text/plain") return ".txt";
-  if (contentType === "application/msword") return ".doc";
-  if (contentType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") return ".docx";
-  return "";
-};
-
 const uploadDataUrlFile = async (body, {
   maxBytes = maxUploadBytes,
   requireImage = false,
   allowedContentTypes = null,
-  defaultExtension = ".bin",
+  directory = uploadDir,
+  publicUrl = true,
 } = {}) => {
-  const dataUrl = typeof body.data_url === "string" ? body.data_url : "";
-  const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
-  if (!match) {
-    const error = new Error("A base64 data URL is required");
-    error.statusCode = 400;
-    throw error;
-  }
-
-  const contentType = match[1];
-  if (requireImage && !contentType.startsWith("image/")) {
-    const error = new Error("Only image uploads are supported");
-    error.statusCode = 415;
-    throw error;
-  }
-  if (allowedContentTypes && !allowedContentTypes.has(contentType)) {
-    const error = new Error("Unsupported file type");
-    error.statusCode = 415;
-    throw error;
-  }
-
-  const buffer = Buffer.from(match[2], "base64");
-  if (buffer.length > maxBytes) {
-    const error = new Error("File is too large");
-    error.statusCode = 413;
-    throw error;
-  }
-
-  const originalExtension = path.extname(String(body.file_name || "")).toLowerCase();
-  const extension = originalExtension || fileExtensionForContentType(contentType) || defaultExtension;
+  const { buffer, contentType, extension } = decodeAndValidateDataUrl(body.data_url, {
+    maxBytes,
+    requireImage,
+    allowedContentTypes,
+  });
   const fileName = `${Date.now()}-${randomUUID()}${extension}`;
 
-  await mkdir(uploadDir, { recursive: true });
-  await writeFile(path.join(uploadDir, fileName), buffer);
+  await mkdir(directory, publicUrl ? { recursive: true } : { recursive: true, mode: 0o700 });
+  if (!publicUrl) await chmod(directory, 0o700);
+  await writeFile(path.join(directory, fileName), buffer, {
+    flag: "wx",
+    mode: publicUrl ? 0o644 : 0o600,
+  });
 
   return {
-    url: `/uploads/${fileName}`,
+    url: publicUrl ? `/uploads/${fileName}` : null,
     file_name: fileName,
+    storage_key: fileName,
+    extension,
     content_type: contentType,
     size: buffer.length,
   };
@@ -4438,7 +4991,6 @@ const uploadDataUrlFile = async (body, {
 const uploadImage = async (body) => uploadDataUrlFile(body, {
   maxBytes: maxUploadBytes,
   requireImage: true,
-  defaultExtension: ".img",
 });
 
 const userMediaContentTypes = new Set([
@@ -4453,44 +5005,186 @@ const userMediaContentTypes = new Set([
   "video/webm",
 ]);
 
-const uploadUserMedia = async (body) => uploadDataUrlFile(body, {
-  maxBytes: maxUploadBytes,
-  allowedContentTypes: userMediaContentTypes,
-  defaultExtension: ".bin",
-});
+const uploadUserMedia = async (userId, body) => {
+  const upload = await uploadDataUrlFile(body, {
+    maxBytes: maxUploadBytes,
+    allowedContentTypes: userMediaContentTypes,
+  });
+  try {
+    await pool.query(
+      `
+        insert into public.user_uploads (user_id, storage_key, content_type, file_size)
+        values ($1, $2, $3, $4)
+      `,
+      [userId, upload.storage_key, upload.content_type, upload.size],
+    );
+  } catch (error) {
+    await unlink(path.join(uploadDir, upload.storage_key)).catch(() => {});
+    throw error;
+  }
+  return upload;
+};
 
 const documentContentTypes = new Set([
   "application/pdf",
-  "application/octet-stream",
   "image/jpeg",
   "image/png",
   "image/webp",
   "image/gif",
   "image/heic",
   "image/heif",
+  "video/mp4",
+  "video/quicktime",
+  "video/webm",
   "text/plain",
-  "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ]);
 
 const uploadDocumentFile = async (body) => uploadDataUrlFile(body, {
   maxBytes: maxDocumentUploadBytes,
   allowedContentTypes: documentContentTypes,
-  defaultExtension: ".bin",
+  directory: privateUploadDir,
+  publicUrl: false,
 });
+
+const safeStorageKey = (value) => {
+  let decoded;
+  try {
+    decoded = decodeURIComponent(String(value || ""));
+  } catch {
+    return null;
+  }
+  if (!decoded || decoded.startsWith(".") || path.basename(decoded) !== decoded) return null;
+  return /^[A-Za-z0-9][A-Za-z0-9._-]{0,200}$/.test(decoded) ? decoded : null;
+};
+
+const sendStoredFile = (response, buffer, {
+  contentType,
+  fileName,
+  isPrivate = false,
+  sandbox = false,
+} = {}) => {
+  const disposition = contentType.startsWith("image/")
+    || contentType.startsWith("video/")
+    || contentType === "application/pdf"
+    || contentType === "text/plain"
+    ? "inline"
+    : "attachment";
+  const headers = {
+    "content-type": contentType,
+    "content-length": String(buffer.length),
+    "cache-control": isPrivate ? "private, no-store" : "public, max-age=31536000, immutable",
+    "content-disposition": `${disposition}; filename="${sanitizeDownloadFileName(fileName, path.extname(fileName || ""))}"`,
+    "x-content-type-options": "nosniff",
+    "cross-origin-resource-policy": "same-origin",
+  };
+  if (sandbox) headers["content-security-policy"] = "default-src 'none'; sandbox";
+  response.writeHead(200, headers);
+  response.end(buffer);
+};
+
+const readDocumentFile = async (document) => {
+  const storageKey = safeStorageKey(document.storage_key);
+  if (storageKey) {
+    return {
+      buffer: await readFile(path.join(privateUploadDir, storageKey)),
+      storageKey,
+    };
+  }
+
+  const legacyPath = normalizeUploadPath(document.file_url);
+  const legacyKey = legacyPath?.startsWith("/uploads/")
+    ? safeStorageKey(legacyPath.slice("/uploads/".length))
+    : null;
+  if (!legacyKey) throw Object.assign(new Error("Document file not found"), { statusCode: 404 });
+  return {
+    buffer: await readFile(path.join(uploadDir, legacyKey)),
+    storageKey: legacyKey,
+  };
+};
+
+const servePrivateDocument = async (userId, documentId, response) => {
+  const result = await pool.query(
+    "select * from public.pet_documents where id = $1 and user_id = $2 limit 1",
+    [documentId, userId],
+  );
+  const document = result.rows[0];
+  if (!document) return false;
+
+  let stored;
+  try {
+    stored = await readDocumentFile(document);
+  } catch (error) {
+    if (error.code === "ENOENT") return false;
+    throw error;
+  }
+  const safeContentType = contentTypeForSafeExtension(path.extname(stored.storageKey));
+  if (!safeContentType) return false;
+  sendStoredFile(response, stored.buffer, {
+    contentType: safeContentType,
+    fileName: document.file_name || stored.storageKey,
+    isPrivate: true,
+    sandbox: true,
+  });
+  return true;
+};
+
+const servePublicUpload = async (request, response, pathname) => {
+  const storageKey = safeStorageKey(pathname.slice("/uploads/".length));
+  const contentType = storageKey ? contentTypeForSafeExtension(path.extname(storageKey)) : null;
+  if (!storageKey || !contentType) return false;
+
+  const documentResult = await pool.query(
+    `
+      select id, user_id
+      from public.pet_documents
+      where file_url = $1 or right(file_url, length($1)) = $1
+      limit 1
+    `,
+    [`/uploads/${storageKey}`],
+  );
+  if (documentResult.rows[0]) {
+    const auth = await requireUser(request, response);
+    if (!auth) return true;
+    if (auth.user.id !== documentResult.rows[0].user_id) return false;
+  }
+
+  let buffer;
+  try {
+    buffer = await readFile(path.join(uploadDir, storageKey));
+  } catch (error) {
+    if (error.code === "ENOENT") return false;
+    throw error;
+  }
+  sendStoredFile(response, buffer, {
+    contentType,
+    fileName: storageKey,
+    isPrivate: Boolean(documentResult.rows[0]),
+    sandbox: Boolean(documentResult.rows[0]),
+  });
+  return true;
+};
 
 const handleRequest = async (request, response) => {
   const url = new URL(request.url || "/", "http://localhost");
 
   try {
+    if (request.method === "GET" && url.pathname.startsWith("/uploads/")) {
+      if (!(await servePublicUpload(request, response, url.pathname))) {
+        sendError(response, 404, "File not found");
+      }
+      return;
+    }
+
     if (request.method === "GET" && url.pathname === "/api/health") {
       sendJson(response, 200, { ok: true, service: "mipo-api" });
       return;
     }
 
     if (request.method === "GET" && url.pathname === "/api/db/health") {
-      const result = await pool.query("select current_database() as database, current_user as user");
-      sendJson(response, 200, { ok: true, ...result.rows[0] });
+      if (!(await requireAdmin(request, response))) return;
+      await pool.query("select 1");
+      sendJson(response, 200, { ok: true });
       return;
     }
 
@@ -4510,7 +5204,10 @@ const handleRequest = async (request, response) => {
     }
 
     if (request.method === "POST" && url.pathname === "/api/admin/login") {
-      const result = await loginAdmin(request, await readBody(request));
+      if (!enforceRateLimit(request, response, "admin-login-ip", rateLimits.adminLogin)) return;
+      const body = await readBody(request);
+      if (!enforceRateLimit(request, response, "admin-login-email", rateLimits.adminLogin, normalizeEmail(body.email))) return;
+      const result = await loginAdmin(request, body);
       sendJson(response, 200, { admin: result.admin }, { "set-cookie": buildAdminCookie(request, result.token) });
       return;
     }
@@ -4533,24 +5230,38 @@ const handleRequest = async (request, response) => {
     }
 
     if (request.method === "POST" && url.pathname === "/api/auth/signup") {
-      const result = await signupUser(request, await readBody(request));
+      if (!enforceRateLimit(request, response, "signup-ip", rateLimits.signup)) return;
+      const body = await readBody(request);
+      if (!enforceRateLimit(request, response, "signup-email", rateLimits.signup, normalizeEmail(body.email))) return;
+      const result = await signupUser(request, body);
       sendJson(response, 201, { user: result.user, profile: result.profile }, { "set-cookie": buildUserCookie(request, result.token) });
       return;
     }
 
     if (request.method === "POST" && url.pathname === "/api/auth/login") {
-      const result = await loginUser(request, await readBody(request));
-      sendJson(response, 200, { user: result.user, profile: result.profile }, { "set-cookie": buildUserCookie(request, result.token) });
+      if (!enforceRateLimit(request, response, "user-login-ip", rateLimits.userLogin)) return;
+      const body = await readBody(request);
+      if (!enforceRateLimit(request, response, "user-login-email", rateLimits.userLogin, normalizeEmail(body.email))) return;
+      const result = await loginUser(request, body);
+      sendJson(response, 200, { user: result.user, profile: result.profile }, {
+        "set-cookie": buildUserCookie(request, result.token, { persistent: result.rememberMe }),
+      });
       return;
     }
 
     if (request.method === "POST" && url.pathname === "/api/auth/password-reset/request") {
-      sendJson(response, 200, await requestPasswordReset(request, await readBody(request)));
+      if (!enforceRateLimit(request, response, "password-reset-request-ip", rateLimits.passwordResetRequest)) return;
+      const body = await readBody(request);
+      if (!enforceRateLimit(request, response, "password-reset-request-email", rateLimits.passwordResetRequest, normalizeEmail(body.email))) return;
+      sendJson(response, 200, await requestPasswordReset(request, body));
       return;
     }
 
     if (request.method === "POST" && url.pathname === "/api/auth/password-reset/confirm") {
-      sendJson(response, 200, await confirmPasswordReset(await readBody(request)));
+      if (!enforceRateLimit(request, response, "password-reset-confirm-ip", rateLimits.passwordResetConfirm)) return;
+      const body = await readBody(request);
+      if (!enforceRateLimit(request, response, "password-reset-confirm-email", rateLimits.passwordResetConfirm, normalizeEmail(body.email))) return;
+      sendJson(response, 200, await confirmPasswordReset(body));
       return;
     }
 
@@ -4574,6 +5285,11 @@ const handleRequest = async (request, response) => {
     if (request.method === "POST" && url.pathname === "/api/ai/chat") {
       const auth = await requireUser(request, response);
       if (!auth) return;
+      if (auth.profile?.ai_consent_given !== true) {
+        sendError(response, 403, "AI consent is required");
+        return;
+      }
+      if (!enforceRateLimit(request, response, "ai-chat", rateLimits.aiChat, auth.user.id)) return;
       sendJson(response, 200, { message: await createAiChatReply(auth, await readBody(request, 512 * 1024)) });
       return;
     }
@@ -4591,8 +5307,10 @@ const handleRequest = async (request, response) => {
 
     const publicPetScanMatch = url.pathname.match(/^\/api\/public\/pets\/([0-9a-fA-F-]{36})\/qr-scan$/);
     if (publicPetScanMatch && request.method === "POST") {
+      if (!enforceRateLimit(request, response, "public-pet-scan", rateLimits.publicPetScan)) return;
+      await readBody(request, 32 * 1024);
       sendJson(response, 201, {
-        logged: await logPublicPetQrScan(publicPetScanMatch[1], await readBody(request), request),
+        logged: await logPublicPetQrScan(publicPetScanMatch[1]),
       });
       return;
     }
@@ -4694,7 +5412,18 @@ const handleRequest = async (request, response) => {
     if (request.method === "POST" && url.pathname === "/api/me/documents") {
       const auth = await requireUser(request, response);
       if (!auth) return;
+      if (!enforceRateLimit(request, response, "document-upload", rateLimits.documentUpload, auth.user.id)) return;
       sendJson(response, 201, { document: await createUserDocument(auth.user.id, await readBody(request, Math.ceil(maxDocumentUploadBytes * 1.5) + 1024 * 1024)) });
+      return;
+    }
+
+    const myDocumentFileMatch = url.pathname.match(/^\/api\/me\/documents\/([0-9a-fA-F-]{36})\/file$/);
+    if (myDocumentFileMatch && request.method === "GET") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      if (!(await servePrivateDocument(auth.user.id, myDocumentFileMatch[1], response))) {
+        sendError(response, 404, "Document not found");
+      }
       return;
     }
 
@@ -4840,7 +5569,8 @@ const handleRequest = async (request, response) => {
     if (request.method === "POST" && url.pathname === "/api/me/uploads") {
       const auth = await requireUser(request, response);
       if (!auth) return;
-      sendJson(response, 201, { upload: await uploadUserMedia(await readBody(request, maxUploadBytes + 1024 * 1024)) });
+      if (!enforceRateLimit(request, response, "media-upload", rateLimits.mediaUpload, auth.user.id)) return;
+      sendJson(response, 201, { upload: await uploadUserMedia(auth.user.id, await readBody(request, Math.ceil(maxUploadBytes * 1.5) + 1024 * 1024)) });
       return;
     }
 
@@ -4848,12 +5578,13 @@ const handleRequest = async (request, response) => {
       const auth = await requireUser(request, response);
       if (!auth) return;
       const limit = Math.min(200, Math.max(1, Number(url.searchParams.get("limit") || 100)));
-      sendJson(response, 200, { orders: await listUserOrders(auth.user.id, auth.user.email, limit) });
+      sendJson(response, 200, { orders: await listUserOrders(auth.user.id, limit) });
       return;
     }
 
     const profileActivityMatch = url.pathname.match(/^\/api\/profiles\/([0-9a-fA-F-]{36})\/activity$/);
     if (profileActivityMatch && request.method === "GET") {
+      if (!(await requireUser(request, response))) return;
       const activity = await getProfileActivityStatus(profileActivityMatch[1]);
       if (!activity) {
         sendError(response, 404, "Profile not found");
@@ -4926,6 +5657,7 @@ const handleRequest = async (request, response) => {
     }
 
     if (request.method === "POST" && url.pathname === "/api/payments/shop") {
+      if (!enforceRateLimit(request, response, "payment-create", rateLimits.paymentCreate)) return;
       sendJson(response, 200, await createShopPayment(request, await readBody(request)));
       return;
     }
@@ -4936,34 +5668,43 @@ const handleRequest = async (request, response) => {
     }
 
     if (request.method === "POST" && url.pathname === "/api/coupons/validate") {
+      if (!enforceRateLimit(request, response, "coupon-validate", rateLimits.couponValidate)) return;
       sendJson(response, 200, { coupon: await validateCoupon(await readBody(request)) });
       return;
     }
 
     if (request.method === "POST" && url.pathname === "/api/orders") {
+      if (!enforceRateLimit(request, response, "order-create", rateLimits.orderCreate)) return;
+      const body = await readBody(request);
       const auth = await getUserFromSession(request).catch(() => null);
-      sendJson(response, 201, { order: await createOrder(await readBody(request), auth?.user || null) });
+      const result = await createOrder(body, auth?.user || null);
+      sendJson(response, 201, {
+        order: result.order,
+        ...(result.accessToken ? { access_token: result.accessToken } : {}),
+      });
       return;
     }
 
     if (request.method === "GET" && url.pathname === "/api/orders") {
-      const ids = (url.searchParams.get("ids") || "")
-        .split(",")
-        .map((id) => id.trim())
-        .filter((id) => uuidPattern.test(id));
-      const email = url.searchParams.get("email");
-      if (ids.length === 0 && !email) {
-        sendJson(response, 200, { orders: [] });
-        return;
-      }
-      sendJson(response, 200, { orders: await listOrders({ ids, email, limit: 200 }) });
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      const limit = Math.min(200, Math.max(1, Number(url.searchParams.get("limit") || 100)));
+      sendJson(response, 200, { orders: await listUserOrders(auth.user.id, limit) });
       return;
     }
 
     const orderMatch = url.pathname.match(/^\/api\/orders\/([^/]+)$/);
     if (orderMatch && request.method === "GET") {
-      const order = await getOrder(decodeURIComponent(orderMatch[1]));
-      if (!order) {
+      let orderReference;
+      try {
+        orderReference = decodeURIComponent(orderMatch[1]);
+      } catch {
+        sendError(response, 404, "Order not found");
+        return;
+      }
+      const order = await getOrder(orderReference);
+      const accessToken = url.searchParams.get("access_token") || request.headers["x-order-access-token"];
+      if (!order || !(await canAccessOrder(request, order, accessToken))) {
         sendError(response, 404, "Order not found");
         return;
       }
@@ -5022,7 +5763,7 @@ const handleRequest = async (request, response) => {
 
     if (request.method === "POST" && url.pathname === "/api/uploads") {
       if (!(await requireAdmin(request, response))) return;
-      sendJson(response, 201, { upload: await uploadImage(await readBody(request, maxUploadBytes + 1024 * 1024)) });
+      sendJson(response, 201, { upload: await uploadImage(await readBody(request, Math.ceil(maxUploadBytes * 1.5) + 1024 * 1024)) });
       return;
     }
 
@@ -5034,14 +5775,16 @@ const handleRequest = async (request, response) => {
     }
 
     if (request.method === "POST" && url.pathname === "/api/reports") {
-      sendJson(response, 201, { report: await createReport(await readBody(request)) });
+      if (!enforceRateLimit(request, response, "report-create", rateLimits.reportCreate)) return;
+      const auth = await getUserFromSession(request).catch(() => null);
+      sendJson(response, 201, { report: await createReport(await readBody(request), auth?.user?.id || null) });
       return;
     }
 
     sendError(response, 404, "Not found");
   } catch (error) {
     console.error(error);
-    sendError(response, error.statusCode || 500, error.statusCode ? error.message : "Internal server error", error.statusCode ? undefined : error.message);
+    sendError(response, error.statusCode || 500, error.statusCode ? error.message : "Internal server error");
   }
 };
 

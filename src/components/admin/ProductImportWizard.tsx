@@ -275,7 +275,7 @@ export const ProductImportWizard = ({
     setShowGoogleSearch(true);
     try {
       const query = encodeURIComponent(editedName);
-      window.open(`https://www.google.com/search?tbm=isch&q=${query}`, "_blank");
+      window.open(`https://www.google.com/search?tbm=isch&q=${query}`, "_blank", "noopener,noreferrer");
     } catch (err) {
       console.error("Image search failed:", err);
     } finally {

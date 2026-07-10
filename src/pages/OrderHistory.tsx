@@ -10,16 +10,27 @@ import { useCart } from "@/contexts/CartContext";
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import { AppHeader } from "@/components/AppHeader";
-import { getShopOrders, type MipoOrder } from "@/lib/mipoApi";
+import { getMyOrders, getShopOrder, type MipoOrder } from "@/lib/mipoApi";
+import { getOrderAccessToken, getRememberedOrderIds } from "@/lib/orderAccess";
+import { useAuth } from "@/hooks/useAuth";
 
 interface OrderItem {
   id: string;
+  product_id?: string | null;
   product_name: string;
   product_image: string;
   quantity: number;
   price: number;
   variant?: string;
   size?: string;
+}
+
+interface ShippingAddress {
+  fullName?: string;
+  address?: string;
+  city?: string;
+  zipCode?: string;
+  phone?: string;
 }
 
 interface Order {
@@ -32,7 +43,7 @@ interface Order {
   tax: number;
   total: number;
   payment_method: string;
-  shipping_address: MipoOrder["shipping_address"];
+  shipping_address: ShippingAddress;
   items: OrderItem[];
 }
 
@@ -40,20 +51,26 @@ const OrderHistory = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { addToCart } = useCart();
+  const { user, loading: authLoading } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   const fetchOrders = useCallback(async () => {
+    if (authLoading) return;
+
     try {
       setLoading(true);
 
-      const savedIds = JSON.parse(localStorage.getItem("mipo_order_ids") || "[]");
-      const savedContact = JSON.parse(localStorage.getItem("mipo_checkout_contact") || "{}");
-      const ordersWithItems = await getShopOrders({
-        ids: Array.isArray(savedIds) ? savedIds : [],
-        email: typeof savedContact.email === "string" ? savedContact.email : undefined,
-      });
+      const ordersWithItems = user
+        ? await getMyOrders({ limit: 200 })
+        : (await Promise.all(
+            getRememberedOrderIds().map(async (id) => {
+              const accessToken = getOrderAccessToken(id);
+              if (!accessToken) return null;
+              return getShopOrder(id, accessToken).catch(() => null);
+            }),
+          )).filter((order): order is MipoOrder => order !== null);
 
       setOrders(ordersWithItems as Order[]);
     } catch (error: unknown) {
@@ -66,7 +83,7 @@ const OrderHistory = () => {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [authLoading, toast, user]);
 
   useEffect(() => {
     fetchOrders();
@@ -107,7 +124,7 @@ const OrderHistory = () => {
 
     order.items.forEach((item) => {
       addToCart({
-        id: item.id || `${item.product_name}-${Date.now()}-${Math.random()}`,
+        productId: item.product_id || item.id,
         name: item.product_name,
         price: item.price,
         image: item.product_image,

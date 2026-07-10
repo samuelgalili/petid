@@ -264,7 +264,11 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
   }, [isOpen, user]);
 
   const handleLogout = async () => {
-    await signOut();
+    const result = await signOut();
+    if (result.error) {
+      toast({ title: result.error.message, variant: "destructive" });
+      return;
+    }
     toast({ title: s.logoutSuccess, description: s.logoutDesc });
     navigate("/auth");
     onClose();

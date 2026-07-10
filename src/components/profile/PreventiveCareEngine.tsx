@@ -294,10 +294,10 @@ export const PreventiveCareEngine = ({
                           '_blank'
                         );
                       }, () => {
-                        window.open('https://www.google.com/maps/search/וטרינר+חירום+24+שעות', '_blank');
+                        window.open('https://www.google.com/maps/search/וטרינר+חירום+24+שעות', '_blank', 'noopener,noreferrer');
                       });
                     } else {
-                      window.open('https://www.google.com/maps/search/וטרינר+חירום+24+שעות', '_blank');
+                      window.open('https://www.google.com/maps/search/וטרינר+חירום+24+שעות', '_blank', 'noopener,noreferrer');
                     }
                     setShowEmergency(false);
                   }}

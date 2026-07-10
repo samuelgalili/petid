@@ -7,7 +7,7 @@
 import { useCallback, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { createMyDocument, uploadMyImage } from "@/lib/mipoApi";
+import { createMyDocument } from "@/lib/mipoApi";
 
 /* ─── Types ─── */
 
@@ -125,7 +125,14 @@ export function useDataIntake({ petId, petName, isSOSActive = false }: UseDataIn
 
     let fileUrl = "";
     try {
-      fileUrl = (await uploadMyImage(file)).url;
+      const document = await createMyDocument({
+        pet_id: petId,
+        document_type: "chat_media",
+        title: `${fileType === "video" ? "וידאו" : "תמונה"} לצ'אט - ${file.name}`,
+        description: null,
+        file,
+      });
+      fileUrl = document.file_url;
     } catch (error) {
       console.error("Media upload error:", error);
       toast({ title: "שגיאה בהעלאה", description: "נסה שוב", variant: "destructive" });

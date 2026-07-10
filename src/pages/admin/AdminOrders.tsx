@@ -174,6 +174,7 @@ const AdminOrders = () => {
           : detectMedicalUrgency(items);
         return {
           ...o,
+          user_id: o.user_id ?? o.customer_id ?? null,
           shipping_address: shippingAddress,
           order_items: items,
           medical_urgency: urgency,

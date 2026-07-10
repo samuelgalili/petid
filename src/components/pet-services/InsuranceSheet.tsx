@@ -89,12 +89,9 @@ export const InsuranceSheet = ({ isOpen, onClose, pet }: InsuranceSheetProps) =>
   const policies = INSURANCE_POLICIES.filter((policy) => !pet?.type || policy.suitable_pet_types.includes(pet.type))
     .sort((a, b) => Number(b.is_featured) - Number(a.is_featured));
 
-  const formatCoverage = (coverage: InsurancePolicy['coverage_details']) => {
-    if (!coverage) return [];
-    if (Array.isArray(coverage)) return coverage;
-    if (typeof coverage === 'object') return Object.values(coverage);
-    return [];
-  };
+  const formatCoverage = (
+    coverage: InsurancePolicy['coverage_details'],
+  ): Array<string | { name?: string; title?: string }> => Array.isArray(coverage) ? coverage : [];
 
   const hasActiveInsurance = petInsurance?.has_insurance === true;
   const isExpiringSoon = petInsurance?.insurance_expiry_date

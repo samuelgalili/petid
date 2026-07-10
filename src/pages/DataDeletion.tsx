@@ -1,262 +1,86 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { ArrowRight, Trash2, AlertTriangle, CheckCircle2, Shield } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
+import { AlertTriangle, ArrowRight, LogIn, Settings, Shield, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
-import { z } from "zod";
-
-const deletionSchema = z.object({
-  email: z.string().trim().email({ message: "כתובת אימייל לא תקינה" }).max(255),
-  reason: z.string().trim().max(500).optional(),
-  confirmDelete: z.boolean().refine(val => val === true, { message: "יש לאשר את המחיקה" }),
-});
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/hooks/useAuth";
 
 const DataDeletion = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [reason, setReason] = useState("");
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrors({});
-
-    const validation = deletionSchema.safeParse({ email, reason, confirmDelete });
-    if (!validation.success) {
-      const fieldErrors: Record<string, string> = {};
-      validation.error.issues.forEach((err) => {
-        if (err.path[0]) {
-          fieldErrors[err.path[0] as string] = err.message;
-        }
-      });
-      setErrors(fieldErrors);
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      // For now, just show success - deletion requests will be handled via email
-      // The user can also contact privacy@mipo.pet directly
-      console.log("Data deletion request:", { email, reason });
-      
-      setIsSubmitted(true);
-      toast.success("בקשתך התקבלה בהצלחה");
-    } catch (error) {
-      console.error("Error submitting deletion request:", error);
-      // Show success anyway - the request will be handled manually
-      setIsSubmitted(true);
-      toast.success("בקשתך התקבלה בהצלחה");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  if (isSubmitted) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center p-4" dir="rtl">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center max-w-md"
-        >
-          <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle2 className="w-10 h-10 text-green-600 dark:text-green-400" />
-          </div>
-          <h1 className="text-2xl font-bold mb-4 font-jakarta">הבקשה התקבלה</h1>
-          <p className="text-muted-foreground mb-6 font-jakarta leading-relaxed">
-            בקשתך למחיקת נתונים התקבלה בהצלחה. צוות התמיכה שלנו יטפל בבקשה תוך 30 יום ויעדכן אותך במייל.
-          </p>
-          <Button onClick={() => navigate("/")} className="gap-2">
-            <ArrowRight className="w-4 h-4" />
-            חזרה לדף הבית
-          </Button>
-        </motion.div>
-      </div>
-    );
-  }
+  const { user, loading } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30" dir="rtl">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="shrink-0"
-          >
-            <ArrowRight className="w-5 h-5" />
+    <div className="min-h-screen bg-background" dir="rtl">
+      <header className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur">
+        <div className="mx-auto flex h-14 max-w-2xl items-center gap-3 px-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="חזרה">
+            <ArrowRight className="h-5 w-5" />
           </Button>
-          <h1 className="text-lg font-bold font-jakarta">מחיקת נתונים</h1>
+          <h1 className="text-lg font-bold">מחיקת חשבון ונתונים</h1>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 max-w-2xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
-        >
-          {/* Warning Card */}
-          <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/20">
-            <CardContent className="pt-6">
-              <div className="flex gap-4">
-                <div className="shrink-0">
-                  <AlertTriangle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
-                </div>
-                <div>
-                  <h3 className="font-bold mb-2 font-jakarta text-amber-900 dark:text-amber-100">
-                    שים לב - פעולה זו בלתי הפיכה
-                  </h3>
-                  <p className="text-sm text-amber-800 dark:text-amber-200 font-jakarta leading-relaxed">
-                    לאחר מחיקת הנתונים, לא נוכל לשחזר את המידע שלך. אנא ודא שזו הפעולה הרצויה.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      <main className="mx-auto max-w-2xl space-y-5 px-4 py-8">
+        <Card className="border-destructive/25 bg-destructive/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              פעולה בלתי הפיכה
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-muted-foreground">
+            <p>
+              מחיקת החשבון מסירה את הפרופיל, חיות המחמד, המסמכים הפרטיים ונתוני החשבון
+              המשויכים אליך. לפני המחיקה האפליקציה מכינה קובץ JSON עם הנתונים הזמינים לייצוא.
+            </p>
+            <p>
+              רשומות הזמנה שנדרשות לצורכי תפעול או חובה חוקית נשמרות ללא שיוך לחשבון, לאחר
+              הסרת פרטי הקשר וכתובת המשלוח.
+            </p>
+          </CardContent>
+        </Card>
 
-          {/* What gets deleted */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-jakarta flex items-center gap-2">
-                <Trash2 className="w-5 h-5 text-destructive" />
-                מה יימחק?
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-3 text-muted-foreground font-jakarta">
-                <li className="flex items-start gap-2">
-                  <span className="text-destructive mt-1">•</span>
-                  פרטי החשבון שלך (שם, אימייל, טלפון)
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-destructive mt-1">•</span>
-                  כל המידע על חיות המחמד שלך
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-destructive mt-1">•</span>
-                  תמונות ותוכן שהעלית
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-destructive mt-1">•</span>
-                  היסטוריית הזמנות ופעילות
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-destructive mt-1">•</span>
-                  הודעות ושיחות
-                </li>
-              </ul>
-            </CardContent>
-          </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Shield className="h-5 w-5 text-primary" />
+              אימות בעלות על החשבון
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm text-muted-foreground">
+            <p>
+              מטעמי אבטחה, מחיקה מתבצעת רק מתוך חשבון מחובר. איננו אוספים כתובת אימייל או
+              סיבת מחיקה בטופס ציבורי, ואיננו מציגים אישור לבקשה שלא נשלחה.
+            </p>
 
-          {/* Privacy Note */}
-          <Card className="border-primary/20 bg-primary/5">
-            <CardContent className="pt-6">
-              <div className="flex gap-4">
-                <div className="shrink-0">
-                  <Shield className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-bold mb-2 font-jakarta">הזכויות שלך</h3>
-                  <p className="text-sm text-muted-foreground font-jakarta leading-relaxed">
-                    בהתאם לחוק הגנת הפרטיות וה-GDPR, יש לך זכות לבקש מחיקת כל המידע האישי שלך. 
-                    נטפל בבקשתך תוך 30 יום.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            {!loading && user ? (
+              <Button className="w-full gap-2" onClick={() => navigate("/settings")}>
+                <Settings className="h-4 w-4" />
+                מעבר להגדרות החשבון
+              </Button>
+            ) : (
+              <Button className="w-full gap-2" onClick={() => navigate("/auth")} disabled={loading}>
+                <LogIn className="h-4 w-4" />
+                {loading ? "בודק מצב התחברות..." : "התחברות כדי למחוק את החשבון"}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
 
-          {/* Deletion Form */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-jakarta">טופס בקשה למחיקת נתונים</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium font-jakarta">
-                    כתובת אימייל <span className="text-destructive">*</span>
-                  </label>
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="הזן את האימייל המשויך לחשבון"
-                    className={errors.email ? "border-destructive" : ""}
-                    dir="ltr"
-                  />
-                  {errors.email && (
-                    <p className="text-sm text-destructive">{errors.email}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium font-jakarta">
-                    סיבת המחיקה (אופציונלי)
-                  </label>
-                  <Textarea
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    placeholder="ספר לנו למה אתה רוצה למחוק את החשבון"
-                    rows={3}
-                    maxLength={500}
-                  />
-                </div>
-
-                <div className="flex items-start gap-3 pt-2">
-                  <Checkbox
-                    id="confirm"
-                    checked={confirmDelete}
-                    onCheckedChange={(checked) => setConfirmDelete(checked === true)}
-                    className={errors.confirmDelete ? "border-destructive" : ""}
-                  />
-                  <label htmlFor="confirm" className="text-sm font-jakarta leading-relaxed cursor-pointer">
-                    אני מבין/ה שפעולה זו בלתי הפיכה ושכל הנתונים שלי יימחקו לצמיתות
-                  </label>
-                </div>
-                {errors.confirmDelete && (
-                  <p className="text-sm text-destructive">{errors.confirmDelete}</p>
-                )}
-
-                <Button
-                  type="submit"
-                  variant="destructive"
-                  className="w-full mt-6"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    "שולח בקשה..."
-                  ) : (
-                    <>
-                      <Trash2 className="w-4 h-4 ml-2" />
-                      שלח בקשה למחיקת נתונים
-                    </>
-                  )}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          {/* Contact */}
-          <p className="text-center text-sm text-muted-foreground font-jakarta">
-            לשאלות נוספות:{" "}
-            <a href="mailto:privacy@mipo.pet" className="text-primary hover:underline">
-              privacy@mipo.pet
-            </a>
-          </p>
-        </motion.div>
+        <Card>
+          <CardContent className="flex items-start gap-3 pt-6">
+            <Trash2 className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+            <div className="space-y-1 text-sm">
+              <p className="font-medium text-foreground">זקוקים לעזרה לפני הכניסה?</p>
+              <p className="text-muted-foreground">
+                פנו אלינו בכתובת{" "}
+                <a className="font-medium text-primary underline-offset-4 hover:underline" href="mailto:privacy@mipo.pet">
+                  privacy@mipo.pet
+                </a>
+                . אל תשלחו במסר מסמכים רפואיים, סיסמאות או פרטי תשלום.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </main>
     </div>
   );

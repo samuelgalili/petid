@@ -1,12 +1,10 @@
 import { useRef, useState } from "react";
-import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Printer, X, Package, Sparkles } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { appUrl } from "@/lib/app-url";
 import { cn } from "@/lib/utils";
 
 interface OrderItem {
@@ -26,7 +24,7 @@ interface LabelOrder {
   order_items?: OrderItem[];
   total: number;
   shipping: number;
-  user_id: string;
+  user_id?: string | null;
 }
 
 export type LabelFormat = "lite" | "premium";
@@ -104,7 +102,7 @@ const LiteLabel = ({ order }: { order: LabelOrder }) => (
       )}
     </div>
 
-    {/* Barcode-style order ref + QR */}
+    {/* Order reference */}
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderTop: "2px dashed #d1d5db", paddingTop: "4mm", marginTop: "3mm" }}>
       <div>
         <div style={{ fontSize: "8px", color: "#9ca3af", marginBottom: "1mm" }}>קוד משלוח</div>
@@ -112,13 +110,6 @@ const LiteLabel = ({ order }: { order: LabelOrder }) => (
           {order.order_number}
         </div>
       </div>
-      <QRCodeSVG
-        value={appUrl(`/order/${order.order_number}`)}
-        size={40}
-        level="L"
-        bgColor="#ffffff"
-        fgColor="#1a1a1a"
-      />
     </div>
   </div>
 );
@@ -165,9 +156,7 @@ const PremiumLabel = ({ order }: { order: LabelOrder }) => (
         <div style={{ fontSize: "14px", fontWeight: 800, color: "#92400e" }}>
           🎁 משלוח מיוחד עבור {order.pet_name}!
         </div>
-        <div style={{ fontSize: "9px", color: "#b45309", marginTop: "1mm" }}>
-          כל פריט נבחר בקפידה עבור חיית המחמד שלך
-        </div>
+        <div style={{ fontSize: "9px", color: "#b45309", marginTop: "1mm" }}>מספר הזמנה #{order.order_number}</div>
       </div>
     )}
 
@@ -212,38 +201,10 @@ const PremiumLabel = ({ order }: { order: LabelOrder }) => (
       </table>
     </div>
 
-    {/* Footer: QR + NRC Badge */}
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderTop: "2px solid #e5e5e5", paddingTop: "4mm" }}>
-      {/* Large QR to pet health dashboard */}
-      <div style={{ display: "flex", alignItems: "center", gap: "4mm" }}>
-        <QRCodeSVG
-          value={appUrl(`/pet/${order.user_id}`)}
-          size={72}
-          level="H"
-          bgColor="#ffffff"
-          fgColor="#1a1a1a"
-        />
-        <div style={{ maxWidth: "55mm" }}>
-          <div style={{ fontSize: "9px", fontWeight: 700, color: "#1a1a1a", marginBottom: "1mm" }}>דשבורד בריאות חי</div>
-          <div style={{ fontSize: "7px", color: "#9ca3af", lineHeight: 1.4 }}>
-            סרוק לצפייה ברשומות הרפואיות, לוח חיסונים ותוכנית תזונה מותאמת אישית
-          </div>
-        </div>
-      </div>
-
-      {/* Dr. NRC Scientific Seal */}
-      <div style={{
-        display: "flex", alignItems: "center", gap: "3mm",
-        background: "linear-gradient(135deg, #f0fdf4, #ecfdf5)",
-        border: "2px solid #86efac",
-        borderRadius: "10px", padding: "3mm 5mm",
-      }}>
-        <div style={{ fontSize: "24px" }}>🔬</div>
-        <div>
-          <div style={{ fontSize: "10px", fontWeight: 800, color: "#166534" }}>Dr. NRC Certified</div>
-          <div style={{ fontSize: "7px", color: "#22c55e", fontWeight: 600 }}>Scientific Seal of Approval</div>
-          <div style={{ fontSize: "6px", color: "#86efac", marginTop: "0.5mm" }}>NRC 2006 · AAFCO 2026</div>
-        </div>
+    <div style={{ borderTop: "2px solid #e5e5e5", paddingTop: "4mm", textAlign: "left" }}>
+      <div style={{ fontSize: "8px", color: "#9ca3af" }}>אסמכתת משלוח</div>
+      <div style={{ fontSize: "16px", fontWeight: 900, fontFamily: "monospace", letterSpacing: "1px" }}>
+        {order.order_number}
       </div>
     </div>
   </div>
@@ -324,8 +285,8 @@ export const OrderLabelGenerator = ({ orders, open, onClose, initialFormat = "li
         {/* Description */}
         <p className="text-xs text-muted-foreground">
           {format === "lite"
-            ? "תווית משלוח קומפקטית (10×15 ס״מ) — כתובת, ברקוד, QR. מתאימה לשליחים."
-            : "תווית Premium A5 — רשימת מוצרים, הודעה אישית, חותמת Dr. NRC, QR לדשבורד בריאות."
+            ? "תווית משלוח קומפקטית (10×15 ס״מ) עם כתובת ואסמכתת הזמנה."
+            : "תווית A5 עם פרטי משלוח, רשימת מוצרים ואסמכתת הזמנה."
           }
         </p>
 

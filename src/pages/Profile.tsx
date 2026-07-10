@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { SEO } from "@/components/SEO";
 import { PageTransition } from "@/components/PageTransition";
-import BottomNav from "@/components/BottomNav";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, Plus, Edit3, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -162,7 +161,7 @@ const Profile = () => {
   const handleCloseSheet = () => setActiveSheet(null);
 
   if (loading) {
-    return <PageTransition><ProfileSkeleton /><BottomNav /></PageTransition>;
+    return <PageTransition><ProfileSkeleton /></PageTransition>;
   }
 
   return (
@@ -459,7 +458,6 @@ const Profile = () => {
           {showPetShop && selectedPet && <PetShopView pet={selectedPet} onBack={() => setShowPetShop(false)} />}
         </AnimatePresence>
 
-        <BottomNav />
       </div>
     </PageTransition>
   );

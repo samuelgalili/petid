@@ -3,7 +3,6 @@ import { useToast } from "@/hooks/use-toast";
 import { ChevronRight, Sparkles, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import petidIcon from "@/assets/petid-icon.png";
-import BottomNav from "@/components/BottomNav";
 import { useNavigate } from "react-router-dom";
 import { SEO } from "@/components/SEO";
 import HorizontalDatePicker from "@/components/chat/HorizontalDatePicker";
@@ -21,9 +20,10 @@ import { BoardingTypePicker } from "@/components/chat/BoardingTypePicker";
 import { StoreCategoryPicker } from "@/components/chat/StoreCategoryPicker";
 import { AdoptionTraitPicker } from "@/components/chat/AdoptionTraitPicker";
 import { AdoptionRequirementPicker } from "@/components/chat/AdoptionRequirementPicker";
-import { OcrApprovalCard, QuickCheckoutCard, InsuranceLeadCard, AddressUpdateCard, NrcPlanCard, PendingApprovalCard } from "@/components/chat/ChatActionCards";
 import { ChatProvider, useChatContext, type Message } from "@/contexts/ChatContext";
 import { useDataIntake, type IntakeType } from "@/hooks/useDataIntake";
+import { Button } from "@/components/ui/button";
+import { getCurrentUser, updateMyProfile } from "@/lib/mipoApi";
 
 const ChatContent = () => {
   const {
@@ -35,7 +35,6 @@ const ChatContent = () => {
     showPetSelection, setShowPetSelection,
     showCategories, setShowCategories,
     showDatePicker, setShowDatePicker,
-    showInsuranceLoading, setShowInsuranceLoading,
     selectedDate, setSelectedDate,
     pendingDateContext, setPendingDateContext,
     sendMessage, streamChat,
@@ -147,39 +146,6 @@ const ChatContent = () => {
       setPendingDateContext("grooming");
       setShowDatePicker(true);
     }
-    if (actions.includes("SHOW_INSURANCE_PLANS")) {
-      setShowInsuranceLoading(true);
-      setTimeout(() => {
-        setShowInsuranceLoading(false);
-        const insuranceMsg: Message = {
-          role: "assistant",
-          content: "הנה התוכניות שמתאימות:",
-          insuranceData: {
-            petName: selectedPet?.name || "החיה שלך",
-            petType: selectedPet?.type || "dog",
-            breed: selectedPet?.breed || null,
-            ageYears: null,
-            petId: selectedPet?.id || null,
-          },
-        };
-        setMessages(prev => [...prev, insuranceMsg]);
-      }, 2000);
-    }
-    if (actions.includes("SHOW_INSURANCE_CALLBACK")) {
-      const callbackMsg: Message = {
-        role: "assistant",
-        content: "נציג מקצועי יבדוק את המקרה ויחזור אליך:",
-        insuranceCallback: {
-          petName: selectedPet?.name || "החיה שלך",
-          petType: selectedPet?.type || "dog",
-          breed: selectedPet?.breed || null,
-          ageYears: null,
-          petId: selectedPet?.id || null,
-        },
-      };
-      setMessages(prev => [...prev, callbackMsg]);
-    }
-
     const pickerActions: Array<{ action: string; key: keyof Message }> = [
       { action: "SHOW_GROOMING_SERVICES", key: "showGroomingPicker" },
       { action: "SHOW_APPOINTMENT_PICKER", key: "showAppointmentPicker" },
@@ -219,32 +185,6 @@ const ChatContent = () => {
       });
     }
 
-    // ===== Parse CARD tags for Omni-Bot Action Cards =====
-    const cardPatterns = content.matchAll(/\[CARD:(\w+):(.*?)\]/g);
-    for (const match of cardPatterns) {
-      const [, cardType, jsonStr] = match;
-      try {
-        const data = JSON.parse(jsonStr);
-        setMessages(prev => {
-          const updated = [...prev];
-          const lastMsg = updated[updated.length - 1];
-          if (lastMsg?.role === "assistant") {
-            const cardMap: Record<string, Partial<Message>> = {
-              OCR_APPROVAL: { ocrApproval: data },
-              QUICK_CHECKOUT: { quickCheckout: data },
-              INSURANCE_LEAD: { insuranceLead: data },
-              ADDRESS_UPDATE: { addressUpdate: data },
-              NRC_PLAN: { nrcPlan: data },
-              PENDING_APPROVAL: { pendingApproval: { ...data, queueId: "" } },
-            };
-            if (cardMap[cardType]) {
-              updated[updated.length - 1] = { ...lastMsg, ...cardMap[cardType] };
-            }
-          }
-          return updated;
-        });
-      } catch { /* ignore malformed JSON */ }
-    }
   };
 
   // Also clean CARD tags from displayed content
@@ -268,16 +208,12 @@ const ChatContent = () => {
         setShowDatePicker(true);
         break;
       case "UPLOAD_DOCUMENT":
-        navigate("/scan-document");
+        void handleAttachment("scan");
         break;
       case "UPLOAD_PHOTO":
-        navigate("/create-post");
-        break;
-      case "ESCALATE":
-        toast({ title: "מעביר לנציג אנושי", description: "נציג יחזור אליך בהקדם" });
+        void handleAttachment("gallery");
         break;
       default:
-        sendMessage(`אני רוצה ${actionTag}`);
         break;
     }
   };
@@ -421,50 +357,6 @@ const ChatContent = () => {
                     {/* Product Cards */}
                     {message.role === "assistant" && message.products && message.products.length > 0 && (
                       <ChatProductCards products={message.products} />
-                    )}
-
-                    {/* Omni-Bot Action Cards */}
-                    {message.role === "assistant" && message.ocrApproval && (
-                      <OcrApprovalCard
-                        {...message.ocrApproval}
-                        onApprove={() => {
-                          sendMessage(`אשרתי את עדכון הנתונים של ${message.ocrApproval!.petName}`);
-                          setMessages(prev => prev.map((m, i) => i === messages.indexOf(message) ? { ...m, ocrApproval: undefined } : m));
-                        }}
-                        onReject={() => {
-                          sendMessage("דחיתי את עדכון הנתונים");
-                          setMessages(prev => prev.map((m, i) => i === messages.indexOf(message) ? { ...m, ocrApproval: undefined } : m));
-                        }}
-                      />
-                    )}
-
-                    {message.role === "assistant" && message.quickCheckout && (
-                      <QuickCheckoutCard
-                        {...message.quickCheckout}
-                        onCheckout={() => navigate(message.quickCheckout!.productId ? `/product/${message.quickCheckout!.productId}` : "/shop")}
-                      />
-                    )}
-
-                    {message.role === "assistant" && message.insuranceLead && (
-                      <InsuranceLeadCard
-                        {...message.insuranceLead}
-                        onSubmit={() => sendMessage(`אני מעוניין בביטוח עבור ${message.insuranceLead!.petName}`)}
-                      />
-                    )}
-
-                    {message.role === "assistant" && message.addressUpdate && (
-                      <AddressUpdateCard
-                        {...message.addressUpdate}
-                        onConfirm={() => sendMessage(`אישרתי עדכון כתובת ל-${message.addressUpdate!.newAddress}`)}
-                      />
-                    )}
-
-                    {message.role === "assistant" && message.nrcPlan && (
-                      <NrcPlanCard {...message.nrcPlan} />
-                    )}
-
-                    {message.role === "assistant" && message.pendingApproval && (
-                      <PendingApprovalCard title={message.pendingApproval.title} />
                     )}
 
                     {/* Grooming Service Picker */}
@@ -630,7 +522,7 @@ const ChatContent = () => {
             )}
 
             {/* Typing indicator — Gemini style */}
-            {isTyping && !showInsuranceLoading && (
+            {isTyping && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -694,15 +586,81 @@ const ChatContent = () => {
         />
       </div>
 
-      <BottomNav />
     </div>
   );
 };
 
-const Chat = () => (
-  <ChatProvider>
-    <ChatContent />
-  </ChatProvider>
-);
+const Chat = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [consentState, setConsentState] = useState<"loading" | "required" | "granted">("loading");
+  const [savingConsent, setSavingConsent] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    getCurrentUser()
+      .then((auth) => {
+        if (!active) return;
+        if (!auth) {
+          navigate("/auth");
+          return;
+        }
+        setConsentState(auth.profile?.ai_consent_given === true ? "granted" : "required");
+      })
+      .catch(() => {
+        if (active) setConsentState("required");
+      });
+    return () => {
+      active = false;
+    };
+  }, [navigate]);
+
+  const grantConsent = async () => {
+    setSavingConsent(true);
+    try {
+      const result = await updateMyProfile({ ai_consent_given: true });
+      if (result.profile?.ai_consent_given !== true) throw new Error("Consent was not saved");
+      setConsentState("granted");
+    } catch {
+      toast({ title: "לא ניתן לשמור את ההסכמה", variant: "destructive" });
+    } finally {
+      setSavingConsent(false);
+    }
+  };
+
+  if (consentState === "loading") {
+    return <main className="min-h-screen bg-background" aria-busy="true" />;
+  }
+
+  if (consentState === "required") {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center p-5" dir="rtl">
+        <section className="w-full max-w-md rounded-lg border bg-card p-6 shadow-sm">
+          <Sparkles className="w-8 h-8 text-primary mb-4" />
+          <h1 className="text-xl font-bold">הסכמה לעיבוד באמצעות AI</h1>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            בעת שימוש בצ'אט, MIPO שולחת ל-Google Gemini את תוכן השיחה ואת פרטי חיית המחמד והפרופיל
+            שנדרשים לתשובה. קבצים ותמונות נשלחים רק לאחר בחירה מפורשת שלך לצרף אותם.
+          </p>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            אפשר לבטל את ההסכמה בכל עת בהגדרות. ללא הסכמה הצ'אט נשאר חסום.
+          </p>
+          <div className="mt-6 space-y-3">
+            <Button className="w-full" onClick={grantConsent} disabled={savingConsent}>
+              {savingConsent ? "שומר..." : "אני מסכימ/ה וממשיך/ה לצ'אט"}
+            </Button>
+            <Button className="w-full" variant="outline" onClick={() => navigate("/")}>לא עכשיו</Button>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  return (
+    <ChatProvider>
+      <ChatContent />
+    </ChatProvider>
+  );
+};
 
 export default Chat;

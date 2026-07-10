@@ -133,6 +133,7 @@ export interface MipoOrderItem {
 export interface MipoOrder {
   id: string;
   order_number: string;
+  user_id?: string | null;
   customer_id?: string | null;
   customer_name?: string | null;
   customer_email?: string | null;
@@ -183,6 +184,7 @@ export interface CreateMipoOrderInput {
     zipCode: string;
   };
   payment_method: string;
+  expected_total: number;
   installments?: number;
   coupon_code?: string;
   order_type?: string;
@@ -199,6 +201,11 @@ export interface MipoPaymentSession {
   low_profile_code?: string | null;
   dev_mode?: boolean;
   already_paid?: boolean;
+}
+
+export interface MipoOrderCreationResult {
+  order: MipoOrder;
+  access_token?: string;
 }
 
 export interface MipoUser {
@@ -235,6 +242,9 @@ export interface MipoProfile {
   quiet_mode_until?: string | null;
   last_active_at?: string | null;
   show_activity_status?: boolean | null;
+  profile_visibility?: "public" | "private" | null;
+  ai_consent_given?: boolean | null;
+  ai_consent_date?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -447,13 +457,12 @@ const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/+$/, ""
 const userSessionHintKey = "mipo_user_session_hint";
 const adminSessionHintKey = "mipo_admin_session_hint";
 
-const hasStorageHint = (key: string) => {
-  try {
-    return localStorage.getItem(key) === "true";
-  } catch {
-    return false;
+export class MipoApiError extends Error {
+  constructor(message: string, public readonly status: number) {
+    super(message);
+    this.name = "MipoApiError";
   }
-};
+}
 
 const setStorageHint = (key: string, value: boolean) => {
   try {
@@ -486,7 +495,7 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const body = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(body?.error || `API request failed with ${response.status}`);
+    throw new MipoApiError(body?.error || `API request failed with ${response.status}`, response.status);
   }
 
   return body as T;
@@ -508,15 +517,13 @@ async function adminApiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     if (response.status === 401) {
       throw new Error("נדרשת התחברות מנהל");
     }
-    throw new Error(body?.error || `API request failed with ${response.status}`);
+    throw new MipoApiError(body?.error || `API request failed with ${response.status}`, response.status);
   }
 
   return body as T;
 }
 
 export async function getCurrentAdmin(): Promise<MipoAdmin | null> {
-  if (!hasStorageHint(adminSessionHintKey)) return null;
-
   const response = await fetch(`${API_BASE_URL}/admin/me`, {
     credentials: "same-origin",
     headers: {
@@ -538,8 +545,6 @@ export async function getCurrentAdmin(): Promise<MipoAdmin | null> {
 }
 
 export async function getCurrentUser(): Promise<MipoAuthResult | null> {
-  if (!hasStorageHint(userSessionHintKey)) return null;
-
   const response = await fetch(`${API_BASE_URL}/auth/me`, {
     credentials: "same-origin",
     headers: {
@@ -563,10 +568,10 @@ export async function getCurrentUser(): Promise<MipoAuthResult | null> {
   };
 }
 
-export async function loginUser(email: string, password: string): Promise<MipoAuthResult> {
+export async function loginUser(email: string, password: string, rememberMe = false): Promise<MipoAuthResult> {
   const auth = await apiFetch<MipoAuthResult>("/auth/login", {
     method: "POST",
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, remember_me: rememberMe }),
   });
   setStorageHint(userSessionHintKey, true);
   return auth;
@@ -588,11 +593,13 @@ export async function signupUser(input: {
 }
 
 export async function logoutUser() {
-  setStorageHint(userSessionHintKey, false);
-  return apiFetch<{ ok: boolean }>("/auth/logout", {
+  const result = await apiFetch<{ ok: boolean }>("/auth/logout", {
     method: "POST",
     body: JSON.stringify({}),
   });
+  if (!result.ok) throw new Error("Sign out failed");
+  setStorageHint(userSessionHintKey, false);
+  return result;
 }
 
 export async function requestPasswordReset(email: string): Promise<{
@@ -947,11 +954,13 @@ export async function loginAdmin(email: string, password: string): Promise<MipoA
 }
 
 export async function logoutAdmin() {
-  setStorageHint(adminSessionHintKey, false);
-  return apiFetch<{ ok: boolean }>("/admin/logout", {
+  const result = await apiFetch<{ ok: boolean }>("/admin/logout", {
     method: "POST",
     body: JSON.stringify({}),
   });
+  if (!result.ok) throw new Error("Admin sign out failed");
+  setStorageHint(adminSessionHintKey, false);
+  return result;
 }
 
 export async function getAdminAnalytics(days: number): Promise<MipoAdminAnalytics> {
@@ -994,18 +1003,18 @@ export async function deleteAdminCoupon(couponId: string) {
   });
 }
 
-export async function createShopOrder(input: CreateMipoOrderInput): Promise<MipoOrder> {
-  const result = await apiFetch<{ order: MipoOrder }>("/orders", {
+export async function createShopOrder(input: CreateMipoOrderInput): Promise<MipoOrderCreationResult> {
+  return apiFetch<MipoOrderCreationResult>("/orders", {
     method: "POST",
     body: JSON.stringify(input),
   });
-  return result.order;
 }
 
 export async function createShopPaymentSession(input: {
   order_id: string;
   success_url: string;
   cancel_url: string;
+  access_token?: string;
 }): Promise<MipoPaymentSession> {
   return apiFetch<MipoPaymentSession>("/payments/shop", {
     method: "POST",
@@ -1013,18 +1022,12 @@ export async function createShopPaymentSession(input: {
   });
 }
 
-export async function getShopOrder(orderIdOrNumber: string): Promise<MipoOrder> {
-  const result = await apiFetch<{ order: MipoOrder }>(`/orders/${encodeURIComponent(orderIdOrNumber)}`);
+export async function getShopOrder(orderIdOrNumber: string, accessToken?: string): Promise<MipoOrder> {
+  const result = await apiFetch<{ order: MipoOrder }>(
+    `/orders/${encodeURIComponent(orderIdOrNumber)}`,
+    accessToken ? { headers: { "X-Order-Access-Token": accessToken } } : undefined,
+  );
   return result.order;
-}
-
-export async function getShopOrders(input: { ids?: string[]; email?: string } = {}): Promise<MipoOrder[]> {
-  const params = new URLSearchParams();
-  if (input.ids?.length) params.set("ids", input.ids.join(","));
-  if (input.email) params.set("email", input.email);
-  const query = params.toString();
-  const result = await apiFetch<{ orders: MipoOrder[] }>(`/orders${query ? `?${query}` : ""}`);
-  return result.orders;
 }
 
 export async function getMyOrders(input: { limit?: number } = {}): Promise<MipoOrder[]> {
@@ -1130,7 +1133,7 @@ export async function uploadAdminProductImage(file: File) {
 export async function invokeProductIntelFunction<T = unknown>(
   functionName: string,
   options: { body?: Record<string, unknown> } = {},
-): Promise<{ data: T; error: null }> {
+): Promise<{ data: T; error: { message: string } | null }> {
   const data = await adminApiFetch<T>(`/product-intel/${functionName}`, {
     method: "POST",
     body: JSON.stringify(options.body || {}),

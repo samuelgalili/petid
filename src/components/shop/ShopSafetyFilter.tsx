@@ -4,10 +4,10 @@
  */
 
 import { useMemo } from "react";
-import { ShieldAlert, ShieldX } from "lucide-react";
+import { HelpCircle, ShieldAlert, ShieldX } from "lucide-react";
 import type { ActivePet } from "@/hooks/useActivePet";
 
-export type ProductSafety = "safe" | "caution" | "unsafe";
+export type ProductSafety = "safe" | "caution" | "unsafe" | "unknown";
 
 interface SafetyCheckResult {
   level: ProductSafety;
@@ -18,33 +18,33 @@ const SAFETY_RULES: { condition: string[]; unsafeKeywords: string[]; reason: str
   {
     condition: ["סוכרת", "diabetic"],
     unsafeKeywords: ["סוכר", "sugar", "מתוק", "sweet", "דבש", "honey", "high carb"],
-    reason: "לא מתאים לחיות עם סוכרת",
+    reason: "תיאור המוצר מזכיר סוכר; יש לבדוק התאמה עם וטרינר",
   },
   {
     condition: ["כליות", "renal"],
     unsafeKeywords: ["חלבון גבוה", "high protein", "בשר נא"],
-    reason: "חלבון גבוה — לא מתאים לבעיות כליות",
+    reason: "תיאור המוצר מזכיר חלבון גבוה; יש לבדוק התאמה עם וטרינר",
   },
   {
     condition: ["אלרגיה", "allergy"],
     unsafeKeywords: ["חיטה", "wheat", "גלוטן", "gluten", "סויה", "soy"],
-    reason: "עלול להכיל אלרגנים",
+    reason: "תיאור המוצר מזכיר רכיב שעשוי להיות רלוונטי לאלרגיה",
   },
   {
     condition: ["עיכול", "gastro"],
     unsafeKeywords: ["שומני", "fatty", "עתיר שומן"],
-    reason: "עתיר שומן — עלול להחמיר בעיות עיכול",
+    reason: "תיאור המוצר מזכיר תכולת שומן גבוהה; מומלץ לבדוק התאמה",
   },
   {
     condition: ["משקל", "obesity"],
     unsafeKeywords: ["קלורי גבוה", "high calorie", "high energy", "עתיר אנרגיה"],
-    reason: "עתיר קלוריות — לא מתאים לדיאטה",
+    reason: "תיאור המוצר מזכיר תכולה קלורית גבוהה; מומלץ לבדוק התאמה",
   },
 ];
 
 export function checkProductSafety(productText: string, pet: ActivePet | null): SafetyCheckResult {
   if (!pet?.medical_conditions || pet.medical_conditions.length === 0) {
-    return { level: "safe", reason: null };
+    return { level: "unknown", reason: "לא ניתן לאמת התאמה רפואית מפרטי הקטלוג" };
   }
 
   const lower = productText.toLowerCase();
@@ -54,7 +54,7 @@ export function checkProductSafety(productText: string, pet: ActivePet | null): 
     const hasCondition = conditions.some(c => rule.condition.some(kw => c.includes(kw)));
     if (!hasCondition) continue;
     const isUnsafe = rule.unsafeKeywords.some(kw => lower.includes(kw));
-    if (isUnsafe) return { level: "unsafe", reason: rule.reason };
+    if (isUnsafe) return { level: "caution", reason: rule.reason };
   }
 
   // Age-based cautions
@@ -64,7 +64,7 @@ export function checkProductSafety(productText: string, pet: ActivePet | null): 
     }
   }
 
-  return { level: "safe", reason: null };
+  return { level: "unknown", reason: "לא נמצא מידע מספיק לאימות התאמה רפואית" };
 }
 
 export function useShopSafety(productName: string, description: string, pet: ActivePet | null): SafetyCheckResult {
@@ -91,6 +91,10 @@ export const SafetyBadge = ({ level, reason, petName, compact = false }: SafetyB
           <div className="w-5 h-5 rounded-full bg-destructive/90 flex items-center justify-center shadow-sm">
             <ShieldX className="w-3 h-3 text-white" strokeWidth={2} />
           </div>
+        ) : level === "unknown" ? (
+          <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center shadow-sm">
+            <HelpCircle className="w-3 h-3 text-muted-foreground" strokeWidth={2} />
+          </div>
         ) : (
           <div className="w-5 h-5 rounded-full bg-amber-500/90 flex items-center justify-center shadow-sm">
             <ShieldAlert className="w-3 h-3 text-white" strokeWidth={2} />
@@ -105,11 +109,15 @@ export const SafetyBadge = ({ level, reason, petName, compact = false }: SafetyB
       className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-semibold ${
         level === "unsafe"
           ? "bg-destructive/10 text-destructive border border-destructive/20"
-          : "bg-amber-500/10 text-amber-700 border border-amber-500/20"
+          : level === "unknown"
+            ? "bg-muted text-muted-foreground border border-border"
+            : "bg-amber-500/10 text-amber-700 border border-amber-500/20"
       }`}
     >
       {level === "unsafe" ? (
         <ShieldX className="w-3 h-3" strokeWidth={2} />
+      ) : level === "unknown" ? (
+        <HelpCircle className="w-3 h-3" strokeWidth={2} />
       ) : (
         <ShieldAlert className="w-3 h-3" strokeWidth={2} />
       )}

@@ -105,7 +105,7 @@ export const DocumentsSection = ({ petId, category, title }: DocumentsSectionPro
       toast({ title: 'המסמך הועלה בהצלחה' });
     } catch (error) {
       console.error('Upload error:', error);
-      toast({ title: 'שגיאה בהעלאת המסמך', variant: 'destructive' });
+      toast({ title: 'שגיאה בהעלאת המסמך', description: error instanceof Error ? error.message : undefined, variant: 'destructive' });
     } finally {
       setIsUploading(false);
     }
@@ -158,7 +158,7 @@ export const DocumentsSection = ({ petId, category, title }: DocumentsSectionPro
                 <input
                   type="file"
                   className="hidden"
-                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                  accept=".pdf,.jpg,.jpeg,.png,.docx"
                   onChange={handleFileUpload}
                   disabled={isUploading}
                 />

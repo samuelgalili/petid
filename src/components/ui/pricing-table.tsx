@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
+import { toSafeHttpUrl } from "@/lib/safeExternalUrl"
 
 export interface PricingFeature {
   text: string
@@ -56,6 +57,7 @@ export function Pricing({
 }: PricingProps) {
   const [annualBilling, setAnnualBilling] = useState<Record<string, boolean>>({})
   const [selectedCredits, setSelectedCredits] = useState<Record<string, string>>({})
+  const safeFooterButtonLink = toSafeHttpUrl(footerButtonLink)
 
   return (
     <section className={cn("py-8 w-full", className)} dir="rtl">
@@ -207,11 +209,10 @@ export function Pricing({
               <Button 
                 variant="outline" 
                 className="shrink-0"
-                onClick={() => footerButtonLink && window.open(footerButtonLink, '_blank')}
-                asChild={!!footerButtonLink}
+                asChild={!!safeFooterButtonLink}
               >
-                {footerButtonLink ? (
-                  <a href={footerButtonLink} target="_blank" rel="noopener noreferrer">
+                {safeFooterButtonLink ? (
+                  <a href={safeFooterButtonLink} target="_blank" rel="noopener noreferrer">
                     {footerButtonText}
                   </a>
                 ) : (
