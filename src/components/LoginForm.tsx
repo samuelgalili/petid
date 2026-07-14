@@ -20,11 +20,51 @@ interface FieldError {
   password?: string;
 }
 
+interface LoginError {
+  message: string;
+  showPasswordReset: boolean;
+}
+
+const loginErrorMessage = (error: { message: string; status: number }): LoginError => {
+  if (error.status === 401 || /invalid (email or password|credentials)/i.test(error.message)) {
+    return {
+      message: "האימייל או הסיסמה שגויים.",
+      showPasswordReset: true,
+    };
+  }
+
+  if (error.status === 429) {
+    return {
+      message: "בוצעו יותר מדי ניסיונות התחברות. נסו שוב בעוד כמה דקות.",
+      showPasswordReset: false,
+    };
+  }
+
+  if (error.status >= 500) {
+    return {
+      message: "שירות ההתחברות אינו זמין כרגע. נסו שוב בעוד כמה דקות.",
+      showPasswordReset: false,
+    };
+  }
+
+  if (error.status === 0) {
+    return {
+      message: "לא ניתן להתחבר לשירות. בדקו את החיבור לאינטרנט ונסו שוב.",
+      showPasswordReset: false,
+    };
+  }
+
+  return {
+    message: "לא הצלחנו להתחבר. בדקו את הפרטים ונסו שוב.",
+    showPasswordReset: false,
+  };
+};
+
 export const LoginForm = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldError>({});
-  const [generalError, setGeneralError] = useState("");
+  const [loginError, setLoginError] = useState<LoginError | null>(null);
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const { toast } = useToast();
@@ -35,7 +75,7 @@ export const LoginForm = () => {
     const result = loginSchema.safeParse(formData);
     if (result.success) {
       setFieldErrors({});
-      setGeneralError("");
+      setLoginError(null);
       return true;
     }
     const errors: FieldError = {};
@@ -49,7 +89,7 @@ export const LoginForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setGeneralError("");
+    setLoginError(null);
     if (!validateForm()) return;
 
     setLoading(true);
@@ -57,13 +97,9 @@ export const LoginForm = () => {
       const { error } = await signIn(formData.email, formData.password, rememberMe);
 
       if (error) {
-        const message = error.status === 429
-          ? error.message || "יותר מדי ניסיונות. נסה שוב מאוחר יותר"
-          : error.message.includes("Invalid email or password")
-            ? "אימייל או סיסמה שגויים"
-            : error.message;
-        setGeneralError(message);
-        toast({ title: "שגיאה בהתחברות", description: message, variant: "destructive" });
+        const displayError = loginErrorMessage(error);
+        setLoginError(displayError);
+        toast({ title: "שגיאה בהתחברות", description: displayError.message, variant: "destructive" });
         setLoading(false);
         return;
       }
@@ -71,7 +107,10 @@ export const LoginForm = () => {
       toast({ title: "התחברת בהצלחה!", description: "ברוכים השבים!" });
       navigate("/");
     } catch {
-      setGeneralError("אירעה שגיאה לא צפויה");
+      setLoginError({
+        message: "אירעה תקלה לא צפויה. נסו שוב.",
+        showPasswordReset: false,
+      });
     } finally {
       setLoading(false);
     }
@@ -80,15 +119,24 @@ export const LoginForm = () => {
   return (
     <form onSubmit={handleSubmit} className="space-y-3" noValidate>
       <AnimatePresence mode="wait">
-        {generalError && (
+        {loginError && (
           <motion.div
             key="error"
+            role="alert"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg text-center"
           >
-            {generalError}
+            <p>{loginError.message}</p>
+            {loginError.showPasswordReset && (
+              <Link
+                to="/forgot-password"
+                className="mt-2 inline-flex min-h-11 items-center font-semibold underline underline-offset-4"
+              >
+                שכחת סיסמה? לאיפוס הסיסמה
+              </Link>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

@@ -99,7 +99,7 @@ ssh -i "$SSH_KEY" -o StrictHostKeyChecking=accept-new "$REMOTE_HOST" \
 
 if [[ "$RESTART_API" == true ]]; then
   ssh -i "$SSH_KEY" -o StrictHostKeyChecking=accept-new "$REMOTE_HOST" \
-    "sudo MIPO_REMOTE_PATH=\"$REMOTE_PATH\" bash \"$REMOTE_PATH/deploy/aws/prepare-host.sh\" && cd \"$REMOTE_PATH\" && MIPO_REMOTE_PATH=\"$REMOTE_PATH\" docker compose -f \"$COMPOSE_FILE\" up -d --build mipo-api"
+    "sudo MIPO_REMOTE_PATH=\"$REMOTE_PATH\" bash \"$REMOTE_PATH/deploy/aws/prepare-host.sh\" && cd \"$REMOTE_PATH\" && MIPO_REMOTE_PATH=\"$REMOTE_PATH\" docker compose -f \"$COMPOSE_FILE\" up -d --build --wait --wait-timeout 60 mipo-api"
 fi
 
 echo "synced_ssm_env=true prefix=${SSM_PREFIX} restart=${RESTART_API}"

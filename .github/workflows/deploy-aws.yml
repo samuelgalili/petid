@@ -190,7 +190,7 @@ jobs:
           sudo MIPO_REMOTE_PATH="$MIPO_REMOTE_PATH" bash "$MIPO_REMOTE_PATH/deploy/aws/prepare-host.sh"
           docker compose -f "$compose_file" build mipo-api
           docker compose -f "$compose_file" run --rm --no-deps -T mipo-api node src/applyMigrations.js </dev/null
-          docker compose -f "$compose_file" up -d --force-recreate --no-deps mipo-api
+          docker compose -f "$compose_file" up -d --force-recreate --no-deps --wait --wait-timeout 60 mipo-api
           docker compose -f "$compose_file" up -d --force-recreate --no-deps caddy
           docker compose -f "$compose_file" ps
           REMOTE
@@ -199,5 +199,5 @@ jobs:
         run: |
           set -euo pipefail
           base_url="${MIPO_PUBLIC_BASE_URL:-http://${MIPO_AWS_HOST}}"
-          curl --fail --show-error --silent "$base_url/api/health"
-          curl --fail --show-error --silent --head "$base_url/" >/dev/null
+          curl --fail --show-error --silent --max-time 15 "$base_url/api/health"
+          curl --fail --show-error --silent --max-time 15 --head "$base_url/" >/dev/null

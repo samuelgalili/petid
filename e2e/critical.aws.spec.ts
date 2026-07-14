@@ -44,6 +44,30 @@ async function mockCatalog(page: Page) {
   });
 }
 
+const loginFailureCases = [
+  {
+    name: "invalid credentials",
+    status: 401,
+    backendError: "Invalid email or password",
+    expectedMessage: "האימייל או הסיסמה שגויים.",
+    showsPasswordReset: true,
+  },
+  {
+    name: "rate limiting",
+    status: 429,
+    backendError: "Too many requests",
+    expectedMessage: "בוצעו יותר מדי ניסיונות התחברות. נסו שוב בעוד כמה דקות.",
+    showsPasswordReset: false,
+  },
+  {
+    name: "server failure",
+    status: 500,
+    backendError: "Internal server error",
+    expectedMessage: "שירות ההתחברות אינו זמין כרגע. נסו שוב בעוד כמה דקות.",
+    showsPasswordReset: false,
+  },
+] as const;
+
 test.describe("AWS application smoke tests", () => {
   test("renders current email authentication and signup", async ({ page }) => {
     await page.goto("/auth");
@@ -65,6 +89,56 @@ test.describe("AWS application smoke tests", () => {
     await expect(page).toHaveURL(/\/signup$/);
     await expect(page.getByRole("heading", { name: "הצטרפו ל-MIPO" })).toBeVisible();
     await expect(page.getByLabel("תאריך לידה")).toBeVisible();
+  });
+
+  for (const failure of loginFailureCases) {
+    test(`shows a safe Hebrew message for ${failure.name}`, async ({ page }) => {
+      await page.route("**/api/auth/me", async (route) => {
+        await route.fulfill({ status: 401, json: { error: "Unauthorized" } });
+      });
+      await page.route("**/api/auth/login", async (route) => {
+        await route.fulfill({
+          status: failure.status,
+          json: { error: failure.backendError },
+        });
+      });
+
+      await page.goto("/auth");
+      await page.getByPlaceholder("אימייל").fill("user@example.com");
+      await page.getByPlaceholder("סיסמה").fill("valid-password");
+      await page.getByRole("button", { name: "התחברות", exact: true }).click();
+
+      const formAlert = page.locator("form").getByRole("alert");
+      await expect(formAlert).toContainText(failure.expectedMessage);
+      await expect(formAlert).not.toContainText(failure.backendError);
+
+      const passwordReset = formAlert.getByRole("link", { name: "שכחת סיסמה? לאיפוס הסיסמה" });
+      if (failure.showsPasswordReset) {
+        await expect(passwordReset).toBeVisible();
+        await passwordReset.click();
+        await expect(page).toHaveURL(/\/forgot-password$/);
+      } else {
+        await expect(passwordReset).toHaveCount(0);
+      }
+    });
+  }
+
+  test("shows a Hebrew connection message when login cannot reach the API", async ({ page }) => {
+    await page.route("**/api/auth/me", async (route) => {
+      await route.fulfill({ status: 401, json: { error: "Unauthorized" } });
+    });
+    await page.route("**/api/auth/login", async (route) => {
+      await route.abort("failed");
+    });
+
+    await page.goto("/auth");
+    await page.getByPlaceholder("אימייל").fill("user@example.com");
+    await page.getByPlaceholder("סיסמה").fill("valid-password");
+    await page.getByRole("button", { name: "התחברות", exact: true }).click();
+
+    const formAlert = page.locator("form").getByRole("alert");
+    await expect(formAlert).toContainText("לא ניתן להתחבר לשירות. בדקו את החיבור לאינטרנט ונסו שוב.");
+    await expect(formAlert).not.toContainText("Failed to fetch");
   });
 
   test("redirects protected customer and admin routes", async ({ page }) => {

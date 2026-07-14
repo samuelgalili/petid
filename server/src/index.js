@@ -1,5 +1,5 @@
 import http from "node:http";
-import { createHash, createHmac, randomBytes, randomInt, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { chmod, mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Pool } from "pg";
@@ -27,6 +27,8 @@ import {
   hashOpaqueToken,
   verifyOpaqueToken,
 } from "./security.js";
+import { checkDatabaseHealth } from "./health.js";
+import { hashPassword, verifyPassword } from "./passwords.js";
 
 const port = Number(process.env.PORT || 3000);
 const databaseUrl = process.env.DATABASE_URL;
@@ -113,6 +115,7 @@ const pool = new Pool({
     ? false
     : { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== "false" },
   max: Number(process.env.DB_POOL_MAX || 8),
+  connectionTimeoutMillis: Number(process.env.DB_CONNECTION_TIMEOUT_MS || 5000),
 });
 
 const jsonHeaders = {
@@ -205,22 +208,6 @@ const secretsEqual = (actual, expected) => {
 };
 
 const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
-
-const hashPassword = (password) => {
-  const salt = randomBytes(16).toString("base64url");
-  const hash = scryptSync(String(password), salt, 64).toString("base64url");
-  return `scrypt$${salt}$${hash}`;
-};
-
-const verifyPassword = (password, passwordHash) => {
-  const [algorithm, salt, hash] = String(passwordHash || "").split("$");
-  if (algorithm !== "scrypt" || !salt || !hash) return false;
-
-  const actualHash = Buffer.from(hash, "base64url");
-  const expectedHash = scryptSync(String(password), salt, actualHash.length);
-  if (actualHash.length !== expectedHash.length) return false;
-  return timingSafeEqual(actualHash, expectedHash);
-};
 
 const hashSessionToken = (token) => createHash("sha256").update(String(token)).digest("hex");
 
@@ -329,12 +316,12 @@ const buildClearAdminCookie = (request) => {
   ].filter(Boolean).join("; ");
 };
 
-const createAdminSession = async (request, adminUserId) => {
+const createAdminSession = async (request, adminUserId, db = pool) => {
   const token = randomBytes(32).toString("base64url");
   const tokenHash = hashSessionToken(token);
   const expiresAt = new Date(Date.now() + adminSessionMs).toISOString();
 
-  await pool.query(
+  await db.query(
     `
       insert into public.admin_sessions (
         admin_user_id,
@@ -481,16 +468,28 @@ const loginAdmin = async (request, body) => {
     throw error;
   }
 
-  const token = await createAdminSession(request, row.id);
-  const updated = await pool.query(
-    `update public.admin_users set last_login_at = now(), updated_at = now() where id = $1 returning ${adminUserSelect}`,
-    [row.id],
-  );
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    const token = await createAdminSession(request, row.id, client);
+    const updated = await client.query(
+      `update public.admin_users set last_login_at = now(), updated_at = now() where id = $1 returning ${adminUserSelect}`,
+      [row.id],
+    );
+    await client.query("commit");
 
-  return {
-    admin: serializeAdmin(updated.rows[0]),
-    token,
-  };
+    return {
+      admin: serializeAdmin(updated.rows[0]),
+      token,
+    };
+  } catch (error) {
+    await client.query("rollback").catch((rollbackError) => {
+      console.error("Admin login rollback failed", rollbackError);
+    });
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
 const logoutAdmin = async (request) => {
@@ -588,8 +587,8 @@ const userSelect = `
   last_login_at
 `;
 
-const getProfileByUserId = async (userId) => {
-  const result = await pool.query("select * from public.profiles where id = $1 limit 1", [userId]);
+const getProfileByUserId = async (userId, db = pool) => {
+  const result = await db.query("select * from public.profiles where id = $1 limit 1", [userId]);
   return result.rows[0] ? serializeProfile(result.rows[0]) : null;
 };
 
@@ -865,19 +864,31 @@ const loginUser = async (request, body) => {
     throw error;
   }
 
-  const token = await createUserSession(request, row.id, pool, { persistent: rememberMe });
-  const updated = await pool.query(
-    `update public.app_users set last_login_at = now(), updated_at = now() where id = $1 returning ${userSelect}`,
-    [row.id],
-  );
-  const profile = await getProfileByUserId(row.id);
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    const token = await createUserSession(request, row.id, client, { persistent: rememberMe });
+    const updated = await client.query(
+      `update public.app_users set last_login_at = now(), updated_at = now() where id = $1 returning ${userSelect}`,
+      [row.id],
+    );
+    const profile = await getProfileByUserId(row.id, client);
+    await client.query("commit");
 
-  return {
-    user: serializeUser(updated.rows[0], profile),
-    profile,
-    token,
-    rememberMe,
-  };
+    return {
+      user: serializeUser(updated.rows[0], profile),
+      profile,
+      token,
+      rememberMe,
+    };
+  } catch (error) {
+    await client.query("rollback").catch((rollbackError) => {
+      console.error("User login rollback failed", rollbackError);
+    });
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
 const generateOtp = () => String(randomInt(100000, 1000000));
@@ -5177,6 +5188,10 @@ const handleRequest = async (request, response) => {
     }
 
     if (request.method === "GET" && url.pathname === "/api/health") {
+      if (!(await checkDatabaseHealth(pool))) {
+        sendJson(response, 503, { ok: false, service: "mipo-api", error: "Database unavailable" });
+        return;
+      }
       sendJson(response, 200, { ok: true, service: "mipo-api" });
       return;
     }
@@ -5783,7 +5798,7 @@ const handleRequest = async (request, response) => {
 
     sendError(response, 404, "Not found");
   } catch (error) {
-    console.error(error);
+    if (!error.statusCode || error.statusCode >= 500) console.error(error);
     sendError(response, error.statusCode || 500, error.statusCode ? error.message : "Internal server error");
   }
 };

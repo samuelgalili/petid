@@ -28,4 +28,10 @@ On push to `aws-migration`, the workflow:
 
 Runtime secrets are still sourced from `/opt/mipo/.env`, which is populated from AWS SSM by `deploy/aws/sync-ssm-env.sh`.
 
+`/mipo/prod/DATABASE_URL` must use the dedicated `mipo_app` PostgreSQL role. Do not copy the RDS master credential into this parameter: RDS manages and rotates the master secret independently in Secrets Manager. The application role owns the MIPO database objects so the same connection can run the checksum-ledger migrations without depending on the rotating master credential.
+
+`/api/health` verifies PostgreSQL connectivity. A database authentication or availability failure returns `503`, fails the Docker healthcheck, and stops the deployment smoke test instead of reporting a false healthy state.
+
+If PostgreSQL reports `28P01` for the application role, compare the SSM connection user with the container environment without printing either secret, restore the dedicated role credential, run `deploy/aws/sync-ssm-env.sh`, and require both a direct database query and `/api/health` to pass. A reset of the RDS-managed master secret should not require an application change.
+
 An existing RDS database without a `schema_migrations` ledger must be explicitly baselined before its first ledger-aware deployment. Verify the schema against the release migrations, then run the migration container once with `MIGRATION_BASELINE_THROUGH` set to the last already-present migration and `MIGRATION_BASELINE_CONFIRM=existing-schema-reviewed`. Do not leave either variable in the production environment.
