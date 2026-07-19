@@ -144,7 +144,7 @@ const OrderHistory = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20" dir="rtl">
+    <div className="mipo-shell min-h-screen bg-white pb-20" dir="rtl">
       <AppHeader title="היסטוריית הזמנות" showBackButton={true} />
 
       {/* Loading State */}

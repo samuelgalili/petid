@@ -118,7 +118,7 @@ const Cart = () => {
 
   if (items.length === 0) {
     return (
-      <div className="h-screen bg-background overflow-hidden" dir="rtl">
+      <div className="mipo-shell h-screen overflow-hidden bg-white" dir="rtl">
         <div className="h-full overflow-y-auto pb-[70px]">
         <AppHeader title="עגלת הקניות" showBackButton={true} />
 
@@ -155,7 +155,7 @@ const Cart = () => {
   }
 
   return (
-    <div className="h-screen bg-background overflow-hidden" dir="rtl">
+    <div className="mipo-shell h-screen overflow-hidden bg-white" dir="rtl">
       <SEO title="עגלת קניות" description="סיימו את הרכישה שלכם - מוצרים איכותיים לחיות מחמד" url="/cart" noIndex={true} />
       <div className="h-full overflow-y-auto pb-[70px]">
       <AppHeader title="עגלת הקניות" showBackButton={true} />

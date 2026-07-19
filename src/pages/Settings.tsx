@@ -89,7 +89,7 @@ const SettingsSection = ({
         )}
       </button>
       {open && (
-        <Card className="border-0 rounded-2xl overflow-hidden shadow-md bg-card">
+        <Card className="mipo-card overflow-hidden border-0">
           {children}
         </Card>
       )}
@@ -343,12 +343,12 @@ const Settings = () => {
   };
 
   return (
-    <div className="h-screen bg-background overflow-hidden" dir={direction}>
+    <div className="mipo-shell h-screen overflow-hidden bg-white" dir={direction}>
       <SEO title="הגדרות ופרטיות" description="נהל התראות, אבטחה, שפה ופרטיות" url="/settings" />
       <div className="h-full overflow-y-auto pb-[70px]">
         {/* Header */}
         <motion.div
-          className="sticky top-0 z-40 bg-background/98 backdrop-blur-xl border-b border-border/40"
+          className="sticky top-0 z-40 border-b border-black/[0.05] bg-white/90 backdrop-blur-xl"
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
         >
@@ -368,14 +368,14 @@ const Settings = () => {
         {/* Profile Card */}
         <div className="max-w-lg mx-auto px-4 pt-4">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <Card className="border border-border/50 rounded-2xl p-4 bg-card mb-5">
+            <Card className="mipo-card mb-5 p-4">
               <div className="flex items-center gap-4">
-                <Avatar className="w-14 h-14 border-2 border-primary/20">
+                <div className="mipo-gradient-ring h-14 w-14 shrink-0"><Avatar className="h-full w-full border-2 border-white">
                   <AvatarImage src={profileAvatar || undefined} />
                   <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">
                     {(profileName || user?.email || "מ")[0].toUpperCase()}
                   </AvatarFallback>
-                </Avatar>
+                </Avatar></div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-base text-foreground truncate">
                     {profileName || "משתמש"}

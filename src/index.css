@@ -66,16 +66,16 @@
      * MIPO BRAND COLORS
      * =========================== */
 
-    --mipo-ink: 222 18% 14%;
-    --mipo-muted: 220 7% 48%;
-    --mipo-soft: 220 22% 97%;
-    --mipo-line: 220 16% 91%;
-    --mipo-coral: 10 94% 71%;
-    --mipo-peach: 33 100% 68%;
-    --mipo-pink: 319 80% 66%;
-    --mipo-violet: 264 82% 68%;
-    --mipo-blue: 221 86% 66%;
-    --mipo-cyan: 188 77% 57%;
+    --mipo-ink: 240 11% 9%;
+    --mipo-muted: 240 5% 44%;
+    --mipo-soft: 60 11% 96%;
+    --mipo-line: 240 8% 89%;
+    --mipo-coral: 350 90% 71%;
+    --mipo-peach: 30 96% 72%;
+    --mipo-pink: 350 90% 71%;
+    --mipo-violet: 258 90% 76%;
+    --mipo-blue: 213 94% 68%;
+    --mipo-cyan: 188 86% 53%;
     
     /* Primary - MIPO cyan */
     --petid-blue: 188 77% 50%;
@@ -243,7 +243,7 @@
     --tag-border: 210 10% 88%;
 
     /* MIPO gradients */
-    --gradient-primary: linear-gradient(120deg, hsl(var(--mipo-peach)) 0%, hsl(var(--mipo-coral)) 22%, hsl(var(--mipo-pink)) 45%, hsl(var(--mipo-violet)) 62%, hsl(var(--mipo-blue)) 78%, hsl(var(--mipo-cyan)) 100%);
+    --gradient-primary: linear-gradient(120deg, #FDBA74 0%, #FB7185 28%, #A78BFA 55%, #60A5FA 78%, #22D3EE 100%);
     --gradient-petid: var(--gradient-primary);
     --gradient-warm: linear-gradient(120deg, hsl(var(--mipo-peach)) 0%, hsl(var(--mipo-coral)) 45%, hsl(var(--mipo-pink)) 100%);
     --gradient-story: var(--gradient-primary);
@@ -634,8 +634,45 @@
 
   .mipo-screen {
     background:
-      linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(220 25% 99%) 45%, hsl(220 22% 97%) 100%);
+      radial-gradient(circle at 12% 0%, rgba(253, 186, 116, 0.12), transparent 28%),
+      radial-gradient(circle at 92% 12%, rgba(34, 211, 238, 0.1), transparent 30%),
+      linear-gradient(180deg, #fff 0%, #F7F7F5 100%);
     color: hsl(var(--mipo-ink));
+  }
+
+  .mipo-shell {
+    width: 100%;
+    max-width: 32rem;
+    min-height: 100dvh;
+    margin-inline: auto;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 0 0 1px rgba(21, 21, 26, 0.04), 0 24px 80px rgba(21, 21, 26, 0.08);
+  }
+
+  .mipo-card {
+    border: 1px solid rgba(21, 21, 26, 0.08);
+    border-radius: 1.5rem;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 12px 32px rgba(21, 21, 26, 0.07);
+  }
+
+  .mipo-gradient-ring {
+    position: relative;
+    background: var(--gradient-primary);
+    padding: 3px;
+    border-radius: 999px;
+  }
+
+  .mipo-icon-button {
+    display: inline-flex;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(21, 21, 26, 0.08);
+    border-radius: 999px;
+    color: #15151A;
+    background: rgba(255, 255, 255, 0.9);
   }
 
   .mipo-soft-card {

@@ -226,8 +226,7 @@ const ChatInputBar = ({
         )}
       </AnimatePresence>
 
-      {/* Gemini-style Input Bar */}
-      <div className="px-3 py-3 bg-background border-t border-border/40">
+      <div className="border-t border-black/[0.06] bg-white/95 px-3 py-3 backdrop-blur-xl">
         <div className="mx-auto flex max-w-2xl items-end gap-2 overflow-hidden">
           {/* Emoji / Plus toggle */}
           <motion.button
@@ -243,8 +242,8 @@ const ChatInputBar = ({
 
           {/* Input field */}
           <div className={cn(
-            "flex min-w-0 flex-1 items-end rounded-3xl border bg-card px-2 py-1 transition-all duration-200 sm:px-3",
-            isFocused ? "border-primary/25 shadow-sm" : "border-border/60"
+            "flex min-w-0 flex-1 items-end rounded-3xl border bg-[#F7F7F5] px-2 py-1 transition-all duration-200 sm:px-3",
+            isFocused ? "border-mipo-cyan/50 shadow-[0_0_0_3px_rgba(34,211,238,0.10)]" : "border-black/[0.06]"
           )}>
             <textarea
               ref={inputRef}
@@ -295,7 +294,7 @@ const ChatInputBar = ({
                 whileTap={{ scale: 0.9 }}
                 onClick={onSend}
                 disabled={isLoading}
-                className="w-11 h-11 flex-shrink-0 flex items-center justify-center bg-primary rounded-full text-primary-foreground disabled:opacity-50 shadow-sm"
+                className="mipo-gradient-button h-11 min-h-11 w-11 flex-shrink-0 p-0 disabled:opacity-50"
                 aria-label="שלח הודעה"
               >
                 <Send className="w-4 h-4" />

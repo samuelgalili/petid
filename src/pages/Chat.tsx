@@ -2,9 +2,9 @@ import { useRef, useEffect, useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ChevronRight, Sparkles, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import petidIcon from "@/assets/petid-icon.png";
 import { useNavigate } from "react-router-dom";
 import { SEO } from "@/components/SEO";
+import { PetidLogo } from "@/components/PetidLogo";
 import HorizontalDatePicker from "@/components/chat/HorizontalDatePicker";
 import ChatInputBar from "@/components/chat/ChatInputBar";
 import { ChatActionButton, extractActionTags, cleanActionTags } from "@/components/chat/ChatActionButton";
@@ -24,6 +24,7 @@ import { ChatProvider, useChatContext, type Message } from "@/contexts/ChatConte
 import { useDataIntake, type IntakeType } from "@/hooks/useDataIntake";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser, updateMyProfile } from "@/lib/mipoApi";
+import { cn } from "@/lib/utils";
 
 const ChatContent = () => {
   const {
@@ -271,25 +272,22 @@ const ChatContent = () => {
     message.showStorePicker || message.showAdoptionTraits || message.showAdoptionRequirements;
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-background pb-[calc(5rem+env(safe-area-inset-bottom,0px))]" dir="rtl" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+    <div className="mipo-shell min-h-screen w-full overflow-x-hidden bg-white pb-[calc(5rem+env(safe-area-inset-bottom,0px))]" dir="rtl" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
       <SEO title="צ'אט AI" description="שאלו את העוזר החכם שלנו כל שאלה על חיות מחמד - אילוף, תזונה, בריאות" url="/chat" />
       
-      {/* ═══ Gemini-style minimal header ═══ */}
-      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/40">
+      <div className="sticky top-0 z-50 border-b border-black/[0.05] bg-white/90 backdrop-blur-xl">
         <div className="flex items-center justify-between px-4 py-3">
           <button
             onClick={handleBack}
-            className="flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-muted/60"
+            className="mipo-icon-button"
             aria-label="חזרה"
           >
             <ChevronRight className="w-5 h-5 text-foreground" />
           </button>
           
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Sparkles className="w-3.5 h-3.5 text-primary-foreground" />
-            </div>
-            <span className="text-[15px] font-semibold text-foreground">MIPO AI</span>
+            <PetidLogo variant="horizontal" size="sm" showAnimals={false} />
+            <span className="rounded-full bg-[#F7F7F5] px-2 py-1 text-[10px] font-semibold text-mipo-muted">AI</span>
           </div>
           
           <div className="w-11" />
@@ -315,20 +313,22 @@ const ChatContent = () => {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2, ease: "easeOut" }}
-                className={`max-w-full overflow-hidden px-3 py-5 sm:px-4 ${!isUser ? "bg-muted/30" : ""}`}
+                className="max-w-full overflow-hidden px-4 py-3"
               >
                 <div className="flex gap-3 items-start">
                   {/* Icon */}
                   <div className="flex-shrink-0 mt-0.5">
                     {isUser ? (
-                      <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F7F7F5]">
                         <span className="text-xs font-bold text-primary">
                           {selectedPet?.name?.charAt(0) || "א"}
                         </span>
                       </div>
                     ) : (
-                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                        <Sparkles className="w-3.5 h-3.5 text-primary-foreground" />
+                      <div className="mipo-gradient-ring p-[2px]">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white">
+                          <Sparkles className="h-3.5 w-3.5 text-mipo-violet" />
+                        </div>
                       </div>
                     )}
                   </div>
@@ -336,12 +336,15 @@ const ChatContent = () => {
                   {/* Content */}
                   <div className={`flex-1 min-w-0 ${hasExpandedContent(message) ? 'max-w-full' : ''}`}>
                     {/* Role label */}
-                    <p className="text-[12px] font-semibold text-muted-foreground mb-1">
-                      {isUser ? "את/ה" : "MIPO AI"}
+                    <p className="mb-1 text-[12px] font-semibold text-mipo-muted">
+                      {isUser ? "את/ה" : "Mipo AI"}
                     </p>
                     
                     {/* Message text — no bubble, clean prose */}
-                    <div className="text-[15px] leading-[1.7] text-foreground whitespace-pre-wrap break-words">
+                    <div className={cn(
+                      "whitespace-pre-wrap break-words rounded-[1.35rem] px-4 py-3 text-[15px] leading-[1.7] text-mipo-ink",
+                      isUser ? "bg-[#F7F7F5]" : "border border-black/[0.06] bg-white shadow-[0_8px_24px_rgba(21,21,26,0.06)]",
+                    )}>
                       {cleanAllTags(message.content)}
                     </div>
                     
@@ -526,14 +529,16 @@ const ChatContent = () => {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="py-5 px-4 bg-muted/30"
+                className="px-4 py-5"
               >
                 <div className="max-w-2xl mx-auto flex gap-3 items-start">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0">
-                    <Sparkles className="w-3.5 h-3.5 text-primary-foreground" />
+                  <div className="mipo-gradient-ring flex-shrink-0 p-[2px]">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white">
+                      <Sparkles className="h-3.5 w-3.5 text-mipo-violet" />
+                    </div>
                   </div>
                   <div className="pt-1">
-                    <p className="text-[12px] font-semibold text-muted-foreground mb-2">MIPO AI</p>
+                    <p className="mb-2 text-[12px] font-semibold text-mipo-muted">Mipo AI</p>
                     <div className="flex items-center gap-1.5">
                       {[0, 1, 2].map((i) => (
                         <motion.div
@@ -629,27 +634,28 @@ const Chat = () => {
   };
 
   if (consentState === "loading") {
-    return <main className="min-h-screen bg-background" aria-busy="true" />;
+    return <main className="mipo-screen min-h-screen" aria-busy="true" />;
   }
 
   if (consentState === "required") {
     return (
-      <main className="min-h-screen bg-background flex items-center justify-center p-5" dir="rtl">
-        <section className="w-full max-w-md rounded-lg border bg-card p-6 shadow-sm">
-          <Sparkles className="w-8 h-8 text-primary mb-4" />
-          <h1 className="text-xl font-bold">הסכמה לעיבוד באמצעות AI</h1>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+      <main className="mipo-screen flex min-h-screen items-center justify-center p-5" dir="rtl">
+        <section className="mipo-card w-full max-w-md p-7">
+          <PetidLogo variant="horizontal" size="sm" showAnimals={false} />
+          <span className="mipo-gradient-ring mt-7 inline-flex p-[2px]"><span className="flex h-12 w-12 items-center justify-center rounded-full bg-white"><Sparkles className="h-5 w-5 text-mipo-violet" /></span></span>
+          <h1 className="mt-4 text-2xl font-semibold tracking-[-0.025em] text-mipo-ink">הסכמה לעיבוד באמצעות AI</h1>
+          <p className="mt-3 text-sm leading-relaxed text-mipo-muted">
             בעת שימוש בצ'אט, MIPO שולחת ל-Google Gemini את תוכן השיחה ואת פרטי חיית המחמד והפרופיל
             שנדרשים לתשובה. קבצים ותמונות נשלחים רק לאחר בחירה מפורשת שלך לצרף אותם.
           </p>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-2 text-sm leading-relaxed text-mipo-muted">
             אפשר לבטל את ההסכמה בכל עת בהגדרות. ללא הסכמה הצ'אט נשאר חסום.
           </p>
           <div className="mt-6 space-y-3">
-            <Button className="w-full" onClick={grantConsent} disabled={savingConsent}>
+            <Button className="mipo-gradient-button w-full" onClick={grantConsent} disabled={savingConsent}>
               {savingConsent ? "שומר..." : "אני מסכימ/ה וממשיך/ה לצ'אט"}
             </Button>
-            <Button className="w-full" variant="outline" onClick={() => navigate("/")}>לא עכשיו</Button>
+            <Button className="mipo-pill-button w-full" variant="outline" onClick={() => navigate("/")}>לא עכשיו</Button>
           </div>
         </section>
       </main>

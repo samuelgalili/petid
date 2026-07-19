@@ -146,14 +146,14 @@ const EditProfile = () => {
 
   if (fetchingProfile) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="mipo-screen flex min-h-screen items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20" dir="rtl">
+    <div className="mipo-shell min-h-screen bg-white pb-20" dir="rtl">
       <div className="bg-background border-b border-border sticky top-0 z-10 px-4 py-4">
         <div className="flex items-center justify-between max-w-2xl mx-auto">
           <Button

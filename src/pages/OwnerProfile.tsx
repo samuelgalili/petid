@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from "react";
 import { SEO } from "@/components/SEO";
+import { PetidLogo } from "@/components/PetidLogo";
 import { PageTransition } from "@/components/PageTransition";
 import BottomNav from "@/components/BottomNav";
 import { motion } from "framer-motion";
@@ -86,16 +87,16 @@ const Section = ({ title, icon: Icon, children, defaultOpen = true, badge }: {
 }) => {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="mx-4 mb-3 bg-card rounded-2xl border border-border/30 overflow-hidden">
+    <div className="mipo-card mx-4 mb-3 overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
         className="w-full p-4 flex items-center justify-between"
       >
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-            <Icon className="w-4 h-4 text-primary" strokeWidth={1.5} />
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#F7F7F5]">
+            <Icon className="h-4 w-4 text-mipo-violet" strokeWidth={1.5} />
           </div>
-          <span className="text-sm font-semibold text-foreground">{title}</span>
+          <span className="text-sm font-semibold text-mipo-ink">{title}</span>
           {badge}
         </div>
         {open
@@ -238,7 +239,7 @@ const OwnerProfile = () => {
   if (loading) {
     return (
       <PageTransition>
-        <div className="min-h-screen bg-background pb-20 pt-14" dir="rtl">
+        <div className="mipo-screen min-h-screen pb-20 pt-14" dir="rtl">
           <div className="px-4 space-y-3">
             <Skeleton className="h-36 rounded-2xl" />
             <Skeleton className="h-24 rounded-2xl" />
@@ -254,29 +255,32 @@ const OwnerProfile = () => {
   return (
     <PageTransition>
       <SEO title="הפרופיל שלי" description="ניהול חשבון, חיות מחמד, ביטוח ומסמכים" url="/owner-profile" />
-      <div className="min-h-screen bg-background pb-20" dir="rtl">
+      <div className="mipo-screen min-h-screen pb-20" dir="rtl">
+        <div className="mipo-shell min-h-screen pb-20">
         {/* ── Header ── */}
-        <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm border-b border-border/20">
+        <div className="sticky top-0 z-20 border-b border-black/[0.05] bg-white/90 backdrop-blur-xl">
           <div className="flex items-center justify-between px-4 h-14">
             <button onClick={() => navigate(-1)} className="p-2 -mr-2" aria-label="חזרה">
               <ChevronRight className="w-5 h-5 text-foreground" />
             </button>
-            <h1 className="text-base font-bold text-foreground">מרכז הבעלים</h1>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/edit-profile")} className="text-xs">
+            <PetidLogo variant="horizontal" size="sm" showAnimals={false} />
+            <Button variant="ghost" size="sm" onClick={() => navigate("/edit-profile")} className="text-xs font-semibold text-mipo-ink">
               עריכה
             </Button>
           </div>
         </div>
 
         {/* ═══ 1. Personal Info Card ═══ */}
-        <div className="mx-4 mt-4 mb-3 p-5 bg-card rounded-2xl border border-border/30">
+        <div className="mipo-card mx-4 mb-3 mt-4 p-5">
           <div className="flex items-start gap-4">
-            <Avatar className="w-20 h-20 border-2 border-primary/20">
+            <div className="mipo-gradient-ring h-20 w-20 shrink-0">
+            <Avatar className="h-full w-full border-[3px] border-white">
               <AvatarImage src={profile?.avatar_url} className="object-cover" />
               <AvatarFallback className="bg-primary/10 text-primary font-bold text-xl">
                 {profile?.full_name?.[0]?.toUpperCase() || "U"}
               </AvatarFallback>
             </Avatar>
+            </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <h2 className="text-lg font-bold text-foreground truncate">{profile?.full_name || "משתמש"}</h2>
@@ -345,7 +349,7 @@ const OwnerProfile = () => {
               {pets.map((pet) => (
                 <motion.button
                   key={pet.id}
-                  onClick={() => navigate("/")}
+                  onClick={() => navigate(`/pet-profile/${pet.id}`)}
                   className="flex-shrink-0 w-[150px] p-3 rounded-xl bg-muted/30 border border-border/20 text-center hover:bg-muted/50 transition-colors relative"
                   whileTap={{ scale: 0.97 }}
                 >
@@ -626,6 +630,7 @@ const OwnerProfile = () => {
             </Button>
           </div>
         </Section>
+        </div>
       </div>
       <BottomNav />
     </PageTransition>

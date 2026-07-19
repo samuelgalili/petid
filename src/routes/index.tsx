@@ -71,12 +71,12 @@ export const authRoutes: RouteObject[] = [
 export const feedRoutes: RouteObject[] = [
   { path: "/", element: <Protected><LazyPage component={MainShell} pageName="בית" /></Protected> },
   { path: "/feed", element: <Protected><LazyPage component={MainShell} pageName="בית" /></Protected> },
-  { path: "/old-feed", element: <Navigate to="/" replace /> },
-  { path: "/explore", element: <Navigate to="/" replace /> },
-  { path: "/reels", element: <Navigate to="/" replace /> },
-  { path: "/user/:userId", element: <Navigate to="/" replace /> },
-  { path: "/profile/:userId", element: <Navigate to="/" replace /> },
-  { path: "/post/:postId", element: <Navigate to="/" replace /> },
+  { path: "/old-feed", element: <Navigate to="/feed" replace /> },
+  { path: "/explore", element: <Navigate to="/feed" replace /> },
+  { path: "/reels", element: <Navigate to="/feed" replace /> },
+  { path: "/user/:userId", element: <Navigate to="/feed" replace /> },
+  { path: "/profile/:userId", element: <Navigate to="/feed" replace /> },
+  { path: "/post/:postId", element: <Navigate to="/feed" replace /> },
   { path: "/story/:userId", element: <Navigate to="/" replace /> },
   { path: "/highlight/:highlightId", element: <Navigate to="/" replace /> },
   { path: "/live", element: <Navigate to="/" replace /> },
@@ -116,13 +116,14 @@ const EditPet = lazy(() => import("@/pages/EditPet"));
 const ArchivedPets = lazy(() => import("@/pages/ArchivedPets"));
 const Documents = lazy(() => import("@/pages/Documents"));
 const Breeds = lazy(() => import("@/pages/Breeds"));
+const Profile = lazy(() => import("@/pages/Profile"));
 
 export const petRoutes: RouteObject[] = [
   { path: "/add-pet", element: <Protected><LazyPage component={AddPet} pageName="הוספת חיית מחמד" /></Protected> },
   { path: "/pet/:petId", element: <PetQrRedirect /> },
   { path: "/pet/:petId/*", element: <Navigate to="/" replace /> },
-  { path: "/pet-profile", element: <Navigate to="/" replace /> },
-  { path: "/pet-profile/:petId", element: <Navigate to="/" replace /> },
+  { path: "/pet-profile", element: <Protected><LazyPage component={Profile} pageName="פרופיל חיית המחמד" /></Protected> },
+  { path: "/pet-profile/:petId", element: <Protected><LazyPage component={Profile} pageName="פרופיל חיית המחמד" /></Protected> },
   { path: "/edit-pet/:petId", element: <Protected><LazyPage component={EditPet} pageName="עריכת חיית מחמד" /></Protected> },
   { path: "/archived-pets", element: <Protected><LazyPage component={ArchivedPets} pageName="חיות מחמד בארכיון" /></Protected> },
   { path: "/breed-history/:petId", element: <Navigate to="/" replace /> },
@@ -145,7 +146,7 @@ const Chat = lazy(() => import("@/pages/Chat"));
 const OwnerProfile = lazy(() => import("@/pages/OwnerProfile"));
 
 export const userRoutes: RouteObject[] = [
-  { path: "/profile", element: <Navigate to="/" replace /> },
+  { path: "/profile", element: <Protected><LazyPage component={OwnerProfile} pageName="הפרופיל שלי" /></Protected> },
   { path: "/edit-profile", element: <Protected><LazyPage component={EditProfile} pageName="עריכת פרופיל" /></Protected> },
   { path: "/settings", element: <Protected><LazyPage component={Settings} pageName="הגדרות" /></Protected> },
   { path: "/notifications", element: <Protected><LazyPage component={Notifications} pageName="התראות" /></Protected> },

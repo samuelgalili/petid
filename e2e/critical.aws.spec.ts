@@ -331,4 +331,71 @@ test.describe("AWS application smoke tests", () => {
       items: [{ product_id: catalog[0].id, name: cartItem.name, quantity: 1 }],
     });
   });
+
+  test("renders the AWS social feed and persists a reaction", async ({ page }) => {
+    const userId = "88888888-8888-4888-8888-888888888888";
+    const petId = "99999999-9999-4999-8999-999999999999";
+    const postId = "77777777-7777-4777-8777-777777777777";
+
+    await page.route("**/api/auth/me", async (route) => {
+      await route.fulfill({
+        json: {
+          user: { id: userId, email: "community@mipo.pet", full_name: "קהילת Mipo" },
+          profile: {
+            id: userId,
+            email: "community@mipo.pet",
+            full_name: "קהילת Mipo",
+            first_name: "קהילת",
+            last_name: "Mipo",
+            phone: "0501234567",
+            city: "תל אביב",
+          },
+        },
+      });
+    });
+    await page.route("**/api/me/pets**", async (route) => {
+      await route.fulfill({
+        json: {
+          pets: [{ id: petId, name: "לוקה", type: "dog", pet_type: "dog", avatar_url: "/placeholder.svg", archived: false }],
+        },
+      });
+    });
+    await page.route("**/api/feed?*", async (route) => {
+      await route.fulfill({
+        json: {
+          posts: [{
+            id: postId,
+            caption: "הטיול הראשון של לוקה בפארק",
+            location: "פארק הירקון",
+            media_url: "/placeholder.svg",
+            media_type: "image",
+            visibility: "public",
+            allow_comments: true,
+            poll_question: null,
+            poll_options: [],
+            poll_results: [],
+            viewer_poll_option: null,
+            reaction_count: 4,
+            comment_count: 0,
+            viewer_has_liked: false,
+            viewer_has_saved: false,
+            is_owner: true,
+            published_at: "2026-07-19T08:00:00.000Z",
+            creator: { id: userId, display_name: "קהילת Mipo", avatar_url: null },
+            pet: { id: petId, name: "לוקה", avatar_url: "/placeholder.svg", type: "dog", breed: null },
+          }],
+        },
+      });
+    });
+    await page.route(`**/api/feed/posts/${postId}/reaction`, async (route) => {
+      await route.fulfill({ json: { liked: true, count: 5 } });
+    });
+
+    await page.goto("/feed");
+    await expect(page.getByText("הטיול הראשון של לוקה בפארק")).toBeVisible();
+    await expect(page.getByText("פארק הירקון")).toBeVisible();
+    await page.getByRole("button", { name: "אהבתי" }).click();
+    await expect(page.getByText("5 אהבו")).toBeVisible();
+    await expect(page.getByRole("button", { name: "אהבתי" })).toHaveAttribute("aria-pressed", "true");
+  });
 });

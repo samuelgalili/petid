@@ -90,14 +90,14 @@ const EditPet = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="mipo-screen flex min-h-screen items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20" dir="rtl">
+    <div className="mipo-shell min-h-screen bg-white pb-20" dir="rtl">
       <AppHeader title="עריכת פרופיל" showBackButton />
       
       <motion.form 

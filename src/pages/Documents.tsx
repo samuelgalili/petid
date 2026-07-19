@@ -357,7 +357,7 @@ export default function Documents() {
         }}
       />
       
-      <div className="min-h-screen bg-background pb-20" dir="rtl">
+      <div className="mipo-shell min-h-screen bg-white pb-20" dir="rtl">
         <div className="container mx-auto px-4 pt-4 pb-6 max-w-lg">
           {/* Stats Cards */}
           <motion.div 
@@ -398,7 +398,7 @@ export default function Documents() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="חיפוש מסמך..."
-                className="h-11 pr-10 pl-10 rounded-xl bg-card border-0 shadow-sm text-sm placeholder:text-muted-foreground"
+                className="mipo-input h-11 border-0 pr-10 pl-10 text-sm shadow-sm placeholder:text-muted-foreground"
               />
               {searchQuery && (
                 <button

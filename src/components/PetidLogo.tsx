@@ -39,36 +39,36 @@ const MipoMark = ({ className }: { className?: string }) => {
 
   return (
     <svg
-      viewBox="0 0 220 150"
+      viewBox="0 0 100 60"
       role="img"
       aria-label="MIPO"
       className={cn("overflow-visible", className)}
     >
       <defs>
-        <linearGradient id={gradientId} x1="18" y1="24" x2="205" y2="124" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#ffbd5f" />
-          <stop offset="0.22" stopColor="#ff7e81" />
-          <stop offset="0.48" stopColor="#d15be6" />
-          <stop offset="0.72" stopColor="#6788f7" />
-          <stop offset="1" stopColor="#3bd7dc" />
+        <linearGradient id={gradientId} x1="10" y1="14" x2="75" y2="54" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#FDBA74" />
+          <stop offset="0.28" stopColor="#FB7185" />
+          <stop offset="0.55" stopColor="#A78BFA" />
+          <stop offset="0.78" stopColor="#60A5FA" />
+          <stop offset="1" stopColor="#22D3EE" />
         </linearGradient>
       </defs>
       <path
-        d="M24 91C29 46 53 33 73 66C92 98 122 98 141 66C162 31 190 43 196 91"
+        d="M10 48C10 28 10 14 22 14C33 14 33 30 33 38C33 30 33 14 44 14C56 14 56 28 56 48"
         fill="none"
         stroke={`url(#${gradientId})`}
-        strokeWidth="18"
+        strokeWidth="8"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
       <path
-        d="M29 113C71 143 151 143 191 111"
+        d="M16 54Q33 60 50 54"
         fill="none"
         stroke={`url(#${gradientId})`}
-        strokeWidth="9"
+        strokeWidth="3.5"
         strokeLinecap="round"
       />
-      <circle cx="207" cy="91" r="12" fill={`url(#${gradientId})`} />
+      <circle cx="70" cy="48" r="5" fill={`url(#${gradientId})`} />
     </svg>
   );
 };
@@ -106,7 +106,7 @@ export const PetidLogo = ({
         <MipoMark className={sizing.horizontalMark} />
         <div className="flex flex-col items-start leading-none">
           <span className={cn("font-semibold text-mipo-ink", size === "sm" ? "text-lg" : "text-2xl")}>
-            MIPO
+            Mipo
           </span>
           {shouldShowTagline && (
             <span className={cn("mt-1 inline-flex items-center gap-1 text-mipo-muted", sizing.tagline)}>
@@ -128,7 +128,7 @@ export const PetidLogo = ({
     >
       <MipoMark className={sizing.mark} />
       <span className={cn("mt-2 font-semibold text-mipo-ink", sizing.word)}>
-        MIPO
+        Mipo
       </span>
       {shouldShowTagline && (
         <span className={cn("mt-2 inline-flex items-center gap-2 font-normal text-mipo-muted", sizing.tagline)}>

@@ -2,6 +2,8 @@
 
 MIPO is a Vite + React frontend backed by the MIPO AWS API on Lightsail/RDS.
 
+The active customer experience uses the Mipo deck design system across onboarding, Mood Mirror home, community feed, AI chat, pet profiles, account management, documents, and commerce.
+
 ## Runtime Split
 
 - Frontend hosting: Caddy on the AWS Lightsail instance
@@ -27,6 +29,8 @@ Node.js 20.19 or newer is required.
 For a pre-existing database that predates `schema_migrations`, the runner refuses to replay historical migrations. After auditing the existing schema, baseline it exactly once with `MIGRATION_BASELINE_THROUGH=<last-existing-file>` and `MIGRATION_BASELINE_CONFIRM=existing-schema-reviewed`; later runs must omit both variables.
 
 Uploaded pet media is stored under `UPLOAD_DIR`. Identity and medical documents are stored under `PRIVATE_UPLOAD_DIR` and are served only by authenticated API routes. Do not expose the private directory through Caddy or another static file server.
+
+Community photos and videos are stored under `UPLOAD_DIR` with ownership recorded in `user_uploads`; posts, reactions, saves, comments, and polls are stored in PostgreSQL. `MAX_SOCIAL_UPLOAD_BYTES` controls the separate community upload limit and defaults to 25 MB.
 
 ## Verification
 

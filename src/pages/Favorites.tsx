@@ -78,7 +78,7 @@ const Favorites = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20" dir="rtl">
+    <div className="mipo-shell min-h-screen bg-white pb-20" dir="rtl">
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/40">
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="חזרה">

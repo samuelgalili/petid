@@ -374,7 +374,7 @@ const Checkout = () => {
   ];
 
   return (
-    <div className="min-h-screen pb-20 bg-background" dir="rtl">
+    <div className="mipo-shell min-h-screen bg-white pb-20" dir="rtl">
       <AppHeader title="תשלום" showBackButton={true} />
 
       {/* Calm Checkout Header Message */}

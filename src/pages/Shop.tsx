@@ -18,8 +18,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
-import petidIcon from "@/assets/petid-icon.png";
 import { SEO } from "@/components/SEO";
+import { PetidLogo } from "@/components/PetidLogo";
 import { SmartRecommendations } from "@/components/shop/SmartRecommendations";
 import { MedicalPharmacy } from "@/components/shop/MedicalPharmacy";
 
@@ -359,7 +359,7 @@ const Shop = () => {
   const decreaseQuantity = useCallback(() => setQuantity(prev => Math.max(1, prev - 1)), []);
 
   return (
-    <div className="h-screen bg-background overflow-hidden" dir="rtl">
+    <div className="mipo-shell h-screen overflow-hidden bg-white" dir="rtl">
       <SEO 
         title="חנות"
         description="מוצרים איכותיים לחיות מחמד במחירים משתלמים - מזון, צעצועים, ציוד ועוד"
@@ -368,7 +368,7 @@ const Shop = () => {
       <div className="h-full overflow-y-auto pb-[calc(80px+env(safe-area-inset-bottom))]">
       {/* Instagram-style Header */}
       <motion.div 
-        className="sticky top-0 z-50 bg-background/98 backdrop-blur-xl border-b border-border/40"
+        className="sticky top-0 z-50 border-b border-black/[0.05] bg-white/90 backdrop-blur-xl"
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
       >
@@ -385,7 +385,10 @@ const Shop = () => {
                 <ChevronRight className="w-5 h-5 text-foreground" />
               </motion.button>
               
-              <h1 className="text-lg font-semibold text-foreground">חנות</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-lg font-semibold text-mipo-ink">חנות</h1>
+                <PetidLogo variant="horizontal" size="sm" showAnimals={false} />
+              </div>
             </div>
             <div className="flex items-center gap-1">
               <motion.button
@@ -429,8 +432,8 @@ const Shop = () => {
           
           {/* Search Bar */}
           <div className="relative">
-            <div className={`flex min-h-12 items-center gap-3 bg-muted rounded-xl px-4 py-2 transition-all ${
-              isSearchFocused ? 'ring-2 ring-primary/20' : ''
+            <div className={`mipo-input flex min-h-12 items-center gap-3 px-4 py-2 transition-all ${
+              isSearchFocused ? 'ring-2 ring-mipo-cyan/20' : ''
             }`}>
               <Search className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
               <input

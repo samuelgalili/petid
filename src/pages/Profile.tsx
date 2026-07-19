@@ -4,7 +4,8 @@ import { SEO } from "@/components/SEO";
 import { PageTransition } from "@/components/PageTransition";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, Plus, Edit3, MessageCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import BottomNav from "@/components/BottomNav";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
 import { ProfileImageEditor } from "@/components/ProfileImageEditor";
@@ -36,6 +37,7 @@ interface Pet {
 
 const Profile = () => {
   const navigate = useNavigate();
+  const { petId } = useParams<{ petId: string }>();
   const { switchPet: contextSwitchPet, activePet: globalActivePet } = usePetPreference();
   const { isGuest } = useGuest();
 
@@ -75,6 +77,14 @@ const Profile = () => {
       setIsExpanded(true);
     }
   }, [globalActivePet?.id, pets.length]);
+
+  useEffect(() => {
+    if (petId && pets.some((pet) => pet.id === petId)) {
+      contextSwitchPet(petId);
+      setSelectedPetId(petId);
+      setIsExpanded(true);
+    }
+  }, [contextSwitchPet, petId, pets]);
 
   useEffect(() => {
     fetchAllData();
@@ -170,16 +180,17 @@ const Profile = () => {
 
       <SEO title="הפרופיל שלי" description="נהלו את חיית המחמד שלכם" url="/profile" type="profile" />
 
-      <div className="h-screen bg-background overflow-hidden flex flex-col" dir="rtl">
+      <div className="mipo-screen h-screen overflow-hidden" dir="rtl">
+      <div className="mipo-shell flex h-screen flex-col overflow-hidden">
         {/* ── Minimal Header ── */}
         <motion.div
-          className="flex items-center justify-between px-4 h-12 bg-background/95 backdrop-blur-sm z-20 border-b border-border/10"
+          className="z-20 flex h-14 items-center justify-between border-b border-black/[0.05] bg-white/90 px-4 backdrop-blur-xl"
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
         >
           <button
             onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/')}
-            className="-mr-2 flex h-11 w-11 items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
+            className="mipo-icon-button"
             aria-label="חזרה"
           >
             <ChevronRight className="w-5 h-5 text-foreground" strokeWidth={1.5} />
@@ -198,7 +209,7 @@ const Profile = () => {
 
           <button
             onClick={() => navigate('/messages')}
-            className="relative flex h-11 w-11 items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
+            className="mipo-icon-button relative"
             aria-label="הודעות"
           >
             <MessageCircle className="w-5 h-5 text-foreground" strokeWidth={1.5} />
@@ -229,8 +240,8 @@ const Profile = () => {
                     whileTap={{ scale: 0.97 }}
                     onClick={() => setIsImageEditorOpen(true)}
                   >
-                    <div className="w-20 h-20 rounded-full p-[2px] bg-gradient-to-br from-primary/60 to-primary/30">
-                      <div className="w-full h-full rounded-full bg-background p-[1.5px]">
+                    <div className="mipo-gradient-ring h-20 w-20">
+                      <div className="h-full w-full rounded-full bg-white p-[2px]">
                         <Avatar className="w-full h-full">
                           <AvatarImage src={profile?.avatar_url} className="object-cover" />
                           <AvatarFallback className="bg-muted text-foreground font-bold text-xl">
@@ -267,11 +278,7 @@ const Profile = () => {
                         whileHover={{ scale: 1.06, y: -3 }}
                         whileTap={{ scale: 0.95 }}
                       >
-                        <div className={`w-[72px] h-[72px] rounded-full p-[2.5px] ${
-                          pet.type === 'dog'
-                            ? 'bg-gradient-to-br from-primary via-primary/60 to-[hsl(210,80%,60%)]'
-                            : 'bg-gradient-to-br from-[hsl(270,60%,60%)] via-primary/60 to-primary'
-                        } group-hover:shadow-lg group-hover:shadow-primary/20 transition-shadow`}>
+                        <div className="mipo-gradient-ring h-[72px] w-[72px] transition-shadow group-hover:shadow-lg">
                           <div className="w-full h-full rounded-full overflow-hidden bg-card p-[1px]">
                             <div className="w-full h-full rounded-full overflow-hidden bg-muted">
                               {pet.avatar_url ? (
@@ -341,11 +348,11 @@ const Profile = () => {
                       whileTap={{ scale: 0.93 }}
                       onClick={triggerHeartRain}
                     >
-                      <div className="w-14 h-14 rounded-2xl overflow-hidden bg-muted shadow-sm">
+                      <div className="mipo-gradient-ring h-16 w-16">
                         {selectedPet.avatar_url ? (
-                          <img src={selectedPet.avatar_url} alt={selectedPet.name} className="w-full h-full object-cover" />
+                          <img src={selectedPet.avatar_url} alt={selectedPet.name} className="h-full w-full rounded-full border-[3px] border-white object-cover" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-muted">
+                          <div className="flex h-full w-full items-center justify-center rounded-full border-[3px] border-white bg-muted">
                             <img src={selectedPet.type === 'dog' ? dogIcon : catIcon} alt={selectedPet.type} className="w-7 h-7 opacity-50" />
                           </div>
                         )}
@@ -459,6 +466,8 @@ const Profile = () => {
         </AnimatePresence>
 
       </div>
+      </div>
+      <BottomNav />
     </PageTransition>
   );
 };

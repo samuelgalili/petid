@@ -173,7 +173,7 @@ const Notifications = () => {
   /* ── Loading skeleton ── */
   if (loading) {
     return (
-      <div className="min-h-screen bg-background" dir="rtl">
+      <div className="mipo-shell min-h-screen bg-white" dir="rtl">
         <div className="px-4 py-5">
           <Skeleton className="h-7 w-28 mb-4" />
           <div className="flex gap-2 mb-6">
@@ -194,13 +194,13 @@ const Notifications = () => {
   }
 
   return (
-    <div className="h-screen bg-background overflow-hidden" dir="rtl">
+    <div className="mipo-shell h-screen overflow-hidden bg-white" dir="rtl">
       <SEO title="התראות" description="מרכז ההתראות שלכם" url="/notifications" noIndex />
 
       <div className="h-full overflow-y-auto pb-[80px]">
         {/* ── Header ── */}
         <motion.div
-          className="sticky top-0 z-20 bg-background/80 backdrop-blur-2xl border-b border-border/20"
+          className="sticky top-0 z-20 border-b border-black/[0.05] bg-white/90 backdrop-blur-2xl"
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
         >
@@ -244,7 +244,7 @@ const Notifications = () => {
                   onClick={() => { haptic("selection"); setActiveFilter(tab.key); }}
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
                     isActive
-                      ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                      ? "bg-[var(--gradient-primary)] text-white shadow-lg"
                       : "bg-muted/40 backdrop-blur-md text-muted-foreground hover:bg-muted/60 border border-border/20"
                   }`}
                 >

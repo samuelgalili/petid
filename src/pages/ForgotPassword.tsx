@@ -142,7 +142,7 @@ const ForgotPassword = () => {
 
   return (
     <div 
-      className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-background via-background to-secondary/30" 
+      className="mipo-screen relative flex min-h-screen items-center justify-center overflow-hidden p-4"
       dir="rtl"
     >
       {/* Background Video */}

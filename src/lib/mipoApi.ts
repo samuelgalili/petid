@@ -67,6 +67,51 @@ export interface MipoAiChatResponseMessage {
   botSource?: string;
 }
 
+export interface MipoSocialCreator {
+  id: string;
+  display_name: string;
+  avatar_url: string | null;
+}
+
+export interface MipoSocialPost {
+  id: string;
+  caption: string | null;
+  location: string | null;
+  media_url: string;
+  media_type: "image" | "video";
+  visibility: "public" | "private";
+  allow_comments: boolean;
+  poll_question: string | null;
+  poll_options: string[];
+  poll_results: number[];
+  viewer_poll_option: number | null;
+  reaction_count: number;
+  comment_count: number;
+  viewer_has_liked: boolean;
+  viewer_has_saved: boolean;
+  is_owner: boolean;
+  published_at: string;
+  creator: MipoSocialCreator;
+  pet: {
+    id: string;
+    name: string;
+    avatar_url: string | null;
+    type: string | null;
+    breed: string | null;
+  } | null;
+}
+
+export interface MipoSocialComment {
+  id: string;
+  post_id: string;
+  user_id: string;
+  parent_id: string | null;
+  body: string;
+  created_at: string;
+  is_owner: boolean;
+  creator: MipoSocialCreator;
+}
+
 export interface MipoBreedInfo {
   id: string;
   breed_name: string;
@@ -764,6 +809,92 @@ export async function uploadMyImage(file: File) {
   });
 
   return result.upload;
+}
+
+export async function uploadSocialMedia(file: File) {
+  const dataUrl = await fileToDataUrl(file);
+  const result = await apiFetch<{
+    upload: { id: string; url: string; file_name: string; content_type: string; size: number };
+  }>("/me/social/uploads", {
+    method: "POST",
+    body: JSON.stringify({ file_name: file.name, data_url: dataUrl }),
+  });
+  return result.upload;
+}
+
+export async function getSocialFeed(input: { limit?: number; before?: string; saved?: boolean } = {}) {
+  const params = new URLSearchParams();
+  if (input.limit) params.set("limit", String(input.limit));
+  if (input.before) params.set("before", input.before);
+  if (input.saved) params.set("saved", "true");
+  const query = params.toString();
+  const result = await apiFetch<{ posts: MipoSocialPost[] }>(`/feed${query ? `?${query}` : ""}`);
+  return result.posts;
+}
+
+export async function getSocialPost(postId: string) {
+  const result = await apiFetch<{ post: MipoSocialPost }>(`/feed/posts/${postId}`);
+  return result.post;
+}
+
+export async function createSocialPost(input: {
+  upload_id: string;
+  pet_id?: string | null;
+  caption?: string;
+  location?: string;
+  visibility?: "public" | "private";
+  allow_comments?: boolean;
+  poll_question?: string;
+  poll_options?: string[];
+}) {
+  const result = await apiFetch<{ post: MipoSocialPost }>("/feed/posts", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  return result.post;
+}
+
+export async function deleteSocialPost(postId: string) {
+  return apiFetch<{ deleted: boolean }>(`/feed/posts/${postId}`, { method: "DELETE" });
+}
+
+export async function toggleSocialReaction(postId: string) {
+  return apiFetch<{ liked: boolean; count: number }>(`/feed/posts/${postId}/reaction`, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
+export async function toggleSocialSave(postId: string) {
+  return apiFetch<{ saved: boolean }>(`/feed/posts/${postId}/save`, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
+export async function getSocialComments(postId: string) {
+  const result = await apiFetch<{ comments: MipoSocialComment[] }>(`/feed/posts/${postId}/comments`);
+  return result.comments;
+}
+
+export async function createSocialComment(postId: string, body: string) {
+  const result = await apiFetch<{ comment: MipoSocialComment }>(`/feed/posts/${postId}/comments`, {
+    method: "POST",
+    body: JSON.stringify({ body }),
+  });
+  return result.comment;
+}
+
+export async function deleteSocialComment(commentId: string) {
+  return apiFetch<{ deleted: boolean }>(`/feed/comments/${commentId}`, { method: "DELETE" });
+}
+
+export async function voteSocialPoll(postId: string, optionIndex: number) {
+  const result = await apiFetch<{ post: MipoSocialPost }>(`/feed/posts/${postId}/poll`, {
+    method: "POST",
+    body: JSON.stringify({ option_index: optionIndex }),
+  });
+  return result.post;
 }
 
 export async function getMyNotifications(input: { unread?: boolean; limit?: number } = {}) {

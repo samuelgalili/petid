@@ -29,6 +29,18 @@ import {
 } from "./security.js";
 import { checkDatabaseHealth } from "./health.js";
 import { hashPassword, verifyPassword } from "./passwords.js";
+import {
+  archiveSocialPost,
+  createSocialComment,
+  createSocialPost,
+  deleteSocialComment,
+  getSocialPost,
+  listSocialComments,
+  listSocialFeed,
+  toggleSocialReaction,
+  toggleSocialSave,
+  voteSocialPoll,
+} from "./social.js";
 
 const port = Number(process.env.PORT || 3000);
 const databaseUrl = process.env.DATABASE_URL;
@@ -37,6 +49,7 @@ const defaultBusinessId = process.env.DEFAULT_BUSINESS_ID || "cf941cc4-e1d1-4d7c
 const uploadDir = process.env.UPLOAD_DIR || "/app/uploads";
 const privateUploadDir = process.env.PRIVATE_UPLOAD_DIR || "/app/private-uploads";
 const maxUploadBytes = Number(process.env.MAX_UPLOAD_BYTES || 5 * 1024 * 1024);
+const maxSocialUploadBytes = Number(process.env.MAX_SOCIAL_UPLOAD_BYTES || 25 * 1024 * 1024);
 const maxDocumentUploadBytes = Number(process.env.MAX_DOCUMENT_UPLOAD_BYTES || 10 * 1024 * 1024);
 const adminCookieName = "mipo_admin_session";
 const userCookieName = "mipo_user_session";
@@ -262,6 +275,8 @@ const rateLimits = {
   reportCreate: { limit: 10, windowMs: 60 * 60 * 1000 },
   aiChat: { limit: 30, windowMs: 60 * 60 * 1000 },
   mediaUpload: { limit: 30, windowMs: 60 * 60 * 1000 },
+  socialUpload: { limit: 12, windowMs: 60 * 60 * 1000 },
+  socialWrite: { limit: 60, windowMs: 60 * 60 * 1000 },
   documentUpload: { limit: 20, windowMs: 60 * 60 * 1000 },
   couponValidate: { limit: 30, windowMs: 10 * 60 * 1000 },
   publicPetScan: { limit: 60, windowMs: 60 * 60 * 1000 },
@@ -5016,24 +5031,25 @@ const userMediaContentTypes = new Set([
   "video/webm",
 ]);
 
-const uploadUserMedia = async (userId, body) => {
+const uploadUserMedia = async (userId, body, maxBytes = maxUploadBytes) => {
   const upload = await uploadDataUrlFile(body, {
-    maxBytes: maxUploadBytes,
+    maxBytes,
     allowedContentTypes: userMediaContentTypes,
   });
   try {
-    await pool.query(
+    const result = await pool.query(
       `
         insert into public.user_uploads (user_id, storage_key, content_type, file_size)
         values ($1, $2, $3, $4)
+        returning id
       `,
       [userId, upload.storage_key, upload.content_type, upload.size],
     );
+    return { ...upload, id: result.rows[0].id };
   } catch (error) {
     await unlink(path.join(uploadDir, upload.storage_key)).catch(() => {});
     throw error;
   }
-  return upload;
 };
 
 const documentContentTypes = new Set([
@@ -5586,6 +5602,120 @@ const handleRequest = async (request, response) => {
       if (!auth) return;
       if (!enforceRateLimit(request, response, "media-upload", rateLimits.mediaUpload, auth.user.id)) return;
       sendJson(response, 201, { upload: await uploadUserMedia(auth.user.id, await readBody(request, Math.ceil(maxUploadBytes * 1.5) + 1024 * 1024)) });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/me/social/uploads") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      if (!enforceRateLimit(request, response, "social-upload", rateLimits.socialUpload, auth.user.id)) return;
+      const bodyLimit = Math.ceil(maxSocialUploadBytes * 1.5) + 1024 * 1024;
+      sendJson(response, 201, {
+        upload: await uploadUserMedia(auth.user.id, await readBody(request, bodyLimit), maxSocialUploadBytes),
+      });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/feed") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      sendJson(response, 200, {
+        posts: await listSocialFeed(pool, auth.user.id, {
+          limit: url.searchParams.get("limit"),
+          before: url.searchParams.get("before"),
+          saved: url.searchParams.get("saved") === "true",
+        }),
+      });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/feed/posts") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      if (!enforceRateLimit(request, response, "social-write", rateLimits.socialWrite, auth.user.id)) return;
+      sendJson(response, 201, { post: await createSocialPost(pool, auth.user.id, await readBody(request)) });
+      return;
+    }
+
+    const socialReactionMatch = url.pathname.match(/^\/api\/feed\/posts\/([0-9a-fA-F-]{36})\/reaction$/);
+    if (socialReactionMatch && request.method === "POST") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      if (!enforceRateLimit(request, response, "social-write", rateLimits.socialWrite, auth.user.id)) return;
+      const result = await toggleSocialReaction(pool, auth.user.id, socialReactionMatch[1]);
+      sendJson(response, 200, { liked: result.active, count: result.count });
+      return;
+    }
+
+    const socialSaveMatch = url.pathname.match(/^\/api\/feed\/posts\/([0-9a-fA-F-]{36})\/save$/);
+    if (socialSaveMatch && request.method === "POST") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      if (!enforceRateLimit(request, response, "social-write", rateLimits.socialWrite, auth.user.id)) return;
+      const result = await toggleSocialSave(pool, auth.user.id, socialSaveMatch[1]);
+      sendJson(response, 200, { saved: result.active });
+      return;
+    }
+
+    const socialCommentsMatch = url.pathname.match(/^\/api\/feed\/posts\/([0-9a-fA-F-]{36})\/comments$/);
+    if (socialCommentsMatch && request.method === "GET") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      sendJson(response, 200, {
+        comments: await listSocialComments(pool, auth.user.id, socialCommentsMatch[1], {
+          limit: url.searchParams.get("limit"),
+        }),
+      });
+      return;
+    }
+
+    if (socialCommentsMatch && request.method === "POST") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      if (!enforceRateLimit(request, response, "social-write", rateLimits.socialWrite, auth.user.id)) return;
+      sendJson(response, 201, {
+        comment: await createSocialComment(pool, auth.user.id, socialCommentsMatch[1], await readBody(request)),
+      });
+      return;
+    }
+
+    const socialPollMatch = url.pathname.match(/^\/api\/feed\/posts\/([0-9a-fA-F-]{36})\/poll$/);
+    if (socialPollMatch && request.method === "POST") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      if (!enforceRateLimit(request, response, "social-write", rateLimits.socialWrite, auth.user.id)) return;
+      const body = await readBody(request);
+      sendJson(response, 200, { post: await voteSocialPoll(pool, auth.user.id, socialPollMatch[1], body.option_index) });
+      return;
+    }
+
+    const socialCommentMatch = url.pathname.match(/^\/api\/feed\/comments\/([0-9a-fA-F-]{36})$/);
+    if (socialCommentMatch && request.method === "DELETE") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      const deleted = await deleteSocialComment(pool, auth.user.id, socialCommentMatch[1]);
+      sendJson(response, deleted ? 200 : 404, { deleted });
+      return;
+    }
+
+    const socialPostMatch = url.pathname.match(/^\/api\/feed\/posts\/([0-9a-fA-F-]{36})$/);
+    if (socialPostMatch && request.method === "GET") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      const post = await getSocialPost(pool, auth.user.id, socialPostMatch[1]);
+      if (!post) {
+        sendError(response, 404, "Post not found");
+        return;
+      }
+      sendJson(response, 200, { post });
+      return;
+    }
+
+    if (socialPostMatch && request.method === "DELETE") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      const deleted = await archiveSocialPost(pool, auth.user.id, socialPostMatch[1]);
+      sendJson(response, deleted ? 200 : 404, { deleted });
       return;
     }
 
