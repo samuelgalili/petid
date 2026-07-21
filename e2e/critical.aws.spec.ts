@@ -171,8 +171,8 @@ test.describe("AWS application smoke tests", () => {
     const email = page.getByLabel("כתובת אימייל");
     await expect(email).toBeVisible();
     await email.fill("reset@example.com");
-    await page.getByRole("button", { name: "שלח קוד אימות" }).click();
-    await expect(page.getByRole("heading", { name: "הזן קוד אימות" })).toBeVisible();
+    await page.getByRole("button", { name: "שליחת קוד אימות" }).click();
+    await expect(page.getByRole("heading", { name: "הזנת קוד אימות" })).toBeVisible();
     await expect(page.getByText("reset@example.com", { exact: true })).toBeVisible();
   });
 
