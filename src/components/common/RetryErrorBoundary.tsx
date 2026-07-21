@@ -102,7 +102,7 @@ export class RetryErrorBoundary extends Component<Props, State> {
               {canRetry && (
                 <Button onClick={this.handleRetry} className="w-full">
                   <RefreshCw className="w-4 h-4 ml-2" />
-                  נסה שוב
+                  נסו שוב
                 </Button>
               )}
               
@@ -178,8 +178,8 @@ function getErrorTitle(type: 'network' | 'server' | 'unknown'): string {
 
 function getErrorDescription(type: 'network' | 'server' | 'unknown'): string {
   const descriptions = {
-    network: 'נראה שיש בעיה בחיבור לאינטרנט. בדוק את החיבור ונסה שוב.',
-    server: 'השרת נתקל בבעיה. נסה שוב בעוד מספר רגעים.',
+    network: 'נראה שיש בעיה בחיבור לאינטרנט. יש לבדוק את החיבור ולנסות שוב.',
+    server: 'השרת נתקל בבעיה. נסו שוב בעוד מספר רגעים.',
     unknown: 'נתקלנו בשגיאה לא צפויה. אנחנו עובדים על פתרון.',
   };
   return descriptions[type];

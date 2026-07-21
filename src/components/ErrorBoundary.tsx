@@ -71,7 +71,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 className="w-full bg-primary hover:bg-primary-dark text-primary-foreground font-jakarta font-bold py-3 rounded-2xl shadow-md"
               >
                 <RefreshCw className="w-5 h-5 ml-2" />
-                נסה שוב
+                נסו שוב
               </Button>
               
               <Button

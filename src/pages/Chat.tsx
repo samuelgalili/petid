@@ -287,7 +287,7 @@ const ChatContent = () => {
           
           <div className="flex items-center gap-2">
             <PetidLogo variant="horizontal" size="sm" showAnimals={false} />
-            <span className="rounded-full bg-[#F7F7F5] px-2 py-1 text-[10px] font-semibold text-mipo-muted">AI</span>
+            <span className="rounded-full bg-mipo-soft px-2 py-1 text-[10px] font-semibold text-mipo-muted">AI</span>
           </div>
           
           <div className="w-11" />
@@ -319,7 +319,7 @@ const ChatContent = () => {
                   {/* Icon */}
                   <div className="flex-shrink-0 mt-0.5">
                     {isUser ? (
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F7F7F5]">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-mipo-soft">
                         <span className="text-xs font-bold text-primary">
                           {selectedPet?.name?.charAt(0) || "א"}
                         </span>
@@ -343,7 +343,7 @@ const ChatContent = () => {
                     {/* Message text — no bubble, clean prose */}
                     <div className={cn(
                       "whitespace-pre-wrap break-words rounded-[1.35rem] px-4 py-3 text-[15px] leading-[1.7] text-mipo-ink",
-                      isUser ? "bg-[#F7F7F5]" : "border border-black/[0.06] bg-white shadow-[0_8px_24px_rgba(21,21,26,0.06)]",
+                      isUser ? "bg-mipo-soft" : "border border-mipo-line/70 bg-mipo-surface shadow-[0_8px_24px_rgba(21,21,26,0.06)]",
                     )}>
                       {cleanAllTags(message.content)}
                     </div>
@@ -566,7 +566,7 @@ const ChatContent = () => {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               onClick={scrollToBottom}
-              className="absolute left-1/2 -translate-x-1/2 bottom-24 z-30 w-9 h-9 rounded-full bg-card/90 backdrop-blur-md border border-border/40 shadow-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+              className="absolute left-1/2 -translate-x-1/2 bottom-24 z-sticky h-11 w-11 rounded-full bg-card/90 backdrop-blur-md border border-border/40 shadow-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
               whileTap={{ scale: 0.9 }}
             >
               <ChevronDown className="w-5 h-5" />
@@ -581,7 +581,7 @@ const ChatContent = () => {
           onSend={handleSend}
           onKeyPress={handleKeyPress}
           isLoading={isLoading}
-          placeholder="כתוב הודעה..."
+          placeholder="כתיבת הודעה..."
           onAttachment={handleAttachment}
           onQuickAction={(actionId) => {
             if (actionId === "calendar") {

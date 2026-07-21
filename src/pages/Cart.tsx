@@ -271,7 +271,7 @@ const Cart = () => {
                 <Input
                   value={couponCode}
                   onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                  placeholder="הזן קוד קופון"
+                  placeholder="הזנת קוד קופון"
                   className="flex-1 font-jakarta rounded-xl"
                 />
                 <Button

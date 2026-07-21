@@ -264,7 +264,7 @@ export default function Documents() {
     setPendingDelete(null);
 
     toast({
-      title: "↩️ המסמך שוחזר",
+      title: "המסמך שוחזר",
       description: "המסמך הוחזר בהצלחה",
     });
   };
@@ -500,7 +500,7 @@ export default function Documents() {
                   </Label>
                   <Select value={uploadPetId} onValueChange={setUploadPetId}>
                     <SelectTrigger className="h-12 rounded-xl border-border">
-                      <SelectValue placeholder="בחר חיית מחמד" />
+                      <SelectValue placeholder="בחירת חיית מחמד" />
                     </SelectTrigger>
                     <SelectContent>
                       {pets.map((pet) => (

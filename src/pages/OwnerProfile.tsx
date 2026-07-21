@@ -93,7 +93,7 @@ const Section = ({ title, icon: Icon, children, defaultOpen = true, badge }: {
         className="w-full p-4 flex items-center justify-between"
       >
         <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#F7F7F5]">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-mipo-soft">
             <Icon className="h-4 w-4 text-mipo-violet" strokeWidth={1.5} />
           </div>
           <span className="text-sm font-semibold text-mipo-ink">{title}</span>

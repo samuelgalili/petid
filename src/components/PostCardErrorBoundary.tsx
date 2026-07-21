@@ -52,7 +52,7 @@ export class PostCardErrorBoundary extends Component<Props, State> {
             size="sm"
           >
             <RefreshCw className="w-4 h-4 ml-2" />
-            נסה שוב
+            נסו שוב
           </Button>
         </div>
       );

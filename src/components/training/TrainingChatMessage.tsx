@@ -277,7 +277,7 @@ export const FeedbackCard = ({
             <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
               <X className="w-5 h-5 text-red-600" />
             </div>
-            <span className="font-bold text-red-800">נסה שוב</span>
+            <span className="font-bold text-red-800">נסו שוב</span>
           </>
         )}
       </div>
@@ -314,7 +314,7 @@ export const FeedbackCard = ({
             onClick={onRetry}
             className="flex-1 h-9 bg-gray-900 hover:bg-gray-800 text-white rounded-full text-sm"
           >
-            נסה שוב
+            נסו שוב
             <Camera className="w-4 h-4 mr-2" />
           </Button>
         )}

@@ -109,7 +109,7 @@ export class ComponentErrorBoundary extends Component<Props, State> {
             className="gap-2"
           >
             <RefreshCw className="w-4 h-4" />
-            נסה שוב
+            נסו שוב
           </Button>
         )}
       </div>

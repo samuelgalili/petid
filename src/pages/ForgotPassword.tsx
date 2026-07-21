@@ -13,7 +13,7 @@ import { PasswordStrengthIndicator } from "@/components/PasswordStrengthIndicato
 import { z } from "zod";
 
 const emailSchema = z.object({
-  email: z.string().email("אנא הזן כתובת אימייל תקינה"),
+  email: z.string().email("נא להזין כתובת אימייל תקינה"),
 });
 
 const passwordSchema = z.object({
@@ -79,7 +79,7 @@ const ForgotPassword = () => {
 
   const handleVerifyOtp = async () => {
     if (otp.length !== 6) {
-      setError("אנא הזן קוד בן 6 ספרות");
+      setError("נא להזין קוד בן 6 ספרות");
       return;
     }
     setError("");
@@ -212,7 +212,7 @@ const ForgotPassword = () => {
                     </div>
                     <h2 className="text-2xl font-bold font-jakarta text-foreground mb-2">איפוס סיסמה</h2>
                     <p className="text-sm font-jakarta text-muted-foreground leading-relaxed">
-                      הזן את כתובת האימייל שלך ונשלח לך קוד אימות
+                      הזנת כתובת האימייל תאפשר לנו לשלוח קוד אימות
                     </p>
                   </motion.div>
 
@@ -265,7 +265,7 @@ const ForgotPassword = () => {
                       ) : (
                         <>
                           <Mail className="ml-2 h-4 w-4" />
-                          <span className="font-jakarta">שלח קוד אימות</span>
+                          <span className="font-jakarta">שליחת קוד אימות</span>
                         </>
                       )}
                     </Button>
@@ -294,7 +294,7 @@ const ForgotPassword = () => {
                     <div className="w-16 h-16 bg-primary/20 rounded-2xl flex items-center justify-center mx-auto mb-5">
                       <KeyRound className="h-8 w-8 text-primary" />
                     </div>
-                    <h2 className="text-2xl font-bold font-jakarta text-foreground mb-2">הזן קוד אימות</h2>
+                    <h2 className="text-2xl font-bold font-jakarta text-foreground mb-2">הזנת קוד אימות</h2>
                     <p className="text-sm font-jakarta text-muted-foreground leading-relaxed">
                       שלחנו קוד בן 6 ספרות אל<br />
                       <strong className="text-foreground">{email}</strong>
@@ -351,7 +351,7 @@ const ForgotPassword = () => {
                         disabled={loading}
                         className="text-sm text-muted-foreground hover:text-primary transition-colors font-jakarta"
                       >
-                        {loading ? "שולח..." : "לא קיבלת? שלח שוב"}
+                        {loading ? "שולח..." : "הקוד לא הגיע? שליחה מחדש"}
                       </button>
                     </div>
 
@@ -380,7 +380,7 @@ const ForgotPassword = () => {
                     </div>
                     <h2 className="text-2xl font-bold font-jakarta text-foreground mb-2">סיסמה חדשה</h2>
                     <p className="text-sm font-jakarta text-muted-foreground leading-relaxed">
-                      בחר סיסמה חדשה לחשבון שלך
+                      בחירת סיסמה חדשה לחשבון
                     </p>
                   </motion.div>
 

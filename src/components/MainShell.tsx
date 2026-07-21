@@ -28,7 +28,7 @@ const MainShell = () => {
         : MipoHome;
 
   return (
-    <div className="relative min-h-screen bg-[#F7F7F5]">
+    <div className="relative min-h-screen bg-mipo-soft">
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={pathname}

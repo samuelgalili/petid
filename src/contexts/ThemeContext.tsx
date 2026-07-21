@@ -31,12 +31,15 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     const applyTheme = () => {
       const effective = getEffectiveTheme();
       setEffectiveTheme(effective);
-      
+
+      // F04: enable the global color cross-fade only around theme changes
+      root.classList.add('theme-switching');
       if (effective === 'dark') {
         root.classList.add('dark');
       } else {
         root.classList.remove('dark');
       }
+      window.setTimeout(() => root.classList.remove('theme-switching'), 350);
     };
 
     applyTheme();

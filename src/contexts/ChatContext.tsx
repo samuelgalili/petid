@@ -354,9 +354,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         role: "assistant",
         content: error instanceof Error
           ? `לא הצלחתי לשלוח את ההודעה: ${error.message}`
-          : "לא הצלחתי לשלוח את ההודעה כרגע. נסה שוב בעוד רגע.",
+          : "לא הצלחתי לשלוח את ההודעה כרגע. נסו שוב בעוד רגע.",
         timestamp: new Date().toISOString(),
-        suggestions: ["נסה שוב", "סריקת מסמך", "צילום תמונה"],
+        suggestions: ["נסו שוב", "סריקת מסמך", "צילום תמונה"],
       }]);
     } finally {
       setIsLoading(false);

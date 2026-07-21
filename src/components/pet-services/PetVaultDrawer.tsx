@@ -169,7 +169,7 @@ export const PetVaultDrawer = ({ isOpen, onClose, pet }: PetVaultDrawerProps) =>
       console.error('Scan error:', error);
       toast({
         title: 'שגיאה בשמירת המסמך',
-        description: 'נסה שוב או העלה את הקובץ ידנית',
+        description: 'נסו שוב או העלו את הקובץ ידנית',
         variant: 'destructive',
       });
       setScanPreview(null);

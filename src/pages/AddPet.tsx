@@ -751,7 +751,7 @@ const AddPet = () => {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={handleCameraCapture}
-                      className="mipo-gradient-button min-h-0 px-4 py-2.5 text-sm"
+                      className="mipo-gradient-button px-4 py-2.5 text-sm"
                     >
                       <Camera className="w-4 h-4" />
                       צלם
@@ -760,7 +760,7 @@ const AddPet = () => {
                       <motion.div
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        className="mipo-pill-button min-h-0 px-4 py-2.5 text-sm cursor-pointer"
+                        className="mipo-pill-button px-4 py-2.5 text-sm cursor-pointer"
                       >
                         <ImagePlus className="w-4 h-4" />
                         גלריה
@@ -851,7 +851,7 @@ const AddPet = () => {
                       className="flex items-start gap-2 px-4 py-3 rounded-xl bg-destructive/10 text-sm"
                     >
                       <span className="text-destructive font-medium">
-                        לא הצלחנו לזהות את הגזע. בחר ידנית לדיוק בריאותי טוב יותר.
+                        לא הצלחנו לזהות את הגזע. יש לבחור ידנית לדיוק בריאותי טוב יותר.
                       </span>
                     </motion.div>
                   )}
@@ -1045,7 +1045,7 @@ const AddPet = () => {
                     <PopoverTrigger asChild>
                       <Button variant="outline" className="mipo-input w-full justify-start text-right h-12">
                         <CalendarIcon className="ml-2 h-4 w-4" />
-                        {formData.birthDate ? format(formData.birthDate, "PPP", { locale: he }) : "בחר תאריך"}
+                        {formData.birthDate ? format(formData.birthDate, "PPP", { locale: he }) : "בחירת תאריך"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -1067,7 +1067,7 @@ const AddPet = () => {
                   <Label className="text-mipo-ink">מין</Label>
                   <Select value={formData.gender} onValueChange={(val) => setFormData(prev => ({ ...prev, gender: val }))}>
                     <SelectTrigger className="mipo-input h-12">
-                      <SelectValue placeholder="בחר מין" />
+                      <SelectValue placeholder="בחירת מין" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="male">זכר</SelectItem>
@@ -1113,7 +1113,7 @@ const AddPet = () => {
                 className="mipo-flow-card p-6 space-y-6"
               >
                 <p className="text-mipo-muted text-center text-sm">
-                  בחר תגיות שמתארות את {formData.name || "חיית המחמד"}
+                  בחירת תגיות שמתארות את {formData.name || "חיית המחמד"}
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   {(petType === 'cat' ? PERSONALITY_TAGS_CAT : PERSONALITY_TAGS_DOG).map(tag => (

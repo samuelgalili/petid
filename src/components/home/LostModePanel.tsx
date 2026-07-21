@@ -292,7 +292,7 @@ MIPO - שומרים על חיות המחמד שלנו
                 onClick={sendRadiusAlert}
               >
                 <Bell className="w-4 h-4" strokeWidth={1.5} />
-                שלח התראה למשתמשים באזור (5 ק״מ)
+                שליחת התראה למשתמשים באזור (5 ק״מ)
               </Button>
 
               {/* QR Tracking Status */}

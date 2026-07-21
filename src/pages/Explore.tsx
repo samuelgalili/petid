@@ -673,7 +673,7 @@ const Explore = () => {
                 <Filter className="w-4 h-4 text-primary/60" />
                 <Select value={breedFilter} onValueChange={setBreedFilter}>
                   <SelectTrigger className="w-[180px] h-10 rounded-2xl text-sm border-border/50 bg-card shadow-soft">
-                    <SelectValue placeholder="בחר גזע" />
+                    <SelectValue placeholder="בחירת גזע" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl bg-card border-border/50 shadow-elevated z-50">
                     {(petTypeFilter === "dog" ? dogBreeds : catBreeds).map((breed) => (

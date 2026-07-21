@@ -157,7 +157,7 @@ export function Pricing({
                     }
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="בחר כמות" />
+                      <SelectValue placeholder="בחירת כמות" />
                     </SelectTrigger>
                     <SelectContent>
                       {tier.creditOptions.map((option) => (

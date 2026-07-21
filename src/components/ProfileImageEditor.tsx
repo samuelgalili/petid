@@ -233,7 +233,7 @@ export const ProfileImageEditor = ({
                     <div className="bg-muted/50 rounded-xl p-8 text-center border border-dashed border-border">
                       <ImageIcon className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
                       <p className="text-sm text-muted-foreground mb-4">
-                        בחר תמונה להעלאה
+                        בחירת תמונה להעלאה
                       </p>
                       <div className="flex flex-col gap-2">
                         <label className="cursor-pointer">
@@ -333,7 +333,7 @@ export const ProfileImageEditor = ({
                         onClick={() => setImageSrc(null)}
                         className="flex-1 rounded-xl h-10 text-sm font-medium"
                       >
-                        בחר תמונה אחרת
+                        בחירת תמונה אחרת
                       </Button>
                       <Button
                         onClick={handleSave}

@@ -486,7 +486,7 @@ export const ProductFormDialog = ({
     if (!productUrl || !productUrl.startsWith("http")) {
       toast({
         title: "כתובת לא תקינה",
-        description: "הזן כתובת URL מלאה של דף מוצר או קטגוריה",
+        description: "הזנת כתובת URL מלאה של דף מוצר או קטגוריה",
         variant: "destructive",
       });
       return;
@@ -540,12 +540,12 @@ export const ProductFormDialog = ({
           setShowImportReview(true);
           toast({
             title: `נמצאו ${result.products.length} מוצרים`,
-            description: "בחר אילו מוצרים לייבא",
+            description: "בחירת המוצרים לייבוא",
           });
         } else {
           toast({
             title: "לא נמצאו מוצרים",
-            description: "נסה קישור אחר או בדוק שהקישור תקין",
+            description: "נסו קישור אחר או ודאו שהקישור תקין",
             variant: "destructive",
           });
         }
@@ -742,7 +742,7 @@ export const ProductFormDialog = ({
     if (selectedProductIndices.size === 0) {
       toast({
         title: "לא נבחרו מוצרים",
-        description: "בחר לפחות מוצר אחד לייבוא",
+        description: "יש לבחור לפחות מוצר אחד לייבוא",
         variant: "destructive",
       });
       return;
@@ -867,7 +867,7 @@ export const ProductFormDialog = ({
     if (!product?.sku || product.sku.length < 3) {
       toast({
         title: "מק״ט קצר מדי",
-        description: "הזן לפחות 3 תווים לחיפוש",
+        description: "יש להזין לפחות 3 תווים לחיפוש",
         variant: "destructive",
       });
       return;
@@ -906,7 +906,7 @@ export const ProductFormDialog = ({
       } else {
         toast({
           title: "לא נמצא מוצר",
-          description: data?.error || "נסה להוסיף שם מוצר או להשתמש בקישור ישיר",
+          description: data?.error || "נסו להוסיף שם מוצר או להשתמש בקישור ישיר",
           variant: "destructive",
         });
       }
@@ -927,7 +927,7 @@ export const ProductFormDialog = ({
     if (!query) {
       toast({
         title: "נא להזין מילות חיפוש",
-        description: "הזן שם מוצר או מילות מפתח לחיפוש",
+        description: "הזנת שם מוצר או מילות מפתח לחיפוש",
         variant: "destructive",
       });
       return;
@@ -950,7 +950,7 @@ export const ProductFormDialog = ({
       } else {
         toast({
           title: "לא נמצאו תמונות",
-          description: "נסה מילות חיפוש אחרות",
+          description: "נסו מילות חיפוש אחרות",
         });
       }
     } catch (err) {
@@ -978,7 +978,7 @@ export const ProductFormDialog = ({
     if (selectedSearchImages.length === 0) {
       toast({
         title: "לא נבחרו תמונות",
-        description: "בחר לפחות תמונה אחת",
+        description: "יש לבחור לפחות תמונה אחת",
         variant: "destructive",
       });
       return;
@@ -1142,7 +1142,7 @@ export const ProductFormDialog = ({
                   <Input
                     value={product.sku || ""}
                     onChange={(e) => handleSkuChange(e.target.value)}
-                    placeholder="הזן מק״ט, ברקוד או שם מוצר..."
+                    placeholder="הזנת מק״ט, ברקוד או שם מוצר..."
                     className="flex-1 bg-background/50"
                   />
                   <Button 
@@ -1239,7 +1239,7 @@ export const ProductFormDialog = ({
                       </div>
                       <div className="flex gap-2">
                         <Input
-                          placeholder={product?.name || "הזן מילות חיפוש..."}
+                          placeholder={product?.name || "הזנת מילות חיפוש..."}
                           value={imageSearchQuery}
                           onChange={(e) => setImageSearchQuery(e.target.value)}
                           onKeyDown={(e) => e.key === "Enter" && handleImageSearch()}
@@ -1360,7 +1360,7 @@ export const ProductFormDialog = ({
                       
                       {!isSearchingImages && imageSearchResults.length === 0 && (
                         <div className="text-center py-4 text-muted-foreground text-sm">
-                          הזן מילות חיפוש ולחץ על חפש
+                          יש להזין מילות חיפוש וללחוץ על חיפוש
                         </div>
                       )}
                     </div>
@@ -1405,7 +1405,7 @@ export const ProductFormDialog = ({
               <Input
                 value={product.sku || ""}
                 onChange={(e) => onProductChange({ ...product, sku: e.target.value })}
-                placeholder="הזן מק״ט או ברקוד של המוצר"
+                placeholder="הזנת מק״ט או ברקוד של המוצר"
                 dir="ltr"
               />
             </div>
@@ -1418,7 +1418,7 @@ export const ProductFormDialog = ({
                 onValueChange={(value) => onProductChange({ ...product, category: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="בחר קטגוריה" />
+                  <SelectValue placeholder="בחירת קטגוריה" />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((cat) => (
@@ -1436,7 +1436,7 @@ export const ProductFormDialog = ({
                 onValueChange={(value) => onProductChange({ ...product, pet_type: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="בחר סוג" />
+                  <SelectValue placeholder="בחירת סוג" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="dog">כלב</SelectItem>
@@ -1560,7 +1560,7 @@ export const ProductFormDialog = ({
                 onValueChange={(value) => onProductChange({ ...product, weight_unit: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="בחר יחידה" />
+                  <SelectValue placeholder="בחירת יחידה" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="kg">ק״ג</SelectItem>

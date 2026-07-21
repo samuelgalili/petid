@@ -79,7 +79,7 @@ export function useDataIntake({ petId, petName, isSOSActive = false }: UseDataIn
       fileUrl = document.file_url;
     } catch (error) {
       console.error("Document upload error:", error);
-      toast({ title: "שגיאה בהעלאה", description: "נסה שוב", variant: "destructive" });
+      toast({ title: "שגיאה בהעלאה", description: "נסו שוב", variant: "destructive" });
       return { type: "scan", userMessage: "", aiPrompt: "" };
     }
 
@@ -135,7 +135,7 @@ export function useDataIntake({ petId, petName, isSOSActive = false }: UseDataIn
       fileUrl = document.file_url;
     } catch (error) {
       console.error("Media upload error:", error);
-      toast({ title: "שגיאה בהעלאה", description: "נסה שוב", variant: "destructive" });
+      toast({ title: "שגיאה בהעלאה", description: "נסו שוב", variant: "destructive" });
       return { type: source, userMessage: "", aiPrompt: "" };
     }
 

@@ -154,7 +154,7 @@ export const OnboardingInterests = ({
           >
             <div className="text-center">
               <h1 className="text-2xl font-bold mb-2">גזעים מועדפים</h1>
-              <p className="text-muted-foreground">בחר עד 5 גזעים שמעניינים אותך</p>
+              <p className="text-muted-foreground">בחירת עד 5 גזעים שמעניינים אותך</p>
             </div>
 
             <div className="flex flex-wrap gap-2 justify-center mt-6">

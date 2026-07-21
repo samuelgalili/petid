@@ -22,7 +22,7 @@ const ChatInputBar = ({
   onSend,
   onKeyPress,
   isLoading,
-  placeholder = "כתוב הודעה...",
+  placeholder = "כתיבת הודעה...",
   onQuickAction,
   onAttachment,
   onVirtualTreat,
@@ -39,7 +39,7 @@ const ChatInputBar = ({
   // Dog-first quick action pills
   const dogPills = [
     { id: "park", emoji: "📍", label: "בוא לגינה", action: () => onAttachment?.("location") },
-    { id: "treat", emoji: "🦴", label: "שלח צ׳ופר", action: () => onVirtualTreat?.() },
+    { id: "treat", emoji: "🦴", label: "שליחת צ׳ופר", action: () => onVirtualTreat?.() },
     { id: "photo", emoji: "📸", label: "תמונה של שיבס", action: () => onAttachment?.("camera") },
   ];
 
@@ -242,7 +242,7 @@ const ChatInputBar = ({
 
           {/* Input field */}
           <div className={cn(
-            "flex min-w-0 flex-1 items-end rounded-3xl border bg-[#F7F7F5] px-2 py-1 transition-all duration-200 sm:px-3",
+            "flex min-w-0 flex-1 items-end rounded-3xl border bg-mipo-soft px-2 py-1 transition-all duration-200 sm:px-3",
             isFocused ? "border-mipo-cyan/50 shadow-[0_0_0_3px_rgba(34,211,238,0.10)]" : "border-black/[0.06]"
           )}>
             <textarea
@@ -295,7 +295,7 @@ const ChatInputBar = ({
                 onClick={onSend}
                 disabled={isLoading}
                 className="mipo-gradient-button h-11 min-h-11 w-11 flex-shrink-0 p-0 disabled:opacity-50"
-                aria-label="שלח הודעה"
+                aria-label="שליחת הודעה"
               >
                 <Send className="w-4 h-4" />
               </motion.button>

@@ -461,7 +461,7 @@ export const BulkProductImport = ({
     if (!urlInput.trim()) {
       toast({
         title: "נא להזין קישור",
-        description: "הזן כתובת URL של דף מוצר או קטלוג",
+        description: "הזנת כתובת URL של דף מוצר או קטלוג",
         variant: "destructive",
       });
       return;
@@ -492,7 +492,7 @@ export const BulkProductImport = ({
       console.error('URL import error:', err);
       toast({
         title: "שגיאה בטעינה מהקישור",
-        description: errorMessage(err, "נסה קישור אחר"),
+        description: errorMessage(err, "נסו קישור אחר"),
         variant: "destructive",
       });
     } finally {
@@ -545,7 +545,7 @@ export const BulkProductImport = ({
       console.error('File parsing error:', err);
       toast({
         title: "שגיאה בקריאת הקובץ",
-        description: errorMessage(err, "נסה קובץ אחר"),
+        description: errorMessage(err, "נסו קובץ אחר"),
         variant: "destructive",
       });
     } finally {
@@ -970,7 +970,7 @@ export const BulkProductImport = ({
               className="space-y-4 py-4"
             >
               <p className="text-sm text-muted-foreground text-center">
-                בחר סוג קובץ לייבוא מוצרים
+                בחירת סוג קובץ לייבוא מוצרים
               </p>
 
               <div className="grid grid-cols-2 gap-3">
@@ -1055,7 +1055,7 @@ export const BulkProductImport = ({
               </div>
 
               <div className="space-y-3">
-                <Label>הזן קישור לדף מוצר או קטלוג</Label>
+                <Label>הזנת קישור לדף מוצר או קטלוג</Label>
                 <div className="flex gap-2">
                   <Input
                     value={urlInput}

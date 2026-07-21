@@ -131,7 +131,7 @@ export const GroomingSheet = ({ isOpen, onClose, pet }: GroomingSheetProps) => {
             <div className="space-y-6">
               {/* Services */}
               <div className="space-y-3">
-                <h3 className="text-sm font-medium text-muted-foreground">בחר שירות</h3>
+                <h3 className="text-sm font-medium text-muted-foreground">בחירת שירות</h3>
                 {services.map((service, index) => (
                   <motion.div
                     key={service.id}
@@ -183,7 +183,7 @@ export const GroomingSheet = ({ isOpen, onClose, pet }: GroomingSheetProps) => {
               {/* Date Selection - Clean Minimal */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-medium text-muted-foreground">בחר תאריך</h3>
+                  <h3 className="text-xs font-medium text-muted-foreground">בחירת תאריך</h3>
                   <span className="text-sm font-semibold text-foreground">
                     {format(selectedDate, 'd בMMMM yyyy', { locale: he })}
                   </span>
@@ -290,7 +290,7 @@ export const GroomingSheet = ({ isOpen, onClose, pet }: GroomingSheetProps) => {
               onClick={handleBook}
               disabled={bookingMutation.isPending}
             >
-              {bookingMutation.isPending ? 'שולח...' : 'שלח בקשה לאישור'}
+              {bookingMutation.isPending ? 'שולח...' : 'שליחת בקשה לאישור'}
             </Button>
             <Button 
               variant="ghost"

@@ -1,6 +1,7 @@
 import { useId } from "react";
 import { motion } from "framer-motion";
 import { PawPrint } from "lucide-react";
+import { MIPO_GRADIENT_STOPS } from "@/lib/mipoTheme";
 import { cn } from "@/lib/utils";
 
 interface PetidLogoProps {
@@ -46,11 +47,11 @@ const MipoMark = ({ className }: { className?: string }) => {
     >
       <defs>
         <linearGradient id={gradientId} x1="10" y1="14" x2="75" y2="54" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#FDBA74" />
-          <stop offset="0.28" stopColor="#FB7185" />
-          <stop offset="0.55" stopColor="#A78BFA" />
-          <stop offset="0.78" stopColor="#60A5FA" />
-          <stop offset="1" stopColor="#22D3EE" />
+          <stop offset="0" stopColor={MIPO_GRADIENT_STOPS[0]} />
+          <stop offset="0.28" stopColor={MIPO_GRADIENT_STOPS[1]} />
+          <stop offset="0.55" stopColor={MIPO_GRADIENT_STOPS[2]} />
+          <stop offset="0.78" stopColor={MIPO_GRADIENT_STOPS[3]} />
+          <stop offset="1" stopColor={MIPO_GRADIENT_STOPS[4]} />
         </linearGradient>
       </defs>
       <path

@@ -303,7 +303,7 @@ const AdminSmartProductEditor = () => {
                     <Label className="text-xs">קטגוריה</Label>
                     <Select value={form.category} onValueChange={(v) => updateForm("category", v)}>
                       <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="בחר קטגוריה" />
+                        <SelectValue placeholder="בחירת קטגוריה" />
                       </SelectTrigger>
                       <SelectContent>
                         {CATEGORIES.map(cat => (

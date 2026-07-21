@@ -357,7 +357,7 @@ const AdminProducts = () => {
       }
 
       if (created === 0) {
-        throw new Error("לא נוצרו מוצרים. בדוק את נתוני הקובץ ונסה שוב.");
+        throw new Error("לא נוצרו מוצרים. יש לבדוק את נתוני הקובץ ולנסות שוב.");
       }
 
       await logAction({

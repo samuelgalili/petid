@@ -8,7 +8,7 @@ interface ChatActionButtonProps {
 }
 
 const ACTION_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-  "SHOW_CALENDAR": { label: "בחר תאריך", icon: Calendar, color: "bg-primary/10 text-primary border-primary/20" },
+  "SHOW_CALENDAR": { label: "בחירת תאריך", icon: Calendar, color: "bg-primary/10 text-primary border-primary/20" },
   "UPLOAD_DOCUMENT": { label: "העלה מסמך", icon: Upload, color: "bg-primary/10 text-primary border-primary/20" },
   "UPLOAD_PHOTO": { label: "העלה תמונה", icon: Camera, color: "bg-primary/10 text-primary border-primary/20" },
 };

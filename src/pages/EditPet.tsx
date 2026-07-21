@@ -150,7 +150,7 @@ const EditPet = () => {
             {formData.birthDate ? (
               format(formData.birthDate, "dd/MM/yyyy", { locale: he })
             ) : (
-              "בחר תאריך"
+              "בחירת תאריך"
             )}
           </Button>
         </div>
@@ -159,7 +159,7 @@ const EditPet = () => {
         <Dialog open={showDatePicker} onOpenChange={setShowDatePicker}>
           <DialogContent className="max-w-sm" dir="rtl">
             <DialogHeader>
-              <DialogTitle className="text-center">בחר תאריך לידה</DialogTitle>
+              <DialogTitle className="text-center">בחירת תאריך לידה</DialogTitle>
             </DialogHeader>
             <div className="py-4">
               <DateWheelPicker
@@ -202,7 +202,7 @@ const EditPet = () => {
             onValueChange={(value) => setFormData({ ...formData, gender: value })}
           >
             <SelectTrigger className="h-12">
-              <SelectValue placeholder="בחר מין" />
+              <SelectValue placeholder="בחירת מין" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="male">זכר</SelectItem>

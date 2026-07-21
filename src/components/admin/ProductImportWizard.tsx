@@ -261,7 +261,7 @@ export const ProductImportWizard = ({
       console.error("Fetch failed:", err);
       toast({
         title: "שגיאה בשליפת הנתונים",
-        description: err instanceof Error ? err.message : "נסה שוב או השתמש בהזנה ידנית",
+        description: err instanceof Error ? err.message : "נסו שוב או השתמשו בהזנה ידנית",
         variant: "destructive",
       });
     } finally {
@@ -415,7 +415,7 @@ export const ProductImportWizard = ({
   const inputMethods: { key: InputMethod; label: string; icon: typeof Link2; placeholder: string }[] = [
     { key: "url", label: "קישור URL", icon: Link2, placeholder: "https://example.com/product/..." },
     { key: "barcode", label: "ברקוד / מק״ט", icon: Barcode, placeholder: "7290000000000" },
-    { key: "name", label: "שם מוצר", icon: Type, placeholder: "הזן שם מוצר..." },
+    { key: "name", label: "שם מוצר", icon: Type, placeholder: "הזנת שם מוצר..." },
   ];
 
   const currentMethod = inputMethods.find((m) => m.key === inputMethod)!;

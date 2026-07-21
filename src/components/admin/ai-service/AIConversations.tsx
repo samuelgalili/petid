@@ -335,7 +335,7 @@ const AIConversations = () => {
           <div className="flex-1 flex items-center justify-center text-muted-foreground">
             <div className="text-center">
               <MessageCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>בחר שיחה לצפייה</p>
+              <p>בחירת שיחה לצפייה</p>
             </div>
           </div>
         )}

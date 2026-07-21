@@ -68,7 +68,7 @@ const integrations = [
   {
     id: "sms",
     name: "SMS Gateway",
-    description: "שלח ותקבל הודעות SMS",
+    description: "שליחה וקבלה של הודעות SMS",
     icon: "💬",
     status: "disconnected",
     stats: null,

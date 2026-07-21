@@ -187,7 +187,7 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
 	      handleClose();
 	    } catch (err) {
 	      console.error("Document upload error:", err);
-	      toast({ title: "שגיאה בהעלאה", description: "נסה שוב או הזן ידנית", variant: "destructive" });
+	      toast({ title: "שגיאה בהעלאה", description: "נסו שוב או הזינו ידנית", variant: "destructive" });
 	      setStep('choose');
 	    }
 	  };
@@ -491,7 +491,7 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
                     </div>
                     <div>
                       <p className="font-semibold text-sm text-foreground">העלה קובץ</p>
-                      <p className="text-[11px] text-muted-foreground">בחר תמונה או PDF מהמכשיר</p>
+                      <p className="text-[11px] text-muted-foreground">בחירת תמונה או PDF מהמכשיר</p>
                     </div>
                   </button>
 

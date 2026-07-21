@@ -464,7 +464,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
       window.location.reload();
     } catch (error) {
       console.error('Update error:', error);
-      toast({ title: 'שגיאה בעדכון', description: error instanceof Error ? error.message : 'נסה שוב', variant: 'destructive' });
+      toast({ title: 'שגיאה בעדכון', description: error instanceof Error ? error.message : 'נסו שוב', variant: 'destructive' });
     } finally {
       setSaving(false);
     }

@@ -211,7 +211,7 @@ const BusinessCRM = () => {
                       onClick={() => setChatOpen(customer.id)}
                     >
                       <MessageCircle className="w-3.5 h-3.5" strokeWidth={1.5} />
-                      שלח הודעה
+                      שליחת הודעה
                     </Button>
                     <Button
                       variant="ghost"
@@ -220,7 +220,7 @@ const BusinessCRM = () => {
                       onClick={() => navigate('/product-sourcing')}
                     >
                       <Sparkles className="w-3.5 h-3.5" strokeWidth={1.5} />
-                      שלח המלצה
+                      שליחת המלצה
                     </Button>
                   </div>
                 </CardContent>
@@ -298,7 +298,7 @@ const BusinessCRM = () => {
                 <div className="flex gap-2">
                   <Input
                     className="flex-1 rounded-2xl h-10 text-xs bg-muted/30 border-border/40"
-                    placeholder="כתוב הודעה..."
+                    placeholder="כתיבת הודעה..."
                     value={chatInput}
                     onChange={e => setChatInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && sendMessage(chatOpen!)}

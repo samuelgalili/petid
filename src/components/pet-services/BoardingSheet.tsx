@@ -147,7 +147,7 @@ export const BoardingSheet = ({ isOpen, onClose, pet }: BoardingSheetProps) => {
             <div className="space-y-6">
               {/* Services */}
               <div className="space-y-3">
-                <h3 className="text-sm font-medium text-muted-foreground">בחר פנסיון</h3>
+                <h3 className="text-sm font-medium text-muted-foreground">בחירת פנסיון</h3>
                 {services.map((service, index) => (
                   <motion.div
                     key={service.id}
@@ -219,7 +219,7 @@ export const BoardingSheet = ({ isOpen, onClose, pet }: BoardingSheetProps) => {
 
               {/* Date Range Selection - Wheel Pickers */}
               <div className="space-y-4">
-                <h3 className="text-sm font-medium text-muted-foreground">בחר תאריכים</h3>
+                <h3 className="text-sm font-medium text-muted-foreground">בחירת תאריכים</h3>
                 
                 {/* Selected Dates Display */}
                 <div className="flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-muted/50 border border-border/50">
@@ -365,7 +365,7 @@ export const BoardingSheet = ({ isOpen, onClose, pet }: BoardingSheetProps) => {
               onClick={() => bookingMutation.mutate()}
               disabled={bookingMutation.isPending}
             >
-              {bookingMutation.isPending ? 'שולח...' : 'שלח בקשה לאישור'}
+              {bookingMutation.isPending ? 'שולח...' : 'שליחת בקשה לאישור'}
             </Button>
             <Button 
               variant="ghost"

@@ -433,7 +433,7 @@ const Settings = () => {
             <SettingRow
               icon={Languages}
               label="שפה"
-              description="בחר שפת ממשק"
+              description="בחירת שפת ממשק"
               type="select"
               value={language}
               options={[

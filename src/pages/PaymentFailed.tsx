@@ -84,7 +84,7 @@ const PaymentFailed = () => {
               className="w-full rounded-xl gap-2"
             >
               <RefreshCw className="w-4 h-4" />
-              נסה שוב
+              נסו שוב
             </Button>
             
             <Button 

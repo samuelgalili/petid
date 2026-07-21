@@ -97,7 +97,7 @@ const Favorites = () => {
         ) : isError ? (
           <div className="py-16 text-center space-y-4" role="alert">
             <h2 className="text-lg font-semibold">לא ניתן לטעון את המועדפים</h2>
-            <Button variant="outline" onClick={() => window.location.reload()}>נסה שוב</Button>
+            <Button variant="outline" onClick={() => window.location.reload()}>נסו שוב</Button>
           </div>
         ) : favoriteProducts.length === 0 ? (
           <motion.div

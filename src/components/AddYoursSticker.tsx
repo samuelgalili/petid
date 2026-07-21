@@ -54,7 +54,7 @@ export const AddYoursStickerCreator = ({ onAdd }: AddYoursStickerCreatorProps) =
   return (
     <div className="space-y-4">
       <Input
-        placeholder="כתוב אתגר..."
+        placeholder="כתיבת אתגר..."
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
         className="rounded-xl"

@@ -174,7 +174,7 @@ export function useProductKeyboardShortcuts({
       { key: 'Ctrl+F / /', description: 'חיפוש' },
       { key: 'Ctrl+S', description: 'שמור' },
       { key: 'Ctrl+D', description: 'שכפל' },
-      { key: 'Ctrl+A', description: 'בחר הכל' },
+      { key: 'Ctrl+A', description: 'בחירת הכול' },
       { key: 'Ctrl+E', description: 'ייצוא' },
       { key: 'Ctrl+I', description: 'ייבוא' },
       { key: 'Delete', description: 'מחק נבחרים' },

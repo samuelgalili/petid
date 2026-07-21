@@ -64,7 +64,7 @@ const EditProfile = () => {
       } catch {
         toast({
           title: "שגיאה בטעינת הפרופיל",
-          description: "משהו השתבש, נסה שנית מאוחר יותר",
+          description: "משהו השתבש, נסו שנית מאוחר יותר",
           variant: "destructive",
         });
       } finally {
@@ -109,7 +109,7 @@ const EditProfile = () => {
     } catch (error: unknown) {
       toast({
         title: "שגיאה בהעלאת תמונה",
-        description: errorMessage(error, "נסה שוב מאוחר יותר"),
+        description: errorMessage(error, "נסו שוב מאוחר יותר"),
         variant: "destructive",
       });
     } finally {
@@ -136,7 +136,7 @@ const EditProfile = () => {
     } catch (error: unknown) {
       toast({
         title: "שגיאה בעדכון הפרופיל",
-        description: errorMessage(error, "משהו השתבש, נסה שנית מאוחר יותר"),
+        description: errorMessage(error, "משהו השתבש, נסו שנית מאוחר יותר"),
         variant: "destructive",
       });
     } finally {

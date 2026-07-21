@@ -43,7 +43,7 @@ const Auth = () => {
         initial={{ opacity: 0, y: 24, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="mipo-flow-card relative w-full max-w-[380px] px-8 py-10 mb-4"
+        className="mipo-card relative w-full max-w-[380px] px-8 py-10 mb-4"
       >
         {/* Logo */}
         <PetidLogo showAnimals={false} size="sm" className="mb-2" />
@@ -82,7 +82,7 @@ const Auth = () => {
             { icon: PawPrint, label: "לכל החיות" },
           ].map((feature) => (
             <div key={feature.label} className="flex items-center gap-1.5">
-              <feature.icon className="w-3.5 h-3.5 text-mipo-cyan" />
+              <feature.icon className="w-3.5 h-3.5 text-mipo-muted" />
               <span>{feature.label}</span>
             </div>
           ))}
@@ -94,7 +94,7 @@ const Auth = () => {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.3 }}
-        className="mipo-soft-card w-full max-w-[380px] py-4 text-center"
+        className="mipo-card w-full max-w-[380px] py-4 text-center"
       >
         <p className="text-sm text-foreground">
           אין לך חשבון?{" "}

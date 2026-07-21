@@ -10,7 +10,6 @@ import { useCart } from "@/contexts/CartContext";
 import { useFlyingCart } from "@/components/FlyingCartAnimation";
 import { useToast } from "@/hooks/use-toast";
 import { OptimizedImage } from "@/components/OptimizedImage";
-import confetti from "canvas-confetti";
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel";
 import { SkeletonProductGrid } from "@/components/ui/enhanced-skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
@@ -112,7 +111,7 @@ const Shop = () => {
       console.error("Error reporting issue:", error);
       toast({
         title: "שגיאה בשליחת הדיווח",
-        description: "אנא נסה שוב מאוחר יותר",
+        description: "נסו שוב מאוחר יותר",
         variant: "destructive",
       });
     } finally {
@@ -337,13 +336,6 @@ const Shop = () => {
       variant: selectedSize || undefined,
     });
 
-    confetti({
-      particleCount: 60,
-      spread: 55,
-      origin: { y: 0.8 },
-      colors: ['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(var(--secondary))'],
-    });
-
     toast({
       title: "נוסף לעגלה",
       description: `${selectedProduct.name}`,
@@ -359,16 +351,16 @@ const Shop = () => {
   const decreaseQuantity = useCallback(() => setQuantity(prev => Math.max(1, prev - 1)), []);
 
   return (
-    <div className="mipo-shell h-screen overflow-hidden bg-white" dir="rtl">
+    <div className="mipo-shell min-h-screen bg-white pb-[calc(80px+env(safe-area-inset-bottom))]" dir="rtl">
       <SEO 
         title="חנות"
         description="מוצרים איכותיים לחיות מחמד במחירים משתלמים - מזון, צעצועים, ציוד ועוד"
         url="/shop"
       />
-      <div className="h-full overflow-y-auto pb-[calc(80px+env(safe-area-inset-bottom))]">
+      <div>
       {/* Instagram-style Header */}
       <motion.div 
-        className="sticky top-0 z-50 border-b border-black/[0.05] bg-white/90 backdrop-blur-xl"
+        className="sticky top-0 z-sticky border-b border-black/[0.05] bg-white/90 backdrop-blur-xl"
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
       >
@@ -416,7 +408,7 @@ const Shop = () => {
                 <AnimatePresence>
                   {getTotalItems() > 0 && (
                     <motion.span 
-                      className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center"
+                      className="absolute -top-1 -end-1 bg-primary text-primary-foreground text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center"
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       exit={{ scale: 0 }}
@@ -652,7 +644,7 @@ const Shop = () => {
               <ShoppingBag className="w-8 h-8 text-destructive" strokeWidth={1.5} />
             </div>
             <p className="text-sm font-medium text-foreground mb-1">משהו השתבש</p>
-            <p className="text-xs text-muted-foreground mb-4">לא הצלחנו לטעון את המוצרים. נסה שוב מאוחר יותר.</p>
+            <p className="text-xs text-muted-foreground mb-4">לא הצלחנו לטעון את המוצרים. נסו שוב מאוחר יותר.</p>
           </div>
         )}
 

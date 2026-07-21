@@ -267,7 +267,7 @@ const AIAutomation = () => {
           <div className="space-y-6 py-4">
             {/* Templates */}
             <div>
-              <Label className="text-sm text-muted-foreground mb-3 block">בחר תבנית או התחל מאפס</Label>
+              <Label className="text-sm text-muted-foreground mb-3 block">בחירת תבנית או התחלה מאפס</Label>
               <div className="grid grid-cols-3 gap-3">
                 {flowTemplates.map((template) => (
                   <Card 
@@ -302,7 +302,7 @@ const AIAutomation = () => {
                   <Label>טריגר</Label>
                   <Select>
                     <SelectTrigger>
-                      <SelectValue placeholder="בחר טריגר" />
+                      <SelectValue placeholder="בחירת טריגר" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="message">הודעה חדשה</SelectItem>
@@ -317,13 +317,13 @@ const AIAutomation = () => {
                   <Label>פעולה</Label>
                   <Select>
                     <SelectTrigger>
-                      <SelectValue placeholder="בחר פעולה" />
+                      <SelectValue placeholder="בחירת פעולה" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="reply">שלח תשובה</SelectItem>
+                      <SelectItem value="reply">שליחת תשובה</SelectItem>
                       <SelectItem value="handoff">העבר לנציג</SelectItem>
                       <SelectItem value="tag">הוסף תגית</SelectItem>
-                      <SelectItem value="notify">שלח התראה</SelectItem>
+                      <SelectItem value="notify">שליחת התראה</SelectItem>
                       <SelectItem value="collect">אסוף פרטים</SelectItem>
                     </SelectContent>
                   </Select>

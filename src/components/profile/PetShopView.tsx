@@ -194,7 +194,7 @@ export const PetShopView = ({ pet, onBack }: PetShopViewProps) => {
         ) : filteredProducts.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-center">
             <p className="text-muted-foreground text-sm">לא נמצאו מוצרים</p>
-            <p className="text-muted-foreground/60 text-xs mt-1">נסה לשנות את הקטגוריה או החיפוש</p>
+            <p className="text-muted-foreground/60 text-xs mt-1">נסו לשנות את הקטגוריה או החיפוש</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4">

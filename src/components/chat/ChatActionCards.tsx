@@ -84,7 +84,7 @@ export const InsuranceLeadCard = ({ petName, breed, onSubmit }: InsuranceLeadCar
         ביטוח מותאם ל{petName}{breed ? ` (${breed})` : ""} — כיסוי מלא לטיפולים וטרינריים.
       </p>
       <Button size="sm" className="w-full gap-1.5 bg-blue-600 hover:bg-blue-700" onClick={onSubmit}>
-        <Shield className="w-3.5 h-3.5" /> שלח בקשה לביטוח
+        <Shield className="w-3.5 h-3.5" /> שליחת בקשה לביטוח
       </Button>
     </Card>
   </motion.div>

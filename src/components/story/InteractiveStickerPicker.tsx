@@ -317,7 +317,7 @@ export const InteractiveStickerPicker = ({
               </div>
               
               <div>
-                <Label className="text-sm font-medium">בחר אימוג'י</Label>
+                <Label className="text-sm font-medium">בחירת אימוג'י</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {emojis.map((emoji) => (
                     <button

@@ -19,6 +19,7 @@ import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { createMyPet, uploadMyImage } from "@/lib/mipoApi";
+import { MIPO_GRADIENT_STOPS } from "@/lib/mipoTheme";
 import { cn } from "@/lib/utils";
 
 type Phase = "welcome" | "photo" | "reveal" | "details" | "creating" | "success";
@@ -88,7 +89,7 @@ const Onboarding = () => {
         particleCount: 120,
         spread: 90,
         origin: { y: 0.62 },
-        colors: ["#FDBA74", "#FB7185", "#A78BFA", "#60A5FA", "#22D3EE"],
+        colors: [...MIPO_GRADIENT_STOPS],
       });
     } catch (error) {
       toast({
@@ -109,7 +110,14 @@ const Onboarding = () => {
         </div>
         <div className="mt-4 grid grid-cols-5 gap-2" aria-label={`שלב ${stepForPhase[phase]} מתוך 5`}>
           {[1, 2, 3, 4, 5].map((step) => (
-            <span key={step} className={cn("h-1 rounded-full", step <= stepForPhase[phase] ? "bg-[var(--gradient-primary)]" : "bg-black/[0.08]")} />
+            <span
+              key={step}
+              className={cn(
+                "h-1 rounded-full",
+                step <= stepForPhase[phase] ? "bg-[image:var(--gradient-primary)]" : "bg-mipo-ink/[0.08]",
+                phase === "creating" && step === 4 && "animate-pulse",
+              )}
+            />
           ))}
         </div>
 
@@ -135,7 +143,7 @@ const Onboarding = () => {
 
           {phase === "photo" && (
             <Screen key="photo" className="pt-10 text-center">
-              <span className="mx-auto inline-flex items-center gap-1.5 rounded-full bg-[#F7F7F5] px-3 py-1 text-xs font-semibold text-mipo-muted">
+              <span className="mx-auto inline-flex items-center gap-1.5 rounded-full bg-mipo-soft px-3 py-1 text-xs font-semibold text-mipo-muted">
                 <Camera className="h-3.5 w-3.5" />
                 שלב ההיכרות
               </span>

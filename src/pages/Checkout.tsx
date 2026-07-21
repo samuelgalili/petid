@@ -233,7 +233,7 @@ const Checkout = () => {
       } else {
         toast({
           title: "שגיאת אימות",
-          description: "אנא בדוק את כל השדות ונסה שוב",
+          description: "נא לבדוק את כל השדות ולנסות שוב",
           variant: "destructive",
         });
       }
@@ -350,9 +350,9 @@ const Checkout = () => {
       
       // More specific error messages
       const message = error instanceof Error ? error.message : "";
-      let errorMessage = "נכשל בביצוע ההזמנה. אנא נסה שוב.";
+      let errorMessage = "נכשל בביצוע ההזמנה. נסו שוב.";
       if (message.includes('Failed to send')) {
-        errorMessage = "שגיאת תקשורת - נסה שוב";
+        errorMessage = "שגיאת תקשורת - נסו שוב";
       } else if (message.includes('נדרשת התחברות')) {
         errorMessage = "נא להתחבר מחדש ולנסות שוב";
       } else if (message) {
@@ -785,7 +785,7 @@ const Checkout = () => {
                     <Input
                       value={couponCode}
                       onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                      placeholder="הזן קוד קופון"
+                      placeholder="הזנת קוד קופון"
                       className="flex-1 font-jakarta rounded-xl"
                     />
                     <Button

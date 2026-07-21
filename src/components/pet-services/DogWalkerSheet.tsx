@@ -159,7 +159,7 @@ export const DogWalkerSheet = ({ isOpen, onClose, pet }: DogWalkerSheetProps) =>
             <div className="space-y-6">
               {/* Walkers List */}
               <div className="space-y-3">
-                <h3 className="text-sm font-medium text-muted-foreground">בחר דוג ווקר</h3>
+                <h3 className="text-sm font-medium text-muted-foreground">בחירת דוג ווקר</h3>
                 {walkers.map((walker, index) => (
                   <motion.div
                     key={walker.id}
@@ -225,7 +225,7 @@ export const DogWalkerSheet = ({ isOpen, onClose, pet }: DogWalkerSheetProps) =>
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
-                  <h3 className="text-sm font-medium text-muted-foreground">בחר משך הטיול</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground">בחירת משך הטיול</h3>
                   <div className="grid grid-cols-3 gap-2">
                     {walkDurations.map((duration) => (
                       <button
@@ -252,7 +252,7 @@ export const DogWalkerSheet = ({ isOpen, onClose, pet }: DogWalkerSheetProps) =>
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
-                  <h3 className="text-sm font-medium text-muted-foreground">בחר תאריך</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground">בחירת תאריך</h3>
                   
                   <div className="flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-muted/50 border border-border/50">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
@@ -365,7 +365,7 @@ export const DogWalkerSheet = ({ isOpen, onClose, pet }: DogWalkerSheetProps) =>
               onClick={handleBook}
               disabled={bookingMutation.isPending}
             >
-              {bookingMutation.isPending ? 'שולח...' : 'שלח בקשה לאישור'}
+              {bookingMutation.isPending ? 'שולח...' : 'שליחת בקשה לאישור'}
             </Button>
             <Button 
               variant="ghost"

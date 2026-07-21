@@ -177,7 +177,7 @@ const AdminQuickImport = () => {
   // ═══════════════════════════════════════════
   const handleScrape = async () => {
     if (!url || !url.startsWith("http")) {
-      toast({ title: "כתובת לא תקינה", description: "הזן כתובת URL מלאה", variant: "destructive" });
+      toast({ title: "כתובת לא תקינה", description: "יש להזין כתובת URL מלאה", variant: "destructive" });
       return;
     }
 
@@ -542,7 +542,7 @@ const AdminQuickImport = () => {
                 <div className="flex items-center gap-3 p-4 bg-destructive/10 text-destructive rounded-xl border border-destructive/20">
                   <AlertCircle size={22} />
                   <span className="flex-1 text-base font-semibold">{errorMessage}</span>
-                  <Button variant="outline" size="sm" onClick={handleReset}>נסה שוב</Button>
+                  <Button variant="outline" size="sm" onClick={handleReset}>נסו שוב</Button>
                 </div>
               )}
 
@@ -1182,7 +1182,7 @@ const AdminQuickImport = () => {
                       <Scale size={24} className="text-muted-foreground" />
                       <div>
                         <p className="text-base font-bold">אין נתוני קלוריות זמינים</p>
-                        <p className="text-sm text-muted-foreground">הזן ידנית או המשך ללא – יחושב מנתוני היצרן</p>
+                        <p className="text-sm text-muted-foreground">הזנה ידנית או המשך ללא – יחושב מנתוני היצרן</p>
                       </div>
                     </div>
                   </div>
@@ -1326,7 +1326,7 @@ const AdminQuickImport = () => {
                         <Label className="text-sm font-bold mb-1.5 block">ספק</Label>
                         <Select value={selectedSupplierId} onValueChange={setSelectedSupplierId}>
                           <SelectTrigger className="h-11 text-base font-medium">
-                            <SelectValue placeholder="בחר ספק..." />
+                            <SelectValue placeholder="בחירת ספק..." />
                           </SelectTrigger>
                           <SelectContent>
                             {suppliers.map((s) => (
@@ -1370,7 +1370,7 @@ const AdminQuickImport = () => {
                                 </span>
                               </>
                             ) : (
-                              <span className="text-muted-foreground text-sm">הזן מחיר עלות</span>
+                              <span className="text-muted-foreground text-sm">הזנת מחיר עלות</span>
                             )}
                           </div>
                         </div>

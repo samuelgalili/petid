@@ -23,11 +23,12 @@ const BottomNav = () => {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-[10000] border-t border-black/[0.06] bg-white/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-nav"
       aria-label="ניווט ראשי"
       dir="rtl"
     >
-      <div className="mx-auto grid h-[68px] max-w-lg grid-cols-3 px-5">
+      <div className="pointer-events-auto mx-auto max-w-lg border-t border-mipo-line/60 bg-mipo-surface/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl">
+        <div className="grid h-[68px] grid-cols-3 px-5">
         {items.map(({ path, label, icon: Icon, active }) => (
           <button
             key={path}
@@ -47,12 +48,13 @@ const BottomNav = () => {
             {active && (
               <motion.span
                 layoutId="mipo-nav-indicator"
-                className="absolute bottom-0 h-1 w-7 rounded-full bg-[var(--gradient-primary)]"
+                className="absolute bottom-0 h-1 w-7 rounded-full bg-[image:var(--gradient-primary)]"
                 transition={{ type: "spring", stiffness: 380, damping: 30 }}
               />
             )}
           </button>
         ))}
+        </div>
       </div>
     </nav>
   );

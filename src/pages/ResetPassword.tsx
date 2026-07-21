@@ -130,7 +130,7 @@ const ResetPassword = () => {
                   <div className="mb-8 text-center">
                     <h2 className="text-3xl font-bold font-jakarta text-foreground mb-3">הגדרת סיסמה חדשה</h2>
                     <p className="text-sm font-jakarta text-muted-foreground leading-relaxed">
-                      הזן את הסיסמה החדשה שלך למטה
+                      הזנת הסיסמה החדשה למטה
                     </p>
                   </div>
 
@@ -180,7 +180,7 @@ const ResetPassword = () => {
                           id="confirmPassword"
                           name="confirmPassword"
                           type={showConfirmPassword ? "text" : "password"}
-                          placeholder="הזן שוב את הסיסמה"
+                          placeholder="הזנת הסיסמה שוב"
                           value={confirmPassword}
                           onChange={(e) => {
                             setConfirmPassword(e.target.value);

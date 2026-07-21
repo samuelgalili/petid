@@ -195,7 +195,7 @@ const AITraining = () => {
                 </p>
                 <Button className="gap-2">
                   <Upload className="w-4 h-4" />
-                  בחר קבצים
+                  בחירת קבצים
                 </Button>
                 <p className="text-xs text-muted-foreground mt-3">
                   PDF, DOCX, TXT • עד 50MB לקובץ
@@ -252,7 +252,7 @@ const AITraining = () => {
                 onChange={(e) => setSystemPrompt(e.target.value)}
                 rows={12}
                 className="font-mono text-sm"
-                placeholder="הזן את הוראות המערכת ל-AI..."
+                placeholder="הזנת הוראות המערכת ל-AI..."
               />
               <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span>{systemPrompt.length} תווים</span>

@@ -321,7 +321,7 @@ const Profile = () => {
                 )}
 
                 <p className="text-[10px] text-muted-foreground/50 mt-4">
-                  בחר חיית מחמד לצפייה
+                  בחירת חיית מחמד לצפייה
                 </p>
               </motion.div>
             ) : (

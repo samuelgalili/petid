@@ -318,7 +318,7 @@ const AIAgentInbox = () => {
               <div className="flex-1 flex items-center justify-center text-muted-foreground">
                 <div className="text-center">
                   <Inbox className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p>בחר שיחה מהתור</p>
+                  <p>בחירת שיחה מהתור</p>
                 </div>
               </div>
             )}

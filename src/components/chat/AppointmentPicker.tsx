@@ -45,7 +45,7 @@ export const AppointmentPicker = ({ onConfirm }: AppointmentPickerProps) => {
       <div className="px-4 pb-3">
         <div className="flex items-center gap-1.5 mb-2">
           <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="text-xs font-medium text-muted-foreground">בחר שעה</span>
+          <span className="text-xs font-medium text-muted-foreground">בחירת שעה</span>
         </div>
         <div className="grid grid-cols-4 gap-1.5 max-h-[140px] overflow-y-auto scrollbar-hide">
           {TIME_SLOTS.map((time) => (
@@ -81,7 +81,7 @@ export const AppointmentPicker = ({ onConfirm }: AppointmentPickerProps) => {
           <Check className="w-4 h-4" />
           {selectedTime
             ? `אישור: ${format(selectedDate, "EEEE d/M", { locale: he })} בשעה ${selectedTime}`
-            : "בחר תאריך ושעה"}
+            : "בחירת תאריך ושעה"}
         </motion.button>
       </div>
     </motion.div>

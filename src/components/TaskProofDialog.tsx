@@ -98,7 +98,7 @@ export const TaskProofDialog = ({
           {!selectedType && (
             <div className="space-y-2">
               <p className="text-sm font-medium text-foreground text-center">
-                בחר סוג הוכחה להעלאה:
+                בחירת סוג הוכחה להעלאה:
               </p>
               <div className="grid grid-cols-3 gap-2">
                 {proofTypes.map((type) => (

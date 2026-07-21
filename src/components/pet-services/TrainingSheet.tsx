@@ -102,7 +102,7 @@ export const TrainingSheet = ({ isOpen, onClose, pet }: TrainingSheetProps) => {
       {/* Divider */}
       <div className="flex items-center gap-3 my-4">
         <div className="flex-1 h-px bg-border" />
-        <span className="text-xs text-muted-foreground">או בחר מאלף מקצועי</span>
+        <span className="text-xs text-muted-foreground">או בחירת מאלף מקצועי</span>
         <div className="flex-1 h-px bg-border" />
       </div>
 
@@ -194,7 +194,7 @@ export const TrainingSheet = ({ isOpen, onClose, pet }: TrainingSheetProps) => {
             אין כרגע תוכניות אילוף זמינות
           </p>
           <p className="text-xs text-muted-foreground text-center mt-1">
-            נסה את הצ'אט החכם לקבלת טיפים
+            נסו את הצ'אט החכם לקבלת טיפים
           </p>
         </div>
       )}

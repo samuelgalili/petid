@@ -144,16 +144,18 @@ export default {
   		},
 		colors: {
 			mipo: {
-				ink: 'hsl(var(--mipo-ink))',
-				muted: 'hsl(var(--mipo-muted))',
-				soft: 'hsl(var(--mipo-soft))',
-				line: 'hsl(var(--mipo-line))',
-				coral: 'hsl(var(--mipo-coral))',
-				peach: 'hsl(var(--mipo-peach))',
-				pink: 'hsl(var(--mipo-pink))',
-				violet: 'hsl(var(--mipo-violet))',
-				blue: 'hsl(var(--mipo-blue))',
-				cyan: 'hsl(var(--mipo-cyan))'
+				ink: 'hsl(var(--mipo-ink) / <alpha-value>)',
+				muted: 'hsl(var(--mipo-muted) / <alpha-value>)',
+				surface: 'hsl(var(--mipo-surface) / <alpha-value>)',
+				soft: 'hsl(var(--mipo-soft) / <alpha-value>)',
+				'soft-deep': 'hsl(var(--mipo-soft-deep) / <alpha-value>)',
+				line: 'hsl(var(--mipo-line) / <alpha-value>)',
+				coral: 'hsl(var(--mipo-coral) / <alpha-value>)',
+				peach: 'hsl(var(--mipo-peach) / <alpha-value>)',
+				pink: 'hsl(var(--mipo-pink) / <alpha-value>)',
+				violet: 'hsl(var(--mipo-violet) / <alpha-value>)',
+				blue: 'hsl(var(--mipo-blue) / <alpha-value>)',
+				cyan: 'hsl(var(--mipo-cyan) / <alpha-value>)'
 			},
 			border: 'hsl(var(--border))',
 			input: 'hsl(var(--input))',
@@ -283,9 +285,15 @@ export default {
   				bg: 'hsl(var(--tag-bg))',
   				text: 'hsl(var(--tag-text))',
   				border: 'hsl(var(--tag-border))'
-  			}
-  		},
-  		borderRadius: {
+			}
+		},
+			zIndex: {
+				sticky: 'var(--z-sticky)',
+				nav: 'var(--z-nav)',
+				sheet: 'var(--z-sheet)',
+				toast: 'var(--z-toast)'
+			},
+		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 4px)',
   			sm: 'calc(var(--radius) - 6px)',
