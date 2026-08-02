@@ -1,3 +1,5 @@
+import { emitPetCompanionReaction } from "@/lib/petCompanionReactions";
+
 export interface MipoProduct {
   id: string;
   name: string;
@@ -423,6 +425,41 @@ export interface MipoPetHealthSummary {
   active_recovery: MipoVetVisit | null;
 }
 
+export type MipoPetCharacterStatus =
+  | "generating_candidates"
+  | "awaiting_selection"
+  | "generating_pack"
+  | "ready"
+  | "failed";
+
+export type MipoPetCharacterExpression =
+  | "neutral"
+  | "happy"
+  | "curious"
+  | "sleepy"
+  | "proud"
+  | "celebrate"
+  | "attentive";
+
+export interface MipoPetCharacter {
+  id: string;
+  pet_id: string;
+  status: MipoPetCharacterStatus;
+  style_key: string;
+  selected_candidate_key: string | null;
+  candidates: Array<{ key: string; url: string }>;
+  expressions: Partial<Record<MipoPetCharacterExpression, string>>;
+  error_code: string | null;
+  generation_version: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MipoPetCharacterResponse {
+  available: boolean;
+  character: MipoPetCharacter | null;
+}
+
 export interface MipoInsuranceClaim {
   id: string;
   user_id?: string;
@@ -473,6 +510,10 @@ export interface MipoDataExport {
   orders: MipoOrder[];
   vet_visits: MipoVetVisit[];
   vaccinations: MipoVaccination[];
+  pet_characters: Array<Pick<
+    MipoPetCharacter,
+    "id" | "pet_id" | "status" | "style_key" | "selected_candidate_key" | "generation_version" | "error_code" | "created_at" | "updated_at"
+  >>;
 }
 
 export interface MipoPublicPet {
@@ -775,6 +816,50 @@ export async function deleteMyPet(petId: string) {
   return result;
 }
 
+export async function getMyPetCharacter(petId: string): Promise<MipoPetCharacterResponse> {
+  return apiFetch<MipoPetCharacterResponse>(`/me/pets/${encodeURIComponent(petId)}/character`);
+}
+
+export async function createMyPetCharacter(petId: string, photos: File[]): Promise<MipoPetCharacterResponse> {
+  const encodedPhotos = await Promise.all(photos.map(async (file) => ({
+    file_name: file.name,
+    data_url: await fileToDataUrl(file),
+  })));
+  const result = await apiFetch<MipoPetCharacterResponse>(
+    `/me/pets/${encodeURIComponent(petId)}/character`,
+    {
+      method: "POST",
+      body: JSON.stringify({ photos: encodedPhotos, consent: true }),
+    },
+  );
+  window.dispatchEvent(new Event("mipo:pet-character-changed"));
+  return result;
+}
+
+export async function selectMyPetCharacterCandidate(
+  petId: string,
+  candidateKey: string,
+): Promise<MipoPetCharacterResponse> {
+  const result = await apiFetch<MipoPetCharacterResponse>(
+    `/me/pets/${encodeURIComponent(petId)}/character/select`,
+    {
+      method: "POST",
+      body: JSON.stringify({ candidate_key: candidateKey }),
+    },
+  );
+  window.dispatchEvent(new Event("mipo:pet-character-changed"));
+  return result;
+}
+
+export async function deleteMyPetCharacter(petId: string): Promise<boolean> {
+  const result = await apiFetch<{ deleted: boolean }>(
+    `/me/pets/${encodeURIComponent(petId)}/character`,
+    { method: "DELETE" },
+  );
+  window.dispatchEvent(new Event("mipo:pet-character-changed"));
+  return result.deleted;
+}
+
 export async function sendAiChat(input: {
   messages: MipoAiChatMessage[];
   userContext?: {
@@ -793,6 +878,7 @@ export async function sendAiChat(input: {
     method: "POST",
     body: JSON.stringify(input),
   });
+  emitPetCompanionReaction(input.userContext?.selectedPetId, "curious");
   return result.message;
 }
 
@@ -983,6 +1069,7 @@ export async function createMyDocument(input: {
   });
   window.dispatchEvent(new Event("mipo:documents-changed"));
   window.dispatchEvent(new Event("mipo:health-changed"));
+  emitPetCompanionReaction(input.pet_id, "proud");
   return result.document;
 }
 
@@ -1058,6 +1145,7 @@ export async function createMyVetVisit(petId: string, input: Partial<MipoVetVisi
     body: JSON.stringify(input),
   });
   window.dispatchEvent(new Event("mipo:health-changed"));
+  emitPetCompanionReaction(petId, "celebrate");
   return result.vet_visit;
 }
 
@@ -1072,6 +1160,7 @@ export async function createMyVaccination(petId: string, input: Partial<MipoVacc
     body: JSON.stringify(input),
   });
   window.dispatchEvent(new Event("mipo:health-changed"));
+  emitPetCompanionReaction(petId, "celebrate");
   return result.vaccination;
 }
 

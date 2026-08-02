@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { LoaderCircle, Sparkles } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
@@ -15,13 +16,25 @@ type MoodSheetProps = {
   petName: string;
   mood: string | null;
   onPick: (label: string) => void;
+  onOpenCharacterStudio?: () => void;
+  hasCharacter?: boolean;
+  characterWorking?: boolean;
 };
 
 /**
  * Mood check-in (design 4a). Replaces the always-visible chip row on the home
  * screen — same chips, same persistence, opened by tapping the pet.
  */
-const MoodSheet = ({ open, onOpenChange, petName, mood, onPick }: MoodSheetProps) => {
+const MoodSheet = ({
+  open,
+  onOpenChange,
+  petName,
+  mood,
+  onPick,
+  onOpenCharacterStudio,
+  hasCharacter = false,
+  characterWorking = false,
+}: MoodSheetProps) => {
   const returnFocusRef = useRef<HTMLElement | null>(null);
 
   return (
@@ -64,6 +77,28 @@ const MoodSheet = ({ open, onOpenChange, petName, mood, onPick }: MoodSheetProps
             </button>
           ))}
         </div>
+        {onOpenCharacterStudio && (
+          <div className="mt-6 border-t border-mipo-line/60 pt-4">
+            <button
+              type="button"
+              onClick={() => {
+                onOpenChange(false);
+                window.setTimeout(onOpenCharacterStudio, 180);
+              }}
+              className="mx-auto flex min-h-12 w-full max-w-sm items-center justify-center gap-2 rounded-2xl bg-mipo-soft px-4 text-sm font-semibold text-mipo-ink transition-colors hover:bg-mipo-line/50"
+            >
+              {characterWorking ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" strokeWidth={1.7} />}
+              {characterWorking
+                ? `הדמות של ${petName} נוצרת עכשיו`
+                : hasCharacter
+                  ? `פתיחת סטודיו הדמות של ${petName}`
+                  : `להפוך את ${petName} לדמות דיגיטלית`}
+            </button>
+            {!hasCharacter && !characterWorking && (
+              <p className="mt-2 text-center text-[11px] leading-5 text-mipo-muted">מבוסס על תמונות · אנימציה חלקה ללא וידאו</p>
+            )}
+          </div>
+        )}
       </SheetContent>
     </Sheet>
   );

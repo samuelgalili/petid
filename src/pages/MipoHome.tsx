@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bell, Bot, ChevronLeft, FileHeart, HeartPulse, Plus, ShoppingBag, UserRound } from "lucide-react";
 
@@ -6,8 +6,12 @@ import defaultPetAvatar from "@/assets/default-pet-avatar.png";
 import { PetidLogo } from "@/components/PetidLogo";
 import PetOrbit, { type OrbitSlot } from "@/components/home/PetOrbit";
 import MoodSheet from "@/components/home/MoodSheet";
+import PetCharacterStudio from "@/components/home/PetCharacterStudio";
 import { useHomeAttention } from "@/hooks/useHomeAttention";
+import { usePetCharacter } from "@/hooks/usePetCharacter";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
+import type { MipoPetCharacterExpression } from "@/lib/mipoApi";
+import { consumePetCompanionReaction, PET_COMPANION_REACTION_EVENT } from "@/lib/petCompanionReactions";
 
 const MipoHome = () => {
   const navigate = useNavigate();
@@ -19,13 +23,49 @@ const MipoHome = () => {
     setMood(localStorage.getItem(moodKey));
   }, [moodKey]);
   const [moodOpen, setMoodOpen] = useState(false);
+  const [characterStudioOpen, setCharacterStudioOpen] = useState(false);
+  const [reactionOverride, setReactionOverride] = useState<MipoPetCharacterExpression | null>(null);
   const attention = useHomeAttention(activePet);
+  const petCharacter = usePetCharacter(activePet?.id);
+  const previousCharacterStatus = useRef(petCharacter.character?.status);
+  const reactionTimer = useRef<number | null>(null);
+  const showReaction = useCallback((expression: MipoPetCharacterExpression, duration = 4500) => {
+    if (reactionTimer.current) window.clearTimeout(reactionTimer.current);
+    setReactionOverride(expression);
+    reactionTimer.current = window.setTimeout(() => {
+      setReactionOverride(null);
+      reactionTimer.current = null;
+    }, duration);
+  }, []);
+  useEffect(() => () => {
+    if (reactionTimer.current) window.clearTimeout(reactionTimer.current);
+  }, []);
   const pickMood = (label: string) => {
     const next = mood === label ? null : label;
     setMood(next);
     if (next) localStorage.setItem(moodKey, next);
     else localStorage.removeItem(moodKey);
   };
+  useEffect(() => {
+    const previousStatus = previousCharacterStatus.current;
+    const nextStatus = petCharacter.character?.status;
+    previousCharacterStatus.current = nextStatus;
+    if (previousStatus && previousStatus !== "ready" && nextStatus === "ready") {
+      showReaction("celebrate", 5000);
+    }
+  }, [petCharacter.character?.status, showReaction]);
+
+  useEffect(() => {
+    if (!activePet?.id) return;
+    const stored = consumePetCompanionReaction(activePet.id);
+    if (stored) showReaction(stored);
+    const handleReaction = (event: Event) => {
+      const detail = (event as CustomEvent<{ petId: string; expression: MipoPetCharacterExpression }>).detail;
+      if (detail?.petId === activePet.id) showReaction(detail.expression);
+    };
+    window.addEventListener(PET_COMPANION_REACTION_EVENT, handleReaction);
+    return () => window.removeEventListener(PET_COMPANION_REACTION_EVENT, handleReaction);
+  }, [activePet?.id, showReaction]);
   const moodInsights: Record<string, { title: string; body: string }> = {
     "שמחה": { title: "יום מצוין להרפתקה", body: `כש${petName} במצב רוח כזה, זה הזמן למשחק חדש או מסלול טיול ארוך יותר.` },
     "רגועה": { title: "יום טוב לתנועה עדינה", body: `טיול רגוע ומשחק קצר יעזרו לשמור על השגרה המאוזנת של ${petName}.` },
@@ -45,6 +85,22 @@ const MipoHome = () => {
     : mood
       ? { text: moodInsights[mood].body, actionLabel: "לשאול את Mipo", actionPath: "/chat" }
       : { text: `הקישו על ${petName} לעדכון מצב הרוח`, actionLabel: "", actionPath: "" };
+  const moodExpressions: Record<string, MipoPetCharacterExpression> = {
+    "שמחה": "happy",
+    "רגועה": "proud",
+    "שובבה": "curious",
+    "עייפה": "sleepy",
+  };
+  const characterExpression: MipoPetCharacterExpression = reactionOverride
+    || (mood ? moodExpressions[mood] : null)
+    || (attention.primary ? "attentive" : "neutral");
+  const characterReady = petCharacter.character?.status === "ready";
+  const characterImage = characterReady
+    ? petCharacter.character?.expressions[characterExpression]
+      || petCharacter.character?.expressions.neutral
+      || activePet?.avatar_url
+      || defaultPetAvatar
+    : activePet?.avatar_url || defaultPetAvatar;
   const firstName = useMemo(() => {
     const hour = new Date().getHours();
     if (hour < 12) return "בוקר טוב";
@@ -78,7 +134,9 @@ const MipoHome = () => {
               className="mt-6"
               slots={slots}
               petName={petName}
-              avatarUrl={activePet?.avatar_url || defaultPetAvatar}
+              avatarUrl={characterImage}
+              isCharacter={characterReady}
+              characterExpression={characterExpression}
               loading={loading}
               onPetClick={() => setMoodOpen(true)}
             />
@@ -108,7 +166,30 @@ const MipoHome = () => {
           </section>
         )}
 
-        <MoodSheet open={moodOpen} onOpenChange={setMoodOpen} petName={petName} mood={mood} onPick={pickMood} />
+        <MoodSheet
+          open={moodOpen}
+          onOpenChange={setMoodOpen}
+          petName={petName}
+          mood={mood}
+          onPick={pickMood}
+          onOpenCharacterStudio={() => setCharacterStudioOpen(true)}
+          hasCharacter={Boolean(petCharacter.character)}
+          characterWorking={petCharacter.character?.status === "generating_candidates" || petCharacter.character?.status === "generating_pack"}
+        />
+        <PetCharacterStudio
+          open={characterStudioOpen}
+          onOpenChange={setCharacterStudioOpen}
+          petName={petName}
+          petAvatarUrl={activePet?.avatar_url || defaultPetAvatar}
+          character={petCharacter.character}
+          available={petCharacter.available}
+          loading={petCharacter.loading}
+          submitting={petCharacter.submitting}
+          error={petCharacter.error}
+          onGenerate={petCharacter.generate}
+          onSelectCandidate={petCharacter.selectCandidate}
+          onDelete={petCharacter.remove}
+        />
       </div>
     </main>
   );
