@@ -1,0 +1,16 @@
+{
+  "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
+  "high": true,
+  "package-manager": "npm",
+  "skip-dev": true,
+  "report-type": "summary",
+  "allowlist": [
+    {
+      "GHSA-qwww-vcr4-c8h2": {
+        "active": true,
+        "notes": "React Router RSC server-action advisory; Mipo is a client-only Vite SPA using BrowserRouter and no unstable RSC APIs. Remove when a patched 7.x release is available.",
+        "expiry": "2026-11-03"
+      }
+    }
+  ]
+}
