@@ -41,6 +41,10 @@ import {
   toggleSocialSave,
   voteSocialPoll,
 } from "./social.js";
+import {
+  generateCharacterCandidates,
+  generateCharacterExpressions,
+} from "./petCharacter.js";
 
 const port = Number(process.env.PORT || 3000);
 const databaseUrl = process.env.DATABASE_URL;
@@ -48,6 +52,7 @@ const adminApiKey = process.env.ADMIN_API_KEY;
 const defaultBusinessId = process.env.DEFAULT_BUSINESS_ID || "cf941cc4-e1d1-4d7c-8122-a5df81a1e53c";
 const uploadDir = process.env.UPLOAD_DIR || "/app/uploads";
 const privateUploadDir = process.env.PRIVATE_UPLOAD_DIR || "/app/private-uploads";
+const petCharacterUploadDir = path.join(privateUploadDir, "pet-characters");
 const maxUploadBytes = Number(process.env.MAX_UPLOAD_BYTES || 5 * 1024 * 1024);
 const maxSocialUploadBytes = Number(process.env.MAX_SOCIAL_UPLOAD_BYTES || 25 * 1024 * 1024);
 const maxDocumentUploadBytes = Number(process.env.MAX_DOCUMENT_UPLOAD_BYTES || 10 * 1024 * 1024);
@@ -83,6 +88,12 @@ const cardcomLowProfileUrl = "https://secure.cardcom.solutions/Interface/LowProf
 const cardcomIndicatorUrl = "https://secure.cardcom.solutions/Interface/BillGoldGetLowProfileIndicator.aspx";
 const geminiApiKey = process.env.GEMINI_API_KEY || "";
 const geminiModel = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const vertexAiApiKey = process.env.VERTEX_AI_API_KEY || "";
+const vertexAiProject = process.env.GOOGLE_CLOUD_PROJECT || "";
+const vertexAiLocation = process.env.GOOGLE_CLOUD_LOCATION || "global";
+const vertexAiImageModel = process.env.VERTEX_AI_IMAGE_MODEL || "gemini-2.5-flash-image";
+const vertexAiVisionModel = process.env.VERTEX_AI_VISION_MODEL || "gemini-2.5-flash";
+const vertexAiConfigured = Boolean(vertexAiApiKey || vertexAiProject);
 const maxAiAttachmentBytes = Number(process.env.MAX_AI_ATTACHMENT_BYTES || 15 * 1024 * 1024);
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -274,6 +285,8 @@ const rateLimits = {
   paymentCreate: { limit: 20, windowMs: 10 * 60 * 1000 },
   reportCreate: { limit: 10, windowMs: 60 * 60 * 1000 },
   aiChat: { limit: 30, windowMs: 60 * 60 * 1000 },
+  petCharacterGeneration: { limit: 3, windowMs: 24 * 60 * 60 * 1000 },
+  petCharacterPack: { limit: 5, windowMs: 24 * 60 * 60 * 1000 },
   mediaUpload: { limit: 30, windowMs: 60 * 60 * 1000 },
   socialUpload: { limit: 12, windowMs: 60 * 60 * 1000 },
   socialWrite: { limit: 60, windowMs: 60 * 60 * 1000 },
@@ -1639,12 +1652,490 @@ const updateUserPet = async (userId, petId, body) => {
   return result.rows[0] ? serializePet(result.rows[0]) : null;
 };
 
+const normalizeStorageKeyList = (value) => (
+  Array.isArray(value)
+    ? value.map((item) => String(item || "").trim()).filter(Boolean)
+    : []
+);
+
+const deletePetCharacterFiles = async (storageKeys) => {
+  await Promise.all(normalizeStorageKeyList(storageKeys).map(async (storageKey) => {
+    const safeKey = safeStorageKey(storageKey);
+    if (!safeKey) return;
+    try {
+      await unlink(path.join(petCharacterUploadDir, safeKey));
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+    }
+  }));
+};
+
+const listPetCharacterFileKeys = async (userId, petId = null) => {
+  const values = [userId];
+  const where = ["character.user_id = $1"];
+  if (petId) {
+    values.push(petId);
+    where.push(`character.pet_id = $${values.length}`);
+  }
+  const result = await pool.query(
+    `
+      select character.source_storage_keys, asset.storage_key
+      from public.pet_characters character
+      left join public.pet_character_assets asset on asset.character_id = character.id
+      where ${where.join(" and ")}
+    `,
+    values,
+  );
+  return [...new Set(result.rows.flatMap((row) => [
+    ...normalizeStorageKeyList(row.source_storage_keys),
+    row.storage_key,
+  ]).filter(Boolean))];
+};
+
 const deleteUserPet = async (userId, petId) => {
   if (!uuidPattern.test(petId)) return false;
+  const characterFiles = await listPetCharacterFileKeys(userId, petId);
   const result = await pool.query(
     "delete from public.pets where id = $1 and user_id = $2",
     [petId, userId],
   );
+  if (result.rowCount > 0) await deletePetCharacterFiles(characterFiles);
+  return result.rowCount > 0;
+};
+
+const characterAssetUrl = (petId, assetKey, version) => (
+  `/api/me/pets/${petId}/character/assets/${encodeURIComponent(assetKey)}?v=${version}`
+);
+
+const serializePetCharacter = (character, assets = []) => {
+  if (!character) return null;
+  const candidates = [];
+  const expressions = {};
+  for (const asset of assets) {
+    const url = characterAssetUrl(character.pet_id, asset.asset_key, character.generation_version);
+    if (asset.asset_type === "candidate") {
+      candidates.push({ key: asset.asset_key, url });
+    } else {
+      expressions[asset.asset_key] = url;
+    }
+  }
+  candidates.sort((a, b) => a.key.localeCompare(b.key));
+  const selectedCandidate = candidates.find((candidate) => candidate.key === character.selected_candidate_key) || null;
+  if (selectedCandidate && !expressions.neutral) expressions.neutral = selectedCandidate.url;
+
+  return {
+    id: character.id,
+    pet_id: character.pet_id,
+    status: character.status,
+    style_key: character.style_key,
+    selected_candidate_key: character.selected_candidate_key || null,
+    candidates,
+    expressions,
+    error_code: character.error_code || null,
+    generation_version: Number(character.generation_version) || 1,
+    created_at: character.created_at,
+    updated_at: character.updated_at,
+  };
+};
+
+const getPetCharacter = async (userId, petId) => {
+  const characterResult = await pool.query(
+    "select * from public.pet_characters where user_id = $1 and pet_id = $2 limit 1",
+    [userId, petId],
+  );
+  const character = characterResult.rows[0];
+  if (!character) return null;
+  const assets = await pool.query(
+    "select asset_key, asset_type from public.pet_character_assets where character_id = $1 order by asset_type, asset_key",
+    [character.id],
+  );
+  return serializePetCharacter(character, assets.rows);
+};
+
+const generatedImageExtension = (contentType) => {
+  if (contentType === "image/jpeg") return ".jpg";
+  if (contentType === "image/webp") return ".webp";
+  return ".png";
+};
+
+const storePetCharacterImage = async ({ buffer, contentType }) => {
+  await mkdir(petCharacterUploadDir, { recursive: true, mode: 0o700 });
+  await chmod(petCharacterUploadDir, 0o700);
+  const storageKey = `${Date.now()}-${randomUUID()}${generatedImageExtension(contentType)}`;
+  await writeFile(path.join(petCharacterUploadDir, storageKey), buffer, { flag: "wx", mode: 0o600 });
+  return { storageKey, contentType, fileSize: buffer.length };
+};
+
+const characterErrorCode = (error) => {
+  if (error?.code === "INVALID_REFERENCE_PHOTOS") return "invalid_reference_photos";
+  if (error?.code === "NO_GENERATED_IMAGE") return "generation_blocked";
+  if (error?.code === "INCONSISTENT_CHARACTER_PACK") return "generation_inconsistent";
+  if (/429|resource exhausted|quota/i.test(String(error?.message || ""))) return "temporarily_unavailable";
+  return "generation_failed";
+};
+
+const markPetCharacterFailed = async (characterId, error) => {
+  console.error("Pet character generation failed", {
+    characterId,
+    code: characterErrorCode(error),
+    message: String(error?.message || "Unknown generation error").slice(0, 300),
+  });
+  await pool.query(
+    `
+      update public.pet_characters
+      set status = 'failed', error_code = $2, source_storage_keys = '[]'::jsonb, updated_at = now()
+      where id = $1
+    `,
+    [characterId, characterErrorCode(error)],
+  ).catch(() => {});
+};
+
+const processPetCharacterCandidates = async (characterId) => {
+  const result = await pool.query(
+    `
+      select character.*, pet.name as pet_name, pet.type as pet_type
+      from public.pet_characters character
+      join public.pets pet on pet.id = character.pet_id
+      where character.id = $1 and character.status = 'generating_candidates'
+      limit 1
+    `,
+    [characterId],
+  );
+  const character = result.rows[0];
+  if (!character) return;
+  const sourceKeys = normalizeStorageKeyList(character.source_storage_keys);
+  const newFiles = [];
+
+  try {
+    const references = await Promise.all(sourceKeys.map(async (storageKey) => {
+      const safeKey = safeStorageKey(storageKey);
+      if (!safeKey) throw Object.assign(new Error("Invalid character source"), { code: "INVALID_REFERENCE_PHOTOS" });
+      const contentType = contentTypeForSafeExtension(path.extname(safeKey));
+      if (!contentType?.startsWith("image/")) {
+        throw Object.assign(new Error("Unsupported character source"), { code: "INVALID_REFERENCE_PHOTOS" });
+      }
+      return { buffer: await readFile(path.join(petCharacterUploadDir, safeKey)), contentType };
+    }));
+
+    const generated = await generateCharacterCandidates({
+      apiKey: vertexAiApiKey || undefined,
+      project: vertexAiProject || undefined,
+      location: vertexAiLocation,
+      imageModel: vertexAiImageModel,
+      visionModel: vertexAiVisionModel,
+      references,
+      petName: character.pet_name,
+      petType: character.pet_type,
+    });
+
+    for (const candidate of generated.candidates) {
+      const stored = await storePetCharacterImage(candidate);
+      newFiles.push({ ...stored, assetKey: candidate.key, assetType: "candidate" });
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query("begin");
+      for (const asset of newFiles) {
+        await client.query(
+          `
+            insert into public.pet_character_assets (
+              character_id, asset_key, asset_type, storage_key, content_type, file_size
+            ) values ($1, $2, $3, $4, $5, $6)
+          `,
+          [characterId, asset.assetKey, asset.assetType, asset.storageKey, asset.contentType, asset.fileSize],
+        );
+      }
+      await client.query(
+        `
+          update public.pet_characters
+          set
+            status = 'awaiting_selection',
+            visual_identity = $2::jsonb,
+            source_storage_keys = '[]'::jsonb,
+            model = $3,
+            error_code = null,
+            updated_at = now()
+          where id = $1
+        `,
+        [characterId, JSON.stringify(generated.visualIdentity), vertexAiImageModel],
+      );
+      await client.query("commit");
+    } catch (error) {
+      await client.query("rollback").catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+    await deletePetCharacterFiles(sourceKeys);
+  } catch (error) {
+    await deletePetCharacterFiles([...sourceKeys, ...newFiles.map((file) => file.storageKey)]).catch(() => {});
+    await markPetCharacterFailed(characterId, error);
+  }
+};
+
+const processPetCharacterExpressions = async (characterId) => {
+  const result = await pool.query(
+    `
+      select
+        character.*,
+        pet.name as pet_name,
+        asset.storage_key as candidate_storage_key,
+        asset.content_type as candidate_content_type
+      from public.pet_characters character
+      join public.pets pet on pet.id = character.pet_id
+      join public.pet_character_assets asset
+        on asset.character_id = character.id
+        and asset.asset_key = character.selected_candidate_key
+        and asset.asset_type = 'candidate'
+      where character.id = $1 and character.status = 'generating_pack'
+      limit 1
+    `,
+    [characterId],
+  );
+  const character = result.rows[0];
+  if (!character) return;
+  const newFiles = [];
+
+  try {
+    const safeKey = safeStorageKey(character.candidate_storage_key);
+    if (!safeKey) throw new Error("Selected character candidate is unavailable");
+    const canonical = {
+      buffer: await readFile(path.join(petCharacterUploadDir, safeKey)),
+      contentType: character.candidate_content_type,
+    };
+    const generated = await generateCharacterExpressions({
+      apiKey: vertexAiApiKey || undefined,
+      project: vertexAiProject || undefined,
+      location: vertexAiLocation,
+      imageModel: vertexAiImageModel,
+      visionModel: vertexAiVisionModel,
+      canonical,
+      visualIdentity: character.visual_identity || {},
+      petName: character.pet_name,
+    });
+
+    for (const expression of generated) {
+      const stored = await storePetCharacterImage(expression);
+      newFiles.push({ ...stored, assetKey: expression.key, assetType: "expression" });
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query("begin");
+      for (const asset of newFiles) {
+        await client.query(
+          `
+            insert into public.pet_character_assets (
+              character_id, asset_key, asset_type, storage_key, content_type, file_size
+            ) values ($1, $2, $3, $4, $5, $6)
+          `,
+          [characterId, asset.assetKey, asset.assetType, asset.storageKey, asset.contentType, asset.fileSize],
+        );
+      }
+      await client.query(
+        "update public.pet_characters set status = 'ready', error_code = null, updated_at = now() where id = $1",
+        [characterId],
+      );
+      await client.query("commit");
+    } catch (error) {
+      await client.query("rollback").catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    await deletePetCharacterFiles(newFiles.map((file) => file.storageKey)).catch(() => {});
+    await markPetCharacterFailed(characterId, error);
+  }
+};
+
+const petCharacterJobsInFlight = new Set();
+let petCharacterJobQueue = Promise.resolve();
+
+const schedulePetCharacterJob = (characterId, stage) => {
+  const jobKey = `${characterId}:${stage}`;
+  if (petCharacterJobsInFlight.has(jobKey)) return;
+  petCharacterJobsInFlight.add(jobKey);
+  petCharacterJobQueue = petCharacterJobQueue
+    .catch(() => {})
+    .then(async () => {
+      try {
+        if (stage === "candidates") await processPetCharacterCandidates(characterId);
+        else await processPetCharacterExpressions(characterId);
+      } finally {
+        petCharacterJobsInFlight.delete(jobKey);
+      }
+    });
+};
+
+const startPetCharacterGeneration = async (userId, petId, body) => {
+  if (!vertexAiConfigured) {
+    const error = new Error("Pet character generation is not configured");
+    error.statusCode = 503;
+    throw error;
+  }
+  if (body.consent !== true) {
+    const error = new Error("Photo processing consent is required");
+    error.statusCode = 400;
+    throw error;
+  }
+  const pet = await getUserPet(userId, petId);
+  if (!pet) return null;
+  const photos = Array.isArray(body.photos) ? body.photos : [];
+  if (photos.length < 1 || photos.length > 3) {
+    const error = new Error("Upload between one and three pet photos");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const currentResult = await pool.query(
+    "select * from public.pet_characters where user_id = $1 and pet_id = $2 limit 1",
+    [userId, petId],
+  );
+  const current = currentResult.rows[0];
+  if (["generating_candidates", "generating_pack"].includes(current?.status)) {
+    const error = new Error("Pet character generation is already in progress");
+    error.statusCode = 409;
+    throw error;
+  }
+
+  const oldFiles = current ? await listPetCharacterFileKeys(userId, petId) : [];
+  const uploaded = [];
+  try {
+    for (const photo of photos) {
+      const stored = await uploadDataUrlFile({ data_url: photo?.data_url }, {
+        maxBytes: maxUploadBytes,
+        requireImage: true,
+        allowedContentTypes: new Set(["image/jpeg", "image/png", "image/webp"]),
+        directory: petCharacterUploadDir,
+        publicUrl: false,
+      });
+      uploaded.push(stored.storage_key);
+    }
+  } catch (error) {
+    await deletePetCharacterFiles(uploaded).catch(() => {});
+    throw error;
+  }
+
+  const client = await pool.connect();
+  let character;
+  try {
+    await client.query("begin");
+    if (current) {
+      await client.query("delete from public.pet_character_assets where character_id = $1", [current.id]);
+      const updated = await client.query(
+        `
+          update public.pet_characters
+          set
+            status = 'generating_candidates',
+            selected_candidate_key = null,
+            source_storage_keys = $2::jsonb,
+            visual_identity = '{}'::jsonb,
+            model = $3,
+            generation_version = generation_version + 1,
+            error_code = null,
+            consented_at = now(),
+            updated_at = now()
+          where id = $1
+          returning *
+        `,
+        [current.id, JSON.stringify(uploaded), vertexAiImageModel],
+      );
+      character = updated.rows[0];
+    } else {
+      const inserted = await client.query(
+        `
+          insert into public.pet_characters (
+            user_id, pet_id, status, source_storage_keys, model
+          ) values ($1, $2, 'generating_candidates', $3::jsonb, $4)
+          returning *
+        `,
+        [userId, petId, JSON.stringify(uploaded), vertexAiImageModel],
+      );
+      character = inserted.rows[0];
+    }
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback").catch(() => {});
+    await deletePetCharacterFiles(uploaded).catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
+
+  await deletePetCharacterFiles(oldFiles).catch(() => {});
+  schedulePetCharacterJob(character.id, "candidates");
+  return serializePetCharacter(character, []);
+};
+
+const selectPetCharacterCandidate = async (userId, petId, candidateKey) => {
+  const key = String(candidateKey || "").trim();
+  const result = await pool.query(
+    `
+      select character.*, asset.id as candidate_asset_id
+      from public.pet_characters character
+      left join public.pet_character_assets asset
+        on asset.character_id = character.id
+        and asset.asset_key = $3
+        and asset.asset_type = 'candidate'
+      where character.user_id = $1 and character.pet_id = $2
+      limit 1
+    `,
+    [userId, petId, key],
+  );
+  const character = result.rows[0];
+  if (!character || !character.candidate_asset_id) return null;
+  if (["generating_candidates", "generating_pack"].includes(character.status)) {
+    const error = new Error("Pet character generation is already in progress");
+    error.statusCode = 409;
+    throw error;
+  }
+
+  const oldExpressions = await pool.query(
+    "select storage_key from public.pet_character_assets where character_id = $1 and asset_type = 'expression'",
+    [character.id],
+  );
+  const client = await pool.connect();
+  let updated;
+  try {
+    await client.query("begin");
+    await client.query(
+      "delete from public.pet_character_assets where character_id = $1 and asset_type = 'expression'",
+      [character.id],
+    );
+    updated = await client.query(
+      `
+        update public.pet_characters
+        set status = 'generating_pack', selected_candidate_key = $2, error_code = null, updated_at = now()
+        where id = $1
+        returning *
+      `,
+      [character.id, key],
+    );
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback").catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
+  await deletePetCharacterFiles(oldExpressions.rows.map((row) => row.storage_key)).catch(() => {});
+  schedulePetCharacterJob(character.id, "expressions");
+  const assets = await pool.query(
+    "select asset_key, asset_type from public.pet_character_assets where character_id = $1 order by asset_type, asset_key",
+    [character.id],
+  );
+  return serializePetCharacter(updated.rows[0], assets.rows);
+};
+
+const deletePetCharacter = async (userId, petId) => {
+  const files = await listPetCharacterFileKeys(userId, petId);
+  const result = await pool.query(
+    "delete from public.pet_characters where user_id = $1 and pet_id = $2",
+    [userId, petId],
+  );
+  if (result.rowCount > 0) await deletePetCharacterFiles(files);
   return result.rowCount > 0;
 };
 
@@ -4053,6 +4544,7 @@ const exportMyData = async (userId, email) => {
     orders,
     vetVisitsResult,
     vaccinationsResult,
+    petCharactersResult,
   ] = await Promise.all([
     getProfileByUserId(userId),
     listUserDocuments(userId, { limit: 500 }),
@@ -4072,6 +4564,17 @@ const exportMyData = async (userId, email) => {
         [userId, petIds],
       )
       : Promise.resolve({ rows: [] }),
+    pool.query(
+      `
+        select
+          id, pet_id, status, style_key, selected_candidate_key,
+          model, generation_version, error_code, consented_at, created_at, updated_at
+        from public.pet_characters
+        where user_id = $1
+        order by created_at desc
+      `,
+      [userId],
+    ),
   ]);
 
   return {
@@ -4085,14 +4588,16 @@ const exportMyData = async (userId, email) => {
     orders,
     vet_visits: vetVisitsResult.rows.map(serializeVetVisit),
     vaccinations: vaccinationsResult.rows.map(serializeVaccination),
+    pet_characters: petCharactersResult.rows,
   };
 };
 
 const deleteMyAccount = async (userId, email) => {
-  const [dataExport, documentFiles, userUploads] = await Promise.all([
+  const [dataExport, documentFiles, userUploads, petCharacterFiles] = await Promise.all([
     exportMyData(userId, email),
     pool.query("select file_url, storage_key from public.pet_documents where user_id = $1", [userId]),
     pool.query("select storage_key from public.user_uploads where user_id = $1", [userId]),
+    listPetCharacterFileKeys(userId),
   ]);
   const normalizedEmail = normalizeEmail(email);
 
@@ -4105,6 +4610,7 @@ const deleteMyAccount = async (userId, email) => {
         if (error.code !== "ENOENT") throw error;
       }
     }),
+    deletePetCharacterFiles(petCharacterFiles),
   ]);
 
   const client = await pool.connect();
@@ -5156,6 +5662,42 @@ const servePrivateDocument = async (userId, documentId, response) => {
   return true;
 };
 
+const servePetCharacterAsset = async (userId, petId, assetKey, response) => {
+  const safeAssetKey = String(assetKey || "").trim();
+  if (!/^[a-z0-9-]{1,40}$/.test(safeAssetKey)) return false;
+  const result = await pool.query(
+    `
+      select asset.storage_key, asset.content_type
+      from public.pet_character_assets asset
+      join public.pet_characters character on character.id = asset.character_id
+      where character.user_id = $1
+        and character.pet_id = $2
+        and asset.asset_key = $3
+      limit 1
+    `,
+    [userId, petId, safeAssetKey],
+  );
+  const asset = result.rows[0];
+  const storageKey = safeStorageKey(asset?.storage_key);
+  const safeContentType = storageKey ? contentTypeForSafeExtension(path.extname(storageKey)) : null;
+  if (!storageKey || !safeContentType?.startsWith("image/") || safeContentType !== asset.content_type) return false;
+
+  let buffer;
+  try {
+    buffer = await readFile(path.join(petCharacterUploadDir, storageKey));
+  } catch (error) {
+    if (error.code === "ENOENT") return false;
+    throw error;
+  }
+  sendStoredFile(response, buffer, {
+    contentType: safeContentType,
+    fileName: `${safeAssetKey}${path.extname(storageKey)}`,
+    isPrivate: true,
+    sandbox: true,
+  });
+  return true;
+};
+
 const servePublicUpload = async (request, response, pathname) => {
   const storageKey = safeStorageKey(pathname.slice("/uploads/".length));
   const contentType = storageKey ? contentTypeForSafeExtension(path.extname(storageKey)) : null;
@@ -5518,6 +6060,100 @@ const handleRequest = async (request, response) => {
       const auth = await requireUser(request, response);
       if (!auth) return;
       sendJson(response, 201, { pet: await insertUserPet(auth.user.id, await readBody(request)) });
+      return;
+    }
+
+    const myPetCharacterAssetMatch = url.pathname.match(
+      /^\/api\/me\/pets\/([0-9a-fA-F-]{36})\/character\/assets\/([a-z0-9-]+)$/,
+    );
+    if (myPetCharacterAssetMatch && request.method === "GET") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      if (!(await servePetCharacterAsset(
+        auth.user.id,
+        myPetCharacterAssetMatch[1],
+        myPetCharacterAssetMatch[2],
+        response,
+      ))) {
+        sendError(response, 404, "Character image not found");
+      }
+      return;
+    }
+
+    const myPetCharacterSelectMatch = url.pathname.match(
+      /^\/api\/me\/pets\/([0-9a-fA-F-]{36})\/character\/select$/,
+    );
+    if (myPetCharacterSelectMatch && request.method === "POST") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      if (!enforceRateLimit(
+        request,
+        response,
+        "pet-character-pack",
+        rateLimits.petCharacterPack,
+        auth.user.id,
+      )) return;
+      const body = await readBody(request, 32 * 1024);
+      const character = await selectPetCharacterCandidate(
+        auth.user.id,
+        myPetCharacterSelectMatch[1],
+        body.candidate_key,
+      );
+      if (!character) {
+        sendError(response, 404, "Character candidate not found");
+        return;
+      }
+      sendJson(response, 202, { available: vertexAiConfigured, character });
+      return;
+    }
+
+    const myPetCharacterMatch = url.pathname.match(
+      /^\/api\/me\/pets\/([0-9a-fA-F-]{36})\/character$/,
+    );
+    if (myPetCharacterMatch && request.method === "GET") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      const pet = await getUserPet(auth.user.id, myPetCharacterMatch[1]);
+      if (!pet) {
+        sendError(response, 404, "Pet not found");
+        return;
+      }
+      sendJson(response, 200, {
+        available: vertexAiConfigured,
+        character: await getPetCharacter(auth.user.id, myPetCharacterMatch[1]),
+      });
+      return;
+    }
+
+    if (myPetCharacterMatch && request.method === "POST") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      if (!enforceRateLimit(
+        request,
+        response,
+        "pet-character-generation",
+        rateLimits.petCharacterGeneration,
+        auth.user.id,
+      )) return;
+      const bodyLimit = Math.ceil(maxUploadBytes * 4) + 1024 * 1024;
+      const character = await startPetCharacterGeneration(
+        auth.user.id,
+        myPetCharacterMatch[1],
+        await readBody(request, bodyLimit),
+      );
+      if (!character) {
+        sendError(response, 404, "Pet not found");
+        return;
+      }
+      sendJson(response, 202, { available: vertexAiConfigured, character });
+      return;
+    }
+
+    if (myPetCharacterMatch && request.method === "DELETE") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      const deleted = await deletePetCharacter(auth.user.id, myPetCharacterMatch[1]);
+      sendJson(response, deleted ? 200 : 404, { deleted });
       return;
     }
 
@@ -5935,6 +6571,27 @@ const handleRequest = async (request, response) => {
 
 const server = http.createServer(handleRequest);
 
+const resumePetCharacterJobs = async () => {
+  if (!vertexAiConfigured) return;
+  const result = await pool.query(
+    `
+      select id, status
+      from public.pet_characters
+      where status in ('generating_candidates', 'generating_pack')
+      order by updated_at asc
+    `,
+  );
+  for (const character of result.rows) {
+    schedulePetCharacterJob(
+      character.id,
+      character.status === "generating_candidates" ? "candidates" : "expressions",
+    );
+  }
+};
+
 server.listen(port, () => {
   console.log(`mipo-api listening on ${port}`);
+  resumePetCharacterJobs().catch((error) => {
+    console.error("Failed to resume pet character generation", error);
+  });
 });
