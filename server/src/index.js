@@ -91,9 +91,13 @@ const geminiModel = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 const vertexAiApiKey = process.env.VERTEX_AI_API_KEY || "";
 const vertexAiProject = process.env.GOOGLE_CLOUD_PROJECT || "";
 const vertexAiLocation = process.env.GOOGLE_CLOUD_LOCATION || "global";
-const vertexAiImageModel = process.env.VERTEX_AI_IMAGE_MODEL || "gemini-2.5-flash-image";
-const vertexAiVisionModel = process.env.VERTEX_AI_VISION_MODEL || "gemini-2.5-flash";
-const vertexAiConfigured = Boolean(vertexAiApiKey || vertexAiProject);
+const petCharacterImageModel = process.env.PET_CHARACTER_IMAGE_MODEL
+  || process.env.VERTEX_AI_IMAGE_MODEL
+  || "gemini-2.5-flash-image";
+const petCharacterVisionModel = process.env.PET_CHARACTER_VISION_MODEL
+  || process.env.VERTEX_AI_VISION_MODEL
+  || "gemini-2.5-flash";
+const petCharacterAiConfigured = Boolean(geminiApiKey || vertexAiApiKey || vertexAiProject);
 const maxAiAttachmentBytes = Number(process.env.MAX_AI_ATTACHMENT_BYTES || 15 * 1024 * 1024);
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -1818,11 +1822,12 @@ const processPetCharacterCandidates = async (characterId) => {
     }));
 
     const generated = await generateCharacterCandidates({
-      apiKey: vertexAiApiKey || undefined,
+      geminiApiKey: geminiApiKey || undefined,
+      vertexApiKey: vertexAiApiKey || undefined,
       project: vertexAiProject || undefined,
       location: vertexAiLocation,
-      imageModel: vertexAiImageModel,
-      visionModel: vertexAiVisionModel,
+      imageModel: petCharacterImageModel,
+      visionModel: petCharacterVisionModel,
       references,
       petName: character.pet_name,
       petType: character.pet_type,
@@ -1858,7 +1863,7 @@ const processPetCharacterCandidates = async (characterId) => {
             updated_at = now()
           where id = $1
         `,
-        [characterId, JSON.stringify(generated.visualIdentity), vertexAiImageModel],
+        [characterId, JSON.stringify(generated.visualIdentity), petCharacterImageModel],
       );
       await client.query("commit");
     } catch (error) {
@@ -1905,11 +1910,12 @@ const processPetCharacterExpressions = async (characterId) => {
       contentType: character.candidate_content_type,
     };
     const generated = await generateCharacterExpressions({
-      apiKey: vertexAiApiKey || undefined,
+      geminiApiKey: geminiApiKey || undefined,
+      vertexApiKey: vertexAiApiKey || undefined,
       project: vertexAiProject || undefined,
       location: vertexAiLocation,
-      imageModel: vertexAiImageModel,
-      visionModel: vertexAiVisionModel,
+      imageModel: petCharacterImageModel,
+      visionModel: petCharacterVisionModel,
       canonical,
       visualIdentity: character.visual_identity || {},
       petName: character.pet_name,
@@ -1970,7 +1976,7 @@ const schedulePetCharacterJob = (characterId, stage) => {
 };
 
 const startPetCharacterGeneration = async (userId, petId, body) => {
-  if (!vertexAiConfigured) {
+  if (!petCharacterAiConfigured) {
     const error = new Error("Pet character generation is not configured");
     error.statusCode = 503;
     throw error;
@@ -2040,7 +2046,7 @@ const startPetCharacterGeneration = async (userId, petId, body) => {
           where id = $1
           returning *
         `,
-        [current.id, JSON.stringify(uploaded), vertexAiImageModel],
+        [current.id, JSON.stringify(uploaded), petCharacterImageModel],
       );
       character = updated.rows[0];
     } else {
@@ -2051,7 +2057,7 @@ const startPetCharacterGeneration = async (userId, petId, body) => {
           ) values ($1, $2, 'generating_candidates', $3::jsonb, $4)
           returning *
         `,
-        [userId, petId, JSON.stringify(uploaded), vertexAiImageModel],
+        [userId, petId, JSON.stringify(uploaded), petCharacterImageModel],
       );
       character = inserted.rows[0];
     }
@@ -6103,7 +6109,7 @@ const handleRequest = async (request, response) => {
         sendError(response, 404, "Character candidate not found");
         return;
       }
-      sendJson(response, 202, { available: vertexAiConfigured, character });
+      sendJson(response, 202, { available: petCharacterAiConfigured, character });
       return;
     }
 
@@ -6119,7 +6125,7 @@ const handleRequest = async (request, response) => {
         return;
       }
       sendJson(response, 200, {
-        available: vertexAiConfigured,
+        available: petCharacterAiConfigured,
         character: await getPetCharacter(auth.user.id, myPetCharacterMatch[1]),
       });
       return;
@@ -6145,7 +6151,7 @@ const handleRequest = async (request, response) => {
         sendError(response, 404, "Pet not found");
         return;
       }
-      sendJson(response, 202, { available: vertexAiConfigured, character });
+      sendJson(response, 202, { available: petCharacterAiConfigured, character });
       return;
     }
 
@@ -6572,7 +6578,7 @@ const handleRequest = async (request, response) => {
 const server = http.createServer(handleRequest);
 
 const resumePetCharacterJobs = async () => {
-  if (!vertexAiConfigured) return;
+  if (!petCharacterAiConfigured) return;
   const result = await pool.query(
     `
       select id, status

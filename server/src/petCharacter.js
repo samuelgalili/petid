@@ -28,9 +28,28 @@ const expressionDirections = {
   attentive: "an alert but calm expression, focused eyes, attentive ears, and a slightly forward posture without distress",
 };
 
-const makeClient = ({ apiKey, project, location }) => {
-  if (apiKey) return new GoogleGenAI({ vertexai: true, apiKey });
-  return new GoogleGenAI({ vertexai: true, project, location });
+export const resolvePetCharacterProvider = ({
+  geminiApiKey,
+  vertexApiKey,
+  project,
+  location = "global",
+}) => {
+  if (vertexApiKey) {
+    return { provider: "vertex", clientOptions: { vertexai: true, apiKey: vertexApiKey } };
+  }
+  if (project) {
+    return { provider: "vertex", clientOptions: { vertexai: true, project, location } };
+  }
+  if (geminiApiKey) {
+    return { provider: "gemini", clientOptions: { apiKey: geminiApiKey } };
+  }
+  return null;
+};
+
+const makeClient = (configuration) => {
+  const resolved = resolvePetCharacterProvider(configuration);
+  if (!resolved) throw new Error("Pet character generation is not configured");
+  return new GoogleGenAI(resolved.clientOptions);
 };
 
 const referenceParts = (references) => references.map((reference) => ({
@@ -60,21 +79,21 @@ export const extractGeneratedImage = (response) => {
   const parts = response?.candidates?.[0]?.content?.parts || [];
   const imagePart = parts.find((part) => part?.inlineData?.data);
   if (!imagePart) {
-    const error = new Error("Vertex returned no generated image");
+    const error = new Error("The AI provider returned no generated image");
     error.code = "NO_GENERATED_IMAGE";
     throw error;
   }
 
   const contentType = imagePart.inlineData.mimeType;
   if (!allowedGeneratedMimeTypes.has(contentType)) {
-    const error = new Error("Vertex returned an unsupported generated image type");
+    const error = new Error("The AI provider returned an unsupported generated image type");
     error.code = "NO_GENERATED_IMAGE";
     throw error;
   }
   const data = imagePart.inlineData.data;
   const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data, "base64");
   if (buffer.length === 0) {
-    const error = new Error("Vertex returned an empty generated image");
+    const error = new Error("The AI provider returned an empty generated image");
     error.code = "NO_GENERATED_IMAGE";
     throw error;
   }
@@ -206,7 +225,8 @@ const validateExpressionPack = async ({
 };
 
 export const generateCharacterCandidates = async ({
-  apiKey,
+  geminiApiKey,
+  vertexApiKey,
   project,
   location = "global",
   imageModel = "gemini-2.5-flash-image",
@@ -215,7 +235,7 @@ export const generateCharacterCandidates = async ({
   petName,
   petType,
 }) => {
-  const client = makeClient({ apiKey, project, location });
+  const client = makeClient({ geminiApiKey, vertexApiKey, project, location });
   const visualIdentity = await analyzeReferences({ client, visionModel, references, petName, petType });
   const candidates = [];
 
@@ -235,7 +255,8 @@ export const generateCharacterCandidates = async ({
 };
 
 export const generateCharacterExpressions = async ({
-  apiKey,
+  geminiApiKey,
+  vertexApiKey,
   project,
   location = "global",
   imageModel = "gemini-2.5-flash-image",
@@ -244,7 +265,7 @@ export const generateCharacterExpressions = async ({
   visualIdentity,
   petName,
 }) => {
-  const client = makeClient({ apiKey, project, location });
+  const client = makeClient({ geminiApiKey, vertexApiKey, project, location });
   const expressions = [];
 
   for (const expression of CHARACTER_EXPRESSIONS) {

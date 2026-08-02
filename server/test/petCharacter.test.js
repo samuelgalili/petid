@@ -6,7 +6,31 @@ import {
   buildExpressionPrompt,
   buildPackValidationPrompt,
   extractGeneratedImage,
+  resolvePetCharacterProvider,
 } from "../src/petCharacter.js";
+
+test("pet character provider uses the existing Gemini API key", () => {
+  assert.deepEqual(
+    resolvePetCharacterProvider({ geminiApiKey: "gemini-key" }),
+    { provider: "gemini", clientOptions: { apiKey: "gemini-key" } },
+  );
+});
+
+test("explicit Vertex configuration takes precedence over Gemini", () => {
+  assert.deepEqual(
+    resolvePetCharacterProvider({
+      geminiApiKey: "gemini-key",
+      vertexApiKey: "vertex-key",
+      project: "vertex-project",
+      location: "global",
+    }),
+    { provider: "vertex", clientOptions: { vertexai: true, apiKey: "vertex-key" } },
+  );
+});
+
+test("pet character provider reports missing configuration", () => {
+  assert.equal(resolvePetCharacterProvider({}), null);
+});
 
 test("character candidate prompt locks pet identity and production composition", () => {
   const prompt = buildCandidatePrompt({
