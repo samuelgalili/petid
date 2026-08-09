@@ -53,6 +53,7 @@ interface ProductBulkActionsProps {
   onActionComplete: () => void;
   onClearSelection: () => void;
   products?: Array<MipoProduct>;
+  canDelete?: boolean;
 }
 
 const categories = [
@@ -69,7 +70,8 @@ export function ProductBulkActions({
   selectedIds, 
   onActionComplete,
   onClearSelection,
-  products = []
+  products = [],
+  canDelete = false,
 }: ProductBulkActionsProps) {
   const [loading, setLoading] = useState(false);
   const [priceDialog, setPriceDialog] = useState(false);
@@ -286,15 +288,17 @@ export function ProductBulkActions({
             שכפל
           </Button>
 
-          <Button 
-            variant="destructive" 
-            size="sm"
-            onClick={handleBulkDelete}
-            disabled={loading}
-          >
-            <Trash2 className="h-4 w-4 ml-2" />
-            מחק
-          </Button>
+          {canDelete && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleBulkDelete}
+              disabled={loading}
+            >
+              <Trash2 className="h-4 w-4 ml-2" />
+              מחק
+            </Button>
+          )}
         </div>
 
         <Button 

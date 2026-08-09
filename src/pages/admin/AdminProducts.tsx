@@ -28,6 +28,8 @@ import { ProductKeyboardShortcutsHelp } from "@/components/admin/products/Produc
 import { InlineEditCell } from "@/components/admin/products/InlineEditCell";
 import { useProductKeyboardShortcuts } from "@/hooks/useProductKeyboardShortcuts";
 import { normalizeProductPetType } from "@/lib/productStore";
+import { useAwsAdminAuth } from "@/hooks/useAwsAdminAuth";
+import { ADMIN_PERMISSIONS, adminHasPermission } from "@/lib/adminPermissions";
 import {
   bulkDeleteAdminProducts,
   createAdminProduct,
@@ -102,7 +104,9 @@ const AdminProducts = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { admin } = useAwsAdminAuth();
   const { logAction } = useAuditLog();
+  const canDeleteProducts = adminHasPermission(admin, ADMIN_PERMISSIONS.PRODUCTS_DELETE);
   const queryClient = useQueryClient();
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [editingProduct, setEditingProduct] = useState<Partial<ProductData> | null>(null);
@@ -129,7 +133,7 @@ const AdminProducts = () => {
     onSearch: () => searchInputRef.current?.focus(),
     onSelectAll: () => setSelectedProducts(displayProducts.map(p => p.id)),
     onDeselectAll: () => setSelectedProducts([]),
-    onDelete: () => selectedProducts.length > 0 && setBulkDeleteDialog(true),
+    onDelete: () => canDeleteProducts && selectedProducts.length > 0 && setBulkDeleteDialog(true),
     onExport: () => {
       const csvContent = [
         ['שם', 'קטגוריה', 'מחיר'].join(','),
@@ -567,13 +571,15 @@ const AdminProducts = () => {
               <Eye className="w-4 h-4 ml-2" />
               צפייה בחנות
             </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => setDeleteDialog({ open: true, productId: product.id })}
-              className="text-destructive"
-            >
-              <Trash2 className="w-4 h-4 ml-2" />
-              מחיקה
-            </DropdownMenuItem>
+            {canDeleteProducts && (
+              <DropdownMenuItem
+                onClick={() => setDeleteDialog({ open: true, productId: product.id })}
+                className="text-destructive"
+              >
+                <Trash2 className="w-4 h-4 ml-2" />
+                מחיקה
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       ),
@@ -833,6 +839,7 @@ const AdminProducts = () => {
           <ProductBulkActions
             selectedIds={selectedProducts}
             products={products}
+            canDelete={canDeleteProducts}
             onActionComplete={() => queryClient.invalidateQueries({ queryKey: ["admin-products-unified"] })}
             onClearSelection={() => setSelectedProducts([])}
           />

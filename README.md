@@ -50,6 +50,21 @@ The active browser suite uses mocked API responses for deterministic UI smoke co
 - Keep runtime secrets in AWS SSM and sync them to `/opt/mipo/.env`
 - Run app database migrations from `server/sql`
 
+## Admin Access
+
+Admin authorization is role-based and enforced by both the Node API and the admin UI. The `admin` role has full access. The `product_manager` role can list, create, and update products, upload product images, and use product import/AI tools; it cannot delete products or access orders, coupons, analytics, notifications, categories, or settings.
+
+Provision an account only after the latest database migrations and API version are deployed. Run the command in an environment where `DATABASE_URL` and the database TLS variables are already loaded:
+
+```bash
+npm --prefix server run admin:provision -- \
+  --email izak7781@gmail.com \
+  --role product_manager \
+  --display-name "Product manager"
+```
+
+The command creates or updates the account, revokes existing admin sessions, and prints a one-time temporary password. Deliver that password through a secure channel; the account must choose a new password of at least 12 characters before any admin operation is allowed.
+
 ## Migration Notes
 
 - Legacy Supabase source code was removed from the AWS branch after the RDS migration. Historical files remain available in older commits if needed for audit/reference.

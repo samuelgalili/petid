@@ -23,6 +23,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ADMIN_PERMISSIONS, adminHasPermission, type AdminPermission } from "@/lib/adminPermissions";
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -34,7 +35,7 @@ interface AdminLayoutProps {
 interface NavGroup {
   label: string;
   icon: LucideIcon;
-  items: { icon: LucideIcon; label: string; href: string; badge?: number }[];
+  items: { icon: LucideIcon; label: string; href: string; badge?: number; permission: AdminPermission }[];
 }
 
 const navGroups: NavGroup[] = [
@@ -42,27 +43,27 @@ const navGroups: NavGroup[] = [
     label: "ראשי",
     icon: LayoutDashboard,
     items: [
-      { icon: BarChart3, label: "אנליטיקות", href: "/admin/analytics" },
-      { icon: Bell, label: "התראות", href: "/admin/notifications" },
+      { icon: BarChart3, label: "אנליטיקות", href: "/admin/analytics", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
+      { icon: Bell, label: "התראות", href: "/admin/notifications", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
     ]
   },
   {
     label: "חנות ומכירות",
     icon: ShoppingCart,
     items: [
-      { icon: Package, label: "מוצרים", href: "/admin/products" },
-      { icon: PackageSearch, label: "ייבוא מהיר", href: "/admin/quick-import" },
-      { icon: Sparkles, label: "עורך חכם", href: "/admin/smart-editor" },
-      { icon: ShoppingCart, label: "הזמנות", href: "/admin/orders" },
-      { icon: Ticket, label: "קופונים", href: "/admin/coupons" },
+      { icon: Package, label: "מוצרים", href: "/admin/products", permission: ADMIN_PERMISSIONS.PRODUCTS_READ },
+      { icon: PackageSearch, label: "ייבוא מהיר", href: "/admin/quick-import", permission: ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE },
+      { icon: Sparkles, label: "עורך חכם", href: "/admin/smart-editor", permission: ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE },
+      { icon: ShoppingCart, label: "הזמנות", href: "/admin/orders", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
+      { icon: Ticket, label: "קופונים", href: "/admin/coupons", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
     ]
   },
   {
     label: "הגדרות מערכת",
     icon: Settings,
     items: [
-      { icon: Settings, label: "הגדרות", href: "/admin/settings" },
-      { icon: FolderTree, label: "קטגוריות", href: "/admin/categories" },
+      { icon: Settings, label: "הגדרות", href: "/admin/settings", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
+      { icon: FolderTree, label: "קטגוריות", href: "/admin/categories", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
     ]
   },
 ];
@@ -72,9 +73,9 @@ const openGroupsStorageKey = "admin_sidebar_open_groups_v3";
 
 // Quick actions for the dashboard header
 const quickActions = [
-  { icon: Plus, label: "מוצר חדש", href: "/admin/products?new=true", color: "bg-primary text-primary-foreground" },
-  { icon: Eye, label: "הזמנות", href: "/admin/orders", color: "bg-muted text-foreground" },
-  { icon: PackageSearch, label: "ייבוא מהיר", href: "/admin/quick-import", color: "bg-muted text-foreground" },
+  { icon: Plus, label: "מוצר חדש", href: "/admin/products?new=true", color: "bg-primary text-primary-foreground", permission: ADMIN_PERMISSIONS.PRODUCTS_CREATE },
+  { icon: Eye, label: "הזמנות", href: "/admin/orders", color: "bg-muted text-foreground", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
+  { icon: PackageSearch, label: "ייבוא מהיר", href: "/admin/quick-import", color: "bg-muted text-foreground", permission: ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE },
 ];
 
 export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: AdminLayoutProps) => {
@@ -136,7 +137,8 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
 
   const filteredGroups = navGroups.map(group => ({
     ...group,
-    items: group.items.filter(item => 
+    items: group.items.filter(item =>
+      adminHasPermission(admin, item.permission) &&
       item.label.toLowerCase().includes(searchQuery.toLowerCase())
     )
   })).filter(group => group.items.length > 0);
@@ -352,7 +354,7 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
             <span className="truncate">{title}</span>
           </h1>
           <div className="flex items-center gap-1 shrink-0">
-            <AdminNotificationsBell />
+            {adminHasPermission(admin, ADMIN_PERMISSIONS.FULL_ACCESS) && <AdminNotificationsBell />}
             <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="w-9 h-9">
               <Home className="w-4 h-4" />
             </Button>
@@ -423,7 +425,7 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
               </div>
               
               <div className="flex items-center gap-1 shrink-0">
-                {quickActions.map((action) => (
+                {quickActions.filter((action) => adminHasPermission(admin, action.permission)).map((action) => (
                   <Button
                     key={action.href + action.label}
                     variant="ghost"
@@ -436,7 +438,7 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
                   </Button>
                 ))}
                 <div className="w-px h-5 bg-border/30 mx-1" />
-                <AdminNotificationsBell />
+                {adminHasPermission(admin, ADMIN_PERMISSIONS.FULL_ACCESS) && <AdminNotificationsBell />}
                 <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => navigate("/")}>
                   <Home className="w-3.5 h-3.5" />
                 </Button>

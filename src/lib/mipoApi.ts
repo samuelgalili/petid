@@ -144,6 +144,8 @@ export interface MipoAdmin {
   email: string;
   display_name: string | null;
   role: string;
+  permissions: string[];
+  must_change_password: boolean;
   created_at?: string | null;
   last_login_at?: string | null;
 }
@@ -1181,6 +1183,15 @@ export async function logoutAdmin() {
   if (!result.ok) throw new Error("Admin sign out failed");
   setStorageHint(adminSessionHintKey, false);
   return result;
+}
+
+export async function changeAdminPassword(password: string): Promise<MipoAdmin> {
+  const result = await adminApiFetch<{ admin: MipoAdmin }>("/admin/password", {
+    method: "POST",
+    body: JSON.stringify({ password }),
+  });
+  setStorageHint(adminSessionHintKey, false);
+  return result.admin;
 }
 
 export async function getAdminAnalytics(days: number): Promise<MipoAdminAnalytics> {

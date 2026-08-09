@@ -14,7 +14,7 @@ type AdminLoginLocationState = {
 const AdminLogin = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAdmin, loading, login } = useAwsAdminAuth();
+  const { admin, isAdmin, loading, login } = useAwsAdminAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,9 +27,9 @@ const AdminLogin = () => {
 
   useEffect(() => {
     if (!loading && isAdmin) {
-      navigate(redirectTo, { replace: true });
+      navigate(admin?.must_change_password ? "/admin/change-password" : redirectTo, { replace: true });
     }
-  }, [isAdmin, loading, navigate, redirectTo]);
+  }, [admin?.must_change_password, isAdmin, loading, navigate, redirectTo]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -37,8 +37,8 @@ const AdminLogin = () => {
     setIsSubmitting(true);
 
     try {
-      await login(email, password);
-      navigate(redirectTo, { replace: true });
+      const loggedInAdmin = await login(email, password);
+      navigate(loggedInAdmin.must_change_password ? "/admin/change-password" : redirectTo, { replace: true });
     } catch {
       setError("פרטי ההתחברות אינם תקינים");
     } finally {

@@ -30,6 +30,12 @@ import {
 import { checkDatabaseHealth } from "./health.js";
 import { hashPassword, verifyPassword } from "./passwords.js";
 import {
+  ADMIN_PERMISSIONS,
+  ADMIN_ROLES,
+  getAdminPermissions,
+  hasAdminPermission,
+} from "./adminPermissions.js";
+import {
   archiveSocialPost,
   createSocialComment,
   createSocialPost,
@@ -244,6 +250,8 @@ const serializeAdmin = (row) => ({
   email: row.email,
   display_name: row.display_name || null,
   role: row.role,
+  permissions: getAdminPermissions(row.role),
+  must_change_password: Boolean(row.must_change_password),
   created_at: row.created_at || null,
   last_login_at: row.last_login_at || null,
 });
@@ -254,6 +262,7 @@ const adminUserSelect = `
   display_name,
   role,
   is_active,
+  must_change_password,
   created_at,
   updated_at,
   last_login_at
@@ -389,6 +398,7 @@ const getAdminFromSession = async (request) => {
         au.display_name,
         au.role,
         au.is_active,
+        au.must_change_password,
         au.created_at,
         au.updated_at,
         au.last_login_at
@@ -414,7 +424,13 @@ const getAdminFromSession = async (request) => {
 
 const requireAdmin = async (request, response) => {
   if (adminApiKey && secretsEqual(request.headers["x-admin-api-key"], adminApiKey)) {
-    request.admin = { id: "api-key", email: "api-key", role: "admin" };
+    request.admin = {
+      id: "api-key",
+      email: "api-key",
+      role: ADMIN_ROLES.ADMIN,
+      permissions: getAdminPermissions(ADMIN_ROLES.ADMIN),
+      must_change_password: false,
+    };
     return true;
   }
 
@@ -426,6 +442,60 @@ const requireAdmin = async (request, response) => {
 
   sendError(response, 401, "Unauthorized");
   return false;
+};
+
+const requireAdminPermission = async (request, response, permission) => {
+  if (!(await requireAdmin(request, response))) return false;
+  if (request.admin.must_change_password) {
+    sendError(response, 403, "Admin password change required");
+    return false;
+  }
+  if (!hasAdminPermission(request.admin.role, permission)) {
+    sendError(response, 403, "Forbidden");
+    return false;
+  }
+  return true;
+};
+
+const recordAdminAudit = async (admin, {
+  actionType,
+  entityType = "product",
+  entityId = null,
+  oldValues = null,
+  newValues = null,
+  metadata = null,
+}) => {
+  try {
+    await pool.query(
+      `
+        insert into public.admin_audit_log (
+          action_type,
+          entity_type,
+          entity_id,
+          old_values,
+          new_values,
+          metadata,
+          actor_admin_user_id,
+          actor_email,
+          actor_role
+        )
+        values ($1, $2, $3, $4::jsonb, $5::jsonb, $6::jsonb, $7, $8, $9)
+      `,
+      [
+        actionType,
+        entityType,
+        entityId,
+        oldValues ? JSON.stringify(oldValues) : null,
+        newValues ? JSON.stringify(newValues) : null,
+        metadata ? JSON.stringify(metadata) : null,
+        admin.id === "api-key" ? null : admin.id,
+        admin.email,
+        admin.role,
+      ],
+    );
+  } catch (error) {
+    console.error("Admin audit log write failed:", error.message);
+  }
 };
 
 const bootstrapAdmin = async (body) => {
@@ -518,6 +588,47 @@ const loginAdmin = async (request, body) => {
     await client.query("rollback").catch((rollbackError) => {
       console.error("Admin login rollback failed", rollbackError);
     });
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+const changeAdminPassword = async (adminId, body) => {
+  const password = String(body.password || body.new_password || body.newPassword || "");
+  if (password.length < 12) {
+    const error = new Error("Admin password must be at least 12 characters");
+    error.statusCode = 400;
+    throw error;
+  }
+  if (password.length > 256) {
+    const error = new Error("Password is too long");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    const result = await client.query(
+      `
+        update public.admin_users
+        set password_hash = $2, must_change_password = false, updated_at = now()
+        where id = $1 and is_active = true
+        returning ${adminUserSelect}
+      `,
+      [adminId, hashPassword(password)],
+    );
+    if (result.rowCount === 0) {
+      const error = new Error("Admin user not found");
+      error.statusCode = 404;
+      throw error;
+    }
+    await client.query("delete from public.admin_sessions where admin_user_id = $1", [adminId]);
+    await client.query("commit");
+    return serializeAdmin(result.rows[0]);
+  } catch (error) {
+    await client.query("rollback");
     throw error;
   } finally {
     client.release();
@@ -5761,7 +5872,7 @@ const handleRequest = async (request, response) => {
     }
 
     if (request.method === "GET" && url.pathname === "/api/db/health") {
-      if (!(await requireAdmin(request, response))) return;
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
       await pool.query("select 1");
       sendJson(response, 200, { ok: true });
       return;
@@ -5805,6 +5916,23 @@ const handleRequest = async (request, response) => {
       }
 
       sendJson(response, 200, { admin });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/admin/password") {
+      if (!(await requireAdmin(request, response))) return;
+      if (request.admin.id === "api-key") {
+        sendError(response, 403, "A signed-in admin session is required");
+        return;
+      }
+      const admin = await changeAdminPassword(request.admin.id, await readBody(request));
+      await recordAdminAudit(request.admin, {
+        actionType: "admin.password_changed",
+        entityType: "admin_user",
+        entityId: request.admin.id,
+        metadata: { sessions_revoked: true },
+      });
+      sendJson(response, 200, { admin }, { "set-cookie": buildClearAdminCookie(request) });
       return;
     }
 
@@ -6382,20 +6510,20 @@ const handleRequest = async (request, response) => {
     }
 
     if (request.method === "GET" && url.pathname === "/api/admin/analytics") {
-      if (!(await requireAdmin(request, response))) return;
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
       sendJson(response, 200, await listAdminAnalytics(url.searchParams.get("days")));
       return;
     }
 
     if (request.method === "GET" && url.pathname === "/api/admin/orders") {
-      if (!(await requireAdmin(request, response))) return;
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
       const limit = Math.min(500, Math.max(1, Number(url.searchParams.get("limit") || 200)));
       sendJson(response, 200, { orders: await listOrders({ limit }) });
       return;
     }
 
     if (request.method === "PATCH" && url.pathname === "/api/admin/orders/bulk") {
-      if (!(await requireAdmin(request, response))) return;
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
       const body = await readBody(request);
       sendJson(response, 200, await bulkUpdateOrders(body.ids, body.updates || {}));
       return;
@@ -6403,7 +6531,7 @@ const handleRequest = async (request, response) => {
 
     const adminOrderMatch = url.pathname.match(/^\/api\/admin\/orders\/([0-9a-fA-F-]{36})$/);
     if (adminOrderMatch && request.method === "PATCH") {
-      if (!(await requireAdmin(request, response))) return;
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
       const order = await updateOrder(adminOrderMatch[1], await readBody(request));
       if (!order) {
         sendError(response, 404, "Order not found");
@@ -6414,20 +6542,20 @@ const handleRequest = async (request, response) => {
     }
 
     if (request.method === "GET" && url.pathname === "/api/admin/coupons") {
-      if (!(await requireAdmin(request, response))) return;
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
       sendJson(response, 200, { coupons: await listAdminCoupons() });
       return;
     }
 
     if (request.method === "POST" && url.pathname === "/api/admin/coupons") {
-      if (!(await requireAdmin(request, response))) return;
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
       sendJson(response, 201, { coupon: await createAdminCoupon(await readBody(request)) });
       return;
     }
 
     const adminCouponMatch = url.pathname.match(/^\/api\/admin\/coupons\/([0-9a-fA-F-]{36})$/);
     if (adminCouponMatch && request.method === "PATCH") {
-      if (!(await requireAdmin(request, response))) return;
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
       const coupon = await updateAdminCoupon(adminCouponMatch[1], await readBody(request));
       if (!coupon) {
         sendError(response, 404, "Coupon not found");
@@ -6438,7 +6566,7 @@ const handleRequest = async (request, response) => {
     }
 
     if (adminCouponMatch && request.method === "DELETE") {
-      if (!(await requireAdmin(request, response))) return;
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
       sendJson(response, 200, { deleted: await deleteAdminCoupon(adminCouponMatch[1]) });
       return;
     }
@@ -6510,54 +6638,99 @@ const handleRequest = async (request, response) => {
     }
 
     if (request.method === "POST" && url.pathname === "/api/products") {
-      if (!(await requireAdmin(request, response))) return;
-      sendJson(response, 201, { product: await createProduct(await readBody(request)) });
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_CREATE))) return;
+      const product = await createProduct(await readBody(request));
+      await recordAdminAudit(request.admin, {
+        actionType: "product.created",
+        entityId: product.id,
+        newValues: product,
+      });
+      sendJson(response, 201, { product });
       return;
     }
 
     if (request.method === "PATCH" && url.pathname === "/api/products/bulk") {
-      if (!(await requireAdmin(request, response))) return;
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_UPDATE))) return;
       const body = await readBody(request);
-      sendJson(response, 200, await bulkUpdateProducts(body.ids, body.updates || {}));
+      const result = await bulkUpdateProducts(body.ids, body.updates || {});
+      await recordAdminAudit(request.admin, {
+        actionType: "product.updated",
+        newValues: body.updates || {},
+        metadata: { bulk: true, product_ids: body.ids, ...result },
+      });
+      sendJson(response, 200, result);
       return;
     }
 
     if (request.method === "DELETE" && url.pathname === "/api/products/bulk") {
-      if (!(await requireAdmin(request, response))) return;
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_DELETE))) return;
       const body = await readBody(request);
-      sendJson(response, 200, await bulkDeleteProducts(body.ids));
+      const result = await bulkDeleteProducts(body.ids);
+      await recordAdminAudit(request.admin, {
+        actionType: "product.deleted",
+        metadata: { bulk: true, product_ids: body.ids, ...result },
+      });
+      sendJson(response, 200, result);
       return;
     }
 
     const productMatch = url.pathname.match(/^\/api\/products\/([0-9a-fA-F-]{36})$/);
     if (productMatch && request.method === "PATCH") {
-      if (!(await requireAdmin(request, response))) return;
-      const product = await updateProduct(productMatch[1], await readBody(request));
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_UPDATE))) return;
+      const body = await readBody(request);
+      const oldProduct = await fetchProductById(productMatch[1], body.source);
+      const product = await updateProduct(productMatch[1], body);
       if (!product) {
         sendError(response, 404, "Product not found");
         return;
       }
+      await recordAdminAudit(request.admin, {
+        actionType: "product.updated",
+        entityId: product.id,
+        oldValues: oldProduct,
+        newValues: product,
+      });
       sendJson(response, 200, { product });
       return;
     }
 
     if (productMatch && request.method === "DELETE") {
-      if (!(await requireAdmin(request, response))) return;
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_DELETE))) return;
+      const oldProduct = await fetchProductById(productMatch[1], url.searchParams.get("source"));
       const deleted = await deleteProduct(productMatch[1], url.searchParams.get("source"));
+      if (deleted) {
+        await recordAdminAudit(request.admin, {
+          actionType: "product.deleted",
+          entityId: productMatch[1],
+          oldValues: oldProduct,
+        });
+      }
       sendJson(response, deleted ? 200 : 404, { deleted });
       return;
     }
 
     if (request.method === "POST" && url.pathname === "/api/uploads") {
-      if (!(await requireAdmin(request, response))) return;
-      sendJson(response, 201, { upload: await uploadImage(await readBody(request, Math.ceil(maxUploadBytes * 1.5) + 1024 * 1024)) });
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCT_ASSETS_UPLOAD))) return;
+      const upload = await uploadImage(await readBody(request, Math.ceil(maxUploadBytes * 1.5) + 1024 * 1024));
+      await recordAdminAudit(request.admin, {
+        actionType: "product.asset_uploaded",
+        entityType: "product_asset",
+        entityId: upload.storage_key || null,
+        metadata: { content_type: upload.content_type, size: upload.size },
+      });
+      sendJson(response, 201, { upload });
       return;
     }
 
     const productIntelMatch = url.pathname.match(/^\/api\/product-intel\/([a-z0-9-]+)$/);
     if (productIntelMatch && request.method === "POST") {
-      if (!(await requireAdmin(request, response))) return;
-      sendJson(response, 200, await runProductIntelFunction(productIntelMatch[1], await readBody(request, 2 * 1024 * 1024)));
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE))) return;
+      const result = await runProductIntelFunction(productIntelMatch[1], await readBody(request, 2 * 1024 * 1024));
+      await recordAdminAudit(request.admin, {
+        actionType: "product.tool_used",
+        metadata: { function_name: productIntelMatch[1] },
+      });
+      sendJson(response, 200, result);
       return;
     }
 

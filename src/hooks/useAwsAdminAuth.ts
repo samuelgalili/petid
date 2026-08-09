@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getCurrentAdmin, loginAdmin, logoutAdmin, MipoAdmin } from "@/lib/mipoApi";
+import { changeAdminPassword, getCurrentAdmin, loginAdmin, logoutAdmin, MipoAdmin } from "@/lib/mipoApi";
 
 export const adminSessionQueryKey = ["aws-admin-session"] as const;
 
@@ -25,6 +25,12 @@ export const useAwsAdminAuth = () => {
     queryClient.setQueryData<MipoAdmin | null>(adminSessionQueryKey, null);
   }, [queryClient]);
 
+  const updatePassword = useCallback(async (password: string) => {
+    await changeAdminPassword(password);
+    queryClient.clear();
+    queryClient.setQueryData<MipoAdmin | null>(adminSessionQueryKey, null);
+  }, [queryClient]);
+
   return {
     admin: query.data || null,
     isAdmin: !!query.data,
@@ -32,6 +38,7 @@ export const useAwsAdminAuth = () => {
     error: query.error,
     login,
     logout,
+    updatePassword,
     refetch: query.refetch,
   };
 };

@@ -11,6 +11,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminRoute } from "@/components/AdminRoute";
 import { PageTransition } from "@/components/PageTransition";
 import { PageErrorBoundary } from "@/components/PageErrorBoundary";
+import { ADMIN_PERMISSIONS, type AdminPermission } from "@/lib/adminPermissions";
 
 const LoadingSpinner = ({ dark = false }: { dark?: boolean }) => (
   <div className={`min-h-screen flex items-center justify-center ${dark ? "bg-black" : "bg-background"}`}>
@@ -40,8 +41,8 @@ const Protected = ({ children }: { children: React.ReactNode }) => (
   <ProtectedRoute>{children}</ProtectedRoute>
 );
 
-const Admin = ({ children }: { children: React.ReactNode }) => (
-  <AdminRoute>{children}</AdminRoute>
+const Admin = ({ children, permission }: { children: React.ReactNode; permission?: AdminPermission }) => (
+  <AdminRoute permission={permission}>{children}</AdminRoute>
 );
 
 const PetQrRedirect = () => {
@@ -198,6 +199,7 @@ export const staticRoutes: RouteObject[] = [
 ];
 
 const AdminLogin = lazy(() => import("@/pages/admin/AdminLogin"));
+const AdminChangePassword = lazy(() => import("@/pages/admin/AdminChangePassword"));
 const AdminAnalytics = lazy(() => import("@/pages/admin/AdminAnalytics"));
 const AdminOrders = lazy(() => import("@/pages/admin/AdminOrders"));
 const AdminProducts = lazy(() => import("@/pages/admin/AdminProducts"));
@@ -208,8 +210,16 @@ const AdminQuickImport = lazy(() => import("@/pages/admin/AdminQuickImport"));
 const AdminSmartProductEditor = lazy(() => import("@/pages/admin/AdminSmartProductEditor"));
 const AdminNotifications = lazy(() => import("@/pages/admin/AdminNotifications"));
 
-const AdminPage = ({ component: Component, pageName }: { component: ComponentType; pageName: string }) => (
-  <Admin>
+const AdminPage = ({
+  component: Component,
+  pageName,
+  permission,
+}: {
+  component: ComponentType;
+  pageName: string;
+  permission: AdminPermission;
+}) => (
+  <Admin permission={permission}>
     <LazyPage component={Component} pageName={pageName} />
   </Admin>
 );
@@ -297,16 +307,17 @@ const legacyAdminRedirects = legacyAdminPaths.map((path) => {
 
 export const adminRoutes: RouteObject[] = [
   { path: "/admin/login", element: <LazyPage component={AdminLogin} pageName="כניסת מנהל" /> },
+  { path: "/admin/change-password", element: <Admin><LazyPage component={AdminChangePassword} pageName="בחירת סיסמה" /></Admin> },
   { path: "/admin", element: <Navigate to="/admin/products" replace /> },
-  { path: "/admin/analytics", element: <AdminPage component={AdminAnalytics} pageName="אנליטיקס" /> },
-  { path: "/admin/orders", element: <AdminPage component={AdminOrders} pageName="הזמנות" /> },
-  { path: "/admin/products", element: <AdminPage component={AdminProducts} pageName="מוצרים" /> },
-  { path: "/admin/coupons", element: <AdminPage component={AdminCoupons} pageName="קופונים" /> },
-  { path: "/admin/settings", element: <AdminPage component={AdminSettings} pageName="הגדרות" /> },
-  { path: "/admin/categories", element: <AdminPage component={AdminCategories} pageName="קטגוריות" /> },
-  { path: "/admin/notifications", element: <AdminPage component={AdminNotifications} pageName="התראות" /> },
-  { path: "/admin/quick-import", element: <AdminPage component={AdminQuickImport} pageName="ייבוא מהיר" /> },
-  { path: "/admin/smart-editor", element: <AdminPage component={AdminSmartProductEditor} pageName="עורך מוצר חכם" /> },
+  { path: "/admin/analytics", element: <AdminPage component={AdminAnalytics} pageName="אנליטיקס" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
+  { path: "/admin/orders", element: <AdminPage component={AdminOrders} pageName="הזמנות" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
+  { path: "/admin/products", element: <AdminPage component={AdminProducts} pageName="מוצרים" permission={ADMIN_PERMISSIONS.PRODUCTS_READ} /> },
+  { path: "/admin/coupons", element: <AdminPage component={AdminCoupons} pageName="קופונים" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
+  { path: "/admin/settings", element: <AdminPage component={AdminSettings} pageName="הגדרות" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
+  { path: "/admin/categories", element: <AdminPage component={AdminCategories} pageName="קטגוריות" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
+  { path: "/admin/notifications", element: <AdminPage component={AdminNotifications} pageName="התראות" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
+  { path: "/admin/quick-import", element: <AdminPage component={AdminQuickImport} pageName="ייבוא מהיר" permission={ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE} /> },
+  { path: "/admin/smart-editor", element: <AdminPage component={AdminSmartProductEditor} pageName="עורך מוצר חכם" permission={ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE} /> },
   { path: "/admin/review-queue", element: <Navigate to="/admin/products?filter=needs_review" replace /> },
   { path: "/admin/scraper", element: <Navigate to="/admin/quick-import" replace /> },
   ...legacyAdminRedirects,
