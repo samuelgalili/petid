@@ -38,6 +38,68 @@ const POSITIVE_INGREDIENTS = {
 
 const normalizeWhitespace = (value) => String(value || "").replace(/\s+/g, " ").trim();
 
+const aiTextKeys = ["title", "name", "label", "range", "url", "website"];
+const aiDetailKeys = ["description", "amount", "value", "text"];
+
+const normalizeAiText = (value) => {
+  if (typeof value === "string") return normalizeWhitespace(value);
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) return value.map(normalizeAiText).filter(Boolean).join(", ");
+  if (!value || typeof value !== "object") return "";
+  const primary = aiTextKeys.map((key) => normalizeAiText(value[key])).find(Boolean) || "";
+  const detail = aiDetailKeys.map((key) => normalizeAiText(value[key])).find(Boolean) || "";
+  return [primary, detail].filter(Boolean).join(": ");
+};
+
+const normalizeAiTextList = (value) => {
+  const values = Array.isArray(value) ? value : value == null ? [] : [value];
+  return values.map(normalizeAiText).filter(Boolean).slice(0, 100);
+};
+
+const normalizeAiNumber = (value) => {
+  if (value == null || value === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+};
+
+export const normalizeProductEnrichment = (value) => {
+  const data = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  const rawVariants = Array.isArray(data.variants) ? data.variants : [];
+  return {
+    name: normalizeAiText(data.name),
+    description: normalizeAiText(data.description),
+    category: normalizeAiText(data.category),
+    dimensions: normalizeAiText(data.dimensions),
+    sizes: normalizeAiTextList(data.sizes),
+    colors: normalizeAiTextList(data.colors),
+    flavors: normalizeAiTextList(data.flavors),
+    benefits: normalizeAiTextList(data.benefits),
+    feedingGuide: normalizeAiText(data.feedingGuide ?? data.feeding_guide),
+    brandWebsite: normalizeAiText(data.brandWebsite ?? data.brand_website),
+    suggestedPrice: normalizeAiNumber(data.suggestedPrice ?? data.suggested_price),
+    salePrice: normalizeAiNumber(data.salePrice ?? data.sale_price),
+    priceReason: normalizeAiText(data.priceReason ?? data.price_reason),
+    petType: normalizeAiText(data.petType ?? data.pet_type),
+    imageSearchQuery: normalizeAiText(data.imageSearchQuery ?? data.image_search_query),
+    imageUrl: normalizeAiText(data.imageUrl ?? data.image_url),
+    allImageUrls: normalizeAiTextList(data.allImageUrls ?? data.all_image_urls ?? data.images),
+    variants: rawVariants.map((variant) => {
+      const record = variant && typeof variant === "object" && !Array.isArray(variant)
+        ? variant
+        : { name: variant };
+      return {
+        name: normalizeAiText(record.name ?? record.label),
+        value: normalizeAiText(record.value ?? record.weight),
+        price: normalizeAiNumber(record.price),
+      };
+    }).filter((variant) => variant.name || variant.value || variant.price != null),
+    weight: normalizeAiText(data.weight),
+    weightUnit: normalizeAiText(data.weightUnit ?? data.weight_unit),
+    sku: normalizeAiText(data.sku),
+    brand: normalizeAiText(data.brand),
+  };
+};
+
 const decodeValue = (value) => {
   try {
     return decodeURIComponent(String(value).replace(/-/g, " ").replace(/\+/g, " "));
@@ -751,7 +813,7 @@ export const enrichProductAi = async (body) => {
     if (scraped.success && scraped.data) {
       return {
         success: true,
-        data: {
+        data: normalizeProductEnrichment({
           name: scraped.data.name,
           description: scraped.data.description,
           category: scraped.data.category,
@@ -763,7 +825,7 @@ export const enrichProductAi = async (body) => {
           variants: scraped.data.variants,
           brand: scraped.data.brand,
           sku: scraped.data.sku,
-        },
+        }),
       };
     }
   }
@@ -790,13 +852,13 @@ export const enrichProductAi = async (body) => {
 Product name: ${body.productName || ""}
 SKU: ${body.sku || ""}
 Category hint: ${body.category || ""}`);
-      return { success: true, data: { ...fallback, ...ai } };
+      return { success: true, data: normalizeProductEnrichment({ ...fallback, ...ai }) };
     } catch (error) {
       console.error("Gemini enrichment failed:", error);
     }
   }
 
-  return { success: true, data: fallback };
+  return { success: true, data: normalizeProductEnrichment(fallback) };
 };
 
 export const searchProductImage = async (body) => {

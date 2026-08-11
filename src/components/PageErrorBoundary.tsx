@@ -26,7 +26,11 @@ export class PageErrorBoundary extends Component<Props, State> {
     console.error(`Error in ${this.props.pageName || "Page"}:`, error, errorInfo);
   }
 
-  private handleBack = () => {
+  private handleRecovery = () => {
+    if (window.location.pathname.startsWith("/admin/")) {
+      window.location.assign("/admin/products");
+      return;
+    }
     window.history.back();
   };
 
@@ -56,11 +60,13 @@ export class PageErrorBoundary extends Component<Props, State> {
             )}
 
             <Button
-              onClick={this.handleBack}
+              onClick={this.handleRecovery}
               className="w-full bg-primary hover:bg-primary-dark text-primary-foreground font-jakarta font-bold py-3 rounded-2xl shadow-md"
             >
               <ArrowRight className="w-5 h-5 ml-2" />
-              חזור אחורה
+              {typeof window !== "undefined" && window.location.pathname.startsWith("/admin/")
+                ? "חזרה למוצרים"
+                : "חזור אחורה"}
             </Button>
           </div>
         </div>

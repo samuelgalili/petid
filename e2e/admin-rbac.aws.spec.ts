@@ -54,6 +54,8 @@ async function mockAdmin(page: Page, overrides: Record<string, unknown> = {}) {
 }
 
 test.describe("Admin role permissions", () => {
+  test.describe.configure({ mode: "serial" });
+
   test("product managers see product tools but no unrelated admin destinations or delete action", async ({ page }) => {
     await mockAdmin(page);
     await page.goto("/admin/products");
@@ -92,5 +94,38 @@ test.describe("Admin role permissions", () => {
 
     await expect(page).toHaveURL(/\/admin\/change-password$/);
     await expect(page.getByRole("heading", { name: "בחירת סיסמת ניהול" })).toBeVisible();
+  });
+
+  test("malformed AI enrichment values do not crash the product editor", async ({ page }) => {
+    await mockAdmin(page);
+    await page.route("**/api/product-intel/enrich-product-ai", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          data: {
+            name: { title: "AI product" },
+            sizes: "Large",
+            colors: { label: "Blue" },
+            flavors: [{ name: "Chicken" }],
+            benefits: [{ title: "Joint support", description: "With glucosamine" }],
+            feedingGuide: { range: "Adult", amount: "2 cups" },
+            brandWebsite: { url: "https://example.com" },
+            suggestedPrice: "49.90",
+          },
+        }),
+      });
+    });
+
+    await page.goto("/admin/products?new=true");
+    const dialog = page.getByRole("dialog");
+    await dialog.getByPlaceholder("ימולא אוטומטית מחיפוש מק״ט").fill("Test enrichment");
+    await dialog.getByRole("button", { name: "העשר עם AI" }).click();
+
+    await expect(dialog.getByText("Large").first()).toBeVisible();
+    await expect(dialog.getByText("Blue").first()).toBeVisible();
+    await expect(dialog.getByText("Joint support: With glucosamine").first()).toBeVisible();
+    await expect(page.getByText("שגיאה בטעינת העמוד")).toHaveCount(0);
   });
 });

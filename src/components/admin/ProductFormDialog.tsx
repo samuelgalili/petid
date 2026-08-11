@@ -35,6 +35,10 @@ import { normalizeProductPetType } from "@/lib/productStore";
 import { createAdminProduct, invokeProductIntelFunction } from "@/lib/mipoApi";
 import { BulkProductImport } from "./BulkProductImport";
 import { toSafeHttpUrl } from "@/lib/safeExternalUrl";
+import {
+  normalizeProductEnrichment,
+  type NormalizedProductEnrichment,
+} from "@/lib/productIntelNormalization";
 
 interface ScrapedProductVariant {
   label: string;
@@ -96,31 +100,6 @@ interface ProductData {
   special_diet?: string[] | null;
 }
 
-interface EnrichedData {
-  name?: string;
-  description?: string;
-  category?: string;
-  dimensions?: string;
-  sizes?: string[];
-  colors?: string[];
-  flavors?: string[];
-  benefits?: string[];
-  feedingGuide?: string;
-  brandWebsite?: string;
-  suggestedPrice?: number;
-  salePrice?: number;
-  priceReason?: string;
-  petType?: string;
-  imageSearchQuery?: string;
-  imageUrl?: string;
-  allImageUrls?: string[];
-  variants?: { name: string; value: string; price?: number }[];
-  weight?: string;
-  weightUnit?: string;
-  sku?: string;
-  brand?: string;
-}
-
 interface ProductFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -160,7 +139,7 @@ export const ProductFormDialog = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const additionalImageInputRef = useRef<HTMLInputElement>(null);
   const [isEnriching, setIsEnriching] = useState(false);
-  const [enrichedData, setEnrichedData] = useState<EnrichedData | null>(null);
+  const [enrichedData, setEnrichedData] = useState<NormalizedProductEnrichment | null>(null);
   const [showEnrichmentDetails, setShowEnrichmentDetails] = useState(false);
   const [showImageSearch, setShowImageSearch] = useState(false);
   const [imageSearchQuery, setImageSearchQuery] = useState("");
@@ -207,7 +186,7 @@ export const ProductFormDialog = ({
       }
 
       if (data?.success && data?.data) {
-        const enriched = data.data as EnrichedData;
+        const enriched = normalizeProductEnrichment(data.data);
         setEnrichedData(enriched);
         setShowEnrichmentDetails(true);
         
@@ -454,7 +433,7 @@ export const ProductFormDialog = ({
     onProductChange(updates);
     
     // Store enriched data for display
-    setEnrichedData({
+    setEnrichedData(normalizeProductEnrichment({
       name: productInfo.title,
       description: productInfo.description,
       suggestedPrice: productInfo.basePrice,
@@ -470,7 +449,7 @@ export const ProductFormDialog = ({
         value: v.weight ? `${v.weight} ${v.weight_unit || ""}` : "",
         price: v.price,
       })),
-    });
+    }));
     setShowEnrichmentDetails(true);
     
     const variantCount = variants.length;
@@ -695,7 +674,7 @@ export const ProductFormDialog = ({
     onProductChange(updates);
     
     // Store enriched data for display
-    setEnrichedData({
+    setEnrichedData(normalizeProductEnrichment({
       name: scrapedProduct.title,
       description: scrapedProduct.description || undefined,
       suggestedPrice: scrapedProduct.basePrice || undefined,
@@ -711,7 +690,7 @@ export const ProductFormDialog = ({
         value: v.weight ? `${v.weight} ${v.weight_unit || ""}` : "",
         price: v.price || undefined,
       })),
-    });
+    }));
     setShowEnrichmentDetails(true);
   }, [product, onProductChange]);
 
