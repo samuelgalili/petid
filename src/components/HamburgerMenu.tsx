@@ -428,7 +428,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
             )}
 
             {/* ── Scrollable Menu ──────────────── */}
-            <div className="flex-1 overflow-y-auto py-2 scrollbar-hide">
+            <div className="flex-1 overflow-y-auto py-2">
 
               {/* ══ ADMIN: Control Center ══ */}
               {isAdmin && (
@@ -451,6 +451,10 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                   <SectionDivider />
                 </>
               )}
+
+              {/* ── Settings ── */}
+              <MenuItem icon={Settings} label={s.settings} onClick={() => go("/settings")} isRtl={isRtl} />
+              <SectionDivider />
 
               {/* ── Pets ── */}
               <MenuItem icon={PawPrint} label={s.myPets} onClick={() => go("/")} isRtl={isRtl} />
@@ -533,9 +537,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
 
               <SectionDivider />
 
-              {/* ── Settings & Logout ── */}
-              <MenuItem icon={Settings} label={s.settings} onClick={() => go("/settings")} isRtl={isRtl} />
-
+              {/* ── Logout ── */}
               {user && (
                 <button
                   onClick={handleLogout}
