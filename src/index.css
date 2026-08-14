@@ -535,6 +535,28 @@
 .dark .bg-gray-500 {
   background-color: hsl(210 10% 30%) !important;
 }
+/* slate — completes the existing gray map. Light-intent shades only. */
+.dark .text-slate-900, .dark .text-slate-800 {
+  color: hsl(0 0% 95%) !important;
+}
+.dark .text-slate-700, .dark .text-slate-600 {
+  color: hsl(0 0% 80%) !important;
+}
+.dark .text-slate-500 {
+  color: hsl(0 0% 65%) !important;
+}
+.dark .bg-slate-50, .dark .bg-slate-100 {
+  background-color: hsl(210 10% 14%) !important;
+}
+.dark .bg-slate-200 {
+  background-color: hsl(210 10% 18%) !important;
+}
+.dark .border-slate-100, .dark .border-slate-200 {
+  border-color: hsl(210 10% 22%) !important;
+}
+.dark .border-slate-300 {
+  border-color: hsl(210 10% 25%) !important;
+}
 
 @layer base {
   * {
