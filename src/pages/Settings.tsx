@@ -401,6 +401,44 @@ const Settings = () => {
         </div>
 
         <div className="max-w-lg mx-auto px-4 space-y-1">
+          {/* ═══ 0. Appearance ═══ */}
+          <SettingsSection title="מראה" icon={Palette}>
+            <SettingRow
+              icon={getThemeIcon()}
+              label="ערכת נושא"
+              description="בהיר, כהה או אוטומטי"
+              type="select"
+              value={theme}
+              options={[
+                { value: "light", label: "בהיר" },
+                { value: "dark", label: "כהה" },
+                { value: "system", label: "אוטומטי" },
+              ]}
+              action={(val: string) => setTheme(val as any)}
+            />
+            <SettingRow
+              icon={Type}
+              label="גודל טקסט"
+              description="שנה את גודל הטקסט"
+              type="select"
+              value={fontSize}
+              options={[
+                { value: "small", label: "קטן" },
+                { value: "medium", label: "בינוני" },
+                { value: "large", label: "גדול" },
+              ]}
+              action={(val: string) => setFontSize(val as any)}
+            />
+            <SettingRow
+              icon={Contrast}
+              label="ניגודיות גבוהה"
+              description="שפר את הנראות"
+              type="toggle"
+              value={highContrast}
+              action={() => setHighContrast(!highContrast)}
+            />
+          </SettingsSection>
+
           {/* ═══ 1. Notification Preferences ═══ */}
           <SettingsSection title="התראות" icon={Bell}>
             <SettingRow
@@ -559,40 +597,6 @@ const Settings = () => {
                 setTempUnit(val);
                 localStorage.setItem("pref_temp_unit", val);
               }}
-            />
-            <SettingRow
-              icon={getThemeIcon()}
-              label="ערכת נושא"
-              description="בהיר, כהה או אוטומטי"
-              type="select"
-              value={theme}
-              options={[
-                { value: "light", label: "בהיר" },
-                { value: "dark", label: "כהה" },
-                { value: "system", label: "אוטומטי" },
-              ]}
-              action={(val: string) => setTheme(val as any)}
-            />
-            <SettingRow
-              icon={Type}
-              label="גודל טקסט"
-              description="שנה את גודל הטקסט"
-              type="select"
-              value={fontSize}
-              options={[
-                { value: "small", label: "קטן" },
-                { value: "medium", label: "בינוני" },
-                { value: "large", label: "גדול" },
-              ]}
-              action={(val: string) => setFontSize(val as any)}
-            />
-            <SettingRow
-              icon={Contrast}
-              label="ניגודיות גבוהה"
-              description="שפר את הנראות"
-              type="toggle"
-              value={highContrast}
-              action={() => setHighContrast(!highContrast)}
             />
             <SettingRow
               icon={Zap}
