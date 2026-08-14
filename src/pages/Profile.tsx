@@ -5,7 +5,7 @@ import { SEO } from "@/components/SEO";
 import { PageTransition } from "@/components/PageTransition";
 import BottomNav from "@/components/BottomNav";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, Plus, Edit3, MessageCircle, Bell, Syringe, Weight, UtensilsCrossed } from "lucide-react";
+import { ChevronRight, Plus, Edit3, MessageCircle, Bell, Menu, Syringe, Weight, UtensilsCrossed } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -207,6 +207,14 @@ const Profile = () => {
               aria-label="הודעות"
             >
               <MessageCircle className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsMenuOpen(true)}
+              className="p-2"
+              aria-label="תפריט"
+            >
+              <Menu className="w-5 h-5 text-foreground" strokeWidth={1.5} />
             </button>
           </div>
         </motion.div>

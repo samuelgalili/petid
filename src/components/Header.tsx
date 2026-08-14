@@ -1,7 +1,6 @@
 import { Heart, Search, X } from "lucide-react";
 import petidLogo from "@/assets/petid-logo.png";
 import petidIcon from "@/assets/petid-icon.png";
-import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -18,7 +17,6 @@ export const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { unreadCount } = useRealtimeNotifications();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
@@ -31,9 +29,6 @@ export const Header = () => {
   return (
     <>
       <TooltipProvider delayDuration={200}>
-        {/* Hamburger Menu */}
-        <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
-        
         {/* Header - Fixed at Top - Clean Instagram-style */}
         <div className="fixed top-0 left-0 right-0 bg-background border-b border-border px-3 z-40 transition-colors" style={{ height: 'calc(44px + env(safe-area-inset-top, 0px))', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
           <div className="flex items-center justify-between h-full" dir="rtl">
