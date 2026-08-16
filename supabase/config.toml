@@ -96,8 +96,8 @@ verify_jwt = false
 [functions.architect-analyze]
 verify_jwt = false
 
-[functions.architect-deploy]
-verify_jwt = false
+# architect-deploy intentionally omitted: it commits code to the repository
+# with GITHUB_PAT, so it requires a valid JWT plus an admin role check.
 
 [functions.petid-agent-runner]
 verify_jwt = false

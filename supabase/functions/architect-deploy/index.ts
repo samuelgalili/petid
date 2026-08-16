@@ -6,10 +6,56 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const jsonHeaders = { ...corsHeaders, "Content-Type": "application/json" };
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, serviceKey);
+
+    // 1. Require an Authorization header.
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Missing authorization header" }),
+        { status: 401, headers: jsonHeaders }
+      );
+    }
+
+    // 2. Resolve the caller from their JWT using the anon client.
+    const supabaseUser = createClient(
+      supabaseUrl,
+      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+    );
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user: caller }, error: authError } = await supabaseUser.auth.getUser(token);
+
+    if (authError || !caller) {
+      return new Response(
+        JSON.stringify({ error: "Invalid or expired token" }),
+        { status: 401, headers: jsonHeaders }
+      );
+    }
+
+    // 3. Only admins may deploy code to the repository.
+    const { data: adminRole, error: roleError } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", caller.id)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (roleError || !adminRole) {
+      console.log("Unauthorized architect-deploy attempt by user:", caller.id);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized. Admin access required." }),
+        { status: 403, headers: jsonHeaders }
+      );
+    }
+
     const GITHUB_PAT = Deno.env.get("GITHUB_PAT");
     const REPO_OWNER = Deno.env.get("GITHUB_REPO_OWNER");
     const REPO_NAME = Deno.env.get("GITHUB_REPO_NAME");
@@ -18,12 +64,20 @@ serve(async (req) => {
       throw new Error("GitHub credentials not configured");
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, serviceKey);
-
     const { card_id } = await req.json();
     if (!card_id) throw new Error("card_id required");
+
+    // 4. Record the attempt before touching the repository.
+    await supabase.from("admin_audit_log").insert({
+      admin_id: caller.id,
+      action_type: "architect.deploy",
+      entity_type: "architect_evolution_card",
+      entity_id: card_id,
+      metadata: {
+        deployed_by_email: caller.email,
+        card_id,
+      },
+    });
 
     // Fetch the card
     const { data: card, error: cardErr } = await supabase
