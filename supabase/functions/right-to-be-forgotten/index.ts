@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
     if (export_data) {
       const [profileRes, petsRes, feedbackRes, postsRes] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', userId).single(),
-        supabase.from('pets').select('*').eq('owner_id', userId),
+        supabase.from('pets').select('*').eq('user_id', userId),
         supabase.from('user_feedback').select('*').eq('user_id', userId),
         supabase.from('posts').select('*').eq('user_id', userId),
       ]);
@@ -56,56 +56,78 @@ Deno.serve(async (req) => {
       };
     }
 
-    // Step 2: Delete all user data across tables
+    // Step 2: Delete all user data across tables.
+    // Every name here must match public schema exactly. A wrong name does not
+    // throw - PostgREST returns an error object - so a typo would silently
+    // leave the user's data in place while we report success.
     const tablesToClean = [
       { table: 'user_feedback', column: 'user_id' },
       { table: 'rage_click_events', column: 'user_id' },
       { table: 'agent_data_access_log', column: 'user_id' },
+      { table: 'post_comments', column: 'user_id' },
+      { table: 'post_likes', column: 'user_id' },
+      { table: 'comment_likes', column: 'user_id' },
+      { table: 'reel_comments', column: 'user_id' },
+      { table: 'reel_likes', column: 'user_id' },
       { table: 'posts', column: 'user_id' },
-      { table: 'comments', column: 'user_id' },
-      { table: 'likes', column: 'user_id' },
       { table: 'pet_care_plans', column: 'user_id' },
       { table: 'pet_documents', column: 'user_id' },
       { table: 'stories', column: 'user_id' },
       { table: 'notifications', column: 'user_id' },
       { table: 'achievements', column: 'user_id' },
       { table: 'orders', column: 'user_id' },
-      { table: 'followers', column: 'follower_id' },
-      { table: 'followers', column: 'following_id' },
+      { table: 'user_follows', column: 'follower_id' },
+      { table: 'user_follows', column: 'following_id' },
+      { table: 'pets', column: 'user_id' },
     ];
 
     const deletionLog: string[] = [];
+    const deletionErrors: string[] = [];
 
     for (const { table, column } of tablesToClean) {
-      try {
-        const { count } = await supabase
-          .from(table)
-          .delete({ count: 'exact' })
-          .eq(column, userId);
-        if (count && count > 0) {
-          deletionLog.push(`${table}: ${count} records deleted`);
-        }
-      } catch {
-        // Table might not exist, skip
+      const { count, error } = await supabase
+        .from(table)
+        .delete({ count: 'exact' })
+        .eq(column, userId);
+
+      if (error) {
+        console.error(`[RTBF] Failed to delete from ${table}.${column}:`, error.message);
+        deletionErrors.push(`${table}.${column}: ${error.message}`);
+        continue;
+      }
+      if (count && count > 0) {
+        deletionLog.push(`${table}: ${count} records deleted`);
       }
     }
 
-    // Delete pets
-    try {
-      const { count } = await supabase
-        .from('pets')
-        .delete({ count: 'exact' })
-        .eq('owner_id', userId);
-      if (count && count > 0) {
-        deletionLog.push(`pets: ${count} records deleted`);
-      }
-    } catch {}
-
-    // Delete profile last
-    try {
-      await supabase.from('profiles').delete().eq('id', userId);
+    // Delete profile last, since other rows reference it.
+    const { error: profileError } = await supabase.from('profiles').delete().eq('id', userId);
+    if (profileError) {
+      console.error('[RTBF] Failed to delete profile:', profileError.message);
+      deletionErrors.push(`profiles.id: ${profileError.message}`);
+    } else {
       deletionLog.push('profile: deleted');
-    } catch {}
+    }
+
+    // A partial erasure must not be reported as success.
+    if (deletionErrors.length > 0) {
+      await supabase.from('admin_audit_log').insert({
+        admin_id: userId,
+        action_type: 'right_to_be_forgotten_failed',
+        entity_type: 'user',
+        entity_id: userId,
+        metadata: { deletion_log: deletionLog, errors: deletionErrors },
+      });
+
+      return new Response(
+        JSON.stringify({
+          error: 'Erasure incomplete. No data was removed from some tables and the account was kept.',
+          deletion_log: deletionLog,
+          errors: deletionErrors,
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Log the deletion in audit
     await supabase.from('admin_audit_log').insert({
@@ -116,15 +138,27 @@ Deno.serve(async (req) => {
       metadata: { deletion_log: deletionLog },
     });
 
-    // Delete the auth user
+    // Delete the auth user. If this fails the account still exists, so the
+    // request has not been fulfilled and must not report success.
     const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
+    if (deleteError) {
+      console.error('[RTBF] Failed to delete auth user:', deleteError.message);
+      return new Response(
+        JSON.stringify({
+          error: 'Account data was removed but the login could not be deleted. Contact support.',
+          deletion_log: deletionLog,
+          errors: [`auth.user: ${deleteError.message}`],
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
         export: export_data ? exportPayload : undefined,
         deletion_log: deletionLog,
-        auth_deleted: !deleteError,
+        auth_deleted: true,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
