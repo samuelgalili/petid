@@ -327,28 +327,20 @@ const Checkout = () => {
 
       // Call the edge function to create payment and order
       // Calculate shipping discount for free shipping coupons
-      const shippingDiscount = isFreeShippingCoupon ? baseShipping : 0;
-      
+      // Send identity and quantity only. The server resolves every price,
+      // discount and total from the database; anything sent here about money
+      // would be ignored, so the totals above are display only.
       const paymentPayload = {
         items: items.map(item => ({
-          name: item.name,
-          price: item.price,
+          product_id: item.id,
           quantity: item.quantity,
-          image: item.image,
           variant: item.variant,
           size: item.size,
         })),
         shipping_address: shippingData,
         payment_method: paymentMethod,
         installments: installments,
-        subtotal: subtotal,
-        shipping: shipping,
-        original_shipping: baseShipping,
-        shipping_discount: shippingDiscount,
-        tax: 0,
-        total: orderTotal,
-        coupon_id: appliedCoupon?.id,
-        discount_amount: discount,
+        coupon_code: appliedCoupon?.code,
         success_url: `${window.location.origin}/payment-success`,
         cancel_url: `${window.location.origin}/payment-failed`,
         client_request_id: clientRequestId,

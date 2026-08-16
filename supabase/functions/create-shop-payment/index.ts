@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { priceOrder } from "../_shared/pricing.ts";
 
 /**
  * CardCom Payment Integration - Shop Orders
@@ -47,11 +48,11 @@ const FUNCTION_VERSION = 'create-shop-payment@2026-02-14-debug-v1';
 const AUTH_PARAM_NAME = 'UserName';
 
 interface ShopPaymentRequest {
+  // Only identity and quantity come from the client. Every price, discount
+  // and total is resolved from the database by priceOrder().
   items: Array<{
-    name: string;
-    price: number;
+    product_id: string;
     quantity: number;
-    image?: string;
     variant?: string;
     size?: string;
   }>;
@@ -65,14 +66,7 @@ interface ShopPaymentRequest {
   };
   payment_method: string;
   installments: number;
-  subtotal: number;
-  shipping: number;
-  original_shipping?: number; // Shipping before discount
-  shipping_discount?: number; // Shipping discount amount (for free shipping coupons)
-  tax: number;
-  total: number;
-  coupon_id?: string;
-  discount_amount?: number;
+  coupon_code?: string;
   success_url: string;
   cancel_url: string;
   client_request_id?: string;
@@ -133,8 +127,42 @@ serve(async (req: Request): Promise<Response> => {
     console.log('PAYMENT_TRACE_START', JSON.stringify({
       ...baseDebug,
       user_id: user.id,
-      total: requestData.total,
+      item_count: Array.isArray(requestData.items) ? requestData.items.length : 0,
       payment_method: requestData.payment_method,
+    }));
+
+    // Resolve every price from the database. Nothing the client sent about
+    // money is used, so a tampered cart cannot change what is charged.
+    const pricing = await priceOrder(supabaseAdmin, {
+      items: requestData.items,
+      couponCode: requestData.coupon_code ?? null,
+      userId: user.id,
+      paymentMethod: requestData.payment_method,
+    });
+
+    if (!pricing.ok) {
+      console.warn('PRICING_REJECTED', JSON.stringify({
+        client_request_id: clientRequestId,
+        user_id: user.id,
+        code: pricing.code,
+        details: pricing.details,
+      }));
+      return new Response(
+        JSON.stringify({
+          error: pricing.message,
+          code: pricing.code,
+          debug: { ...baseDebug, stage: 'pricing_rejected' },
+        }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    console.log('PRICING_RESOLVED', JSON.stringify({
+      client_request_id: clientRequestId,
+      subtotal: pricing.subtotal,
+      shipping: pricing.shipping,
+      discount: pricing.discount,
+      total: pricing.total,
     }));
 
     // Generate order number
@@ -148,14 +176,14 @@ serve(async (req: Request): Promise<Response> => {
         order_number: orderNumber,
         status: "pending",
         payment_status: "pending",
-        subtotal: requestData.subtotal,
-        shipping: requestData.shipping,
-        tax: requestData.tax,
-        total: requestData.total,
+        subtotal: pricing.subtotal,
+        shipping: pricing.shipping,
+        tax: 0,
+        total: pricing.total,
         payment_method: requestData.payment_method,
         shipping_address: requestData.shipping_address,
-        coupon_id: requestData.coupon_id || null,
-        discount_amount: requestData.discount_amount || 0,
+        coupon_id: pricing.coupon?.id ?? null,
+        discount_amount: pricing.discount,
         payment_installments: requestData.installments,
       })
       .select()
@@ -166,15 +194,15 @@ serve(async (req: Request): Promise<Response> => {
       throw new Error('שגיאה ביצירת הזמנה');
     }
 
-    // Insert order items
-    const orderItems = requestData.items.map((item) => ({
+    // Insert order items using the server-resolved names and prices.
+    const orderItems = pricing.items.map((item) => ({
       order_id: orderData.id,
       product_name: item.name,
-      product_image: item.image || '',
+      product_image: item.image,
       quantity: item.quantity,
-      price: item.price,
-      variant: item.variant || null,
-      size: item.size || null,
+      price: item.unit_price,
+      variant: item.variant,
+      size: item.size,
     }));
 
     const { error: itemsError } = await supabaseAdmin
@@ -186,6 +214,33 @@ serve(async (req: Request): Promise<Response> => {
       // Rollback order
       await supabaseAdmin.from("orders").delete().eq("id", orderData.id);
       throw new Error('שגיאה בהוספת פריטים להזמנה');
+    }
+
+    // Record the coupon redemption. coupon_uses is what priceOrder() counts
+    // against max_uses, so this row is what actually enforces the limit.
+    if (pricing.coupon) {
+      const { error: useError } = await supabaseAdmin.from("coupon_uses").insert({
+        coupon_id: pricing.coupon.id,
+        user_id: user.id,
+        order_id: orderData.id,
+      });
+      if (useError) {
+        console.error('Coupon use insert failed:', useError.message);
+      }
+
+      // Mirror the count onto coupons.used_count, which the admin screen
+      // displays. Best effort: coupon_uses remains the source of truth.
+      const { count: totalUses } = await supabaseAdmin
+        .from("coupon_uses")
+        .select("id", { count: "exact", head: true })
+        .eq("coupon_id", pricing.coupon.id);
+
+      if (typeof totalUses === "number") {
+        await supabaseAdmin
+          .from("coupons")
+          .update({ used_count: totalUses })
+          .eq("id", pricing.coupon.id);
+      }
     }
 
     // For cash on delivery - no payment processing needed
@@ -256,8 +311,8 @@ serve(async (req: Request): Promise<Response> => {
     // Build webhook URL
     const webhookUrl = `${supabaseUrl}/functions/v1/shop-payment-webhook`;
 
-    // Build item description for CardCom
-    const itemsDescription = requestData.items
+    // Build item description for CardCom from the server-resolved names
+    const itemsDescription = pricing.items
       .map(item => `${item.name} x${item.quantity}`)
       .join(', ');
 
@@ -273,42 +328,42 @@ serve(async (req: Request): Promise<Response> => {
     const flatInvoiceLines: Record<string, string> = {};
     let lineIndex = 1;
     
-    // Products
-    for (const item of requestData.items) {
-      const qty = Number(item.quantity ?? 1);
-      const unit = Number(item.price ?? 0);
-      const safeUnit = Number.isFinite(unit) ? unit : 0;
-      
+    // Products, priced by the server.
+    for (const item of pricing.items) {
       const description = item.name + (item.variant ? ` - ${item.variant}` : '') + (item.size ? ` (${item.size})` : '');
-      
+
       flatInvoiceLines[`InvoiceLines${lineIndex}.Description`] = String(description);
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = String(qty);
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyStr(safeUnit);
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = String(item.quantity);
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyStr(item.unit_price);
       lineIndex++;
     }
 
-    // Add shipping if applicable
-    const shippingToShow = requestData.original_shipping ?? requestData.shipping;
-    if (shippingToShow > 0) {
+    // Show shipping at full price, then the coupon discount as its own line.
+    if (pricing.base_shipping > 0) {
       flatInvoiceLines[`InvoiceLines${lineIndex}.Description`] = 'משלוח';
       flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = '1';
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyStr(shippingToShow);
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyStr(pricing.base_shipping);
       lineIndex++;
     }
-    
-    // Add shipping discount as negative line if applicable (for free shipping coupons)
-    if (requestData.shipping_discount && requestData.shipping_discount > 0) {
+
+    if (pricing.shipping_discount > 0) {
       flatInvoiceLines[`InvoiceLines${lineIndex}.Description`] = 'משלוח חינם (קופון)';
       flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = '1';
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyStr(-requestData.shipping_discount);
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyStr(-pricing.shipping_discount);
       lineIndex++;
     }
-    
-    // Add discount as negative line if applicable
-    if (requestData.discount_amount && requestData.discount_amount > 0) {
+
+    if (pricing.discount > 0) {
       flatInvoiceLines[`InvoiceLines${lineIndex}.Description`] = 'קופון';
       flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = '1';
-      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyStr(-requestData.discount_amount);
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyStr(-pricing.discount);
+      lineIndex++;
+    }
+
+    if (pricing.cod_surcharge > 0) {
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Description`] = 'תוספת תשלום במזומן';
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Quantity`] = '1';
+      flatInvoiceLines[`InvoiceLines${lineIndex}.Price`] = toMoneyStr(pricing.cod_surcharge);
       lineIndex++;
     }
     
@@ -325,17 +380,17 @@ serve(async (req: Request): Promise<Response> => {
     const sumToBill = toMoneyStr(sumFromLines);
     
     console.log('CARDcom_request_amounts', JSON.stringify({
-      requestData_total: requestData.total,
+      order_total: pricing.total,
       sumFromLines: sumFromLines,
       sumToBill: sumToBill,
       invoiceLineCount: lineIndex - 1
     }));
-    
+
     // GUARDRAIL: Block payment if calculated sum is zero or negative
     if (sumFromLines <= 0) {
       console.error('BLOCK_CARDcom_ZERO_AMOUNT', { sumToBill, sumFromLines, flatInvoiceLines });
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: 'INVALID_AMOUNT',
           message: 'הסכום לתשלום הוא 0. בדוק מוצרים/משלוח/קופון.',
           debug: {
@@ -346,6 +401,33 @@ serve(async (req: Request): Promise<Response> => {
           }
         }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // The invoice lines and the stored order total are derived from the same
+    // priced items, so any drift means a bug in this function rather than a
+    // tampered request. Refuse to bill an amount the order does not record.
+    if (Math.abs(sumFromLines - pricing.total) > 0.01) {
+      console.error('BLOCK_CARDcom_TOTAL_MISMATCH', {
+        sum_from_lines: sumFromLines,
+        order_total: pricing.total,
+      });
+      await supabaseAdmin
+        .from("orders")
+        .update({ payment_status: "failed" })
+        .eq("id", orderData.id);
+
+      return new Response(
+        JSON.stringify({
+          error: 'אירעה שגיאה בחישוב הסכום. ההזמנה לא חויבה.',
+          debug: {
+            ...baseDebug,
+            stage: 'total_mismatch',
+            sum_from_lines: sumFromLines,
+            order_total: pricing.total,
+          }
+        }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 

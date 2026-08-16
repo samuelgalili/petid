@@ -284,6 +284,43 @@ serve(async (req: Request): Promise<Response> => {
         );
       }
 
+      // Confirm CardCom charged what the order says it should cost. A gap
+      // means the amount was altered somewhere between order creation and
+      // capture, so the order must not be marked paid on this callback.
+      const chargedAmount = getNumberValue(indicatorPayload, [
+        'Amount', 'amount', 'SumToBill', 'sumtobill', 'DealSum', 'dealsum',
+      ]);
+      const expectedTotal = Number(currentOrder.total);
+
+      if (chargedAmount === null) {
+        console.error('No amount in indicator response; cannot verify order', orderId);
+      } else if (!Number.isFinite(expectedTotal) || Math.abs(chargedAmount - expectedTotal) > 0.01) {
+        console.error('PAYMENT_AMOUNT_MISMATCH', {
+          order_id: orderId,
+          charged: chargedAmount,
+          expected: expectedTotal,
+        });
+
+        await supabaseAdmin
+          .from('orders')
+          .update({
+            payment_status: 'amount_mismatch',
+            payment_transaction_id: transactionId,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', orderId);
+
+        return new Response(
+          JSON.stringify({
+            received: true,
+            error: 'Charged amount does not match order total',
+            charged: chargedAmount,
+            expected: expectedTotal,
+          }),
+          { status: 409, headers: corsHeaders }
+        );
+      }
+
       // Update order to paid
       const { error: updateError } = await supabaseAdmin
         .from('orders')

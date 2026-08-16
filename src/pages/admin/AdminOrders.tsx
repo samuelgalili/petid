@@ -93,6 +93,7 @@ const PAYMENT_CONFIG: Record<string, { label: string; color: string }> = {
   failed: { label: "נכשל", color: "text-rose-600 bg-rose-500/10" },
   awaiting_cod: { label: "תשלום במסירה", color: "text-amber-600 bg-amber-500/10" },
   dev_approved: { label: "פיתוח", color: "text-blue-600 bg-blue-500/10" },
+  amount_mismatch: { label: "פער בסכום", color: "text-rose-600 bg-rose-500/10" },
   refunded: { label: "הוחזר", color: "text-violet-600 bg-violet-500/10" },
   libra_credit: { label: "קרדיט ביטוח", color: "text-primary bg-primary/10" },
 };
