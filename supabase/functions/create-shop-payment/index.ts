@@ -209,20 +209,40 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // Check CardCom credentials
+    // Check CardCom credentials.
+    // Missing credentials is a configuration failure, never an approval:
+    // treating it as one turns a bad deploy into free orders. Bypassing the
+    // processor requires opting in explicitly via ALLOW_PAYMENTLESS_ORDERS.
     if (!CARDCOM_TERMINAL || !CARDCOM_USERNAME || !CARDCOM_API_PASSWORD) {
-      console.error('CardCom credentials not configured');
-      // For development - allow order without real payment
-      console.warn('DEV MODE: Processing without CardCom');
-      
+      const allowPaymentless = Deno.env.get('ALLOW_PAYMENTLESS_ORDERS') === 'true';
+
+      if (!allowPaymentless) {
+        console.error('CardCom credentials not configured - refusing to approve order');
+
+        await supabaseAdmin
+          .from("orders")
+          .update({ payment_status: "failed" })
+          .eq("id", orderData.id);
+
+        return new Response(
+          JSON.stringify({
+            error: 'שירות התשלומים אינו זמין כרגע. אנא נסו שוב מאוחר יותר.',
+            debug: { ...baseDebug, stage: 'cardcom_not_configured' }
+          }),
+          { status: 503, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      console.warn('ALLOW_PAYMENTLESS_ORDERS is on: approving order without CardCom');
+
       await supabaseAdmin
         .from("orders")
         .update({ payment_status: "dev_approved" })
         .eq("id", orderData.id);
 
       return new Response(
-        JSON.stringify({ 
-          success: true, 
+        JSON.stringify({
+          success: true,
           order_id: orderData.id,
           order_number: orderNumber,
           dev_mode: true,
