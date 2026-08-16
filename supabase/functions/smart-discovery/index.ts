@@ -2,6 +2,11 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { chatCompletion } from "../_shared/ai.ts";
+import { checkRateLimit, getClientIP, rateLimitExceededResponse } from "../_shared/rate-limit.ts";
+
+// Reached from the public /explore page, so guests must still work.
+// Each call runs an LLM request, so throttle by IP instead.
+const DISCOVERY_RATE_LIMIT = { maxRequests: 20, windowSeconds: 60 };
 
 serve(async (req) => {
   const corsResponse = handleCorsPreflightRequest(req);
@@ -11,6 +16,13 @@ serve(async (req) => {
   const corsHeaders = getCorsHeaders(origin);
 
   try {
+    const clientIP = getClientIP(req);
+    const rateLimit = checkRateLimit(clientIP, "smart_discovery", DISCOVERY_RATE_LIMIT);
+    if (!rateLimit.allowed) {
+      console.log(`smart-discovery rate limit exceeded for ip ${clientIP}`);
+      return rateLimitExceededResponse(rateLimit, corsHeaders);
+    }
+
     const { userId, type } = await req.json();
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;

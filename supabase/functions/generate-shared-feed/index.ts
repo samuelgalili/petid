@@ -1,6 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { chatCompletion } from "../_shared/ai.ts";
+import { checkRateLimit, getClientIP, rateLimitExceededResponse } from "../_shared/rate-limit.ts";
+
+// Reached from the chat panel, which guests can use, so throttle by IP
+// rather than requiring a session. Each call runs an LLM request.
+const SHARED_FEED_RATE_LIMIT = { maxRequests: 15, windowSeconds: 60 };
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,6 +18,13 @@ serve(async (req) => {
   }
 
   try {
+    const clientIP = getClientIP(req);
+    const rateLimit = checkRateLimit(clientIP, "shared_feed", SHARED_FEED_RATE_LIMIT);
+    if (!rateLimit.allowed) {
+      console.log(`generate-shared-feed rate limit exceeded for ip ${clientIP}`);
+      return rateLimitExceededResponse(rateLimit, corsHeaders);
+    }
+
     const { user1_id, user2_id } = await req.json();
     if (!user1_id || !user2_id) {
       return new Response(JSON.stringify({ success: false, error: "Missing user IDs" }), {

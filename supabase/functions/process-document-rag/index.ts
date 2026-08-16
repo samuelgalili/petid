@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { chatCompletion } from "../_shared/ai.ts";
+import { requireAdmin, authErrorResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -346,6 +347,10 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Only reachable from the admin-guarded data hub upload dialog.
+    const auth = await requireAdmin(req, supabase);
+    if (!auth.ok) return authErrorResponse(auth, corsHeaders);
 
     const { sourceId, fileUrl, textContent, documentTitle }: ProcessRequest = await req.json();
 
