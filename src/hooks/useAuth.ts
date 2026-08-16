@@ -2,19 +2,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 
-// Get client IP via public API (cached per session)
-let cachedIP: string | null = null;
-async function getClientIP(): Promise<string> {
-  if (cachedIP) return cachedIP;
-  try {
-    const resp = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(3000) });
-    const data = await resp.json();
-    cachedIP = data.ip;
-    return data.ip;
-  } catch {
-    return 'unknown';
-  }
-}
+// The login rate limit is keyed by the address auth-guard reads from the
+// request headers. The client used to look its own IP up and send it, which
+// meant an attacker could present a new one on every attempt.
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -76,10 +66,7 @@ export const useAuth = () => {
     // Server-side rate limiting (second defense layer)
     try {
       const guardResp = await supabase.functions.invoke('auth-guard', {
-        body: {
-          action: 'check',
-          ip_address: await getClientIP(),
-        },
+        body: { action: 'check' },
       });
 
       if (guardResp.data && !guardResp.data.allowed) {
@@ -104,7 +91,7 @@ export const useAuth = () => {
       // Reset server-side rate limit
       try {
         await supabase.functions.invoke('auth-guard', {
-          body: { action: 'reset', ip_address: await getClientIP() },
+          body: { action: 'reset' },
         });
       } catch { /* non-critical */ }
     }

@@ -1,10 +1,16 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { getClientIP } from "../_shared/rate-limit.ts";
+import { requireUser } from "../_shared/auth.ts";
 
 /**
  * Auth Guard Edge Function
  * Server-side rate limiting for login attempts.
  * Called BEFORE actual auth to check if IP is allowed.
+ *
+ * The caller does not get to say who it is. The address comes from the
+ * proxy headers on the request; a body-supplied ip_address is ignored,
+ * since sending a fresh one per attempt would defeat the limit entirely.
  */
 Deno.serve(async (req) => {
   const corsResponse = handleCorsPreflightRequest(req);
@@ -15,11 +21,15 @@ Deno.serve(async (req) => {
   const headers = { ...corsHeaders, 'Content-Type': 'application/json' };
 
   try {
-    const { action, ip_address } = await req.json();
+    const { action } = await req.json();
+    const ip_address = getClientIP(req);
 
-    if (!ip_address) {
+    if (!ip_address || ip_address === 'unknown') {
+      // Without an address there is nothing to key the limit on. Refuse
+      // rather than silently letting every attempt through.
+      console.error('[AuthGuard] No client IP on request');
       return new Response(
-        JSON.stringify({ error: 'ip_address required' }),
+        JSON.stringify({ allowed: false, message: 'לא ניתן לאמת את הבקשה.' }),
         { status: 400, headers }
       );
     }
@@ -84,7 +94,18 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'reset') {
-      // Reset rate limit on successful login
+      // Clearing the counter is only meaningful after a login succeeded, so
+      // it requires the resulting session. Without this an attacker could
+      // reset the limit before every attempt and never be blocked.
+      const auth = await requireUser(req);
+      if (!auth.ok) {
+        console.warn(`[AuthGuard] Unauthenticated reset attempt from ${ip_address}`);
+        return new Response(
+          JSON.stringify({ error: 'Authentication required' }),
+          { status: 401, headers }
+        );
+      }
+
       await supabase
         .from('auth_rate_limits')
         .delete()
