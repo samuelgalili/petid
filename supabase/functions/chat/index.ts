@@ -4,6 +4,16 @@ import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { detectCategory, getKnowledgeForCategory, getFlowForCategory } from "./knowledge-base.ts";
 import { chatCompletion, chatCompletionStream } from "../_shared/ai.ts";
+import {
+  checkRateLimit,
+  getClientIP,
+  rateLimitExceededResponse,
+} from "../_shared/rate-limit.ts";
+
+// Each chat turn costs an upstream LLM call, so the endpoint is throttled.
+// Signed-in users are keyed by user id; guests and WhatsApp fall back to IP.
+const CHAT_RATE_LIMIT_USER = { maxRequests: 30, windowSeconds: 60 };
+const CHAT_RATE_LIMIT_ANON = { maxRequests: 10, windowSeconds: 60 };
 
 // ============= Types =============
 type Pet = {
@@ -807,6 +817,31 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Resolve the caller once, before any expensive work. Guests and the
+    // WhatsApp webhook send the anon key rather than a user JWT, so a missing
+    // user is expected here and must not block the request.
+    const authHeader = req.headers.get("authorization");
+    let userId: string | null = null;
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.slice(7);
+      if (token !== Deno.env.get("SUPABASE_ANON_KEY")) {
+        const { data: { user } } = await supabase.auth.getUser(token);
+        userId = user?.id || null;
+      }
+    }
+
+    // Throttle before reaching the LLM. Identified users get a higher ceiling
+    // than anonymous callers sharing an IP.
+    const clientIP = getClientIP(req);
+    const rateLimit = userId
+      ? checkRateLimit(userId, "chat", CHAT_RATE_LIMIT_USER)
+      : checkRateLimit(clientIP, "chat_anon", CHAT_RATE_LIMIT_ANON);
+
+    if (!rateLimit.allowed) {
+      console.log(`Chat rate limit exceeded for ${userId ? `user ${userId}` : `ip ${clientIP}`}`);
+      return rateLimitExceededResponse(rateLimit, corsHeaders);
+    }
+
     // ============= Pet Context Resolver =============
     const pets: Pet[] = (userContext?.pets ?? []).map(p => ({
       id: p.id, name: p.name || "חיה", type: p.type || "unknown",
@@ -927,17 +962,7 @@ nrc_calculation: ${nrcCalc}
     let ocrDocumentData = "";
     let brainIntegrity = "";
 
-    // Get user ID from auth header for owner/purchase data
-    const authHeader = req.headers.get("authorization");
-    let userId: string | null = null;
-    if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.slice(7);
-      // Only extract user if it's not the anon key
-      if (token !== Deno.env.get("SUPABASE_ANON_KEY")) {
-        const { data: { user } } = await supabase.auth.getUser(token);
-        userId = user?.id || null;
-      }
-    }
+    // userId was resolved above, before the rate limit check.
 
     // Parallel data fetching for all layers
     const dataPromises: Promise<void>[] = [];
