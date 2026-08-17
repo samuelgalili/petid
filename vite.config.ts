@@ -43,102 +43,15 @@ export default defineConfig(({ mode }) => ({
           },
         ],
       },
-      workbox: {
+      // injectManifest, not generateSW: the worker lives at src/sw.js so the
+      // push and notificationclick handlers ship with it. Under generateSW,
+      // workbox emitted its own dist/sw.js and overwrote the handwritten one.
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.js",
+      injectManifest: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MiB
         globPatterns: ["**/*.{js,css,html,ico,png,jpg,jpeg,svg,gif,webp}"],
-        navigateFallbackDenylist: [/^\/~oauth/],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "google-fonts-cache",
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365,
-              },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "gstatic-fonts-cache",
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365,
-              },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
-            urlPattern: /^https:\/\/images\.unsplash\.com\/.*/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "unsplash-images-cache",
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 * 30,
-              },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          // Supabase REST responses are deliberately not cached. They are
-          // per-user rows returned under the caller's token, and Cache Storage
-          // outlives the session, so on a shared device the next person could
-          // be served the previous user's feed or profile.
-          {
-            // Cache Supabase storage (avatars, post images)
-            urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/v1\/.*/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "supabase-storage-cache",
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 7,
-              },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
-            urlPattern: /\/api\/.*/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "api-cache",
-              networkTimeoutSeconds: 10,
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 5,
-              },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
-            urlPattern: /\/chat$/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "chat-page-cache",
-              networkTimeoutSeconds: 5,
-              expiration: {
-                maxEntries: 5,
-                maxAgeSeconds: 60 * 60 * 24,
-              },
-            },
-          },
-          {
-            urlPattern: /\/messages\/.*/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "messages-page-cache",
-              networkTimeoutSeconds: 5,
-              expiration: {
-                maxEntries: 20,
-                maxAgeSeconds: 60 * 60 * 24,
-              },
-            },
-          },
-        ],
       },
       devOptions: {
         enabled: true,
