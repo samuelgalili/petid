@@ -807,7 +807,17 @@ export const ProductFormDialog = ({
             business_id: "cf941cc4-e1d1-4d7c-8122-a5df81a1e53c", // Default business ID
           };
 
-          const { error } = await supabase.from("business_products").insert(productData);
+          // pet_type is a free-text field on the form but an enum on the
+          // column; anything unrecognised is stored as "all".
+          const petType = productData.pet_type;
+          const normalizedProduct = {
+            ...productData,
+            pet_type: (["dog", "cat", "other", "all"].includes(petType as string)
+              ? petType
+              : "all") as "dog" | "cat" | "other" | "all",
+          };
+
+          const { error } = await supabase.from("business_products").insert(normalizedProduct);
           
           if (error) {
             console.error("Error inserting product:", error);

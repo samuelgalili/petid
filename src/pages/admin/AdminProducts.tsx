@@ -193,8 +193,19 @@ const AdminProducts = () => {
       if (spError) console.error("Error fetching scraped_products:", spError);
 
       // Transform and unify
+      // benefits, feeding_guide and product_attributes are the three json
+      // columns on business_products. The generated row type is Json, while
+      // ProductData models them as an array, an array and a record. Narrow
+      // them here so a scalar in the column cannot reach consumers that
+      // assume a shape.
       const manualProducts: ProductData[] = (businessProducts || []).map(p => ({
         ...p,
+        benefits: Array.isArray(p.benefits) ? p.benefits : [],
+        feeding_guide: Array.isArray(p.feeding_guide) ? p.feeding_guide : [],
+        product_attributes:
+          p.product_attributes && typeof p.product_attributes === 'object' && !Array.isArray(p.product_attributes)
+            ? (p.product_attributes as Record<string, any>)
+            : {},
         source: 'manual' as const,
         source_url: null,
       }));
