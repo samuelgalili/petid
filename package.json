@@ -9,6 +9,8 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
+    "lint:ci": "eslint . -c eslint.ci.config.js --max-warnings=-1",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit",
     "preview": "vite preview"
   },
   "dependencies": {
