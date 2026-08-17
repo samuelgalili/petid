@@ -109,6 +109,23 @@ export const useAuth = () => {
   const signOut = async () => {
     localStorage.removeItem("rememberMe");
     const { error } = await supabase.auth.signOut();
+
+    // Drop any service worker caches holding data fetched as this user.
+    // Devices that ran an earlier build may still have a supabase-api-cache
+    // entry, and it would otherwise survive into the next session.
+    if (typeof caches !== "undefined") {
+      try {
+        const names = await caches.keys();
+        await Promise.all(
+          names
+            .filter((name) => name.startsWith("supabase-") || name.includes("api-cache"))
+            .map((name) => caches.delete(name))
+        );
+      } catch {
+        // Cache eviction is best effort; never block sign-out on it.
+      }
+    }
+
     return { error };
   };
 

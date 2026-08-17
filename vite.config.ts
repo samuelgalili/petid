@@ -84,20 +84,10 @@ export default defineConfig(({ mode }) => ({
               cacheableResponse: { statuses: [0, 200] },
             },
           },
-          {
-            // Cache Supabase REST/PostgREST (feed posts, profiles)
-            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/.*/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "supabase-api-cache",
-              networkTimeoutSeconds: 8,
-              expiration: {
-                maxEntries: 60,
-                maxAgeSeconds: 60 * 5,
-              },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
+          // Supabase REST responses are deliberately not cached. They are
+          // per-user rows returned under the caller's token, and Cache Storage
+          // outlives the session, so on a shared device the next person could
+          // be served the previous user's feed or profile.
           {
             // Cache Supabase storage (avatars, post images)
             urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/v1\/.*/i,
