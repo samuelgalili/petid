@@ -3,7 +3,7 @@
 מקור האמת למצב התיקונים בענף `claude/petaidy-code-review-be1706`.
 מתעדכן בכל תיקון. כל שורה מפנה לקומיט שאפשר לבטל בנפרד ב־`git revert`.
 
-**מצב:** 19 בוצעו · 4 חלקיות · 7 נותרו (מתוך 30)
+**מצב:** 21 בוצעו · 4 חלקיות · 5 נותרו (מתוך 30)
 
 ---
 
@@ -43,6 +43,8 @@
 | — | שתי שגיאות הטייפצ'ק האחרונות תוקנו — `tsc` נקי לחלוטין | `039d7a7` | 17.08 | `ProductFormDialog.tsx`, `AdminProducts.tsx` |
 | 21 | CI חוסם על typecheck ועל כללי נכונות ב־ESLint | `b685f41` | 17.08 | `eslint.ci.config.js`, `e2e-tests.yml`, `package.json` |
 | 13 | נוטיפיקציות פוש — מעבר ל־`injectManifest`, המאזינים שורדים את הבילד | `d4d9e99` | 17.08 | `src/sw.js`, `vite.config.ts` |
+| 17 | מנוי auth יחיד לכל האפליקציה במקום ~110; admin נפתר פעם אחת | `dd98245` | 17.08 | `useAuth.ts`, `useAdmin.ts` |
+| 19 | chunk ראשי 1,077KB→526KB; `AdminProducts` 471KB→84KB | `e3f17f6`, `2d4b562` | 17.08 | `ProductFormDialog.tsx`, `vite.config.ts` |
 
 ## 🟡 בוצע חלקית
 
@@ -63,9 +65,7 @@
 | # | תיקון | הערכה |
 |---|---|---|
 | 16 | תמונות base64 ב־DB → Supabase Storage | 2‑3 ימים |
-| 17 | `useAuth` ו־`useAdmin` ל־Context אחד (110 מנויים כפולים) | יום |
 | 18 | החלפת 223 מופעי `select('*')` ברשימת עמודות | 2 ימים |
-| 19 | הפרדת קוד אדמין מה־bundle (chunk ראשי 1.08MB) | יום |
 
 ### יסודות
 | # | תיקון | הערכה |
