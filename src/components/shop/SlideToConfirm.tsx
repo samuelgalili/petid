@@ -36,6 +36,10 @@ export const SlideToConfirm = ({
   const bgOpacity = useTransform(x, [0, getMaxDrag() * THRESHOLD], [0, 1]);
   const labelOpacity = useTransform(x, [0, getMaxDrag() * 0.3], [1, 0]);
   const checkScale = useTransform(x, [getMaxDrag() * 0.5, getMaxDrag() * THRESHOLD], [0, 1]);
+  // Inverse of checkScale, for the bag icon that fades out as the check fades in.
+  // Declared here because the JSX below sits inside a conditional branch, and a
+  // hook called there would change hook order between renders.
+  const bagScale = useTransform(checkScale, [0, 1], [1, 0]);
 
   const handleDragEnd = useCallback(() => {
     const maxDrag = getMaxDrag();
@@ -110,7 +114,7 @@ export const SlideToConfirm = ({
             <Check className="w-5 h-5 text-primary-foreground" strokeWidth={2.5} />
           </motion.div>
           <motion.div
-            style={{ scale: useTransform(checkScale, [0, 1], [1, 0]) }}
+            style={{ scale: bagScale }}
             className="absolute"
           >
             <ShoppingBag className="w-5 h-5 text-primary-foreground" strokeWidth={2} />
