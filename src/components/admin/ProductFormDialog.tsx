@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, lazy, Suspense } from "react";
 import { Sparkles, ImageIcon, Loader2, ExternalLink, Search, Upload, Globe, X, Check, FileSpreadsheet, Package, ChevronDown, ChevronUp, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,7 +32,11 @@ import {
 } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { BulkProductImport } from "./BulkProductImport";
+// Loaded on demand: this pulls in the xlsx parser, which is most of the
+// admin products chunk, and the dialog is only opened deliberately.
+const BulkProductImport = lazy(() =>
+  import("./BulkProductImport").then((m) => ({ default: m.BulkProductImport }))
+);
 import { CompetitorPriceManager } from "./products/CompetitorPriceManager";
 
 interface ScrapedProductVariant {
@@ -1797,6 +1801,7 @@ export const ProductFormDialog = ({
         </form>
 
         {/* Bulk Import Dialog */}
+        <Suspense fallback={null}>
         <BulkProductImport
           open={showBulkImport}
           onOpenChange={setShowBulkImport}
@@ -1824,6 +1829,7 @@ export const ProductFormDialog = ({
             }
           }}
         />
+        </Suspense>
       </DialogContent>
     </Dialog>
   );
