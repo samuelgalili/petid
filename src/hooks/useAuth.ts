@@ -1,55 +1,89 @@
-import { useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
+
+// Auth state is held once for the whole app rather than per component.
+//
+// useAuth is called from ~110 components. When each call owned its own
+// useState and useEffect, every one of them opened its own
+// onAuthStateChange subscription and issued its own getSession request on
+// mount. This module keeps a single subscription and a single snapshot, and
+// the hook reads it through useSyncExternalStore.
+//
+// The hook's return shape is unchanged, so callers did not need touching.
+
+interface AuthState {
+  user: User | null;
+  session: Session | null;
+  loading: boolean;
+}
+
+// Replaced wholesale on every change: useSyncExternalStore compares snapshots
+// by identity, so mutating this object in place would not notify anyone.
+let state: AuthState = { user: null, session: null, loading: true };
+
+const listeners = new Set<() => void>();
+let started = false;
+
+function setState(next: AuthState) {
+  state = next;
+  for (const listener of listeners) listener();
+}
+
+/** Open the single subscription, on first use. */
+function start() {
+  if (started) return;
+  started = true;
+
+  supabase.auth.onAuthStateChange((_event, session) => {
+    setState({ user: session?.user ?? null, session, loading: false });
+  });
+
+  supabase.auth
+    .getSession()
+    .then(({ data: { session } }) => {
+      setState({ user: session?.user ?? null, session, loading: false });
+    })
+    .catch(() => {
+      setState({ ...state, loading: false });
+    });
+}
+
+function subscribe(listener: () => void): () => void {
+  start();
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+function getSnapshot(): AuthState {
+  return state;
+}
+
+// Server render and hydration both see the pre-resolved state.
+function getServerSnapshot(): AuthState {
+  return state;
+}
 
 // The login rate limit is keyed by the address auth-guard reads from the
 // request headers. The client used to look its own IP up and send it, which
 // meant an attacker could present a new one on every attempt.
 
 export const useAuth = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, session, loading } = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot
+  );
 
-  useEffect(() => {
-    let isMounted = true;
-
-    // Set up auth state listener FIRST (for ongoing changes)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        if (!isMounted) return;
-        setSession(session);
-        setUser(session?.user ?? null);
-      }
-    );
-
-    // THEN check for existing session (initial load)
-    const initializeAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!isMounted) return;
-        setSession(session);
-        setUser(session?.user ?? null);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    initializeAuth();
-
-    return () => {
-      isMounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  const signIn = async (email: string, password: string, rememberMe: boolean) => {
+  const signIn = useCallback(async (email: string, password: string, rememberMe: boolean) => {
     // Client-side rate limiting (first defense layer)
     const now = Date.now();
     const attemptsKey = "login_attempts";
     const windowMs = 60000;
     const maxAttempts = 5;
-    
+
     try {
       const stored = JSON.parse(localStorage.getItem(attemptsKey) || '{"c":0,"t":0}');
       if (now - stored.t < windowMs && stored.c >= maxAttempts) {
@@ -104,9 +138,9 @@ export const useAuth = () => {
     }
 
     return { data, error };
-  };
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     localStorage.removeItem("rememberMe");
     const { error } = await supabase.auth.signOut();
 
@@ -127,7 +161,7 @@ export const useAuth = () => {
     }
 
     return { error };
-  };
+  }, []);
 
   return {
     user,
