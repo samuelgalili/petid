@@ -1,4 +1,5 @@
 import { recordEvent } from "./events.js";
+import { setChangeContext } from "./productVersions.js";
 
 // Turning mapped rows into products.
 //
@@ -394,6 +395,11 @@ export const runImportApply = async (pool, importId) => {
       const client = await pool.connect();
       try {
         await client.query("begin");
+        // So the product's history says an import wrote this, and which one.
+        await setChangeContext(client, {
+          source: "import",
+          reason: `ייבוא ${importRow.filename || importRow.id}`,
+        });
         const result = await applyRow(client, cache, { row, importRow, profile });
 
         if (result.action === "skip") {

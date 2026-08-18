@@ -1,4 +1,5 @@
 import { recordEvent } from "./events.js";
+import { setChangeContext } from "./productVersions.js";
 
 // Comparing a delivery against the one before it.
 //
@@ -312,6 +313,12 @@ export const decideChanges = async (pool, { changeIds, action, adminUserId }) =>
       await client.query("commit");
       return { requested: ids.length, decided: result.rowCount, applied: 0 };
     }
+
+    await setChangeContext(client, {
+      source: "admin",
+      reason: "אישור שינוי מייבוא",
+      adminUserId,
+    });
 
     const pending = await client.query(
       `

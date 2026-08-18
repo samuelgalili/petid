@@ -1,4 +1,5 @@
 import { recordEvent } from "./events.js";
+import { setChangeContext } from "./productVersions.js";
 
 // The review queue, grouped by why each product is in it.
 //
@@ -118,6 +119,11 @@ export const applyReviewDecision = async (pool, { productIds, action, adminUserI
   const client = await pool.connect();
   try {
     await client.query("begin");
+    await setChangeContext(client, {
+      source: "admin",
+      reason: action === "publish" ? "אושר לפרסום במרכז הביקורת" : "נדחה במרכז הביקורת",
+      adminUserId,
+    });
 
     let refused = [];
     let updated = 0;

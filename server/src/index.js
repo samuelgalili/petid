@@ -41,6 +41,7 @@ import { MAP_JOB_TYPE, runImportMap, suggestProfileMappings } from "./importMapR
 import { APPLY_JOB_TYPE, runImportApply } from "./importApply.js";
 import { applyReviewDecision, getReviewProducts, getReviewSummary } from "./reviewCenter.js";
 import { DETECT_JOB_TYPE, decideChanges, getPendingChanges, runImportDetect } from "./importChanges.js";
+import { getProductVersion, getProductVersions, rollbackProduct } from "./productVersions.js";
 import { TARGET_FIELDS } from "./importMapping.js";
 import {
   CLIENT_EVENT_TYPES,
@@ -6700,6 +6701,44 @@ const handleRequest = async (request, response) => {
         return;
       }
       sendJson(response, 200, report);
+      return;
+    }
+
+    const versionsMatch = url.pathname.match(/^\/api\/admin\/products\/([0-9a-fA-F-]{36})\/versions$/);
+    if (versionsMatch && request.method === "GET") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_READ))) return;
+      sendJson(response, 200, { versions: await getProductVersions(pool, versionsMatch[1]) });
+      return;
+    }
+
+    const oneVersionMatch = url.pathname.match(/^\/api\/admin\/products\/([0-9a-fA-F-]{36})\/versions\/(\d+)$/);
+    if (oneVersionMatch && request.method === "GET") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_READ))) return;
+      const version = await getProductVersion(pool, oneVersionMatch[1], Number(oneVersionMatch[2]));
+      if (!version) {
+        sendError(response, 404, "Version not found");
+        return;
+      }
+      sendJson(response, 200, { version });
+      return;
+    }
+
+    const rollbackMatch = url.pathname.match(/^\/api\/admin\/products\/([0-9a-fA-F-]{36})\/rollback$/);
+    if (rollbackMatch && request.method === "POST") {
+      // Restoring rewrites a live product, so it needs the catalogue permission.
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_CREATE))) return;
+      const body = await readBody(request);
+      const version = Number(body.version);
+      if (!Number.isInteger(version) || version < 1) {
+        sendError(response, 400, "version must be a positive integer");
+        return;
+      }
+      sendJson(response, 200, await rollbackProduct(pool, {
+        productId: rollbackMatch[1],
+        version,
+        adminUserId: request.admin?.id || null,
+        reason: body.reason || null,
+      }));
       return;
     }
 
