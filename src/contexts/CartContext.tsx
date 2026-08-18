@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { playAddToCartSound } from "@/lib/sounds";
+import { trackEvent } from "@/lib/analytics";
 
 export interface CartItem {
   /** Stable cart-line identity: product + variant + size. */
@@ -78,6 +79,17 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const addToCart: CartContextType["addToCart"] = (item) => {
     const productId = item.productId || item.id;
     if (!productId) return;
+
+    trackEvent("cart.item_added", {
+      entity_type: "product",
+      entity_id: productId,
+      payload: {
+        quantity: item.quantity || 1,
+        price: item.price,
+        variant: item.variant || null,
+        size: item.size || null,
+      },
+    });
     const lineId = getLineId(productId, item.variant, item.size);
 
     setItems((prevItems) => {
@@ -106,7 +118,19 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const removeFromCart = (id: string) => {
-    setItems((prevItems) => prevItems.filter((item) => item.id !== id));
+    setItems((prevItems) => {
+      const removed = prevItems.find((item) => item.id === id);
+      if (removed) {
+        // Abandonment is only visible as the gap between adds and orders, so a
+        // removal is as worth recording as an add.
+        trackEvent("cart.item_removed", {
+          entity_type: "product",
+          entity_id: removed.productId,
+          payload: { quantity: removed.quantity, price: removed.price },
+        });
+      }
+      return prevItems.filter((item) => item.id !== id);
+    });
   };
 
   const updateQuantity = (id: string, quantity: number) => {

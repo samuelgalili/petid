@@ -541,6 +541,8 @@ export interface MipoAdminAnalytics {
   breeds: MipoBreedInfo[];
 }
 
+import { getSessionId } from "./analytics";
+
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/+$/, "");
 const userSessionHintKey = "mipo_user_session_hint";
 const adminSessionHintKey = "mipo_admin_session_hint";
@@ -659,7 +661,7 @@ export async function getCurrentUser(): Promise<MipoAuthResult | null> {
 export async function loginUser(email: string, password: string, rememberMe = false): Promise<MipoAuthResult> {
   const auth = await apiFetch<MipoAuthResult>("/auth/login", {
     method: "POST",
-    body: JSON.stringify({ email, password, remember_me: rememberMe }),
+    body: JSON.stringify({ email, password, remember_me: rememberMe, session_id: getSessionId() }),
   });
   setStorageHint(userSessionHintKey, true);
   return auth;
@@ -674,7 +676,7 @@ export async function signupUser(input: {
 }): Promise<MipoAuthResult> {
   const auth = await apiFetch<MipoAuthResult>("/auth/signup", {
     method: "POST",
-    body: JSON.stringify(input),
+    body: JSON.stringify({ ...input, session_id: getSessionId() }),
   });
   setStorageHint(userSessionHintKey, true);
   return auth;
@@ -1237,7 +1239,7 @@ export async function deleteAdminCoupon(couponId: string) {
 export async function createShopOrder(input: CreateMipoOrderInput): Promise<MipoOrderCreationResult> {
   return apiFetch<MipoOrderCreationResult>("/orders", {
     method: "POST",
-    body: JSON.stringify(input),
+    body: JSON.stringify({ ...input, session_id: getSessionId() }),
   });
 }
 

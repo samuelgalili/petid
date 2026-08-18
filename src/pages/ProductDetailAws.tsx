@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { trackEvent } from "@/lib/analytics";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Minus, Plus, ShoppingCart, Store, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,23 @@ const ProductDetailAws = () => {
   });
 
   const product = useMemo(() => products.find((item) => item.id === id) || null, [products, id]);
+
+  // Which products people look at, and never buy, is the signal that no table
+  // in this system holds today.
+  useEffect(() => {
+    if (!product) return;
+    trackEvent("product.viewed", {
+      entity_type: "product",
+      entity_id: product.id,
+      payload: {
+        name: product.name,
+        price: asNumber(product.sale_price || product.price),
+        category: product.category || null,
+        brand: product.brand || null,
+        in_stock: product.in_stock !== false,
+      },
+    });
+  }, [product]);
   const images = product?.images?.length ? product.images : [product?.image_url || "/placeholder.svg"];
   const price = asNumber(product?.sale_price || product?.price);
   const originalPrice = product?.sale_price ? asNumber(product.price) : asNumber(product?.original_price);

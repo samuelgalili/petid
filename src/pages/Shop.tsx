@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { trackEvent } from "@/lib/analytics";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -258,6 +259,23 @@ const Shop = () => {
     console.log("Filtered products:", result.length);
     return result;
   }, [products, sortBy, showDealsOnly, activeTab, favorites, searchQuery, selectedCategory]);
+
+  // The list filters on every keystroke, so the query is only reported once the
+  // person stops typing. A search that returns nothing is recorded separately:
+  // it is the clearest signal of a gap in the catalogue.
+  useEffect(() => {
+    const query = searchQuery.trim();
+    if (query.length < 2) return;
+
+    const timer = setTimeout(() => {
+      const resultCount = filteredAndSortedProducts.length;
+      trackEvent(resultCount === 0 ? "search.no_results" : "search.performed", {
+        payload: { query, result_count: resultCount },
+      });
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, filteredAndSortedProducts]);
 
   const addToSearchHistory = useCallback((query: string) => {
     if (!query.trim()) return;
