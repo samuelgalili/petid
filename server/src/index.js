@@ -42,6 +42,7 @@ import { APPLY_JOB_TYPE, runImportApply } from "./importApply.js";
 import { applyReviewDecision, getReviewProducts, getReviewSummary } from "./reviewCenter.js";
 import { DETECT_JOB_TYPE, decideChanges, getPendingChanges, runImportDetect } from "./importChanges.js";
 import { getProductVersion, getProductVersions, rollbackProduct } from "./productVersions.js";
+import { getCustomer, listCustomers } from "./customerCrm.js";
 import { TARGET_FIELDS } from "./importMapping.js";
 import {
   CLIENT_EVENT_TYPES,
@@ -6701,6 +6702,30 @@ const handleRequest = async (request, response) => {
         return;
       }
       sendJson(response, 200, report);
+      return;
+    }
+
+    // Customer records carry personal data, so they sit behind full access
+    // rather than the catalogue permission a product manager holds.
+    if (request.method === "GET" && url.pathname === "/api/admin/customers") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      sendJson(response, 200, await listCustomers(pool, {
+        search: url.searchParams.get("search"),
+        limit: url.searchParams.get("limit"),
+        offset: url.searchParams.get("offset"),
+      }));
+      return;
+    }
+
+    const customerMatch = url.pathname.match(/^\/api\/admin\/customers\/([0-9a-fA-F-]{36})$/);
+    if (customerMatch && request.method === "GET") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      const customer = await getCustomer(pool, customerMatch[1]);
+      if (!customer) {
+        sendError(response, 404, "Customer not found");
+        return;
+      }
+      sendJson(response, 200, customer);
       return;
     }
 

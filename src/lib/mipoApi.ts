@@ -1373,6 +1373,48 @@ export async function runImportMapping(importId: string): Promise<{ queued: bool
   return adminApiFetch(`/admin/imports/${importId}/map`, { method: "POST" });
 }
 
+// --- customers ---------------------------------------------------------------
+
+export interface MipoCustomerRow {
+  id: string;
+  email: string;
+  full_name: string | null;
+  phone: string | null;
+  has_account: boolean;
+  first_order_at: string | null;
+  last_order_at: string | null;
+  order_count: number;
+  total_spent: string;
+  pet_count: number;
+  created_at: string;
+}
+
+export interface MipoCustomerCard {
+  customer: MipoCustomerRow & {
+    marketing_consent?: boolean | null;
+    city?: string | null;
+    last_login_at?: string | null;
+  };
+  orders: { id: string; order_number: string; status: string; total: string; order_date: string; item_count: number }[];
+  pets: { id: string; name: string; type: string; breed: string | null; birth_date: string | null }[];
+  behaviour: { event_type: string; count: number; last_at: string }[];
+  viewed_products: { id: string; name: string; image_url: string; price: string; views: number; purchased: boolean }[];
+  stats: { order_count: number; total_spent: number; average_order: number; viewed_not_purchased: number };
+}
+
+export async function getCustomers(input: { search?: string; limit?: number } = {}) {
+  const params = new URLSearchParams();
+  if (input.search) params.set("search", input.search);
+  params.set("limit", String(input.limit ?? 50));
+  return adminApiFetch<{ customers: MipoCustomerRow[]; totals: { customers: number; with_account: number; buyers: number } }>(
+    `/admin/customers?${params.toString()}`,
+  );
+}
+
+export async function getCustomerCard(customerId: string): Promise<MipoCustomerCard> {
+  return adminApiFetch<MipoCustomerCard>(`/admin/customers/${customerId}`);
+}
+
 // --- review center ---------------------------------------------------------
 
 export interface MipoReviewReason {
