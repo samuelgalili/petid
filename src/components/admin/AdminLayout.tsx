@@ -5,7 +5,7 @@ import { LucideIcon } from "lucide-react";
 import { 
   LayoutDashboard, Users, ShoppingCart, Package, Flag, Heart, Store, ShieldAlert, 
   FileText, Settings, Bell, Shield, History, ChevronRight, ChevronDown,
-  Menu, LogOut, MapPin, Ticket, Bot, Wallet, ListTodo, Truck, UserPlus,
+  Menu, LogOut, MapPin, Ticket, Bot, Wallet, ListTodo, Truck, UserPlus, ClipboardCheck,
   CreditCard, Boxes, Receipt, Megaphone, Users2, RotateCcw, BarChart3,
   Plug, HardDrive, Contact, FolderTree, CalendarDays, Headphones,
   Building2, DollarSign, Webhook, PlaySquare, Trophy, Zap, Clock,
@@ -54,6 +54,7 @@ const navGroups: NavGroup[] = [
       { icon: Package, label: "מוצרים", href: "/admin/products", permission: ADMIN_PERMISSIONS.PRODUCTS_READ },
       { icon: PackageSearch, label: "ייבוא מהיר", href: "/admin/quick-import", permission: ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE },
       { icon: Truck, label: "ספקים וייבוא", href: "/admin/suppliers", permission: ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE },
+      { icon: ClipboardCheck, label: "מרכז ביקורת", href: "/admin/review", permission: ADMIN_PERMISSIONS.PRODUCTS_READ },
       { icon: Sparkles, label: "עורך חכם", href: "/admin/smart-editor", permission: ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE },
       { icon: ShoppingCart, label: "הזמנות", href: "/admin/orders", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
       { icon: Ticket, label: "קופונים", href: "/admin/coupons", permission: ADMIN_PERMISSIONS.FULL_ACCESS },

@@ -1373,6 +1373,64 @@ export async function runImportMapping(importId: string): Promise<{ queued: bool
   return adminApiFetch(`/admin/imports/${importId}/map`, { method: "POST" });
 }
 
+// --- review center ---------------------------------------------------------
+
+export interface MipoReviewReason {
+  code: string;
+  label: string;
+  blocks_publish: boolean;
+  product_count: number;
+}
+
+export interface MipoReviewSummary {
+  reasons: MipoReviewReason[];
+  pending: number;
+  publishable: number;
+}
+
+export interface MipoReviewProduct {
+  id: string;
+  name: string;
+  sku: string | null;
+  price: number;
+  cost_price: number | null;
+  image_url: string;
+  size_amount: number | null;
+  size_unit: string | null;
+  brand_name: string | null;
+  category_name: string | null;
+  animal_name: string | null;
+  supplier_name: string | null;
+  row_number: number;
+  reasons: string[];
+}
+
+export async function getReviewSummary(): Promise<MipoReviewSummary> {
+  return adminApiFetch<MipoReviewSummary>("/admin/review/summary");
+}
+
+export async function getReviewProducts(input: { reason?: string | null; limit?: number } = {}) {
+  const params = new URLSearchParams();
+  if (input.reason) params.set("reason", input.reason);
+  params.set("limit", String(input.limit ?? 100));
+  const result = await adminApiFetch<{ products: MipoReviewProduct[] }>(
+    `/admin/review/products?${params.toString()}`,
+  );
+  return result.products;
+}
+
+export async function applyReviewDecision(input: { product_ids: string[]; action: "publish" | "reject" }) {
+  return adminApiFetch<{
+    requested: number;
+    updated: number;
+    refused: { id: string; name: string; sku: string | null; reason: string }[];
+  }>("/admin/review/decision", { method: "POST", body: JSON.stringify(input) });
+}
+
+export async function runImportApply(importId: string): Promise<{ queued: boolean }> {
+  return adminApiFetch(`/admin/imports/${importId}/apply`, { method: "POST" });
+}
+
 export async function createShopPaymentSession(input: {
   order_id: string;
   success_url: string;

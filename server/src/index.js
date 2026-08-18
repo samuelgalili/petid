@@ -39,6 +39,7 @@ import {
 import { MAX_FILE_BYTES } from "./importParser.js";
 import { MAP_JOB_TYPE, runImportMap, suggestProfileMappings } from "./importMapRun.js";
 import { APPLY_JOB_TYPE, runImportApply } from "./importApply.js";
+import { applyReviewDecision, getReviewProducts, getReviewSummary } from "./reviewCenter.js";
 import { TARGET_FIELDS } from "./importMapping.js";
 import {
   CLIENT_EVENT_TYPES,
@@ -6698,6 +6699,36 @@ const handleRequest = async (request, response) => {
         return;
       }
       sendJson(response, 200, report);
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/review/summary") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_READ))) return;
+      sendJson(response, 200, await getReviewSummary(pool));
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/review/products") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_READ))) return;
+      const products = await getReviewProducts(pool, {
+        reason: url.searchParams.get("reason"),
+        limit: url.searchParams.get("limit"),
+        offset: url.searchParams.get("offset"),
+      });
+      sendJson(response, 200, { products });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/admin/review/decision") {
+      // Publishing changes what shoppers can buy, so it needs the permission
+      // that governs the catalogue rather than the one that reads it.
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_CREATE))) return;
+      const body = await readBody(request);
+      sendJson(response, 200, await applyReviewDecision(pool, {
+        productIds: body.product_ids,
+        action: body.action,
+        adminUserId: request.admin?.id || null,
+      }));
       return;
     }
 
