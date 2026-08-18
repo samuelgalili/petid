@@ -28,6 +28,12 @@ import {
   verifyOpaqueToken,
 } from "./security.js";
 import { checkDatabaseHealth } from "./health.js";
+import {
+  CLIENT_EVENT_TYPES,
+  attachSessionToCustomer,
+  customerIdForAppUser,
+  recordEvent,
+} from "./events.js";
 import { hashPassword, verifyPassword } from "./passwords.js";
 import {
   ADMIN_PERMISSIONS,
@@ -298,6 +304,10 @@ const rateLimits = {
   paymentCreate: { limit: 20, windowMs: 10 * 60 * 1000 },
   reportCreate: { limit: 10, windowMs: 60 * 60 * 1000 },
   aiChat: { limit: 30, windowMs: 60 * 60 * 1000 },
+  // Browsing is chatty by nature, and a batch carries up to 20 events, so the
+  // ceiling is high enough not to drop normal use and low enough to stop a
+  // client filling the table.
+  eventIngest: { limit: 120, windowMs: 60 * 1000 },
   petCharacterGeneration: { limit: 3, windowMs: 24 * 60 * 60 * 1000 },
   petCharacterPack: { limit: 5, windowMs: 24 * 60 * 60 * 1000 },
   mediaUpload: { limit: 30, windowMs: 60 * 60 * 1000 },
@@ -958,6 +968,41 @@ const signupUser = async (request, body) => {
       [userResult.rows[0].id, email, fullName, firstName, lastName, phone, birthdate],
     );
 
+    // A person is one customer row whether they arrived by signing up or by
+    // checking out as a guest. Someone who bought before registering already
+    // has a row under this email, so the account attaches to it instead of
+    // starting a second identity and orphaning their order history.
+    const customerResult = await client.query(
+      `
+        insert into public.customers (app_user_id, email, full_name, phone, normalized_phone)
+        values ($1, $2, $3, $4, nullif(regexp_replace(coalesce($4, ''), '[^0-9]', '', 'g'), ''))
+        on conflict (email) do update set
+          app_user_id = coalesce(public.customers.app_user_id, excluded.app_user_id),
+          full_name = coalesce(public.customers.full_name, excluded.full_name),
+          phone = coalesce(public.customers.phone, excluded.phone),
+          normalized_phone = coalesce(public.customers.normalized_phone, excluded.normalized_phone),
+          updated_at = now()
+        returning id
+      `,
+      [userResult.rows[0].id, email, fullName, phone],
+    );
+
+    const customerId = customerResult.rows[0]?.id || null;
+
+    await recordEvent(client, {
+      event_type: "customer.registered",
+      actor_customer_id: customerId,
+      session_id: body.session_id,
+      entity_type: "customer",
+      entity_id: customerId,
+      source: "web",
+      idempotency_key: `customer.registered:${userResult.rows[0].id}`,
+      payload: { has_phone: Boolean(phone) },
+    });
+
+    // Everything they browsed before creating the account is theirs now.
+    await attachSessionToCustomer(client, body.session_id, customerId);
+
     const token = await createUserSession(request, userResult.rows[0].id, client);
     await client.query("commit");
 
@@ -1016,6 +1061,20 @@ const loginUser = async (request, body) => {
       [row.id],
     );
     const profile = await getProfileByUserId(row.id, client);
+
+    // Signing in is the moment an anonymous session becomes a known person, so
+    // the browsing that led here stops being anonymous too.
+    const customerId = await customerIdForAppUser(client, row.id);
+    await attachSessionToCustomer(client, body.session_id, customerId);
+    await recordEvent(client, {
+      event_type: "customer.signed_in",
+      actor_customer_id: customerId,
+      session_id: body.session_id,
+      entity_type: "customer",
+      entity_id: customerId,
+      source: "web",
+    });
+
     await client.query("commit");
 
     return {
@@ -3466,7 +3525,7 @@ const scrapedProductFields = {
   sale_price: "sale_price",
   image_url: "main_image_url",
   category: "sub_category",
-  in_stock: "stock_status",
+  in_stock: "in_stock",
   sku: "sku",
   pet_type: "pet_type",
   flavors: "flavors",
@@ -3499,10 +3558,6 @@ const normalizeFieldValue = (field, value, target = "business") => {
 
   if (field === "pet_type") {
     return normalizePetType(value);
-  }
-
-  if (field === "in_stock" && target === "scraped") {
-    return value ? "in_stock" : "out_of_stock";
   }
 
   if (booleanFields.has(field)) {
@@ -4592,6 +4647,35 @@ const createOrder = async (body, currentUser = null) => {
     if (amounts.coupon?.id) {
       await client.query("update public.coupons set used_count = used_count + 1, updated_at = now() where id = $1", [amounts.coupon.id]);
     }
+
+    // Inside the transaction on purpose: an order that exists without its event,
+    // or an event for an order that rolled back, would both be lies.
+    await recordEvent(client, {
+      event_type: "order.placed",
+      actor_customer_id: order.customer_id,
+      session_id: body.session_id,
+      entity_type: "order",
+      entity_id: order.id,
+      source: "web",
+      idempotency_key: `order.placed:${order.id}`,
+      payload: {
+        order_number: order.order_number,
+        total: Number(order.total),
+        subtotal: Number(order.subtotal),
+        discount_amount: Number(order.discount_amount),
+        payment_method: order.payment_method,
+        coupon_id: amounts.coupon?.id || null,
+        item_count: orderItems.length,
+        items: orderItems.map((item) => ({
+          product_id: item.product_id,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+      },
+    });
+
+    // Browsing that happened before checkout belongs to this person too.
+    await attachSessionToCustomer(client, body.session_id, order.customer_id);
 
     await client.query("commit");
     return {
@@ -6585,6 +6669,51 @@ const handleRequest = async (request, response) => {
     if (request.method === "POST" && url.pathname === "/api/coupons/validate") {
       if (!enforceRateLimit(request, response, "coupon-validate", rateLimits.couponValidate)) return;
       sendJson(response, 200, { coupon: await validateCoupon(await readBody(request)) });
+      return;
+    }
+
+    // Behaviour the server never sees on its own: views, searches, cart edits.
+    // Open to guests by design, since most browsing happens before anyone signs
+    // in, and the whole point is to keep that half of the funnel.
+    if (request.method === "POST" && url.pathname === "/api/events") {
+      if (!enforceRateLimit(request, response, "event-ingest", rateLimits.eventIngest)) return;
+      const body = await readBody(request);
+      const incoming = Array.isArray(body.events) ? body.events : [body];
+
+      if (incoming.length === 0 || incoming.length > 20) {
+        sendError(response, 400, "Send between 1 and 20 events");
+        return;
+      }
+
+      const rejected = incoming
+        .map((event) => String(event?.event_type || ""))
+        .filter((type) => !CLIENT_EVENT_TYPES.has(type));
+
+      if (rejected.length > 0) {
+        // Named explicitly so a client bug is obvious rather than silent.
+        sendError(response, 400, `Unsupported event types: ${[...new Set(rejected)].join(", ")}`);
+        return;
+      }
+
+      const auth = await getUserFromSession(request).catch(() => null);
+      const actorCustomerId = auth?.user
+        ? await customerIdForAppUser(pool, auth.user.id)
+        : null;
+
+      let accepted = 0;
+      for (const event of incoming) {
+        const id = await recordEvent(pool, {
+          ...event,
+          // The browser says what happened, never who it happened to.
+          actor_customer_id: actorCustomerId,
+          actor_admin_user_id: null,
+          session_id: event.session_id || body.session_id,
+          source: "web",
+        });
+        if (id) accepted += 1;
+      }
+
+      sendJson(response, 202, { accepted, received: incoming.length });
       return;
     }
 
