@@ -28,6 +28,15 @@ import {
   verifyOpaqueToken,
 } from "./security.js";
 import { checkDatabaseHealth } from "./health.js";
+import { JobWorker } from "./jobWorker.js";
+import {
+  IMPORT_JOB_TYPE,
+  createImport,
+  getImportReport,
+  loadImportFile,
+  runImportParse,
+} from "./importEngine.js";
+import { MAX_FILE_BYTES } from "./importParser.js";
 import {
   CLIENT_EVENT_TYPES,
   attachSessionToCustomer,
@@ -308,6 +317,7 @@ const rateLimits = {
   // ceiling is high enough not to drop normal use and low enough to stop a
   // client filling the table.
   eventIngest: { limit: 120, windowMs: 60 * 1000 },
+  importUpload: { limit: 20, windowMs: 60 * 60 * 1000 },
   petCharacterGeneration: { limit: 3, windowMs: 24 * 60 * 60 * 1000 },
   petCharacterPack: { limit: 5, windowMs: 24 * 60 * 60 * 1000 },
   mediaUpload: { limit: 30, windowMs: 60 * 60 * 1000 },
@@ -6637,6 +6647,72 @@ const handleRequest = async (request, response) => {
       return;
     }
 
+    if (request.method === "POST" && url.pathname === "/api/admin/imports") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE))) return;
+      if (!enforceRateLimit(request, response, "import-upload", rateLimits.importUpload)) return;
+
+      // Base64 in JSON rather than multipart: it is how every other upload in
+      // this API already arrives, and it keeps one body reader in play.
+      const body = await readBody(request, Math.ceil(MAX_FILE_BYTES * 1.4));
+      const encoded = String(body.file_base64 || "").replace(/^data:[^,]*,/, "");
+      if (!encoded) {
+        sendError(response, 400, "file_base64 is required");
+        return;
+      }
+
+      const buffer = Buffer.from(encoded, "base64");
+      if (buffer.length === 0) {
+        sendError(response, 400, "The uploaded file is empty");
+        return;
+      }
+      if (buffer.length > MAX_FILE_BYTES) {
+        sendError(response, 413, "The file is larger than the upload limit");
+        return;
+      }
+
+      const created = await createImport(pool, {
+        buffer,
+        filename: String(body.filename || "").slice(0, 255) || null,
+        supplierId: body.supplier_id || null,
+        profileId: body.profile_id || null,
+        sheetName: body.sheet_name || null,
+        adminUserId: request.admin?.id || null,
+        contentType: body.content_type || null,
+      });
+
+      // Parsing happens on the queue, so the response returns straight away and
+      // a large catalogue does not hold the connection open.
+      sendJson(response, 202, { import: created });
+      return;
+    }
+
+    const importReportMatch = url.pathname.match(/^\/api\/admin\/imports\/([0-9a-fA-F-]{36})$/);
+    if (importReportMatch && request.method === "GET") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE))) return;
+      const report = await getImportReport(pool, importReportMatch[1]);
+      if (!report) {
+        sendError(response, 404, "Import not found");
+        return;
+      }
+      sendJson(response, 200, report);
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/imports") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE))) return;
+      const result = await pool.query(
+        `
+          select i.*, s.name as supplier_name
+          from public.imports i
+          left join public.suppliers s on s.id = i.supplier_id
+          order by i.created_at desc
+          limit 100
+        `,
+      );
+      sendJson(response, 200, { imports: result.rows });
+      return;
+    }
+
     const adminCouponMatch = url.pathname.match(/^\/api\/admin\/coupons\/([0-9a-fA-F-]{36})$/);
     if (adminCouponMatch && request.method === "PATCH") {
       if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
@@ -6897,8 +6973,37 @@ const resumePetCharacterJobs = async () => {
   }
 };
 
+// Background work runs in this process. Handlers are registered here rather
+// than inside the worker so the worker stays a queue and knows nothing about
+// imports.
+const jobWorker = new JobWorker(pool, {
+  handlers: {
+    [IMPORT_JOB_TYPE]: async (job) => {
+      const importId = job.payload?.import_id;
+      if (!importId) throw new Error("import.parse job is missing import_id");
+
+      const buffer = await loadImportFile(pool, importId);
+      if (!buffer) throw new Error(`No stored file for import ${importId}`);
+
+      return runImportParse(pool, importId, buffer);
+    },
+  },
+});
+
+const shutdown = async (signal) => {
+  console.log(`mipo-api shutting down on ${signal}`);
+  await jobWorker.stop();
+  server.close(() => process.exit(0));
+  // Do not wait forever for connections that will not close on their own.
+  setTimeout(() => process.exit(0), 10_000).unref();
+};
+
+process.on("SIGTERM", () => void shutdown("SIGTERM"));
+process.on("SIGINT", () => void shutdown("SIGINT"));
+
 server.listen(port, () => {
   console.log(`mipo-api listening on ${port}`);
+  jobWorker.start();
   resumePetCharacterJobs().catch((error) => {
     console.error("Failed to resume pet character generation", error);
   });
