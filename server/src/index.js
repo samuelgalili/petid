@@ -40,6 +40,7 @@ import { MAX_FILE_BYTES } from "./importParser.js";
 import { MAP_JOB_TYPE, runImportMap, suggestProfileMappings } from "./importMapRun.js";
 import { APPLY_JOB_TYPE, runImportApply } from "./importApply.js";
 import { applyReviewDecision, getReviewProducts, getReviewSummary } from "./reviewCenter.js";
+import { DETECT_JOB_TYPE, decideChanges, getPendingChanges, runImportDetect } from "./importChanges.js";
 import { TARGET_FIELDS } from "./importMapping.js";
 import {
   CLIENT_EVENT_TYPES,
@@ -6702,6 +6703,44 @@ const handleRequest = async (request, response) => {
       return;
     }
 
+    const runDetectMatch = url.pathname.match(/^\/api\/admin\/imports\/([0-9a-fA-F-]{36})\/detect$/);
+    if (runDetectMatch && request.method === "POST") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE))) return;
+      await pool.query(
+        `
+          insert into public.jobs (job_type, payload, idempotency_key)
+          values ($1, $2::jsonb, $3)
+          on conflict (idempotency_key) where idempotency_key is not null
+          do update set status = 'pending', run_after = now(), attempts = 0, updated_at = now()
+        `,
+        [DETECT_JOB_TYPE, JSON.stringify({ import_id: runDetectMatch[1] }), `${DETECT_JOB_TYPE}:${runDetectMatch[1]}`],
+      );
+      sendJson(response, 202, { queued: true });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/changes") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_READ))) return;
+      sendJson(response, 200, await getPendingChanges(pool, {
+        importId: url.searchParams.get("import_id"),
+        limit: url.searchParams.get("limit"),
+      }));
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/admin/changes/decision") {
+      // Approving a change edits a live product, so it needs the catalogue
+      // permission rather than the one that only reads it.
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_CREATE))) return;
+      const body = await readBody(request);
+      sendJson(response, 200, await decideChanges(pool, {
+        changeIds: body.change_ids,
+        action: body.action,
+        adminUserId: request.admin?.id || null,
+      }));
+      return;
+    }
+
     if (request.method === "GET" && url.pathname === "/api/admin/review/summary") {
       if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_READ))) return;
       sendJson(response, 200, await getReviewSummary(pool));
@@ -7156,6 +7195,11 @@ const resumePetCharacterJobs = async () => {
 // imports.
 const jobWorker = new JobWorker(pool, {
   handlers: {
+    [DETECT_JOB_TYPE]: async (job) => {
+      const importId = job.payload?.import_id;
+      if (!importId) throw new Error("import.detect job is missing import_id");
+      return runImportDetect(pool, importId);
+    },
     [APPLY_JOB_TYPE]: async (job) => {
       const importId = job.payload?.import_id;
       if (!importId) throw new Error("import.apply job is missing import_id");
