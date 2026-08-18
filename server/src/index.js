@@ -37,6 +37,8 @@ import {
   runImportParse,
 } from "./importEngine.js";
 import { MAX_FILE_BYTES } from "./importParser.js";
+import { MAP_JOB_TYPE, runImportMap, suggestProfileMappings } from "./importMapRun.js";
+import { TARGET_FIELDS } from "./importMapping.js";
 import {
   CLIENT_EVENT_TYPES,
   attachSessionToCustomer,
@@ -6698,6 +6700,107 @@ const handleRequest = async (request, response) => {
       return;
     }
 
+    // The vocabulary a column can be mapped onto, so the editor is driven by
+    // the engine rather than by a list copied into the frontend.
+    if (request.method === "GET" && url.pathname === "/api/admin/import-target-fields") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE))) return;
+      sendJson(response, 200, {
+        fields: Object.entries(TARGET_FIELDS).map(([field, spec]) => ({ field, ...spec })),
+      });
+      return;
+    }
+
+    const profileMappingsMatch = url.pathname.match(/^\/api\/admin\/import-profiles\/([0-9a-fA-F-]{36})\/mappings$/);
+    if (profileMappingsMatch && request.method === "GET") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE))) return;
+      const result = await pool.query(
+        `
+          select * from public.import_field_mappings
+          where profile_id = $1
+          order by target_kind, source_field
+        `,
+        [profileMappingsMatch[1]],
+      );
+      sendJson(response, 200, { mappings: result.rows });
+      return;
+    }
+
+    if (profileMappingsMatch && request.method === "PATCH") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE))) return;
+      const body = await readBody(request);
+      const updates = Array.isArray(body.mappings) ? body.mappings : [];
+      if (updates.length === 0) {
+        sendError(response, 400, "mappings must be a non-empty array");
+        return;
+      }
+
+      let updated = 0;
+      for (const update of updates) {
+        const target = update.target_field ? TARGET_FIELDS[update.target_field] : null;
+        if (update.target_field && !target) {
+          sendError(response, 400, `Unknown target field: ${update.target_field}`);
+          return;
+        }
+        // An ignored column has to say why. The database enforces this too; the
+        // check here is so the editor gets a usable message instead of a 500.
+        if (update.target_kind === "ignored" && !update.ignore_reason) {
+          sendError(response, 400, `Ignoring ${update.source_field} needs a reason`);
+          return;
+        }
+
+        const result = await pool.query(
+          `
+            update public.import_field_mappings set
+              target_kind = coalesce($3, target_kind),
+              target_field = $4,
+              value_type = coalesce($5, value_type),
+              is_required = coalesce($6, is_required),
+              ignore_reason = $7,
+              updated_at = now()
+            where profile_id = $1 and id = $2
+          `,
+          [
+            profileMappingsMatch[1],
+            update.id,
+            update.target_kind || (target ? target.kind : null),
+            update.target_field || null,
+            update.value_type || (target ? target.type : null),
+            typeof update.is_required === "boolean" ? update.is_required : null,
+            update.ignore_reason || null,
+          ],
+        );
+        updated += result.rowCount;
+      }
+
+      sendJson(response, 200, { updated });
+      return;
+    }
+
+    const suggestMatch = url.pathname.match(/^\/api\/admin\/import-profiles\/([0-9a-fA-F-]{36})\/suggest$/);
+    if (suggestMatch && request.method === "POST") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE))) return;
+      sendJson(response, 200, await suggestProfileMappings(pool, suggestMatch[1]));
+      return;
+    }
+
+    const runMapMatch = url.pathname.match(/^\/api\/admin\/imports\/([0-9a-fA-F-]{36})\/map$/);
+    if (runMapMatch && request.method === "POST") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE))) return;
+      await pool.query(
+        `
+          insert into public.jobs (job_type, payload, idempotency_key)
+          values ($1, $2::jsonb, $3)
+          on conflict (idempotency_key) where idempotency_key is not null
+          do update set status = 'pending', run_after = now(), attempts = 0, updated_at = now()
+        `,
+        [MAP_JOB_TYPE, JSON.stringify({ import_id: runMapMatch[1] }), `${MAP_JOB_TYPE}:${runMapMatch[1]}`],
+      );
+      // Re-runnable on purpose: correcting a mapping and mapping again is the
+      // normal way to work, not an exceptional path.
+      sendJson(response, 202, { queued: true });
+      return;
+    }
+
     if (request.method === "GET" && url.pathname === "/api/admin/imports") {
       if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE))) return;
       const result = await pool.query(
@@ -6978,6 +7081,11 @@ const resumePetCharacterJobs = async () => {
 // imports.
 const jobWorker = new JobWorker(pool, {
   handlers: {
+    [MAP_JOB_TYPE]: async (job) => {
+      const importId = job.payload?.import_id;
+      if (!importId) throw new Error("import.map job is missing import_id");
+      return runImportMap(pool, importId);
+    },
     [IMPORT_JOB_TYPE]: async (job) => {
       const importId = job.payload?.import_id;
       if (!importId) throw new Error("import.parse job is missing import_id");
