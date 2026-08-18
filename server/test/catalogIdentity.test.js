@@ -95,3 +95,50 @@ describe("every order line joins to a product", async () => {
     assert.equal(orphans.rows[0].count, 0, "purchase history must stay joinable to the catalog");
   });
 });
+
+describe("the checkout upsert still resolves to one customer", async () => {
+  await withPool(async (pool) => {
+    const email = `checkout-${Date.now()}@example.com`;
+
+    // Exactly the statement createOrder runs.
+    const upsert = `
+      insert into public.shop_customers (email, full_name, phone, last_order_at)
+      values ($1, $2, $3, now())
+      on conflict (email) do update set
+        full_name = excluded.full_name,
+        phone = excluded.phone,
+        last_order_at = now(),
+        updated_at = now()
+      returning id
+    `;
+
+    const first = await pool.query(upsert, [email, "קונה", "052-1111111"]);
+    const second = await pool.query(upsert, [email, "קונה מעודכן", "052-2222222"]);
+
+    assert.equal(
+      first.rows[0].id,
+      second.rows[0].id,
+      "a returning customer must keep the id their earlier orders point at",
+    );
+
+    const rows = await pool.query("select full_name from public.customers where email = $1", [email]);
+    assert.equal(rows.rowCount, 1, "one person is one row");
+    assert.equal(rows.rows[0].full_name, "קונה מעודכן");
+
+    await pool.query("delete from public.shop_customers where lower(email) = $1", [email]);
+    const afterDelete = await pool.query("select 1 from public.customers where email = $1", [email]);
+    assert.equal(afterDelete.rowCount, 0, "account deletion must still remove the customer");
+  });
+});
+
+describe("no order points at a customer that is gone", async () => {
+  await withPool(async (pool) => {
+    const dangling = await pool.query(`
+      select count(*)::int as count
+      from public.orders o
+      where o.customer_id is not null
+        and not exists (select 1 from public.customers c where c.id = o.customer_id)
+    `);
+    assert.equal(dangling.rows[0].count, 0);
+  });
+});
