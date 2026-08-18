@@ -6700,6 +6700,33 @@ const handleRequest = async (request, response) => {
       return;
     }
 
+    // Suppliers with their profiles, because choosing where a file belongs is
+    // the first thing the upload needs and the two are never useful apart.
+    if (request.method === "GET" && url.pathname === "/api/admin/suppliers") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE))) return;
+      const result = await pool.query(
+        `
+          select
+            s.id, s.name, s.slug, s.status, s.source_type, s.default_currency, s.last_import_at,
+            coalesce(
+              jsonb_agg(
+                jsonb_build_object(
+                  'id', p.id, 'name', p.name, 'sheet_name', p.sheet_name,
+                  'header_row', p.header_row, 'status', p.status, 'last_import_at', p.last_import_at
+                ) order by p.created_at
+              ) filter (where p.id is not null),
+              '[]'::jsonb
+            ) as profiles
+          from public.suppliers s
+          left join public.supplier_import_profiles p on p.supplier_id = s.id
+          group by s.id
+          order by s.name
+        `,
+      );
+      sendJson(response, 200, { suppliers: result.rows });
+      return;
+    }
+
     // The vocabulary a column can be mapped onto, so the editor is driven by
     // the engine rather than by a list copied into the frontend.
     if (request.method === "GET" && url.pathname === "/api/admin/import-target-fields") {

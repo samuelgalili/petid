@@ -1243,6 +1243,136 @@ export async function createShopOrder(input: CreateMipoOrderInput): Promise<Mipo
   });
 }
 
+
+// --- supplier imports ------------------------------------------------------
+
+export interface MipoSupplier {
+  id: string;
+  name: string;
+  slug: string | null;
+  status: string;
+  source_type: string;
+  default_currency: string;
+  last_import_at: string | null;
+}
+
+export interface MipoImportProfile {
+  id: string;
+  supplier_id: string;
+  name: string;
+  sheet_name: string | null;
+  header_row: number;
+  status: string;
+  last_import_at: string | null;
+}
+
+export interface MipoImportRun {
+  id: string;
+  supplier_id: string | null;
+  supplier_name?: string | null;
+  profile_id: string | null;
+  status: string;
+  filename: string | null;
+  sheet_name: string | null;
+  total_rows: number;
+  valid_rows: number;
+  invalid_rows: number;
+  pending_review_rows: number;
+  mapped_fields: number;
+  unmapped_fields: number;
+  ignored_fields: number;
+  warnings: { code: string; message: string; columns?: string[] }[];
+  errors: { code: string; message: string }[];
+  created_at: string;
+}
+
+export interface MipoFieldMapping {
+  id: string;
+  profile_id: string;
+  source_field: string;
+  normalized_source_field: string;
+  target_kind: "domain" | "attribute" | "identifier" | "price" | "metadata" | "ignored" | "unmapped";
+  target_field: string | null;
+  value_type: string;
+  is_required: boolean;
+  ignore_reason: string | null;
+  notes: string | null;
+}
+
+export interface MipoTargetField {
+  field: string;
+  kind: string;
+  type: string;
+}
+
+export interface MipoSupplierWithProfiles extends MipoSupplier {
+  profiles: MipoImportProfile[];
+}
+
+export async function getSuppliers(): Promise<MipoSupplierWithProfiles[]> {
+  const result = await adminApiFetch<{ suppliers: MipoSupplierWithProfiles[] }>("/admin/suppliers");
+  return result.suppliers;
+}
+
+export async function getImportTargetFields(): Promise<MipoTargetField[]> {
+  const result = await adminApiFetch<{ fields: MipoTargetField[] }>("/admin/import-target-fields");
+  return result.fields;
+}
+
+export async function getImportRuns(): Promise<MipoImportRun[]> {
+  const result = await adminApiFetch<{ imports: MipoImportRun[] }>("/admin/imports");
+  return result.imports;
+}
+
+export async function getImportReport(importId: string) {
+  return adminApiFetch<{
+    import: MipoImportRun;
+    row_states: { status: string; count: number }[];
+    fields: MipoFieldMapping[];
+    field_summary: { mapped: number; unmapped: number; ignored: number };
+  }>(`/admin/imports/${importId}`);
+}
+
+export async function uploadSupplierFile(input: {
+  filename: string;
+  file_base64: string;
+  supplier_id?: string | null;
+  profile_id?: string | null;
+  sheet_name?: string | null;
+  content_type?: string | null;
+}): Promise<MipoImportRun> {
+  const result = await adminApiFetch<{ import: MipoImportRun }>("/admin/imports", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  return result.import;
+}
+
+export async function getProfileMappings(profileId: string): Promise<MipoFieldMapping[]> {
+  const result = await adminApiFetch<{ mappings: MipoFieldMapping[] }>(
+    `/admin/import-profiles/${profileId}/mappings`,
+  );
+  return result.mappings;
+}
+
+export async function updateProfileMappings(
+  profileId: string,
+  mappings: Array<Partial<MipoFieldMapping> & { id: string; source_field: string }>,
+): Promise<{ updated: number }> {
+  return adminApiFetch(`/admin/import-profiles/${profileId}/mappings`, {
+    method: "PATCH",
+    body: JSON.stringify({ mappings }),
+  });
+}
+
+export async function suggestProfileMappings(profileId: string): Promise<{ proposed: number; total: number }> {
+  return adminApiFetch(`/admin/import-profiles/${profileId}/suggest`, { method: "POST" });
+}
+
+export async function runImportMapping(importId: string): Promise<{ queued: boolean }> {
+  return adminApiFetch(`/admin/imports/${importId}/map`, { method: "POST" });
+}
+
 export async function createShopPaymentSession(input: {
   order_id: string;
   success_url: string;
