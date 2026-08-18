@@ -131,6 +131,39 @@ describe("the checkout upsert still resolves to one customer", async () => {
   });
 });
 
+describe("only published products reach the shop", async () => {
+  await withPool(async (pool) => {
+    // An import creates products in review. They were briefly visible to
+    // shoppers because the view listed the statuses to hide rather than the one
+    // to show, so every status added later was visible by default.
+    const created = await pool.query(
+      `insert into public.products (source_kind, status, name, price, image_url, sku)
+       values ('import', 'pending_review', 'ממתין לביקורת', 10, '/x.png', $1)
+       returning id`,
+      [`REVIEW-${Date.now()}`],
+    );
+    const productId = created.rows[0].id;
+
+    const visible = await pool.query(
+      "select 1 from public.business_products where id = $1",
+      [productId],
+    );
+    assert.equal(visible.rowCount, 0, "a product awaiting review must not be for sale");
+
+    await pool.query(
+      "update public.products set status = 'published' where id = $1",
+      [productId],
+    );
+    const afterPublish = await pool.query(
+      "select 1 from public.business_products where id = $1",
+      [productId],
+    );
+    assert.equal(afterPublish.rowCount, 1, "publishing is what puts it in the shop");
+
+    await pool.query("delete from public.products where id = $1", [productId]);
+  });
+});
+
 describe("no order points at a customer that is gone", async () => {
   await withPool(async (pool) => {
     const dangling = await pool.query(`

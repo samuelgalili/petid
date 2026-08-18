@@ -38,6 +38,7 @@ import {
 } from "./importEngine.js";
 import { MAX_FILE_BYTES } from "./importParser.js";
 import { MAP_JOB_TYPE, runImportMap, suggestProfileMappings } from "./importMapRun.js";
+import { APPLY_JOB_TYPE, runImportApply } from "./importApply.js";
 import { TARGET_FIELDS } from "./importMapping.js";
 import {
   CLIENT_EVENT_TYPES,
@@ -6810,6 +6811,22 @@ const handleRequest = async (request, response) => {
       return;
     }
 
+    const runApplyMatch = url.pathname.match(/^\/api\/admin\/imports\/([0-9a-fA-F-]{36})\/apply$/);
+    if (runApplyMatch && request.method === "POST") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_CREATE))) return;
+      await pool.query(
+        `
+          insert into public.jobs (job_type, payload, idempotency_key)
+          values ($1, $2::jsonb, $3)
+          on conflict (idempotency_key) where idempotency_key is not null
+          do update set status = 'pending', run_after = now(), attempts = 0, updated_at = now()
+        `,
+        [APPLY_JOB_TYPE, JSON.stringify({ import_id: runApplyMatch[1] }), `${APPLY_JOB_TYPE}:${runApplyMatch[1]}`],
+      );
+      sendJson(response, 202, { queued: true });
+      return;
+    }
+
     const runMapMatch = url.pathname.match(/^\/api\/admin\/imports\/([0-9a-fA-F-]{36})\/map$/);
     if (runMapMatch && request.method === "POST") {
       if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE))) return;
@@ -7108,6 +7125,11 @@ const resumePetCharacterJobs = async () => {
 // imports.
 const jobWorker = new JobWorker(pool, {
   handlers: {
+    [APPLY_JOB_TYPE]: async (job) => {
+      const importId = job.payload?.import_id;
+      if (!importId) throw new Error("import.apply job is missing import_id");
+      return runImportApply(pool, importId);
+    },
     [MAP_JOB_TYPE]: async (job) => {
       const importId = job.payload?.import_id;
       if (!importId) throw new Error("import.map job is missing import_id");
