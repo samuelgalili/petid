@@ -43,6 +43,7 @@ import { applyReviewDecision, getReviewProducts, getReviewSummary } from "./revi
 import { DETECT_JOB_TYPE, decideChanges, getPendingChanges, runImportDetect } from "./importChanges.js";
 import { getProductVersion, getProductVersions, rollbackProduct } from "./productVersions.js";
 import { getCustomer, listCustomers } from "./customerCrm.js";
+import { importImageArchive } from "./imageImport.js";
 import { TARGET_FIELDS } from "./importMapping.js";
 import {
   CLIENT_EVENT_TYPES,
@@ -6702,6 +6703,50 @@ const handleRequest = async (request, response) => {
         return;
       }
       sendJson(response, 200, report);
+      return;
+    }
+
+    // Images we hold ourselves. Served from here rather than hotlinked, so the
+    // shop does not break when someone else's site changes. Public, because a
+    // product image on a storefront is public by definition.
+    const storedImageMatch = url.pathname.match(/^\/api\/images\/([0-9a-f]{64})$/);
+    if (storedImageMatch && request.method === "GET") {
+      const stored = await pool.query(
+        "select content, content_type from public.image_blobs where checksum_sha256 = $1 limit 1",
+        [storedImageMatch[1]],
+      );
+      if (stored.rowCount === 0) {
+        sendError(response, 404, "Image not found");
+        return;
+      }
+      const image = stored.rows[0];
+      response.writeHead(200, {
+        "content-type": image.content_type,
+        "content-length": String(image.content.length),
+        // The checksum is the filename, so the bytes behind a URL never change.
+        "cache-control": "public, max-age=31536000, immutable",
+      });
+      response.end(image.content);
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/admin/images/archive") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_CREATE))) return;
+      if (!enforceRateLimit(request, response, "image-archive", rateLimits.importUpload)) return;
+
+      const body = await readBody(request, 280 * 1024 * 1024);
+      const encoded = String(body.file_base64 || "").replace(/^data:[^,]*,/, "");
+      if (!encoded) {
+        sendError(response, 400, "file_base64 is required");
+        return;
+      }
+
+      const result = await importImageArchive(pool, {
+        buffer: Buffer.from(encoded, "base64"),
+        supplierId: body.supplier_id || null,
+        adminUserId: request.admin?.id || null,
+      });
+      sendJson(response, 200, result);
       return;
     }
 
