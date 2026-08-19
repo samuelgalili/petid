@@ -67,6 +67,7 @@ const navGroups: NavGroup[] = [
     items: [
       { icon: Settings, label: "הגדרות", href: "/admin/settings", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
       { icon: FolderTree, label: "קטגוריות", href: "/admin/categories", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
+      { icon: Plug, label: "חיבור n8n", href: "/admin/integrations", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
     ]
   },
 ];

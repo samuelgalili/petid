@@ -75,7 +75,9 @@ export const createConnectionSafeLookup = (lookupFn = lookup) => (hostname, opti
   }).catch((error) => callback(error));
 };
 
-const safeRemoteDispatcher = new Agent({
+// Re-checks every address at connect time, so a hostname that passed validation
+// and then resolves to 127.0.0.1 on the actual request is still refused.
+export const safeRemoteDispatcher = new Agent({
   connect: { lookup: createConnectionSafeLookup() },
 });
 

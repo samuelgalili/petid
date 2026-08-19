@@ -57,6 +57,15 @@ import {
   generateProductContent,
   getContentHistory,
 } from "./contentEngine.js";
+import { validateRemoteHttpUrl } from "./urlSafety.js";
+import {
+  EventBusWorker,
+  dispatchPendingEvents,
+  getBusStatus,
+  knownEventTypes,
+  replayDeliveries,
+  testSubscription,
+} from "./eventBus.js";
 import { TARGET_FIELDS } from "./importMapping.js";
 import {
   CLIENT_EVENT_TYPES,
@@ -6830,6 +6839,157 @@ const handleRequest = async (request, response) => {
       return;
     }
 
+    // ---- Event bus ---------------------------------------------------------
+    // Subscriptions are a way to make the server POST to an arbitrary URL, so
+    // every one of these paths is behind full access and every URL goes through
+    // the SSRF check before it is stored.
+
+    if (request.method === "GET" && url.pathname === "/api/admin/events/bus") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      sendJson(response, 200, {
+        ...(await getBusStatus(pool)),
+        event_types: await knownEventTypes(pool),
+      });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/admin/events/subscriptions") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      const body = await readBody(request);
+
+      const name = String(body.name || "").trim();
+      if (!name) {
+        sendJson(response, 400, { error: "שם הוא שדה חובה" });
+        return;
+      }
+
+      let target;
+      try {
+        target = await validateRemoteHttpUrl(body.target_url);
+      } catch (error) {
+        sendJson(response, 400, { error: error?.message || "כתובת לא תקינה" });
+        return;
+      }
+
+      const eventTypes = Array.isArray(body.event_types)
+        ? body.event_types.map((value) => String(value).trim()).filter(Boolean).slice(0, 100)
+        : [];
+
+      const created = await pool.query(
+        `
+          insert into public.event_subscriptions
+            (name, target_url, event_types, secret, headers, is_active,
+             max_attempts, timeout_ms, created_by_admin_user_id)
+          values ($1, $2, $3::text[], nullif($4, ''), coalesce($5::jsonb, '{}'::jsonb),
+                  coalesce($6, true), coalesce($7, 8), coalesce($8, 15000), $9)
+          returning id
+        `,
+        [
+          name.slice(0, 200),
+          target.toString(),
+          eventTypes,
+          String(body.secret || "").trim(),
+          body.headers ? JSON.stringify(body.headers) : null,
+          body.is_active,
+          body.max_attempts ? Number(body.max_attempts) : null,
+          body.timeout_ms ? Number(body.timeout_ms) : null,
+          request.admin?.id || null,
+        ],
+      );
+      sendJson(response, 201, { id: created.rows[0].id });
+      return;
+    }
+
+    const subscriptionMatch = url.pathname.match(
+      /^\/api\/admin\/events\/subscriptions\/([0-9a-fA-F-]{36})(\/test)?$/,
+    );
+
+    if (subscriptionMatch && subscriptionMatch[2] && request.method === "POST") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      sendJson(response, 200, await testSubscription(pool, subscriptionMatch[1]));
+      return;
+    }
+
+    if (subscriptionMatch && !subscriptionMatch[2] && request.method === "PATCH") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      const body = await readBody(request);
+
+      let targetUrl = null;
+      if (body.target_url !== undefined) {
+        try {
+          targetUrl = (await validateRemoteHttpUrl(body.target_url)).toString();
+        } catch (error) {
+          sendJson(response, 400, { error: error?.message || "כתובת לא תקינה" });
+          return;
+        }
+      }
+
+      // A secret is only replaced when a new one is sent. An empty string in the
+      // form means "leave it alone", not "clear it" — clearing is explicit.
+      const updated = await pool.query(
+        `
+          update public.event_subscriptions
+          set name = coalesce($2, name),
+              target_url = coalesce($3, target_url),
+              event_types = coalesce($4::text[], event_types),
+              secret = case when $5 then null else coalesce(nullif($6, ''), secret) end,
+              headers = coalesce($7::jsonb, headers),
+              is_active = coalesce($8, is_active),
+              max_attempts = coalesce($9, max_attempts),
+              timeout_ms = coalesce($10, timeout_ms),
+              updated_at = now()
+          where id = $1
+          returning id
+        `,
+        [
+          subscriptionMatch[1],
+          body.name ? String(body.name).trim().slice(0, 200) : null,
+          targetUrl,
+          Array.isArray(body.event_types)
+            ? body.event_types.map((value) => String(value).trim()).filter(Boolean).slice(0, 100)
+            : null,
+          body.clear_secret === true,
+          String(body.secret || "").trim(),
+          body.headers ? JSON.stringify(body.headers) : null,
+          body.is_active === undefined ? null : Boolean(body.is_active),
+          body.max_attempts ? Number(body.max_attempts) : null,
+          body.timeout_ms ? Number(body.timeout_ms) : null,
+        ],
+      );
+      if (updated.rowCount === 0) {
+        sendJson(response, 404, { error: "מנוי לא נמצא" });
+        return;
+      }
+      sendJson(response, 200, { updated: true });
+      return;
+    }
+
+    if (subscriptionMatch && !subscriptionMatch[2] && request.method === "DELETE") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      await pool.query("delete from public.event_subscriptions where id = $1", [subscriptionMatch[1]]);
+      sendJson(response, 200, { deleted: true });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/admin/events/replay") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      const body = await readBody(request);
+      sendJson(response, 200, await replayDeliveries(pool, {
+        deliveryIds: body.delivery_ids,
+        subscriptionId: body.subscription_id || null,
+      }));
+      return;
+    }
+
+    // Fan-out normally happens on the worker's own schedule. This exists so a
+    // newly saved subscription can be filled from the current backlog without
+    // waiting for the next tick.
+    if (request.method === "POST" && url.pathname === "/api/admin/events/dispatch") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      sendJson(response, 200, await dispatchPendingEvents(pool));
+      return;
+    }
+
     if (request.method === "GET" && url.pathname === "/api/admin/pricing/rules") {
       if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
       const result = await pool.query(
@@ -7465,9 +7625,13 @@ const jobWorker = new JobWorker(pool, {
   },
 });
 
+// The bus runs on its own loop rather than as a job type. An import that holds
+// the job worker for a minute must not delay an order webhook by a minute.
+const eventBusWorker = new EventBusWorker(pool);
+
 const shutdown = async (signal) => {
   console.log(`mipo-api shutting down on ${signal}`);
-  await jobWorker.stop();
+  await Promise.all([jobWorker.stop(), eventBusWorker.stop()]);
   server.close(() => process.exit(0));
   // Do not wait forever for connections that will not close on their own.
   setTimeout(() => process.exit(0), 10_000).unref();
@@ -7479,6 +7643,7 @@ process.on("SIGINT", () => void shutdown("SIGINT"));
 server.listen(port, () => {
   console.log(`mipo-api listening on ${port}`);
   jobWorker.start();
+  eventBusWorker.start();
   resumePetCharacterJobs().catch((error) => {
     console.error("Failed to resume pet character generation", error);
   });

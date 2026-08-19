@@ -1469,6 +1469,98 @@ export async function applyReviewDecision(input: { product_ids: string[]; action
   }>("/admin/review/decision", { method: "POST", body: JSON.stringify(input) });
 }
 
+// --- event bus -------------------------------------------------------------
+
+export interface MipoEventSubscription {
+  id: string;
+  name: string;
+  target_url: string;
+  event_types: string[];
+  is_active: boolean;
+  max_attempts: number;
+  timeout_ms: number;
+  headers: Record<string, string>;
+  /** The secret itself never leaves the server — only whether one is set. */
+  has_secret: boolean;
+  last_success_at: string | null;
+  last_failure_at: string | null;
+  last_error: string | null;
+  created_at: string;
+  pending: string;
+  delivered: string;
+  dead: string;
+}
+
+export interface MipoEventBusStatus {
+  subscriptions: MipoEventSubscription[];
+  backlog: { awaiting_dispatch: string; awaiting_delivery: string; dead: string };
+  recent_failures: {
+    id: string;
+    status: string;
+    attempts: number;
+    response_status: number | null;
+    last_error: string | null;
+    updated_at: string;
+    event_type: string;
+    subscription_name: string;
+  }[];
+  event_types: { event_type: string; events: string }[];
+}
+
+export interface MipoSubscriptionInput {
+  name?: string;
+  target_url?: string;
+  event_types?: string[];
+  secret?: string;
+  clear_secret?: boolean;
+  headers?: Record<string, string>;
+  is_active?: boolean;
+  max_attempts?: number;
+  timeout_ms?: number;
+}
+
+export async function getEventBusStatus(): Promise<MipoEventBusStatus> {
+  return adminApiFetch<MipoEventBusStatus>("/admin/events/bus");
+}
+
+export async function createEventSubscription(input: MipoSubscriptionInput) {
+  return adminApiFetch<{ id: string }>("/admin/events/subscriptions", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function updateEventSubscription(id: string, input: MipoSubscriptionInput) {
+  return adminApiFetch<{ updated: boolean }>(`/admin/events/subscriptions/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function deleteEventSubscription(id: string) {
+  return adminApiFetch<{ deleted: boolean }>(`/admin/events/subscriptions/${id}`, { method: "DELETE" });
+}
+
+export async function testEventSubscription(id: string) {
+  return adminApiFetch<{ ok: boolean; responseStatus?: number; error?: string }>(
+    `/admin/events/subscriptions/${id}/test`,
+    { method: "POST" },
+  );
+}
+
+export async function replayEventDeliveries(input: { delivery_ids?: string[]; subscription_id?: string }) {
+  return adminApiFetch<{ replayed: number }>("/admin/events/replay", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function dispatchPendingEvents() {
+  return adminApiFetch<{ dispatched: number; deliveries: number }>("/admin/events/dispatch", {
+    method: "POST",
+  });
+}
+
 export async function runImportApply(importId: string): Promise<{ queued: boolean }> {
   return adminApiFetch(`/admin/imports/${importId}/apply`, { method: "POST" });
 }

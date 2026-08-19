@@ -212,6 +212,7 @@ const AdminNotifications = lazy(() => import("@/pages/admin/AdminNotifications")
 const AdminSupplierImports = lazy(() => import("@/pages/admin/AdminSupplierImports"));
 const AdminReviewCenter = lazy(() => import("@/pages/admin/AdminReviewCenter"));
 const AdminCustomers = lazy(() => import("@/pages/admin/AdminCustomers"));
+const AdminEventBus = lazy(() => import("@/pages/admin/AdminEventBus"));
 
 const AdminPage = ({
   component: Component,
@@ -323,6 +324,7 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/suppliers", element: <AdminPage component={AdminSupplierImports} pageName="ספקים וייבוא" permission={ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE} /> },
   { path: "/admin/review", element: <AdminPage component={AdminReviewCenter} pageName="מרכז ביקורת" permission={ADMIN_PERMISSIONS.PRODUCTS_READ} /> },
   { path: "/admin/customers", element: <AdminPage component={AdminCustomers} pageName="לקוחות" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
+  { path: "/admin/integrations", element: <AdminPage component={AdminEventBus} pageName="חיבור n8n" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
   { path: "/admin/smart-editor", element: <AdminPage component={AdminSmartProductEditor} pageName="עורך מוצר חכם" permission={ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE} /> },
   { path: "/admin/review-queue", element: <Navigate to="/admin/products?filter=needs_review" replace /> },
   { path: "/admin/scraper", element: <Navigate to="/admin/quick-import" replace /> },
