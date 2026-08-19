@@ -44,6 +44,12 @@ import { DETECT_JOB_TYPE, decideChanges, getPendingChanges, runImportDetect } fr
 import { getProductVersion, getProductVersions, rollbackProduct } from "./productVersions.js";
 import { getCustomer, listCustomers } from "./customerCrm.js";
 import { importImageArchive } from "./imageImport.js";
+import {
+  CONTENT_JOB_TYPE,
+  approveContent,
+  generateProductContent,
+  getContentHistory,
+} from "./contentEngine.js";
 import { TARGET_FIELDS } from "./importMapping.js";
 import {
   CLIENT_EVENT_TYPES,
@@ -6774,6 +6780,55 @@ const handleRequest = async (request, response) => {
       return;
     }
 
+    const contentMatch = url.pathname.match(/^\/api\/admin\/products\/([0-9a-fA-F-]{36})\/content$/);
+    if (contentMatch && request.method === "GET") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_READ))) return;
+      sendJson(response, 200, { versions: await getContentHistory(pool, contentMatch[1]) });
+      return;
+    }
+
+    if (contentMatch && request.method === "POST") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE))) return;
+      const body = await readBody(request);
+
+      // A whole catalogue goes on the queue; one product runs now, because the
+      // person asking is watching for the result.
+      if (body.queue) {
+        await pool.query(
+          `
+            insert into public.jobs (job_type, payload, idempotency_key)
+            values ($1, $2::jsonb, $3)
+            on conflict (idempotency_key) where idempotency_key is not null
+            do update set status = 'pending', run_after = now(), attempts = 0, updated_at = now()
+          `,
+          [
+            CONTENT_JOB_TYPE,
+            JSON.stringify({ product_id: contentMatch[1], admin_user_id: request.admin?.id || null, reason: body.reason || null }),
+            `${CONTENT_JOB_TYPE}:${contentMatch[1]}`,
+          ],
+        );
+        sendJson(response, 202, { queued: true });
+        return;
+      }
+
+      sendJson(response, 200, await generateProductContent(pool, contentMatch[1], {
+        adminUserId: request.admin?.id || null,
+        reason: body.reason || null,
+      }));
+      return;
+    }
+
+    const approveContentMatch = url.pathname.match(/^\/api\/admin\/products\/([0-9a-fA-F-]{36})\/content\/(\d+)\/approve$/);
+    if (approveContentMatch && request.method === "POST") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_CREATE))) return;
+      sendJson(response, 200, await approveContent(pool, {
+        productId: approveContentMatch[1],
+        version: Number(approveContentMatch[2]),
+        adminUserId: request.admin?.id || null,
+      }));
+      return;
+    }
+
     const versionsMatch = url.pathname.match(/^\/api\/admin\/products\/([0-9a-fA-F-]{36})\/versions$/);
     if (versionsMatch && request.method === "GET") {
       if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_READ))) return;
@@ -7304,6 +7359,14 @@ const resumePetCharacterJobs = async () => {
 // imports.
 const jobWorker = new JobWorker(pool, {
   handlers: {
+    [CONTENT_JOB_TYPE]: async (job) => {
+      const productId = job.payload?.product_id;
+      if (!productId) throw new Error("content.generate job is missing product_id");
+      return generateProductContent(pool, productId, {
+        adminUserId: job.payload?.admin_user_id || null,
+        reason: job.payload?.reason || null,
+      });
+    },
     [DETECT_JOB_TYPE]: async (job) => {
       const importId = job.payload?.import_id;
       if (!importId) throw new Error("import.detect job is missing import_id");

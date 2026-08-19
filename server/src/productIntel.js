@@ -4,6 +4,9 @@ import { fetchValidatedRemoteUrl, validateRemoteHttpUrl } from "./urlSafety.js";
 const firecrawlApiKey = process.env.FIRECRAWL_API_KEY || "";
 const geminiApiKey = process.env.GEMINI_API_KEY || "";
 
+/** Whether generation is possible at all, so callers can degrade rather than fail. */
+export const isGeminiConfigured = () => Boolean(geminiApiKey);
+
 const FORBIDDEN_INGREDIENTS = {
   bha: { he: "BHA (בוטילהידרוקסיאניזול)", risk: "חשד לסרטן - משמר כימי בעייתי", severity: "critical" },
   bht: { he: "BHT (בוטילהידרוקסיטולואן)", risk: "חשד לסרטן - משמר כימי בעייתי", severity: "critical" },
@@ -550,7 +553,8 @@ const searchProductBySku = async ({ sku, query, preferredDomains = [] }) => {
   return best || results[0]?.url || null;
 };
 
-const callGeminiJson = async (prompt, { temperature = 0.1 } = {}) => {
+/** Exported so the content engine reuses this path rather than opening a second one. */
+export const callGeminiJson = async (prompt, { temperature = 0.1 } = {}) => {
   if (!geminiApiKey) return null;
   const response = await fetchWithTimeout(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`,
