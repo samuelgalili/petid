@@ -7,7 +7,7 @@ import {
   FileText, Settings, Bell, Shield, History, ChevronRight, ChevronDown,
   Menu, LogOut, MapPin, Ticket, Bot, Wallet, ListTodo, Truck, UserPlus, ClipboardCheck,
   CreditCard, Boxes, Receipt, Megaphone, Users2, RotateCcw, BarChart3,
-  Plug, HardDrive, Contact, FolderTree, CalendarDays, Headphones,
+  Plug, HardDrive, Contact, FolderTree, CalendarDays, Headphones, ArrowLeftRight, Tag,
   Building2, DollarSign, Webhook, PlaySquare, Trophy, Zap, Clock,
   Search, PanelLeftClose, PanelLeft, Home, Upload, Crown, Brain,
   Plus, Eye, PackageSearch, ArrowUpRight, Sparkles, Tv, FileCheck
@@ -55,6 +55,8 @@ const navGroups: NavGroup[] = [
       { icon: PackageSearch, label: "ייבוא מהיר", href: "/admin/quick-import", permission: ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE },
       { icon: Truck, label: "ספקים וייבוא", href: "/admin/suppliers", permission: ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE },
       { icon: ClipboardCheck, label: "מרכז ביקורת", href: "/admin/review", permission: ADMIN_PERMISSIONS.PRODUCTS_READ },
+      { icon: ArrowLeftRight, label: "אישור שינויים", href: "/admin/changes", permission: ADMIN_PERMISSIONS.PRODUCTS_READ },
+      { icon: Tag, label: "הצעות תמחור", href: "/admin/pricing", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
       { icon: Sparkles, label: "עורך חכם", href: "/admin/smart-editor", permission: ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE },
       { icon: ShoppingCart, label: "הזמנות", href: "/admin/orders", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
       { icon: Users, label: "לקוחות", href: "/admin/customers", permission: ADMIN_PERMISSIONS.FULL_ACCESS },

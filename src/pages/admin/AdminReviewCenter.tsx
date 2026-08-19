@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle2, ClipboardCheck, Loader2, XCircle } from "lucide-react";
+import { Link } from "react-router-dom";
+import { AlertTriangle, CheckCircle2, ClipboardCheck, History, Loader2, XCircle } from "lucide-react";
 
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Badge } from "@/components/ui/badge";
@@ -121,6 +122,16 @@ const AdminReviewCenter = () => {
           </Badge>
         ))}
       </div>
+      {/* Inside a label, so the click has to be stopped or following the link
+          would also tick the checkbox on the way out. */}
+      <Link
+        to={`/admin/products/${product.id}/history`}
+        onClick={(event) => event.stopPropagation()}
+        className="shrink-0 text-muted-foreground hover:text-foreground"
+        title="היסטוריה ותוכן"
+      >
+        <History className="h-4 w-4" />
+      </Link>
     </label>
   );
 

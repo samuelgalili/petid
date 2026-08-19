@@ -1469,6 +1469,155 @@ export async function applyReviewDecision(input: { product_ids: string[]; action
   }>("/admin/review/decision", { method: "POST", body: JSON.stringify(input) });
 }
 
+// --- change approval -------------------------------------------------------
+
+export interface MipoImportChange {
+  id: string;
+  change_type: string;
+  field_name: string | null;
+  /**
+   * jsonb, so the shape follows change_type: a scalar for `field_changed`,
+   * and `{ sku, name }` for a product that appeared or vanished.
+   */
+  old_value: unknown;
+  new_value: unknown;
+  severity: "critical" | "normal" | "minor";
+  product_id: string | null;
+  product_name: string | null;
+  product_sku: string | null;
+}
+
+export async function getPendingChanges(input: { import_id?: string; limit?: number } = {}) {
+  const params = new URLSearchParams();
+  if (input.import_id) params.set("import_id", input.import_id);
+  params.set("limit", String(input.limit ?? 200));
+  return adminApiFetch<{
+    changes: MipoImportChange[];
+    summary: { change_type: string; severity: string; count: number }[];
+  }>(`/admin/changes?${params.toString()}`);
+}
+
+export async function decideChanges(input: { change_ids: string[]; action: "approve" | "reject" }) {
+  return adminApiFetch<{ requested: number; decided: number; applied: number }>(
+    "/admin/changes/decision",
+    { method: "POST", body: JSON.stringify(input) },
+  );
+}
+
+// --- pricing proposals -----------------------------------------------------
+
+export interface MipoPriceProposal {
+  id: string;
+  product_id: string;
+  product_name: string;
+  sku: string | null;
+  current_price: string | null;
+  proposed_price: string;
+  cost: string | null;
+  margin_percent: string | null;
+  rule_name: string | null;
+  calculation: Record<string, unknown> & { change_percent?: number };
+  warnings: { code: string; message?: string }[];
+  created_at: string;
+}
+
+export async function getPriceProposals(limit = 200): Promise<MipoPriceProposal[]> {
+  const result = await adminApiFetch<{ proposals: MipoPriceProposal[] }>(
+    `/admin/pricing/proposals?limit=${limit}`,
+  );
+  return result.proposals;
+}
+
+export async function proposePrices(input: { product_id?: string; limit?: number } = {}) {
+  return adminApiFetch<{ queued?: boolean } & Record<string, unknown>>("/admin/pricing/propose", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function decidePriceProposals(input: {
+  proposal_ids: string[];
+  action: "apply" | "reject";
+}) {
+  return adminApiFetch<{ requested: number; applied: number; rejected: number }>(
+    "/admin/pricing/decision",
+    { method: "POST", body: JSON.stringify(input) },
+  );
+}
+
+// --- product history and content -------------------------------------------
+
+export interface MipoProductVersion {
+  version: number;
+  changed_fields: string[] | null;
+  reason: string | null;
+  source: string | null;
+  created_at: string;
+  actor_email: string | null;
+  summary: {
+    name: string | null;
+    price: string | null;
+    status: string | null;
+    description: string | null;
+    image_url: string | null;
+  };
+}
+
+export interface MipoProductContentVersion {
+  version: number;
+  is_current: boolean;
+  status: string;
+  generator: string | null;
+  model: string | null;
+  reason: string | null;
+  title: string | null;
+  short_description: string | null;
+  long_description: string | null;
+  key_benefits: string[] | null;
+  quality_checks: { passed?: boolean; issues?: string[] } & Record<string, unknown>;
+  source_facts: Record<string, unknown>;
+  created_at: string;
+  seo_title: string | null;
+  meta_description: string | null;
+  slug: string | null;
+  keywords: string[] | null;
+}
+
+export async function getProductVersions(productId: string): Promise<MipoProductVersion[]> {
+  const result = await adminApiFetch<{ versions: MipoProductVersion[] }>(
+    `/admin/products/${productId}/versions`,
+  );
+  return result.versions;
+}
+
+export async function rollbackProduct(input: { productId: string; version: number; reason?: string }) {
+  return adminApiFetch<{ product_id: string; restored_from: number; new_version: number }>(
+    `/admin/products/${input.productId}/rollback`,
+    { method: "POST", body: JSON.stringify({ version: input.version, reason: input.reason }) },
+  );
+}
+
+export async function getProductContent(productId: string): Promise<MipoProductContentVersion[]> {
+  const result = await adminApiFetch<{ versions: MipoProductContentVersion[] }>(
+    `/admin/products/${productId}/content`,
+  );
+  return result.versions;
+}
+
+export async function generateProductContent(productId: string, reason?: string) {
+  return adminApiFetch<Record<string, unknown>>(`/admin/products/${productId}/content`, {
+    method: "POST",
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export async function approveProductContent(productId: string, version: number) {
+  return adminApiFetch<Record<string, unknown>>(
+    `/admin/products/${productId}/content/${version}/approve`,
+    { method: "POST" },
+  );
+}
+
 // --- event bus -------------------------------------------------------------
 
 export interface MipoEventSubscription {
