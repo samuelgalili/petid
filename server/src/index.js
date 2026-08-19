@@ -45,6 +45,13 @@ import { getProductVersion, getProductVersions, rollbackProduct } from "./produc
 import { getCustomer, listCustomers } from "./customerCrm.js";
 import { importImageArchive } from "./imageImport.js";
 import {
+  PRICING_JOB_TYPE,
+  decideProposals,
+  getPendingProposals,
+  proposeForCatalogue,
+  proposePrice,
+} from "./pricingEngine.js";
+import {
   CONTENT_JOB_TYPE,
   approveContent,
   generateProductContent,
@@ -6780,6 +6787,65 @@ const handleRequest = async (request, response) => {
       return;
     }
 
+    if (request.method === "GET" && url.pathname === "/api/admin/pricing/proposals") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      sendJson(response, 200, {
+        proposals: await getPendingProposals(pool, { limit: url.searchParams.get("limit") }),
+      });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/admin/pricing/propose") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      const body = await readBody(request);
+
+      if (body.product_id) {
+        sendJson(response, 200, await proposePrice(pool, body.product_id));
+        return;
+      }
+
+      // A whole catalogue goes on the queue rather than holding the request.
+      await pool.query(
+        `
+          insert into public.jobs (job_type, payload, idempotency_key)
+          values ($1, $2::jsonb, $3)
+          on conflict (idempotency_key) where idempotency_key is not null
+          do update set status = 'pending', run_after = now(), attempts = 0, updated_at = now()
+        `,
+        [PRICING_JOB_TYPE, JSON.stringify({ limit: body.limit || 500 }), `${PRICING_JOB_TYPE}:catalogue`],
+      );
+      sendJson(response, 202, { queued: true });
+      return;
+    }
+
+    // The only path that writes a price. Everything else proposes.
+    if (request.method === "POST" && url.pathname === "/api/admin/pricing/decision") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      const body = await readBody(request);
+      sendJson(response, 200, await decideProposals(pool, {
+        proposalIds: body.proposal_ids,
+        action: body.action,
+        adminUserId: request.admin?.id || null,
+      }));
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/pricing/rules") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      const result = await pool.query(
+        `
+          select r.*, c.name as category_name, b.name as brand_name, s.name as supplier_name
+          from public.pricing_rules r
+          left join public.categories c on c.id = r.category_id
+          left join public.brands b on b.id = r.brand_id
+          left join public.suppliers s on s.id = r.supplier_id
+          order by r.scope, r.priority
+        `,
+      );
+      sendJson(response, 200, { rules: result.rows });
+      return;
+    }
+
     const contentMatch = url.pathname.match(/^\/api\/admin\/products\/([0-9a-fA-F-]{36})\/content$/);
     if (contentMatch && request.method === "GET") {
       if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_READ))) return;
@@ -7359,6 +7425,11 @@ const resumePetCharacterJobs = async () => {
 // imports.
 const jobWorker = new JobWorker(pool, {
   handlers: {
+    [PRICING_JOB_TYPE]: async (job) => (
+      job.payload?.product_id
+        ? proposePrice(pool, job.payload.product_id)
+        : proposeForCatalogue(pool, { limit: job.payload?.limit })
+    ),
     [CONTENT_JOB_TYPE]: async (job) => {
       const productId = job.payload?.product_id;
       if (!productId) throw new Error("content.generate job is missing product_id");
