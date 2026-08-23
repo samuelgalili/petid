@@ -16,6 +16,7 @@ import {
 import { fallbackBreeds } from "./referenceData.js";
 import {
   getCardcomString,
+  isSuccessfulCardcomCharge,
   parseCardcomReturnValue,
   parseVerifiedCardcomIndicator,
 } from "./cardcom.js";
@@ -5412,9 +5413,11 @@ const handleCardcomWebhook = async (request, url) => {
 
   const indicatorPayload = await fetchCardcomLowProfileIndicator(lowProfileCode);
   const {
+    operation,
     chargedAmountMinor,
     operationResponse,
     dealResponse,
+    tokenResponse,
     returnValue,
   } = parseVerifiedCardcomIndicator(indicatorPayload, {
     requestedLowProfileCode: lowProfileCode,
@@ -5485,7 +5488,7 @@ const handleCardcomWebhook = async (request, url) => {
     error.statusCode = 409;
     throw error;
   }
-  const isSuccess = operationResponse === 0 && (dealResponse === null || dealResponse === 0);
+  const isSuccess = isSuccessfulCardcomCharge({ operationResponse, dealResponse });
 
   await pool.query(
     `
@@ -5510,6 +5513,8 @@ const handleCardcomWebhook = async (request, url) => {
       JSON.stringify({
         stage: "verified_indicator",
         method: request.method,
+        operation,
+        token_response: tokenResponse,
       }),
     ],
   );

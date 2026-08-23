@@ -3,6 +3,8 @@ const indicatorError = () => Object.assign(
   { statusCode: 502 },
 );
 
+const chargeOperations = new Set([1, 2]);
+
 export const getCardcomString = (source, keys) => {
   for (const key of keys) {
     const value = source?.[key];
@@ -70,7 +72,9 @@ export const parseVerifiedCardcomIndicator = (indicatorPayload, {
   if (operationResponse === null
     || lowProfileCode !== requestedLowProfileCode
     || returnedTerminalNumber !== String(terminalNumber)
-    || operation !== 1
+    // CardCom operations 1 (charge) and 2 (charge plus token) both include a
+    // card charge. The caller still verifies the deal result and exact amount.
+    || !chargeOperations.has(operation)
     || coinId !== 1
     || !Number.isInteger(chargedAmountMinor)) {
     throw indicatorError();
@@ -78,9 +82,15 @@ export const parseVerifiedCardcomIndicator = (indicatorPayload, {
 
   return {
     lowProfileCode,
+    operation,
     chargedAmountMinor,
     operationResponse,
     dealResponse: getCardcomNumber(indicatorPayload, ["DealResponse", "dealresponse"]),
+    tokenResponse: getCardcomNumber(indicatorPayload, ["TokenResponse", "tokenresponse"]),
     returnValue: getCardcomString(indicatorPayload, ["ReturnValue", "returnvalue"]),
   };
 };
+
+export const isSuccessfulCardcomCharge = ({ operationResponse, dealResponse }) => (
+  operationResponse === 0 && dealResponse === 0
+);
