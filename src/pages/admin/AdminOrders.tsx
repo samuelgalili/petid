@@ -35,6 +35,7 @@ import {
 } from "@/components/admin/AdminStyles";
 import { cn } from "@/lib/utils";
 import { OrderLabelGenerator, type LabelFormat } from "@/components/admin/OrderLabelGenerator";
+import { OrderShareMenu } from "@/components/admin/OrderShareMenu";
 import { bulkUpdateAdminOrders, getAdminOrders, updateAdminOrder } from "@/lib/mipoApi";
 
 interface OrderItem {
@@ -71,6 +72,8 @@ interface Order {
   shipping: number;
   tax: number;
   user_id: string | null;
+  customer_email: string | null;
+  customer_phone: string | null;
   shipping_address: AdminShippingAddress;
   order_type: string;
   pet_name: string | null;
@@ -384,6 +387,7 @@ const AdminOrders = () => {
                     <th className="py-3 px-3 text-right font-medium">סטטוס</th>
                     <th className="py-3 px-3 text-right font-medium">תשלום</th>
                     <th className="py-3 px-3 text-left font-medium">סה״כ</th>
+                    <th className="py-3 px-3 text-center font-medium">שיתוף</th>
                     <th className="py-3 px-3 w-10"></th>
                   </tr>
                 </thead>
@@ -449,11 +453,27 @@ const AdminOrders = () => {
                             )}
                           </div>
                         </td>
-                        <td className="py-3 px-3">
-                          <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border", statusCfg.color)}>
-                            <StatusIcon className="w-3 h-3" />
-                            {statusCfg.label}
-                          </span>
+                        <td className="py-3 px-3" onClick={(event) => event.stopPropagation()}>
+                          <Select
+                            value={order.status}
+                            onValueChange={(value) => updateSingleStatus(order.id, value as Order["status"])}
+                            disabled={updatingStatus}
+                          >
+                            <SelectTrigger
+                              className={cn("h-8 w-[116px] gap-1 rounded-full px-2 text-[10px] font-medium", statusCfg.color)}
+                              aria-label={`שינוי סטטוס הזמנה ${order.order_number}`}
+                            >
+                              <span className="inline-flex items-center gap-1">
+                                <StatusIcon className="h-3 w-3" />
+                                {statusCfg.label}
+                              </span>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.entries(STATUS_CONFIG).map(([key, config]) => (
+                                <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </td>
                         <td className="py-3 px-3">
                           <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-medium", paymentCfg.color)}>
@@ -467,6 +487,9 @@ const AdminOrders = () => {
                               <AlertTriangle className="w-3.5 h-3.5 text-amber-500" strokeWidth={2} />
                             )}
                           </div>
+                        </td>
+                        <td className="py-3 px-3 text-center" onClick={(event) => event.stopPropagation()}>
+                          <OrderShareMenu order={order} />
                         </td>
                         <td className="py-3 px-3">
                           <ChevronRight className="w-4 h-4 text-muted-foreground" />
