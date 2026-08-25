@@ -732,7 +732,18 @@ const userSelect = `
 `;
 
 const getProfileByUserId = async (userId, db = pool) => {
-  const result = await db.query("select * from public.profiles where id = $1 limit 1", [userId]);
+  // Identity lives on app_users; profiles holds everything else. Joining here
+  // keeps the serialized profile shape unchanged for API consumers.
+  const result = await db.query(
+    `
+      select p.*, au.email, au.full_name, au.phone, au.birthdate
+      from public.profiles p
+      join public.app_users au on au.id = p.id
+      where p.id = $1
+      limit 1
+    `,
+    [userId],
+  );
   return result.rows[0] ? serializeProfile(result.rows[0]) : null;
 };
 
@@ -806,15 +817,15 @@ const getUserFromSession = async (request) => {
         au.updated_at,
         au.last_login_at,
         p.id as profile_id,
-        p.email as profile_email,
-        p.full_name as profile_full_name,
+        au.email as profile_email,
+        au.full_name as profile_full_name,
         p.first_name as profile_first_name,
         p.last_name as profile_last_name,
         p.bio as profile_bio,
-        p.phone as profile_phone,
+        au.phone as profile_phone,
         p.whatsapp_number as profile_whatsapp_number,
         p.avatar_url as profile_avatar_url,
-        p.birthdate as profile_birthdate,
+        au.birthdate as profile_birthdate,
         p.street as profile_street,
         p.city as profile_city,
         p.id_number_last4 as profile_id_number_last4,
@@ -945,24 +956,40 @@ const signupUser = async (request, body) => {
       `
         insert into public.profiles (
           id,
-          email,
-          full_name,
           first_name,
           last_name,
-          phone,
-          whatsapp_number,
-          birthdate
+          whatsapp_number
         )
-        values ($1, $2, $3, $4, $5, $6, $6, $7)
+        values ($1, $2, $3, $4)
         returning *
       `,
-      [userResult.rows[0].id, email, fullName, firstName, lastName, phone, birthdate],
+      [userResult.rows[0].id, firstName, lastName, phone],
+    );
+
+    // Claim any unclaimed commerce identity that already used this email —
+    // typically orders placed as a guest before registering.
+    await client.query(
+      `
+        update public.shop_customers
+        set user_id = $1,
+            updated_at = now()
+        where lower(email) = $2
+          and user_id is null
+      `,
+      [userResult.rows[0].id, email],
     );
 
     const token = await createUserSession(request, userResult.rows[0].id, client);
     await client.query("commit");
 
-    const profile = serializeProfile(profileResult.rows[0]);
+    // Identity now lives on app_users, so merge it back for the response shape.
+    const profile = serializeProfile({
+      ...profileResult.rows[0],
+      email,
+      full_name: fullName,
+      phone,
+      birthdate,
+    });
     return {
       user: serializeUser(userResult.rows[0], profile),
       profile,
@@ -1310,7 +1337,6 @@ const updateMyProfile = async (userId, body) => {
 
   if (fullName !== undefined) {
     const { firstName, lastName } = splitFullName(fullName);
-    pushProfile("full_name", fullName);
     pushProfile("first_name", firstName);
     pushProfile("last_name", lastName);
     pushApp("full_name", fullName);
@@ -1318,7 +1344,6 @@ const updateMyProfile = async (userId, body) => {
   if (fullName === undefined && firstName !== undefined) pushProfile("first_name", firstName);
   if (fullName === undefined && lastName !== undefined) pushProfile("last_name", lastName);
   if (phone !== undefined) {
-    pushProfile("phone", phone);
     pushApp("phone", phone);
   }
   if (whatsappNumber !== undefined) pushProfile("whatsapp_number", whatsappNumber);
@@ -1336,7 +1361,6 @@ const updateMyProfile = async (userId, body) => {
     pushProfile("ai_consent_date", aiConsentGiven ? new Date().toISOString() : null);
   }
   if (birthdate !== undefined) {
-    pushProfile("birthdate", birthdate);
     pushApp("birthdate", birthdate);
   }
 
@@ -1674,13 +1698,14 @@ const getPublicPet = async (petId) => {
     `
       select
         p.*,
-        pr.full_name as owner_full_name,
-        pr.phone as owner_phone,
+        au.full_name as owner_full_name,
+        au.phone as owner_phone,
         pr.city as owner_city,
         pr.profile_visibility,
         pr.show_location
       from public.pets p
       left join public.profiles pr on pr.id = p.user_id
+      left join public.app_users au on au.id = p.user_id
       where p.id = $1 and p.archived = false
       limit 1
     `,
@@ -4479,16 +4504,17 @@ const createOrder = async (body, currentUser = null) => {
     }
     const customerResult = await client.query(
       `
-        insert into public.shop_customers (email, full_name, phone, last_order_at)
-        values ($1, $2, $3, now())
-        on conflict (email) do update set
+        insert into public.shop_customers (email, full_name, phone, last_order_at, user_id)
+        values ($1, $2, $3, now(), $4)
+        on conflict (lower(email)) do update set
           full_name = excluded.full_name,
           phone = excluded.phone,
           last_order_at = now(),
-          updated_at = now()
+          updated_at = now(),
+          user_id = coalesce(public.shop_customers.user_id, excluded.user_id)
         returning id
       `,
-      [amounts.customerEmail, shippingAddress.fullName, shippingAddress.phone],
+      [amounts.customerEmail, shippingAddress.fullName, shippingAddress.phone, currentUser?.id || null],
     );
 
     const orderNumber = generateOrderNumber();
@@ -4749,7 +4775,12 @@ const deleteMyAccount = async (userId, email) => {
       `,
       [userId, normalizedEmail],
     );
-    await client.query("delete from public.shop_customers where lower(email) = $1", [normalizedEmail]);
+    // Follows the user_id link as well as the email, so a commerce record created
+    // under a second checkout email is not left behind.
+    await client.query(
+      "delete from public.shop_customers where user_id = $1 or lower(email) = $2",
+      [userId, normalizedEmail],
+    );
     await client.query("delete from public.app_users where id = $1", [userId]);
     await client.query("commit");
   } catch (error) {
