@@ -38,11 +38,44 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    environment:
+      # Read from the host .env. Production sets the mipo.pet pair; staging sets
+      # only MIPO_SITE_ADDRESS plus MIPO_ROBOTS_POLICY.
+      MIPO_SITE_ADDRESS: ${MIPO_SITE_ADDRESS:-mipo.pet}
+      MIPO_WWW_ADDRESS: ${MIPO_WWW_ADDRESS:-http://localhost:8081}
+      MIPO_ROBOTS_POLICY: ${MIPO_ROBOTS_POLICY:-}
     volumes:
       - ${MIPO_REMOTE_PATH:-/opt/mipo}/deploy/aws/Caddyfile:/etc/caddy/Caddyfile:ro
       - ${MIPO_REMOTE_PATH:-/opt/mipo}/dist:/srv/www:ro
       - caddy_data:/data
       - caddy_config:/config
+    networks:
+      - mipo
+
+  # Staging-only database. Guarded behind a compose profile so production, which
+  # uses RDS, never starts it — `docker compose up` without --profile staging
+  # ignores this service entirely.
+  #
+  # Brought up once when the staging host is provisioned:
+  #   docker compose --profile staging up -d postgres
+  #
+  # It is not published to the host; only the mipo network can reach it.
+  postgres:
+    image: postgres:16-alpine
+    profiles: ["staging"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${STAGING_DB_NAME:-mipo}
+      POSTGRES_USER: ${STAGING_DB_USER:-mipo}
+      POSTGRES_PASSWORD: ${STAGING_DB_PASSWORD:?set STAGING_DB_PASSWORD in the staging .env}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${STAGING_DB_USER:-mipo} -d ${STAGING_DB_NAME:-mipo}"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    volumes:
+      - staging_pgdata:/var/lib/postgresql/data
     networks:
       - mipo
 
@@ -52,3 +85,4 @@ networks:
 volumes:
   caddy_data:
   caddy_config:
+  staging_pgdata:
