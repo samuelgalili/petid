@@ -17,25 +17,46 @@ Every command below was run end to end before it was written down.
 ## Prerequisites
 
 - Node.js 20.19 or newer
-- Docker, for the database. A PostgreSQL 16 installed any other way works too —
-  only the connection string changes.
+- PostgreSQL 16. Docker is the portable option and is what the commands below
+  assume. On a Mac without Docker, `brew install postgresql@16` works just as
+  well — only the connection string changes.
 
 ## One-time setup
 
 ```bash
 git clone https://github.com/samuelgalili/petid.git
 cd petid
+git checkout aws-migration
 npm ci
 npm ci --prefix server
 ```
 
-Start the database:
+**Check out `aws-migration` before installing anything.** A fresh clone lands on
+`main`, which is the pre-AWS branch and is not the running system. Its
+`package-lock.json` is also out of step with its `package.json`, so `npm ci`
+there fails with a wall of `Missing: ... from lock file` — that is the wrong
+branch talking, not a broken machine.
+
+Start the database, either way round.
+
+With Docker:
 
 ```bash
 docker run -d --name mipo-db -p 5432:5432 \
   -e POSTGRES_USER=mipo -e POSTGRES_PASSWORD=mipo -e POSTGRES_DB=mipo \
   postgres:16-alpine
 ```
+
+Or with Homebrew on a Mac:
+
+```bash
+brew install postgresql@16
+brew services start postgresql@16
+createdb mipo
+```
+
+Homebrew's PostgreSQL trusts your own macOS account, so the connection string
+becomes `postgres://$(whoami)@127.0.0.1:5432/mipo` — no password.
 
 Create `.env` in the repository root. This is the minimum that boots the stack —
 only `DATABASE_URL` is genuinely required, the rest saves you flags:
@@ -150,3 +171,8 @@ pass `--port` to Vite.
 **Migrations refuse to run on a database that already has tables** — that guard
 is for a schema predating the ledger. On a local database the fix is to delete
 the container and start over, not to force a baseline.
+
+**`npm ci` reports dozens of `Missing: ... from lock file`** — you are on
+`main`. Run `git checkout aws-migration` and install again. Do not reach for
+`npm install` to "fix" the lock file: on the right branch it is already correct,
+and rewriting it on the wrong one produces a diff nobody wants to review.
