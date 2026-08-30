@@ -1657,7 +1657,22 @@ const insertUserPet = async (userId, body) => {
     ],
   );
 
-  return serializePet(result.rows[0]);
+  const pet = result.rows[0];
+  await emitEvent(pool, {
+    type: EVENT_TYPES.PET_CREATED,
+    entityType: "pet",
+    entityId: pet.id,
+    payload: {
+      owner_user_id: userId,
+      name: pet.name,
+      type: pet.type,
+      breed: pet.breed,
+      birth_date: pet.birth_date,
+      microchip_number: pet.microchip_number,
+    },
+  });
+
+  return serializePet(pet);
 };
 
 const listUserPets = async (userId, archived = "false") => {
@@ -1798,6 +1813,15 @@ const updateUserPet = async (userId, petId, body) => {
     return `${column} = $${values.length}`;
   });
 
+  // Read the lost flag first so the update can be compared against it. Only a
+  // real transition emits — saving the form without changing it emits nothing.
+  const previous = Object.prototype.hasOwnProperty.call(payload, "is_lost")
+    ? (await pool.query(
+      "select is_lost from public.pets where id = $1 and user_id = $2",
+      [petId, userId],
+    )).rows[0] || null
+    : null;
+
   const result = await pool.query(
     `
       update public.pets
@@ -1808,7 +1832,27 @@ const updateUserPet = async (userId, petId, body) => {
     values,
   );
 
-  return result.rows[0] ? serializePet(result.rows[0]) : null;
+  const pet = result.rows[0];
+  if (!pet) return null;
+
+  if (previous && Boolean(previous.is_lost) !== Boolean(pet.is_lost)) {
+    await emitEvent(pool, {
+      type: pet.is_lost ? EVENT_TYPES.PET_MARKED_LOST : EVENT_TYPES.PET_FOUND,
+      entityType: "pet",
+      entityId: pet.id,
+      payload: {
+        owner_user_id: userId,
+        name: pet.name,
+        type: pet.type,
+        lost_since: pet.lost_since,
+        // Included so a finder-facing workflow does not have to read them back.
+        lost_reward_text: pet.is_lost ? pet.lost_reward_text : null,
+        lost_contact_phone: pet.is_lost && pet.lost_show_phone ? pet.lost_contact_phone : null,
+      },
+    });
+  }
+
+  return serializePet(pet);
 };
 
 const normalizeStorageKeyList = (value) => (
@@ -3312,7 +3356,26 @@ const createUserInsuranceClaim = async (userId, body) => {
     ],
   );
 
-  return serializeInsuranceClaim(result.rows[0]);
+  const claim = result.rows[0];
+  await emitEvent(pool, {
+    type: EVENT_TYPES.CLAIM_SUBMITTED,
+    entityType: "insurance_claim",
+    entityId: claim.id,
+    payload: {
+      claim_number: claim.claim_number,
+      owner_user_id: userId,
+      pet_id: claim.pet_id,
+      pet_name: claim.pet_name,
+      clinic_name: claim.clinic_name,
+      visit_date: claim.visit_date,
+      total_amount: claim.total_amount === null ? null : Number(claim.total_amount),
+      status: claim.status,
+      // Diagnosis and the owner's ID digits are deliberately left out — a
+      // claims workflow can read them back if it is entitled to.
+    },
+  });
+
+  return serializeInsuranceClaim(claim);
 };
 
 const serializeServiceBooking = (row) => ({
@@ -3414,7 +3477,26 @@ const createUserServiceBooking = async (userId, body) => {
     ],
   );
 
-  return serializeServiceBooking(result.rows[0]);
+  const booking = result.rows[0];
+  await emitEvent(pool, {
+    type: EVENT_TYPES.BOOKING_CREATED,
+    entityType: "service_booking",
+    entityId: booking.id,
+    payload: {
+      booking_number: booking.booking_number,
+      owner_user_id: userId,
+      pet_id: booking.pet_id,
+      service_type: booking.service_type,
+      service_name: booking.service_name,
+      provider_name: booking.provider_name,
+      requested_date: booking.requested_date,
+      start_date: booking.start_date,
+      total_price: booking.total_price === null ? null : Number(booking.total_price),
+      status: booking.status,
+    },
+  });
+
+  return serializeServiceBooking(booking);
 };
 
 const normalizePetType = (value) => {
@@ -5763,6 +5845,19 @@ const createReport = async (body, reporterId = null) => {
       reporterId,
     ],
   );
+
+  await emitEvent(pool, {
+    type: EVENT_TYPES.CONTENT_REPORTED,
+    entityType: "content_report",
+    entityId: id,
+    payload: {
+      content_type: body.content_type || "product",
+      content_id: body.content_id || null,
+      reason: body.reason || "other",
+      reporter_id: reporterId,
+    },
+  });
+
   return { id };
 };
 
