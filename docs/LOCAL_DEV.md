@@ -161,6 +161,35 @@ The catalogue seed gives you ten products, so the shop is not empty.
 Never point a local environment at CardCom's live terminal. If you need to
 exercise checkout, ask CardCom for test credentials.
 
+## Seeding a case you need to see
+
+A local database starts empty, so anything whose behaviour depends on data that
+only exists in production cannot be checked by looking. A fix to how a cancelled
+order is displayed shows nothing until a cancelled order exists locally.
+
+Seed the case rather than hunting for it. This creates three orders in different
+states against your local account:
+
+```bash
+export PATH="$(brew --prefix postgresql@16)/bin:$PATH"   # Homebrew only
+psql "postgres://$(whoami)@127.0.0.1:5432/mipo" <<'SQL'
+insert into public.orders (order_number, user_id, customer_email, customer_name, status, payment_status, total, order_date)
+select
+  'LOCAL-' || upper(s.status) || '-' || lpad(floor(random()*9999)::text, 4, '0'),
+  au.id, au.email, au.full_name, s.status, 'paid', s.total, now() - (s.days || ' days')::interval
+from public.app_users au
+cross join (values ('cancelled', 25.00, 1), ('delivered', 38.90, 3), ('shipped', 7.99, 5)) as s(status, total, days)
+where lower(au.email) = lower('me@local.test');
+SQL
+```
+
+Change the email to whichever account you signed up with. `/profile` and
+`/order-history` then show all three.
+
+The same approach covers any state that is awkward to reach through the UI — a
+failed payment, an archived pet, a reported post. Writing SQL against a
+disposable local database is the fast path here, not a workaround.
+
 ## Checking a schema change
 
 Anything that touches `server/sql` deserves more than a glance at the UI. With
