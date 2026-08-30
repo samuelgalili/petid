@@ -106,8 +106,45 @@ npm run dev:api     # terminal 1 — API on 3000
 npm run dev         # terminal 2 — Vite on 8080
 ```
 
-Open <http://localhost:8080> and sign up with any email. It is your database;
-nothing is sent anywhere.
+Open <http://localhost:8080>.
+
+## Getting in the first time
+
+**The database is empty.** No accounts, no orders — a production login will not
+work here. Sign up rather than log in; they are two different screens:
+
+| | |
+|---|---|
+| `/signup` | create an account — this is the one you want |
+| `/auth` | log in with an account that already exists locally |
+
+The signup form needs **five** fields, and the submit button stays disabled
+until all of them are filled: full name, **date of birth**, email, password (8
+characters minimum), and password confirmation. The date of birth is the one
+people miss — leave it blank and the form simply never becomes submittable.
+
+**There is no email verification.** Signing up logs you straight in; no message
+is sent and none is expected. (`requireEmailVerification` appears in the admin
+settings screen, but that toggle is not wired to anything.)
+
+To skip the form entirely and know exactly what credentials you have:
+
+```bash
+curl -s -X POST http://localhost:8080/api/auth/signup \
+  -H 'content-type: application/json' \
+  -d '{"email":"me@local.test","password":"local-password-123","full_name":"Local User"}'
+```
+
+A response containing `"user"` means the account exists; log in at `/auth`.
+
+For the admin screens, which need a separate account:
+
+```bash
+npm --prefix server run admin:provision -- \
+  --email admin@local.test --role admin --display-name "Local admin"
+```
+
+It prints a one-time temporary password that must be changed on first use.
 
 ## What works without secrets, and what does not
 
