@@ -120,6 +120,7 @@ const statusLabel: Record<string, { text: string; variant: "default" | "secondar
   completed: { text: "הושלם", variant: "secondary" },
   shipped: { text: "נשלח", variant: "default" },
   delivered: { text: "נמסר", variant: "success" },
+  cancelled: { text: "בוטל", variant: "secondary" },
 };
 
 const getStatusBadge = (status: string) => {
