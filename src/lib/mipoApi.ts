@@ -398,6 +398,8 @@ export interface MipoPet {
 export interface MipoAuthResult {
   user: MipoUser;
   profile: MipoProfile | null;
+  /** Whether this same browser also holds a valid admin session. */
+  is_admin?: boolean;
 }
 
 export interface MipoNotification {
@@ -674,7 +676,13 @@ export async function getCurrentAdmin(): Promise<MipoAdmin | null> {
     throw new Error(body?.error || `API request failed with ${response.status}`);
   }
 
-  return (body?.admin || null) as MipoAdmin | null;
+  const admin = (body?.admin || null) as MipoAdmin | null;
+  // The hint was only ever written at login and cleared on the way out, so a
+  // live admin session with no hint stayed invisible to the app shell -- which
+  // is what happens after a forced password change, or in a browser whose
+  // storage was cleared. Writing it here keeps the hint tracking the session.
+  setStorageHint(adminSessionHintKey, Boolean(admin));
+  return admin;
 }
 
 export async function getCurrentUser(): Promise<MipoAuthResult | null> {
@@ -695,9 +703,15 @@ export async function getCurrentUser(): Promise<MipoAuthResult | null> {
     throw new Error(body?.error || `API request failed with ${response.status}`);
   }
 
+  const isAdmin = Boolean(body?.is_admin);
+  // Keep the stored hint in step with what the server just said, so the next
+  // first paint is right before this request comes back.
+  setStorageHint(adminSessionHintKey, isAdmin);
+
   return {
     user: body.user as MipoUser,
     profile: (body.profile || null) as MipoProfile | null,
+    is_admin: isAdmin,
   };
 }
 

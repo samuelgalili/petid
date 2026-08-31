@@ -27,11 +27,15 @@ export const useAuth = () => {
   const [user, setUser] = useState<MipoUser | null>(null);
   const [session, setSession] = useState<MipoSession | null>(null);
   const [loading, setLoading] = useState(true);
+  // Reported by /auth/me: whether this browser also holds an admin session.
+  // Signing in as a user never grants it -- the panel is a separate identity.
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const applyAuth = (auth: MipoAuthResult | null) => {
     const nextSession = toSession(auth);
     setSession(nextSession);
     setUser(nextSession?.user ?? null);
+    setIsAdmin(Boolean(auth?.is_admin));
   };
 
   useEffect(() => {
@@ -124,6 +128,7 @@ export const useAuth = () => {
     user,
     session,
     loading,
+    isAdmin,
     signIn,
     signUp,
     signOut,
