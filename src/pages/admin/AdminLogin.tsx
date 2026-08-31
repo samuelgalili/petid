@@ -11,6 +11,13 @@ type AdminLoginLocationState = {
   from?: string;
 };
 
+// Neither is a place to land after signing in. /admin/login would bounce
+// straight back, and /admin/change-password is where the route guard sent the
+// admin when changing the password revoked their session: returning them there
+// asks for the change again, which revokes the new session, which sends them
+// back to the login. That is the loop a newly provisioned admin cannot escape.
+const NOT_A_DESTINATION = ["/admin/login", "/admin/change-password"];
+
 const AdminLogin = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -21,8 +28,8 @@ const AdminLogin = () => {
   const [error, setError] = useState("");
 
   const redirectTo = useMemo(() => {
-    const state = location.state as AdminLoginLocationState | null;
-    return state?.from && state.from !== "/admin/login" ? state.from : "/admin/products";
+    const from = (location.state as AdminLoginLocationState | null)?.from;
+    return from && !NOT_A_DESTINATION.includes(from) ? from : "/admin/products";
   }, [location.state]);
 
   useEffect(() => {
