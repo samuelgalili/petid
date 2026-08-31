@@ -212,6 +212,36 @@ export interface MipoOrder {
   order_items: MipoOrderItem[];
 }
 
+/**
+ * One row per human, whether they hold an account or only ever checked out as
+ * a guest. Comes from the customer_identities view plus order and pet counts.
+ */
+export interface MipoCustomer {
+  identity_id: string;
+  identity_kind: "account" | "guest";
+  user_id: string | null;
+  shop_customer_id: string | null;
+  email: string | null;
+  full_name: string | null;
+  phone: string | null;
+  is_active: boolean | null;
+  created_at: string | null;
+  last_login_at: string | null;
+  first_order_at: string | null;
+  last_order_at: string | null;
+  last_activity_at: string | null;
+  orders_count: number;
+  paid_orders_count: number;
+  total_spent: number;
+  pets_count: number;
+}
+
+export interface MipoCustomerDetail {
+  customer: MipoCustomer;
+  orders: MipoOrder[];
+  pets: MipoPet[];
+}
+
 export interface CreateMipoOrderInput {
   items: Array<{
     id?: string;
@@ -1283,6 +1313,22 @@ export async function updateAdminOrder(
     body: JSON.stringify(updates),
   });
   return result.order;
+}
+
+export async function getAdminCustomers(
+  input: { limit?: number; search?: string; kind?: "account" | "guest" } = {},
+): Promise<MipoCustomer[]> {
+  const params = new URLSearchParams();
+  if (input.limit) params.set("limit", String(input.limit));
+  if (input.search?.trim()) params.set("search", input.search.trim());
+  if (input.kind) params.set("kind", input.kind);
+  const query = params.toString();
+  const result = await adminApiFetch<{ customers: MipoCustomer[] }>(`/admin/customers${query ? `?${query}` : ""}`);
+  return result.customers;
+}
+
+export async function getAdminCustomer(identityId: string): Promise<MipoCustomerDetail> {
+  return adminApiFetch<MipoCustomerDetail>(`/admin/customers/${encodeURIComponent(identityId)}`);
 }
 
 export async function bulkUpdateAdminOrders(ids: string[], updates: Partial<Pick<MipoOrder, "status">>) {

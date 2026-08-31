@@ -4896,6 +4896,153 @@ const listAdminAnalytics = async (daysInput) => {
   };
 };
 
+// An order belongs to the account that placed it, or — for a guest checkout —
+// to the account that has since claimed the commerce row, or to the guest row
+// itself. Same precedence customer_identities uses for identity_id, so the two
+// always agree on who a person is.
+const ORDER_IDENTITY_EXPRESSION = "coalesce(o.user_id, sc.user_id, o.customer_id)";
+
+const customerIdentityQuery = (where, tail) => `
+  with attributed_orders as (
+    select
+      ${ORDER_IDENTITY_EXPRESSION} as identity_id,
+      o.payment_status,
+      o.total,
+      coalesce(o.order_date, o.created_at) as placed_at
+    from public.orders o
+    left join public.shop_customers sc on sc.id = o.customer_id
+  ),
+  order_stats as (
+    select
+      identity_id,
+      count(*) as orders_count,
+      count(*) filter (where payment_status = 'paid') as paid_orders_count,
+      coalesce(sum(total) filter (where payment_status = 'paid'), 0) as total_spent,
+      max(placed_at) as last_order_at,
+      min(placed_at) as first_order_at
+    from attributed_orders
+    where identity_id is not null
+    group by identity_id
+  ),
+  pet_stats as (
+    select user_id, count(*) as pets_count
+    from public.pets
+    where not archived
+    group by user_id
+  )
+  select * from (
+    -- distinct on guards the one case the view cannot: two shop_customers rows
+    -- claimed by the same account would otherwise list that person twice.
+    select distinct on (ci.identity_id)
+      ci.identity_id,
+      ci.identity_kind,
+      ci.user_id,
+      ci.shop_customer_id,
+      ci.email,
+      ci.full_name,
+      ci.phone,
+      au.is_active,
+      au.last_login_at,
+      coalesce(au.created_at, sc.created_at) as created_at,
+      coalesce(os.last_order_at, ci.last_order_at) as last_order_at,
+      os.first_order_at,
+      coalesce(os.orders_count, 0) as orders_count,
+      coalesce(os.paid_orders_count, 0) as paid_orders_count,
+      coalesce(os.total_spent, 0) as total_spent,
+      coalesce(ps.pets_count, 0) as pets_count,
+      greatest(
+        coalesce(os.last_order_at, ci.last_order_at),
+        coalesce(au.created_at, sc.created_at)
+      ) as last_activity_at
+    from public.customer_identities ci
+    left join public.app_users au on au.id = ci.user_id
+    left join public.shop_customers sc on sc.id = ci.shop_customer_id
+    left join order_stats os on os.identity_id = ci.identity_id
+    left join pet_stats ps on ps.user_id = ci.user_id
+    ${where}
+    order by ci.identity_id, sc.created_at asc nulls last
+  ) customers
+  ${tail}
+`;
+
+const mapCustomerIdentity = (row) => ({
+  identity_id: row.identity_id,
+  identity_kind: row.identity_kind,
+  user_id: row.user_id,
+  shop_customer_id: row.shop_customer_id,
+  email: row.email,
+  full_name: row.full_name,
+  phone: row.phone,
+  is_active: row.is_active === null || row.is_active === undefined ? null : Boolean(row.is_active),
+  created_at: row.created_at,
+  last_login_at: row.last_login_at,
+  first_order_at: row.first_order_at,
+  last_order_at: row.last_order_at,
+  last_activity_at: row.last_activity_at,
+  orders_count: Number(row.orders_count || 0),
+  paid_orders_count: Number(row.paid_orders_count || 0),
+  total_spent: toMoney(row.total_spent),
+  pets_count: Number(row.pets_count || 0),
+});
+
+const listAdminCustomers = async ({ limit = 200, search = null, kind = null } = {}) => {
+  const values = [];
+  const where = [];
+
+  const term = String(search || "").trim();
+  if (term) {
+    values.push(`%${term.replace(/[%_\\]/g, (character) => `\\${character}`)}%`);
+    where.push(
+      `(ci.email ilike $${values.length} or ci.full_name ilike $${values.length} or ci.phone ilike $${values.length})`,
+    );
+  }
+
+  if (kind === "account" || kind === "guest") {
+    values.push(kind);
+    where.push(`ci.identity_kind = $${values.length}`);
+  }
+
+  values.push(Math.min(1000, Math.max(1, Number(limit) || 200)));
+
+  const result = await pool.query(
+    customerIdentityQuery(
+      where.length > 0 ? `where ${where.join(" and ")}` : "",
+      `order by last_activity_at desc nulls last, created_at desc nulls last limit $${values.length}`,
+    ),
+    values,
+  );
+
+  return result.rows.map(mapCustomerIdentity);
+};
+
+const getAdminCustomer = async (identityId) => {
+  if (!uuidPattern.test(String(identityId || ""))) return null;
+
+  const result = await pool.query(customerIdentityQuery("where ci.identity_id = $1", "limit 1"), [identityId]);
+  if (result.rowCount === 0) return null;
+
+  const customer = mapCustomerIdentity(result.rows[0]);
+
+  const orderRows = await pool.query(
+    `
+      select o.*
+      from public.orders o
+      left join public.shop_customers sc on sc.id = o.customer_id
+      where ${ORDER_IDENTITY_EXPRESSION} = $1
+      order by coalesce(o.order_date, o.created_at) desc
+      limit 100
+    `,
+    [customer.identity_id],
+  );
+
+  const [orders, pets] = await Promise.all([
+    attachOrderItems(orderRows.rows),
+    customer.user_id ? listUserPets(customer.user_id, "all") : Promise.resolve([]),
+  ]);
+
+  return { customer, orders, pets };
+};
+
 const getOrder = async (id) => {
   const result = uuidPattern.test(id)
     ? await pool.query("select * from public.orders where id = $1 limit 1", [id])
@@ -6555,6 +6702,30 @@ const handleRequest = async (request, response) => {
       if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
       const limit = Math.min(500, Math.max(1, Number(url.searchParams.get("limit") || 200)));
       sendJson(response, 200, { orders: await listOrders({ limit }) });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/customers") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      sendJson(response, 200, {
+        customers: await listAdminCustomers({
+          limit: url.searchParams.get("limit") || 200,
+          search: url.searchParams.get("search"),
+          kind: url.searchParams.get("kind"),
+        }),
+      });
+      return;
+    }
+
+    const adminCustomerMatch = url.pathname.match(/^\/api\/admin\/customers\/([0-9a-fA-F-]{36})$/);
+    if (adminCustomerMatch && request.method === "GET") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      const customer = await getAdminCustomer(adminCustomerMatch[1]);
+      if (!customer) {
+        sendError(response, 404, "Customer not found");
+        return;
+      }
+      sendJson(response, 200, customer);
       return;
     }
 
