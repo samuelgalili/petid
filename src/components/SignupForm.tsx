@@ -4,6 +4,7 @@ import { format, differenceInYears } from "date-fns";
 import { CalendarIcon, Eye, EyeOff, Loader2, Lock, Mail, User } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -39,6 +40,7 @@ export const SignupForm = () => {
     confirmPassword: "",
   });
   const [birthdate, setBirthdate] = useState<Date | undefined>(undefined);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldError>({});
   const [generalError, setGeneralError] = useState("");
@@ -78,6 +80,7 @@ export const SignupForm = () => {
         email: formData.email.trim(),
         password: formData.password,
         birthdate: format(birthdate, "yyyy-MM-dd"),
+        accept_terms: acceptedTerms,
       });
 
       if (error) {
@@ -99,7 +102,7 @@ export const SignupForm = () => {
     }
   };
 
-  const isFormValid = formData.fullName && formData.email && formData.password && formData.confirmPassword && birthdate;
+  const isFormValid = formData.fullName && formData.email && formData.password && formData.confirmPassword && birthdate && acceptedTerms;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3" noValidate>
@@ -242,6 +245,25 @@ export const SignupForm = () => {
         {fieldErrors.confirmPassword && <p className="text-xs text-destructive mt-1 text-right">{fieldErrors.confirmPassword}</p>}
       </div>
 
+      {/* An explicit act, not a sentence under the button: consent has to be
+          something the person did, and something we can point at later. */}
+      <div className="flex items-start gap-2.5">
+        <Checkbox
+          id="accept-terms"
+          checked={acceptedTerms}
+          onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
+          disabled={loading}
+          className="mt-0.5 shrink-0"
+        />
+        <label htmlFor="accept-terms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+          קראתי ואני מסכים/ה ל
+          <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">תנאי השימוש</a>
+          , ל
+          <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">מדיניות הפרטיות</a>
+          {" "}ולמדיניות הביטולים.
+        </label>
+      </div>
+
       <Button
         type="submit"
         variant="instagram"
@@ -251,13 +273,6 @@ export const SignupForm = () => {
       >
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "הרשמה"}
       </Button>
-
-      <p className="text-xs text-muted-foreground text-center leading-relaxed">
-        בהרשמה, אתה מסכים ל{" "}
-        <a href="/terms" className="inline-flex min-h-11 items-center text-primary">תנאי שימוש</a>,{" "}
-        <a href="/privacy-policy" className="inline-flex min-h-11 items-center text-primary">מדיניות פרטיות</a> ו{" "}
-        <a href="/privacy-policy" className="inline-flex min-h-11 items-center text-primary">מדיניות עוגיות</a>.
-      </p>
     </form>
   );
 };

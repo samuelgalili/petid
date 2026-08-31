@@ -671,6 +671,8 @@ export async function signupUser(input: {
   password: string;
   birthdate?: string | null;
   phone?: string | null;
+  /** The server refuses the signup without it, so the form must send it. */
+  accept_terms: boolean;
 }): Promise<MipoAuthResult> {
   const auth = await apiFetch<MipoAuthResult>("/auth/signup", {
     method: "POST",

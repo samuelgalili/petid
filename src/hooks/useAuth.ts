@@ -83,6 +83,7 @@ export const useAuth = () => {
     password: string;
     birthdate?: string | null;
     phone?: string | null;
+    accept_terms: boolean;
   }) => {
     try {
       const auth = await signupUser(input);

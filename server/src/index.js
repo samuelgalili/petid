@@ -728,8 +728,14 @@ const userSelect = `
   is_active,
   created_at,
   updated_at,
-  last_login_at
+  last_login_at,
+  terms_accepted_at,
+  terms_version
 `;
+
+// Bump this whenever the terms themselves change, so an acceptance recorded
+// today cannot be mistaken for acceptance of a later text.
+const TERMS_VERSION = process.env.TERMS_VERSION || "2026-08-31";
 
 const getProfileByUserId = async (userId, db = pool) => {
   const result = await db.query("select * from public.profiles where id = $1 limit 1", [userId]);
@@ -920,6 +926,13 @@ const signupUser = async (request, body) => {
     error.statusCode = 400;
     throw error;
   }
+  // Enforced here rather than only in the form: a consent the server never
+  // checked is a consent that can be skipped by anything that is not the form.
+  if (body.accept_terms !== true && body.accepted_terms !== true) {
+    const error = new Error("The terms of use must be accepted");
+    error.statusCode = 400;
+    throw error;
+  }
 
   const { firstName, lastName } = splitFullName(fullName);
   const client = await pool.connect();
@@ -933,12 +946,14 @@ const signupUser = async (request, body) => {
           full_name,
           phone,
           birthdate,
-          is_active
+          is_active,
+          terms_accepted_at,
+          terms_version
         )
-        values ($1, $2, $3, $4, $5, true)
+        values ($1, $2, $3, $4, $5, true, now(), $6)
         returning ${userSelect}
       `,
-      [email, hashPassword(password), fullName, phone, birthdate],
+      [email, hashPassword(password), fullName, phone, birthdate, TERMS_VERSION],
     );
 
     const profileResult = await client.query(
