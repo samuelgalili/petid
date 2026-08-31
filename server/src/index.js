@@ -5990,7 +5990,14 @@ const handleRequest = async (request, response) => {
         return;
       }
 
-      sendJson(response, 200, auth);
+      // The panel is a separate identity with its own cookie, so being signed
+      // in here says nothing about it. Reporting whether the same browser also
+      // holds an admin session lets the app show the shortcut without a second
+      // request, and without depending on local storage -- which is scoped per
+      // origin, so it goes missing the moment the dev server moves to another
+      // port. Costs a query only when that cookie is actually present.
+      const admin = await getAdminFromSession(request);
+      sendJson(response, 200, { ...auth, is_admin: Boolean(admin) });
       return;
     }
 

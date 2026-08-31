@@ -353,6 +353,8 @@ export interface MipoPet {
 export interface MipoAuthResult {
   user: MipoUser;
   profile: MipoProfile | null;
+  /** Whether this same browser also holds a valid admin session. */
+  is_admin?: boolean;
 }
 
 export interface MipoNotification {
@@ -656,9 +658,15 @@ export async function getCurrentUser(): Promise<MipoAuthResult | null> {
     throw new Error(body?.error || `API request failed with ${response.status}`);
   }
 
+  const isAdmin = Boolean(body?.is_admin);
+  // Keep the stored hint in step with what the server just said, so the next
+  // first paint is right before this request comes back.
+  setStorageHint(adminSessionHintKey, isAdmin);
+
   return {
     user: body.user as MipoUser,
     profile: (body.profile || null) as MipoProfile | null,
+    is_admin: isAdmin,
   };
 }
 
