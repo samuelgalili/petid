@@ -15,6 +15,7 @@ import {
   Building2, FolderOpen, ChevronDown, ChevronUp, Stethoscope,
   Receipt, CalendarClock, Package, ExternalLink, Dog, Cat,
   Cpu, Link2, TrendingUp, Lock, Wallet,
+  MoreVertical, Pencil, Archive, FolderClock,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -32,8 +33,15 @@ import {
   getMyInsuranceClaims,
   getMyOrders,
   getMyPets,
+  updateMyPet,
   type MipoProfile,
 } from "@/lib/mipoApi";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+import { useToast } from "@/hooks/use-toast";
+import { usePetPreference } from "@/contexts/PetPreferenceContext";
 
 // ─── Types ────────────────────────────────────────
 interface Pet {
@@ -144,6 +152,10 @@ const OwnerProfile = () => {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<MipoProfile | null>(null);
   const [pets, setPets] = useState<Pet[]>([]);
+  const [petToArchive, setPetToArchive] = useState<Pet | null>(null);
+  const [archiving, setArchiving] = useState(false);
+  const { toast } = useToast();
+  const { refresh: refreshPets } = usePetPreference();
   const [claims, setClaims] = useState<Claim[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [documents, setDocuments] = useState<PetDocument[]>([]);
@@ -247,7 +259,7 @@ const OwnerProfile = () => {
             <Skeleton className="h-20 rounded-2xl" />
           </div>
         </div>
-        <BottomNav />
+      <BottomNav />
       </PageTransition>
     );
   }
@@ -347,12 +359,47 @@ const OwnerProfile = () => {
           ) : (
             <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
               {pets.map((pet) => (
-                <motion.button
+                <motion.div
                   key={pet.id}
-                  onClick={() => navigate(`/pet-profile/${pet.id}`)}
-                  className="flex-shrink-0 w-[150px] p-3 rounded-xl bg-muted/30 border border-border/20 text-center hover:bg-muted/50 transition-colors relative"
+                  className="flex-shrink-0 w-[150px] rounded-xl bg-muted/30 border border-border/20 hover:bg-muted/50 transition-colors relative"
                   whileTap={{ scale: 0.97 }}
                 >
+                  {/* The card listed the pets and led to the dashboard, and
+                      that was every action it offered. Editing and archiving
+                      live here now, where a person is already looking at the
+                      list they want to change. */}
+                  <div className="absolute top-1.5 right-1.5 z-10">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          className="p-1.5 rounded-lg hover:bg-background/80 transition-colors"
+                          aria-label={`פעולות עבור ${pet.name}`}
+                        >
+                          <MoreVertical className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={1.5} />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" dir="rtl" className="w-48">
+                        <DropdownMenuItem onSelect={() => navigate(`/edit-pet/${pet.id}`)}>
+                          <Pencil className="w-4 h-4" />
+                          עריכת הפרטים
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => setPetToArchive(pet)}>
+                          <Archive className="w-4 h-4" />
+                          העברה לארכיון
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onSelect={() => navigate("/archived-pets")}>
+                          <FolderClock className="w-4 h-4" />
+                          חיות בארכיון
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
+                  <button
+                    onClick={() => navigate(`/pet-profile/${pet.id}`)}
+                    className="w-full p-3 text-center"
+                  >
                   {/* Species indicator */}
                   <div className="absolute top-2 left-2">
                     {pet.type === "dog" ? (
@@ -393,7 +440,8 @@ const OwnerProfile = () => {
                       )}
                     </div>
                   )}
-                </motion.button>
+                  </button>
+                </motion.div>
               ))}
               {/* Add pet card */}
               <motion.button
@@ -632,6 +680,33 @@ const OwnerProfile = () => {
         </Section>
         </div>
       </div>
+        <ConfirmDialog
+        open={!!petToArchive}
+        onOpenChange={(open) => { if (!open) setPetToArchive(null); }}
+        title={petToArchive ? `להעביר את ${petToArchive.name} לארכיון?` : ""}
+        description="החיה תוסר מהרשימה, וכל המידע הרפואי שלה נשמר. אפשר לשחזר אותה בכל רגע מ״חיות בארכיון״."
+        confirmLabel="העברה לארכיון"
+        loading={archiving}
+        onConfirm={async () => {
+          if (!petToArchive) return;
+          setArchiving(true);
+          try {
+            await updateMyPet(petToArchive.id, { archived: true, archived_at: new Date().toISOString() });
+            await Promise.all([fetchOwnerData(), refreshPets()]);
+            toast({ title: "הועבר לארכיון", description: "אפשר לשחזר מ״חיות בארכיון״" });
+            setPetToArchive(null);
+          } catch (error) {
+            toast({
+              title: "ההעברה לארכיון נכשלה",
+              description: error instanceof Error ? error.message : undefined,
+              variant: "destructive",
+            });
+          } finally {
+            setArchiving(false);
+          }
+        }}
+      />
+
       <BottomNav />
     </PageTransition>
   );
