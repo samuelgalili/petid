@@ -236,10 +236,25 @@ export interface MipoCustomer {
   pets_count: number;
 }
 
+export type MipoCustomerNoteKind = "note" | "call" | "whatsapp" | "email" | "meeting";
+
+export interface MipoCustomerNote {
+  id: string;
+  user_id: string | null;
+  shop_customer_id: string | null;
+  admin_user_id: string | null;
+  author_name: string | null;
+  kind: MipoCustomerNoteKind;
+  body: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface MipoCustomerDetail {
   customer: MipoCustomer;
   orders: MipoOrder[];
   pets: MipoPet[];
+  notes: MipoCustomerNote[];
 }
 
 export interface CreateMipoOrderInput {
@@ -1329,6 +1344,25 @@ export async function getAdminCustomers(
 
 export async function getAdminCustomer(identityId: string): Promise<MipoCustomerDetail> {
   return adminApiFetch<MipoCustomerDetail>(`/admin/customers/${encodeURIComponent(identityId)}`);
+}
+
+export async function createAdminCustomerNote(
+  identityId: string,
+  input: { kind: MipoCustomerNoteKind; body: string },
+): Promise<MipoCustomerNote> {
+  const result = await adminApiFetch<{ note: MipoCustomerNote }>(
+    `/admin/customers/${encodeURIComponent(identityId)}/notes`,
+    { method: "POST", body: JSON.stringify(input) },
+  );
+  return result.note;
+}
+
+export async function deleteAdminCustomerNote(identityId: string, noteId: string): Promise<boolean> {
+  const result = await adminApiFetch<{ deleted: boolean }>(
+    `/admin/customers/${encodeURIComponent(identityId)}/notes/${encodeURIComponent(noteId)}`,
+    { method: "DELETE" },
+  );
+  return result.deleted;
 }
 
 export async function bulkUpdateAdminOrders(ids: string[], updates: Partial<Pick<MipoOrder, "status">>) {

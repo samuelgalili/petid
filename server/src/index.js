@@ -5035,12 +5035,122 @@ const getAdminCustomer = async (identityId) => {
     [customer.identity_id],
   );
 
-  const [orders, pets] = await Promise.all([
+  const subjects = await customerNoteSubjects(customer);
+
+  const [orders, pets, notes] = await Promise.all([
     attachOrderItems(orderRows.rows),
     customer.user_id ? listUserPets(customer.user_id, "all") : Promise.resolve([]),
+    listCustomerNotes(subjects),
   ]);
 
-  return { customer, orders, pets };
+  return { customer, orders, pets, notes };
+};
+
+const CUSTOMER_NOTE_KINDS = ["note", "call", "whatsapp", "email", "meeting"];
+const MAX_CUSTOMER_NOTE_LENGTH = 5000;
+
+const mapCustomerNote = (row) => ({
+  id: row.id,
+  user_id: row.user_id,
+  shop_customer_id: row.shop_customer_id,
+  admin_user_id: row.admin_user_id,
+  author_name: row.author_name,
+  kind: row.kind,
+  body: row.body,
+  created_at: row.created_at,
+  updated_at: row.updated_at,
+});
+
+// Every row a note could have been filed against. An account may own several
+// shop_customers rows -- one per checkout email it has claimed -- and notes
+// written while those were still guests have to keep showing on the card.
+const customerNoteSubjects = async (customer) => {
+  if (!customer.user_id) {
+    return {
+      userId: null,
+      shopCustomerIds: customer.shop_customer_id ? [customer.shop_customer_id] : [],
+    };
+  }
+
+  const result = await pool.query("select id from public.shop_customers where user_id = $1", [customer.user_id]);
+  return { userId: customer.user_id, shopCustomerIds: result.rows.map((row) => row.id) };
+};
+
+const listCustomerNotes = async (subjects, limit = 200) => {
+  if (!subjects.userId && subjects.shopCustomerIds.length === 0) return [];
+
+  const result = await pool.query(
+    `
+      select *
+      from public.customer_notes
+      where ($1::uuid is not null and user_id = $1)
+         or shop_customer_id = any($2::uuid[])
+      order by created_at desc
+      limit $3
+    `,
+    [subjects.userId, subjects.shopCustomerIds, Math.min(500, Math.max(1, Number(limit) || 200))],
+  );
+  return result.rows.map(mapCustomerNote);
+};
+
+const createCustomerNote = async (customer, admin, body) => {
+  const kind = String(body.kind || "note").trim();
+  if (!CUSTOMER_NOTE_KINDS.includes(kind)) {
+    const error = new Error(`kind must be one of: ${CUSTOMER_NOTE_KINDS.join(", ")}`);
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const text = String(body.body || "").trim();
+  if (!text) {
+    const error = new Error("A note body is required");
+    error.statusCode = 400;
+    throw error;
+  }
+  if (text.length > MAX_CUSTOMER_NOTE_LENGTH) {
+    const error = new Error(`A note cannot exceed ${MAX_CUSTOMER_NOTE_LENGTH} characters`);
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // An account is filed under its user_id, which never changes. Only a guest,
+  // which has no account yet, is filed under its commerce row.
+  const result = await pool.query(
+    `
+      insert into public.customer_notes (user_id, shop_customer_id, admin_user_id, author_name, kind, body)
+      values ($1, $2, $3, $4, $5, $6)
+      returning *
+    `,
+    [
+      customer.user_id,
+      customer.user_id ? null : customer.shop_customer_id,
+      // The machine caller authenticated by ADMIN_API_KEY has the literal id
+      // "api-key" and no row in admin_users, so only a real admin is linked.
+      uuidPattern.test(String(admin?.id || "")) ? admin.id : null,
+      admin?.display_name || admin?.email || null,
+      kind,
+      text,
+    ],
+  );
+
+  return mapCustomerNote(result.rows[0]);
+};
+
+// Scoped to the customer on the URL so a guessed note id cannot reach a note
+// belonging to somebody else.
+const deleteCustomerNote = async (subjects, noteId) => {
+  if (!uuidPattern.test(String(noteId || ""))) return false;
+  if (!subjects.userId && subjects.shopCustomerIds.length === 0) return false;
+
+  const result = await pool.query(
+    `
+      delete from public.customer_notes
+      where id = $1
+        and (($2::uuid is not null and user_id = $2) or shop_customer_id = any($3::uuid[]))
+    `,
+    [noteId, subjects.userId, subjects.shopCustomerIds],
+  );
+  return result.rowCount > 0;
 };
 
 const getOrder = async (id) => {
@@ -6726,6 +6836,34 @@ const handleRequest = async (request, response) => {
         return;
       }
       sendJson(response, 200, customer);
+      return;
+    }
+
+    const adminCustomerNotesMatch = url.pathname.match(/^\/api\/admin\/customers\/([0-9a-fA-F-]{36})\/notes$/);
+    if (adminCustomerNotesMatch && request.method === "POST") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      const detail = await getAdminCustomer(adminCustomerNotesMatch[1]);
+      if (!detail) {
+        sendError(response, 404, "Customer not found");
+        return;
+      }
+      const note = await createCustomerNote(detail.customer, request.admin, await readBody(request));
+      sendJson(response, 201, { note });
+      return;
+    }
+
+    const adminCustomerNoteMatch = url.pathname
+      .match(/^\/api\/admin\/customers\/([0-9a-fA-F-]{36})\/notes\/([0-9a-fA-F-]{36})$/);
+    if (adminCustomerNoteMatch && request.method === "DELETE") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      const detail = await getAdminCustomer(adminCustomerNoteMatch[1]);
+      if (!detail) {
+        sendError(response, 404, "Customer not found");
+        return;
+      }
+      const subjects = await customerNoteSubjects(detail.customer);
+      const deleted = await deleteCustomerNote(subjects, adminCustomerNoteMatch[2]);
+      sendJson(response, deleted ? 200 : 404, { deleted });
       return;
     }
 

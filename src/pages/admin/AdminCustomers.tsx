@@ -12,9 +12,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Users, UserCheck, UserPlus, ShoppingBag, DollarSign, PawPrint,
-  Mail, Phone, Calendar, ChevronRight, Package,
+  Mail, Phone, Calendar, ChevronRight, Package, MessageCircle,
+  PhoneCall, StickyNote, CalendarClock, Trash2, Loader2, type LucideIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -22,16 +24,19 @@ import {
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import {
   AdminStatCard, AdminStatsGrid, AdminToolbar,
   AdminEmptyState, AdminPageHeader,
 } from "@/components/admin/AdminStyles";
 import { cn } from "@/lib/utils";
+import { customerGreeting, openWhatsApp, whatsAppLink } from "@/lib/customerContact";
 import {
-  getAdminCustomer, getAdminCustomers,
-  type MipoCustomer, type MipoCustomerDetail,
+  createAdminCustomerNote, deleteAdminCustomerNote, getAdminCustomer, getAdminCustomers,
+  type MipoCustomer, type MipoCustomerDetail, type MipoCustomerNote, type MipoCustomerNoteKind,
 } from "@/lib/mipoApi";
 
 const ORDER_STATUS_LABELS: Record<string, string> = {
@@ -48,6 +53,16 @@ const PET_TYPE_LABELS: Record<string, string> = {
   other: "אחר",
 };
 
+const NOTE_KINDS: Array<{ value: MipoCustomerNoteKind; label: string; icon: LucideIcon }> = [
+  { value: "call", label: "שיחה", icon: PhoneCall },
+  { value: "note", label: "הערה", icon: StickyNote },
+  { value: "whatsapp", label: "וואטסאפ", icon: MessageCircle },
+  { value: "email", label: "מייל", icon: Mail },
+  { value: "meeting", label: "פגישה", icon: CalendarClock },
+];
+
+const NOTE_KIND_BY_VALUE = new Map(NOTE_KINDS.map((kind) => [kind.value, kind]));
+
 // Keeps the agorot when there are any, so an order total reads ₪144.80 rather
 // than a rounded ₪145 that will not match the invoice.
 const formatCurrency = (value: number) => `₪${value.toLocaleString("he-IL", {
@@ -57,6 +72,16 @@ const formatCurrency = (value: number) => `₪${value.toLocaleString("he-IL", {
 
 const formatDate = (value?: string | null) => (
   value ? new Date(value).toLocaleDateString("he-IL") : "—"
+);
+
+// A call log is useless without the hour: two calls on the same day are a
+// different story from one.
+const formatDateTime = (value?: string | null) => (
+  value
+    ? new Date(value).toLocaleString("he-IL", {
+      day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
+    })
+    : "—"
 );
 
 const AdminCustomers = () => {
@@ -119,6 +144,18 @@ const AdminCustomers = () => {
       cancelled = true;
     };
   }, [selectedId, toast]);
+
+  // Notes change nothing in the list row, so the panel updates in place rather
+  // than refetching the whole card on every entry.
+  const handleNoteAdded = useCallback((note: MipoCustomerNote) => {
+    setDetail((current) => (current ? { ...current, notes: [note, ...current.notes] } : current));
+  }, []);
+
+  const handleNoteDeleted = useCallback((noteId: string) => {
+    setDetail((current) => (
+      current ? { ...current, notes: current.notes.filter((note) => note.id !== noteId) } : current
+    ));
+  }, []);
 
   // Filtering runs on the client so typing stays instant. The server takes the
   // same filters when the list outgrows a single fetch.
@@ -270,7 +307,12 @@ const AdminCustomers = () => {
 
         <Sheet open={!!selectedId} onOpenChange={(open) => { if (!open) setSelectedId(null); }}>
           <SheetContent side="left" className="w-full sm:w-[440px] p-0">
-            <CustomerDetailPanel detail={detail} loading={detailLoading} />
+            <CustomerDetailPanel
+              detail={detail}
+              loading={detailLoading}
+              onNoteAdded={handleNoteAdded}
+              onNoteDeleted={handleNoteDeleted}
+            />
           </SheetContent>
         </Sheet>
       </div>
@@ -281,10 +323,98 @@ const AdminCustomers = () => {
 const CustomerDetailPanel = ({
   detail,
   loading,
+  onNoteAdded,
+  onNoteDeleted,
 }: {
   detail: MipoCustomerDetail | null;
   loading: boolean;
+  onNoteAdded: (note: MipoCustomerNote) => void;
+  onNoteDeleted: (noteId: string) => void;
 }) => {
+  const { toast } = useToast();
+  const [noteKind, setNoteKind] = useState<MipoCustomerNoteKind>("call");
+  const [noteBody, setNoteBody] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<MipoCustomerNote | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const identityId = detail?.customer.identity_id;
+
+  // A fresh composer for each customer, so a half-typed note never follows the
+  // agent onto the next card.
+  useEffect(() => {
+    setNoteBody("");
+    setNoteKind("call");
+  }, [identityId]);
+
+  const saveNote = useCallback(async (kind: MipoCustomerNoteKind, body: string) => {
+    if (!identityId) return false;
+    const text = body.trim();
+    if (!text) return false;
+
+    setSaving(true);
+    try {
+      onNoteAdded(await createAdminCustomerNote(identityId, { kind, body: text }));
+      return true;
+    } catch (error) {
+      toast({
+        title: "שמירת הרישום נכשלה",
+        description: error instanceof Error ? error.message : "נסה שוב",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }, [identityId, onNoteAdded, toast]);
+
+  // The message leaves from the agent's own WhatsApp, so the log entry is the
+  // only trace the system will ever have of it. Write it before opening.
+  const handleWhatsApp = useCallback(async () => {
+    if (!detail) return;
+    const link = whatsAppLink(detail.customer.phone, customerGreeting(detail.customer.full_name));
+    if (!link) return;
+
+    await saveNote("whatsapp", "וואטסאפ נפתח מכרטיס הלקוח (תוכן ההודעה לא נשמר)");
+    openWhatsApp(link);
+  }, [detail, saveNote]);
+
+  const handleSubmitNote = useCallback(async () => {
+    if (await saveNote(noteKind, noteBody)) setNoteBody("");
+  }, [noteBody, noteKind, saveNote]);
+
+  const confirmDelete = useCallback(async () => {
+    if (!identityId || !pendingDelete) return;
+    setDeleting(true);
+    try {
+      await deleteAdminCustomerNote(identityId, pendingDelete.id);
+      onNoteDeleted(pendingDelete.id);
+      setPendingDelete(null);
+    } catch (error) {
+      toast({
+        title: "מחיקת הרישום נכשלה",
+        description: error instanceof Error ? error.message : "נסה שוב",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(false);
+    }
+  }, [identityId, onNoteDeleted, pendingDelete, toast]);
+
+  // Orders and notes share one chronological stream: that is what turns a list
+  // of facts about a person into a history of dealing with them.
+  const timeline = useMemo(() => {
+    if (!detail) return [];
+    return [
+      ...detail.notes.map((note) => ({ at: note.created_at, note, order: null })),
+      ...detail.orders.map((order) => ({
+        at: order.order_date || order.created_at || "",
+        note: null,
+        order,
+      })),
+    ].sort((first, second) => new Date(second.at).getTime() - new Date(first.at).getTime());
+  }, [detail]);
+
   if (loading || !detail) {
     return (
       <div dir="rtl">
@@ -300,7 +430,8 @@ const CustomerDetailPanel = ({
     );
   }
 
-  const { customer, orders, pets } = detail;
+  const { customer, pets } = detail;
+  const whatsapp = whatsAppLink(customer.phone, customerGreeting(customer.full_name));
 
   return (
     <div className="flex flex-col h-full" dir="rtl">
@@ -333,6 +464,34 @@ const CustomerDetailPanel = ({
                   <UserPlus className="w-3.5 h-3.5 text-muted-foreground" />
                   <span>התחבר לאחרונה {formatDate(customer.last_login_at)}</span>
                 </div>
+              )}
+
+              <div className="flex items-center gap-2 pt-1">
+                <Button
+                  size="sm"
+                  className="gap-1.5 flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                  disabled={!whatsapp || saving}
+                  onClick={handleWhatsApp}
+                >
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  וואטסאפ
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5 flex-1"
+                  disabled={!customer.phone}
+                  asChild={Boolean(customer.phone)}
+                >
+                  {customer.phone
+                    ? <a href={`tel:${customer.phone}`}><PhoneCall className="w-3.5 h-3.5" /> חיוג</a>
+                    : <span><PhoneCall className="w-3.5 h-3.5" /> חיוג</span>}
+                </Button>
+              </div>
+              {!whatsapp && (
+                <p className="text-[10px] text-muted-foreground">
+                  אין מספר טלפון תקין ללקוח הזה, אז אי אפשר לשלוח לו וואטסאפ
+                </p>
               )}
             </CardContent>
           </Card>
@@ -377,29 +536,114 @@ const CustomerDetailPanel = ({
             )}
           </section>
 
-          <section className="space-y-2">
+          <section className="space-y-3">
             <h4 className="text-xs font-semibold flex items-center gap-1.5">
-              <Package className="w-3.5 h-3.5" /> הזמנות
+              <StickyNote className="w-3.5 h-3.5" /> פעילות
             </h4>
-            {orders.length === 0 ? (
-              <p className="text-xs text-muted-foreground">אין הזמנות</p>
+
+            <Card className="border-border/40">
+              <CardContent className="p-3 space-y-2">
+                <Select value={noteKind} onValueChange={(value) => setNoteKind(value as MipoCustomerNoteKind)}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {NOTE_KINDS.map((kind) => (
+                      <SelectItem key={kind.value} value={kind.value} className="text-xs">
+                        {kind.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Textarea
+                  value={noteBody}
+                  onChange={(event) => setNoteBody(event.target.value)}
+                  placeholder="מה נאמר בשיחה?"
+                  rows={3}
+                  maxLength={5000}
+                  className="text-xs resize-none"
+                />
+                <Button
+                  size="sm"
+                  className="w-full gap-1.5"
+                  disabled={saving || !noteBody.trim()}
+                  onClick={handleSubmitNote}
+                >
+                  {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  שמירה
+                </Button>
+              </CardContent>
+            </Card>
+
+            {timeline.length === 0 ? (
+              <p className="text-xs text-muted-foreground">עוד לא נרשמה פעילות</p>
             ) : (
-              orders.map((order) => (
-                <div key={order.id} className="border rounded-lg px-3 py-2 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold">{order.order_number}</span>
-                    <span className="text-xs font-semibold">{formatCurrency(order.total)}</span>
+              timeline.map((entry) => {
+                if (entry.note) {
+                  const kind = NOTE_KIND_BY_VALUE.get(entry.note.kind);
+                  const KindIcon = kind?.icon || StickyNote;
+                  return (
+                    <div key={entry.note.id} className="border rounded-lg px-3 py-2 space-y-1 group">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-semibold flex items-center gap-1.5">
+                          <KindIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                          {kind?.label || entry.note.kind}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] text-muted-foreground">
+                            {formatDateTime(entry.note.created_at)}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                            onClick={() => setPendingDelete(entry.note)}
+                            aria-label="מחיקת רישום"
+                          >
+                            <Trash2 className="w-3 h-3 text-destructive" />
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-xs whitespace-pre-wrap">{entry.note.body}</p>
+                      {entry.note.author_name && (
+                        <p className="text-[10px] text-muted-foreground">{entry.note.author_name}</p>
+                      )}
+                    </div>
+                  );
+                }
+
+                const order = entry.order!;
+                return (
+                  <div key={order.id} className="border rounded-lg px-3 py-2 space-y-1 bg-muted/20">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold flex items-center gap-1.5">
+                        <Package className="w-3.5 h-3.5 text-muted-foreground" />
+                        {order.order_number}
+                      </span>
+                      <span className="text-xs font-semibold">{formatCurrency(order.total)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                      <span>{formatDate(order.order_date)}</span>
+                      <span>{ORDER_STATUS_LABELS[order.status] || order.status}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                    <span>{formatDate(order.order_date)}</span>
-                    <span>{ORDER_STATUS_LABELS[order.status] || order.status}</span>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </section>
         </div>
       </ScrollArea>
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(open) => { if (!open) setPendingDelete(null); }}
+        title="למחוק את הרישום?"
+        description="הרישום יימחק לצמיתות ולא יופיע יותר בכרטיס הלקוח."
+        confirmLabel="מחיקה"
+        variant="destructive"
+        loading={deleting}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 };
