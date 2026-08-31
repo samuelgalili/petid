@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { KeyRound, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,11 +11,20 @@ import { useAwsAdminAuth } from "@/hooks/useAwsAdminAuth";
 const AdminChangePassword = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { updatePassword } = useAwsAdminAuth();
+  const { admin, loading: adminLoading, updatePassword } = useAwsAdminAuth();
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Nothing links here voluntarily: the screen exists for the forced change
+  // after provisioning. An admin who no longer owes one has already done it,
+  // so asking again would revoke the session they just earned.
+  useEffect(() => {
+    if (!adminLoading && admin && !admin.must_change_password) {
+      navigate("/admin/products", { replace: true });
+    }
+  }, [admin, adminLoading, navigate]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
