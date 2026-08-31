@@ -12,6 +12,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
+import { SHIPPING_ESTIMATE_HE } from "@/lib/shipping";
 
 interface ProductInfoDrawerProps {
   product: {
@@ -292,7 +293,7 @@ export const ProductInfoDrawer = ({ product, petName, onClose, onAddToCart, onAd
               <Truck className="w-4 h-4 text-muted-foreground" />
               <div>
                 <span className="text-sm font-semibold text-foreground">משלוח</span>
-                <p className="text-xs text-muted-foreground">2-5 ימי עסקים</p>
+                <p className="text-xs text-muted-foreground">{SHIPPING_ESTIMATE_HE}</p>
               </div>
             </motion.div>
           </div>
