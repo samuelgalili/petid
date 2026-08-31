@@ -629,7 +629,13 @@ export async function getCurrentAdmin(): Promise<MipoAdmin | null> {
     throw new Error(body?.error || `API request failed with ${response.status}`);
   }
 
-  return (body?.admin || null) as MipoAdmin | null;
+  const admin = (body?.admin || null) as MipoAdmin | null;
+  // The hint was only ever written at login and cleared on the way out, so a
+  // live admin session with no hint stayed invisible to the app shell -- which
+  // is what happens after a forced password change, or in a browser whose
+  // storage was cleared. Writing it here keeps the hint tracking the session.
+  setStorageHint(adminSessionHintKey, Boolean(admin));
+  return admin;
 }
 
 export async function getCurrentUser(): Promise<MipoAuthResult | null> {

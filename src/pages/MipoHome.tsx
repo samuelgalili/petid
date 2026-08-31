@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Bot, ChevronLeft, FileHeart, HeartPulse, Plus, ShoppingBag, UserRound } from "lucide-react";
+import { Bell, Bot, ChevronLeft, FileHeart, HeartPulse, Plus, Shield, ShoppingBag, UserRound } from "lucide-react";
 
 import defaultPetAvatar from "@/assets/default-pet-avatar.png";
 import { PetidLogo } from "@/components/PetidLogo";
@@ -8,6 +8,7 @@ import PetOrbit, { type OrbitSlot } from "@/components/home/PetOrbit";
 import MoodSheet from "@/components/home/MoodSheet";
 import PetCharacterStudio from "@/components/home/PetCharacterStudio";
 import { useHomeAttention } from "@/hooks/useHomeAttention";
+import { useUserRole } from "@/hooks/useUserRole";
 import { usePetCharacter } from "@/hooks/usePetCharacter";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import type { MipoPetCharacterExpression } from "@/lib/mipoApi";
@@ -26,6 +27,7 @@ const MipoHome = () => {
   const [characterStudioOpen, setCharacterStudioOpen] = useState(false);
   const [reactionOverride, setReactionOverride] = useState<MipoPetCharacterExpression | null>(null);
   const attention = useHomeAttention(activePet);
+  const { isAdmin } = useUserRole();
   const petCharacter = usePetCharacter(activePet?.id);
   const previousCharacterStatus = useRef(petCharacter.character?.status);
   const reactionTimer = useRef<number | null>(null);
@@ -112,13 +114,28 @@ const MipoHome = () => {
     <main className="mipo-screen min-h-screen" dir="rtl">
       <div className="mipo-shell flex min-h-screen flex-col overflow-hidden pb-[calc(84px+env(safe-area-inset-bottom))]">
         <header className="sticky top-0 z-sticky flex items-center justify-between border-b border-mipo-line/60 bg-mipo-surface/85 px-5 py-3 backdrop-blur-xl">
-          <button className="mipo-icon-button" onClick={() => navigate("/profile")} aria-label="פרופיל משתמש">
-            <UserRound className="h-5 w-5" strokeWidth={1.7} />
-          </button>
+          {/* Both sides flex so the logo stays centred when the admin button
+              makes one side wider than the other. */}
+          <div className="flex flex-1 items-center justify-start gap-1">
+            <button className="mipo-icon-button" onClick={() => navigate("/profile")} aria-label="פרופיל משתמש">
+              <UserRound className="h-5 w-5" strokeWidth={1.7} />
+            </button>
+          </div>
           <PetidLogo variant="horizontal" size="sm" showAnimals={false} />
-          <button className="mipo-icon-button" onClick={() => navigate("/notifications")} aria-label="התראות">
-            <Bell className="h-5 w-5" strokeWidth={1.7} />
-          </button>
+          <div className="flex flex-1 items-center justify-end gap-1">
+            {/* Only for someone the app already knows holds an admin session.
+                It points at /admin rather than /admin/login, so a live session
+                lands straight in the panel and only an expired one is asked
+                for a password. */}
+            {isAdmin && (
+              <button className="mipo-icon-button" onClick={() => navigate("/admin")} aria-label="פאנל ניהול">
+                <Shield className="h-5 w-5" strokeWidth={1.7} />
+              </button>
+            )}
+            <button className="mipo-icon-button" onClick={() => navigate("/notifications")} aria-label="התראות">
+              <Bell className="h-5 w-5" strokeWidth={1.7} />
+            </button>
+          </div>
         </header>
 
         <section className="px-5 pb-4 pt-7 text-center">
