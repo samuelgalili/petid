@@ -1,0 +1,99 @@
+name: Database integration
+
+# An ephemeral environment, created and destroyed on every push. This is the
+# free equivalent of the schema-verification half of a staging server: it proves
+# the migrations apply and that the API still answers against the schema they
+# produce.
+#
+# It exists for one failure mode in particular. Unit tests never touch the
+# database, so a migration that drops or moves a column looks fine until a real
+# request runs a query that still selects it. That is exactly what 0019 does,
+# and exactly what this job catches.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-integration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  migrations:
+    name: Migrations and API smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: mipo
+          POSTGRES_PASSWORD: mipo
+          POSTGRES_DB: mipo_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mipo -d mipo_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgres://mipo:mipo@127.0.0.1:5432/mipo_ci
+      DB_SSL: "false"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19.0"
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install server dependencies
+        run: npm ci --prefix server
+
+      # Uses the real runner, so the migration ledger and its checksum
+      # verification are exercised too — not just the SQL.
+      - name: Apply migrations
+        run: node server/src/applyMigrations.js
+
+      # The ledger must treat a second run as a no-op. A migration that is not
+      # safely re-runnable will fail here rather than during a retried deploy.
+      - name: Re-apply migrations (idempotency)
+        run: |
+          set -euo pipefail
+          output="$(node server/src/applyMigrations.js)"
+          echo "$output"
+          if ! grep -q 'applied_migrations=0' <<<"$output"; then
+            echo "::error::A second migration run was not a no-op" >&2
+            exit 1
+          fi
+
+      - name: Verify no migration was skipped
+        run: |
+          set -euo pipefail
+          on_disk="$(ls server/sql/[0-9]*.sql | wc -l | tr -d ' ')"
+          recorded="$(psql "$DATABASE_URL" -tAc 'select count(*) from public.schema_migrations')"
+          echo "on disk: $on_disk    recorded: $recorded"
+          if [ "$on_disk" != "$recorded" ]; then
+            echo "::error::$on_disk migration files but $recorded ledger entries" >&2
+            exit 1
+          fi
+
+      # The part unit tests cannot do: run real requests against the real
+      # schema and prove nothing selects a column that is no longer there.
+      - name: API smoke test against the live schema
+        run: node server/scripts/db-smoke.mjs
+
+      - name: Server unit tests
+        run: npm test --prefix server
