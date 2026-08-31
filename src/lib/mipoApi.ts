@@ -212,6 +212,51 @@ export interface MipoOrder {
   order_items: MipoOrderItem[];
 }
 
+/**
+ * One row per human, whether they hold an account or only ever checked out as
+ * a guest. Comes from the customer_identities view plus order and pet counts.
+ */
+export interface MipoCustomer {
+  identity_id: string;
+  identity_kind: "account" | "guest";
+  user_id: string | null;
+  shop_customer_id: string | null;
+  email: string | null;
+  full_name: string | null;
+  phone: string | null;
+  is_active: boolean | null;
+  created_at: string | null;
+  last_login_at: string | null;
+  first_order_at: string | null;
+  last_order_at: string | null;
+  last_activity_at: string | null;
+  orders_count: number;
+  paid_orders_count: number;
+  total_spent: number;
+  pets_count: number;
+}
+
+export type MipoCustomerNoteKind = "note" | "call" | "whatsapp" | "email" | "meeting";
+
+export interface MipoCustomerNote {
+  id: string;
+  user_id: string | null;
+  shop_customer_id: string | null;
+  admin_user_id: string | null;
+  author_name: string | null;
+  kind: MipoCustomerNoteKind;
+  body: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MipoCustomerDetail {
+  customer: MipoCustomer;
+  orders: MipoOrder[];
+  pets: MipoPet[];
+  notes: MipoCustomerNote[];
+}
+
 export interface CreateMipoOrderInput {
   items: Array<{
     id?: string;
@@ -1283,6 +1328,41 @@ export async function updateAdminOrder(
     body: JSON.stringify(updates),
   });
   return result.order;
+}
+
+export async function getAdminCustomers(
+  input: { limit?: number; search?: string; kind?: "account" | "guest" } = {},
+): Promise<MipoCustomer[]> {
+  const params = new URLSearchParams();
+  if (input.limit) params.set("limit", String(input.limit));
+  if (input.search?.trim()) params.set("search", input.search.trim());
+  if (input.kind) params.set("kind", input.kind);
+  const query = params.toString();
+  const result = await adminApiFetch<{ customers: MipoCustomer[] }>(`/admin/customers${query ? `?${query}` : ""}`);
+  return result.customers;
+}
+
+export async function getAdminCustomer(identityId: string): Promise<MipoCustomerDetail> {
+  return adminApiFetch<MipoCustomerDetail>(`/admin/customers/${encodeURIComponent(identityId)}`);
+}
+
+export async function createAdminCustomerNote(
+  identityId: string,
+  input: { kind: MipoCustomerNoteKind; body: string },
+): Promise<MipoCustomerNote> {
+  const result = await adminApiFetch<{ note: MipoCustomerNote }>(
+    `/admin/customers/${encodeURIComponent(identityId)}/notes`,
+    { method: "POST", body: JSON.stringify(input) },
+  );
+  return result.note;
+}
+
+export async function deleteAdminCustomerNote(identityId: string, noteId: string): Promise<boolean> {
+  const result = await adminApiFetch<{ deleted: boolean }>(
+    `/admin/customers/${encodeURIComponent(identityId)}/notes/${encodeURIComponent(noteId)}`,
+    { method: "DELETE" },
+  );
+  return result.deleted;
 }
 
 export async function bulkUpdateAdminOrders(ids: string[], updates: Partial<Pick<MipoOrder, "status">>) {

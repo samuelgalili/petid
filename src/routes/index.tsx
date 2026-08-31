@@ -202,6 +202,7 @@ const AdminLogin = lazy(() => import("@/pages/admin/AdminLogin"));
 const AdminChangePassword = lazy(() => import("@/pages/admin/AdminChangePassword"));
 const AdminAnalytics = lazy(() => import("@/pages/admin/AdminAnalytics"));
 const AdminOrders = lazy(() => import("@/pages/admin/AdminOrders"));
+const AdminCustomers = lazy(() => import("@/pages/admin/AdminCustomers"));
 const AdminProducts = lazy(() => import("@/pages/admin/AdminProducts"));
 const AdminCoupons = lazy(() => import("@/pages/admin/AdminCoupons"));
 const AdminSettings = lazy(() => import("@/pages/admin/AdminSettings"));
@@ -302,6 +303,11 @@ const legacyAdminRedirects = legacyAdminPaths.map((path) => {
     return { path, element: <Navigate to="/admin/quick-import" replace /> };
   }
 
+  // The two old paths that were about people now have a real screen to land on.
+  if (path === "/admin/crm" || path === "/admin/users") {
+    return { path, element: <Navigate to="/admin/customers" replace /> };
+  }
+
   return { path, element: <Navigate to="/admin/analytics" replace /> };
 });
 
@@ -311,6 +317,7 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin", element: <Navigate to="/admin/products" replace /> },
   { path: "/admin/analytics", element: <AdminPage component={AdminAnalytics} pageName="אנליטיקס" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
   { path: "/admin/orders", element: <AdminPage component={AdminOrders} pageName="הזמנות" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
+  { path: "/admin/customers", element: <AdminPage component={AdminCustomers} pageName="לקוחות" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
   { path: "/admin/products", element: <AdminPage component={AdminProducts} pageName="מוצרים" permission={ADMIN_PERMISSIONS.PRODUCTS_READ} /> },
   { path: "/admin/coupons", element: <AdminPage component={AdminCoupons} pageName="קופונים" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
   { path: "/admin/settings", element: <AdminPage component={AdminSettings} pageName="הגדרות" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
