@@ -223,6 +223,7 @@ const AdminProducts = () => {
         image_url: product.image_url || "/placeholder.svg",
         images: product.images || null,
         category: product.category,
+        category_id: product.category_id || null,
         in_stock: product.in_stock,
         is_featured: product.is_featured,
         sku: product.sku || null,
