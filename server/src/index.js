@@ -3656,9 +3656,14 @@ const mapScrapedProduct = (row) => ({
 });
 
 const listProducts = async () => {
+  // The id is the tiebreaker, and it is what makes this list hold still.
+  // A bulk import gives every row the same created_at to the microsecond, and
+  // an ORDER BY with ties leaves the rest to the executor -- which reorders
+  // after an UPDATE, because the new row version is written at the end of the
+  // heap. That is why an edited product appeared to jump somewhere random.
   const [businessProducts, scrapedProducts] = await Promise.all([
-    pool.query("select * from public.business_products order by created_at desc"),
-    pool.query("select * from public.scraped_products order by scraped_at desc nulls last, created_at desc"),
+    pool.query("select * from public.business_products order by created_at desc, id"),
+    pool.query("select * from public.scraped_products order by scraped_at desc nulls last, created_at desc, id"),
   ]);
 
   return [
