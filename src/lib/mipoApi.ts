@@ -1297,6 +1297,123 @@ export async function getShopProducts(): Promise<MipoProduct[]> {
   return result.products;
 }
 
+export interface MipoEconomicsOverview {
+  window: { from: string; to: string };
+  total_users: number;
+  active_ai_users: number;
+  total_input_tokens: number;
+  total_output_tokens: number;
+  total_cached_tokens: number;
+  total_tokens: number;
+  total_mipo_credits_consumed: number;
+  total_ai_cost: number;
+  total_external_cost: number;
+  total_variable_cost: number;
+  currency: string;
+  average_cost_per_user: number;
+  average_cost_per_active_user: number;
+  requests_succeeded: number;
+  requests_failed: number;
+  average_latency_ms: number;
+}
+
+export interface MipoEconomicsGroup {
+  id: string;
+  label: string;
+  total_tokens: number;
+  mipo_credits: number;
+  events: number;
+  provider_cost: number;
+  cost_share_percent: number;
+}
+
+export interface MipoEconomicsProvider {
+  id: string;
+  slug: string;
+  label: string;
+  is_enabled: boolean;
+  total_tokens: number;
+  mipo_credits: number;
+  provider_cost: number;
+  requests: number;
+  succeeded: number;
+  fallbacks: number;
+  avg_latency_ms: number;
+  success_rate: number | null;
+  average_cost_per_request: number;
+}
+
+export interface MipoEconomicsUser {
+  user_id: string;
+  email: string | null;
+  full_name: string | null;
+  total_tokens: number;
+  mipo_credits: number;
+  events: number;
+  ai_cost: number;
+  external_cost: number;
+  total_cost: number;
+}
+
+export interface MipoEconomicsTimelinePoint {
+  bucket: string;
+  total_tokens: number;
+  mipo_credits: number;
+  events: number;
+  active_users: number;
+  provider_cost: number;
+}
+
+/** What a user may see about their own consumption. Never carries cost. */
+export interface MipoUserUsage {
+  period: { from: string; to: string };
+  total_tokens: number;
+  credits_consumed: number;
+  events: number;
+  by_feature: Array<{ slug: string; name: string; events: number; credits_consumed: number }>;
+}
+
+const economicsQuery = (days: number) => `?days=${encodeURIComponent(String(days))}`;
+
+export async function getEconomicsOverview(days = 30): Promise<MipoEconomicsOverview> {
+  const result = await adminApiFetch<{ overview: MipoEconomicsOverview }>(`/admin/economics/overview${economicsQuery(days)}`);
+  return result.overview;
+}
+
+export async function getEconomicsByFeature(days = 30): Promise<MipoEconomicsGroup[]> {
+  const result = await adminApiFetch<{ features: MipoEconomicsGroup[] }>(`/admin/economics/features${economicsQuery(days)}`);
+  return result.features;
+}
+
+export async function getEconomicsByModel(days = 30): Promise<MipoEconomicsGroup[]> {
+  const result = await adminApiFetch<{ models: MipoEconomicsGroup[] }>(`/admin/economics/models${economicsQuery(days)}`);
+  return result.models;
+}
+
+export async function getEconomicsByProvider(days = 30): Promise<MipoEconomicsProvider[]> {
+  const result = await adminApiFetch<{ providers: MipoEconomicsProvider[] }>(`/admin/economics/providers${economicsQuery(days)}`);
+  return result.providers;
+}
+
+export async function getEconomicsTopUsers(days = 30, limit = 10): Promise<MipoEconomicsUser[]> {
+  const result = await adminApiFetch<{ users: MipoEconomicsUser[] }>(
+    `/admin/economics/users${economicsQuery(days)}&limit=${encodeURIComponent(String(limit))}`,
+  );
+  return result.users;
+}
+
+export async function getEconomicsTimeline(days = 30, bucket = "day"): Promise<MipoEconomicsTimelinePoint[]> {
+  const result = await adminApiFetch<{ timeline: MipoEconomicsTimelinePoint[] }>(
+    `/admin/economics/timeline${economicsQuery(days)}&bucket=${encodeURIComponent(bucket)}`,
+  );
+  return result.timeline;
+}
+
+export async function getMyUsage(days = 30): Promise<MipoUserUsage> {
+  const result = await apiFetch<{ usage: MipoUserUsage }>(`/me/usage${economicsQuery(days)}`);
+  return result.usage;
+}
+
 export async function getBreedInfo(petType: "dog" | "cat"): Promise<MipoBreedInfo[]> {
   const result = await apiFetch<{ breeds: MipoBreedInfo[] }>(`/breeds?pet_type=${encodeURIComponent(petType)}`);
   return result.breeds;

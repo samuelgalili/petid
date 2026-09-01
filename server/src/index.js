@@ -11,6 +11,7 @@ import {
   scrapeProduct,
   scanProductList,
   searchProductImage,
+  setProductIntelAiGateway,
   smartScrapeProduct,
 } from "./productIntel.js";
 import { fallbackBreeds } from "./referenceData.js";
@@ -29,6 +30,19 @@ import {
   verifyOpaqueToken,
 } from "./security.js";
 import { checkDatabaseHealth } from "./health.js";
+import { createProviderRegistry } from "./aiProviders.js";
+import { createAiGateway, newRequestId, newTraceId } from "./aiGateway.js";
+import {
+  getCostByFeature,
+  getCostByModel,
+  getCostByProvider,
+  getEconomicsOverview,
+  getEconomicsTimeline,
+  getTopCostUsers,
+  getTrace,
+  getUserUsageSummary,
+  resolveWindow,
+} from "./aiEconomics.js";
 import { hashPassword, verifyPassword } from "./passwords.js";
 import {
   ADMIN_PERMISSIONS,
@@ -152,6 +166,12 @@ const pool = new Pool({
   max: Number(process.env.DB_POOL_MAX || 8),
   connectionTimeoutMillis: Number(process.env.DB_CONNECTION_TIMEOUT_MS || 5000),
 });
+
+// Every AI call in the API goes through this gateway. Features never hold a
+// provider key or talk to a provider directly.
+const aiProviderRegistry = createProviderRegistry({ geminiApiKey, geminiModel });
+const aiGateway = createAiGateway({ pool, registry: aiProviderRegistry });
+setProductIntelAiGateway(aiGateway);
 
 const jsonHeaders = {
   "content-type": "application/json; charset=utf-8",
@@ -1950,6 +1970,20 @@ const processPetCharacterCandidates = async (characterId) => {
       newFiles.push({ ...stored, assetKey: candidate.key, assetType: "candidate" });
     }
 
+    // Image generation runs on the Google SDK with its own Vertex credential
+    // resolution, so it is metered rather than routed - it still belongs in one
+    // ledger. Priced per image, not per token.
+    await aiGateway.recordExternalUsage({
+      feature: "pet_character",
+      category: "image",
+      modelSlug: petCharacterImageModel,
+      quantity: generated.candidates.length,
+      unit: "image",
+      userId: character.user_id,
+      petId: character.pet_id,
+      metadata: { stage: "candidates" },
+    }).catch((error) => console.error("pet_character_usage_not_recorded", { message: error.message }));
+
     const client = await pool.connect();
     try {
       await client.query("begin");
@@ -2037,6 +2071,17 @@ const processPetCharacterExpressions = async (characterId) => {
       const stored = await storePetCharacterImage(expression);
       newFiles.push({ ...stored, assetKey: expression.key, assetType: "expression" });
     }
+
+    await aiGateway.recordExternalUsage({
+      feature: "pet_character",
+      category: "image",
+      modelSlug: petCharacterImageModel,
+      quantity: generated.length,
+      unit: "image",
+      userId: character.user_id,
+      petId: character.pet_id,
+      metadata: { stage: "expression_pack" },
+    }).catch((error) => console.error("pet_character_usage_not_recorded", { message: error.message }));
 
     const client = await pool.connect();
     try {
@@ -2779,40 +2824,32 @@ const parseGeminiJson = (text) => {
   }
 };
 
-const callGeminiPetJson = async (parts, { temperature = 0.25 } = {}) => {
-  if (!geminiApiKey) {
-    const error = new Error("GEMINI_API_KEY is not configured");
-    error.statusCode = 503;
-    throw error;
-  }
+// Routed through the gateway: the model is chosen by capability, and the call
+// is metered into the usage and cost ledgers.
+const callGeminiPetJson = async (parts, {
+  temperature = 0.25,
+  feature = "ai_chat",
+  capability = "reasoning",
+  userId = null,
+  petId = null,
+  requestId,
+  traceId,
+} = {}) => {
+  const result = await aiGateway.runAiRequest({
+    feature,
+    capability,
+    parts,
+    temperature,
+    timeoutMs: 65000,
+    userId,
+    petId,
+    ...(requestId ? { requestId } : {}),
+    ...(traceId ? { traceId } : {}),
+  });
 
-  const response = await fetchWithTimeout(
-    `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiApiKey}`,
-    {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts }],
-        generationConfig: {
-          temperature,
-          responseMimeType: "application/json",
-        },
-      }),
-    },
-    65000,
-  );
-
-  if (!response.ok) {
-    const error = new Error(`Gemini request failed (${response.status})`);
-    error.statusCode = 502;
-    throw error;
-  }
-
-  const data = await response.json();
-  const text = data.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("") || "";
-  const parsed = parseGeminiJson(text);
+  const parsed = result.json ?? parseGeminiJson(result.text);
   if (!parsed) {
-    const error = new Error("Gemini returned an empty response");
+    const error = new Error("The AI provider returned an empty response");
     error.statusCode = 502;
     throw error;
   }
@@ -3146,10 +3183,16 @@ const createAiChatReply = async (auth, body) => {
     attachmentReferences,
   });
 
-  const result = await callGeminiPetJson([
-    { text: prompt },
-    ...attachmentParts,
-  ]);
+  const result = await callGeminiPetJson(
+    [{ text: prompt }, ...attachmentParts],
+    {
+      // Attachments mean the model has to read an image or a document.
+      feature: attachmentReferences.length > 0 ? "document_analysis" : "ai_chat",
+      capability: attachmentReferences.length > 0 ? "vision" : "reasoning",
+      userId: auth.user.id,
+      petId: selectedPet?.id || null,
+    },
+  );
 
   const content = safeText(result.content || result.message, 12000);
   if (!content) {
@@ -6041,6 +6084,20 @@ const handleRequest = async (request, response) => {
       return;
     }
 
+    // What a user may see about their own consumption: credits and tokens.
+    // Provider, model and cost are never selected by this query.
+    if (request.method === "GET" && url.pathname === "/api/me/usage") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      const usageWindow = resolveWindow({
+        from: url.searchParams.get("from"),
+        to: url.searchParams.get("to"),
+        days: url.searchParams.get("days") || 30,
+      });
+      sendJson(response, 200, { usage: await getUserUsageSummary(pool, auth.user.id, usageWindow) });
+      return;
+    }
+
     if (request.method === "GET" && url.pathname === "/api/me/export") {
       const auth = await requireUser(request, response);
       if (!auth) return;
@@ -6511,6 +6568,61 @@ const handleRequest = async (request, response) => {
         return;
       }
       sendJson(response, 200, { activity });
+      return;
+    }
+
+    // --- AI economics (admin) -------------------------------------------
+    // Read-only aggregation over the usage and cost ledgers.
+    const economicsWindow = () => resolveWindow({
+      from: url.searchParams.get("from"),
+      to: url.searchParams.get("to"),
+      days: url.searchParams.get("days"),
+    });
+
+    if (request.method === "GET" && url.pathname === "/api/admin/economics/overview") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      sendJson(response, 200, { overview: await getEconomicsOverview(pool, economicsWindow()) });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/economics/providers") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      sendJson(response, 200, { providers: await getCostByProvider(pool, economicsWindow()) });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/economics/models") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      sendJson(response, 200, { models: await getCostByModel(pool, economicsWindow()) });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/economics/features") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      sendJson(response, 200, { features: await getCostByFeature(pool, economicsWindow()) });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/economics/users") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      sendJson(response, 200, {
+        users: await getTopCostUsers(pool, economicsWindow(), url.searchParams.get("limit")),
+      });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/economics/timeline") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      sendJson(response, 200, {
+        timeline: await getEconomicsTimeline(pool, economicsWindow(), url.searchParams.get("bucket")),
+      });
+      return;
+    }
+
+    const economicsTraceMatch = url.pathname.match(/^\/api\/admin\/economics\/traces\/([A-Za-z0-9_-]{1,128})$/);
+    if (economicsTraceMatch && request.method === "GET") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      sendJson(response, 200, { trace: await getTrace(pool, economicsTraceMatch[1]) });
       return;
     }
 
