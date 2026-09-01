@@ -4,6 +4,7 @@ import { Bell, Bot, ChevronLeft, FileHeart, HeartPulse, Plus, ShoppingBag, UserR
 
 import defaultPetAvatar from "@/assets/default-pet-avatar.png";
 import { PetidLogo } from "@/components/PetidLogo";
+import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import PetOrbit, { type OrbitSlot } from "@/components/home/PetOrbit";
 import MoodSheet from "@/components/home/MoodSheet";
 import PetCharacterStudio from "@/components/home/PetCharacterStudio";
@@ -120,6 +121,8 @@ const MipoHome = () => {
             <Bell className="h-5 w-5" strokeWidth={1.7} />
           </button>
         </header>
+
+        <EmailVerificationBanner className="mx-5 mt-3" />
 
         <section className="px-5 pb-4 pt-7 text-center">
           <p className="text-sm font-medium text-mipo-muted">{firstName}</p>

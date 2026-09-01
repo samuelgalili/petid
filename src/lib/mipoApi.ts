@@ -263,6 +263,9 @@ export interface MipoUser {
   full_name: string | null;
   phone?: string | null;
   birthdate?: string | null;
+  /** Whether this browser's account has proven it holds its email address. */
+  email_verified?: boolean;
+  email_verified_at?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
   last_login_at?: string | null;
@@ -353,6 +356,7 @@ export interface MipoPet {
 export interface MipoAuthResult {
   user: MipoUser;
   profile: MipoProfile | null;
+  email_verification?: { sent: boolean; reason: string };
 }
 
 export interface MipoNotification {
@@ -654,6 +658,21 @@ export async function getCurrentUser(): Promise<MipoAuthResult | null> {
     user: body.user as MipoUser,
     profile: (body.profile || null) as MipoProfile | null,
   };
+}
+
+export async function requestEmailVerification(): Promise<{ ok: boolean; sent: boolean; reason: string }> {
+  return apiFetch("/auth/email-verification/request", { method: "POST", body: "{}" });
+}
+
+/** Open on purpose: the link is followed wherever the mail is read. */
+export async function confirmEmailVerification(
+  email: string,
+  otp: string,
+): Promise<{ verified: boolean; already_verified: boolean }> {
+  return apiFetch("/auth/email-verification/confirm", {
+    method: "POST",
+    body: JSON.stringify({ email, otp }),
+  });
 }
 
 export async function loginUser(email: string, password: string, rememberMe = false): Promise<MipoAuthResult> {

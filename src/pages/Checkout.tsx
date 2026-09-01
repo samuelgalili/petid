@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
 import { AppHeader } from "@/components/AppHeader";
 import { CHECKOUT } from "@/lib/brandVoice";
-import { createShopOrder, createShopPaymentSession, MipoCoupon, validateCouponCode } from "@/lib/mipoApi";
+import { createShopOrder, createShopPaymentSession, MipoApiError, MipoCoupon, validateCouponCode } from "@/lib/mipoApi";
 import { rememberOrderAccess } from "@/lib/orderAccess";
 
 const shippingSchema = z.object({
@@ -348,6 +348,18 @@ const Checkout = () => {
       console.error("Error placing order:", error);
       setIsProcessing(false);
       
+      // The one refusal a person can fix themselves right now, so it gets its
+      // own message and a way out instead of "try again".
+      if (error instanceof MipoApiError && error.status === 403) {
+        toast({
+          title: "צריך לאמת את המייל",
+          description: "שלחנו לכם קוד אימות. אחרי האימות אפשר להשלים את ההזמנה.",
+          variant: "destructive",
+        });
+        navigate("/verify-email");
+        return;
+      }
+
       // More specific error messages
       const message = error instanceof Error ? error.message : "";
       let errorMessage = "נכשל בביצוע ההזמנה. נסו שוב.";
