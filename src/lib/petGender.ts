@@ -9,7 +9,12 @@
  * slashed form Hebrew uses when the subject is genuinely unknown.
  */
 
-export type PetGender = "male" | "female" | null | undefined;
+// Deliberately `string`, not a union of the two English values: normalize()
+// accepts what the database and the forms actually hold - "male", "female",
+// "זכר", "נקבה", "m", "f" - and pets.gender is a plain text column. Declaring
+// the narrow union made the type disagree with both the implementation and
+// every caller.
+export type PetGender = string | null | undefined;
 
 const normalize = (gender: PetGender): "male" | "female" | null => {
   const value = String(gender || "").trim().toLowerCase();
