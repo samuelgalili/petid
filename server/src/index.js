@@ -3672,20 +3672,31 @@ const mapScrapedProduct = (row) => ({
   source: "scraped",
 });
 
+// The category join is an enrichment, not a requirement. If the code is
+// deployed before 0025 runs, the catalogue must still serve products - joining
+// a table that does not exist yet would otherwise take the whole shop down.
+// Same fallback convention as listBreeds: 42P01 undefined_table,
+// 42703 undefined_column.
+const isMissingCategorySchema = (error) => error?.code === "42P01" || error?.code === "42703";
+
+const queryProductsWithCategories = async (table, orderBy) => {
+  try {
+    return await pool.query(`
+      select p.*, c.slug as category_slug, c.name_he as category_name
+      from public.${table} p
+      left join public.product_categories c on c.id = p.category_id
+      order by ${orderBy}
+    `);
+  } catch (error) {
+    if (!isMissingCategorySchema(error)) throw error;
+    return pool.query(`select p.* from public.${table} p order by ${orderBy}`);
+  }
+};
+
 const listProducts = async () => {
   const [businessProducts, scrapedProducts] = await Promise.all([
-    pool.query(`
-      select p.*, c.slug as category_slug, c.name_he as category_name
-      from public.business_products p
-      left join public.product_categories c on c.id = p.category_id
-      order by p.created_at desc
-    `),
-    pool.query(`
-      select p.*, c.slug as category_slug, c.name_he as category_name
-      from public.scraped_products p
-      left join public.product_categories c on c.id = p.category_id
-      order by p.scraped_at desc nulls last, p.created_at desc
-    `),
+    queryProductsWithCategories("business_products", "p.created_at desc"),
+    queryProductsWithCategories("scraped_products", "p.scraped_at desc nulls last, p.created_at desc"),
   ]);
 
   return [
@@ -4038,12 +4049,19 @@ const categoryListQuery = `
 `;
 
 const listProductCategories = async ({ includeInactive = false } = {}) => {
-  const result = await pool.query(
-    `${categoryListQuery}
-     ${includeInactive ? "" : "where c.is_active"}
-     order by c.position, c.name_he`,
-  );
-  return result.rows;
+  try {
+    const result = await pool.query(
+      `${categoryListQuery}
+       ${includeInactive ? "" : "where c.is_active"}
+       order by c.position, c.name_he`,
+    );
+    return result.rows;
+  } catch (error) {
+    // Before 0025 runs there is no tree yet. An empty list lets the shop fall
+    // back to its built-in bar instead of rendering an error.
+    if (!isMissingCategorySchema(error)) throw error;
+    return [];
+  }
 };
 
 const getProductCategory = async (id) => {
