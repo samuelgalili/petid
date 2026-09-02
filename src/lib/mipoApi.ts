@@ -10,6 +10,10 @@ export interface MipoProduct {
   image_url: string;
   images?: string[] | null;
   category: string | null;
+  /** Populated once the category tree exists; absent before that migration. */
+  category_id?: string | null;
+  category_slug?: string | null;
+  category_name?: string | null;
   pet_type?: string | null;
   in_stock: boolean | null;
   is_featured?: boolean | null;
@@ -1295,6 +1299,15 @@ export async function bulkUpdateAdminOrders(ids: string[], updates: Partial<Pick
 export async function getShopProducts(): Promise<MipoProduct[]> {
   const result = await apiFetch<{ products: MipoProduct[] }>("/products");
   return result.products;
+}
+
+/**
+ * One product by id. A product page and a shared product link must resolve on
+ * their own rather than by downloading the whole catalogue and searching it.
+ */
+export async function getShopProduct(productId: string): Promise<MipoProduct> {
+  const result = await apiFetch<{ product: MipoProduct }>(`/products/${encodeURIComponent(productId)}`);
+  return result.product;
 }
 
 export async function getBreedInfo(petType: "dog" | "cat"): Promise<MipoBreedInfo[]> {

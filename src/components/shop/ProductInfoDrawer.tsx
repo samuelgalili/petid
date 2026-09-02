@@ -12,6 +12,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
+import { computePetAdjustedScore, safetyLevelFor } from "@/lib/petSafetyScore";
 
 interface ProductInfoDrawerProps {
   product: {
@@ -35,50 +36,6 @@ interface ProductInfoDrawerProps {
   onAddToCarePlan?: () => void;
 }
 
-/**
- * Calculate dynamic SafeScore modifier based on pet age and breed.
- * Puppies/kittens get stricter scoring; certain breeds with known sensitivities get adjustments.
- */
-function computePetAdjustedScore(
-  baseScore: number | null | undefined,
-  birthDate: string | null,
-  breed: string | null,
-  medicalConditions: string[] | null,
-  category?: string
-): number | null {
-  if (baseScore == null) return null;
-
-  let adjusted = baseScore;
-
-  // Age-based modifier: younger animals need stricter safety
-  if (birthDate) {
-    const ageMonths = Math.floor(
-      (Date.now() - new Date(birthDate).getTime()) / (1000 * 60 * 60 * 24 * 30.44)
-    );
-    if (ageMonths < 6) {
-      // Puppy/kitten penalty for non-puppy-specific food
-      adjusted -= 0.8;
-    } else if (ageMonths < 12) {
-      adjusted -= 0.3;
-    } else if (ageMonths > 120) {
-      // Senior pet — stricter on joint/digestive
-      adjusted -= 0.4;
-    }
-  }
-
-  // Medical conditions modifier
-  if (medicalConditions && medicalConditions.length > 0) {
-    const sensitiveConditions = ["allergies", "digestive", "kidney", "urinary", "heart"];
-    const hasSensitive = medicalConditions.some((c) => sensitiveConditions.includes(c));
-    if (hasSensitive && category === "food") {
-      adjusted -= 0.5;
-    }
-  }
-
-  // Clamp between 0 and 10
-  return Math.round(Math.max(0, Math.min(10, adjusted)) * 10) / 10;
-}
-
 export const ProductInfoDrawer = ({ product, petName, onClose, onAddToCart, onAddToCarePlan }: ProductInfoDrawerProps) => {
   const { toast } = useToast();
   const { activePet } = usePetPreference();
@@ -88,14 +45,14 @@ export const ProductInfoDrawer = ({ product, petName, onClose, onAddToCart, onAd
   // Dynamic SafeScore: adjust base score using pet's age, breed, and conditions
   const safetyScore = computePetAdjustedScore(
     product.safetyScore,
-    activePet?.birth_date ?? null,
-    activePet?.breed ?? null,
-    activePet?.medical_conditions ?? null,
-    product.category
+    {
+      birthDate: activePet?.birth_date,
+      breed: activePet?.breed,
+      medicalConditions: activePet?.medical_conditions,
+    },
+    product.category,
   );
-  const safetyLevel = safetyScore != null 
-    ? safetyScore >= 8 ? "safe" : safetyScore >= 5 ? "caution" : "unsafe"
-    : null;
+  const safetyLevel = safetyLevelFor(safetyScore);
 
   const safetyColors = {
     safe: { bg: "bg-[hsla(142,60%,45%,0.1)]", border: "border-[hsla(142,60%,45%,0.2)]", text: "text-[hsl(142,60%,45%)]", icon: ShieldCheck },
