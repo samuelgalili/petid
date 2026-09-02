@@ -29,6 +29,12 @@ import {
   verifyOpaqueToken,
 } from "./security.js";
 import { checkDatabaseHealth } from "./health.js";
+import {
+  fetchImageBuffer,
+  ImagePipelineError,
+  normalizeWithBackgroundRemoval,
+} from "./imagePipeline.js";
+import { createGeminiBackgroundRemover } from "./backgroundRemoval.js";
 import { hashPassword, verifyPassword } from "./passwords.js";
 import {
   ADMIN_PERMISSIONS,
@@ -3425,6 +3431,8 @@ const businessProductFields = {
   image_url: "image_url",
   images: "images",
   category: "category",
+  image_source_url: "image_source_url",
+  image_adopted_at: "image_adopted_at",
   in_stock: "in_stock",
   is_featured: "is_featured",
   sku: "sku",
@@ -3746,9 +3754,115 @@ const ensureDefaultBusinessProfile = async () => {
   return defaultBusinessId;
 };
 
+// Images reach the catalogue four ways - scraping, a spreadsheet, a database
+// import, or somebody pasting a URL they found - and until now all four stored
+// the supplier's own address. That is not our image: it can change, it can be
+// resized, it can 404, and the supplier can see our traffic. Adoption downloads
+// the bytes once, normalizes them onto the shared canvas and stores them here,
+// after which the product points at us.
+//
+// Already-ours URLs pass straight through, so re-saving a product does not
+// re-download and re-encode an image we normalized yesterday.
+// Strips the buying trail from a public product row.
+const withoutSupplierOrigin = (product) => {
+  const { image_source_url: _origin, image_adopted_at: _adoptedAt, ...rest } = product;
+  return rest;
+};
+
+const isAdminRequest = async (request) => {
+  if (adminApiKey && secretsEqual(request.headers["x-admin-api-key"], adminApiKey)) return true;
+  return Boolean(await getAdminFromSession(request));
+};
+
+const isOwnedImageUrl = (value) => {
+  const url = String(value || "").trim();
+  return url.startsWith("/uploads/") || url === "/placeholder.svg" || url.startsWith("data:image/webp");
+};
+
+const backgroundRemovalEnabled = process.env.PRODUCT_IMAGE_REMOVE_BACKGROUND === "true";
+
+// Injected rather than imported so this file never picks a provider. Left null
+// until a remover is wired in; the pipeline then simply skips the stage.
+let productBackgroundRemover = backgroundRemovalEnabled
+  ? createGeminiBackgroundRemover({ apiKey: geminiApiKey })
+  : null;
+
+export const setProductBackgroundRemover = (remover) => {
+  productBackgroundRemover = typeof remover === "function" ? remover : null;
+};
+
+const adoptProductImage = async (imageUrl, { label = "product" } = {}) => {
+  const value = String(imageUrl || "").trim();
+  if (!value || isOwnedImageUrl(value)) return { url: value || null, adopted: false };
+
+  let sourceBuffer;
+  try {
+    sourceBuffer = value.startsWith("data:")
+      ? decodeAndValidateDataUrl(value, { maxBytes: maxUploadBytes, requireImage: true }).buffer
+      : await fetchImageBuffer(value);
+  } catch (error) {
+    // A bad image must not block the product. The row keeps whatever it had and
+    // the admin can see it was never adopted.
+    console.warn("product_image_not_adopted", {
+      label,
+      reason: error instanceof ImagePipelineError ? error.code : "decode_failed",
+    });
+    return { url: value, adopted: false, reason: error?.code || "decode_failed" };
+  }
+
+  try {
+    const normalized = await normalizeWithBackgroundRemoval(sourceBuffer, {
+      remover: backgroundRemovalEnabled ? productBackgroundRemover : null,
+      onWarning: (warning) => console.warn("product_image_warning", { label, ...warning }),
+    });
+
+    const fileName = `${Date.now()}-${randomUUID()}${normalized.extension}`;
+    await mkdir(uploadDir, { recursive: true });
+    await writeFile(path.join(uploadDir, fileName), normalized.buffer, { flag: "wx", mode: 0o644 });
+
+    return {
+      url: `/uploads/${fileName}`,
+      adopted: true,
+      width: normalized.width,
+      height: normalized.height,
+      bytes: normalized.bytes,
+      background_removed: normalized.background_removed,
+      original_url: value.startsWith("data:") ? null : value,
+    };
+  } catch (error) {
+    console.warn("product_image_not_adopted", { label, reason: error?.code || "normalize_failed" });
+    return { url: value, adopted: false, reason: error?.code || "normalize_failed" };
+  }
+};
+
+// Every image on a product, not just the primary one.
+const adoptProductImages = async (body, label) => {
+  const primary = await adoptProductImage(body.image_url, { label });
+  const gallery = Array.isArray(body.images) && body.images.length > 0
+    ? await Promise.all(body.images.map((image) => adoptProductImage(image, { label })))
+    : [];
+
+  return {
+    image_url: primary.url,
+    images: gallery.map((entry) => entry.url).filter(Boolean),
+    adopted: [primary, ...gallery].filter((entry) => entry.adopted).length,
+    // Kept so the catalogue can be rebuilt if our storage is ever lost.
+    image_source_url: primary.original_url || null,
+    image_adopted_at: primary.adopted ? new Date().toISOString() : null,
+  };
+};
+
 const createProduct = async (body) => {
   const payload = normalizeProductPayload(body);
   const businessId = body.business_id || await ensureDefaultBusinessProfile();
+
+  // Scraped, imported from a spreadsheet, or pasted by hand - the bytes become
+  // ours here, before the row is written.
+  const owned = await adoptProductImages(payload, payload.name);
+  payload.image_url = owned.image_url || "/placeholder.svg";
+  payload.images = owned.images;
+  payload.image_source_url = owned.image_source_url;
+  payload.image_adopted_at = owned.image_adopted_at;
 
   const result = await pool.query(
     `
@@ -3758,7 +3872,8 @@ const createProduct = async (body) => {
         flavors, brand, weight_unit, price_per_weight, source_url, ingredients,
         benefits, feeding_guide, product_attributes, life_stage, dog_size, special_diet,
         breed_tags, medical_tags, auto_restock, restock_interval_days, api_sync_enabled,
-        cost_price, supplier_id, safety_score, kcal_per_kg
+        cost_price, supplier_id, safety_score, kcal_per_kg,
+        image_source_url, image_adopted_at
       )
       values (
         $1, $2, $3, $4, $5, $6,
@@ -3766,7 +3881,7 @@ const createProduct = async (body) => {
         $14, $15, $16, $17, $18, $19,
         $20, $21, $22, $23, $24, $25,
         $26, $27, $28, $29, $30,
-        $31, $32, $33, $34
+        $31, $32, $33, $34, $35, $36
       )
       returning *
     `,
@@ -3805,6 +3920,8 @@ const createProduct = async (body) => {
       payload.supplier_id,
       payload.safety_score,
       payload.kcal_per_kg,
+      payload.image_source_url,
+      payload.image_adopted_at,
     ],
   );
 
@@ -3822,6 +3939,18 @@ const fetchProductById = async (id, source) => {
 };
 
 const updateBusinessProduct = async (id, body) => {
+  // An edit can introduce a new supplier URL just as an import can, so the same
+  // rule applies: if it is not already ours, adopt it before it is stored.
+  if (Object.hasOwn(body, "image_url") || Object.hasOwn(body, "images")) {
+    const owned = await adoptProductImages(body, body.name || id);
+    if (Object.hasOwn(body, "image_url")) body.image_url = owned.image_url;
+    if (Object.hasOwn(body, "images")) body.images = owned.images;
+    if (owned.image_source_url) {
+      body.image_source_url = owned.image_source_url;
+      body.image_adopted_at = owned.image_adopted_at;
+    }
+  }
+
   const statement = buildUpdateStatement({
     table: "business_products",
     fields: businessProductFields,
@@ -5642,10 +5771,36 @@ const uploadDataUrlFile = async (body, {
   };
 };
 
-const uploadImage = async (body) => uploadDataUrlFile(body, {
-  maxBytes: maxUploadBytes,
-  requireImage: true,
-});
+// A directly uploaded product image gets exactly the same treatment as an
+// imported one - same canvas, same format, same quality - so the catalogue does
+// not depend on how a given image happened to arrive.
+const uploadImage = async (body) => {
+  const { buffer } = decodeAndValidateDataUrl(body.data_url, {
+    maxBytes: maxUploadBytes,
+    requireImage: true,
+  });
+
+  const normalized = await normalizeWithBackgroundRemoval(buffer, {
+    remover: backgroundRemovalEnabled ? productBackgroundRemover : null,
+    onWarning: (warning) => console.warn("product_image_warning", { label: "upload", ...warning }),
+  });
+
+  const fileName = `${Date.now()}-${randomUUID()}${normalized.extension}`;
+  await mkdir(uploadDir, { recursive: true });
+  await writeFile(path.join(uploadDir, fileName), normalized.buffer, { flag: "wx", mode: 0o644 });
+
+  return {
+    url: `/uploads/${fileName}`,
+    file_name: fileName,
+    storage_key: fileName,
+    extension: normalized.extension,
+    content_type: normalized.content_type,
+    size: normalized.bytes,
+    width: normalized.width,
+    height: normalized.height,
+    background_removed: normalized.background_removed,
+  };
+};
 
 const userMediaContentTypes = new Set([
   "image/jpeg",
@@ -6638,7 +6793,11 @@ const handleRequest = async (request, response) => {
     }
 
     if (request.method === "GET" && url.pathname === "/api/products") {
-      sendJson(response, 200, { products: await listProducts() });
+      const products = await listProducts();
+      // Which supplier an image came from is buying information, not product
+      // information. Admin screens keep it; the shop never sees it.
+      const asAdmin = await isAdminRequest(request);
+      sendJson(response, 200, { products: asAdmin ? products : products.map(withoutSupplierOrigin) });
       return;
     }
 
