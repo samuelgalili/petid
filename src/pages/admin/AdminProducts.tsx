@@ -47,6 +47,7 @@ interface ProductData {
   original_price: number | null;
   image_url: string;
   category: string | null;
+  category_id?: string | null;
   in_stock: boolean | null;
   is_featured: boolean | null;
   business_id: string;
