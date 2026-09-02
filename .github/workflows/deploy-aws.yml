@@ -182,13 +182,18 @@ jobs:
         run: |
           set -euo pipefail
           ssh -i ~/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 "${MIPO_AWS_USER}@${MIPO_AWS_HOST}" \
-            "MIPO_REMOTE_PATH='${MIPO_REMOTE_PATH}' bash -s" <<'REMOTE'
+            "MIPO_REMOTE_PATH='${MIPO_REMOTE_PATH}' MIPO_DEPLOY_SHA='${GITHUB_SHA::12}' bash -s" <<'REMOTE'
           set -euo pipefail
           cd "$MIPO_REMOTE_PATH"
           compose_file="$MIPO_REMOTE_PATH/deploy/aws/docker-compose.yml"
 
           sudo MIPO_REMOTE_PATH="$MIPO_REMOTE_PATH" bash "$MIPO_REMOTE_PATH/deploy/aws/prepare-host.sh"
           docker compose -f "$compose_file" build mipo-api
+
+          # Migrations run automatically on every deploy and some of them are
+          # destructive. Dump first, and stop here if the dump cannot be made.
+          bash "$MIPO_REMOTE_PATH/deploy/aws/backup-before-migrate.sh" "$MIPO_REMOTE_PATH" "deploy-${MIPO_DEPLOY_SHA:-unknown}"
+
           docker compose -f "$compose_file" run --rm --no-deps -T mipo-api node src/applyMigrations.js </dev/null
           docker compose -f "$compose_file" up -d --force-recreate --no-deps --wait --wait-timeout 60 mipo-api
           docker compose -f "$compose_file" up -d --force-recreate --no-deps caddy
