@@ -74,6 +74,7 @@ interface ProductData {
   // Unified field to track source
   source?: 'manual' | 'scraped';
   source_url?: string | null;
+  updated_at?: string | null;
 }
 
 const emptyProduct: Partial<ProductData> = {
