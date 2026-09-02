@@ -369,7 +369,7 @@ const OwnerProfile = () => {
                       live here now, where a person is already looking at the
                       list they want to change. */}
                   <div className="absolute top-1.5 right-1.5 z-10">
-                    <DropdownMenu>
+                    <DropdownMenu dir="rtl">
                       <DropdownMenuTrigger asChild>
                         <button
                           className="p-1.5 rounded-lg hover:bg-background/80 transition-colors"
@@ -378,7 +378,7 @@ const OwnerProfile = () => {
                           <MoreVertical className="w-3.5 h-3.5 text-muted-foreground" strokeWidth={1.5} />
                         </button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" dir="rtl" className="w-48">
+                      <DropdownMenuContent align="start" className="w-48">
                         <DropdownMenuItem onSelect={() => navigate(`/edit-pet/${pet.id}`)}>
                           <Pencil className="w-4 h-4" />
                           עריכת הפרטים

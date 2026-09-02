@@ -392,13 +392,13 @@ const Profile = () => {
                       {/* Editing was the only thing this page could do to a
                           pet. Archiving, and the archive itself, had no way in
                           from anywhere in the app. */}
-                      <DropdownMenu>
+                      <DropdownMenu dir="rtl">
                         <DropdownMenuTrigger asChild>
                           <button className="p-2.5 rounded-xl hover:bg-muted/50 transition-colors" aria-label="עוד פעולות">
                             <MoreVertical className="w-4 h-4 text-muted-foreground/50" strokeWidth={1.5} />
                           </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" dir="rtl" className="w-52">
+                        <DropdownMenuContent align="end" className="w-52">
                           <DropdownMenuItem onSelect={() => navigate(`/edit-pet/${selectedPet.id}`)}>
                             <Edit3 className="w-4 h-4" />
                             עריכת הפרטים
