@@ -4298,15 +4298,40 @@ const resolveCatalogOrderItems = async (client, items) => {
   return resolved;
 };
 
+// The wording the customer ticks to accept an unattended delivery. It is copied
+// onto the order rather than referenced, so changing this text later cannot
+// rewrite what somebody already agreed to.
+const LEAVE_AT_DOOR_TERMS =
+  "אם אין מענה בכתובת, המשלוח יושאר ליד הדלת. מרגע ההשארה האחריות על החבילה היא של הלקוח בלבד.";
+
+const boundedText = (value, max) => String(value ?? "").trim().slice(0, max);
+
 const normalizeShippingAddress = (shippingAddress) => {
   const address = shippingAddress && typeof shippingAddress === "object" ? shippingAddress : {};
+  const entranceType = (address.entranceType || address.entrance_type) === "building"
+    ? "building"
+    : "house";
+  const leaveAtDoor = address.leaveAtDoor === true || address.leave_at_door === true;
+
   const normalized = {
     fullName: String(address.fullName || address.full_name || "").trim(),
     email: normalizeEmail(address.email),
     phone: String(address.phone || "").trim(),
+    phoneSecondary: String(address.phoneSecondary || address.phone_secondary || "").trim(),
+    // Still `address`: every order written so far uses that key in its jsonb and
+    // the admin screens read it.
     address: String(address.address || address.street || "").trim(),
+    building: boundedText(address.building, 20),
+    floor: boundedText(address.floor, 10),
+    apartment: boundedText(address.apartment, 20),
+    lobbyCode: boundedText(address.lobbyCode ?? address.lobby_code, 30),
+    entranceType,
     city: String(address.city || "").trim(),
     zipCode: String(address.zipCode || address.zip_code || address.postal_code || "").trim(),
+    notes: boundedText(address.notes, 500),
+    leaveAtDoor,
+    leaveAtDoorTerms: leaveAtDoor ? LEAVE_AT_DOOR_TERMS : null,
+    leaveAtDoorAt: leaveAtDoor ? new Date().toISOString() : null,
   };
 
   const isValid = normalized.fullName.length >= 2
@@ -4314,11 +4339,19 @@ const normalizeShippingAddress = (shippingAddress) => {
     && normalized.email.length <= 255
     && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized.email)
     && /^[0-9]{9,15}$/.test(normalized.phone)
-    && normalized.address.length >= 5
+    && (normalized.phoneSecondary === "" || /^[0-9]{9,15}$/.test(normalized.phoneSecondary))
+    && normalized.address.length >= 2
     && normalized.address.length <= 200
+    && normalized.building.length >= 1
     && normalized.city.length >= 2
     && normalized.city.length <= 50
-    && /^[0-9]{5,7}$/.test(normalized.zipCode);
+    && /^[0-9]{5,7}$/.test(normalized.zipCode)
+    // A courier who cannot get through the lobby door cannot deliver, so for a
+    // building the code carries as much weight as the street name.
+    && (entranceType === "house" || (normalized.apartment !== "" && normalized.lobbyCode !== ""))
+    // The acknowledgement is worth nothing unless the customer actually made it.
+    && leaveAtDoor === true;
+
   if (!isValid) {
     const error = new Error("Invalid shipping details");
     error.statusCode = 400;
@@ -4326,6 +4359,95 @@ const normalizeShippingAddress = (shippingAddress) => {
   }
 
   return normalized;
+};
+
+// ─── Shipping profile ────────────────────────────────────────────────────────
+// The customer's current address, kept so the next checkout arrives filled in.
+// Deliberately separate from the address on an order: editing this must never
+// change where a past parcel was sent.
+
+const serializeShippingProfile = (row) => (row ? {
+  full_name: row.full_name || null,
+  phone: row.phone || null,
+  phone_secondary: row.phone_secondary || null,
+  city: row.city || null,
+  street: row.street || null,
+  building: row.building || null,
+  floor: row.floor || null,
+  apartment: row.apartment || null,
+  lobby_code: row.lobby_code || null,
+  entrance_type: row.entrance_type || "house",
+  zip_code: row.zip_code || null,
+  notes: row.notes || null,
+  leave_at_door: row.leave_at_door === true,
+  leave_at_door_at: row.leave_at_door_at || null,
+  updated_at: row.updated_at,
+} : null);
+
+const getShippingProfile = async (userId) => {
+  const result = await pool.query(
+    "select * from public.shipping_profiles where user_id = $1 limit 1",
+    [userId],
+  );
+  return serializeShippingProfile(result.rows[0] || null);
+};
+
+// Called after an order is placed as well as from the profile screen, so the
+// address a customer just used is the one waiting for them next time.
+const saveShippingProfile = async (userId, input) => {
+  const body = input && typeof input === "object" ? input : {};
+  const entranceType = (body.entranceType || body.entrance_type) === "building" ? "building" : "house";
+  const leaveAtDoor = body.leaveAtDoor === true || body.leave_at_door === true;
+  const values = [
+    userId,
+    boundedText(body.fullName ?? body.full_name, 100) || null,
+    boundedText(body.phone, 20) || null,
+    boundedText(body.phoneSecondary ?? body.phone_secondary, 20) || null,
+    boundedText(body.city, 50) || null,
+    boundedText(body.address ?? body.street, 200) || null,
+    boundedText(body.building, 20) || null,
+    boundedText(body.floor, 10) || null,
+    boundedText(body.apartment, 20) || null,
+    boundedText(body.lobbyCode ?? body.lobby_code, 30) || null,
+    entranceType,
+    boundedText(body.zipCode ?? body.zip_code, 10) || null,
+    boundedText(body.notes, 500) || null,
+    leaveAtDoor,
+    leaveAtDoor ? LEAVE_AT_DOOR_TERMS : null,
+    leaveAtDoor ? new Date().toISOString() : null,
+  ];
+
+  const result = await pool.query(
+    `
+      insert into public.shipping_profiles (
+        user_id, full_name, phone, phone_secondary, city, street, building,
+        floor, apartment, lobby_code, entrance_type, zip_code, notes,
+        leave_at_door, leave_at_door_terms, leave_at_door_at
+      ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+      on conflict (user_id) do update set
+        full_name = excluded.full_name,
+        phone = excluded.phone,
+        phone_secondary = excluded.phone_secondary,
+        city = excluded.city,
+        street = excluded.street,
+        building = excluded.building,
+        floor = excluded.floor,
+        apartment = excluded.apartment,
+        lobby_code = excluded.lobby_code,
+        entrance_type = excluded.entrance_type,
+        zip_code = excluded.zip_code,
+        notes = excluded.notes,
+        leave_at_door = excluded.leave_at_door,
+        -- Keep the earlier acceptance and its wording when the customer has not
+        -- re-agreed on this save.
+        leave_at_door_terms = coalesce(excluded.leave_at_door_terms, public.shipping_profiles.leave_at_door_terms),
+        leave_at_door_at = coalesce(excluded.leave_at_door_at, public.shipping_profiles.leave_at_door_at),
+        updated_at = now()
+      returning *
+    `,
+    values,
+  );
+  return serializeShippingProfile(result.rows[0]);
 };
 
 const calculateOrderAmounts = async (client, body, orderItems, shippingAddress) => {
@@ -4595,6 +4717,14 @@ const createOrder = async (body, currentUser = null) => {
     }
 
     await client.query("commit");
+
+    // Remember where this went, so the next checkout arrives filled in. After
+    // the commit and swallowing failures on purpose: the order is placed, and
+    // failing to cache an address must not turn that into an error.
+    if (currentUser?.id) {
+      await saveShippingProfile(currentUser.id, shippingAddress).catch(() => {});
+    }
+
     return {
       order: mapOrder(order, itemsResult.rows.map(mapOrderItem)),
       accessToken,
@@ -6031,6 +6161,22 @@ const handleRequest = async (request, response) => {
       const auth = await requireUser(request, response);
       if (!auth) return;
       sendJson(response, 200, await updateMyProfile(auth.user.id, await readBody(request)));
+      return;
+    }
+
+    if (url.pathname === "/api/me/shipping-profile") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      if (request.method === "GET") {
+        sendJson(response, 200, { profile: await getShippingProfile(auth.user.id) });
+        return;
+      }
+      if (request.method === "PUT") {
+        const body = await readBody(request, 16 * 1024);
+        sendJson(response, 200, { profile: await saveShippingProfile(auth.user.id, body) });
+        return;
+      }
+      sendError(response, 405, "Method not allowed");
       return;
     }
 
