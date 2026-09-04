@@ -11,7 +11,8 @@ import { useHomeAttention } from "@/hooks/useHomeAttention";
 import { usePetCharacter } from "@/hooks/usePetCharacter";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import type { MipoPetCharacterExpression } from "@/lib/mipoApi";
-import { consumePetCompanionReaction, PET_COMPANION_REACTION_EVENT } from "@/lib/petCompanionReactions";
+import { MOOD_EXPRESSION, type CharacterMood } from "@/lib/characterBehavior";
+import { usePetCompanionMood } from "@/hooks/usePetCompanionMood";
 
 const MipoHome = () => {
   const navigate = useNavigate();
@@ -24,48 +25,15 @@ const MipoHome = () => {
   }, [moodKey]);
   const [moodOpen, setMoodOpen] = useState(false);
   const [characterStudioOpen, setCharacterStudioOpen] = useState(false);
-  const [reactionOverride, setReactionOverride] = useState<MipoPetCharacterExpression | null>(null);
   const attention = useHomeAttention(activePet);
   const petCharacter = usePetCharacter(activePet?.id);
   const previousCharacterStatus = useRef(petCharacter.character?.status);
-  const reactionTimer = useRef<number | null>(null);
-  const showReaction = useCallback((expression: MipoPetCharacterExpression, duration = 4500) => {
-    if (reactionTimer.current) window.clearTimeout(reactionTimer.current);
-    setReactionOverride(expression);
-    reactionTimer.current = window.setTimeout(() => {
-      setReactionOverride(null);
-      reactionTimer.current = null;
-    }, duration);
-  }, []);
-  useEffect(() => () => {
-    if (reactionTimer.current) window.clearTimeout(reactionTimer.current);
-  }, []);
   const pickMood = (label: string) => {
     const next = mood === label ? null : label;
     setMood(next);
     if (next) localStorage.setItem(moodKey, next);
     else localStorage.removeItem(moodKey);
   };
-  useEffect(() => {
-    const previousStatus = previousCharacterStatus.current;
-    const nextStatus = petCharacter.character?.status;
-    previousCharacterStatus.current = nextStatus;
-    if (previousStatus && previousStatus !== "ready" && nextStatus === "ready") {
-      showReaction("celebrate", 5000);
-    }
-  }, [petCharacter.character?.status, showReaction]);
-
-  useEffect(() => {
-    if (!activePet?.id) return;
-    const stored = consumePetCompanionReaction(activePet.id);
-    if (stored) showReaction(stored);
-    const handleReaction = (event: Event) => {
-      const detail = (event as CustomEvent<{ petId: string; expression: MipoPetCharacterExpression }>).detail;
-      if (detail?.petId === activePet.id) showReaction(detail.expression);
-    };
-    window.addEventListener(PET_COMPANION_REACTION_EVENT, handleReaction);
-    return () => window.removeEventListener(PET_COMPANION_REACTION_EVENT, handleReaction);
-  }, [activePet?.id, showReaction]);
   const moodInsights: Record<string, { title: string; body: string }> = {
     "שמחה": { title: "יום מצוין להרפתקה", body: `כש${petName} במצב רוח כזה, זה הזמן למשחק חדש או מסלול טיול ארוך יותר.` },
     "רגועה": { title: "יום טוב לתנועה עדינה", body: `טיול רגוע ומשחק קצר יעזרו לשמור על השגרה המאוזנת של ${petName}.` },
@@ -79,25 +47,31 @@ const MipoHome = () => {
     { id: "chat", label: "Mipo AI", icon: <Bot className="h-[21px] w-[21px]" strokeWidth={1.7} />, onClick: () => navigate("/chat"), attention: attention.has("chat"), attentionLabel: attention.items.find((i) => i.slot === "chat")?.message },
   ];
 
+  const moodLabels: Record<string, CharacterMood> = {
+    "שמחה": "happy",
+    "רגועה": "neutral",
+    "שובבה": "curious",
+    "עייפה": "neutral",
+  };
+  const companion = usePetCompanionMood(activePet?.id, {
+    hasAttention: Boolean(attention.primary),
+    moodLabel: mood,
+    moodLabels,
+  });
+
   // One line under the orbit — attention wins, then mood, then the nudge (SPEC §3)
   const line = attention.primary
     ? { text: attention.primary.message, actionLabel: attention.primary.actionLabel, actionPath: attention.primary.actionPath }
     : mood
       ? { text: moodInsights[mood].body, actionLabel: "לשאול את Mipo", actionPath: "/chat" }
       : { text: `הקישו על ${petName} לעדכון מצב הרוח`, actionLabel: "", actionPath: "" };
-  const moodExpressions: Record<string, MipoPetCharacterExpression> = {
-    "שמחה": "happy",
-    "רגועה": "proud",
-    "שובבה": "curious",
-    "עייפה": "sleepy",
-  };
-  const characterExpression: MipoPetCharacterExpression = reactionOverride
-    || (mood ? moodExpressions[mood] : null)
-    || (attention.primary ? "attentive" : "neutral");
+  const characterExpression = MOOD_EXPRESSION[companion.mood];
   const characterReady = petCharacter.character?.status === "ready";
+  // Falling back through the resting expression means a pack that is missing
+  // one face still shows the character rather than dropping to the photo.
   const characterImage = characterReady
     ? petCharacter.character?.expressions[characterExpression]
-      || petCharacter.character?.expressions.neutral
+      || petCharacter.character?.expressions[MOOD_EXPRESSION.neutral]
       || activePet?.avatar_url
       || defaultPetAvatar
     : activePet?.avatar_url || defaultPetAvatar;
@@ -136,7 +110,7 @@ const MipoHome = () => {
               petName={petName}
               avatarUrl={characterImage}
               isCharacter={characterReady}
-              characterExpression={characterExpression}
+              mood={companion.mood}
               loading={loading}
               onPetClick={() => setMoodOpen(true)}
             />
