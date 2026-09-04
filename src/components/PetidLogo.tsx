@@ -1,7 +1,7 @@
 import { useId } from "react";
 import { motion } from "framer-motion";
 import { PawPrint } from "lucide-react";
-import { MIPO_GRADIENT_STOPS } from "@/lib/mipoTheme";
+import { MIPO_DOT_COLOR, MIPO_MARK_GRADIENT, MIPO_SMILE_GRADIENT } from "@/lib/mipoTheme";
 import { cn } from "@/lib/utils";
 
 interface PetidLogoProps {
@@ -35,41 +35,73 @@ const sizeMap = {
   },
 };
 
+// Geometry measured off the brand artwork: stroke width 47, peak centres at
+// x 93.5 / 286.5 with the stroke top at y 3, valley floor y 124, feet at
+// x 29 / 352 down a nearly straight leg, dot at (412, 175.5) r 21.5.
+const M_PATH =
+  "M29 185 C36 145, 52 26, 93.5 26 C142 26, 160 124, 190.25 124 " +
+  "C220.5 124, 239 26, 286.5 26 C329 26, 345 145, 352 185";
+
+// The smile is a filled ribbon, not a stroke. It tapers from 26 units at the
+// middle to under 12 at the tips, and SVG has no variable-width stroke; drawing
+// it at a constant width reads blunt and far too heavy at the ends.
+const SMILE_PATH =
+  "M1 231C6 236.9 18.9 256.5 30.8 266.5C42.7 276.5 57.6 284.2 72.4 290.9" +
+  "C87.3 297.6 103.6 302.8 119.9 306.8C136.3 310.8 153.5 313.8 170.5 314.9" +
+  "C187.5 316 205.1 315.5 222 313.7C238.9 311.9 256.1 308.9 272 304.2" +
+  "C287.9 299.5 303.6 293.2 317.7 285.7C331.8 278.2 346 269.8 356.7 259.2" +
+  "C367.4 248.6 377.8 228.2 382 222L382 222C376.1 226 358.7 238.8 346.5 246.2" +
+  "C334.3 253.6 322.1 260.8 308.6 266.4C295.1 272 280.5 276.4 265.6 280" +
+  "C250.7 283.6 235 286.3 219.4 287.8C203.8 289.3 187.6 289.5 171.8 288.9" +
+  "C156 288.3 139.9 287.1 124.6 284.3C109.3 281.6 94 277.5 79.8 272.4" +
+  "C65.6 267.3 52.3 260.8 39.2 253.9C26.1 247 7.4 234.8 1 231Z";
+
 const MipoMark = ({ className }: { className?: string }) => {
   const gradientId = useId();
 
   return (
     <svg
-      viewBox="0 0 100 60"
+      viewBox="0 0 437 314"
       role="img"
       aria-label="MIPO"
       className={cn("overflow-visible", className)}
     >
       <defs>
-        <linearGradient id={gradientId} x1="10" y1="14" x2="75" y2="54" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor={MIPO_GRADIENT_STOPS[0]} />
-          <stop offset="0.28" stopColor={MIPO_GRADIENT_STOPS[1]} />
-          <stop offset="0.55" stopColor={MIPO_GRADIENT_STOPS[2]} />
-          <stop offset="0.78" stopColor={MIPO_GRADIENT_STOPS[3]} />
-          <stop offset="1" stopColor={MIPO_GRADIENT_STOPS[4]} />
+        <linearGradient
+          id={`${gradientId}-m`}
+          x1={MIPO_MARK_GRADIENT.x1}
+          y1={MIPO_MARK_GRADIENT.y1}
+          x2={MIPO_MARK_GRADIENT.x2}
+          y2={MIPO_MARK_GRADIENT.y2}
+          gradientUnits="userSpaceOnUse"
+        >
+          {MIPO_MARK_GRADIENT.stops.map(([offset, color]) => (
+            <stop key={color} offset={offset} stopColor={color} />
+          ))}
+        </linearGradient>
+        <linearGradient
+          id={`${gradientId}-s`}
+          x1={MIPO_SMILE_GRADIENT.x1}
+          y1={MIPO_SMILE_GRADIENT.y1}
+          x2={MIPO_SMILE_GRADIENT.x2}
+          y2={MIPO_SMILE_GRADIENT.y2}
+          gradientUnits="userSpaceOnUse"
+        >
+          {MIPO_SMILE_GRADIENT.stops.map(([offset, color]) => (
+            <stop key={color} offset={offset} stopColor={color} />
+          ))}
         </linearGradient>
       </defs>
       <path
-        d="M10 48C10 28 10 14 22 14C33 14 33 30 33 38C33 30 33 14 44 14C56 14 56 28 56 48"
+        d={M_PATH}
         fill="none"
-        stroke={`url(#${gradientId})`}
-        strokeWidth="8"
+        stroke={`url(#${gradientId}-m)`}
+        strokeWidth="47"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <path
-        d="M16 54Q33 60 50 54"
-        fill="none"
-        stroke={`url(#${gradientId})`}
-        strokeWidth="3.5"
-        strokeLinecap="round"
-      />
-      <circle cx="70" cy="48" r="5" fill={`url(#${gradientId})`} />
+      <path d={SMILE_PATH} fill={`url(#${gradientId}-s)`} />
+      <circle cx="412" cy="175.5" r="21.5" fill={MIPO_DOT_COLOR} />
     </svg>
   );
 };
