@@ -300,7 +300,7 @@ const Settings = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `petid-data-export-${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `mipo-data-export-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success("הנתונים הורדו בהצלחה");
@@ -324,7 +324,7 @@ const Settings = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `petid-data-export-${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `mipo-data-export-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
 

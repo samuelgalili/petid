@@ -12,7 +12,7 @@ interface QueuedAction {
   timestamp: number;
 }
 
-const QUEUE_KEY = 'petid-offline-queue';
+const QUEUE_KEY = 'mipo-offline-queue';
 
 /**
  * Hook for managing offline state and syncing queued actions

@@ -1,6 +1,6 @@
-// Petid Icons - Commercial Brand
+// Mipo Icons - Commercial Brand
 // Clean, professional, minimal aesthetic
-// Single color: var(--petid-primary) or #1C1C1E
+// Single color: var(--mipo-primary) or #1C1C1E
 
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -13,13 +13,13 @@ interface IconProps {
 }
 
 // Wallet Icon
-export const PetidWalletIcon = ({ size = 24, className = '', filled = false, animate = false }: IconProps) => (
+export const MipoWalletIcon = ({ size = 24, className = '', filled = false, animate = false }: IconProps) => (
   <motion.svg
     width={size}
     height={size}
     viewBox="0 0 24 24"
     fill="none"
-    className={`text-petid-primary ${className}`}
+    className={`text-mipo-primary ${className}`}
     whileHover={animate ? { scale: 1.03 } : undefined}
     whileTap={animate ? { scale: 0.97 } : undefined}
   >
@@ -41,13 +41,13 @@ export const PetidWalletIcon = ({ size = 24, className = '', filled = false, ani
 );
 
 // Shop Bag Icon
-export const PetidShopBagIcon = ({ size = 24, className = '', filled = false, animate = false }: IconProps) => (
+export const MipoShopBagIcon = ({ size = 24, className = '', filled = false, animate = false }: IconProps) => (
   <motion.svg
     width={size}
     height={size}
     viewBox="0 0 24 24"
     fill="none"
-    className={`text-petid-primary ${className}`}
+    className={`text-mipo-primary ${className}`}
     whileHover={animate ? { scale: 1.03 } : undefined}
     whileTap={animate ? { scale: 0.97 } : undefined}
   >
@@ -69,13 +69,13 @@ export const PetidShopBagIcon = ({ size = 24, className = '', filled = false, an
 );
 
 // Rewards / Gift Icon
-export const PetidRewardsIcon = ({ size = 24, className = '', filled = false, animate = false }: IconProps) => (
+export const MipoRewardsIcon = ({ size = 24, className = '', filled = false, animate = false }: IconProps) => (
   <motion.svg
     width={size}
     height={size}
     viewBox="0 0 24 24"
     fill="none"
-    className={`text-petid-primary ${className}`}
+    className={`text-mipo-primary ${className}`}
     whileHover={animate ? { scale: 1.03 } : undefined}
     whileTap={animate ? { scale: 0.97 } : undefined}
   >
@@ -101,13 +101,13 @@ export const PetidRewardsIcon = ({ size = 24, className = '', filled = false, an
 );
 
 // Loyalty Badge Icon
-export const PetidLoyaltyBadgeIcon = ({ size = 24, className = '', filled = false, animate = false }: IconProps) => (
+export const MipoLoyaltyBadgeIcon = ({ size = 24, className = '', filled = false, animate = false }: IconProps) => (
   <motion.svg
     width={size}
     height={size}
     viewBox="0 0 24 24"
     fill="none"
-    className={`text-petid-primary ${className}`}
+    className={`text-mipo-primary ${className}`}
     whileHover={animate ? { scale: 1.03 } : undefined}
     whileTap={animate ? { scale: 0.97 } : undefined}
   >
@@ -131,13 +131,13 @@ export const PetidLoyaltyBadgeIcon = ({ size = 24, className = '', filled = fals
 );
 
 // Info Icon
-export const PetidInfoIcon = ({ size = 24, className = '', filled = false, animate = false }: IconProps) => (
+export const MipoInfoIcon = ({ size = 24, className = '', filled = false, animate = false }: IconProps) => (
   <motion.svg
     width={size}
     height={size}
     viewBox="0 0 24 24"
     fill="none"
-    className={`text-petid-primary ${className}`}
+    className={`text-mipo-primary ${className}`}
     whileHover={animate ? { scale: 1.03 } : undefined}
     whileTap={animate ? { scale: 0.97 } : undefined}
   >
@@ -162,13 +162,13 @@ export const PetidInfoIcon = ({ size = 24, className = '', filled = false, anima
 );
 
 // Cart Icon
-export const PetidCartIcon = ({ size = 24, className = '', filled = false, animate = false, itemCount = 0 }: IconProps & { itemCount?: number }) => (
+export const MipoCartIcon = ({ size = 24, className = '', filled = false, animate = false, itemCount = 0 }: IconProps & { itemCount?: number }) => (
   <motion.svg
     width={size}
     height={size}
     viewBox="0 0 24 24"
     fill="none"
-    className={`text-petid-primary ${className}`}
+    className={`text-mipo-primary ${className}`}
     whileHover={animate ? { scale: 1.03 } : undefined}
     whileTap={animate ? { scale: 0.97 } : undefined}
   >
@@ -194,13 +194,13 @@ export const PetidCartIcon = ({ size = 24, className = '', filled = false, anima
 );
 
 // Truck / Delivery Icon
-export const PetidTruckIcon = ({ size = 24, className = '', filled = false, animate = false }: IconProps) => (
+export const MipoTruckIcon = ({ size = 24, className = '', filled = false, animate = false }: IconProps) => (
   <motion.svg
     width={size}
     height={size}
     viewBox="0 0 24 24"
     fill="none"
-    className={`text-petid-primary ${className}`}
+    className={`text-mipo-primary ${className}`}
     whileHover={animate ? { scale: 1.03, x: 2 } : undefined}
     whileTap={animate ? { scale: 0.97 } : undefined}
   >
@@ -223,13 +223,13 @@ export const PetidTruckIcon = ({ size = 24, className = '', filled = false, anim
 );
 
 // Tag / Promotions Icon
-export const PetidTagIcon = ({ size = 24, className = '', filled = false, animate = false }: IconProps) => (
+export const MipoTagIcon = ({ size = 24, className = '', filled = false, animate = false }: IconProps) => (
   <motion.svg
     width={size}
     height={size}
     viewBox="0 0 24 24"
     fill="none"
-    className={`text-petid-primary ${className}`}
+    className={`text-mipo-primary ${className}`}
     whileHover={animate ? { scale: 1.03, rotate: -5 } : undefined}
     whileTap={animate ? { scale: 0.97 } : undefined}
   >
@@ -246,13 +246,13 @@ export const PetidTagIcon = ({ size = 24, className = '', filled = false, animat
 );
 
 // Home Icon
-export const PetidHomeIcon = ({ size = 24, className = '', filled = false, animate = false }: IconProps) => (
+export const MipoHomeIcon = ({ size = 24, className = '', filled = false, animate = false }: IconProps) => (
   <motion.svg
     width={size}
     height={size}
     viewBox="0 0 24 24"
     fill="none"
-    className={`text-petid-primary ${className}`}
+    className={`text-mipo-primary ${className}`}
     whileHover={animate ? { scale: 1.03 } : undefined}
     whileTap={animate ? { scale: 0.97 } : undefined}
   >
@@ -275,13 +275,13 @@ export const PetidHomeIcon = ({ size = 24, className = '', filled = false, anima
 );
 
 // Petitting / Loyalty Club Icon
-export const PetidClubIcon = ({ size = 24, className = '', filled = false, animate = false }: IconProps) => (
+export const MipoClubIcon = ({ size = 24, className = '', filled = false, animate = false }: IconProps) => (
   <motion.svg
     width={size}
     height={size}
     viewBox="0 0 24 24"
     fill="none"
-    className={`text-petid-primary ${className}`}
+    className={`text-mipo-primary ${className}`}
     whileHover={animate ? { scale: 1.03 } : undefined}
     whileTap={animate ? { scale: 0.97 } : undefined}
   >
@@ -317,13 +317,13 @@ export const PetidClubIcon = ({ size = 24, className = '', filled = false, anima
 );
 
 // Filter Icon
-export const PetidFilterIcon = ({ size = 24, className = '', filled = false, animate = false }: IconProps) => (
+export const MipoFilterIcon = ({ size = 24, className = '', filled = false, animate = false }: IconProps) => (
   <motion.svg
     width={size}
     height={size}
     viewBox="0 0 24 24"
     fill="none"
-    className={`text-petid-primary ${className}`}
+    className={`text-mipo-primary ${className}`}
     whileHover={animate ? { scale: 1.03 } : undefined}
     whileTap={animate ? { scale: 0.97 } : undefined}
   >
@@ -339,13 +339,13 @@ export const PetidFilterIcon = ({ size = 24, className = '', filled = false, ani
 );
 
 // Settings Icon
-export const PetidSettingsIcon = ({ size = 24, className = '', filled = false, animate = false }: IconProps) => (
+export const MipoSettingsIcon = ({ size = 24, className = '', filled = false, animate = false }: IconProps) => (
   <motion.svg
     width={size}
     height={size}
     viewBox="0 0 24 24"
     fill="none"
-    className={`text-petid-primary ${className}`}
+    className={`text-mipo-primary ${className}`}
     whileHover={animate ? { scale: 1.03, rotate: 45 } : undefined}
     whileTap={animate ? { scale: 0.97 } : undefined}
     transition={{ duration: 0.3 }}
@@ -368,19 +368,19 @@ export const PetidSettingsIcon = ({ size = 24, className = '', filled = false, a
 );
 
 // Export all icons
-export const PetidIcons = {
-  Wallet: PetidWalletIcon,
-  ShopBag: PetidShopBagIcon,
-  Rewards: PetidRewardsIcon,
-  LoyaltyBadge: PetidLoyaltyBadgeIcon,
-  Info: PetidInfoIcon,
-  Cart: PetidCartIcon,
-  Truck: PetidTruckIcon,
-  Tag: PetidTagIcon,
-  Home: PetidHomeIcon,
-  Club: PetidClubIcon,
-  Filter: PetidFilterIcon,
-  Settings: PetidSettingsIcon,
+export const MipoIcons = {
+  Wallet: MipoWalletIcon,
+  ShopBag: MipoShopBagIcon,
+  Rewards: MipoRewardsIcon,
+  LoyaltyBadge: MipoLoyaltyBadgeIcon,
+  Info: MipoInfoIcon,
+  Cart: MipoCartIcon,
+  Truck: MipoTruckIcon,
+  Tag: MipoTagIcon,
+  Home: MipoHomeIcon,
+  Club: MipoClubIcon,
+  Filter: MipoFilterIcon,
+  Settings: MipoSettingsIcon,
 };
 
-export default PetidIcons;
+export default MipoIcons;

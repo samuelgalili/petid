@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Bell, Bot, ChevronLeft, FileHeart, HeartPulse, Plus, ShoppingBag, UserRound } from "lucide-react";
 
 import defaultPetAvatar from "@/assets/default-pet-avatar.png";
-import { PetidLogo } from "@/components/PetidLogo";
+import { MipoLogo } from "@/components/MipoLogo";
 import PetOrbit, { type OrbitSlot } from "@/components/home/PetOrbit";
 import MoodSheet from "@/components/home/MoodSheet";
 import PetCharacterStudio from "@/components/home/PetCharacterStudio";
@@ -115,7 +115,7 @@ const MipoHome = () => {
           <button className="mipo-icon-button" onClick={() => navigate("/profile")} aria-label="פרופיל משתמש">
             <UserRound className="h-5 w-5" strokeWidth={1.7} />
           </button>
-          <PetidLogo variant="horizontal" size="sm" showAnimals={false} />
+          <MipoLogo variant="horizontal" size="sm" showAnimals={false} />
           <button className="mipo-icon-button" onClick={() => navigate("/notifications")} aria-label="התראות">
             <Bell className="h-5 w-5" strokeWidth={1.7} />
           </button>

@@ -4,7 +4,7 @@ import { PawPrint } from "lucide-react";
 import { MIPO_DOT_COLOR, MIPO_MARK_GRADIENT, MIPO_SMILE_GRADIENT } from "@/lib/mipoTheme";
 import { cn } from "@/lib/utils";
 
-interface PetidLogoProps {
+interface MipoLogoProps {
   showAnimals?: boolean;
   className?: string;
   size?: "sm" | "md" | "lg";
@@ -106,12 +106,12 @@ const MipoMark = ({ className }: { className?: string }) => {
   );
 };
 
-export const PetidLogo = ({
+export const MipoLogo = ({
   showAnimals = true,
   className = "",
   size = "md",
   variant = "stacked",
-}: PetidLogoProps) => {
+}: MipoLogoProps) => {
   const sizing = sizeMap[size];
   const shouldShowTagline = showAnimals && variant !== "mark";
 

@@ -12,7 +12,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [theme, setThemeState] = useState<Theme>(() => {
-    const stored = localStorage.getItem('petid-theme') as Theme;
+    const stored = localStorage.getItem('mipo-theme') as Theme;
     return stored || 'system';
   });
 
@@ -57,7 +57,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
-    localStorage.setItem('petid-theme', newTheme);
+    localStorage.setItem('mipo-theme', newTheme);
   };
 
   return (

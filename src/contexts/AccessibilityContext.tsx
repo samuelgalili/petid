@@ -24,7 +24,7 @@ const defaultSettings: AccessibilitySettings = {
 
 export const AccessibilityProvider = ({ children }: { children: React.ReactNode }) => {
   const [settings, setSettings] = useState<AccessibilitySettings>(() => {
-    const stored = localStorage.getItem('petid-accessibility');
+    const stored = localStorage.getItem('mipo-accessibility');
     return stored ? JSON.parse(stored) : defaultSettings;
   });
 
@@ -51,7 +51,7 @@ export const AccessibilityProvider = ({ children }: { children: React.ReactNode 
       root.classList.remove('reduce-motion');
     }
 
-    localStorage.setItem('petid-accessibility', JSON.stringify(settings));
+    localStorage.setItem('mipo-accessibility', JSON.stringify(settings));
   }, [settings]);
 
   const setFontSize = (fontSize: FontSize) => {

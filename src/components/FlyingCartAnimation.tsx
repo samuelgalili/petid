@@ -93,7 +93,7 @@ export const FlyingCartProvider = ({ children }: { children: ReactNode }) => {
             >
               {/* Outer glow ring */}
               <motion.div
-                className="absolute -inset-2 rounded-2xl bg-gradient-to-br from-petid-gold/60 via-petid-gold/30 to-transparent"
+                className="absolute -inset-2 rounded-2xl bg-gradient-to-br from-mipo-gold/60 via-mipo-gold/30 to-transparent"
                 initial={{ opacity: 0, scale: 1.2 }}
                 animate={{ 
                   opacity: [0, 0.8, 0.4, 0],
@@ -105,7 +105,7 @@ export const FlyingCartProvider = ({ children }: { children: ReactNode }) => {
               
               {/* Product image container */}
               <motion.div
-                className="relative w-full h-full rounded-2xl overflow-hidden border-2 border-petid-gold/50 shadow-[0_8px_32px_rgba(0,0,0,0.25),0_0_20px_rgba(212,175,55,0.4)]"
+                className="relative w-full h-full rounded-2xl overflow-hidden border-2 border-mipo-gold/50 shadow-[0_8px_32px_rgba(0,0,0,0.25),0_0_20px_rgba(212,175,55,0.4)]"
                 animate={{
                   boxShadow: [
                     '0 8px 32px rgba(0,0,0,0.25), 0 0 20px rgba(212,175,55,0.4)',
@@ -131,7 +131,7 @@ export const FlyingCartProvider = ({ children }: { children: ReactNode }) => {
                 
                 {/* Golden overlay pulse */}
                 <motion.div
-                  className="absolute inset-0 bg-gradient-to-t from-petid-gold/40 via-transparent to-petid-gold/20"
+                  className="absolute inset-0 bg-gradient-to-t from-mipo-gold/40 via-transparent to-mipo-gold/20"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: [0, 0.7, 0.3, 0] }}
                   transition={{ duration: 0.65 }}
@@ -142,7 +142,7 @@ export const FlyingCartProvider = ({ children }: { children: ReactNode }) => {
               {[...Array(4)].map((_, i) => (
                 <motion.div
                   key={i}
-                  className="absolute w-2 h-2 rounded-full bg-petid-gold"
+                  className="absolute w-2 h-2 rounded-full bg-mipo-gold"
                   style={{
                     left: '50%',
                     top: '50%',

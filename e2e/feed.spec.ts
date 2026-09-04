@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Social Feed (Petid)', () => {
+test.describe('Social Feed (Mipo)', () => {
   test.beforeEach(async ({ page }) => {
     // Continue as guest to access the feed
     await page.goto('/auth');
@@ -9,8 +9,8 @@ test.describe('Social Feed (Petid)', () => {
   });
 
   test('should display feed page correctly', async ({ page }) => {
-    // Check header with Petid branding
-    await expect(page.getByText('Petid')).toBeVisible();
+    // Check header with Mipo branding
+    await expect(page.getByText('Mipo')).toBeVisible();
     
     // Check hamburger menu icon
     await expect(page.locator('[class*="Menu"], svg[class*="lucide-menu"]').first()).toBeVisible();

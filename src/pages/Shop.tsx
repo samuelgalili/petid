@@ -18,7 +18,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { SEO } from "@/components/SEO";
-import { PetidLogo } from "@/components/PetidLogo";
+import { MipoLogo } from "@/components/MipoLogo";
 import { SmartRecommendations } from "@/components/shop/SmartRecommendations";
 import { MedicalPharmacy } from "@/components/shop/MedicalPharmacy";
 
@@ -79,8 +79,8 @@ const Shop = () => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [infoDrawerProduct, setInfoDrawerProduct] = useState<any>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const [searchHistory, setSearchHistory] = useState<string[]>(() => readStoredStrings("petid-search-history"));
-  const [favorites, setFavorites] = useState<string[]>(() => readStoredStrings("petid-favorites"));
+  const [searchHistory, setSearchHistory] = useState<string[]>(() => readStoredStrings("mipo-search-history"));
+  const [favorites, setFavorites] = useState<string[]>(() => readStoredStrings("mipo-favorites"));
 
   // Report dialog state
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
@@ -125,7 +125,7 @@ const Shop = () => {
       const newFavorites = prev.includes(productId)
         ? prev.filter(id => id !== productId)
         : [...prev, productId];
-      localStorage.setItem("petid-favorites", JSON.stringify(newFavorites));
+      localStorage.setItem("mipo-favorites", JSON.stringify(newFavorites));
       return newFavorites;
     });
     
@@ -264,7 +264,7 @@ const Shop = () => {
     setSearchHistory(prev => {
       const filtered = prev.filter(item => item !== query);
       const newHistory = [query, ...filtered].slice(0, 5); // Keep last 5 searches
-      localStorage.setItem("petid-search-history", JSON.stringify(newHistory));
+      localStorage.setItem("mipo-search-history", JSON.stringify(newHistory));
       return newHistory;
     });
   }, []);
@@ -273,14 +273,14 @@ const Shop = () => {
     e.stopPropagation();
     setSearchHistory(prev => {
       const newHistory = prev.filter(item => item !== query);
-      localStorage.setItem("petid-search-history", JSON.stringify(newHistory));
+      localStorage.setItem("mipo-search-history", JSON.stringify(newHistory));
       return newHistory;
     });
   }, []);
 
   const clearSearchHistory = useCallback(() => {
     setSearchHistory([]);
-    localStorage.removeItem("petid-search-history");
+    localStorage.removeItem("mipo-search-history");
   }, []);
 
   const handleSearchSelect = useCallback((product: any) => {
@@ -379,7 +379,7 @@ const Shop = () => {
               
               <div className="flex items-center gap-3">
                 <h1 className="text-lg font-semibold text-mipo-ink">חנות</h1>
-                <PetidLogo variant="horizontal" size="sm" showAnimals={false} />
+                <MipoLogo variant="horizontal" size="sm" showAnimals={false} />
               </div>
             </div>
             <div className="flex items-center gap-1">

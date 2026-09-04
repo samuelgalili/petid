@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-const HINTS_STORAGE_KEY = 'petid_shown_hints';
+const HINTS_STORAGE_KEY = 'mipo_shown_hints';
 
 export const useFeatureHint = (featureId: string) => {
   const [shouldShowHint, setShouldShowHint] = useState(false);

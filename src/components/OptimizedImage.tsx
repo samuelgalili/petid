@@ -136,7 +136,7 @@ export const OptimizedImage = ({
           }}
         >
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-petid-gold/20 to-amber-200/30 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-mipo-gold/20 to-amber-200/30 flex items-center justify-center">
               <span className="text-2xl opacity-50">🐾</span>
             </div>
           </div>
