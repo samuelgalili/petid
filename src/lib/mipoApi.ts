@@ -1241,6 +1241,45 @@ export async function createShopOrder(input: CreateMipoOrderInput): Promise<Mipo
   });
 }
 
+/**
+ * The customer's saved delivery address — what the next checkout starts from.
+ * Separate from the address on an order: changing this never rewrites where a
+ * past parcel was sent.
+ */
+export interface MipoShippingProfile {
+  full_name: string | null;
+  phone: string | null;
+  phone_secondary: string | null;
+  city: string | null;
+  street: string | null;
+  building: string | null;
+  floor: string | null;
+  apartment: string | null;
+  lobby_code: string | null;
+  entrance_type: "house" | "building";
+  zip_code: string | null;
+  notes: string | null;
+  leave_at_door: boolean;
+  leave_at_door_at: string | null;
+  updated_at: string;
+}
+
+/** Null for a customer who has not ordered yet; throws 401 for a guest. */
+export async function getMyShippingProfile(): Promise<MipoShippingProfile | null> {
+  const result = await apiFetch<{ profile: MipoShippingProfile | null }>("/me/shipping-profile");
+  return result.profile;
+}
+
+export async function saveMyShippingProfile(
+  profile: Partial<MipoShippingProfile> & Record<string, unknown>,
+): Promise<MipoShippingProfile | null> {
+  const result = await apiFetch<{ profile: MipoShippingProfile | null }>("/me/shipping-profile", {
+    method: "PUT",
+    body: JSON.stringify(profile),
+  });
+  return result.profile;
+}
+
 export async function createShopPaymentSession(input: {
   order_id: string;
   success_url: string;
