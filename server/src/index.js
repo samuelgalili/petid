@@ -2243,11 +2243,20 @@ const selectPetCharacterCandidate = async (userId, petId, candidateKey) => {
     updated = await client.query(
       `
         update public.pet_characters
-        set status = 'generating_pack', selected_candidate_key = $2, error_code = null, updated_at = now()
+        set
+          status = 'generating_pack',
+          selected_candidate_key = $2,
+          -- Record which of the two styles was chosen. The expression pack is
+          -- generated from the selected candidate image, so it inherits the
+          -- style automatically; storing it is what lets a later regeneration
+          -- stay in the style the owner picked.
+          style_key = $3,
+          error_code = null,
+          updated_at = now()
         where id = $1
         returning *
       `,
-      [character.id, key],
+      [character.id, key, key.startsWith("candidate-") ? key.slice("candidate-".length) : character.style_key],
     );
     await client.query("commit");
   } catch (error) {

@@ -1,6 +1,13 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 
-export const CHARACTER_CANDIDATE_KEYS = ["candidate-1", "candidate-2", "candidate-3"];
+/**
+ * Two candidates, one per style, so the owner picks a direction rather than
+ * three variations of the same idea. It is also a third fewer generated images
+ * on the most expensive thing the product does.
+ */
+export const CHARACTER_STYLES = ["realistic", "chibi"];
+
+export const CHARACTER_CANDIDATE_KEYS = CHARACTER_STYLES.map((style) => `candidate-${style}`);
 
 export const CHARACTER_EXPRESSIONS = [
   "happy",
@@ -13,11 +20,30 @@ export const CHARACTER_EXPRESSIONS = [
 
 const allowedGeneratedMimeTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
 
-const candidateStyles = [
-  "premium soft-dimensional 2D character art, rounded shapes, subtle tactile texture, gentle studio lighting",
-  "polished miniature 3D character illustration, soft clay-like forms, refined materials, warm cinematic lighting",
-  "high-end modern storybook character art, clean silhouettes, layered shading, restrained pastel palette",
-];
+/**
+ * The realistic style is the pet as it actually looks: real anatomy, real fur,
+ * real proportions, photographed rather than drawn. The chibi style keeps the
+ * same identity - the same markings, the same colours - on deliberately
+ * stylised proportions.
+ *
+ * Both must stay recognisably *this* pet. The uploaded photo is the identity
+ * reference, not a breed hint, so neither style is allowed to prettify the
+ * animal into a generic one.
+ */
+const candidateStyles = {
+  realistic: [
+    "photorealistic rendering with realistic anatomy, realistic fur detail and direction,",
+    "realistic eyes with natural catchlights, natural proportions, soft natural lighting",
+    "and a soft grounded shadow. It must read as a professionally photographed pet,",
+    "never as an illustration, cartoon, 3D cartoon or anime",
+  ].join(" "),
+  chibi: [
+    "warm chibi character art with deliberately compact proportions and a larger head,",
+    "clean rounded forms, soft shading and a restrained palette. Keep the real coat",
+    "colours, markings and eye colour exactly; stylise the proportions, never the identity.",
+    "Charming and premium, never childish or mascot-like",
+  ].join(" "),
+};
 
 const expressionDirections = {
   happy: "a joyful open expression, bright eyes, relaxed ears, and a small energetic bounce pose",
@@ -101,7 +127,7 @@ export const extractGeneratedImage = (response) => {
 };
 
 export const buildCandidatePrompt = ({ petName, petType, visualIdentity, style }) => `
-Create a single premium virtual companion character based only on the supplied reference photos.
+Create a single premium full-body pet avatar based only on the supplied reference photos.
 
 Identity requirements:
 - The character is ${petName}, a ${petType || "pet"}.
@@ -113,10 +139,11 @@ Identity requirements:
 Art direction:
 - ${style}.
 - Full body in a natural three-quarter-front pose, centered, looking toward the viewer.
-- Expressive and adorable without becoming generic; recognizability matters more than exaggeration.
+- Recognisability matters more than charm: this must read as this specific animal, not a nicer one of the same breed.
+- Show the whole animal - head, neck, torso, every visible leg and paw, and the tail. Do not crop them.
 - Square 1:1 composition with generous breathing room around the body.
 - Clean warm-neutral background (#F7F7F5), soft grounded shadow, crisp production-ready finish.
-- This will be the canonical master for an interactive Tamagotchi-style companion.
+- This becomes the pet's permanent visual identity in the app, so it must stay consistent and reusable.
 `.trim();
 
 export const buildExpressionPrompt = ({ petName, expression, visualIdentity }) => `
@@ -239,12 +266,12 @@ export const generateCharacterCandidates = async ({
   const visualIdentity = await analyzeReferences({ client, visionModel, references, petName, petType });
   const candidates = [];
 
-  for (let index = 0; index < candidateStyles.length; index += 1) {
+  for (let index = 0; index < CHARACTER_STYLES.length; index += 1) {
     const image = await generateImage({
       client,
       imageModel,
       parts: [
-        { text: buildCandidatePrompt({ petName, petType, visualIdentity, style: candidateStyles[index] }) },
+        { text: buildCandidatePrompt({ petName, petType, visualIdentity, style: candidateStyles[CHARACTER_STYLES[index]] }) },
         ...referenceParts(references),
       ],
     });
