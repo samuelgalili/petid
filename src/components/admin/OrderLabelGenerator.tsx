@@ -6,13 +6,20 @@ import { Badge } from "@/components/ui/badge";
 import { Printer, X, Package, Sparkles } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { formatShippingAddressForLabel } from "@/lib/shippingAddress";
+import { formatShippingAddressForLabel, type ShippingAddressFields } from "@/lib/shippingAddress";
+import { renderCode128Svg } from "@/lib/barcode";
 
 interface OrderItem {
   product_name: string;
   quantity: number;
   price: number;
   product_id?: string | null;
+  variant?: string | null;
+  size?: string | null;
+  /** Snapshotted onto the order line when the order was placed. */
+  sku?: string | null;
+  weight?: string | null;
+  weight_unit?: string | null;
 }
 
 interface LabelOrder {
@@ -21,12 +28,21 @@ interface LabelOrder {
   order_date: string;
   customer_name: string | null;
   pet_name: string | null;
-  shipping_address: any;
+  shipping_address: ShippingAddressFields | string | null;
   order_items?: OrderItem[];
   total: number;
   shipping: number;
   user_id?: string | null;
+  special_instructions?: string | null;
 }
+
+// The business the warehouse is fulfilling on behalf of.
+const BUSINESS = {
+  name: "יובל דיגיטל",
+  taxStatus: "עוסק פטור",
+  taxId: "036574564",
+  address: "יגיע כפיים 1, פתח-תקווה",
+} as const;
 
 export type LabelFormat = "lite" | "premium";
 
@@ -43,75 +59,192 @@ interface OrderLabelGeneratorProps {
 // every label the warehouse received.
 const formatAddress = formatShippingAddressForLabel;
 
-const getFullName = (order: LabelOrder): string => {
-  if (order.customer_name) return order.customer_name;
-  const addr = order.shipping_address;
-  if (addr && typeof addr === "object") return addr.fullName || addr.name || "לקוח";
-  return "לקוח";
+const addressOf = (order: LabelOrder): ShippingAddressFields =>
+  order.shipping_address && typeof order.shipping_address === "object" ? order.shipping_address : {};
+
+const getFullName = (order: LabelOrder): string =>
+  // `fullName` is the only name key the server has ever written into the
+  // address; `customer_name` is the column on the order itself.
+  order.customer_name || addressOf(order).fullName || "לקוח";
+
+const getPhone = (order: LabelOrder): string => addressOf(order).phone || "";
+
+const getSecondaryPhone = (order: LabelOrder): string => addressOf(order).phoneSecondary || "";
+
+const formatItemWeight = (item: OrderItem): string => {
+  const weight = String(item.weight ?? "").trim();
+  if (!weight) return "—";
+  const unit = String(item.weight_unit ?? "").trim();
+  // A weight that already carries its unit must not have a second one appended.
+  return unit && !weight.toLowerCase().includes(unit.toLowerCase()) ? `${weight} ${unit}` : weight;
 };
 
-const getPhone = (order: LabelOrder): string => {
-  const addr = order.shipping_address;
-  if (addr && typeof addr === "object") return addr.phone || "";
-  return "";
+// ─── Warehouse Label (10×15cm) ──────────────────────────────
+// Everything the logistics centre needs to pick, pack and deliver, and nothing
+// it does not: no prices anywhere on the sheet.
+const labelStyles = {
+  sectionTitle: {
+    fontSize: "8px", fontWeight: 700, color: "#6b7280",
+    letterSpacing: "1.5px", marginBottom: "1.5mm",
+  },
+  divider: { borderTop: "1.5px solid #d1d5db", paddingTop: "3mm", marginTop: "3mm" },
+  th: {
+    textAlign: "right" as const, padding: "1.5mm 1mm",
+    borderBottom: "1.5px solid #9ca3af", fontWeight: 700,
+    fontSize: "8px", color: "#374151", whiteSpace: "nowrap" as const,
+  },
+  td: {
+    padding: "1.5mm 1mm", borderBottom: "1px solid #e5e7eb",
+    fontSize: "10px", verticalAlign: "top" as const,
+  },
 };
 
-// ─── Logistics Lite Label (10×15cm) ─────────────────────────
-const LiteLabel = ({ order }: { order: LabelOrder }) => (
-  <div style={{
-    width: "100mm", height: "150mm",
-    border: "2px solid #222", borderRadius: "8px",
-    padding: "6mm", marginBottom: "6mm",
-    display: "flex", flexDirection: "column",
-    justifyContent: "space-between", background: "#fff",
-    pageBreakAfter: "always", fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif",
-    color: "#1a1a1a", position: "relative", overflow: "hidden",
-  }}>
-    {/* Header */}
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "2px solid #222", paddingBottom: "4mm", marginBottom: "4mm" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-        <span style={{ fontSize: "14px" }}>🐾</span>
-        <span style={{ fontSize: "16px", fontWeight: 800 }}>
-          Pet<span style={{ color: "#6366f1" }}>ID</span>
-        </span>
-      </div>
-      <div style={{ textAlign: "left" }}>
-        <div style={{ fontSize: "13px", fontWeight: 800, fontFamily: "monospace" }}>#{order.order_number}</div>
-        <div style={{ fontSize: "9px", color: "#6b7280" }}>{new Date(order.order_date).toLocaleDateString("he-IL")}</div>
-      </div>
-    </div>
+const WarehouseLabel = ({ order }: { order: LabelOrder }) => {
+  const address = addressOf(order);
+  const items = order.order_items || [];
+  const totalUnits = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+  const barcode = renderCode128Svg(order.order_number, { moduleWidth: 2, height: 44 });
 
-    {/* Recipient */}
-    <div style={{ flex: 1 }}>
-      <div style={{ fontSize: "8px", fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: "2mm" }}>נמען</div>
-      <div style={{ fontSize: "16px", fontWeight: 800, marginBottom: "2mm" }}>{getFullName(order)}</div>
-      <div style={{ fontSize: "13px", lineHeight: 1.7, fontWeight: 500, marginBottom: "2mm" }}>{formatAddress(order.shipping_address)}</div>
-      {getPhone(order) && (
-        <div style={{ fontSize: "13px", fontWeight: 600, fontFamily: "monospace", marginBottom: "2mm" }}>📞 {getPhone(order)}</div>
+  return (
+    <div style={{
+      width: "100mm",
+      // Deliberately a minimum, not a fixed height: an order with many lines
+      // must run onto a second page rather than have items clipped off the
+      // bottom, which would be a picking error nobody could see.
+      minHeight: "150mm",
+      border: "2px solid #222", borderRadius: "8px",
+      padding: "5mm", marginBottom: "6mm",
+      display: "flex", flexDirection: "column",
+      background: "#fff", pageBreakAfter: "always",
+      fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif",
+      color: "#1a1a1a", position: "relative",
+    }}>
+      {/* Sender and order reference */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "2px solid #222", paddingBottom: "3mm" }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "1mm" }}>
+            <span style={{ fontSize: "14px" }}>🐾</span>
+            <span style={{ fontSize: "15px", fontWeight: 800 }}>MIPO</span>
+          </div>
+          <div style={{ fontSize: "8px", color: "#4b5563", lineHeight: 1.5 }}>
+            <div>{BUSINESS.name} · {BUSINESS.taxStatus} {BUSINESS.taxId}</div>
+            <div>{BUSINESS.address}</div>
+          </div>
+        </div>
+        <div style={{ textAlign: "left" }}>
+          <div style={{ fontSize: "14px", fontWeight: 800, fontFamily: "monospace" }}>#{order.order_number}</div>
+          <div style={{ fontSize: "9px", color: "#6b7280" }}>{new Date(order.order_date).toLocaleDateString("he-IL")}</div>
+        </div>
+      </div>
+
+      {/* Recipient */}
+      <div style={{ paddingTop: "3mm" }}>
+        <div style={labelStyles.sectionTitle}>נמען</div>
+        <div style={{ fontSize: "15px", fontWeight: 800, marginBottom: "1.5mm" }}>{getFullName(order)}</div>
+        <div style={{ fontSize: "12px", lineHeight: 1.6, fontWeight: 500 }}>{formatAddress(order.shipping_address)}</div>
+        <div style={{ fontSize: "12px", fontWeight: 600, fontFamily: "monospace", marginTop: "1.5mm" }}>
+          {getPhone(order) && <span>📞 {getPhone(order)}</span>}
+          {getSecondaryPhone(order) && (
+            <span style={{ marginRight: "4mm" }}>נוסף: {getSecondaryPhone(order)}</span>
+          )}
+        </div>
+      </div>
+
+      {/* Access: a courier who cannot pass the lobby door cannot deliver. */}
+      {(address.lobbyCode || address.leaveAtDoor) && (
+        <div style={{ ...labelStyles.divider }}>
+          {address.lobbyCode && (
+            <div style={{ fontSize: "12px", fontWeight: 700, marginBottom: address.leaveAtDoor ? "2mm" : 0 }}>
+              קוד כניסה ללובי: <span style={{ fontFamily: "monospace", fontSize: "14px" }}>{address.lobbyCode}</span>
+            </div>
+          )}
+          {address.leaveAtDoor && (
+            <div style={{
+              background: "#fef3c7", border: "1.5px solid #f59e0b",
+              borderRadius: "4px", padding: "2mm 3mm",
+              fontSize: "11px", fontWeight: 700, color: "#92400e",
+            }}>
+              ⚠ הלקוח אישר השארה ליד הדלת באחריותו
+            </div>
+          )}
+        </div>
       )}
+
+      {/* Items */}
+      <div style={{ ...labelStyles.divider, flex: 1 }}>
+        <div style={labelStyles.sectionTitle}>
+          פריטים — {items.length} שורות, {totalUnits} יחידות
+        </div>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr>
+              <th style={{ ...labelStyles.th, width: "6mm" }}>#</th>
+              <th style={{ ...labelStyles.th, width: "22mm" }}>מק״ט</th>
+              <th style={labelStyles.th}>מוצר</th>
+              <th style={{ ...labelStyles.th, textAlign: "center", width: "12mm" }}>כמות</th>
+              <th style={{ ...labelStyles.th, width: "16mm" }}>משקל</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item, index) => (
+              <tr key={`${item.product_id || item.product_name}-${index}`}>
+                <td style={{ ...labelStyles.td, color: "#9ca3af" }}>{index + 1}</td>
+                <td style={{ ...labelStyles.td, fontFamily: "monospace", fontSize: "9px", wordBreak: "break-all" }}>
+                  {item.sku || "—"}
+                </td>
+                <td style={labelStyles.td}>
+                  {item.product_name}
+                  {(item.variant || item.size) && (
+                    <div style={{ fontSize: "8px", color: "#6b7280" }}>
+                      {[item.variant, item.size].filter(Boolean).join(" · ")}
+                    </div>
+                  )}
+                </td>
+                <td style={{ ...labelStyles.td, textAlign: "center", fontWeight: 800, fontSize: "12px" }}>
+                  ×{item.quantity}
+                </td>
+                <td style={{ ...labelStyles.td, fontSize: "9px" }}>{formatItemWeight(item)}</td>
+              </tr>
+            ))}
+            {items.length === 0 && (
+              <tr>
+                <td colSpan={5} style={{ ...labelStyles.td, textAlign: "center", color: "#b91c1c", fontWeight: 700 }}>
+                  אין פריטים בהזמנה — אין לשלוח
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Notes */}
+      {(order.special_instructions || address.notes) && (
+        <div style={labelStyles.divider}>
+          <div style={labelStyles.sectionTitle}>הערות</div>
+          <div style={{ fontSize: "10px", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>
+            {[order.special_instructions, address.notes].filter(Boolean).join("\n")}
+          </div>
+        </div>
+      )}
+
       {order.pet_name && (
-        <div style={{
-          display: "inline-flex", alignItems: "center", gap: "2mm",
-          background: "#eff6ff", border: "1px solid #93c5fd",
-          borderRadius: "4px", padding: "1.5mm 3mm",
-          fontSize: "10px", fontWeight: 700, color: "#1d4ed8", marginTop: "2mm"
-        }}>
+        <div style={{ fontSize: "10px", color: "#1d4ed8", fontWeight: 700, marginTop: "2mm" }}>
           🐾 {order.pet_name}
         </div>
       )}
-    </div>
 
-    {/* Order reference */}
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderTop: "2px dashed #d1d5db", paddingTop: "4mm", marginTop: "3mm" }}>
-      <div>
-        <div style={{ fontSize: "8px", color: "#9ca3af", marginBottom: "1mm" }}>קוד משלוח</div>
-        <div style={{ fontSize: "20px", fontWeight: 900, fontFamily: "monospace", letterSpacing: "2px" }}>
+      {/* Scannable order reference */}
+      <div style={{ ...labelStyles.divider, borderTop: "2px dashed #d1d5db", textAlign: "center" }}>
+        {barcode
+          ? <div style={{ lineHeight: 0 }} dangerouslySetInnerHTML={{ __html: barcode }} />
+          : null}
+        <div style={{ fontSize: "13px", fontWeight: 900, fontFamily: "monospace", letterSpacing: "2px", marginTop: "1mm" }}>
           {order.order_number}
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // ─── Premium A5 Experience Label ─────────────────────────────
 const PremiumLabel = ({ order }: { order: LabelOrder }) => (
@@ -227,7 +360,7 @@ export const OrderLabelGenerator = ({ orders, open, onClose, initialFormat = "li
       <html dir="rtl" lang="he">
       <head>
         <meta charset="UTF-8" />
-        <title>MIPO — תוויות ${format === "lite" ? "Logistics Lite" : "Premium A5"}</title>
+        <title>MIPO — ${format === "lite" ? "תוויות מחסן" : "תוויות Premium A5"}</title>
         <style>
           @page { size: ${pageSize}; margin: ${format === "lite" ? "2mm" : "0"}; }
           * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -242,7 +375,7 @@ export const OrderLabelGenerator = ({ orders, open, onClose, initialFormat = "li
     setTimeout(() => { printWindow.print(); }, 300);
   };
 
-  const formatLabel = format === "lite" ? "Logistics Lite (10×15cm)" : "Premium A5 Experience";
+  const formatLabel = format === "lite" ? "תווית מחסן (10×15 ס״מ)" : "Premium A5 Experience";
 
   return (
     <Dialog open={open} onOpenChange={() => onClose()}>
@@ -262,7 +395,7 @@ export const OrderLabelGenerator = ({ orders, open, onClose, initialFormat = "li
               format === "lite" ? "bg-primary/10 text-primary border border-primary/30" : "text-muted-foreground hover:text-foreground"
             )} onClick={() => setFormat("lite")}>
               <Package className="w-3.5 h-3.5" />
-              Logistics Lite
+              תווית מחסן
             </div>
             <Switch
               checked={format === "premium"}
@@ -284,7 +417,7 @@ export const OrderLabelGenerator = ({ orders, open, onClose, initialFormat = "li
         {/* Description */}
         <p className="text-xs text-muted-foreground">
           {format === "lite"
-            ? "תווית משלוח קומפקטית (10×15 ס״מ) עם כתובת ואסמכתת הזמנה."
+            ? "תווית מחסן (10×15 ס״מ): נמען, כתובת מלאה, טלפונים, מק״ט לכל פריט, כמות, משקל, הערות וברקוד. ללא מחירים."
             : "תווית A5 עם פרטי משלוח, רשימת מוצרים ואסמכתת הזמנה."
           }
         </p>
@@ -305,7 +438,7 @@ export const OrderLabelGenerator = ({ orders, open, onClose, initialFormat = "li
           <div ref={printRef} style={{ transform: format === "lite" ? "scale(0.7)" : "scale(0.55)", transformOrigin: "top right" }}>
             {orders.map((order) => (
               format === "lite"
-                ? <LiteLabel key={order.id} order={order} />
+                ? <WarehouseLabel key={order.id} order={order} />
                 : <PremiumLabel key={order.id} order={order} />
             ))}
           </div>

@@ -4218,7 +4218,7 @@ const normalizeRequestedOrderItems = (items) => {
 const resolveCatalogOrderItem = async (client, requestedItem) => {
   const findManual = () => client.query(
     `
-      select id, name, image_url, price, sale_price, in_stock
+      select id, name, image_url, price, sale_price, in_stock, sku, weight_unit
       from public.business_products
       where id = $1
       for share
@@ -4227,7 +4227,17 @@ const resolveCatalogOrderItem = async (client, requestedItem) => {
   );
   const findScraped = () => client.query(
     `
-      select id, product_name, main_image_url, final_price, regular_price, sale_price, stock_status
+      select
+        id,
+        product_name,
+        main_image_url,
+        final_price,
+        regular_price,
+        sale_price,
+        stock_status,
+        sku,
+        weight,
+        weight_unit
       from public.scraped_products
       where id = $1
       for share
@@ -4279,6 +4289,11 @@ const resolveCatalogOrderItem = async (client, requestedItem) => {
     throw error;
   }
 
+  const trimmedOrNull = (value) => {
+    const text = String(value ?? "").trim();
+    return text || null;
+  };
+
   return {
     product_id: row.id,
     product_source: source,
@@ -4288,6 +4303,13 @@ const resolveCatalogOrderItem = async (client, requestedItem) => {
     price,
     variant: requestedItem.variant,
     size: requestedItem.size,
+    // Snapshotted for the warehouse label: what the catalog said at the moment
+    // the order was placed, not whatever it says when the label is printed.
+    // business_products carries no weight column, so a manual product has a
+    // unit but no value until the catalog gains one.
+    sku: trimmedOrNull(row.sku),
+    weight: source === "scraped" ? trimmedOrNull(row.weight) : null,
+    weight_unit: trimmedOrNull(row.weight_unit),
   };
 };
 
@@ -4377,6 +4399,9 @@ const mapOrderItem = (row) => ({
   price: toMoney(row.price),
   variant: row.variant,
   size: row.size,
+  sku: row.sku || null,
+  weight: row.weight || null,
+  weight_unit: row.weight_unit || null,
   created_at: row.created_at,
 });
 
@@ -4554,35 +4579,33 @@ const createOrder = async (body, currentUser = null) => {
     );
 
     const order = orderResult.rows[0];
+    // Columns and values are derived from one list, so adding a column cannot
+    // leave the placeholder arithmetic behind and shift every row's values.
+    const orderItemColumns = [
+      ["order_id", () => order.id],
+      ["product_id", (item) => item.product_id],
+      ["product_source", (item) => item.product_source],
+      ["product_name", (item) => item.product_name],
+      ["product_image", (item) => item.product_image],
+      ["quantity", (item) => item.quantity],
+      ["price", (item) => item.price],
+      ["variant", (item) => item.variant],
+      ["size", (item) => item.size],
+      ["sku", (item) => item.sku ?? null],
+      ["weight", (item) => item.weight ?? null],
+      ["weight_unit", (item) => item.weight_unit ?? null],
+    ];
     const itemValues = [];
     const placeholders = orderItems.map((item, index) => {
-      const base = index * 9;
-      itemValues.push(
-        order.id,
-        item.product_id,
-        item.product_source,
-        item.product_name,
-        item.product_image,
-        item.quantity,
-        item.price,
-        item.variant,
-        item.size,
-      );
-      return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9})`;
+      const base = index * orderItemColumns.length;
+      for (const [, readValue] of orderItemColumns) itemValues.push(readValue(item));
+      return `(${orderItemColumns.map((_, offset) => `$${base + offset + 1}`).join(", ")})`;
     });
 
     const itemsResult = await client.query(
       `
         insert into public.order_items (
-          order_id,
-          product_id,
-          product_source,
-          product_name,
-          product_image,
-          quantity,
-          price,
-          variant,
-          size
+          ${orderItemColumns.map(([column]) => column).join(",\n          ")}
         )
         values ${placeholders.join(", ")}
         returning *

@@ -9,15 +9,21 @@
 export interface ShippingAddressFields {
   fullName?: string | null;
   phone?: string | null;
+  phoneSecondary?: string | null;
   /** What the server actually stores. */
   address?: string | null;
   /** Older records and third-party payloads used this name. */
   street?: string | null;
-  apartment?: string | null;
+  building?: string | null;
   floor?: string | null;
-  entrance?: string | null;
+  apartment?: string | null;
+  /** Required for a building: a courier who cannot pass the lobby cannot deliver. */
+  lobbyCode?: string | null;
+  entranceType?: "building" | "house" | string | null;
   city?: string | null;
   zipCode?: string | null;
+  notes?: string | null;
+  leaveAtDoor?: boolean | null;
 }
 
 type AddressInput = ShippingAddressFields | string | null | undefined;
@@ -30,13 +36,13 @@ const trimmed = (value: unknown): string =>
 /** The street line, including the parts a courier needs to find the door. */
 export const formatStreetLine = (address: ShippingAddressFields): string => {
   const street = trimmed(address.address) || trimmed(address.street);
-  const entrance = trimmed(address.entrance);
+  const building = trimmed(address.building);
   const floor = trimmed(address.floor);
   const apartment = trimmed(address.apartment);
 
   return [
-    street,
-    entrance ? `כניסה ${entrance}` : "",
+    // The building number belongs on the street itself, not as its own clause.
+    [street, building].filter(Boolean).join(" "),
     floor ? `קומה ${floor}` : "",
     apartment ? `דירה ${apartment}` : "",
   ].filter(Boolean).join(", ");
