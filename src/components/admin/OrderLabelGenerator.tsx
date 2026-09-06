@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Printer, X, Package, Sparkles } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { formatShippingAddressForLabel } from "@/lib/shippingAddress";
 
 interface OrderItem {
   product_name: string;
@@ -37,12 +38,10 @@ interface OrderLabelGeneratorProps {
 }
 
 // ─── Shared Helpers ──────────────────────────────────────────
-const formatAddress = (addr: any): string => {
-  if (!addr) return "כתובת לא זמינה";
-  if (typeof addr === "string") return addr;
-  const parts = [addr.street, addr.city, addr.zipCode, addr.country].filter(Boolean);
-  return parts.join(", ") || "כתובת לא זמינה";
-};
+// Formatting lives in the shared helper, not here. This file used to read
+// `addr.street`, a key the server never writes, so the street was missing from
+// every label the warehouse received.
+const formatAddress = formatShippingAddressForLabel;
 
 const getFullName = (order: LabelOrder): string => {
   if (order.customer_name) return order.customer_name;

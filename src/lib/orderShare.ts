@@ -1,12 +1,6 @@
-export interface OrderShareAddress {
-  fullName?: string;
-  address?: string;
-  street?: string;
-  apartment?: string;
-  city?: string;
-  zipCode?: string;
-  phone?: string;
-}
+import { formatShippingAddress, type ShippingAddressFields } from "@/lib/shippingAddress";
+
+export type OrderShareAddress = ShippingAddressFields;
 
 export interface OrderShareItem {
   product_name: string;
@@ -58,18 +52,7 @@ const formatDate = (value?: string | null) => {
   });
 };
 
-const formatAddress = (address?: OrderShareAddress | null) => {
-  if (!address) return null;
-
-  const street = [address.address || address.street, address.apartment ? `דירה ${address.apartment}` : null]
-    .filter(Boolean)
-    .join(", ");
-  const locality = [address.city, address.zipCode ? `מיקוד ${address.zipCode}` : null]
-    .filter(Boolean)
-    .join(", ");
-
-  return [street, locality].filter(Boolean).join(", ") || null;
-};
+const formatAddress = (address?: OrderShareAddress | null) => formatShippingAddress(address);
 
 export const formatHebrewOrderShareMessage = (order: ShareableOrder) => {
   const address = order.shipping_address;
