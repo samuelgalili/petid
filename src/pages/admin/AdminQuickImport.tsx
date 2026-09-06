@@ -320,7 +320,12 @@ const AdminQuickImport = () => {
           }
           return label;
         }).filter(Boolean) || [],
-        weight_unit: editData.variants?.find((v: any) => v.weight_unit)?.weight_unit || null,
+        // Both taken from the same variant: a number from one and a unit from
+        // another would describe a weight that does not exist.
+        weight: editData.variants?.find((v: any) => v.weight != null)?.weight ?? null,
+        weight_unit: editData.variants?.find((v: any) => v.weight != null)?.weight_unit
+          || editData.variants?.find((v: any) => v.weight_unit)?.weight_unit
+          || null,
       };
 
       const curation = determineCurationStatus(

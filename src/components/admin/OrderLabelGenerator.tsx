@@ -72,8 +72,14 @@ const getPhone = (order: LabelOrder): string => addressOf(order).phone || "";
 const getSecondaryPhone = (order: LabelOrder): string => addressOf(order).phoneSecondary || "";
 
 const formatItemWeight = (item: OrderItem): string => {
-  const weight = String(item.weight ?? "").trim();
-  if (!weight) return "—";
+  const raw = String(item.weight ?? "").trim();
+  if (!raw) return "—";
+
+  // numeric(10,3) comes back as "12.000"; a picker reads "12" faster.
+  const weight = /^\d+\.\d+$/.test(raw)
+    ? raw.replace(/\.?0+$/, "")
+    : raw;
+
   const unit = String(item.weight_unit ?? "").trim();
   // A weight that already carries its unit must not have a second one appended.
   return unit && !weight.toLowerCase().includes(unit.toLowerCase()) ? `${weight} ${unit}` : weight;

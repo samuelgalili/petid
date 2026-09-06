@@ -28,6 +28,7 @@ export interface MipoProduct {
   benefits?: unknown[] | null;
   feeding_guide?: unknown[] | null;
   product_attributes?: Record<string, unknown> | null;
+  weight?: number | string | null;
   weight_unit?: string | null;
   price_per_weight?: number | string | null;
   source_url?: string | null;
@@ -176,6 +177,10 @@ export interface MipoOrderItem {
   price: number;
   variant?: string | null;
   size?: string | null;
+  /** Snapshotted from the catalog when the order was placed, for the warehouse label. */
+  sku?: string | null;
+  weight?: string | null;
+  weight_unit?: string | null;
   created_at?: string | null;
 }
 

@@ -3431,6 +3431,7 @@ const businessProductFields = {
   pet_type: "pet_type",
   flavors: "flavors",
   brand: "brand",
+  weight: "weight",
   weight_unit: "weight_unit",
   price_per_weight: "price_per_weight",
   source_url: "source_url",
@@ -3548,6 +3549,7 @@ const normalizeProductPayload = (body) => {
     pet_type: normalizePetType(body.pet_type),
     flavors: Array.isArray(body.flavors) ? body.flavors : [],
     brand: body.brand ?? null,
+    weight: toNumber(body.weight),
     weight_unit: body.weight_unit ?? null,
     price_per_weight: toNumber(body.price_per_weight),
     source_url: body.source_url ?? null,
@@ -3750,62 +3752,58 @@ const createProduct = async (body) => {
   const payload = normalizeProductPayload(body);
   const businessId = body.business_id || await ensureDefaultBusinessProfile();
 
+  // Columns and values come from one list. The hand-written placeholder block
+  // that used to be here silently fell one short of the column list when a
+  // column was added, and Postgres rejected the whole insert.
+  const productColumns = [
+    ["business_id", () => businessId],
+    ["name", () => payload.name],
+    ["description", () => payload.description],
+    ["price", () => payload.price],
+    ["original_price", () => payload.original_price],
+    ["sale_price", () => payload.sale_price],
+    ["image_url", () => payload.image_url],
+    ["images", () => payload.images],
+    ["category", () => payload.category],
+    ["in_stock", () => payload.in_stock],
+    ["is_featured", () => payload.is_featured],
+    ["sku", () => payload.sku],
+    ["pet_type", () => payload.pet_type],
+    ["flavors", () => payload.flavors],
+    ["brand", () => payload.brand],
+    ["weight", () => payload.weight],
+    ["weight_unit", () => payload.weight_unit],
+    ["price_per_weight", () => payload.price_per_weight],
+    ["source_url", () => payload.source_url],
+    ["ingredients", () => payload.ingredients],
+    ["benefits", () => JSON.stringify(payload.benefits)],
+    ["feeding_guide", () => JSON.stringify(payload.feeding_guide)],
+    ["product_attributes", () => JSON.stringify(payload.product_attributes)],
+    ["life_stage", () => payload.life_stage],
+    ["dog_size", () => payload.dog_size],
+    ["special_diet", () => payload.special_diet],
+    ["breed_tags", () => payload.breed_tags],
+    ["medical_tags", () => payload.medical_tags],
+    ["auto_restock", () => payload.auto_restock],
+    ["restock_interval_days", () => payload.restock_interval_days],
+    ["api_sync_enabled", () => payload.api_sync_enabled],
+    ["cost_price", () => payload.cost_price],
+    ["supplier_id", () => payload.supplier_id],
+    ["safety_score", () => payload.safety_score],
+    ["kcal_per_kg", () => payload.kcal_per_kg],
+  ];
+
   const result = await pool.query(
     `
       insert into public.business_products (
-        business_id, name, description, price, original_price, sale_price,
-        image_url, images, category, in_stock, is_featured, sku, pet_type,
-        flavors, brand, weight_unit, price_per_weight, source_url, ingredients,
-        benefits, feeding_guide, product_attributes, life_stage, dog_size, special_diet,
-        breed_tags, medical_tags, auto_restock, restock_interval_days, api_sync_enabled,
-        cost_price, supplier_id, safety_score, kcal_per_kg
+        ${productColumns.map(([column]) => column).join(", ")}
       )
       values (
-        $1, $2, $3, $4, $5, $6,
-        $7, $8, $9, $10, $11, $12, $13,
-        $14, $15, $16, $17, $18, $19,
-        $20, $21, $22, $23, $24, $25,
-        $26, $27, $28, $29, $30,
-        $31, $32, $33, $34
+        ${productColumns.map((_, index) => `$${index + 1}`).join(", ")}
       )
       returning *
     `,
-    [
-      businessId,
-      payload.name,
-      payload.description,
-      payload.price,
-      payload.original_price,
-      payload.sale_price,
-      payload.image_url,
-      payload.images,
-      payload.category,
-      payload.in_stock,
-      payload.is_featured,
-      payload.sku,
-      payload.pet_type,
-      payload.flavors,
-      payload.brand,
-      payload.weight_unit,
-      payload.price_per_weight,
-      payload.source_url,
-      payload.ingredients,
-      JSON.stringify(payload.benefits),
-      JSON.stringify(payload.feeding_guide),
-      JSON.stringify(payload.product_attributes),
-      payload.life_stage,
-      payload.dog_size,
-      payload.special_diet,
-      payload.breed_tags,
-      payload.medical_tags,
-      payload.auto_restock,
-      payload.restock_interval_days,
-      payload.api_sync_enabled,
-      payload.cost_price,
-      payload.supplier_id,
-      payload.safety_score,
-      payload.kcal_per_kg,
-    ],
+    productColumns.map(([, readValue]) => readValue()),
   );
 
   return mapBusinessProduct(result.rows[0]);
@@ -4218,7 +4216,7 @@ const normalizeRequestedOrderItems = (items) => {
 const resolveCatalogOrderItem = async (client, requestedItem) => {
   const findManual = () => client.query(
     `
-      select id, name, image_url, price, sale_price, in_stock, sku, weight_unit
+      select id, name, image_url, price, sale_price, in_stock, sku, weight, weight_unit
       from public.business_products
       where id = $1
       for share
@@ -4305,10 +4303,10 @@ const resolveCatalogOrderItem = async (client, requestedItem) => {
     size: requestedItem.size,
     // Snapshotted for the warehouse label: what the catalog said at the moment
     // the order was placed, not whatever it says when the label is printed.
-    // business_products carries no weight column, so a manual product has a
-    // unit but no value until the catalog gains one.
+    // The manual catalog stores a number, the scraped one free text; both are
+    // kept verbatim as text so an unparseable imported value is not lost.
     sku: trimmedOrNull(row.sku),
-    weight: source === "scraped" ? trimmedOrNull(row.weight) : null,
+    weight: trimmedOrNull(row.weight),
     weight_unit: trimmedOrNull(row.weight_unit),
   };
 };
