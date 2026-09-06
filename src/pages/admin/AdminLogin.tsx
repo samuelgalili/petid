@@ -11,17 +11,25 @@ type AdminLoginLocationState = {
   from?: string;
 };
 
-// Neither is a place to land after signing in. /admin/login would bounce
-// straight back, and /admin/change-password is where the route guard sent the
-// admin when changing the password revoked their session: returning them there
-// asks for the change again, which revokes the new session, which sends them
-// back to the login. That is the loop a newly provisioned admin cannot escape.
-const NOT_A_DESTINATION = ["/admin/login", "/admin/change-password"];
+// None of these is a place to land after signing in. /admin/login would bounce
+// straight back, /admin/change-password is where the route guard sent the admin
+// when changing the password revoked their session, and /admin/two-factor is
+// where it sends a session that has not proven its second factor. Returning to
+// any of them asks for a step that has just been completed, which is the loop a
+// newly provisioned admin cannot escape.
+const NOT_A_DESTINATION = ["/admin/login", "/admin/change-password", "/admin/two-factor"];
+
+const nextStepFor = (admin: { must_change_password: boolean; mfa_verified: boolean } | null, fallback: string) => {
+  if (!admin) return fallback;
+  if (admin.must_change_password) return "/admin/change-password";
+  if (!admin.mfa_verified) return "/admin/two-factor";
+  return fallback;
+};
 
 const AdminLogin = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { admin, isAdmin, loading, login } = useAwsAdminAuth();
+  const { admin, hasAdminSession, loading, login } = useAwsAdminAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,10 +41,10 @@ const AdminLogin = () => {
   }, [location.state]);
 
   useEffect(() => {
-    if (!loading && isAdmin) {
-      navigate(admin?.must_change_password ? "/admin/change-password" : redirectTo, { replace: true });
+    if (!loading && hasAdminSession) {
+      navigate(nextStepFor(admin, redirectTo), { replace: true });
     }
-  }, [admin?.must_change_password, isAdmin, loading, navigate, redirectTo]);
+  }, [admin, hasAdminSession, loading, navigate, redirectTo]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -45,7 +53,7 @@ const AdminLogin = () => {
 
     try {
       const loggedInAdmin = await login(email, password);
-      navigate(loggedInAdmin.must_change_password ? "/admin/change-password" : redirectTo, { replace: true });
+      navigate(nextStepFor(loggedInAdmin, redirectTo), { replace: true });
     } catch {
       setError("פרטי ההתחברות אינם תקינים");
     } finally {

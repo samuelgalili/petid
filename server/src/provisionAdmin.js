@@ -44,6 +44,10 @@ try {
   const passwordHash = hashPassword(temporaryPassword);
   const result = existing.rowCount === 1
     ? await client.query(
+      // Re-provisioning is the break-glass path for an admin who has lost both
+      // their authenticator and their recovery codes: it clears the enrolment
+      // so they can register a new device, and it needs database credentials on
+      // the host, which is why it is a script and not an HTTP endpoint.
       `
         update public.admin_users
         set
@@ -53,6 +57,9 @@ try {
           role = $5,
           is_active = true,
           must_change_password = true,
+          totp_secret_encrypted = null,
+          totp_enrolled_at = null,
+          totp_last_used_step = null,
           updated_at = now()
         where id = $1
         returning id, email, display_name, role
@@ -79,6 +86,10 @@ try {
     [result.rows[0].id],
   );
   await client.query(
+    "delete from public.admin_recovery_codes where admin_user_id = $1",
+    [result.rows[0].id],
+  );
+  await client.query(
     `
       insert into public.admin_audit_log (
         action_type,
@@ -95,7 +106,7 @@ try {
       existing.rowCount === 1 ? "admin.reprovisioned" : "admin.provisioned",
       result.rows[0].id,
       JSON.stringify({ email, display_name: displayName, role, is_active: true }),
-      JSON.stringify({ must_change_password: true, sessions_revoked: true }),
+      JSON.stringify({ must_change_password: true, sessions_revoked: true, mfa_enrolment_cleared: true }),
     ],
   );
   await client.query("commit");
@@ -104,6 +115,7 @@ try {
     ...result.rows[0],
     temporary_password: temporaryPassword,
     must_change_password: true,
+    mfa_enrolment_required: true,
   }, null, 2));
 } catch (error) {
   await client.query("rollback");

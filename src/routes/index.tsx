@@ -200,6 +200,7 @@ export const staticRoutes: RouteObject[] = [
 
 const AdminLogin = lazy(() => import("@/pages/admin/AdminLogin"));
 const AdminChangePassword = lazy(() => import("@/pages/admin/AdminChangePassword"));
+const AdminTwoFactor = lazy(() => import("@/pages/admin/AdminTwoFactor"));
 const AdminAnalytics = lazy(() => import("@/pages/admin/AdminAnalytics"));
 const AdminOrders = lazy(() => import("@/pages/admin/AdminOrders"));
 const AdminProducts = lazy(() => import("@/pages/admin/AdminProducts"));
@@ -308,6 +309,7 @@ const legacyAdminRedirects = legacyAdminPaths.map((path) => {
 export const adminRoutes: RouteObject[] = [
   { path: "/admin/login", element: <LazyPage component={AdminLogin} pageName="כניסת מנהל" /> },
   { path: "/admin/change-password", element: <Admin><LazyPage component={AdminChangePassword} pageName="בחירת סיסמה" /></Admin> },
+  { path: "/admin/two-factor", element: <Admin><LazyPage component={AdminTwoFactor} pageName="אימות דו-שלבי" /></Admin> },
   { path: "/admin", element: <Navigate to="/admin/products" replace /> },
   { path: "/admin/analytics", element: <AdminPage component={AdminAnalytics} pageName="אנליטיקס" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
   { path: "/admin/orders", element: <AdminPage component={AdminOrders} pageName="הזמנות" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },

@@ -146,8 +146,23 @@ export interface MipoAdmin {
   role: string;
   permissions: string[];
   must_change_password: boolean;
+  /** Whether this account has an authenticator registered. */
+  mfa_enrolled: boolean;
+  /** Whether the current session has proven the second factor. */
+  mfa_verified: boolean;
   created_at?: string | null;
   last_login_at?: string | null;
+}
+
+export interface MipoAdminTwoFactorSetup {
+  secret: string;
+  otpauth_url: string;
+}
+
+export interface MipoAdminTwoFactorVerification {
+  ok: boolean;
+  used_recovery_code: boolean;
+  recovery_codes_remaining: number | null;
 }
 
 export interface MipoCoupon {
@@ -1192,6 +1207,47 @@ export async function changeAdminPassword(password: string): Promise<MipoAdmin> 
   });
   setStorageHint(adminSessionHintKey, false);
   return result.admin;
+}
+
+/**
+ * Starts authenticator enrolment. Returns the seed once; the server keeps it
+ * encrypted and will not hand it back again.
+ */
+export async function startAdminTwoFactorSetup(): Promise<MipoAdminTwoFactorSetup> {
+  return apiFetch<MipoAdminTwoFactorSetup>("/admin/2fa/setup", {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
+/** Confirms enrolment with the first code and returns the recovery codes once. */
+export async function activateAdminTwoFactor(code: string): Promise<string[]> {
+  const result = await apiFetch<{ ok: boolean; recovery_codes: string[] }>("/admin/2fa/activate", {
+    method: "POST",
+    body: JSON.stringify({ code }),
+  });
+  return result.recovery_codes;
+}
+
+/** Proves the second factor for the current session, by code or recovery code. */
+export async function verifyAdminTwoFactor(code: string): Promise<MipoAdminTwoFactorVerification> {
+  return apiFetch<MipoAdminTwoFactorVerification>("/admin/2fa/verify", {
+    method: "POST",
+    body: JSON.stringify({ code }),
+  });
+}
+
+export async function getAdminRecoveryCodesRemaining(): Promise<number> {
+  const result = await adminApiFetch<{ remaining: number }>("/admin/2fa/recovery-codes");
+  return result.remaining;
+}
+
+export async function reissueAdminRecoveryCodes(): Promise<string[]> {
+  const result = await adminApiFetch<{ ok: boolean; recovery_codes: string[] }>("/admin/2fa/recovery-codes", {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+  return result.recovery_codes;
 }
 
 export async function getAdminAnalytics(days: number): Promise<MipoAdminAnalytics> {

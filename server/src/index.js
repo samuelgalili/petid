@@ -52,6 +52,18 @@ import {
   generateCharacterCandidates,
   generateCharacterExpressions,
 } from "./petCharacter.js";
+import { getSecretBox } from "./secretBox.js";
+import {
+  buildOtpAuthUrl,
+  generateTotpSecret,
+  verifyTotp,
+} from "./totp.js";
+import {
+  generateRecoveryCodes,
+  hashRecoveryCode,
+  isWellFormedRecoveryCode,
+  verifyRecoveryCode,
+} from "./recoveryCodes.js";
 
 const port = Number(process.env.PORT || 3000);
 const databaseUrl = process.env.DATABASE_URL;
@@ -75,6 +87,14 @@ const adminSessionHours = Number.isFinite(configuredAdminSessionHours) && config
   ? configuredAdminSessionHours
   : 8;
 const adminSessionMs = adminSessionHours * 60 * 60 * 1000;
+// Re-proving the second factor for a sensitive action: long enough that an
+// admin working through the settings screens is not challenged repeatedly,
+// short enough that an unattended laptop is not a standing authorisation.
+const configuredAdminStepUpMinutes = Number(process.env.ADMIN_MFA_STEP_UP_MINUTES || 15);
+const adminStepUpMs = (Number.isFinite(configuredAdminStepUpMinutes) && configuredAdminStepUpMinutes > 0
+  ? configuredAdminStepUpMinutes
+  : 15) * 60 * 1000;
+const adminTotpIssuer = process.env.ADMIN_TOTP_ISSUER || "MIPO";
 const configuredUserSessionDays = Number(process.env.USER_SESSION_DAYS || 30);
 const userSessionDays = Number.isFinite(configuredUserSessionDays) && configuredUserSessionDays > 0
   ? configuredUserSessionDays
@@ -117,6 +137,10 @@ if (isProduction) {
     ["ADMIN_API_KEY", adminApiKey],
     ["RESEND_API_KEY", resendApiKey],
     ["GEMINI_API_KEY", geminiApiKey],
+    // Without it no admin can enrol or verify a second factor, and admin
+    // sign-in is mandatory two-factor: refuse to boot rather than serve a
+    // panel nobody can get into.
+    ["SECRET_ENCRYPTION_KEY", process.env.SECRET_ENCRYPTION_KEY],
   ].filter(([, value]) => !value).map(([name]) => name);
   if (missingRequiredConfiguration.length > 0) {
     throw new Error(`Missing required production configuration: ${missingRequiredConfiguration.join(", ")}`);
@@ -253,6 +277,9 @@ const serializeAdmin = (row) => ({
   role: row.role,
   permissions: getAdminPermissions(row.role),
   must_change_password: Boolean(row.must_change_password),
+  // The seed itself never leaves the server; the client only needs to know
+  // whether this account still owes an enrolment.
+  mfa_enrolled: Boolean(row.totp_enrolled_at),
   created_at: row.created_at || null,
   last_login_at: row.last_login_at || null,
 });
@@ -264,6 +291,7 @@ const adminUserSelect = `
   role,
   is_active,
   must_change_password,
+  totp_enrolled_at,
   created_at,
   updated_at,
   last_login_at
@@ -291,6 +319,10 @@ const enforceRateLimit = (request, response, scope, options, identity = "") => {
 
 const rateLimits = {
   adminLogin: { limit: 8, windowMs: 15 * 60 * 1000 },
+  // A six-digit code has a one-in-a-million chance per guess across three
+  // accepted steps; ten attempts per quarter hour keeps brute force hopeless
+  // while leaving room for mistyped codes and clock drift.
+  adminMfaVerify: { limit: 10, windowMs: 15 * 60 * 1000 },
   userLogin: { limit: 20, windowMs: 15 * 60 * 1000 },
   signup: { limit: 8, windowMs: 60 * 60 * 1000 },
   passwordResetRequest: { limit: 5, windowMs: 60 * 60 * 1000 },
@@ -358,11 +390,18 @@ const buildClearAdminCookie = (request) => {
   ].filter(Boolean).join("; ");
 };
 
+const normalizeUserAgent = (value) => {
+  const normalized = String(value || "").trim().slice(0, 512);
+  return normalized || null;
+};
+
 const createAdminSession = async (request, adminUserId, db = pool) => {
   const token = randomBytes(32).toString("base64url");
   const tokenHash = hashSessionToken(token);
   const expiresAt = new Date(Date.now() + adminSessionMs).toISOString();
 
+  // A session starts unverified: the password alone never reaches the panel.
+  // mfa_verified_at is stamped once the second factor is proven.
   await db.query(
     `
       insert into public.admin_sessions (
@@ -378,12 +417,19 @@ const createAdminSession = async (request, adminUserId, db = pool) => {
       adminUserId,
       tokenHash,
       expiresAt,
-      request.headers["user-agent"] || null,
+      normalizeUserAgent(request.headers["user-agent"]),
       getRequestIp(request),
     ],
   );
 
   return token;
+};
+
+const markAdminSessionMfaVerified = async (tokenHash, db = pool) => {
+  await db.query(
+    "update public.admin_sessions set mfa_verified_at = now(), last_seen_at = now() where session_token_hash = $1",
+    [tokenHash],
+  );
 };
 
 const getAdminFromSession = async (request) => {
@@ -400,9 +446,12 @@ const getAdminFromSession = async (request) => {
         au.role,
         au.is_active,
         au.must_change_password,
+        au.totp_enrolled_at,
         au.created_at,
         au.updated_at,
-        au.last_login_at
+        au.last_login_at,
+        admin_session.user_agent as session_user_agent,
+        admin_session.mfa_verified_at
       from public.admin_sessions admin_session
       join public.admin_users au on au.id = admin_session.admin_user_id
       where admin_session.session_token_hash = $1
@@ -414,35 +463,100 @@ const getAdminFromSession = async (request) => {
   );
 
   if (result.rowCount === 0) return null;
+  const row = result.rows[0];
+
+  // The cookie is bound to the client that earned it. A session token replayed
+  // from anywhere else is treated as stolen: it is destroyed, not merely
+  // refused, so the copy in the attacker's hands stops working for both of them.
+  if (normalizeUserAgent(request.headers["user-agent"]) !== (row.session_user_agent || null)) {
+    await pool.query(
+      "delete from public.admin_sessions where session_token_hash = $1",
+      [tokenHash],
+    );
+    console.warn("Admin session rejected: user agent did not match the session it was issued to");
+    return null;
+  }
 
   await pool.query(
     "update public.admin_sessions set last_seen_at = now() where session_token_hash = $1",
     [tokenHash],
   );
 
-  return serializeAdmin(result.rows[0]);
+  return {
+    ...serializeAdmin(row),
+    session_token_hash: tokenHash,
+    mfa_verified_at: row.mfa_verified_at || null,
+  };
 };
 
-const requireAdmin = async (request, response) => {
+/**
+ * Gates every admin route. A session that has not proven its second factor is
+ * refused by default: a route added later is protected unless it deliberately
+ * opts in with allowPendingMfa, which only the enrolment and verification
+ * endpoints do.
+ */
+const requireAdmin = async (request, response, { allowPendingMfa = false } = {}) => {
   if (adminApiKey && secretsEqual(request.headers["x-admin-api-key"], adminApiKey)) {
+    // The service key is held in SSM for machine callers; there is no person
+    // present to challenge, and it can no longer create or reset admins.
     request.admin = {
       id: "api-key",
       email: "api-key",
       role: ADMIN_ROLES.ADMIN,
       permissions: getAdminPermissions(ADMIN_ROLES.ADMIN),
       must_change_password: false,
+      mfa_enrolled: true,
+      mfa_verified_at: new Date().toISOString(),
     };
     return true;
   }
 
   const admin = await getAdminFromSession(request);
-  if (admin) {
-    request.admin = admin;
-    return true;
+  if (!admin) {
+    sendError(response, 401, "Unauthorized");
+    return false;
   }
 
-  sendError(response, 401, "Unauthorized");
-  return false;
+  request.admin = admin;
+
+  if (!admin.mfa_verified_at && !allowPendingMfa) {
+    sendJson(response, 403, {
+      error: admin.mfa_enrolled
+        ? "Two-factor verification required"
+        : "Two-factor enrolment required",
+      mfa_required: true,
+      mfa_enrolled: admin.mfa_enrolled,
+    });
+    return false;
+  }
+
+  return true;
+};
+
+/**
+ * Step-up authentication: the second factor must have been proven recently,
+ * not merely at some point during a long working session.
+ */
+const requireFreshAdminMfa = async (request, response, maxAgeMs = adminStepUpMs) => {
+  const verifiedAt = request.admin?.mfa_verified_at;
+  if (!verifiedAt) {
+    sendJson(response, 403, { error: "Two-factor verification required", mfa_required: true });
+    return false;
+  }
+
+  if (request.admin.id === "api-key") return true;
+
+  const age = Date.now() - new Date(verifiedAt).getTime();
+  if (!Number.isFinite(age) || age > maxAgeMs) {
+    sendJson(response, 403, {
+      error: "Re-enter your authentication code to continue",
+      mfa_step_up_required: true,
+      max_age_seconds: Math.floor(maxAgeMs / 1000),
+    });
+    return false;
+  }
+
+  return true;
 };
 
 const requireAdminPermission = async (request, response, permission) => {
@@ -499,49 +613,123 @@ const recordAdminAudit = async (admin, {
   }
 };
 
-const bootstrapAdmin = async (body) => {
-  const email = normalizeEmail(body.email);
-  const password = String(body.password || "");
-  const displayName = String(body.display_name || body.displayName || "Admin").trim() || "Admin";
+// Admin accounts are created and reset with `npm run admin:provision --prefix
+// server`, which needs database credentials on the host. The old HTTP bootstrap
+// route was removed: a single static header key could reset any admin's
+// password and reactivate a disabled account from anywhere on the network,
+// which would have been a way straight past the second factor.
 
-  if (!email || !email.includes("@")) {
-    const error = new Error("A valid admin email is required");
-    error.statusCode = 400;
-    throw error;
-  }
+const totpEncryptionContext = (adminUserId) => `admin_totp:${adminUserId}`;
 
-  if (password.length < 12) {
-    const error = new Error("Admin password must be at least 12 characters");
-    error.statusCode = 400;
-    throw error;
+const requireSecretBox = (response) => {
+  const secretBox = getSecretBox();
+  if (!secretBox) {
+    sendError(response, 503, "Two-factor authentication is not configured on this server");
+    return null;
   }
-  if (password.length > 256) {
-    const error = new Error("Password is too long");
-    error.statusCode = 400;
-    throw error;
-  }
+  return secretBox;
+};
 
+const loadAdminTotpSecret = async (adminUserId, secretBox) => {
+  const result = await pool.query(
+    "select totp_secret_encrypted, totp_enrolled_at, totp_last_used_step from public.admin_users where id = $1",
+    [adminUserId],
+  );
+  const row = result.rows[0];
+  if (!row?.totp_secret_encrypted) return null;
+
+  return {
+    secret: secretBox.open(row.totp_secret_encrypted, totpEncryptionContext(adminUserId)),
+    enrolledAt: row.totp_enrolled_at || null,
+    lastUsedStep: row.totp_last_used_step === null || row.totp_last_used_step === undefined
+      ? null
+      : Number(row.totp_last_used_step),
+  };
+};
+
+/**
+ * Starts (or restarts) enrolment. The seed is stored immediately but the
+ * account is not protected until a correct code confirms it, so an interrupted
+ * enrolment can simply be started again.
+ */
+const startAdminTotpEnrolment = async (admin, secretBox) => {
+  const secret = generateTotpSecret();
   const result = await pool.query(
     `
-      insert into public.admin_users (
-        email,
-        password_hash,
-        display_name,
-        role,
-        is_active
-      )
-      values ($1, $2, $3, 'admin', true)
-      on conflict (email) do update set
-        password_hash = excluded.password_hash,
-        display_name = excluded.display_name,
-        is_active = true,
-        updated_at = now()
-      returning ${adminUserSelect}
+      update public.admin_users
+      set totp_secret_encrypted = $2, totp_last_used_step = null, updated_at = now()
+      where id = $1 and totp_enrolled_at is null
+      returning id
     `,
-    [email, hashPassword(password), displayName],
+    [admin.id, secretBox.seal(secret, totpEncryptionContext(admin.id))],
   );
 
-  return serializeAdmin(result.rows[0]);
+  if (result.rowCount === 0) {
+    // Another request finished enrolling between the check and this write.
+    const error = new Error("Two-factor authentication is already enrolled for this account");
+    error.statusCode = 409;
+    throw error;
+  }
+
+  return {
+    secret,
+    otpauth_url: buildOtpAuthUrl({
+      secret,
+      accountName: admin.email,
+      issuer: adminTotpIssuer,
+    }),
+  };
+};
+
+const issueAdminRecoveryCodes = async (adminUserId, client) => {
+  const codes = generateRecoveryCodes();
+  await client.query("delete from public.admin_recovery_codes where admin_user_id = $1", [adminUserId]);
+  for (const code of codes) {
+    await client.query(
+      "insert into public.admin_recovery_codes (admin_user_id, code_hash) values ($1, $2)",
+      [adminUserId, hashRecoveryCode(code)],
+    );
+  }
+  return codes;
+};
+
+const recordAdminTotpStep = async (adminUserId, step, client = pool) => {
+  await client.query(
+    "update public.admin_users set totp_last_used_step = $2, updated_at = now() where id = $1",
+    [adminUserId, step],
+  );
+};
+
+/**
+ * Spends a recovery code. Codes are single use, so the update is what decides
+ * the race: two requests carrying the same code cannot both win.
+ */
+const consumeAdminRecoveryCode = async (adminUserId, code, ip) => {
+  if (!isWellFormedRecoveryCode(code)) return false;
+
+  const result = await pool.query(
+    "select id, code_hash from public.admin_recovery_codes where admin_user_id = $1 and used_at is null",
+    [adminUserId],
+  );
+
+  for (const row of result.rows) {
+    if (!verifyRecoveryCode(code, row.code_hash)) continue;
+    const claimed = await pool.query(
+      "update public.admin_recovery_codes set used_at = now(), used_ip = $2 where id = $1 and used_at is null returning id",
+      [row.id, ip],
+    );
+    return claimed.rowCount === 1;
+  }
+
+  return false;
+};
+
+const countAdminRecoveryCodesRemaining = async (adminUserId) => {
+  const result = await pool.query(
+    "select count(*)::int as remaining from public.admin_recovery_codes where admin_user_id = $1 and used_at is null",
+    [adminUserId],
+  );
+  return result.rows[0]?.remaining ?? 0;
 };
 
 const loginAdmin = async (request, body) => {
@@ -5883,27 +6071,20 @@ const handleRequest = async (request, response) => {
       return;
     }
 
-    if (request.method === "POST" && url.pathname === "/api/admin/bootstrap") {
-      if (!adminApiKey) {
-        sendError(response, 503, "Admin API key is not configured");
-        return;
-      }
-
-      if (!secretsEqual(request.headers["x-admin-api-key"], adminApiKey)) {
-        sendError(response, 401, "Unauthorized");
-        return;
-      }
-
-      sendJson(response, 201, { admin: await bootstrapAdmin(await readBody(request)) });
-      return;
-    }
-
     if (request.method === "POST" && url.pathname === "/api/admin/login") {
       if (!enforceRateLimit(request, response, "admin-login-ip", rateLimits.adminLogin)) return;
       const body = await readBody(request);
       if (!enforceRateLimit(request, response, "admin-login-email", rateLimits.adminLogin, normalizeEmail(body.email))) return;
       const result = await loginAdmin(request, body);
-      sendJson(response, 200, { admin: result.admin }, { "set-cookie": buildAdminCookie(request, result.token) });
+      // The cookie is issued, but the session is not authenticated yet: it can
+      // only reach the enrolment and verification routes until the second
+      // factor is proven.
+      sendJson(
+        response,
+        200,
+        { admin: { ...result.admin, mfa_verified: false } },
+        { "set-cookie": buildAdminCookie(request, result.token) },
+      );
       return;
     }
 
@@ -5920,16 +6101,218 @@ const handleRequest = async (request, response) => {
         return;
       }
 
-      sendJson(response, 200, { admin });
+      // The client needs the session's own factor state to decide between the
+      // panel, the enrolment screen and the code prompt.
+      const { session_token_hash: _sessionTokenHash, mfa_verified_at: mfaVerifiedAt, ...publicAdmin } = admin;
+      sendJson(response, 200, {
+        admin: { ...publicAdmin, mfa_verified: Boolean(mfaVerifiedAt) },
+      });
       return;
     }
 
-    if (request.method === "POST" && url.pathname === "/api/admin/password") {
+    // Enrolment is reachable with the password alone, because an admin who has
+    // never enrolled has no second factor to offer yet. It is the only thing
+    // such a session can do.
+    if (request.method === "POST" && url.pathname === "/api/admin/2fa/setup") {
+      if (!(await requireAdmin(request, response, { allowPendingMfa: true }))) return;
+      if (request.admin.id === "api-key") {
+        sendError(response, 403, "A signed-in admin session is required");
+        return;
+      }
+      if (request.admin.mfa_enrolled) {
+        sendError(response, 409, "Two-factor authentication is already enrolled for this account");
+        return;
+      }
+
+      const secretBox = requireSecretBox(response);
+      if (!secretBox) return;
+
+      sendJson(response, 200, await startAdminTotpEnrolment(request.admin, secretBox));
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/admin/2fa/activate") {
+      if (!enforceRateLimit(request, response, "admin-mfa-ip", rateLimits.adminMfaVerify)) return;
+      if (!(await requireAdmin(request, response, { allowPendingMfa: true }))) return;
+      if (request.admin.id === "api-key") {
+        sendError(response, 403, "A signed-in admin session is required");
+        return;
+      }
+      if (request.admin.mfa_enrolled) {
+        sendError(response, 409, "Two-factor authentication is already enrolled for this account");
+        return;
+      }
+
+      const secretBox = requireSecretBox(response);
+      if (!secretBox) return;
+
+      const stored = await loadAdminTotpSecret(request.admin.id, secretBox);
+      if (!stored) {
+        sendError(response, 409, "Start two-factor enrolment before confirming a code");
+        return;
+      }
+
+      const body = await readBody(request);
+      const verification = verifyTotp(stored.secret, body.code, { lastUsedStep: stored.lastUsedStep });
+      if (!verification.valid) {
+        sendError(response, 400, "The authentication code is not valid");
+        return;
+      }
+
+      // Enrolment completes in one call and on the session the admin already
+      // holds: no sign-out, so there is no screen that demands an enrolment the
+      // admin has just finished.
+      const client = await pool.connect();
+      let recoveryCodes;
+      try {
+        await client.query("begin");
+        const enrolled = await client.query(
+          `
+            update public.admin_users
+            set totp_enrolled_at = now(), totp_last_used_step = $2, updated_at = now()
+            where id = $1 and totp_enrolled_at is null
+            returning id
+          `,
+          [request.admin.id, verification.step],
+        );
+        if (enrolled.rowCount === 0) {
+          // A concurrent request already completed enrolment; issuing a second
+          // set of recovery codes here would silently invalidate the first.
+          const error = new Error("Two-factor authentication is already enrolled for this account");
+          error.statusCode = 409;
+          throw error;
+        }
+        recoveryCodes = await issueAdminRecoveryCodes(request.admin.id, client);
+        await markAdminSessionMfaVerified(request.admin.session_token_hash, client);
+        await client.query("commit");
+      } catch (error) {
+        await client.query("rollback").catch(() => {});
+        throw error;
+      } finally {
+        client.release();
+      }
+
+      await recordAdminAudit(request.admin, {
+        actionType: "admin.mfa_enrolled",
+        entityType: "admin_user",
+        entityId: request.admin.id,
+        metadata: { recovery_codes_issued: recoveryCodes.length },
+      });
+
+      // The only time these are ever readable. They are stored hashed.
+      sendJson(response, 200, { ok: true, recovery_codes: recoveryCodes });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/admin/2fa/verify") {
+      if (!enforceRateLimit(request, response, "admin-mfa-ip", rateLimits.adminMfaVerify)) return;
+      if (!(await requireAdmin(request, response, { allowPendingMfa: true }))) return;
+      if (request.admin.id === "api-key") {
+        sendError(response, 403, "A signed-in admin session is required");
+        return;
+      }
+      if (!enforceRateLimit(request, response, "admin-mfa-admin", rateLimits.adminMfaVerify, request.admin.id)) return;
+      if (!request.admin.mfa_enrolled) {
+        sendError(response, 409, "Enrol two-factor authentication before verifying a code");
+        return;
+      }
+
+      const secretBox = requireSecretBox(response);
+      if (!secretBox) return;
+
+      const body = await readBody(request);
+      const stored = await loadAdminTotpSecret(request.admin.id, secretBox);
+      const verification = stored
+        ? verifyTotp(stored.secret, body.code, { lastUsedStep: stored.lastUsedStep })
+        : { valid: false, step: null };
+
+      let usedRecoveryCode = false;
+      if (verification.valid) {
+        await recordAdminTotpStep(request.admin.id, verification.step);
+      } else if (await consumeAdminRecoveryCode(request.admin.id, body.code, getRequestIp(request))) {
+        usedRecoveryCode = true;
+      } else {
+        sendError(response, 400, "The authentication code is not valid");
+        return;
+      }
+
+      await markAdminSessionMfaVerified(request.admin.session_token_hash);
+
+      const remaining = usedRecoveryCode ? await countAdminRecoveryCodesRemaining(request.admin.id) : null;
+      if (usedRecoveryCode) {
+        await recordAdminAudit(request.admin, {
+          actionType: "admin.mfa_recovery_code_used",
+          entityType: "admin_user",
+          entityId: request.admin.id,
+          metadata: { recovery_codes_remaining: remaining },
+        });
+      }
+
+      sendJson(response, 200, {
+        ok: true,
+        used_recovery_code: usedRecoveryCode,
+        recovery_codes_remaining: remaining,
+      });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/2fa/recovery-codes") {
       if (!(await requireAdmin(request, response))) return;
       if (request.admin.id === "api-key") {
         sendError(response, 403, "A signed-in admin session is required");
         return;
       }
+      sendJson(response, 200, {
+        remaining: await countAdminRecoveryCodesRemaining(request.admin.id),
+      });
+      return;
+    }
+
+    // Reissuing recovery codes hands out ten new standing bypasses, so it is
+    // treated as a sensitive action in its own right.
+    if (request.method === "POST" && url.pathname === "/api/admin/2fa/recovery-codes") {
+      if (!(await requireAdmin(request, response))) return;
+      if (request.admin.id === "api-key") {
+        sendError(response, 403, "A signed-in admin session is required");
+        return;
+      }
+      if (!(await requireFreshAdminMfa(request, response))) return;
+
+      const client = await pool.connect();
+      let recoveryCodes;
+      try {
+        await client.query("begin");
+        recoveryCodes = await issueAdminRecoveryCodes(request.admin.id, client);
+        await client.query("commit");
+      } catch (error) {
+        await client.query("rollback").catch(() => {});
+        throw error;
+      } finally {
+        client.release();
+      }
+
+      await recordAdminAudit(request.admin, {
+        actionType: "admin.mfa_recovery_codes_reissued",
+        entityType: "admin_user",
+        entityId: request.admin.id,
+        metadata: { recovery_codes_issued: recoveryCodes.length },
+      });
+
+      sendJson(response, 200, { ok: true, recovery_codes: recoveryCodes });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/admin/password") {
+      // An admin who has not enrolled yet reaches this with the password alone:
+      // it is the forced first-login change, and there is no second factor to
+      // ask for. Once enrolled, changing the password is a step-up action.
+      if (!(await requireAdmin(request, response, { allowPendingMfa: true }))) return;
+      if (request.admin.id === "api-key") {
+        sendError(response, 403, "A signed-in admin session is required");
+        return;
+      }
+      if (request.admin.mfa_enrolled && !(await requireFreshAdminMfa(request, response))) return;
+
       const admin = await changeAdminPassword(request.admin.id, await readBody(request));
       await recordAdminAudit(request.admin, {
         actionType: "admin.password_changed",

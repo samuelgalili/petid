@@ -9,6 +9,7 @@
   "scripts": {
     "start": "node src/index.js",
     "admin:provision": "node src/provisionAdmin.js",
+    "secret:keygen": "node src/generateSecretKey.js",
     "test": "node --test"
   },
   "dependencies": {
