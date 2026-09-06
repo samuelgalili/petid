@@ -17,6 +17,7 @@ This branch targets AWS Lightsail + RDS. Supabase/Vercel are no longer part of t
 
 ## Remaining Cutover Work
 
+- [ ] **Blocks `claude/admin-2fa`:** store `SECRET_ENCRYPTION_KEY` in SSM and sync it to `/opt/mipo/.env` before that branch is deployed, then confirm the container decodes it to 32 bytes. Without it the API refuses to boot in production and the deploy leaves migration `0031` applied with the API down. Steps and verification: `docs/ADMIN_2FA_DEPLOYMENT.md`.
 - [ ] Complete a low-value CardCom payment and verify the authenticated callback and final order status.
 - [ ] Verify Resend email delivery, Gemini with user consent, and Firecrawl product import in production.
 - [ ] Complete the legacy Supabase incident-response checklist in `docs/SECURITY_RESPONSE.md`.
