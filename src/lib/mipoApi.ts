@@ -1199,6 +1199,10 @@ export async function changeAdminPassword(password: string): Promise<MipoAdmin> 
   return result.admin;
 }
 
+export async function getAdminDispatchConfig(): Promise<{ warehouse_whatsapp: string | null }> {
+  return adminApiFetch<{ warehouse_whatsapp: string | null }>("/admin/dispatch-config");
+}
+
 export async function getAdminAnalytics(days: number): Promise<MipoAdminAnalytics> {
   const params = new URLSearchParams({ days: String(days) });
   return adminApiFetch<MipoAdminAnalytics>(`/admin/analytics?${params.toString()}`);

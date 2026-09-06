@@ -63,6 +63,10 @@ const petCharacterUploadDir = path.join(privateUploadDir, "pet-characters");
 const maxUploadBytes = Number(process.env.MAX_UPLOAD_BYTES || 5 * 1024 * 1024);
 const maxSocialUploadBytes = Number(process.env.MAX_SOCIAL_UPLOAD_BYTES || 25 * 1024 * 1024);
 const maxDocumentUploadBytes = Number(process.env.MAX_DOCUMENT_UPLOAD_BYTES || 10 * 1024 * 1024);
+// The logistics centre's WhatsApp number. Kept in configuration rather than in
+// code so it can change through the usual SSM sync without a rebuild; an admin
+// can still override it per send when it is missing or wrong.
+const warehouseWhatsappNumber = String(process.env.WAREHOUSE_WHATSAPP_NUMBER || "").trim() || null;
 const adminCookieName = "mipo_admin_session";
 const userCookieName = "mipo_user_session";
 const passwordResetOtpMinutes = Number(process.env.PASSWORD_RESET_OTP_MINUTES || 10);
@@ -6532,6 +6536,12 @@ const handleRequest = async (request, response) => {
         return;
       }
       sendJson(response, 200, { activity });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/dispatch-config") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      sendJson(response, 200, { warehouse_whatsapp: warehouseWhatsappNumber });
       return;
     }
 

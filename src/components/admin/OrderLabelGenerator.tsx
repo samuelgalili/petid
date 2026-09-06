@@ -3,11 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Printer, X, Package, Sparkles } from "lucide-react";
+import { Printer, X, Package, Sparkles, MessageCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { formatShippingAddressForLabel, type ShippingAddressFields } from "@/lib/shippingAddress";
 import { renderCode128Svg } from "@/lib/barcode";
+import { WarehouseDispatchDialog } from "@/components/admin/WarehouseDispatchDialog";
 
 interface OrderItem {
   product_name: string;
@@ -352,6 +353,7 @@ const PremiumLabel = ({ order }: { order: LabelOrder }) => (
 export const OrderLabelGenerator = ({ orders, open, onClose, initialFormat = "lite" }: OrderLabelGeneratorProps) => {
   const printRef = useRef<HTMLDivElement>(null);
   const [format, setFormat] = useState<LabelFormat>(initialFormat);
+  const [dispatchOpen, setDispatchOpen] = useState(false);
 
   const handlePrint = () => {
     const content = printRef.current;
@@ -433,11 +435,22 @@ export const OrderLabelGenerator = ({ orders, open, onClose, initialFormat = "li
             <Printer className="w-4 h-4" />
             הדפס {orders.length} תוויות ({format === "lite" ? "10×15" : "A5"})
           </Button>
+          <Button variant="outline" onClick={() => setDispatchOpen(true)} className="gap-2">
+            <MessageCircle className="w-4 h-4" />
+            שליחה למחסן בוואטסאפ
+          </Button>
           <Button variant="outline" onClick={onClose}>
             <X className="w-4 h-4 ml-1" />
             סגור
           </Button>
         </div>
+
+        <WarehouseDispatchDialog
+          orders={orders}
+          open={dispatchOpen}
+          onClose={() => setDispatchOpen(false)}
+          onPrint={handlePrint}
+        />
 
         {/* Preview */}
         <div className="border rounded-2xl bg-muted/20 p-4 overflow-auto max-h-[55vh]">
