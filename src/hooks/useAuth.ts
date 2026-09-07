@@ -111,7 +111,7 @@ export const useAuth = () => {
         "addPetDraft",
         "mipo_order_ids",
         "mipo_order_access_tokens",
-        "petid-cart",
+        "mipo-cart",
         "chat_pending_intent",
       ].forEach((key) => localStorage.removeItem(key));
       ["lastOrder", "pendingOrder", "mipo_checkout_contact", "appliedCoupon"]

@@ -1,6 +1,6 @@
 // Central Icons Export
-// Easy import: import { PetidIcons } from '@/icons';
+// Easy import: import { MipoIcons } from '@/icons';
 
-export * from './petid';
+export * from './mipo';
 
-export { default as PetidIcons } from './petid';
+export { default as MipoIcons } from './mipo';

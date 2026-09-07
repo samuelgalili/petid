@@ -4,7 +4,7 @@ import { ChevronRight, Sparkles, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { SEO } from "@/components/SEO";
-import { PetidLogo } from "@/components/PetidLogo";
+import { MipoLogo } from "@/components/MipoLogo";
 import HorizontalDatePicker from "@/components/chat/HorizontalDatePicker";
 import ChatInputBar from "@/components/chat/ChatInputBar";
 import { ChatActionButton, extractActionTags, cleanActionTags } from "@/components/chat/ChatActionButton";
@@ -286,7 +286,7 @@ const ChatContent = () => {
           </button>
           
           <div className="flex items-center gap-2">
-            <PetidLogo variant="horizontal" size="sm" showAnimals={false} />
+            <MipoLogo variant="horizontal" size="sm" showAnimals={false} />
             <span className="rounded-full bg-mipo-soft px-2 py-1 text-[10px] font-semibold text-mipo-muted">AI</span>
           </div>
           
@@ -641,7 +641,7 @@ const Chat = () => {
     return (
       <main className="mipo-screen flex min-h-screen items-center justify-center p-5" dir="rtl">
         <section className="mipo-card w-full max-w-md p-7">
-          <PetidLogo variant="horizontal" size="sm" showAnimals={false} />
+          <MipoLogo variant="horizontal" size="sm" showAnimals={false} />
           <span className="mipo-gradient-ring mt-7 inline-flex p-[2px]"><span className="flex h-12 w-12 items-center justify-center rounded-full bg-white"><Sparkles className="h-5 w-5 text-mipo-violet" /></span></span>
           <h1 className="mt-4 text-2xl font-semibold tracking-[-0.025em] text-mipo-ink">הסכמה לעיבוד באמצעות AI</h1>
           <p className="mt-3 text-sm leading-relaxed text-mipo-muted">

@@ -65,7 +65,7 @@ const HorizontalDatePicker: React.FC<HorizontalDatePickerProps> = ({
                 className={cn(
                   "flex items-center justify-center rounded-full transition-all duration-300",
                   isSelected
-                    ? "w-14 h-14 bg-gradient-to-br from-petid-blue via-petid-sky to-petid-teal text-white shadow-lg"
+                    ? "w-14 h-14 bg-gradient-to-br from-mipo-blue via-mipo-sky to-mipo-teal text-white shadow-lg"
                     : "w-11 h-11 border-2 border-muted-foreground/30 text-foreground hover:border-primary/50"
                 )}
               >

@@ -117,13 +117,13 @@ function getNextSteps(trigger: CelebrationTrigger, petType: "dog" | "cat"): Next
 /* ─── Paw-print confetti ─── */
 
 function firePawConfetti() {
-  const petidColors = ["#0099E6", "#37B679", "#FFB800", "#E8725A"];
+  const mipoColors = ["#0099E6", "#37B679", "#FFB800", "#E8725A"];
 
   confetti({
     particleCount: 80,
     spread: 70,
     origin: { y: 0.5 },
-    colors: petidColors,
+    colors: mipoColors,
     shapes: ["circle", "square"],
     scalar: 1.2,
     ticks: 120,
@@ -135,7 +135,7 @@ function firePawConfetti() {
       angle: 60,
       spread: 55,
       origin: { x: 0, y: 0.6 },
-      colors: petidColors,
+      colors: mipoColors,
       scalar: 1,
     });
   }, 200);
@@ -146,7 +146,7 @@ function firePawConfetti() {
       angle: 120,
       spread: 55,
       origin: { x: 1, y: 0.6 },
-      colors: petidColors,
+      colors: mipoColors,
       scalar: 1,
     });
   }, 400);
@@ -422,12 +422,12 @@ export const CelebrationScreen = ({
     const shareText = `${emoji} ${petName} בציון בריאות ${scoreTo}%! 🐾✨ מנוהל באמצעות MIPO`;
 
     if (cardBlob && navigator.share && navigator.canShare?.({
-      files: [new File([cardBlob], "petid-health-card.png", { type: "image/png" })],
+      files: [new File([cardBlob], "mipo-health-card.png", { type: "image/png" })],
     })) {
       try {
         await navigator.share({
           text: shareText,
-          files: [new File([cardBlob], "petid-health-card.png", { type: "image/png" })],
+          files: [new File([cardBlob], "mipo-health-card.png", { type: "image/png" })],
         });
         return;
       } catch {
@@ -496,7 +496,7 @@ export const CelebrationScreen = ({
               animate={{ rotate: 0, scale: 1 }}
               transition={{ delay: 0.2, duration: 0.4, ease: EASING.bounce as any }}
             >
-              <Sparkles className="w-10 h-10 text-petid-gold" strokeWidth={1.5} />
+              <Sparkles className="w-10 h-10 text-mipo-gold" strokeWidth={1.5} />
             </motion.div>
 
             {/* Pet emoji */}

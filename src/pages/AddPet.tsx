@@ -21,7 +21,7 @@ import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
-import { PetidLogo } from "@/components/PetidLogo";
+import { MipoLogo } from "@/components/MipoLogo";
 
 const MEDICAL_CONDITIONS = [
   { value: "gastrointestinal", label: "בעיות עיכול / גסטרו", emoji: "🤢", categoryEn: "Gastrointestinal" },
@@ -519,7 +519,7 @@ const AddPet = () => {
                 <ArrowRight className="w-5 h-5 text-mipo-ink" />
               </button>
             )}
-            <PetidLogo variant="horizontal" showAnimals={false} size="sm" />
+            <MipoLogo variant="horizontal" showAnimals={false} size="sm" />
             <div className="w-11" />
           </div>
           
@@ -634,7 +634,7 @@ const AddPet = () => {
                 exit={{ opacity: 0, y: -20 }}
                 className="mipo-flow-card p-8 text-center space-y-7"
               >
-                <PetidLogo size="md" showAnimals className="mx-auto" />
+                <MipoLogo size="md" showAnimals className="mx-auto" />
                 <h1 className="text-2xl font-semibold text-mipo-ink">ברוכים הבאים ל-MIPO</h1>
                 <p className="text-mipo-muted text-base">
                   הבית השקט והחכם של חיית המחמד שלכם

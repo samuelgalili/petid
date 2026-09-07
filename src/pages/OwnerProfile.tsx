@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from "react";
 import { SEO } from "@/components/SEO";
-import { PetidLogo } from "@/components/PetidLogo";
+import { MipoLogo } from "@/components/MipoLogo";
 import { PageTransition } from "@/components/PageTransition";
 import BottomNav from "@/components/BottomNav";
 import { motion } from "framer-motion";
@@ -276,7 +276,7 @@ const OwnerProfile = () => {
             <button onClick={() => navigate(-1)} className="p-2 -mr-2" aria-label="חזרה">
               <ChevronRight className="w-5 h-5 text-foreground" />
             </button>
-            <PetidLogo variant="horizontal" size="sm" showAnimals={false} />
+            <MipoLogo variant="horizontal" size="sm" showAnimals={false} />
             <Button variant="ghost" size="sm" onClick={() => navigate("/edit-profile")} className="text-xs font-semibold text-mipo-ink">
               עריכה
             </Button>

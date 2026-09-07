@@ -18,7 +18,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
 import defaultPetAvatar from "@/assets/default-pet-avatar.png";
-import { PetidLogo } from "@/components/PetidLogo";
+import { MipoLogo } from "@/components/MipoLogo";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -107,7 +107,7 @@ const MipoFeed = () => {
           <button onClick={() => navigate("/profile")} className="mipo-icon-button" aria-label="פרופיל משתמש">
             <UserRound className="h-5 w-5" strokeWidth={1.7} />
           </button>
-          <PetidLogo variant="horizontal" size="sm" showAnimals={false} />
+          <MipoLogo variant="horizontal" size="sm" showAnimals={false} />
           <button onClick={() => setComposerOpen(true)} className="mipo-icon-button" aria-label="יצירת פוסט">
             <Plus className="h-5 w-5" />
           </button>

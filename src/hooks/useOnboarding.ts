@@ -5,7 +5,7 @@ export const useOnboarding = () => {
   const [isComplete, setIsComplete] = useState(true);
 
   useEffect(() => {
-    const hasCompletedOnboarding = localStorage.getItem("petid-onboarding-complete");
+    const hasCompletedOnboarding = localStorage.getItem("mipo-onboarding-complete");
     if (!hasCompletedOnboarding) {
       setShowOnboarding(true);
       setIsComplete(false);
@@ -13,13 +13,13 @@ export const useOnboarding = () => {
   }, []);
 
   const completeOnboarding = () => {
-    localStorage.setItem("petid-onboarding-complete", "true");
+    localStorage.setItem("mipo-onboarding-complete", "true");
     setShowOnboarding(false);
     setIsComplete(true);
   };
 
   const resetOnboarding = () => {
-    localStorage.removeItem("petid-onboarding-complete");
+    localStorage.removeItem("mipo-onboarding-complete");
     setShowOnboarding(true);
     setIsComplete(false);
   };

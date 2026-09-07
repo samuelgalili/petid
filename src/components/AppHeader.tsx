@@ -11,7 +11,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useNotificationsBadge } from "@/hooks/useNotificationsBadge";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion } from "framer-motion";
-import petidIcon from "@/assets/petid-icon.png";
+import mipoIcon from "@/assets/mipo-icon.png";
 
 interface AppHeaderProps {
   title: string;

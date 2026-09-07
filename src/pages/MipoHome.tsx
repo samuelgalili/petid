@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Bell, Bot, ChevronLeft, FileHeart, HeartPulse, Plus, Shield, ShoppingBag, UserRound } from "lucide-react";
 
 import defaultPetAvatar from "@/assets/default-pet-avatar.png";
-import { PetidLogo } from "@/components/PetidLogo";
+import { MipoLogo } from "@/components/MipoLogo";
 import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import PetOrbit, { type OrbitSlot } from "@/components/home/PetOrbit";
 import MoodSheet from "@/components/home/MoodSheet";
@@ -98,7 +98,7 @@ const MipoHome = () => {
               <UserRound className="h-5 w-5" strokeWidth={1.7} />
             </button>
           </div>
-          <PetidLogo variant="horizontal" size="sm" showAnimals={false} />
+          <MipoLogo variant="horizontal" size="sm" showAnimals={false} />
           <div className="flex flex-1 items-center justify-end gap-1">
             {/* Only for someone the app already knows holds an admin session.
                 It points at /admin rather than /admin/login, so a live session

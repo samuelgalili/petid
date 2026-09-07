@@ -1,6 +1,6 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { MyPetsSection } from "@/components/home/MyPetsSection";
-import petidIcon from "@/assets/petid-icon.png";
+import mipoIcon from "@/assets/mipo-icon.png";
 
 interface MyPetsSheetProps {
   open: boolean;
@@ -25,7 +25,7 @@ export const MyPetsSheet = ({
         <SheetHeader className="p-4 border-b border-border bg-gradient-to-br from-white via-[#4ECDC4]/5 to-[#1E5799]/5">
           <SheetTitle className="flex items-center gap-2.5 text-slate-800">
             <div className="w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center">
-              <img src={petidIcon} alt="MIPO" className="w-6 h-6 object-contain" />
+              <img src={mipoIcon} alt="MIPO" className="w-6 h-6 object-contain" />
             </div>
             חיות המחמד שלי
           </SheetTitle>

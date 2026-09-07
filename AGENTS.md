@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-PetID is a Vite + React + TypeScript app served by Caddy on AWS Lightsail, with a Node API in `server/src` and PostgreSQL on AWS RDS. Frontend code lives in `src/`: pages in `src/pages`, reusable UI in `src/components`, hooks in `src/hooks`, shared utilities in `src/lib` and `src/utils`, and routes in `src/routes`. Assets are split between `public/` and `src/assets/`. End-to-end tests live in `e2e/`, database migrations live in `server/sql`, and deployment configuration lives in `deploy/aws`. Supabase and Vercel are legacy systems and are not part of the active runtime.
+MIPO is a Vite + React + TypeScript app served by Caddy on AWS Lightsail, with a Node API in `server/src` and PostgreSQL on AWS RDS. Frontend code lives in `src/`: pages in `src/pages`, reusable UI in `src/components`, hooks in `src/hooks`, shared utilities in `src/lib` and `src/utils`, and routes in `src/routes`. Assets are split between `public/` and `src/assets/`. End-to-end tests live in `e2e/`, database migrations live in `server/sql`, and deployment configuration lives in `deploy/aws`. Supabase and Vercel are legacy systems and are not part of the active runtime.
 
 ## Build, Test, and Development Commands
 

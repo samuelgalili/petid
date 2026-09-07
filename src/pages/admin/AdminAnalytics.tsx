@@ -33,7 +33,7 @@ const EMPTY_ANALYTICS: MipoAdminAnalytics = {
 };
 
 const CHART_COLORS = [
-  "hsl(204, 100%, 48%)", // petid-blue
+  "hsl(204, 100%, 48%)", // mipo-blue
   "hsl(260, 75%, 55%)", // purple
   "hsl(42, 100%, 50%)",  // gold
   "hsl(12, 76%, 61%)",   // coral

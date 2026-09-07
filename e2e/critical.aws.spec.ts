@@ -265,7 +265,7 @@ test.describe("AWS application smoke tests", () => {
 
   test("completes a guest cash-on-delivery order", async ({ page }) => {
     await page.addInitScript((item) => {
-      localStorage.setItem("petid-cart", JSON.stringify([item]));
+      localStorage.setItem("mipo-cart", JSON.stringify([item]));
     }, cartItem);
 
     let submittedOrder: Record<string, unknown> | undefined;

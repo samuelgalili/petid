@@ -162,26 +162,26 @@ export default {
 			ring: 'hsl(var(--ring))',
 			background: 'hsl(var(--background))',
 			foreground: 'hsl(var(--foreground))',
-			petid: {
-				pink: 'hsl(var(--petid-pink))',
-				'pink-light': 'hsl(var(--petid-pink-light))',
-				'pink-hover': 'hsl(var(--petid-pink-hover))',
-				purple: 'hsl(var(--petid-purple))',
-				'purple-light': 'hsl(var(--petid-purple-light))',
-				cyan: 'hsl(var(--petid-cyan))',
-				'cyan-light': 'hsl(var(--petid-cyan-light))',
-				teal: 'hsl(var(--petid-teal))',
-				'teal-light': 'hsl(var(--petid-teal-light))',
-				'teal-hover': 'hsl(var(--petid-teal-hover))',
-				gold: 'hsl(var(--petid-gold))',
-				'gold-light': 'hsl(var(--petid-gold-light))',
-				coral: 'hsl(var(--petid-coral))',
-				'coral-light': 'hsl(var(--petid-coral-light))',
-				heart: 'hsl(var(--petid-heart))',
+			mipo: {
+				pink: 'hsl(var(--mipo-pink))',
+				'pink-light': 'hsl(var(--mipo-pink-light))',
+				'pink-hover': 'hsl(var(--mipo-pink-hover))',
+				purple: 'hsl(var(--mipo-purple))',
+				'purple-light': 'hsl(var(--mipo-purple-light))',
+				cyan: 'hsl(var(--mipo-cyan))',
+				'cyan-light': 'hsl(var(--mipo-cyan-light))',
+				teal: 'hsl(var(--mipo-teal))',
+				'teal-light': 'hsl(var(--mipo-teal-light))',
+				'teal-hover': 'hsl(var(--mipo-teal-hover))',
+				gold: 'hsl(var(--mipo-gold))',
+				'gold-light': 'hsl(var(--mipo-gold-light))',
+				coral: 'hsl(var(--mipo-coral))',
+				'coral-light': 'hsl(var(--mipo-coral-light))',
+				heart: 'hsl(var(--mipo-heart))',
 				// Legacy aliases
-				blue: 'hsl(var(--petid-pink))',
-				'blue-light': 'hsl(var(--petid-pink-light))',
-				turquoise: 'hsl(var(--petid-cyan))'
+				blue: 'hsl(var(--mipo-pink))',
+				'blue-light': 'hsl(var(--mipo-pink-light))',
+				turquoise: 'hsl(var(--mipo-cyan))'
 			},
 			shop: {
 				blue: 'hsl(var(--shop-blue))',
@@ -320,7 +320,7 @@ export default {
 		},
 		backgroundImage: {
 			'gradient-primary': 'var(--gradient-primary)',
-			'gradient-petid': 'var(--gradient-petid)',
+			'gradient-mipo': 'var(--gradient-mipo)',
 			'gradient-warm': 'var(--gradient-warm)',
 			'gradient-story': 'var(--gradient-story)',
 			'gradient-instagram': 'var(--gradient-instagram)'
@@ -342,7 +342,7 @@ export default {
 					height: '0'
 				}
 			},
-			'pulse-petid': {
+			'pulse-mipo': {
 				'0%, 100%': {
 					boxShadow: '0 0 0 0 hsla(204, 100%, 48%, 0.4)'
 				},

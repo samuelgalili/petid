@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { PetidLogo } from "@/components/PetidLogo";
+import { MipoLogo } from "@/components/MipoLogo";
 
 interface SplashScreenProps {
   onFinish: () => void;
@@ -36,7 +36,7 @@ export const SplashScreen = ({ onFinish }: SplashScreenProps) => {
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             className="flex min-h-[320px] flex-col items-center justify-center px-8"
           >
-            <PetidLogo size="lg" showAnimals />
+            <MipoLogo size="lg" showAnimals />
           </motion.div>
         </motion.div>
       )}

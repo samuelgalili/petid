@@ -142,7 +142,7 @@ export const PetPreferenceProvider: React.FC<{ children: React.ReactNode }> = ({
       if (sickOthers.length > 0) {
         // Dispatch a custom event so any toast system can pick it up
         window.dispatchEvent(
-          new CustomEvent("petid:fleet-safety", {
+          new CustomEvent("mipo:fleet-safety", {
             detail: { sickPets: sickOthers, activePet: pet },
           })
         );

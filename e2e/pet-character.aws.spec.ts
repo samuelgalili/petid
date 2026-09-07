@@ -63,7 +63,7 @@ async function mockHome(page: Page) {
 test.describe("AWS pet character studio", () => {
   test("uploads a photo and starts still-image generation at 320px in dark mode", async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 740 });
-    await page.addInitScript(() => localStorage.setItem("petid-theme", "dark"));
+    await page.addInitScript(() => localStorage.setItem("mipo-theme", "dark"));
     await mockHome(page);
 
     let submittedBody: { consent?: boolean; photos?: Array<{ data_url?: string }> } | null = null;

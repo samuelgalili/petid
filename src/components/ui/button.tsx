@@ -18,10 +18,10 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline hover:opacity-80 active:opacity-60",
         success: "bg-success text-success-foreground hover:bg-success-dark hover:opacity-95 active:opacity-80 active:scale-[0.98] transform",
         // MIPO specific variants
-        petid: "bg-gradient-petid text-white font-semibold shadow-button hover:shadow-button-hover hover:opacity-95 active:opacity-80 active:scale-[0.98] transform",
+        mipo: "bg-gradient-mipo text-white font-semibold shadow-button hover:shadow-button-hover hover:opacity-95 active:opacity-80 active:scale-[0.98] transform",
         warm: "bg-gradient-warm text-white font-semibold shadow-button hover:shadow-button-hover hover:opacity-95 active:opacity-80 active:scale-[0.98] transform",
-        gold: "bg-petid-gold text-petid-gold-foreground font-semibold shadow-button hover:opacity-95 active:opacity-80 active:scale-[0.98] transform",
-        coral: "bg-petid-coral text-white font-semibold shadow-button hover:opacity-95 active:opacity-80 active:scale-[0.98] transform",
+        gold: "bg-mipo-gold text-mipo-gold-foreground font-semibold shadow-button hover:opacity-95 active:opacity-80 active:scale-[0.98] transform",
+        coral: "bg-mipo-coral text-white font-semibold shadow-button hover:opacity-95 active:opacity-80 active:scale-[0.98] transform",
         // Legacy aliases
         instagram: "bg-primary text-primary-foreground font-semibold hover:bg-primary-hover hover:opacity-95 active:opacity-80 active:scale-[0.98] transform",
         instagramSecondary: "bg-transparent text-primary font-semibold hover:text-primary/80 hover:opacity-80 active:opacity-60",

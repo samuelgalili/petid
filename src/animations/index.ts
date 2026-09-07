@@ -1,6 +1,6 @@
 // Central Animations Export
-// Easy import: import { PetidAnimations } from '@/animations';
+// Easy import: import { MipoAnimations } from '@/animations';
 
-export * from './petid';
+export * from './mipo';
 
-export { default as PetidAnimations } from './petid';
+export { default as MipoAnimations } from './mipo';

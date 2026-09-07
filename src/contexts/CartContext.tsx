@@ -45,7 +45,7 @@ const getLineId = (productId: string, variant?: string, size?: string) => (
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>(() => {
     try {
-      const savedCart = localStorage.getItem("petid-cart");
+      const savedCart = localStorage.getItem("mipo-cart");
       const parsed = savedCart ? JSON.parse(savedCart) : [];
       if (!Array.isArray(parsed)) return [];
 
@@ -66,7 +66,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cartShake, setCartShake] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem("petid-cart", JSON.stringify(items));
+    localStorage.setItem("mipo-cart", JSON.stringify(items));
   }, [items]);
 
   useEffect(() => {

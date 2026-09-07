@@ -12,7 +12,7 @@ export const FeedOnboarding = () => {
   const [currentTip, setCurrentTip] = useState<number | null>(null);
 
   useEffect(() => {
-    const seen = localStorage.getItem("petid_feed_onboarding_v2");
+    const seen = localStorage.getItem("mipo_feed_onboarding_v2");
     if (!seen) {
       // Start showing tips after a short delay
       const timer = setTimeout(() => setCurrentTip(0), 1500);
@@ -25,13 +25,13 @@ export const FeedOnboarding = () => {
       setCurrentTip(currentTip + 1);
     } else {
       setCurrentTip(null);
-      localStorage.setItem("petid_feed_onboarding_v2", "true");
+      localStorage.setItem("mipo_feed_onboarding_v2", "true");
     }
   };
 
   const handleSkipAll = () => {
     setCurrentTip(null);
-    localStorage.setItem("petid_feed_onboarding_v2", "true");
+    localStorage.setItem("mipo_feed_onboarding_v2", "true");
   };
 
   if (currentTip === null) return null;
