@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  CHARACTER_CANDIDATE_KEYS,
+  CHARACTER_STYLES,
   buildCandidatePrompt,
   buildExpressionPrompt,
   buildPackValidationPrompt,
@@ -104,4 +106,28 @@ test("generated image extraction rejects an unsupported declared image type", ()
     }),
     /unsupported generated image type/i,
   );
+});
+
+
+test("two candidate styles are offered, one per style", () => {
+  assert.deepEqual(CHARACTER_STYLES, ["realistic", "chibi"]);
+  assert.deepEqual(CHARACTER_CANDIDATE_KEYS, ["candidate-realistic", "candidate-chibi"]);
+});
+
+test("the shared candidate prompt no longer forces a house style", () => {
+  const prompt = buildCandidatePrompt({
+    petName: "Mika",
+    petType: "dog",
+    visualIdentity: {},
+    style: "photorealistic rendering",
+  });
+
+  // The style block decides the look, so the shared text must not smuggle one in.
+  assert.doesNotMatch(prompt, /Tamagotchi/i);
+  assert.doesNotMatch(prompt, /adorable/i);
+  // Full body is a hard requirement of the avatar spec, not a style preference.
+  assert.match(prompt, /every visible leg and paw/);
+  assert.match(prompt, /Do not crop/);
+  // Identity beats flattery.
+  assert.match(prompt, /not a nicer one of the same breed/);
 });

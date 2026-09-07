@@ -1,4 +1,4 @@
-import { emitPetCompanionReaction } from "@/lib/petCompanionReactions";
+import { emitPetCompanionEvent } from "@/lib/petCompanionReactions";
 
 export interface MipoProduct {
   id: string;
@@ -969,7 +969,7 @@ export async function sendAiChat(input: {
     method: "POST",
     body: JSON.stringify(input),
   });
-  emitPetCompanionReaction(input.userContext?.selectedPetId, "curious");
+  emitPetCompanionEvent(input.userContext?.selectedPetId, "chat_reply_received");
   return result.message;
 }
 
@@ -1160,7 +1160,7 @@ export async function createMyDocument(input: {
   });
   window.dispatchEvent(new Event("mipo:documents-changed"));
   window.dispatchEvent(new Event("mipo:health-changed"));
-  emitPetCompanionReaction(input.pet_id, "proud");
+  emitPetCompanionEvent(input.pet_id, "health_score_improved");
   return result.document;
 }
 
@@ -1236,7 +1236,7 @@ export async function createMyVetVisit(petId: string, input: Partial<MipoVetVisi
     body: JSON.stringify(input),
   });
   window.dispatchEvent(new Event("mipo:health-changed"));
-  emitPetCompanionReaction(petId, "celebrate");
+  emitPetCompanionEvent(petId, "health_score_improved");
   return result.vet_visit;
 }
 
@@ -1251,7 +1251,7 @@ export async function createMyVaccination(petId: string, input: Partial<MipoVacc
     body: JSON.stringify(input),
   });
   window.dispatchEvent(new Event("mipo:health-changed"));
-  emitPetCompanionReaction(petId, "celebrate");
+  emitPetCompanionEvent(petId, "health_score_improved");
   return result.vaccination;
 }
 

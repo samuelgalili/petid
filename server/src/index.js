@@ -2182,15 +2182,18 @@ const listPetCharacterFileKeys = async (userId, petId = null) => {
   }
   const result = await pool.query(
     `
-      select character.source_storage_keys, asset.storage_key
+      select character.source_storage_keys, character.identity_image_key, asset.storage_key
       from public.pet_characters character
       left join public.pet_character_assets asset on asset.character_id = character.id
       where ${where.join(" and ")}
     `,
     values,
   );
+  // The retained identity photo is listed here too, so deleting a pet or its
+  // character removes the owner's uploaded picture with everything else.
   return [...new Set(result.rows.flatMap((row) => [
     ...normalizeStorageKeyList(row.source_storage_keys),
+    row.identity_image_key,
     row.storage_key,
   ]).filter(Boolean))];
 };
@@ -2371,12 +2374,17 @@ const processPetCharacterCandidates = async (characterId) => {
             status = 'awaiting_selection',
             visual_identity = $2::jsonb,
             source_storage_keys = '[]'::jsonb,
+            -- Keep the first photo as the identity reference. Without it a
+            -- regeneration cannot happen without the owner finding and
+            -- uploading the picture again, and if they no longer have it the
+            -- avatar they got is the only one they can ever have.
+            identity_image_key = coalesce(identity_image_key, $4),
             model = $3,
             error_code = null,
             updated_at = now()
           where id = $1
         `,
-        [characterId, JSON.stringify(generated.visualIdentity), petCharacterImageModel],
+        [characterId, JSON.stringify(generated.visualIdentity), petCharacterImageModel, sourceKeys[0] || null],
       );
       await client.query("commit");
     } catch (error) {
@@ -2385,7 +2393,8 @@ const processPetCharacterCandidates = async (characterId) => {
     } finally {
       client.release();
     }
-    await deletePetCharacterFiles(sourceKeys);
+    // Everything but the retained identity photo.
+    await deletePetCharacterFiles(sourceKeys.filter((key) => key !== sourceKeys[0]));
   } catch (error) {
     await deletePetCharacterFiles([...sourceKeys, ...newFiles.map((file) => file.storageKey)]).catch(() => {});
     await markPetCharacterFailed(characterId, error);
@@ -2513,11 +2522,6 @@ const startPetCharacterGeneration = async (userId, petId, body) => {
   const pet = await getUserPet(userId, petId);
   if (!pet) return null;
   const photos = Array.isArray(body.photos) ? body.photos : [];
-  if (photos.length < 1 || photos.length > 3) {
-    const error = new Error("Upload between one and three pet photos");
-    error.statusCode = 400;
-    throw error;
-  }
 
   const currentResult = await pool.query(
     "select * from public.pet_characters where user_id = $1 and pet_id = $2 limit 1",
@@ -2530,7 +2534,21 @@ const startPetCharacterGeneration = async (userId, petId, body) => {
     throw error;
   }
 
-  const oldFiles = current ? await listPetCharacterFileKeys(userId, petId) : [];
+  // Regenerating reuses the photo the avatar was built from. Asking for it
+  // again is asking the owner to still have it, and after a failed generation
+  // that is exactly when they are most likely not to.
+  const retainedIdentityKey = safeStorageKey(current?.identity_image_key) ? current.identity_image_key : null;
+  if (photos.length > 3 || (photos.length < 1 && !retainedIdentityKey)) {
+    const error = new Error("Upload between one and three pet photos");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // A regeneration from the retained photo must not delete that photo.
+  const oldFiles = current
+    ? (await listPetCharacterFileKeys(userId, petId))
+      .filter((key) => photos.length > 0 || key !== retainedIdentityKey)
+    : [];
   const uploaded = [];
   try {
     for (const photo of photos) {
@@ -2570,7 +2588,7 @@ const startPetCharacterGeneration = async (userId, petId, body) => {
           where id = $1
           returning *
         `,
-        [current.id, JSON.stringify(uploaded), petCharacterImageModel],
+        [current.id, JSON.stringify(uploaded.length > 0 ? uploaded : [retainedIdentityKey]), petCharacterImageModel],
       );
       character = updated.rows[0];
     } else {
@@ -2637,11 +2655,20 @@ const selectPetCharacterCandidate = async (userId, petId, candidateKey) => {
     updated = await client.query(
       `
         update public.pet_characters
-        set status = 'generating_pack', selected_candidate_key = $2, error_code = null, updated_at = now()
+        set
+          status = 'generating_pack',
+          selected_candidate_key = $2,
+          -- Record which of the two styles was chosen. The expression pack is
+          -- generated from the selected candidate image, so it inherits the
+          -- style automatically; storing it is what lets a later regeneration
+          -- stay in the style the owner picked.
+          style_key = $3,
+          error_code = null,
+          updated_at = now()
         where id = $1
         returning *
       `,
-      [character.id, key],
+      [character.id, key, key.startsWith("candidate-") ? key.slice("candidate-".length) : character.style_key],
     );
     await client.query("commit");
   } catch (error) {
