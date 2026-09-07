@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SHIPPING_ESTIMATE_HE } from "@/lib/shipping";
 import { motion } from "framer-motion";
 import {
   Brain,
@@ -41,7 +42,7 @@ import { cn } from "@/lib/utils";
 const faqItems = [
   { id: 1, question: "מה שעות הפעילות שלכם?", answer: "אנחנו פתוחים ימים א׳-ה׳ 09:00-21:00, יום ו׳ 09:00-14:00. סגורים בשבת.", status: "active" },
   { id: 2, question: "מה מדיניות ההחזרות?", answer: "ניתן להחזיר מוצרים עד 14 יום מקבלת ההזמנה בתנאי שהמוצר לא נפתח ובאריזתו המקורית.", status: "active" },
-  { id: 3, question: "כמה זמן לוקח משלוח?", answer: "משלוחים מגיעים תוך 2-5 ימי עסקים. משלוח אקספרס תוך יום עסקים אחד.", status: "active" },
+  { id: 3, question: "כמה זמן לוקח משלוח?", answer: `משלוחים מגיעים תוך ${SHIPPING_ESTIMATE_HE}. משלוח אקספרס תוך יום עסקים אחד.`, status: "active" },
   { id: 4, question: "האם יש משלוח חינם?", answer: "כן! משלוח חינם בהזמנות מעל ₪200.", status: "active" },
   { id: 5, question: "איך אפשר לשלם?", answer: "אנחנו מקבלים כרטיסי אשראי, PayPal, ותשלום במזומן בעת קבלה.", status: "draft" },
 ];

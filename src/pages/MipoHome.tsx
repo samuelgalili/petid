@@ -15,6 +15,8 @@ import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import type { MipoPetCharacterExpression } from "@/lib/mipoApi";
 import { MOOD_EXPRESSION, type CharacterMood } from "@/lib/characterBehavior";
 import { usePetCompanionMood } from "@/hooks/usePetCompanionMood";
+import { consumePetCompanionReaction, PET_COMPANION_REACTION_EVENT } from "@/lib/petCompanionReactions";
+import { petVerbSuffix } from "@/lib/petGender";
 
 const MipoHome = () => {
   const navigate = useNavigate();
@@ -118,7 +120,7 @@ const MipoHome = () => {
         <section className="px-5 pb-4 pt-7 text-center">
           <p className="text-sm font-medium text-mipo-muted">{firstName}</p>
           <h1 className="mt-1 text-[1.7rem] font-semibold leading-tight tracking-[-0.035em] text-mipo-ink">
-            איך {petName} מרגיש{activePet?.pet_type === "cat" ? "ה" : ""} היום?
+            איך {petName} מרגיש{petVerbSuffix(activePet?.gender)} היום?
           </h1>
         </section>
 
