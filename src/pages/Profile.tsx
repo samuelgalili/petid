@@ -3,7 +3,13 @@ import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { SEO } from "@/components/SEO";
 import { PageTransition } from "@/components/PageTransition";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, Plus, Edit3, MessageCircle } from "lucide-react";
+import { ChevronRight, Plus, Edit3, MessageCircle, MoreVertical, Archive, FolderClock } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+import { useToast } from "@/hooks/use-toast";
+import { updateMyPet } from "@/lib/mipoApi";
 import { useNavigate, useParams } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import dogIcon from "@/assets/dog-official.svg";
@@ -38,7 +44,10 @@ interface Pet {
 const Profile = () => {
   const navigate = useNavigate();
   const { petId } = useParams<{ petId: string }>();
-  const { switchPet: contextSwitchPet, activePet: globalActivePet } = usePetPreference();
+  const { switchPet: contextSwitchPet, activePet: globalActivePet, refresh: refreshPets } = usePetPreference();
+  const { toast } = useToast();
+  const [petToArchive, setPetToArchive] = useState<string | null>(null);
+  const [archiving, setArchiving] = useState(false);
   const { isGuest } = useGuest();
 
   const [loading, setLoading] = useState(true);
@@ -380,6 +389,31 @@ const Profile = () => {
                       >
                         <Edit3 className="w-4 h-4 text-muted-foreground/50" strokeWidth={1.5} />
                       </button>
+                      {/* Editing was the only thing this page could do to a
+                          pet. Archiving, and the archive itself, had no way in
+                          from anywhere in the app. */}
+                      <DropdownMenu dir="rtl">
+                        <DropdownMenuTrigger asChild>
+                          <button className="p-2.5 rounded-xl hover:bg-muted/50 transition-colors" aria-label="עוד פעולות">
+                            <MoreVertical className="w-4 h-4 text-muted-foreground/50" strokeWidth={1.5} />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-52">
+                          <DropdownMenuItem onSelect={() => navigate(`/edit-pet/${selectedPet.id}`)}>
+                            <Edit3 className="w-4 h-4" />
+                            עריכת הפרטים
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => setPetToArchive(selectedPet.id)}>
+                            <Archive className="w-4 h-4" />
+                            העברה לארכיון
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onSelect={() => navigate("/archived-pets")}>
+                            <FolderClock className="w-4 h-4" />
+                            חיות בארכיון
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </motion.div>
                 )}
@@ -401,6 +435,36 @@ const Profile = () => {
             )}
           </AnimatePresence>
         </div>
+
+        {/* Archiving keeps the vet visits and vaccinations; only permanent
+            deletion, on the archive page, destroys them. */}
+        <ConfirmDialog
+          open={!!petToArchive}
+          onOpenChange={(open) => { if (!open) setPetToArchive(null); }}
+          title="להעביר לארכיון?"
+          description="החיה תוסר מהרשימה הפעילה. כל המידע הרפואי נשמר, ואפשר לשחזר אותה בכל רגע מ״חיות בארכיון״."
+          confirmLabel="העברה לארכיון"
+          loading={archiving}
+          onConfirm={async () => {
+            if (!petToArchive) return;
+            setArchiving(true);
+            try {
+              await updateMyPet(petToArchive, { archived: true, archived_at: new Date().toISOString() });
+              await refreshPets();
+              setPetToArchive(null);
+              toast({ title: "הועבר לארכיון", description: "אפשר לשחזר מ״חיות בארכיון״" });
+              navigate("/");
+            } catch (error) {
+              toast({
+                title: "ההעברה לארכיון נכשלה",
+                description: error instanceof Error ? error.message : undefined,
+                variant: "destructive",
+              });
+            } finally {
+              setArchiving(false);
+            }
+          }}
+        />
 
         {/* Menus & Editors */}
         <HamburgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />

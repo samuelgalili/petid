@@ -35,6 +35,8 @@ import {
   Lock,
   UserPen,
   Download,
+  Archive,
+  Pencil,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
@@ -47,7 +49,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotificationsBadge } from "@/hooks/useNotificationsBadge";
-import { getCurrentUser, type MipoProfile } from "@/lib/mipoApi";
+import { getCurrentUser, updateMyPet, type MipoProfile } from "@/lib/mipoApi";
 
 interface HamburgerMenuProps {
   isOpen: boolean;
@@ -62,6 +64,12 @@ const menuStrings = {
     editProfile: "עריכת פרופיל",
     myPets: "חיות המחמד שלי",
     addPet: "הוסף חיית מחמד",
+    editPet: "עריכה",
+    archivePet: "לארכיון",
+    archivedPets: "חיות בארכיון",
+    petArchived: "הועבר לארכיון",
+    petArchivedHint: "אפשר לשחזר או למחוק לצמיתות מ\"חיות בארכיון\"",
+    petArchiveFailed: "ההעברה לארכיון נכשלה",
     notifications: "התראות",
     messages: "הודעות",
     favorites: "מועדפים",
@@ -104,6 +112,12 @@ const menuStrings = {
     editProfile: "Edit Profile",
     myPets: "My Pets",
     addPet: "Add Pet",
+    editPet: "Edit",
+    archivePet: "Archive",
+    archivedPets: "Archived pets",
+    petArchived: "Moved to the archive",
+    petArchivedHint: "Restore or delete it for good from Archived pets",
+    petArchiveFailed: "Could not archive",
     notifications: "Notifications",
     messages: "Messages",
     favorites: "Favorites",
@@ -146,6 +160,12 @@ const menuStrings = {
     editProfile: "تعديل الملف",
     myPets: "حيواناتي",
     addPet: "إضافة حيوان",
+    editPet: "تعديل",
+    archivePet: "أرشفة",
+    archivedPets: "الحيوانات المؤرشفة",
+    petArchived: "نُقل إلى الأرشيف",
+    petArchivedHint: "يمكن استعادته أو حذفه نهائياً من الأرشيف",
+    petArchiveFailed: "تعذّرت الأرشفة",
     notifications: "إشعارات",
     messages: "رسائل",
     favorites: "المفضلة",
@@ -241,7 +261,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const { language, setLanguage, direction } = useLanguage();
-  const { activePet, pets, switchPet: contextSwitchPet } = usePetPreference();
+  const { activePet, pets, switchPet: contextSwitchPet, refresh: refreshPets } = usePetPreference();
   const { isAdmin, isBusiness } = useUserRole();
   const { isInstallable, isInstalled, installPWA } = usePWAInstall();
   const { user, signOut } = useAuth();
@@ -251,6 +271,7 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
 
   const [profile, setProfile] = useState<MipoProfile | null>(null);
   const [showPetPicker, setShowPetPicker] = useState(false);
+  const [archivingPet, setArchivingPet] = useState(false);
   const [installDismissed, setInstallDismissed] = useState(() =>
     localStorage.getItem("pwa_menu_install_dismissed") === "true"
   );
@@ -275,6 +296,27 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
   };
 
   const go = (path: string) => { navigate(path); onClose(); };
+
+  // Archiving is reversible and keeps the pet's vet visits and vaccinations,
+  // so it needs no confirmation of its own. Permanent deletion lives on the
+  // archive page, behind its own warning, and destroys those records.
+  const archiveActivePet = async () => {
+    if (!activePet || archivingPet) return;
+    setArchivingPet(true);
+    try {
+      await updateMyPet(activePet.id, { archived: true, archived_at: new Date().toISOString() });
+      await refreshPets();
+      toast({ title: s.petArchived, description: s.petArchivedHint });
+    } catch (error) {
+      toast({
+        title: s.petArchiveFailed,
+        description: error instanceof Error ? error.message : undefined,
+        variant: "destructive",
+      });
+    } finally {
+      setArchivingPet(false);
+    }
+  };
 
   const themeOptions = [
     { key: "light" as const, icon: Sun, label: s.lightMode },
@@ -421,6 +463,27 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
                     </motion.div>
                   )}
                 </AnimatePresence>
+
+                {/* The list showed the pets but offered nothing to do with
+                    them. These act on whichever pet is active, so switching
+                    above is how you choose the one you mean. */}
+                <div className="flex items-center gap-2 mt-2">
+                  <button
+                    onClick={() => go(`/edit-pet/${activePet.id}`)}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-muted/40 hover:bg-muted/70 transition-colors text-xs font-medium text-foreground"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    {s.editPet}
+                  </button>
+                  <button
+                    onClick={archiveActivePet}
+                    disabled={archivingPet}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-muted/40 hover:bg-muted/70 transition-colors text-xs font-medium text-muted-foreground disabled:opacity-50"
+                  >
+                    <Archive className="w-3.5 h-3.5" />
+                    {s.archivePet}
+                  </button>
+                </div>
               </div>
             )}
 
@@ -450,6 +513,10 @@ export const HamburgerMenu = ({ isOpen, onClose }: HamburgerMenuProps) => {
               {/* ── Pets ── */}
               <MenuItem icon={PawPrint} label={s.myPets} onClick={() => go("/")} isRtl={isRtl} />
               <MenuItem icon={Plus} label={s.addPet} onClick={() => go("/add-pet")} isRtl={isRtl} />
+              {/* The archive page could restore and permanently delete a pet
+                  all along, but nothing in the app linked to it, so anything
+                  archived was gone from view with no way back. */}
+              <MenuItem icon={Archive} label={s.archivedPets} onClick={() => go("/archived-pets")} isRtl={isRtl} />
 
               <SectionDivider />
 
