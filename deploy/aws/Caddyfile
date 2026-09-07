@@ -1,8 +1,20 @@
-www.mipo.pet {
-	redir https://mipo.pet{uri} permanent
+# Site addresses come from the environment so one file serves both
+# environments. docker-compose passes them through from the host .env:
+#
+#   production   MIPO_SITE_ADDRESS=mipo.pet
+#                MIPO_WWW_ADDRESS=www.mipo.pet
+#   staging      MIPO_SITE_ADDRESS=staging.mipo.pet
+#                MIPO_WWW_ADDRESS unset
+#
+# With MIPO_WWW_ADDRESS unset the redirect block binds a plain-HTTP localhost
+# port that is never published, so Caddy does not try to obtain a certificate
+# for a hostname that does not resolve.
+
+{$MIPO_WWW_ADDRESS:http://localhost:8081} {
+	redir https://{$MIPO_SITE_ADDRESS:mipo.pet}{uri} permanent
 }
 
-mipo.pet {
+{$MIPO_SITE_ADDRESS:mipo.pet} {
 	encode zstd gzip
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
@@ -12,6 +24,11 @@ mipo.pet {
 		Permissions-Policy "camera=(), microphone=(), geolocation=(self)"
 		+Content-Security-Policy "base-uri 'self'; object-src 'none'; frame-ancestors 'none'"
 	}
+
+	# Staging sets MIPO_ROBOTS_POLICY="noindex, nofollow" so it can never be
+	# indexed. Production leaves it unset and gets "all", the explicit
+	# index-normally value — never an empty header.
+	header X-Robots-Tag "{$MIPO_ROBOTS_POLICY:all}"
 
 	handle /api/* {
 		reverse_proxy mipo-api:3000
