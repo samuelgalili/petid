@@ -11,6 +11,7 @@ export interface MipoProduct {
   images?: string[] | null;
   /** Free-text category kept for imports. The tree is category_id. */
   category: string | null;
+  /** Populated once the category tree exists; absent before that migration. */
   category_id?: string | null;
   category_slug?: string | null;
   category_name?: string | null;
@@ -1537,6 +1538,8 @@ export async function deleteAdminProductCategory(
     }
     throw error;
   }
+}
+
 export interface MipoEconomicsOverview {
   window: { from: string; to: string };
   total_users: number;
@@ -1652,6 +1655,15 @@ export async function getEconomicsTimeline(days = 30, bucket = "day"): Promise<M
 export async function getMyUsage(days = 30): Promise<MipoUserUsage> {
   const result = await apiFetch<{ usage: MipoUserUsage }>(`/me/usage${economicsQuery(days)}`);
   return result.usage;
+}
+
+/**
+ * One product by id. A product page and a shared product link must resolve on
+ * their own rather than by downloading the whole catalogue and searching it.
+ */
+export async function getShopProduct(productId: string): Promise<MipoProduct> {
+  const result = await apiFetch<{ product: MipoProduct }>(`/products/${encodeURIComponent(productId)}`);
+  return result.product;
 }
 
 export async function getBreedInfo(petType: "dog" | "cat"): Promise<MipoBreedInfo[]> {

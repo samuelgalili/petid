@@ -488,6 +488,13 @@ const requireAdmin = async (request, response) => {
   return false;
 };
 
+// Answers "is this caller an admin" without rejecting the request when they
+// are not. Public endpoints use it to decide how much of a row to reveal.
+const isAdminRequest = async (request) => {
+  if (adminApiKey && secretsEqual(request.headers["x-admin-api-key"], adminApiKey)) return true;
+  return Boolean(await getAdminFromSession(request));
+};
+
 const requireAdminPermission = async (request, response, permission) => {
   if (!(await requireAdmin(request, response))) return false;
   if (request.admin.must_change_password) {
@@ -4172,6 +4179,31 @@ const queryProductsWithCategories = async (table, orderBy) => {
   }
 };
 
+// What a shop visitor is allowed to see about a product.
+//
+// mapBusinessProduct spreads the whole row, which carries cost_price,
+// supplier_id, suggested_price and the internal review flags. Those describe
+// Mipo's margin and buying decisions, not the product, and they were reaching
+// every visitor of /api/products. An allowlist rather than a blocklist, so a
+// column added later is private until someone deliberately publishes it.
+const PUBLIC_PRODUCT_FIELDS = [
+  "id", "name", "description", "price", "original_price", "sale_price",
+  "image_url", "images", "category", "category_id", "category_slug", "category_name",
+  "in_stock", "is_featured", "sku", "pet_type", "flavors", "brand",
+  "weight", "weight_unit", "price_per_weight", "ingredients", "benefits", "feeding_guide",
+  "product_attributes", "life_stage", "dog_size", "special_diet",
+  "breed_tags", "medical_tags", "kcal_per_kg", "safety_score",
+  "source_url", "source", "created_at", "updated_at",
+];
+
+const toPublicProduct = (product) => {
+  const publicProduct = {};
+  for (const field of PUBLIC_PRODUCT_FIELDS) {
+    if (Object.hasOwn(product, field)) publicProduct[field] = product[field];
+  }
+  return publicProduct;
+};
+
 const listProducts = async () => {
   // The id is the tiebreaker, and it is what makes this list hold still.
   // A bulk import gives every row the same created_at to the microsecond, and
@@ -4281,11 +4313,6 @@ const ensureDefaultBusinessProfile = async () => {
 const withoutSupplierOrigin = (product) => {
   const { image_source_url: _origin, image_adopted_at: _adoptedAt, ...rest } = product;
   return rest;
-};
-
-const isAdminRequest = async (request) => {
-  if (adminApiKey && secretsEqual(request.headers["x-admin-api-key"], adminApiKey)) return true;
-  return Boolean(await getAdminFromSession(request));
 };
 
 const isOwnedImageUrl = (value) => {
@@ -4446,6 +4473,17 @@ const fetchProductById = async (id, source) => {
 
   const result = await pool.query("select * from public.business_products where id = $1", [id]);
   return result.rows[0] ? mapBusinessProduct(result.rows[0]) : null;
+};
+
+// A public caller does not know which table a product lives in.
+const fetchPublicProductById = async (id) => {
+  const [business, scraped] = await Promise.all([
+    pool.query("select * from public.business_products where id = $1", [id]),
+    pool.query("select * from public.scraped_products where id = $1", [id]),
+  ]);
+  if (business.rows[0]) return mapBusinessProduct(business.rows[0]);
+  if (scraped.rows[0]) return mapScrapedProduct(scraped.rows[0]);
+  return null;
 };
 
 const updateBusinessProduct = async (id, body) => {
@@ -8366,10 +8404,11 @@ const handleRequest = async (request, response) => {
 
     if (request.method === "GET" && url.pathname === "/api/products") {
       const products = await listProducts();
-      // Which supplier an image came from is buying information, not product
-      // information. Admin screens keep it; the shop never sees it.
+      // Admin screens edit the full row; everyone else gets the public shape.
+      // The allowlist is what keeps the supplier origin off a shop response
+      // too: image_source_url and image_adopted_at are simply not in it.
       const asAdmin = await isAdminRequest(request);
-      sendJson(response, 200, { products: asAdmin ? products : products.map(withoutSupplierOrigin) });
+      sendJson(response, 200, { products: asAdmin ? products : products.map(toPublicProduct) });
       return;
     }
 
@@ -8440,6 +8479,20 @@ const handleRequest = async (request, response) => {
         metadata: { reassigned: result.reassigned },
       });
       sendJson(response, 200, result);
+      return;
+    }
+
+    // A product page should not have to download the whole catalogue to render
+    // one product, and a shared product link has to work on its own.
+    const publicProductMatch = url.pathname.match(/^\/api\/products\/([0-9a-fA-F-]{36})$/);
+    if (publicProductMatch && request.method === "GET") {
+      const product = await fetchPublicProductById(publicProductMatch[1]);
+      if (!product) {
+        sendError(response, 404, "Product not found");
+        return;
+      }
+      const asAdmin = await isAdminRequest(request);
+      sendJson(response, 200, { product: asAdmin ? product : toPublicProduct(product) });
       return;
     }
 

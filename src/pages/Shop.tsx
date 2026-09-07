@@ -912,6 +912,16 @@ const Shop = () => {
                     </div>
                   </div>
                 )}
+
+                {/* The sheet is a quick look. Everything the product actually
+                    carries - ingredients, feeding guide, variants, spec - lives
+                    on its own page, which is also what a shared link opens. */}
+                <button
+                  onClick={() => navigate(`/product/${selectedProduct.id}${activePet?.id ? `?petId=${activePet.id}` : ""}`)}
+                  className="mt-3 min-h-11 w-full rounded-2xl border border-border/60 text-sm font-medium text-foreground transition-colors hover:bg-muted/50"
+                >
+                  לדף המוצר המלא
+                </button>
               </div>
             </motion.div>
           )}
