@@ -4173,9 +4173,14 @@ const queryProductsWithCategories = async (table, orderBy) => {
 };
 
 const listProducts = async () => {
+  // The id is the tiebreaker, and it is what makes this list hold still.
+  // A bulk import gives every row the same created_at to the microsecond, and
+  // an ORDER BY with ties leaves the rest to the executor -- which reorders
+  // after an UPDATE, because the new row version is written at the end of the
+  // heap. That is why an edited product appeared to jump somewhere random.
   const [businessProducts, scrapedProducts] = await Promise.all([
-    queryProductsWithCategories("business_products", "p.created_at desc"),
-    queryProductsWithCategories("scraped_products", "p.scraped_at desc nulls last, p.created_at desc"),
+    queryProductsWithCategories("business_products", "p.created_at desc, p.id"),
+    queryProductsWithCategories("scraped_products", "p.scraped_at desc nulls last, p.created_at desc, p.id"),
   ]);
 
   return [

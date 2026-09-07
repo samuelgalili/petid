@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { Search, Filter, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,11 @@ interface DataTableProps<T> {
   emptyIcon?: ReactNode;
   emptyMessage?: string;
   pageSize?: number;
+  /**
+   * A row to go to and mark. Saving an edit hands the id back so the person
+   * lands on the row they just changed instead of hunting for it across pages.
+   */
+  highlightId?: string | null;
 }
 
 export function DataTable<T>({
@@ -54,12 +59,14 @@ export function DataTable<T>({
   emptyIcon,
   emptyMessage = "לא נמצאו תוצאות",
   pageSize = 10,
+  highlightId = null,
 }: DataTableProps<T>) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [currentPage, setCurrentPage] = useState(1);
+  const highlightRowRef = useRef<HTMLTableRowElement>(null);
 
   // Filter data
   let filteredData = [...data];
@@ -94,6 +101,24 @@ export function DataTable<T>({
   }
 
   // Pagination
+  // Where the marked row ended up after filtering and sorting, so the table can
+  // turn to its page rather than leaving the person on whatever page they were.
+  const highlightIndex = useMemo(
+    () => (highlightId ? filteredData.findIndex((item) => getItemId(item) === highlightId) : -1),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [highlightId, filteredData.length, sortKey, sortDir, searchQuery],
+  );
+
+  useEffect(() => {
+    if (highlightIndex < 0) return;
+    setCurrentPage(Math.floor(highlightIndex / pageSize) + 1);
+  }, [highlightIndex, pageSize]);
+
+  useEffect(() => {
+    if (highlightIndex < 0) return;
+    highlightRowRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [highlightIndex, currentPage]);
+
   const totalPages = Math.ceil(filteredData.length / pageSize);
   const paginatedData = filteredData.slice(
     (currentPage - 1) * pageSize,
@@ -251,7 +276,14 @@ export function DataTable<T>({
                 </TableRow>
               ) : (
                 paginatedData.map((item) => (
-                  <TableRow key={getItemId(item)}>
+                  <TableRow
+                    key={getItemId(item)}
+                    ref={getItemId(item) === highlightId ? highlightRowRef : undefined}
+                    className={cn(
+                      getItemId(item) === highlightId &&
+                        "bg-primary/10 ring-1 ring-inset ring-primary/40 transition-colors",
+                    )}
+                  >
                     {selectable && (
                       <TableCell>
                         <Checkbox
