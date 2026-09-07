@@ -52,6 +52,12 @@ import {
   generateCharacterCandidates,
   generateCharacterExpressions,
 } from "./petCharacter.js";
+import {
+  EVENT_TYPES,
+  emitEvent,
+  originFromRequest,
+  startDispatcher,
+} from "./events.js";
 
 const port = Number(process.env.PORT || 3000);
 const databaseUrl = process.env.DATABASE_URL;
@@ -979,6 +985,21 @@ const signupUser = async (request, body) => {
       [userResult.rows[0].id, email],
     );
 
+    await emitEvent(client, {
+      type: EVENT_TYPES.USER_REGISTERED,
+      entityType: "user",
+      entityId: userResult.rows[0].id,
+      origin: originFromRequest(request),
+      payload: {
+        email,
+        full_name: fullName,
+        phone,
+        // Consent has not been given at signup; a welcome flow must check
+        // marketing_consent before sending anything promotional.
+        marketing_consent: false,
+      },
+    });
+
     const token = await createUserSession(request, userResult.rows[0].id, client);
     await client.query("commit");
 
@@ -1660,7 +1681,22 @@ const insertUserPet = async (userId, body) => {
     ],
   );
 
-  return serializePet(result.rows[0]);
+  const pet = result.rows[0];
+  await emitEvent(pool, {
+    type: EVENT_TYPES.PET_CREATED,
+    entityType: "pet",
+    entityId: pet.id,
+    payload: {
+      owner_user_id: userId,
+      name: pet.name,
+      type: pet.type,
+      breed: pet.breed,
+      birth_date: pet.birth_date,
+      microchip_number: pet.microchip_number,
+    },
+  });
+
+  return serializePet(pet);
 };
 
 const listUserPets = async (userId, archived = "false") => {
@@ -1753,6 +1789,28 @@ const getPublicPet = async (petId) => {
 const logPublicPetQrScan = async (petId) => {
   if (!uuidPattern.test(String(petId || ""))) return false;
 
+  // A scan of a pet currently marked lost is the highest-urgency signal in the
+  // system: someone is standing next to a missing animal right now. Emitted
+  // before the log write so a failure to log still raises the alert.
+  try {
+    const lost = await pool.query(
+      "select id, user_id, name, is_lost from public.pets where id = $1 and is_lost = true and archived = false",
+      [petId],
+    );
+    if (lost.rowCount > 0) {
+      const pet = lost.rows[0];
+      await emitEvent(pool, {
+        type: EVENT_TYPES.PET_QR_SCANNED,
+        entityType: "pet",
+        entityId: pet.id,
+        origin: "system",
+        payload: { pet_name: pet.name, owner_user_id: pet.user_id, is_lost: true },
+      });
+    }
+  } catch (error) {
+    console.warn("Failed to emit QR scan event", error.message);
+  }
+
   try {
     await pool.query(
       `
@@ -1780,6 +1838,15 @@ const updateUserPet = async (userId, petId, body) => {
     return `${column} = $${values.length}`;
   });
 
+  // Read the lost flag first so the update can be compared against it. Only a
+  // real transition emits — saving the form without changing it emits nothing.
+  const previous = Object.prototype.hasOwnProperty.call(payload, "is_lost")
+    ? (await pool.query(
+      "select is_lost from public.pets where id = $1 and user_id = $2",
+      [petId, userId],
+    )).rows[0] || null
+    : null;
+
   const result = await pool.query(
     `
       update public.pets
@@ -1790,7 +1857,27 @@ const updateUserPet = async (userId, petId, body) => {
     values,
   );
 
-  return result.rows[0] ? serializePet(result.rows[0]) : null;
+  const pet = result.rows[0];
+  if (!pet) return null;
+
+  if (previous && Boolean(previous.is_lost) !== Boolean(pet.is_lost)) {
+    await emitEvent(pool, {
+      type: pet.is_lost ? EVENT_TYPES.PET_MARKED_LOST : EVENT_TYPES.PET_FOUND,
+      entityType: "pet",
+      entityId: pet.id,
+      payload: {
+        owner_user_id: userId,
+        name: pet.name,
+        type: pet.type,
+        lost_since: pet.lost_since,
+        // Included so a finder-facing workflow does not have to read them back.
+        lost_reward_text: pet.is_lost ? pet.lost_reward_text : null,
+        lost_contact_phone: pet.is_lost && pet.lost_show_phone ? pet.lost_contact_phone : null,
+      },
+    });
+  }
+
+  return serializePet(pet);
 };
 
 const normalizeStorageKeyList = (value) => (
@@ -3294,7 +3381,26 @@ const createUserInsuranceClaim = async (userId, body) => {
     ],
   );
 
-  return serializeInsuranceClaim(result.rows[0]);
+  const claim = result.rows[0];
+  await emitEvent(pool, {
+    type: EVENT_TYPES.CLAIM_SUBMITTED,
+    entityType: "insurance_claim",
+    entityId: claim.id,
+    payload: {
+      claim_number: claim.claim_number,
+      owner_user_id: userId,
+      pet_id: claim.pet_id,
+      pet_name: claim.pet_name,
+      clinic_name: claim.clinic_name,
+      visit_date: claim.visit_date,
+      total_amount: claim.total_amount === null ? null : Number(claim.total_amount),
+      status: claim.status,
+      // Diagnosis and the owner's ID digits are deliberately left out — a
+      // claims workflow can read them back if it is entitled to.
+    },
+  });
+
+  return serializeInsuranceClaim(claim);
 };
 
 const serializeServiceBooking = (row) => ({
@@ -3396,7 +3502,26 @@ const createUserServiceBooking = async (userId, body) => {
     ],
   );
 
-  return serializeServiceBooking(result.rows[0]);
+  const booking = result.rows[0];
+  await emitEvent(pool, {
+    type: EVENT_TYPES.BOOKING_CREATED,
+    entityType: "service_booking",
+    entityId: booking.id,
+    payload: {
+      booking_number: booking.booking_number,
+      owner_user_id: userId,
+      pet_id: booking.pet_id,
+      service_type: booking.service_type,
+      service_name: booking.service_name,
+      provider_name: booking.provider_name,
+      requested_date: booking.requested_date,
+      start_date: booking.start_date,
+      total_price: booking.total_price === null ? null : Number(booking.total_price),
+      status: booking.status,
+    },
+  });
+
+  return serializeServiceBooking(booking);
 };
 
 const normalizePetType = (value) => {
@@ -4454,7 +4579,7 @@ const attachOrderItems = async (orders) => {
   return orders.map((order) => mapOrder(order, itemsByOrder.get(order.id) || []));
 };
 
-const createOrder = async (body, currentUser = null) => {
+const createOrder = async (body, currentUser = null, eventOrigin = "app") => {
   const shippingAddress = normalizeShippingAddress(body.shipping_address || body.shippingData);
   const paymentMethod = String(body.payment_method || "credit-card");
   if (!["credit-card", "apple-pay", "google-pay", "bit", "paybox", "paypal", "cash-on-delivery"].includes(paymentMethod)) {
@@ -4619,6 +4744,27 @@ const createOrder = async (body, currentUser = null) => {
     if (amounts.coupon?.id) {
       await client.query("update public.coupons set used_count = used_count + 1, updated_at = now() where id = $1", [amounts.coupon.id]);
     }
+
+    await emitEvent(client, {
+      type: EVENT_TYPES.ORDER_CREATED,
+      entityType: "order",
+      entityId: order.id,
+      origin: eventOrigin,
+      payload: {
+        order_number: order.order_number,
+        user_id: order.user_id,
+        customer_id: order.customer_id,
+        customer_email: order.customer_email,
+        total: Number(order.total),
+        item_count: orderItems.length,
+        payment_method: order.payment_method,
+        payment_status: order.payment_status,
+        status: order.status,
+        order_type: order.order_type,
+        medical_urgency: order.medical_urgency,
+        coupon_code: amounts.coupon?.code || null,
+      },
+    });
 
     await client.query("commit");
     return {
@@ -5182,7 +5328,7 @@ const canAccessOrder = async (request, order, accessToken) => {
   return verifyOpaqueToken(accessToken, order.accessTokenHash);
 };
 
-const updateOrder = async (id, body) => {
+const updateOrder = async (id, body, eventOrigin = "admin") => {
   const assignments = [];
   const values = [id];
 
@@ -5215,15 +5361,74 @@ const updateOrder = async (id, body) => {
 
   if (assignments.length === 0) return getOrder(id);
 
-  const result = await pool.query(
-    `
-      update public.orders
-      set ${assignments.join(", ")}, updated_at = now()
-      where id = $1
-      returning *
-    `,
-    values,
+  const previous = await pool.query(
+    "select status, payment_status, shipping_status, tracking_number from public.orders where id = $1",
+    [id],
   );
+  const before = previous.rows[0] || null;
+
+  const client = await pool.connect();
+  let result;
+  try {
+    await client.query("begin");
+    result = await client.query(
+      `
+        update public.orders
+        set ${assignments.join(", ")}, updated_at = now()
+        where id = $1
+        returning *
+      `,
+      values,
+    );
+
+    if (result.rowCount > 0 && before) {
+      const after = result.rows[0];
+      const base = {
+        order_number: after.order_number,
+        user_id: after.user_id,
+        customer_id: after.customer_id,
+        customer_email: after.customer_email,
+        total: Number(after.total),
+      };
+
+      // One event per field that actually moved. An admin saving a form
+      // without changing anything emits nothing.
+      if (before.status !== after.status || before.payment_status !== after.payment_status) {
+        await emitEvent(client, {
+          type: EVENT_TYPES.ORDER_STATUS_CHANGED,
+          entityType: "order",
+          entityId: id,
+          origin: eventOrigin,
+          payload: {
+            ...base,
+            status: { from: before.status, to: after.status },
+            payment_status: { from: before.payment_status, to: after.payment_status },
+          },
+        });
+      }
+
+      if (before.shipping_status !== after.shipping_status
+        || before.tracking_number !== after.tracking_number) {
+        await emitEvent(client, {
+          type: EVENT_TYPES.ORDER_SHIPPED,
+          entityType: "order",
+          entityId: id,
+          origin: eventOrigin,
+          payload: {
+            ...base,
+            shipping_status: { from: before.shipping_status, to: after.shipping_status },
+            tracking_number: after.tracking_number,
+          },
+        });
+      }
+    }
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback").catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
 
   if (result.rowCount === 0) return null;
   const [order] = await attachOrderItems(result.rows);
@@ -5807,36 +6012,99 @@ const handleCardcomWebhook = async (request, url) => {
     ],
   );
 
+  // The status change and its event are written together. The update stays
+  // conditional, so a webhook CardCom retries changes nothing the second time —
+  // and because the event is only emitted when a row actually changed, a
+  // duplicate delivery cannot produce a duplicate event either.
   if (isSuccess) {
     if (order.payment_status !== "paid") {
-      await pool.query(
-        `
-          update public.orders
-          set payment_status = 'paid',
-              payment_transaction_id = $2,
-              status = 'processing',
-              updated_at = now()
-          where id = $1
-            and payment_transaction_id = any($3::text[])
-            and payment_status <> 'paid'
-        `,
-        [order.id, lowProfileCode, acceptedPaymentIdentifiers],
-      );
+      const client = await pool.connect();
+      try {
+        await client.query("begin");
+        const updated = await client.query(
+          `
+            update public.orders
+            set payment_status = 'paid',
+                payment_transaction_id = $2,
+                status = 'processing',
+                updated_at = now()
+            where id = $1
+              and payment_transaction_id = any($3::text[])
+              and payment_status <> 'paid'
+            returning order_number, user_id, customer_id, customer_email, total, status
+          `,
+          [order.id, lowProfileCode, acceptedPaymentIdentifiers],
+        );
+
+        if (updated.rowCount > 0) {
+          const paid = updated.rows[0];
+          await emitEvent(client, {
+            type: EVENT_TYPES.ORDER_PAID,
+            entityType: "order",
+            entityId: order.id,
+            payload: {
+              order_number: paid.order_number,
+              user_id: paid.user_id,
+              customer_id: paid.customer_id,
+              customer_email: paid.customer_email,
+              total: Number(paid.total),
+              status: paid.status,
+              transaction_id: transactionId,
+              low_profile_code: lowProfileCode,
+            },
+          });
+        }
+        await client.query("commit");
+      } catch (error) {
+        await client.query("rollback").catch(() => {});
+        throw error;
+      } finally {
+        client.release();
+      }
     }
   } else if (order.payment_status !== "paid") {
-    await pool.query(
-      `
-        update public.orders
-        set payment_status = 'failed',
-            payment_transaction_id = null,
-            payment_url = null,
-            updated_at = now()
-        where id = $1
-          and payment_transaction_id = any($2::text[])
-          and payment_status <> 'paid'
-      `,
-      [order.id, acceptedPaymentIdentifiers],
-    );
+    const client = await pool.connect();
+    try {
+      await client.query("begin");
+      const updated = await client.query(
+        `
+          update public.orders
+          set payment_status = 'failed',
+              payment_transaction_id = null,
+              payment_url = null,
+              updated_at = now()
+          where id = $1
+            and payment_transaction_id = any($2::text[])
+            and payment_status <> 'paid'
+          returning order_number, user_id, customer_email, total
+        `,
+        [order.id, acceptedPaymentIdentifiers],
+      );
+
+      if (updated.rowCount > 0) {
+        const failed = updated.rows[0];
+        await emitEvent(client, {
+          type: EVENT_TYPES.ORDER_PAYMENT_FAILED,
+          entityType: "order",
+          entityId: order.id,
+          payload: {
+            order_number: failed.order_number,
+            user_id: failed.user_id,
+            customer_email: failed.customer_email,
+            total: Number(failed.total),
+            operation_response: operationResponse,
+            deal_response: dealResponse,
+            low_profile_code: lowProfileCode,
+          },
+        });
+      }
+      await client.query("commit");
+    } catch (error) {
+      await client.query("rollback").catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   const paymentStatus = order.payment_status === "paid" || isSuccess ? "paid" : "failed";
@@ -5865,6 +6133,19 @@ const createReport = async (body, reporterId = null) => {
       reporterId,
     ],
   );
+
+  await emitEvent(pool, {
+    type: EVENT_TYPES.CONTENT_REPORTED,
+    entityType: "content_report",
+    entityId: id,
+    payload: {
+      content_type: body.content_type || "product",
+      content_id: body.content_id || null,
+      reason: body.reason || "other",
+      reporter_id: reporterId,
+    },
+  });
+
   return { id };
 };
 
@@ -6884,7 +7165,11 @@ const handleRequest = async (request, response) => {
     const adminOrderMatch = url.pathname.match(/^\/api\/admin\/orders\/([0-9a-fA-F-]{36})$/);
     if (adminOrderMatch && request.method === "PATCH") {
       if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
-      const order = await updateOrder(adminOrderMatch[1], await readBody(request));
+      const order = await updateOrder(
+        adminOrderMatch[1],
+        await readBody(request),
+        originFromRequest(request) === "automation" ? "automation" : "admin",
+      );
       if (!order) {
         sendError(response, 404, "Order not found");
         return;
@@ -6944,7 +7229,7 @@ const handleRequest = async (request, response) => {
       if (!enforceRateLimit(request, response, "order-create", rateLimits.orderCreate)) return;
       const body = await readBody(request);
       const auth = await getUserFromSession(request).catch(() => null);
-      const result = await createOrder(body, auth?.user || null);
+      const result = await createOrder(body, auth?.user || null, originFromRequest(request));
       sendJson(response, 201, {
         order: result.order,
         ...(result.accessToken ? { access_token: result.accessToken } : {}),
@@ -7125,4 +7410,8 @@ server.listen(port, () => {
   resumePetCharacterJobs().catch((error) => {
     console.error("Failed to resume pet character generation", error);
   });
+  // No-op until AUTOMATION_WEBHOOK_URL is set. Events accumulate in the outbox
+  // either way, so enabling delivery later replays everything recorded while it
+  // was off.
+  startDispatcher({ pool });
 });
