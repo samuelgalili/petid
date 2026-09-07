@@ -461,7 +461,7 @@ WhatsApp - קישורי שיתוף ויצירת קשר
 ## 📁 מבנה הפרויקט
 
 ```
-petid/
+mipo/
 ├── docs/                    # תיעוד
 │   ├── PROJECT_PROMPT.md
 │   └── PROJECT_DESCRIPTION.md

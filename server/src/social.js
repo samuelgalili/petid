@@ -87,7 +87,7 @@ const postSelect = `
   select
     post.*,
     upload.storage_key,
-    profile.full_name as creator_name,
+    author.full_name as creator_name,
     profile.avatar_url as creator_avatar_url,
     pet.name as pet_name,
     pet.avatar_url as pet_avatar_url,
@@ -118,6 +118,7 @@ const postSelect = `
   from public.social_posts post
   join public.user_uploads upload on upload.id = post.upload_id
   left join public.profiles profile on profile.id = post.user_id
+  left join public.app_users author on author.id = post.user_id
   left join public.pets pet on pet.id = post.pet_id
 `;
 
@@ -262,11 +263,12 @@ export const listSocialComments = async (pool, userId, postId, { limit = 80 } = 
         comment.parent_id,
         comment.body,
         comment.created_at,
-        profile.full_name as creator_name,
+        author.full_name as creator_name,
         profile.avatar_url as creator_avatar_url,
         (comment.user_id = $2) as is_owner
       from public.social_post_comments comment
       left join public.profiles profile on profile.id = comment.user_id
+      left join public.app_users author on author.id = comment.user_id
       where comment.post_id = $1 and comment.status = 'published'
       order by comment.created_at asc
       limit $3

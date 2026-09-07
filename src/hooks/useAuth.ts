@@ -27,11 +27,15 @@ export const useAuth = () => {
   const [user, setUser] = useState<MipoUser | null>(null);
   const [session, setSession] = useState<MipoSession | null>(null);
   const [loading, setLoading] = useState(true);
+  // Reported by /auth/me: whether this browser also holds an admin session.
+  // Signing in as a user never grants it -- the panel is a separate identity.
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const applyAuth = (auth: MipoAuthResult | null) => {
     const nextSession = toSession(auth);
     setSession(nextSession);
     setUser(nextSession?.user ?? null);
+    setIsAdmin(Boolean(auth?.is_admin));
   };
 
   useEffect(() => {
@@ -83,6 +87,7 @@ export const useAuth = () => {
     password: string;
     birthdate?: string | null;
     phone?: string | null;
+    accept_terms: boolean;
   }) => {
     try {
       const auth = await signupUser(input);
@@ -106,7 +111,7 @@ export const useAuth = () => {
         "addPetDraft",
         "mipo_order_ids",
         "mipo_order_access_tokens",
-        "petid-cart",
+        "mipo-cart",
         "chat_pending_intent",
       ].forEach((key) => localStorage.removeItem(key));
       ["lastOrder", "pendingOrder", "mipo_checkout_contact", "appliedCoupon"]
@@ -124,6 +129,7 @@ export const useAuth = () => {
     user,
     session,
     loading,
+    isAdmin,
     signIn,
     signUp,
     signOut,

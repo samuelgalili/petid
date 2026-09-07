@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import type { MipoPetCharacterExpression } from "@/lib/mipoApi";
+import type { CharacterMood } from "@/lib/characterBehavior";
 import { cn } from "@/lib/utils";
 
 export type OrbitSlot = {
@@ -21,8 +21,8 @@ type PetOrbitProps = {
   slots: OrbitSlot[];
   petName: string;
   avatarUrl: string;
-  /** Generated expression images use full-body idle motion instead of a static portrait. */
-  characterExpression?: MipoPetCharacterExpression;
+  /** Drives the micro animation. The picture comes from avatarUrl; this is the motion. */
+  mood?: CharacterMood;
   isCharacter?: boolean;
   loading?: boolean;
   /** Tapping the pet — mood check-in */
@@ -39,24 +39,25 @@ const POSITION = [
 
 const CLOCKWISE_DELAY = [0, 0.12, 0.04, 0.08];
 
-const REACTION_ANIMATIONS = {
-  neutral: { y: [0, -3, 0], rotate: [0, -0.7, 0], scale: [1, 1.01, 1] },
-  happy: { y: [0, -7, 0, -3, 0], rotate: [0, -1.5, 1.5, 0], scale: [1, 1.025, 1] },
-  curious: { y: [0, -2, 0], rotate: [0, 2.5, 1.2, 0], scale: [1, 1.012, 1] },
-  sleepy: { y: [0, 2, 0], rotate: [0, -0.8, 0], scale: [1, 0.985, 1] },
-  proud: { y: [0, -4, 0], rotate: [0, 0.7, 0], scale: [1, 1.018, 1] },
-  celebrate: { y: [0, -10, 0, -5, 0], rotate: [0, -2, 2, 0], scale: [1, 1.035, 1] },
-  attentive: { y: [0, -3, 0], rotate: [0, 1.2, -0.6, 0], scale: [1, 1.018, 1] },
-} satisfies Record<MipoPetCharacterExpression, { y: number[]; rotate: number[]; scale: number[] }>;
+/**
+ * Micro animation per mood. Neutral is the dominant state, so it is the
+ * quietest thing here: a 3px drift over five seconds reads as breathing, not as
+ * movement. Nothing bounces, floats or waves.
+ */
+const MOOD_ANIMATION = {
+  neutral: { y: [0, -3, 0], rotate: [0, -0.5, 0], scale: [1, 1.008, 1] },
+  happy: { y: [0, -5, 0], rotate: [0, -1.1, 0.8, 0], scale: [1, 1.018, 1] },
+  excited: { y: [0, -7, 0, -3, 0], rotate: [0, -1.4, 1.4, 0], scale: [1, 1.026, 1] },
+  curious: { y: [0, -2, 0], rotate: [0, 2.2, 1, 0], scale: [1, 1.012, 1] },
+  concerned: { y: [0, -2, 0], rotate: [0, 1, -0.5, 0], scale: [1, 1.014, 1] },
+} satisfies Record<CharacterMood, { y: number[]; rotate: number[]; scale: number[] }>;
 
-const REACTION_DURATION: Record<MipoPetCharacterExpression, number> = {
-  neutral: 3.8,
-  happy: 2.8,
+const MOOD_DURATION: Record<CharacterMood, number> = {
+  neutral: 5.2,
+  happy: 3.2,
+  excited: 2.5,
   curious: 3.4,
-  sleepy: 4.8,
-  proud: 3.6,
-  celebrate: 2.5,
-  attentive: 3.1,
+  concerned: 3.1,
 };
 
 /**
@@ -68,7 +69,7 @@ const PetOrbit = ({
   slots,
   petName,
   avatarUrl,
-  characterExpression = "neutral",
+  mood = "neutral",
   isCharacter = false,
   loading,
   onPetClick,
@@ -90,7 +91,7 @@ const PetOrbit = ({
           "mipo-gradient-ring relative h-[166px] w-[166px] shadow-[0_18px_42px_rgba(96,165,250,0.20)]",
           isCharacter && "shadow-[0_20px_52px_rgba(139,92,246,0.24)]",
         )}>
-          {isCharacter && characterExpression === "celebrate" && !reduceMotion && (
+          {isCharacter && mood === "excited" && !reduceMotion && (
             <>
               <motion.span
                 aria-hidden="true"
@@ -112,9 +113,9 @@ const PetOrbit = ({
             ) : (
               <motion.div
                 className={cn(isCharacter ? "absolute -inset-3" : "h-full w-full")}
-                animate={isCharacter && !reduceMotion ? REACTION_ANIMATIONS[characterExpression] : { y: 0, rotate: 0, scale: 1 }}
+                animate={isCharacter && !reduceMotion ? MOOD_ANIMATION[mood] : { y: 0, rotate: 0, scale: 1 }}
                 transition={isCharacter && !reduceMotion
-                  ? { duration: REACTION_DURATION[characterExpression], repeat: Infinity, ease: "easeInOut" }
+                  ? { duration: MOOD_DURATION[mood], repeat: Infinity, ease: "easeInOut" }
                   : { duration: 0 }}
               >
                 <AnimatePresence mode="wait" initial={false}>

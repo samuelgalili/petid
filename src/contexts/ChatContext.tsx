@@ -218,7 +218,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         } else {
           setMessages([{
             role: "assistant",
-            content: `היי ${firstName}! מה שלום? 🐾\n\nעל מי נדבר היום?`,
+            // Greets someone with several pets. It reused the single-pet
+            // wording, "מה שלום {name}?", with the name dropped because there
+            // is no one pet to name -- leaving the dangling "מה שלום?".
+            // Asking who first is the sentence that fits more than one.
+            content: `היי ${firstName}! 🐾\n\nעל מי נדבר היום?`,
             suggestions: pets.map(p => p.name),
           }]);
         }

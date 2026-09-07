@@ -1,4 +1,4 @@
-// Petid Animations - Commercial Brand
+// Mipo Animations - Commercial Brand
 // Professional, subtle, clean animations
 
 import { Variants } from 'framer-motion';
@@ -102,7 +102,7 @@ export const pointsParticleTransition = {
   ease: 'easeOut',
 };
 
-// CTA Button Pulse Animation (Petid Only)
+// CTA Button Pulse Animation (Mipo Only)
 export const ctaPulseAnimation: Variants = {
   initial: {
     boxShadow: '0 0 0 0 hsla(209, 79%, 52%, 0.4)',
@@ -259,18 +259,18 @@ export const checkmarkTransition = {
   ease: 'easeOut',
 };
 
-// Confetti Trigger Function (Petid style - more subtle)
-export const triggerPetidConfetti = async () => {
+// Confetti Trigger Function (Mipo style - more subtle)
+export const triggerMipoConfetti = async () => {
   const confetti = (await import('canvas-confetti')).default;
   
-  // Petid brand colors - more professional
-  const petidColors = ['#2688E6', '#37B679', '#FFD748', '#F7F8FA'];
+  // Mipo brand colors - more professional
+  const mipoColors = ['#2688E6', '#37B679', '#FFD748', '#F7F8FA'];
   
   confetti({
     particleCount: 60,
     spread: 50,
     origin: { y: 0.7 },
-    colors: petidColors,
+    colors: mipoColors,
     shapes: ['circle'],
     scalar: 1,
     gravity: 1.2,
@@ -278,7 +278,7 @@ export const triggerPetidConfetti = async () => {
 };
 
 // Export all animations
-export const PetidAnimations = {
+export const MipoAnimations = {
   addToCart: { variants: addToCartAnimation, transition: addToCartTransition },
   cartItemFly: { variants: cartItemFlyAnimation, transition: cartItemFlyTransition },
   bottomSheet: { variants: bottomSheetAnimation, transition: bottomSheetTransition },
@@ -293,7 +293,7 @@ export const PetidAnimations = {
   skeleton: { variants: skeletonAnimation, transition: skeletonTransition },
   badgePop: { variants: badgePopAnimation, transition: badgePopTransition },
   checkmark: { variants: checkmarkAnimation, transition: checkmarkTransition },
-  triggerConfetti: triggerPetidConfetti,
+  triggerConfetti: triggerMipoConfetti,
 };
 
-export default PetidAnimations;
+export default MipoAnimations;

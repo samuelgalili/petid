@@ -185,8 +185,8 @@ const campaigns: AdCampaign[] = [
 ];
 
 // MIPO brand colors
-const PETID_BLUE = '#1D4E89';
-const PETID_GOLD = '#F7BF00';
+const MIPO_BLUE = '#1D4E89';
+const MIPO_GOLD = '#F7BF00';
 
 const AdCampaigns = () => {
   const [currentCampaign, setCurrentCampaign] = useState(0);
@@ -210,7 +210,7 @@ const AdCampaigns = () => {
   const downloadImage = () => {
     const link = document.createElement('a');
     link.href = campaign.image;
-    link.download = `petid-${campaign.id}-${format}-${language}.png`;
+    link.download = `mipo-${campaign.id}-${format}-${language}.png`;
     link.click();
     toast({
       title: language === 'he' ? 'התמונה הורדה!' : 'Image Downloaded!',
@@ -346,8 +346,8 @@ const AdCampaigns = () => {
                   {/* Logo */}
                   <div className="flex justify-center mb-4">
                     <div className="flex items-center gap-1">
-                      <span className="text-2xl font-black" style={{ color: PETID_BLUE }}>Pet</span>
-                      <span className="text-2xl font-black" style={{ color: PETID_GOLD }}>ID</span>
+                      <span className="text-2xl font-black" style={{ color: MIPO_BLUE }}>Pet</span>
+                      <span className="text-2xl font-black" style={{ color: MIPO_GOLD }}>ID</span>
                     </div>
                   </div>
 
@@ -374,7 +374,7 @@ const AdCampaigns = () => {
                   <div className="mt-4">
                     <button
                       className="w-full py-3 rounded-xl font-semibold text-white text-sm shadow-lg"
-                      style={{ backgroundColor: PETID_BLUE }}
+                      style={{ backgroundColor: MIPO_BLUE }}
                     >
                       {campaign.cta[language]}
                     </button>
@@ -516,14 +516,14 @@ const AdCampaigns = () => {
                 <div className="space-y-1">
                   <span className="text-muted-foreground">{language === 'he' ? 'צבע ראשי' : 'Primary Color'}</span>
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded" style={{ backgroundColor: PETID_BLUE }} />
+                    <div className="w-4 h-4 rounded" style={{ backgroundColor: MIPO_BLUE }} />
                     <span className="text-foreground">Blue #1D4E89</span>
                   </div>
                 </div>
                 <div className="space-y-1">
                   <span className="text-muted-foreground">{language === 'he' ? 'צבע זהב' : 'Gold Accent'}</span>
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded" style={{ backgroundColor: PETID_GOLD }} />
+                    <div className="w-4 h-4 rounded" style={{ backgroundColor: MIPO_GOLD }} />
                     <span className="text-foreground">Gold #F7BF00</span>
                   </div>
                 </div>

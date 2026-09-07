@@ -69,66 +69,66 @@
     --mipo-cyan: 188 86% 53%;
     
     /* Primary - MIPO cyan */
-    --petid-blue: 188 77% 50%;
-    --petid-blue-hover: 188 77% 44%;
-    --petid-blue-light: 188 77% 62%;
-    --petid-blue-foreground: 0 0% 100%;
+    --mipo-blue: 188 77% 50%;
+    --mipo-blue-hover: 188 77% 44%;
+    --mipo-blue-light: 188 77% 62%;
+    --mipo-blue-foreground: 0 0% 100%;
 
     /* Secondary - soft blue */
-    --petid-deep-blue: 221 86% 62%;
-    --petid-deep-blue-light: 221 86% 70%;
-    --petid-deep-blue-foreground: 0 0% 100%;
+    --mipo-deep-blue: 221 86% 62%;
+    --mipo-deep-blue-light: 221 86% 70%;
+    --mipo-deep-blue-foreground: 0 0% 100%;
 
     /* Accent - cyan */
-    --petid-sky: 188 77% 57%;
-    --petid-sky-light: 188 77% 68%;
-    --petid-sky-foreground: 0 0% 100%;
+    --mipo-sky: 188 77% 57%;
+    --mipo-sky-light: 188 77% 68%;
+    --mipo-sky-foreground: 0 0% 100%;
 
     /* Legacy Teal - Maps to Light Blue */
-    --petid-teal: 188 77% 50%;
-    --petid-teal-hover: 188 77% 44%;
-    --petid-teal-light: 188 77% 62%;
-    --petid-teal-foreground: 0 0% 100%;
+    --mipo-teal: 188 77% 50%;
+    --mipo-teal-hover: 188 77% 44%;
+    --mipo-teal-light: 188 77% 62%;
+    --mipo-teal-foreground: 0 0% 100%;
 
     /* Legacy Cyan - Maps to Light Blue */
-    --petid-cyan: 188 77% 50%;
-    --petid-cyan-hover: 188 77% 44%;
-    --petid-cyan-light: 188 77% 62%;
-    --petid-cyan-foreground: 0 0% 100%;
+    --mipo-cyan: 188 77% 50%;
+    --mipo-cyan-hover: 188 77% 44%;
+    --mipo-cyan-light: 188 77% 62%;
+    --mipo-cyan-foreground: 0 0% 100%;
 
     /* Secondary - Warm Gold (loyalty, premium) */
-    --petid-gold: 33 100% 68%;
-    --petid-gold-light: 33 100% 74%;
-    --petid-gold-foreground: 0 0% 10%;
+    --mipo-gold: 33 100% 68%;
+    --mipo-gold-light: 33 100% 74%;
+    --mipo-gold-foreground: 0 0% 10%;
 
     /* Accent - Coral (love, warmth) */
-    --petid-coral: 10 94% 71%;
-    --petid-coral-light: 10 94% 78%;
-    --petid-coral-foreground: 0 0% 100%;
+    --mipo-coral: 10 94% 71%;
+    --mipo-coral-light: 10 94% 78%;
+    --mipo-coral-foreground: 0 0% 100%;
 
     /* Pink - For accents */
-    --petid-pink: 319 80% 66%;
-    --petid-pink-light: 319 80% 74%;
-    --petid-pink-foreground: 0 0% 100%;
+    --mipo-pink: 319 80% 66%;
+    --mipo-pink-light: 319 80% 74%;
+    --mipo-pink-foreground: 0 0% 100%;
 
     /* Purple - For gradients */
-    --petid-purple: 264 82% 68%;
-    --petid-purple-light: 264 82% 76%;
-    --petid-purple-foreground: 0 0% 100%;
+    --mipo-purple: 264 82% 68%;
+    --mipo-purple-light: 264 82% 76%;
+    --mipo-purple-foreground: 0 0% 100%;
 
     /* Like/Heart - Vibrant Pink */
-    --petid-heart: 319 80% 66%;
-    --petid-heart-foreground: 0 0% 100%;
+    --mipo-heart: 319 80% 66%;
+    --mipo-heart-foreground: 0 0% 100%;
 
     /* Neutral Palette - Warm undertones */
-    --petid-black: 222 18% 14%;
-    --petid-gray-900: 222 16% 19%;
-    --petid-gray-700: 220 8% 36%;
-    --petid-gray-500: 220 7% 48%;
-    --petid-gray-400: 220 7% 70%;
-    --petid-gray-300: 220 16% 91%;
-    --petid-gray-100: 220 22% 97%;
-    --petid-white: 0 0% 100%;
+    --mipo-black: 222 18% 14%;
+    --mipo-gray-900: 222 16% 19%;
+    --mipo-gray-700: 220 8% 36%;
+    --mipo-gray-500: 220 7% 48%;
+    --mipo-gray-400: 220 7% 70%;
+    --mipo-gray-300: 220 16% 91%;
+    --mipo-gray-100: 220 22% 97%;
+    --mipo-white: 0 0% 100%;
 
     /* ===========================
      * SEMANTIC TOKENS
@@ -237,7 +237,7 @@
     --gradient-primary: linear-gradient(120deg, #FDBA74 0%, #FB7185 28%, #A78BFA 55%, #60A5FA 78%, #22D3EE 100%);
     /* Deepened stops for gradient TEXT on white (≥3:1 at display sizes). Never below 24px. */
     --gradient-text: linear-gradient(120deg, #B45309 0%, #E11D48 28%, #7C3AED 55%, #2563EB 78%, #0E7490 100%);
-    --gradient-petid: var(--gradient-primary);
+    --gradient-mipo: var(--gradient-primary);
     --gradient-warm: linear-gradient(120deg, hsl(var(--mipo-peach)) 0%, hsl(var(--mipo-coral)) 45%, hsl(var(--mipo-pink)) 100%);
     --gradient-story: var(--gradient-primary);
     --gradient-instagram: var(--gradient-primary);
@@ -283,7 +283,7 @@
     --spacing: 0.25rem;
 
     /* Legacy support - Blue palette */
-    --petid-turquoise: 204 100% 48%;
+    --mipo-turquoise: 204 100% 48%;
     --shop-blue: 204 100% 48%;
     --shop-turquoise: 204 100% 48%;
     --shop-light-blue: 204 100% 58%;
@@ -313,25 +313,25 @@
     --mipo-soft-deep: 240 5% 17%;
     --mipo-line: 240 5% 24%;
 
-    --petid-blue: 204 100% 55%;
-    --petid-deep-blue: 210 85% 50%;
-    --petid-sky: 200 95% 60%;
-    --petid-cyan: 204 100% 55%;
-    --petid-teal: 204 100% 55%;
-    --petid-purple: 260 75% 60%;
-    --petid-pink: 330 85% 60%;
-    --petid-gold: 42 100% 55%;
-    --petid-coral: 12 76% 65%;
-    --petid-heart: 330 85% 60%;
+    --mipo-blue: 204 100% 55%;
+    --mipo-deep-blue: 210 85% 50%;
+    --mipo-sky: 200 95% 60%;
+    --mipo-cyan: 204 100% 55%;
+    --mipo-teal: 204 100% 55%;
+    --mipo-purple: 260 75% 60%;
+    --mipo-pink: 330 85% 60%;
+    --mipo-gold: 42 100% 55%;
+    --mipo-coral: 12 76% 65%;
+    --mipo-heart: 330 85% 60%;
     
-    --petid-black: 0 0% 100%;
-    --petid-gray-900: 0 0% 92%;
-    --petid-gray-700: 0 0% 75%;
-    --petid-gray-500: 0 0% 60%;
-    --petid-gray-400: 0 0% 45%;
-    --petid-gray-300: 0 0% 30%;
-    --petid-gray-100: 0 0% 15%;
-    --petid-white: 0 0% 0%;
+    --mipo-black: 0 0% 100%;
+    --mipo-gray-900: 0 0% 92%;
+    --mipo-gray-700: 0 0% 75%;
+    --mipo-gray-500: 0 0% 60%;
+    --mipo-gray-400: 0 0% 45%;
+    --mipo-gray-300: 0 0% 30%;
+    --mipo-gray-100: 0 0% 15%;
+    --mipo-white: 0 0% 0%;
 
     --primary: 204 100% 55%;
     --primary-foreground: 0 0% 100%;
@@ -406,7 +406,7 @@
     --chart-4: 152 60% 55%;
     --chart-5: 42 100% 55%;
 
-    --petid-turquoise: 204 100% 55%;
+    --mipo-turquoise: 204 100% 55%;
     --shop-blue: 204 100% 55%;
     --shop-turquoise: 204 100% 55%;
     --ig-blue: 204 100% 55%;

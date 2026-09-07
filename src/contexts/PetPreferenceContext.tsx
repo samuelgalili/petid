@@ -12,6 +12,8 @@ export interface PetProfile {
   name: string;
   breed: string | null;
   pet_type: string;
+  /** Optional on the pet, and Hebrew copy needs it to agree correctly. */
+  gender: string | null;
   avatar_url: string | null;
   weight: number | null;
   birth_date: string | null;
@@ -83,6 +85,7 @@ export const PetPreferenceProvider: React.FC<{ children: React.ReactNode }> = ({
         name: p.name,
         breed: p.breed || null,
         pet_type: p.type || p.pet_type || "dog",
+        gender: p.gender || null,
         avatar_url: p.avatar_url || null,
         weight: p.weight ?? null,
         birth_date: p.birth_date || null,
@@ -139,7 +142,7 @@ export const PetPreferenceProvider: React.FC<{ children: React.ReactNode }> = ({
       if (sickOthers.length > 0) {
         // Dispatch a custom event so any toast system can pick it up
         window.dispatchEvent(
-          new CustomEvent("petid:fleet-safety", {
+          new CustomEvent("mipo:fleet-safety", {
             detail: { sickPets: sickOthers, activePet: pet },
           })
         );

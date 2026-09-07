@@ -1,4 +1,4 @@
-import { emitPetCompanionReaction } from "@/lib/petCompanionReactions";
+import { emitPetCompanionEvent } from "@/lib/petCompanionReactions";
 
 export interface MipoProduct {
   id: string;
@@ -9,7 +9,12 @@ export interface MipoProduct {
   sale_price?: number | string | null;
   image_url: string;
   images?: string[] | null;
+  /** Free-text category kept for imports. The tree is category_id. */
   category: string | null;
+  /** Populated once the category tree exists; absent before that migration. */
+  category_id?: string | null;
+  category_slug?: string | null;
+  category_name?: string | null;
   pet_type?: string | null;
   in_stock: boolean | null;
   is_featured?: boolean | null;
@@ -28,6 +33,7 @@ export interface MipoProduct {
   benefits?: unknown[] | null;
   feeding_guide?: unknown[] | null;
   product_attributes?: Record<string, unknown> | null;
+  weight?: number | string | null;
   weight_unit?: string | null;
   price_per_weight?: number | string | null;
   source_url?: string | null;
@@ -176,6 +182,10 @@ export interface MipoOrderItem {
   price: number;
   variant?: string | null;
   size?: string | null;
+  /** Snapshotted from the catalog when the order was placed, for the warehouse label. */
+  sku?: string | null;
+  weight?: string | null;
+  weight_unit?: string | null;
   created_at?: string | null;
 }
 
@@ -210,6 +220,51 @@ export interface MipoOrder {
   updated_at?: string | null;
   items: MipoOrderItem[];
   order_items: MipoOrderItem[];
+}
+
+/**
+ * One row per human, whether they hold an account or only ever checked out as
+ * a guest. Comes from the customer_identities view plus order and pet counts.
+ */
+export interface MipoCustomer {
+  identity_id: string;
+  identity_kind: "account" | "guest";
+  user_id: string | null;
+  shop_customer_id: string | null;
+  email: string | null;
+  full_name: string | null;
+  phone: string | null;
+  is_active: boolean | null;
+  created_at: string | null;
+  last_login_at: string | null;
+  first_order_at: string | null;
+  last_order_at: string | null;
+  last_activity_at: string | null;
+  orders_count: number;
+  paid_orders_count: number;
+  total_spent: number;
+  pets_count: number;
+}
+
+export type MipoCustomerNoteKind = "note" | "call" | "whatsapp" | "email" | "meeting";
+
+export interface MipoCustomerNote {
+  id: string;
+  user_id: string | null;
+  shop_customer_id: string | null;
+  admin_user_id: string | null;
+  author_name: string | null;
+  kind: MipoCustomerNoteKind;
+  body: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MipoCustomerDetail {
+  customer: MipoCustomer;
+  orders: MipoOrder[];
+  pets: MipoPet[];
+  notes: MipoCustomerNote[];
 }
 
 export interface CreateMipoOrderInput {
@@ -263,6 +318,9 @@ export interface MipoUser {
   full_name: string | null;
   phone?: string | null;
   birthdate?: string | null;
+  /** Whether this browser's account has proven it holds its email address. */
+  email_verified?: boolean;
+  email_verified_at?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
   last_login_at?: string | null;
@@ -353,6 +411,9 @@ export interface MipoPet {
 export interface MipoAuthResult {
   user: MipoUser;
   profile: MipoProfile | null;
+  /** Whether this same browser also holds a valid admin session. */
+  is_admin?: boolean;
+  email_verification?: { sent: boolean; reason: string };
 }
 
 export interface MipoNotification {
@@ -546,7 +607,7 @@ const userSessionHintKey = "mipo_user_session_hint";
 const adminSessionHintKey = "mipo_admin_session_hint";
 
 export class MipoApiError extends Error {
-  constructor(message: string, public readonly status: number) {
+  constructor(message: string, public readonly status: number, public readonly body?: unknown) {
     super(message);
     this.name = "MipoApiError";
   }
@@ -583,7 +644,7 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const body = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new MipoApiError(body?.error || `API request failed with ${response.status}`, response.status);
+    throw new MipoApiError(body?.error || `API request failed with ${response.status}`, response.status, body);
   }
 
   return body as T;
@@ -605,7 +666,7 @@ async function adminApiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     if (response.status === 401) {
       throw new Error("נדרשת התחברות מנהל");
     }
-    throw new MipoApiError(body?.error || `API request failed with ${response.status}`, response.status);
+    throw new MipoApiError(body?.error || `API request failed with ${response.status}`, response.status, body);
   }
 
   return body as T;
@@ -629,7 +690,13 @@ export async function getCurrentAdmin(): Promise<MipoAdmin | null> {
     throw new Error(body?.error || `API request failed with ${response.status}`);
   }
 
-  return (body?.admin || null) as MipoAdmin | null;
+  const admin = (body?.admin || null) as MipoAdmin | null;
+  // The hint was only ever written at login and cleared on the way out, so a
+  // live admin session with no hint stayed invisible to the app shell -- which
+  // is what happens after a forced password change, or in a browser whose
+  // storage was cleared. Writing it here keeps the hint tracking the session.
+  setStorageHint(adminSessionHintKey, Boolean(admin));
+  return admin;
 }
 
 export async function getCurrentUser(): Promise<MipoAuthResult | null> {
@@ -650,10 +717,31 @@ export async function getCurrentUser(): Promise<MipoAuthResult | null> {
     throw new Error(body?.error || `API request failed with ${response.status}`);
   }
 
+  const isAdmin = Boolean(body?.is_admin);
+  // Keep the stored hint in step with what the server just said, so the next
+  // first paint is right before this request comes back.
+  setStorageHint(adminSessionHintKey, isAdmin);
+
   return {
     user: body.user as MipoUser,
     profile: (body.profile || null) as MipoProfile | null,
+    is_admin: isAdmin,
   };
+}
+
+export async function requestEmailVerification(): Promise<{ ok: boolean; sent: boolean; reason: string }> {
+  return apiFetch("/auth/email-verification/request", { method: "POST", body: "{}" });
+}
+
+/** Open on purpose: the link is followed wherever the mail is read. */
+export async function confirmEmailVerification(
+  email: string,
+  otp: string,
+): Promise<{ verified: boolean; already_verified: boolean }> {
+  return apiFetch("/auth/email-verification/confirm", {
+    method: "POST",
+    body: JSON.stringify({ email, otp }),
+  });
 }
 
 export async function loginUser(email: string, password: string, rememberMe = false): Promise<MipoAuthResult> {
@@ -671,6 +759,8 @@ export async function signupUser(input: {
   password: string;
   birthdate?: string | null;
   phone?: string | null;
+  /** The server refuses the signup without it, so the form must send it. */
+  accept_terms: boolean;
 }): Promise<MipoAuthResult> {
   const auth = await apiFetch<MipoAuthResult>("/auth/signup", {
     method: "POST",
@@ -880,7 +970,7 @@ export async function sendAiChat(input: {
     method: "POST",
     body: JSON.stringify(input),
   });
-  emitPetCompanionReaction(input.userContext?.selectedPetId, "curious");
+  emitPetCompanionEvent(input.userContext?.selectedPetId, "chat_reply_received");
   return result.message;
 }
 
@@ -1071,7 +1161,7 @@ export async function createMyDocument(input: {
   });
   window.dispatchEvent(new Event("mipo:documents-changed"));
   window.dispatchEvent(new Event("mipo:health-changed"));
-  emitPetCompanionReaction(input.pet_id, "proud");
+  emitPetCompanionEvent(input.pet_id, "health_score_improved");
   return result.document;
 }
 
@@ -1147,7 +1237,7 @@ export async function createMyVetVisit(petId: string, input: Partial<MipoVetVisi
     body: JSON.stringify(input),
   });
   window.dispatchEvent(new Event("mipo:health-changed"));
-  emitPetCompanionReaction(petId, "celebrate");
+  emitPetCompanionEvent(petId, "health_score_improved");
   return result.vet_visit;
 }
 
@@ -1162,7 +1252,7 @@ export async function createMyVaccination(petId: string, input: Partial<MipoVacc
     body: JSON.stringify(input),
   });
   window.dispatchEvent(new Event("mipo:health-changed"));
-  emitPetCompanionReaction(petId, "celebrate");
+  emitPetCompanionEvent(petId, "health_score_improved");
   return result.vaccination;
 }
 
@@ -1192,6 +1282,10 @@ export async function changeAdminPassword(password: string): Promise<MipoAdmin> 
   });
   setStorageHint(adminSessionHintKey, false);
   return result.admin;
+}
+
+export async function getAdminDispatchConfig(): Promise<{ warehouse_whatsapp: string | null }> {
+  return adminApiFetch<{ warehouse_whatsapp: string | null }>("/admin/dispatch-config");
 }
 
 export async function getAdminAnalytics(days: number): Promise<MipoAdminAnalytics> {
@@ -1241,6 +1335,45 @@ export async function createShopOrder(input: CreateMipoOrderInput): Promise<Mipo
   });
 }
 
+/**
+ * The customer's saved delivery address — what the next checkout starts from.
+ * Separate from the address on an order: changing this never rewrites where a
+ * past parcel was sent.
+ */
+export interface MipoShippingProfile {
+  full_name: string | null;
+  phone: string | null;
+  phone_secondary: string | null;
+  city: string | null;
+  street: string | null;
+  building: string | null;
+  floor: string | null;
+  apartment: string | null;
+  lobby_code: string | null;
+  entrance_type: "house" | "building";
+  zip_code: string | null;
+  notes: string | null;
+  leave_at_door: boolean;
+  leave_at_door_at: string | null;
+  updated_at: string;
+}
+
+/** Null for a customer who has not ordered yet; throws 401 for a guest. */
+export async function getMyShippingProfile(): Promise<MipoShippingProfile | null> {
+  const result = await apiFetch<{ profile: MipoShippingProfile | null }>("/me/shipping-profile");
+  return result.profile;
+}
+
+export async function saveMyShippingProfile(
+  profile: Partial<MipoShippingProfile> & Record<string, unknown>,
+): Promise<MipoShippingProfile | null> {
+  const result = await apiFetch<{ profile: MipoShippingProfile | null }>("/me/shipping-profile", {
+    method: "PUT",
+    body: JSON.stringify(profile),
+  });
+  return result.profile;
+}
+
 export async function createShopPaymentSession(input: {
   order_id: string;
   success_url: string;
@@ -1285,6 +1418,41 @@ export async function updateAdminOrder(
   return result.order;
 }
 
+export async function getAdminCustomers(
+  input: { limit?: number; search?: string; kind?: "account" | "guest" } = {},
+): Promise<MipoCustomer[]> {
+  const params = new URLSearchParams();
+  if (input.limit) params.set("limit", String(input.limit));
+  if (input.search?.trim()) params.set("search", input.search.trim());
+  if (input.kind) params.set("kind", input.kind);
+  const query = params.toString();
+  const result = await adminApiFetch<{ customers: MipoCustomer[] }>(`/admin/customers${query ? `?${query}` : ""}`);
+  return result.customers;
+}
+
+export async function getAdminCustomer(identityId: string): Promise<MipoCustomerDetail> {
+  return adminApiFetch<MipoCustomerDetail>(`/admin/customers/${encodeURIComponent(identityId)}`);
+}
+
+export async function createAdminCustomerNote(
+  identityId: string,
+  input: { kind: MipoCustomerNoteKind; body: string },
+): Promise<MipoCustomerNote> {
+  const result = await adminApiFetch<{ note: MipoCustomerNote }>(
+    `/admin/customers/${encodeURIComponent(identityId)}/notes`,
+    { method: "POST", body: JSON.stringify(input) },
+  );
+  return result.note;
+}
+
+export async function deleteAdminCustomerNote(identityId: string, noteId: string): Promise<boolean> {
+  const result = await adminApiFetch<{ deleted: boolean }>(
+    `/admin/customers/${encodeURIComponent(identityId)}/notes/${encodeURIComponent(noteId)}`,
+    { method: "DELETE" },
+  );
+  return result.deleted;
+}
+
 export async function bulkUpdateAdminOrders(ids: string[], updates: Partial<Pick<MipoOrder, "status">>) {
   return adminApiFetch<{ updated: number }>("/admin/orders/bulk", {
     method: "PATCH",
@@ -1295,6 +1463,207 @@ export async function bulkUpdateAdminOrders(ids: string[], updates: Partial<Pick
 export async function getShopProducts(): Promise<MipoProduct[]> {
   const result = await apiFetch<{ products: MipoProduct[] }>("/products");
   return result.products;
+}
+
+export interface MipoProductCategory {
+  id: string;
+  parent_id: string | null;
+  slug: string;
+  name_he: string;
+  name_en: string | null;
+  description: string | null;
+  icon: string | null;
+  position: number;
+  is_active: boolean;
+  product_count: number;
+  aliases: string[];
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface MipoCategoryDeleteResult {
+  deleted: boolean;
+  reason?: "not_found" | "has_children" | "has_products";
+  children?: number;
+  products?: number;
+  reassigned?: number;
+}
+
+export async function getProductCategories(): Promise<MipoProductCategory[]> {
+  const result = await apiFetch<{ categories: MipoProductCategory[] }>("/categories");
+  return result.categories;
+}
+
+export async function getAdminProductCategories(): Promise<MipoProductCategory[]> {
+  const result = await adminApiFetch<{ categories: MipoProductCategory[] }>("/admin/categories");
+  return result.categories;
+}
+
+export async function createAdminProductCategory(
+  category: Partial<MipoProductCategory>,
+): Promise<MipoProductCategory> {
+  const result = await adminApiFetch<{ category: MipoProductCategory }>("/admin/categories", {
+    method: "POST",
+    body: JSON.stringify(category),
+  });
+  return result.category;
+}
+
+export async function updateAdminProductCategory(
+  categoryId: string,
+  updates: Partial<MipoProductCategory>,
+): Promise<MipoProductCategory> {
+  const result = await adminApiFetch<{ category: MipoProductCategory }>(
+    `/admin/categories/${encodeURIComponent(categoryId)}`,
+    { method: "PATCH", body: JSON.stringify(updates) },
+  );
+  return result.category;
+}
+
+// A refusal (children or products still attached) comes back as 409 with the
+// counts, so the caller can offer to move the products somewhere first.
+export async function deleteAdminProductCategory(
+  categoryId: string,
+  reassignTo?: string | null,
+): Promise<MipoCategoryDeleteResult> {
+  const query = reassignTo ? `?reassign_to=${encodeURIComponent(reassignTo)}` : "";
+  try {
+    return await adminApiFetch<MipoCategoryDeleteResult>(
+      `/admin/categories/${encodeURIComponent(categoryId)}${query}`,
+      { method: "DELETE" },
+    );
+  } catch (error) {
+    if (error instanceof MipoApiError && error.status === 409 && error.body) {
+      return error.body as MipoCategoryDeleteResult;
+    }
+    throw error;
+  }
+}
+
+export interface MipoEconomicsOverview {
+  window: { from: string; to: string };
+  total_users: number;
+  active_ai_users: number;
+  total_input_tokens: number;
+  total_output_tokens: number;
+  total_cached_tokens: number;
+  total_tokens: number;
+  total_mipo_credits_consumed: number;
+  total_ai_cost: number;
+  total_external_cost: number;
+  total_variable_cost: number;
+  currency: string;
+  average_cost_per_user: number;
+  average_cost_per_active_user: number;
+  requests_succeeded: number;
+  requests_failed: number;
+  average_latency_ms: number;
+}
+
+export interface MipoEconomicsGroup {
+  id: string;
+  label: string;
+  total_tokens: number;
+  mipo_credits: number;
+  events: number;
+  provider_cost: number;
+  cost_share_percent: number;
+}
+
+export interface MipoEconomicsProvider {
+  id: string;
+  slug: string;
+  label: string;
+  is_enabled: boolean;
+  total_tokens: number;
+  mipo_credits: number;
+  provider_cost: number;
+  requests: number;
+  succeeded: number;
+  fallbacks: number;
+  avg_latency_ms: number;
+  success_rate: number | null;
+  average_cost_per_request: number;
+}
+
+export interface MipoEconomicsUser {
+  user_id: string;
+  email: string | null;
+  full_name: string | null;
+  total_tokens: number;
+  mipo_credits: number;
+  events: number;
+  ai_cost: number;
+  external_cost: number;
+  total_cost: number;
+}
+
+export interface MipoEconomicsTimelinePoint {
+  bucket: string;
+  total_tokens: number;
+  mipo_credits: number;
+  events: number;
+  active_users: number;
+  provider_cost: number;
+}
+
+/** What a user may see about their own consumption. Never carries cost. */
+export interface MipoUserUsage {
+  period: { from: string; to: string };
+  total_tokens: number;
+  credits_consumed: number;
+  events: number;
+  by_feature: Array<{ slug: string; name: string; events: number; credits_consumed: number }>;
+}
+
+const economicsQuery = (days: number) => `?days=${encodeURIComponent(String(days))}`;
+
+export async function getEconomicsOverview(days = 30): Promise<MipoEconomicsOverview> {
+  const result = await adminApiFetch<{ overview: MipoEconomicsOverview }>(`/admin/economics/overview${economicsQuery(days)}`);
+  return result.overview;
+}
+
+export async function getEconomicsByFeature(days = 30): Promise<MipoEconomicsGroup[]> {
+  const result = await adminApiFetch<{ features: MipoEconomicsGroup[] }>(`/admin/economics/features${economicsQuery(days)}`);
+  return result.features;
+}
+
+export async function getEconomicsByModel(days = 30): Promise<MipoEconomicsGroup[]> {
+  const result = await adminApiFetch<{ models: MipoEconomicsGroup[] }>(`/admin/economics/models${economicsQuery(days)}`);
+  return result.models;
+}
+
+export async function getEconomicsByProvider(days = 30): Promise<MipoEconomicsProvider[]> {
+  const result = await adminApiFetch<{ providers: MipoEconomicsProvider[] }>(`/admin/economics/providers${economicsQuery(days)}`);
+  return result.providers;
+}
+
+export async function getEconomicsTopUsers(days = 30, limit = 10): Promise<MipoEconomicsUser[]> {
+  const result = await adminApiFetch<{ users: MipoEconomicsUser[] }>(
+    `/admin/economics/users${economicsQuery(days)}&limit=${encodeURIComponent(String(limit))}`,
+  );
+  return result.users;
+}
+
+export async function getEconomicsTimeline(days = 30, bucket = "day"): Promise<MipoEconomicsTimelinePoint[]> {
+  const result = await adminApiFetch<{ timeline: MipoEconomicsTimelinePoint[] }>(
+    `/admin/economics/timeline${economicsQuery(days)}&bucket=${encodeURIComponent(bucket)}`,
+  );
+  return result.timeline;
+}
+
+export async function getMyUsage(days = 30): Promise<MipoUserUsage> {
+  const result = await apiFetch<{ usage: MipoUserUsage }>(`/me/usage${economicsQuery(days)}`);
+  return result.usage;
+}
+
+/**
+ * One product by id. A product page and a shared product link must resolve on
+ * their own rather than by downloading the whole catalogue and searching it.
+ */
+export async function getShopProduct(productId: string): Promise<MipoProduct> {
+  const result = await apiFetch<{ product: MipoProduct }>(`/products/${encodeURIComponent(productId)}`);
+  return result.product;
 }
 
 export async function getBreedInfo(petType: "dog" | "cat"): Promise<MipoBreedInfo[]> {

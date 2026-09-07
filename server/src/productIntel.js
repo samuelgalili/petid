@@ -550,47 +550,36 @@ const searchProductBySku = async ({ sku, query, preferredDomains = [] }) => {
   return best || results[0]?.url || null;
 };
 
-const callGeminiJson = async (prompt, { temperature = 0.1 } = {}) => {
-  if (!geminiApiKey) return null;
-  const response = await fetchWithTimeout(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`,
-    {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { temperature, responseMimeType: "application/json" },
-      }),
-    },
-    45000,
-  );
-  if (!response.ok) throw new Error(`Gemini request failed (${response.status})`);
-  const data = await response.json();
-  const text = data.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("") || "";
-  const match = text.match(/\{[\s\S]*\}/);
+// Injected by index.js at startup. This module does not hold a provider key and
+// does not call a provider directly - every AI call here is metered.
+let aiGateway = null;
+
+export const setProductIntelAiGateway = (gateway) => {
+  aiGateway = gateway;
+};
+
+const runGatewayJson = async (parts, { temperature = 0.1, feature, capability = "structured_output", timeoutMs = 45000 }) => {
+  // Admin tooling degrades to the non-AI path when AI is unavailable, which is
+  // the behaviour these callers already expect from a missing key.
+  if (!aiGateway || !geminiApiKey) return null;
+  const result = await aiGateway.runAiRequest({
+    feature,
+    capability,
+    parts,
+    temperature,
+    timeoutMs,
+    metadata: { surface: "admin_product_tools" },
+  });
+  if (result.json) return result.json;
+  const match = String(result.text || "").match(/\{[\s\S]*\}/);
   return match ? JSON.parse(match[0]) : null;
 };
 
-const callGeminiPartsJson = async (parts, { temperature = 0.1 } = {}) => {
-  if (!geminiApiKey) return null;
-  const response = await fetchWithTimeout(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`,
-    {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts }],
-        generationConfig: { temperature, responseMimeType: "application/json" },
-      }),
-    },
-    60000,
-  );
-  if (!response.ok) throw new Error(`Gemini request failed (${response.status})`);
-  const data = await response.json();
-  const text = data.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("") || "";
-  const match = text.match(/\{[\s\S]*\}/);
-  return match ? JSON.parse(match[0]) : null;
-};
+const callGeminiJson = async (prompt, { temperature = 0.1, feature = "product_enrichment" } = {}) =>
+  runGatewayJson([{ text: prompt }], { temperature, feature, timeoutMs: 45000 });
+
+const callGeminiPartsJson = async (parts, { temperature = 0.1, feature = "product_list_scan" } = {}) =>
+  runGatewayJson(parts, { temperature, feature, capability: "vision", timeoutMs: 60000 });
 
 const parseDataUrl = (value) => {
   const input = String(value || "");
@@ -928,7 +917,7 @@ export const analyzeProductIngredients = async (body) => {
 Pet type: ${body.petType || "pet"}
 Product: ${body.productName || ""}
 Category: ${body.category || ""}
-Ingredients: ${ingredients}`);
+Ingredients: ${ingredients}`, { feature: "ingredient_analysis" });
     } catch (error) {
       console.error("Gemini ingredient analysis failed:", error);
     }

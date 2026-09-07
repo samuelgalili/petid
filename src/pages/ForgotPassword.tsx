@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { confirmPasswordReset, requestPasswordReset } from "@/lib/mipoApi";
 import { Loader2, ArrowLeft, Mail, KeyRound, Eye, EyeOff, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { PetidLogo } from "@/components/PetidLogo";
+import { MipoLogo } from "@/components/MipoLogo";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { PasswordStrengthIndicator } from "@/components/PasswordStrengthIndicator";
 import { z } from "zod";
@@ -180,7 +180,7 @@ const ForgotPassword = () => {
             <span className="font-jakarta">חזרה</span>
           </Link>
           
-          <PetidLogo showAnimals={false} />
+          <MipoLogo showAnimals={false} />
         </div>
       </motion.div>
 

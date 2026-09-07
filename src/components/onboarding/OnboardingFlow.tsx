@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Heart, Stethoscope, Users, ChevronRight, ChevronLeft, Sparkles } from "lucide-react";
-import { PetidLogo } from "@/components/PetidLogo";
+import { MipoLogo } from "@/components/MipoLogo";
 
 interface OnboardingStep {
   id: number;
@@ -19,7 +19,7 @@ const steps: OnboardingStep[] = [
     id: 1,
     title: "MIPO",
     subtitle: "My Precious One",
-    icon: <PetidLogo variant="mark" size="sm" showAnimals={false} />,
+    icon: <MipoLogo variant="mark" size="sm" showAnimals={false} />,
     iconBg: "bg-white",
     features: [
       { emoji: "🐾", text: "ניהול פרופיל מלא לחיית המחמד" },
@@ -91,7 +91,7 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: () => void }) => {
   };
 
   const handleComplete = () => {
-    localStorage.setItem("petid-onboarding-complete", "true");
+    localStorage.setItem("mipo-onboarding-complete", "true");
     onComplete();
   };
 

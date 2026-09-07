@@ -3,8 +3,13 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { initGlobalErrorReporter } from "./lib/errorReporter";
+import { migrateRenamedStorage } from "./lib/storageRename";
 
 initGlobalErrorReporter();
+
+// Before anything reads storage: the petid -> mipo rename moved these keys, and
+// what sits behind them is the user's cart, favourites and settings.
+migrateRenamedStorage();
 
 // Remove private API responses cached by older service-worker versions.
 if ("caches" in window) {

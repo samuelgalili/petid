@@ -1,12 +1,12 @@
-# 🛡️ PetID: The Ultimate Master Execution Prompt
+# 🛡️ MIPO: The Ultimate Master Execution Prompt
 
-**Vision:** Build a high-end, minimalist pet-tech ecosystem (Gemini-style UI) operating with a multi-agent smart system. The platform prioritizes scientific accuracy (NRC 2006), brand integrity (PetID), and human-approved automation.
+**Vision:** Build a high-end, minimalist pet-tech ecosystem (Gemini-style UI) operating with a multi-agent smart system. The platform prioritizes scientific accuracy (NRC 2006), brand integrity (MIPO), and human-approved automation.
 
 ---
 
 ## 1. Brand & UI Identity ✅
-- **Visuals:** Light Mode, black text on white background, large readable fonts, minimal PETID logo.
-- **Naming:** Strictly use PetID; replace all 'Vet Life' mentions with 'PetID Care'.
+- **Visuals:** Light Mode, black text on white background, large readable fonts, minimal MIPO logo.
+- **Naming:** Strictly use MIPO; replace all 'Vet Life' mentions with 'MIPO Care'.
 - **The Feed:** Vertical scroll (TikTok/Instagram style) for personalized content and NRC-based insights.
 
 ## 2. Data Intelligence (The OCR Hub) ✅
@@ -15,7 +15,7 @@
 - **Storage:** Files must be auto-tagged and archived in the pet's 'Documents' tab.
 
 ## 3. The Smart Agent Fleet (The Team) ✅
-- **General Rule:** No "Robots". Use names only. All chat messages start with: `[Name] מ-PetID:`.
+- **General Rule:** No "Robots". Use names only. All chat messages start with: `[Name] מ-MIPO:`.
 - **שרה (Sara)** — Service: Handles FAQs, general help, and user onboarding.
 - **דני (Dani)** — Nutrition: Provides scientific food/health advice based on NRC 2006 standards.
 - **רוני (Roni)** — Sales/Libra: Manages Libra Insurance leads and store offers post-scan.

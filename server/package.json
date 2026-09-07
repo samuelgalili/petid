@@ -8,13 +8,15 @@
   },
   "scripts": {
     "start": "node src/index.js",
-    "admin:provision": "node src/provisionAdmin.js",
-    "test": "node --test"
+    "admin:provision": "node --env-file-if-exists=../.env src/provisionAdmin.js",
+    "test": "node --test",
+    "test:integration": "node scripts/aiGatewayIntegrationCheck.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.52.0",
     "cheerio": "^1.2.0",
     "pg": "^8.13.1",
+    "sharp": "^0.35.4",
     "undici": "^7.29.0"
   }
 }

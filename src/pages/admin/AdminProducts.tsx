@@ -47,6 +47,7 @@ interface ProductData {
   original_price: number | null;
   image_url: string;
   category: string | null;
+  category_id?: string | null;
   in_stock: boolean | null;
   is_featured: boolean | null;
   business_id: string;
@@ -62,6 +63,7 @@ interface ProductData {
   sale_price?: number | null;
   images?: string[] | null;
   brand?: string | null;
+  weight?: number | null;
   weight_unit?: string | null;
   price_per_weight?: number | null;
   ingredients?: string | null;
@@ -74,6 +76,7 @@ interface ProductData {
   // Unified field to track source
   source?: 'manual' | 'scraped';
   source_url?: string | null;
+  updated_at?: string | null;
 }
 
 const emptyProduct: Partial<ProductData> = {
@@ -119,6 +122,8 @@ const AdminProducts = () => {
   const [showScrapedOnly, setShowScrapedOnly] = useState(false);
   const [showManualOnly, setShowManualOnly] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
+  // The row to return to after a save, so an edit does not vanish into the list.
+  const [lastSavedId, setLastSavedId] = useState<string | null>(null);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -223,12 +228,17 @@ const AdminProducts = () => {
         image_url: product.image_url || "/placeholder.svg",
         images: product.images || null,
         category: product.category,
+        category_id: product.category_id || null,
         in_stock: product.in_stock,
         is_featured: product.is_featured,
         sku: product.sku || null,
         pet_type: normalizeProductPetType(product.pet_type),
         flavors: product.flavors || null,
         brand: product.brand || null,
+        // `?? null` rather than `|| null`: this payload is an allowlist, so a
+        // field missing from it is dropped without a word, and a weight of 0 is
+        // still a value the admin typed.
+        weight: product.weight ?? null,
         weight_unit: product.weight_unit || null,
         price_per_weight: product.price_per_weight || null,
         source_url: product.source_url || null,
@@ -266,9 +276,10 @@ const AdminProducts = () => {
         });
       }
     },
-    onSuccess: () => {
+    onSuccess: (_result, product) => {
       queryClient.invalidateQueries({ queryKey: ["admin-products-unified"] });
       toast({ title: editingProduct?.id ? "המוצר עודכן" : "המוצר נוסף בהצלחה!" });
+      setLastSavedId(product.id ?? null);
       setIsDialogOpen(false);
       setEditingProduct(null);
     },
@@ -402,8 +413,9 @@ const AdminProducts = () => {
         [field]: value,
       } as Partial<ProductData>);
     },
-    onSuccess: () => {
+    onSuccess: (_result, { productId }) => {
       queryClient.invalidateQueries({ queryKey: ["admin-products-unified"] });
+      setLastSavedId(productId);
     },
     onError: (error) => {
       console.error("Inline edit error:", error);
@@ -536,6 +548,25 @@ const AdminProducts = () => {
           {product.source === 'scraped' ? 'מיובא' : 'ידני'}
         </Badge>
       ),
+    },
+    {
+      key: "updated_at",
+      header: "עודכן",
+      sortable: true,
+      className: "w-28",
+      render: (product) => {
+        const value = product.updated_at || product.created_at;
+        if (!value) return <span className="text-xs text-muted-foreground">—</span>;
+        const when = new Date(value);
+        return (
+          <div className="text-xs leading-tight">
+            <p className="text-foreground">{when.toLocaleDateString("he-IL")}</p>
+            <p className="text-[10px] text-muted-foreground">
+              {when.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
+            </p>
+          </div>
+        );
+      },
     },
     {
       key: "actions",
@@ -821,6 +852,7 @@ const AdminProducts = () => {
         data={displayProducts}
         columns={columns}
         loading={isLoading}
+        highlightId={lastSavedId}
         filters={filters}
         searchPlaceholder="חיפוש לפי שם, SKU, קטגוריה..."
         searchKey={(item, query) => {

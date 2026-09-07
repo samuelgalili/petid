@@ -26,15 +26,19 @@ const getRoleHint = (): AppRole[] => {
 };
 
 export const useUserRole = (): UseUserRoleReturn => {
-  const { user } = useAuth();
+  const { isAdmin: sessionIsAdmin, loading: authLoading } = useAuth();
   const [roles, setRoles] = useState<AppRole[]>(["user"]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchRoles = useCallback(async () => {
     setIsLoading(true);
-    setRoles(getRoleHint());
+    // The server is the authority: /auth/me reports whether this browser also
+    // holds an admin session. The stored hint only covers the first paint,
+    // before that answer arrives; it is scoped per origin, so it is absent on a
+    // dev server that moved to another port even though the cookie still works.
+    setRoles(authLoading ? getRoleHint() : sessionIsAdmin ? ["admin"] : ["user"]);
     setIsLoading(false);
-  }, [user]);
+  }, [authLoading, sessionIsAdmin]);
 
   useEffect(() => {
     fetchRoles();

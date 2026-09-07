@@ -116,7 +116,7 @@ const baseTemplate = (content: string, title: string) => `
   <div class="container">
     <div class="card">
       <div class="header">
-        <img src="${appUrl("/petid-icon.png")}" alt="MIPO" class="logo">
+        <img src="${appUrl("/mipo-icon.png")}" alt="MIPO" class="logo">
         <h1 class="title">${title}</h1>
       </div>
       ${content}

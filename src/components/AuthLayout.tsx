@@ -1,6 +1,6 @@
 import { ReactNode, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { PetidLogo } from "@/components/PetidLogo";
+import { MipoLogo } from "@/components/MipoLogo";
 import { Sparkles } from "lucide-react";
 
 interface AuthLayoutProps {
@@ -33,7 +33,7 @@ export const AuthLayout = ({ children }: AuthLayoutProps) => {
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
-            className="absolute inset-0 bg-gradient-to-br from-petid-blue via-petid-gold to-petid-blue-dark"
+            className="absolute inset-0 bg-gradient-to-br from-mipo-blue via-mipo-gold to-mipo-blue-dark"
           >
             {/* Animated background circles */}
             {[...Array(6)].map((_, i) => (
@@ -110,7 +110,7 @@ export const AuthLayout = ({ children }: AuthLayoutProps) => {
                 transition={{ duration: 2, repeat: Infinity }}
                 className="rounded-3xl p-4 bg-white/10 backdrop-blur-sm"
               >
-                <PetidLogo className="h-24 w-auto" />
+                <MipoLogo className="h-24 w-auto" />
               </motion.div>
             </motion.div>
 
@@ -182,7 +182,7 @@ export const AuthLayout = ({ children }: AuthLayoutProps) => {
           className="fixed top-0 left-0 right-0 z-10 bg-white/5 backdrop-blur-sm py-4"
         >
           <div className="flex justify-center">
-            <PetidLogo showAnimals={false} />
+            <MipoLogo showAnimals={false} />
           </div>
         </motion.div>
       )}

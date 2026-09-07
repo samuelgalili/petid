@@ -14,7 +14,7 @@ import {
 import confetti from "canvas-confetti";
 
 import defaultPetAvatar from "@/assets/default-pet-avatar.png";
-import { PetidLogo } from "@/components/PetidLogo";
+import { MipoLogo } from "@/components/MipoLogo";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -105,7 +105,7 @@ const Onboarding = () => {
     <main className="mipo-screen min-h-[100dvh]" dir="rtl">
       <div className="mipo-shell relative flex min-h-[100dvh] flex-col overflow-hidden px-6 pb-8 pt-5">
         <div className="flex items-center justify-between">
-          <PetidLogo variant="horizontal" size="sm" showAnimals={false} />
+          <MipoLogo variant="horizontal" size="sm" showAnimals={false} />
           <span className="text-xs font-semibold tracking-wide text-mipo-muted">{stepForPhase[phase]} / 5</span>
         </div>
         <div className="mt-4 grid grid-cols-5 gap-2" aria-label={`שלב ${stepForPhase[phase]} מתוך 5`}>
@@ -126,7 +126,7 @@ const Onboarding = () => {
             <Screen key="welcome" className="items-center justify-center text-center">
               <div className="relative">
                 <div className="absolute inset-0 scale-150 rounded-full bg-[radial-gradient(circle,rgba(167,139,250,0.18),transparent_68%)]" />
-                <PetidLogo size="lg" showAnimals />
+                <MipoLogo size="lg" showAnimals />
               </div>
               <h1 className="mt-10 max-w-sm text-4xl font-semibold leading-[1.08] tracking-[-0.045em] text-mipo-ink">
                 תמונה אחת.<br />חיים שלמים של דאגה.

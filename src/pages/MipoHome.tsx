@@ -1,17 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Bot, ChevronLeft, FileHeart, HeartPulse, Plus, ShoppingBag, UserRound } from "lucide-react";
+import { Bell, Bot, ChevronLeft, FileHeart, HeartPulse, Plus, Shield, ShoppingBag, UserRound } from "lucide-react";
 
 import defaultPetAvatar from "@/assets/default-pet-avatar.png";
-import { PetidLogo } from "@/components/PetidLogo";
+import { MipoLogo } from "@/components/MipoLogo";
+import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import PetOrbit, { type OrbitSlot } from "@/components/home/PetOrbit";
 import MoodSheet from "@/components/home/MoodSheet";
 import PetCharacterStudio from "@/components/home/PetCharacterStudio";
 import { useHomeAttention } from "@/hooks/useHomeAttention";
+import { useUserRole } from "@/hooks/useUserRole";
 import { usePetCharacter } from "@/hooks/usePetCharacter";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import type { MipoPetCharacterExpression } from "@/lib/mipoApi";
+import { MOOD_EXPRESSION, type CharacterMood } from "@/lib/characterBehavior";
+import { usePetCompanionMood } from "@/hooks/usePetCompanionMood";
 import { consumePetCompanionReaction, PET_COMPANION_REACTION_EVENT } from "@/lib/petCompanionReactions";
+import { petVerbSuffix } from "@/lib/petGender";
 
 const MipoHome = () => {
   const navigate = useNavigate();
@@ -24,48 +29,16 @@ const MipoHome = () => {
   }, [moodKey]);
   const [moodOpen, setMoodOpen] = useState(false);
   const [characterStudioOpen, setCharacterStudioOpen] = useState(false);
-  const [reactionOverride, setReactionOverride] = useState<MipoPetCharacterExpression | null>(null);
   const attention = useHomeAttention(activePet);
+  const { isAdmin } = useUserRole();
   const petCharacter = usePetCharacter(activePet?.id);
   const previousCharacterStatus = useRef(petCharacter.character?.status);
-  const reactionTimer = useRef<number | null>(null);
-  const showReaction = useCallback((expression: MipoPetCharacterExpression, duration = 4500) => {
-    if (reactionTimer.current) window.clearTimeout(reactionTimer.current);
-    setReactionOverride(expression);
-    reactionTimer.current = window.setTimeout(() => {
-      setReactionOverride(null);
-      reactionTimer.current = null;
-    }, duration);
-  }, []);
-  useEffect(() => () => {
-    if (reactionTimer.current) window.clearTimeout(reactionTimer.current);
-  }, []);
   const pickMood = (label: string) => {
     const next = mood === label ? null : label;
     setMood(next);
     if (next) localStorage.setItem(moodKey, next);
     else localStorage.removeItem(moodKey);
   };
-  useEffect(() => {
-    const previousStatus = previousCharacterStatus.current;
-    const nextStatus = petCharacter.character?.status;
-    previousCharacterStatus.current = nextStatus;
-    if (previousStatus && previousStatus !== "ready" && nextStatus === "ready") {
-      showReaction("celebrate", 5000);
-    }
-  }, [petCharacter.character?.status, showReaction]);
-
-  useEffect(() => {
-    if (!activePet?.id) return;
-    const stored = consumePetCompanionReaction(activePet.id);
-    if (stored) showReaction(stored);
-    const handleReaction = (event: Event) => {
-      const detail = (event as CustomEvent<{ petId: string; expression: MipoPetCharacterExpression }>).detail;
-      if (detail?.petId === activePet.id) showReaction(detail.expression);
-    };
-    window.addEventListener(PET_COMPANION_REACTION_EVENT, handleReaction);
-    return () => window.removeEventListener(PET_COMPANION_REACTION_EVENT, handleReaction);
-  }, [activePet?.id, showReaction]);
   const moodInsights: Record<string, { title: string; body: string }> = {
     "שמחה": { title: "יום מצוין להרפתקה", body: `כש${petName} במצב רוח כזה, זה הזמן למשחק חדש או מסלול טיול ארוך יותר.` },
     "רגועה": { title: "יום טוב לתנועה עדינה", body: `טיול רגוע ומשחק קצר יעזרו לשמור על השגרה המאוזנת של ${petName}.` },
@@ -79,25 +52,31 @@ const MipoHome = () => {
     { id: "chat", label: "Mipo AI", icon: <Bot className="h-[21px] w-[21px]" strokeWidth={1.7} />, onClick: () => navigate("/chat"), attention: attention.has("chat"), attentionLabel: attention.items.find((i) => i.slot === "chat")?.message },
   ];
 
+  const moodLabels: Record<string, CharacterMood> = {
+    "שמחה": "happy",
+    "רגועה": "neutral",
+    "שובבה": "curious",
+    "עייפה": "neutral",
+  };
+  const companion = usePetCompanionMood(activePet?.id, {
+    hasAttention: Boolean(attention.primary),
+    moodLabel: mood,
+    moodLabels,
+  });
+
   // One line under the orbit — attention wins, then mood, then the nudge (SPEC §3)
   const line = attention.primary
     ? { text: attention.primary.message, actionLabel: attention.primary.actionLabel, actionPath: attention.primary.actionPath }
     : mood
       ? { text: moodInsights[mood].body, actionLabel: "לשאול את Mipo", actionPath: "/chat" }
       : { text: `הקישו על ${petName} לעדכון מצב הרוח`, actionLabel: "", actionPath: "" };
-  const moodExpressions: Record<string, MipoPetCharacterExpression> = {
-    "שמחה": "happy",
-    "רגועה": "proud",
-    "שובבה": "curious",
-    "עייפה": "sleepy",
-  };
-  const characterExpression: MipoPetCharacterExpression = reactionOverride
-    || (mood ? moodExpressions[mood] : null)
-    || (attention.primary ? "attentive" : "neutral");
+  const characterExpression = MOOD_EXPRESSION[companion.mood];
   const characterReady = petCharacter.character?.status === "ready";
+  // Falling back through the resting expression means a pack that is missing
+  // one face still shows the character rather than dropping to the photo.
   const characterImage = characterReady
     ? petCharacter.character?.expressions[characterExpression]
-      || petCharacter.character?.expressions.neutral
+      || petCharacter.character?.expressions[MOOD_EXPRESSION.neutral]
       || activePet?.avatar_url
       || defaultPetAvatar
     : activePet?.avatar_url || defaultPetAvatar;
@@ -112,19 +91,36 @@ const MipoHome = () => {
     <main className="mipo-screen min-h-screen" dir="rtl">
       <div className="mipo-shell flex min-h-screen flex-col overflow-hidden pb-[calc(84px+env(safe-area-inset-bottom))]">
         <header className="sticky top-0 z-sticky flex items-center justify-between border-b border-mipo-line/60 bg-mipo-surface/85 px-5 py-3 backdrop-blur-xl">
-          <button className="mipo-icon-button" onClick={() => navigate("/profile")} aria-label="פרופיל משתמש">
-            <UserRound className="h-5 w-5" strokeWidth={1.7} />
-          </button>
-          <PetidLogo variant="horizontal" size="sm" showAnimals={false} />
-          <button className="mipo-icon-button" onClick={() => navigate("/notifications")} aria-label="התראות">
-            <Bell className="h-5 w-5" strokeWidth={1.7} />
-          </button>
+          {/* Both sides flex so the logo stays centred when the admin button
+              makes one side wider than the other. */}
+          <div className="flex flex-1 items-center justify-start gap-1">
+            <button className="mipo-icon-button" onClick={() => navigate("/profile")} aria-label="פרופיל משתמש">
+              <UserRound className="h-5 w-5" strokeWidth={1.7} />
+            </button>
+          </div>
+          <MipoLogo variant="horizontal" size="sm" showAnimals={false} />
+          <div className="flex flex-1 items-center justify-end gap-1">
+            {/* Only for someone the app already knows holds an admin session.
+                It points at /admin rather than /admin/login, so a live session
+                lands straight in the panel and only an expired one is asked
+                for a password. */}
+            {isAdmin && (
+              <button className="mipo-icon-button" onClick={() => navigate("/admin")} aria-label="פאנל ניהול">
+                <Shield className="h-5 w-5" strokeWidth={1.7} />
+              </button>
+            )}
+            <button className="mipo-icon-button" onClick={() => navigate("/notifications")} aria-label="התראות">
+              <Bell className="h-5 w-5" strokeWidth={1.7} />
+            </button>
+          </div>
         </header>
+
+        <EmailVerificationBanner className="mx-5 mt-3" />
 
         <section className="px-5 pb-4 pt-7 text-center">
           <p className="text-sm font-medium text-mipo-muted">{firstName}</p>
           <h1 className="mt-1 text-[1.7rem] font-semibold leading-tight tracking-[-0.035em] text-mipo-ink">
-            איך {petName} מרגיש{activePet?.pet_type === "cat" ? "ה" : ""} היום?
+            איך {petName} מרגיש{petVerbSuffix(activePet?.gender)} היום?
           </h1>
         </section>
 
@@ -136,7 +132,7 @@ const MipoHome = () => {
               petName={petName}
               avatarUrl={characterImage}
               isCharacter={characterReady}
-              characterExpression={characterExpression}
+              mood={companion.mood}
               loading={loading}
               onPetClick={() => setMoodOpen(true)}
             />

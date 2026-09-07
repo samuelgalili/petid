@@ -33,6 +33,7 @@ test.describe("Admin panel", () => {
       const routes = [
         { path: "/admin/products", text: "סה״כ מוצרים" },
         { path: "/admin/orders", text: "ניהול הזמנות" },
+        { path: "/admin/customers", text: "סה״כ לקוחות" },
         { path: "/admin/coupons", text: "צור קופון" },
         { path: "/admin/notifications", text: "מרכז התראות" },
         { path: "/admin/quick-import", text: "הדבק קישור או ברקוד" },
@@ -82,6 +83,7 @@ test.describe("Admin panel", () => {
         "/admin/quick-import",
         "/admin/smart-editor",
         "/admin/orders",
+        "/admin/customers",
         "/admin/coupons",
         "/admin/settings",
         "/admin/categories",

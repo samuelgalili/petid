@@ -35,7 +35,7 @@ export interface PromoPostConfig {
 export const PROMO_POSTS: PromoPostConfig[] = [
   {
     id: "promo-product-1",
-    user_id: "petid-shop",
+    user_id: "mipo-shop",
     image_url: "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=800",
     caption: "🐕 מזון פרימיום לכלבים - 20% הנחה! מזון איכותי עשיר בחלבון לבריאות מיטבית של הכלב שלכם.",
     likes_count: 156,
@@ -57,7 +57,7 @@ export const PROMO_POSTS: PromoPostConfig[] = [
   },
   {
     id: "promo-gallery-1",
-    user_id: "petid-featured",
+    user_id: "mipo-featured",
     image_url: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800",
     media_urls: [
       "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800",
@@ -79,7 +79,7 @@ export const PROMO_POSTS: PromoPostConfig[] = [
   },
   {
     id: "promo-challenge-1",
-    user_id: "petid-community",
+    user_id: "mipo-community",
     image_url: "https://images.unsplash.com/photo-1587559045816-8b0a54d1f2b7?w=800",
     caption: "🏆 אתגר #MipoCutePhoto - שתפו את התמונה הכי חמודה של חיית המחמד שלכם וזכו ב-500 נקודות!",
     likes_count: 342,
@@ -97,7 +97,7 @@ export const PROMO_POSTS: PromoPostConfig[] = [
   },
   {
     id: "promo-cta-1",
-    user_id: "petid-adoption",
+    user_id: "mipo-adoption",
     image_url: "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=800",
     caption: "🐾 אימוץ במקום קנייה! מאות כלבים וחתולים מחכים לבית חם. בואו לפגוש את החבר החדש שלכם.",
     likes_count: 278,

@@ -313,7 +313,7 @@ export const FeedVideoView = ({ items, currentUserId, onLike, onSave }: FeedVide
                 <img
                   src={(item.type === 'post' || item.type === 'suggested') && item.data.user?.avatar_url
                     ? item.data.user.avatar_url
-                    : 'https://api.dicebear.com/7.x/bottts/svg?seed=petid'}
+                    : 'https://api.dicebear.com/7.x/bottts/svg?seed=mipo'}
                   alt=""
                   className="w-full h-full object-cover"
                 />

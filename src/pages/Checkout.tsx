@@ -4,32 +4,65 @@ import { Check, CreditCard, MapPin, Package, Truck, Smartphone, Wallet, Tag, X, 
 import { CheckoutSafetyCheck } from "@/components/shop/CheckoutSafetyCheck";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
 import { AppHeader } from "@/components/AppHeader";
 import { CHECKOUT } from "@/lib/brandVoice";
-import { createShopOrder, createShopPaymentSession, MipoCoupon, validateCouponCode } from "@/lib/mipoApi";
+import { createShopOrder, createShopPaymentSession, getMyShippingProfile, MipoApiError, MipoCoupon, validateCouponCode } from "@/lib/mipoApi";
 import { rememberOrderAccess } from "@/lib/orderAccess";
 
+// Kept identical to LEAVE_AT_DOOR_TERMS on the server, which is what actually
+// gets recorded on the order.
+const LEAVE_AT_DOOR_TERMS =
+  "אם אין מענה בכתובת, המשלוח יושאר ליד הדלת. מרגע ההשארה האחריות על החבילה היא של הלקוח בלבד.";
+
+// Mirrors normalizeShippingAddress on the server. The server still decides;
+// this exists so the customer is told which field is wrong instead of one flat
+// "invalid shipping details" after the round trip.
 const shippingSchema = z.object({
   fullName: z.string().trim().min(2, "שם מלא חייב להכיל לפחות 2 תווים").max(100, "שם מלא חייב להכיל פחות מ-100 תווים"),
   email: z.string().trim().email("כתובת אימייל לא תקינה").max(255, "אימייל חייב להכיל פחות מ-255 תווים"),
   phone: z.string().trim().regex(/^[0-9]{9,15}$/, "מספר טלפון חייב להכיל 9-15 ספרות"),
-  address: z.string().trim().min(5, "כתובת חייבת להכיל לפחות 5 תווים").max(200, "כתובת חייבת להכיל פחות מ-200 תווים"),
+  phoneSecondary: z.string().trim().regex(/^([0-9]{9,15})?$/, "מספר טלפון חייב להכיל 9-15 ספרות"),
+  address: z.string().trim().min(2, "רחוב חייב להכיל לפחות 2 תווים").max(200, "שם הרחוב ארוך מדי"),
+  building: z.string().trim().min(1, "מספר בית או בניין הוא שדה חובה").max(20, "מספר בית ארוך מדי"),
+  entranceType: z.enum(["house", "building"]),
+  floor: z.string().trim().max(10, "קומה ארוכה מדי"),
+  apartment: z.string().trim().max(20, "מספר דירה ארוך מדי"),
+  lobbyCode: z.string().trim().max(30, "קוד כניסה ארוך מדי"),
   city: z.string().trim().min(2, "עיר חייבת להכיל לפחות 2 תווים").max(50, "עיר חייבת להכיל פחות מ-50 תווים"),
   zipCode: z.string().trim().regex(/^[0-9]{5,7}$/, "מיקוד חייב להכיל 5-7 ספרות"),
+  notes: z.string().trim().max(500, "ההערות ארוכות מדי"),
+  leaveAtDoor: z.boolean(),
+}).superRefine((data, ctx) => {
+  // A courier stuck at a locked lobby door cannot deliver, so in a building
+  // these two carry the same weight as the street name.
+  if (data.entranceType === "building") {
+    if (!data.apartment) {
+      ctx.addIssue({ code: "custom", path: ["apartment"], message: "מספר דירה הוא שדה חובה בבניין" });
+    }
+    if (!data.lobbyCode) {
+      ctx.addIssue({ code: "custom", path: ["lobbyCode"], message: "קוד כניסה ללובי הוא שדה חובה בבניין" });
+    }
+  }
+  if (!data.leaveAtDoor) {
+    ctx.addIssue({ code: "custom", path: ["leaveAtDoor"], message: "יש לאשר את התנאי כדי להמשיך" });
+  }
 });
 
 const Checkout = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { items, getSubtotal, clearCart } = useCart();
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState("credit-card");
   const [installments, setInstallments] = useState(1);
@@ -40,9 +73,17 @@ const Checkout = () => {
     fullName: "",
     email: "",
     phone: "",
+    phoneSecondary: "",
     address: "",
+    building: "",
+    entranceType: "house" as "house" | "building",
+    floor: "",
+    apartment: "",
+    lobbyCode: "",
     city: "",
     zipCode: "",
+    notes: "",
+    leaveAtDoor: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isProcessing, setIsProcessing] = useState(false);
@@ -62,23 +103,66 @@ const Checkout = () => {
     }
   }, []);
 
-  // Keep checkout contact details only for this browser tab/session.
+  // Name, email and phone live on the account, not the shipping profile, so a
+  // signed-in customer should never be asked for them again either.
   useEffect(() => {
+    if (!user) return;
+    setShippingData((prev) => ({
+      ...prev,
+      fullName: prev.fullName || user.full_name || "",
+      email: prev.email || user.email || "",
+      phone: prev.phone || user.phone || "",
+    }));
+  }, [user]);
+
+  // Two sources, in order of trust. The saved shipping profile follows the
+  // customer across devices and between orders; sessionStorage only holds what
+  // was typed in this tab, and is all a guest has.
+  useEffect(() => {
+    let cancelled = false;
+
+    const fillFrom = (source: Record<string, unknown>) => {
+      if (cancelled) return;
+      const text = (...keys: string[]) => {
+        for (const key of keys) {
+          const value = source[key];
+          if (typeof value === "string" && value) return value;
+        }
+        return "";
+      };
+      setShippingData((prev) => ({
+        ...prev,
+        fullName: prev.fullName || text("fullName", "full_name"),
+        email: prev.email || text("email"),
+        phone: prev.phone || text("phone"),
+        phoneSecondary: prev.phoneSecondary || text("phoneSecondary", "phone_secondary"),
+        address: prev.address || text("address", "street"),
+        building: prev.building || text("building"),
+        entranceType: prev.entranceType !== "house"
+          ? prev.entranceType
+          : (text("entranceType", "entrance_type") === "building" ? "building" : "house"),
+        floor: prev.floor || text("floor"),
+        apartment: prev.apartment || text("apartment"),
+        lobbyCode: prev.lobbyCode || text("lobbyCode", "lobby_code"),
+        city: prev.city || text("city"),
+        zipCode: prev.zipCode || text("zipCode", "zip_code"),
+        notes: prev.notes || text("notes"),
+      }));
+    };
+
     try {
       const savedContact = sessionStorage.getItem("mipo_checkout_contact");
-      if (!savedContact) return;
-      const contact = JSON.parse(savedContact);
-      setShippingData((prev) => ({
-        fullName: prev.fullName || contact.fullName || "",
-        email: prev.email || contact.email || "",
-        phone: prev.phone || contact.phone || "",
-        address: prev.address || contact.address || "",
-        city: prev.city || contact.city || "",
-        zipCode: prev.zipCode || contact.zipCode || "",
-      }));
+      if (savedContact) fillFrom(JSON.parse(savedContact));
     } catch {
       // Ignore stale local data.
     }
+
+    // A guest has no profile; the 401 is expected and means "nothing saved".
+    getMyShippingProfile()
+      .then((profile) => { if (profile) fillFrom(profile as unknown as Record<string, unknown>); })
+      .catch(() => undefined);
+
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -226,6 +310,13 @@ const Checkout = () => {
     }
   };
 
+  const handleCheckboxChange = (field: string, value: boolean) => {
+    setShippingData({ ...shippingData, [field]: value });
+    if (errors[field]) {
+      setErrors({ ...errors, [field]: "" });
+    }
+  };
+
   const handleNextStep = () => {
     if (currentStep === 1) {
       if (validateShipping()) {
@@ -348,6 +439,18 @@ const Checkout = () => {
       console.error("Error placing order:", error);
       setIsProcessing(false);
       
+      // The one refusal a person can fix themselves right now, so it gets its
+      // own message and a way out instead of "try again".
+      if (error instanceof MipoApiError && error.status === 403) {
+        toast({
+          title: "צריך לאמת את המייל",
+          description: "שלחנו לכם קוד אימות. אחרי האימות אפשר להשלים את ההזמנה.",
+          variant: "destructive",
+        });
+        navigate("/verify-email");
+        return;
+      }
+
       // More specific error messages
       const message = error instanceof Error ? error.message : "";
       let errorMessage = "נכשל בביצוע ההזמנה. נסו שוב.";
@@ -499,20 +602,137 @@ const Checkout = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="address" className="font-jakarta text-sm font-semibold text-foreground">
-                    כתובת רחוב *
+                  <Label htmlFor="phoneSecondary" className="font-jakarta text-sm font-semibold text-foreground">
+                    טלפון נוסף
                   </Label>
                   <Input
-                    id="address"
-                    value={shippingData.address}
-                    onChange={(e) => handleInputChange("address", e.target.value)}
-                    className={`mt-1.5 font-jakarta rounded-xl ${errors.address ? "border-destructive" : ""}`}
-                    placeholder="רחוב הרצל 123, דירה 4"
+                    id="phoneSecondary"
+                    type="tel"
+                    value={shippingData.phoneSecondary}
+                    onChange={(e) => handleInputChange("phoneSecondary", e.target.value)}
+                    className={`mt-1.5 font-jakarta rounded-xl ${errors.phoneSecondary ? "border-destructive" : ""}`}
+                    placeholder="לא חובה — למקרה שאין מענה"
                   />
-                  {errors.address && (
-                    <p className="text-xs text-destructive mt-1 font-jakarta">{errors.address}</p>
+                  {errors.phoneSecondary && (
+                    <p className="text-xs text-destructive mt-1 font-jakarta">{errors.phoneSecondary}</p>
                   )}
                 </div>
+
+                <div className="grid grid-cols-[1fr_auto] gap-3">
+                  <div>
+                    <Label htmlFor="address" className="font-jakarta text-sm font-semibold text-foreground">
+                      רחוב *
+                    </Label>
+                    <Input
+                      id="address"
+                      value={shippingData.address}
+                      onChange={(e) => handleInputChange("address", e.target.value)}
+                      className={`mt-1.5 font-jakarta rounded-xl ${errors.address ? "border-destructive" : ""}`}
+                      placeholder="הרצל"
+                    />
+                    {errors.address && (
+                      <p className="text-xs text-destructive mt-1 font-jakarta">{errors.address}</p>
+                    )}
+                  </div>
+
+                  <div className="w-24">
+                    <Label htmlFor="building" className="font-jakarta text-sm font-semibold text-foreground">
+                      מס׳ בית *
+                    </Label>
+                    <Input
+                      id="building"
+                      value={shippingData.building}
+                      onChange={(e) => handleInputChange("building", e.target.value)}
+                      className={`mt-1.5 font-jakarta rounded-xl ${errors.building ? "border-destructive" : ""}`}
+                      placeholder="45"
+                    />
+                    {errors.building && (
+                      <p className="text-xs text-destructive mt-1 font-jakarta">{errors.building}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Which one this is decides whether a floor, an apartment and a
+                    lobby code are needed at all. */}
+                <div>
+                  <Label className="font-jakarta text-sm font-semibold text-foreground">סוג הכתובת *</Label>
+                  <RadioGroup
+                    dir="rtl"
+                    value={shippingData.entranceType}
+                    onValueChange={(value) => handleInputChange("entranceType", value)}
+                    className="mt-2 flex gap-4"
+                  >
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="house" id="entrance-house" />
+                      <Label htmlFor="entrance-house" className="font-jakarta text-sm font-normal cursor-pointer">
+                        בית פרטי
+                      </Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="building" id="entrance-building" />
+                      <Label htmlFor="entrance-building" className="font-jakarta text-sm font-normal cursor-pointer">
+                        בניין
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                {shippingData.entranceType === "building" && (
+                  <div className="space-y-4 rounded-xl border border-border/60 bg-muted/20 p-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label htmlFor="floor" className="font-jakarta text-sm font-semibold text-foreground">
+                          קומה
+                        </Label>
+                        <Input
+                          id="floor"
+                          value={shippingData.floor}
+                          onChange={(e) => handleInputChange("floor", e.target.value)}
+                          className={`mt-1.5 font-jakarta rounded-xl ${errors.floor ? "border-destructive" : ""}`}
+                          placeholder="3"
+                        />
+                        {errors.floor && (
+                          <p className="text-xs text-destructive mt-1 font-jakarta">{errors.floor}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <Label htmlFor="apartment" className="font-jakarta text-sm font-semibold text-foreground">
+                          דירה *
+                        </Label>
+                        <Input
+                          id="apartment"
+                          value={shippingData.apartment}
+                          onChange={(e) => handleInputChange("apartment", e.target.value)}
+                          className={`mt-1.5 font-jakarta rounded-xl ${errors.apartment ? "border-destructive" : ""}`}
+                          placeholder="14"
+                        />
+                        {errors.apartment && (
+                          <p className="text-xs text-destructive mt-1 font-jakarta">{errors.apartment}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="lobbyCode" className="font-jakarta text-sm font-semibold text-foreground">
+                        קוד כניסה ללובי *
+                      </Label>
+                      <Input
+                        id="lobbyCode"
+                        value={shippingData.lobbyCode}
+                        onChange={(e) => handleInputChange("lobbyCode", e.target.value)}
+                        className={`mt-1.5 font-jakarta rounded-xl ${errors.lobbyCode ? "border-destructive" : ""}`}
+                        placeholder="1408#"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1 font-jakarta">
+                        בלי קוד השליח לא יוכל להיכנס והמשלוח יחזור.
+                      </p>
+                      {errors.lobbyCode && (
+                        <p className="text-xs text-destructive mt-1 font-jakarta">{errors.lobbyCode}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -547,6 +767,45 @@ const Checkout = () => {
                     )}
                   </div>
                 </div>
+
+                <div>
+                  <Label htmlFor="notes" className="font-jakarta text-sm font-semibold text-foreground">
+                    הערות לשליח
+                  </Label>
+                  <Input
+                    id="notes"
+                    value={shippingData.notes}
+                    onChange={(e) => handleInputChange("notes", e.target.value)}
+                    className={`mt-1.5 font-jakarta rounded-xl ${errors.notes ? "border-destructive" : ""}`}
+                    placeholder="למשל: הכלב בחצר, לצלצל בפעמון"
+                  />
+                  {errors.notes && (
+                    <p className="text-xs text-destructive mt-1 font-jakarta">{errors.notes}</p>
+                  )}
+                </div>
+
+                {/* Leaving a parcel at an unattended door moves the risk to the
+                    customer, so this is an acknowledgement they have to make,
+                    not a preference with a default. */}
+                <label
+                  htmlFor="leaveAtDoor"
+                  className={`flex gap-3 rounded-xl border p-4 cursor-pointer transition-colors ${
+                    errors.leaveAtDoor ? "border-destructive bg-destructive/5" : "border-border/60 bg-muted/20"
+                  }`}
+                >
+                  <Checkbox
+                    id="leaveAtDoor"
+                    checked={shippingData.leaveAtDoor}
+                    onCheckedChange={(checked) => handleCheckboxChange("leaveAtDoor", checked === true)}
+                    className="mt-0.5"
+                  />
+                  <span className="font-jakarta text-sm leading-relaxed text-foreground">
+                    {LEAVE_AT_DOOR_TERMS}
+                    {errors.leaveAtDoor && (
+                      <span className="block text-xs text-destructive mt-1">{errors.leaveAtDoor}</span>
+                    )}
+                  </span>
+                </label>
               </Card>
             </motion.div>
           )}

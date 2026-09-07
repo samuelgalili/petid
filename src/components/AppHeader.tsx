@@ -11,7 +11,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useNotificationsBadge } from "@/hooks/useNotificationsBadge";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion } from "framer-motion";
-import petidIcon from "@/assets/petid-icon.png";
+import mipoIcon from "@/assets/mipo-icon.png";
 
 interface AppHeaderProps {
   title: string;
@@ -60,33 +60,39 @@ export const AppHeader = ({
     }
   };
 
-  // Role-based right action
-  const roleAction = useMemo(() => {
-    if (hideRoleAction || extraAction) return null;
+  // Role-based right actions
+  const roleActions = useMemo(() => {
+    if (hideRoleAction || extraAction) return [];
 
-    if (isAdmin) {
-      return {
-        icon: Shield,
-        label: "ניהול",
-        onClick: () => navigate("/admin/products"),
-        badge: null as string | null,
-      };
-    }
-    if (isBusiness) {
-      return {
-        icon: Store,
-        label: "חנות",
-        onClick: () => navigate("/convert-to-business"),
-        badge: null,
-      };
-    }
-    // Regular user → notifications
-    return {
+    const notifications = {
       icon: Bell,
       label: "התראות",
       onClick: () => navigate("/notifications"),
-      badge: unreadCount > 0 ? (unreadCount > 9 ? "9+" : String(unreadCount)) : null,
+      badge: (unreadCount > 0 ? (unreadCount > 9 ? "9+" : String(unreadCount)) : null) as string | null,
     };
+
+    // An admin is still a person with notifications, so the shortcut to the
+    // panel sits beside the bell rather than taking its place.
+    if (isAdmin) {
+      return [
+        {
+          icon: Shield,
+          label: "ניהול",
+          onClick: () => navigate("/admin/products"),
+          badge: null as string | null,
+        },
+        notifications,
+      ];
+    }
+    if (isBusiness) {
+      return [{
+        icon: Store,
+        label: "חנות",
+        onClick: () => navigate("/convert-to-business"),
+        badge: null as string | null,
+      }];
+    }
+    return [notifications];
   }, [isAdmin, isBusiness, hideRoleAction, extraAction, unreadCount, navigate]);
 
   return (
@@ -162,8 +168,8 @@ export const AppHeader = ({
           )}
         </div>
 
-        {/* Right (RTL: Left) — Role Action */}
-        <div className="flex items-center gap-1 w-11 justify-end">
+        {/* Right (RTL: Left) — Role Actions */}
+        <div className="flex items-center gap-1 min-w-11 justify-end">
           {extraAction ? (
             <Button
               variant="ghost"
@@ -178,20 +184,21 @@ export const AppHeader = ({
                 strokeWidth={1.5}
               />
             </Button>
-          ) : roleAction ? (
+          ) : roleActions.map((action) => (
             <Button
+              key={action.label}
               variant="ghost"
               size="icon"
-              onClick={roleAction.onClick}
+              onClick={action.onClick}
               className="rounded-full h-11 w-11 relative"
-              aria-label={roleAction.label}
+              aria-label={action.label}
             >
-              <roleAction.icon
+              <action.icon
                 className="w-[18px] h-[18px]"
                 style={{ color: dark ? "white" : "hsl(var(--foreground))" }}
                 strokeWidth={1.5}
               />
-              {roleAction.badge && (
+              {action.badge && (
                 <motion.span
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
@@ -201,11 +208,11 @@ export const AppHeader = ({
                     boxShadow: "0 0 6px hsl(var(--destructive) / 0.5)",
                   }}
                 >
-                  {roleAction.badge}
+                  {action.badge}
                 </motion.span>
               )}
             </Button>
-          ) : null}
+          ))}
         </div>
       </div>
 

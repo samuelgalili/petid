@@ -1,5 +1,5 @@
 /**
- * PETID UNIFIED DESIGN SYSTEM
+ * MIPO UNIFIED DESIGN SYSTEM
  * ============================
  * Single source of truth for all design tokens and layout constants.
  * All pages MUST use these values for consistency.

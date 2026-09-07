@@ -7,8 +7,8 @@ export const DailyStreak = () => {
 
   useEffect(() => {
     const today = new Date().toDateString();
-    const lastVisit = localStorage.getItem("petid_feed_last_visit");
-    const currentStreak = parseInt(localStorage.getItem("petid_feed_streak") || "0", 10);
+    const lastVisit = localStorage.getItem("mipo_feed_last_visit");
+    const currentStreak = parseInt(localStorage.getItem("mipo_feed_streak") || "0", 10);
 
     if (lastVisit === today) {
       // Same day, keep streak
@@ -19,14 +19,14 @@ export const DailyStreak = () => {
       if (lastVisit === yesterday.toDateString()) {
         // Consecutive day
         const newStreak = currentStreak + 1;
-        localStorage.setItem("petid_feed_streak", String(newStreak));
+        localStorage.setItem("mipo_feed_streak", String(newStreak));
         setStreak(newStreak);
       } else {
         // Streak broken, restart
-        localStorage.setItem("petid_feed_streak", "1");
+        localStorage.setItem("mipo_feed_streak", "1");
         setStreak(1);
       }
-      localStorage.setItem("petid_feed_last_visit", today);
+      localStorage.setItem("mipo_feed_last_visit", today);
     }
   }, []);
 

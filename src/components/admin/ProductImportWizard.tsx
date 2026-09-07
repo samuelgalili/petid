@@ -393,7 +393,13 @@ export const ProductImportWizard = ({
         dog_size: scrapedData?.dogSize || null,
         special_diet: scrapedData?.specialDiet || [],
         flavors: variantLabels,
-        weight_unit: variants.find(v => v.weight_unit)?.weight_unit || null,
+        // The variant column is weight_kg, so the unit that goes with it is
+        // kilograms; taking a unit from a different variant would describe a
+        // weight that does not exist.
+        weight: variants.find(v => v.weight_kg != null)?.weight_kg ?? null,
+        weight_unit: variants.some(v => v.weight_kg != null)
+          ? "kg"
+          : variants.find(v => v.weight_unit)?.weight_unit || null,
       };
 
       const inserted = await createAdminProduct(productData);

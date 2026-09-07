@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { LoginForm } from "@/components/LoginForm";
 import { useAuth } from "@/hooks/useAuth";
 import { AuthLoadingSkeleton } from "@/components/AuthLoadingSkeleton";
-import { PetidLogo } from "@/components/PetidLogo";
+import { MipoLogo } from "@/components/MipoLogo";
 import { PawPrint, Heart, Shield } from "lucide-react";
 import { getMyPets } from "@/lib/mipoApi";
 
@@ -46,7 +46,7 @@ const Auth = () => {
         className="mipo-card relative w-full max-w-[380px] px-8 py-10 mb-4"
       >
         {/* Logo */}
-        <PetidLogo showAnimals={false} size="sm" className="mb-2" />
+        <MipoLogo showAnimals={false} size="sm" className="mb-2" />
 
         {/* Welcome Text */}
         <motion.div

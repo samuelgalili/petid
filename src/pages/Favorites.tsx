@@ -12,7 +12,7 @@ import { getShopProducts, type MipoProduct } from "@/lib/mipoApi";
 
 const readFavorites = (): string[] => {
   try {
-    const parsed = JSON.parse(localStorage.getItem("petid-favorites") || "[]");
+    const parsed = JSON.parse(localStorage.getItem("mipo-favorites") || "[]");
     return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : [];
   } catch {
     return [];
@@ -54,7 +54,7 @@ const Favorites = () => {
   const removeFavorite = (productId: string) => {
     const nextFavorites = favorites.filter((id) => id !== productId);
     setFavorites(nextFavorites);
-    localStorage.setItem("petid-favorites", JSON.stringify(nextFavorites));
+    localStorage.setItem("mipo-favorites", JSON.stringify(nextFavorites));
     toast({ title: "הוסר מהמועדפים", duration: 2000 });
   };
 

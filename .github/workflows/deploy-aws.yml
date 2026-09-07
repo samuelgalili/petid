@@ -2,14 +2,15 @@ name: Deploy AWS
 
 on:
   push:
-    branches: [aws-migration]
+    branches: [aws-migration, staging]
   workflow_dispatch:
 
 permissions:
   contents: read
 
+# Per-environment, so a staging deploy never queues behind a production one.
 concurrency:
-  group: aws-production
+  group: aws-${{ github.ref_name == 'aws-migration' && 'production' || 'staging' }}
   cancel-in-progress: false
 
 jobs:
@@ -18,8 +19,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
+    # Host, paths and secrets all resolve from the GitHub Environment, so the
+    # same workflow serves both. Configure them under
+    # Settings → Environments → production / staging.
+    environment: ${{ github.ref_name == 'aws-migration' && 'production' || 'staging' }}
+
     env:
-      MIPO_AWS_HOST: ${{ vars.MIPO_AWS_HOST || '63.183.241.110' }}
+      MIPO_AWS_HOST: ${{ vars.MIPO_AWS_HOST || (github.ref_name == 'aws-migration' && '63.183.241.110' || '') }}
       MIPO_PUBLIC_BASE_URL: ${{ vars.MIPO_PUBLIC_BASE_URL }}
 
     steps:
@@ -109,15 +115,38 @@ jobs:
     needs: quality
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: github.ref_name == 'aws-migration'
+    if: github.ref_name == 'aws-migration' || github.ref_name == 'staging'
+
+    environment: ${{ github.ref_name == 'aws-migration' && 'production' || 'staging' }}
 
     env:
-      MIPO_AWS_HOST: ${{ vars.MIPO_AWS_HOST || '63.183.241.110' }}
+      MIPO_AWS_HOST: ${{ vars.MIPO_AWS_HOST || (github.ref_name == 'aws-migration' && '63.183.241.110' || '') }}
       MIPO_AWS_USER: ${{ vars.MIPO_AWS_USER || 'ubuntu' }}
       MIPO_REMOTE_PATH: ${{ vars.MIPO_REMOTE_PATH || '/opt/mipo' }}
       MIPO_PUBLIC_BASE_URL: ${{ vars.MIPO_PUBLIC_BASE_URL }}
 
     steps:
+      - name: Verify deploy target
+        env:
+          TARGET_ENV: ${{ github.ref_name == 'aws-migration' && 'production' || 'staging' }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${MIPO_AWS_HOST}" ]; then
+            echo "MIPO_AWS_HOST is empty for the '${TARGET_ENV}' environment." >&2
+            echo "Set it under Settings → Environments → ${TARGET_ENV} → Environment variables." >&2
+            exit 1
+          fi
+
+          # A staging deploy must never reach the production host, whatever the
+          # variables say.
+          if [ "${TARGET_ENV}" = "staging" ] && [ "${MIPO_AWS_HOST}" = "63.183.241.110" ]; then
+            echo "Refusing to deploy the staging branch to the production host." >&2
+            exit 1
+          fi
+
+          echo "Deploying '${TARGET_ENV}' to ${MIPO_AWS_HOST} (${MIPO_REMOTE_PATH})"
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -182,20 +211,25 @@ jobs:
         run: |
           set -euo pipefail
           ssh -i ~/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 "${MIPO_AWS_USER}@${MIPO_AWS_HOST}" \
-            "MIPO_REMOTE_PATH='${MIPO_REMOTE_PATH}' bash -s" <<'REMOTE'
+            "MIPO_REMOTE_PATH='${MIPO_REMOTE_PATH}' MIPO_DEPLOY_SHA='${GITHUB_SHA::12}' bash -s" <<'REMOTE'
           set -euo pipefail
           cd "$MIPO_REMOTE_PATH"
           compose_file="$MIPO_REMOTE_PATH/deploy/aws/docker-compose.yml"
 
           sudo MIPO_REMOTE_PATH="$MIPO_REMOTE_PATH" bash "$MIPO_REMOTE_PATH/deploy/aws/prepare-host.sh"
           docker compose -f "$compose_file" build mipo-api
+
+          # Migrations run automatically on every deploy and some of them are
+          # destructive. Dump first, and stop here if the dump cannot be made.
+          bash "$MIPO_REMOTE_PATH/deploy/aws/backup-before-migrate.sh" "$MIPO_REMOTE_PATH" "deploy-${MIPO_DEPLOY_SHA:-unknown}"
+
           docker compose -f "$compose_file" run --rm --no-deps -T mipo-api node src/applyMigrations.js </dev/null
           docker compose -f "$compose_file" up -d --force-recreate --no-deps --wait --wait-timeout 60 mipo-api
           docker compose -f "$compose_file" up -d --force-recreate --no-deps caddy
           docker compose -f "$compose_file" ps
           REMOTE
 
-      - name: Smoke test production
+      - name: Smoke test the deployed environment
         run: |
           set -euo pipefail
           base_url="${MIPO_PUBLIC_BASE_URL:-http://${MIPO_AWS_HOST}}"

@@ -1,6 +1,6 @@
 import { Heart, Search, X } from "lucide-react";
-import petidLogo from "@/assets/petid-logo.png";
-import petidIcon from "@/assets/petid-icon.png";
+import mipoLogo from "@/assets/mipo-logo.png";
+import mipoIcon from "@/assets/mipo-icon.png";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { Button } from "@/components/ui/button";
 import {
@@ -94,7 +94,7 @@ export const Header = () => {
               <span className="text-[20px] font-black tracking-tight text-foreground" style={{ fontFamily: 'Assistant, sans-serif' }}>
                 MIPO
               </span>
-              <img src={petidIcon} alt="MIPO" className="h-7 w-7 object-contain" />
+              <img src={mipoIcon} alt="MIPO" className="h-7 w-7 object-contain" />
             </div>
           </div>
         </div>

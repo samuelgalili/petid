@@ -8,7 +8,7 @@
 1. **Quiet surfaces, one signature.** White/soft-gray surfaces; the pastel gradient is the only loud element.
 2. **The gradient means pet identity + primary action.** Gradient ring = a pet. Gradient fill = THE primary CTA (max one per screen) and the nav active-indicator. Never for decoration, section headers, or secondary buttons.
 3. **Ink on gradient.** Text on the gradient is `--mipo-ink` @ 700 (F24) — never white.
-4. **Tokens only.** No raw hexes in components (`mipoTheme.ts` is the one JS exception). No `petid-*`, `ig-*`, `shop-*`, `--primary` in new code.
+4. **Tokens only.** No raw hexes in components (`mipoTheme.ts` is the one JS exception). No `mipo-*`, `ig-*`, `shop-*`, `--primary` in new code.
 
 ## Brand tokens
 
@@ -45,11 +45,11 @@ Gen-3 tokens flip in `.dark` (F02): ink 0 0% 95%, muted 240 5% 64%, surface 240 
 
 | Legacy | Use |
 |---|---|
-| `--primary` / `petid-cyan/teal/turquoise` / `ig-blue` / `shop-*` | `--mipo-cyan` (or the screen's accent) |
-| `petid-coral/pink/heart` / `ig-red` | `--mipo-coral` |
-| `petid-purple` / `--accent` | `--mipo-violet` |
-| `petid-gold` / `ig-orange` / `yellow-primary` | `--mipo-peach` |
-| `petid-gray-*` / `bg-gray-*` / `bg-white` | `mipo-surface / soft / soft-deep / line / muted / ink` |
+| `--primary` / `mipo-cyan/teal/turquoise` / `ig-blue` / `shop-*` | `--mipo-cyan` (or the screen's accent) |
+| `mipo-coral/pink/heart` / `ig-red` | `--mipo-coral` |
+| `mipo-purple` / `--accent` | `--mipo-violet` |
+| `mipo-gold` / `ig-orange` / `yellow-primary` | `--mipo-peach` |
+| `mipo-gray-*` / `bg-gray-*` / `bg-white` | `mipo-surface / soft / soft-deep / line / muted / ink` |
 | raw `#F7F7F5` `#F6F6F3` `#ECECEA` | `--mipo-soft` / `--mipo-soft-deep` |
 
-CI gate (suggested): fail on new `petid-|ig-|shop-|--primary\b|#F7F7F5|#ECECEA` matches under `src/` outside `index.css` legacy block.
+CI gate (suggested): fail on new `mipo-|ig-|shop-|--primary\b|#F7F7F5|#ECECEA` matches under `src/` outside `index.css` legacy block.

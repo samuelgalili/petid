@@ -36,7 +36,7 @@ import petCollar from "@/assets/products/pet-collar.jpg";
 
 // Pet default avatar
 import defaultPetAvatar from "@/assets/default-pet-avatar.png";
-import petidIcon from "@/assets/petid-icon.png";
+import mipoIcon from "@/assets/mipo-icon.png";
 
 const parkImages = [parkImage1, parkImage2, parkImage3, parkImage4, parkImage5, parkImage6];
 const productImages = [dogFood, catFood, dogTreats, dogToys, petBed, petCollar];
@@ -533,7 +533,7 @@ const Explore = () => {
           {/* Title Bar */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <img src={petidIcon} alt="MIPO" className="w-7 h-7 object-contain" />
+              <img src={mipoIcon} alt="MIPO" className="w-7 h-7 object-contain" />
               <h1 className="text-lg font-semibold text-foreground">גלה</h1>
             </div>
             <Button

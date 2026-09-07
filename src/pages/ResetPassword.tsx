@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { confirmPasswordReset } from "@/lib/mipoApi";
 import { Loader2, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { PetidLogo } from "@/components/PetidLogo";
+import { MipoLogo } from "@/components/MipoLogo";
 import { PasswordStrengthIndicator } from "@/components/PasswordStrengthIndicator";
 import { z } from "zod";
 
@@ -109,7 +109,7 @@ const ResetPassword = () => {
       {/* Fixed Header with Back Button and Logo */}
       <div className="fixed top-0 left-0 right-0 z-10 bg-background/5 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-center">
-          <PetidLogo showAnimals={false} />
+          <MipoLogo showAnimals={false} />
         </div>
       </div>
 

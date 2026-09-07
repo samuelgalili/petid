@@ -11,6 +11,7 @@ import {
   scrapeProduct,
   scanProductList,
   searchProductImage,
+  setProductIntelAiGateway,
   smartScrapeProduct,
 } from "./productIntel.js";
 import { fallbackBreeds } from "./referenceData.js";
@@ -29,6 +30,25 @@ import {
   verifyOpaqueToken,
 } from "./security.js";
 import { checkDatabaseHealth } from "./health.js";
+import { createProviderRegistry } from "./aiProviders.js";
+import { createAiGateway, newRequestId, newTraceId } from "./aiGateway.js";
+import {
+  getCostByFeature,
+  getCostByModel,
+  getCostByProvider,
+  getEconomicsOverview,
+  getEconomicsTimeline,
+  getTopCostUsers,
+  getTrace,
+  getUserUsageSummary,
+  resolveWindow,
+} from "./aiEconomics.js";
+import {
+  fetchImageBuffer,
+  ImagePipelineError,
+  normalizeWithBackgroundRemoval,
+} from "./imagePipeline.js";
+import { createGeminiBackgroundRemover } from "./backgroundRemoval.js";
 import { hashPassword, verifyPassword } from "./passwords.js";
 import {
   ADMIN_PERMISSIONS,
@@ -52,6 +72,13 @@ import {
   generateCharacterCandidates,
   generateCharacterExpressions,
 } from "./petCharacter.js";
+import { LEAVE_AT_DOOR_TERMS, normalizeShippingAddress } from "./shippingAddress.js";
+import {
+  EVENT_TYPES,
+  emitEvent,
+  originFromRequest,
+  startDispatcher,
+} from "./events.js";
 
 const port = Number(process.env.PORT || 3000);
 const databaseUrl = process.env.DATABASE_URL;
@@ -63,6 +90,10 @@ const petCharacterUploadDir = path.join(privateUploadDir, "pet-characters");
 const maxUploadBytes = Number(process.env.MAX_UPLOAD_BYTES || 5 * 1024 * 1024);
 const maxSocialUploadBytes = Number(process.env.MAX_SOCIAL_UPLOAD_BYTES || 25 * 1024 * 1024);
 const maxDocumentUploadBytes = Number(process.env.MAX_DOCUMENT_UPLOAD_BYTES || 10 * 1024 * 1024);
+// The logistics centre's WhatsApp number. Kept in configuration rather than in
+// code so it can change through the usual SSM sync without a rebuild; an admin
+// can still override it per send when it is missing or wrong.
+const warehouseWhatsappNumber = String(process.env.WAREHOUSE_WHATSAPP_NUMBER || "").trim() || null;
 const adminCookieName = "mipo_admin_session";
 const userCookieName = "mipo_user_session";
 const passwordResetOtpMinutes = Number(process.env.PASSWORD_RESET_OTP_MINUTES || 10);
@@ -70,6 +101,11 @@ const passwordResetOtpTtlMs = Math.max(1, passwordResetOtpMinutes) * 60 * 1000;
 const passwordResetDebug = process.env.PASSWORD_RESET_DEBUG === "true";
 const resendApiKey = process.env.RESEND_API_KEY;
 const passwordResetFromEmail = process.env.PASSWORD_RESET_FROM_EMAIL || "MIPO <onboarding@resend.dev>";
+// A verification link is followed at leisure, often on another device, so it
+// lives far longer than a password reset code.
+const emailVerificationHours = Math.max(1, Number(process.env.EMAIL_VERIFICATION_HOURS || 24));
+const emailVerificationTtlMs = emailVerificationHours * 60 * 60 * 1000;
+const emailVerificationResendMs = Math.max(0, Number(process.env.EMAIL_VERIFICATION_RESEND_SECONDS || 60)) * 1000;
 const configuredAdminSessionHours = Number(process.env.ADMIN_SESSION_HOURS || 8);
 const adminSessionHours = Number.isFinite(configuredAdminSessionHours) && configuredAdminSessionHours > 0
   ? configuredAdminSessionHours
@@ -152,6 +188,12 @@ const pool = new Pool({
   max: Number(process.env.DB_POOL_MAX || 8),
   connectionTimeoutMillis: Number(process.env.DB_CONNECTION_TIMEOUT_MS || 5000),
 });
+
+// Every AI call in the API goes through this gateway. Features never hold a
+// provider key or talk to a provider directly.
+const aiProviderRegistry = createProviderRegistry({ geminiApiKey, geminiModel });
+const aiGateway = createAiGateway({ pool, registry: aiProviderRegistry });
+setProductIntelAiGateway(aiGateway);
 
 const jsonHeaders = {
   "content-type": "application/json; charset=utf-8",
@@ -294,6 +336,8 @@ const rateLimits = {
   userLogin: { limit: 20, windowMs: 15 * 60 * 1000 },
   signup: { limit: 8, windowMs: 60 * 60 * 1000 },
   passwordResetRequest: { limit: 5, windowMs: 60 * 60 * 1000 },
+  emailVerificationRequest: { limit: 6, windowMs: 60 * 60 * 1000 },
+  emailVerificationConfirm: { limit: 15, windowMs: 15 * 60 * 1000 },
   passwordResetConfirm: { limit: 10, windowMs: 15 * 60 * 1000 },
   orderCreate: { limit: 20, windowMs: 10 * 60 * 1000 },
   paymentCreate: { limit: 20, windowMs: 10 * 60 * 1000 },
@@ -443,6 +487,13 @@ const requireAdmin = async (request, response) => {
 
   sendError(response, 401, "Unauthorized");
   return false;
+};
+
+// Answers "is this caller an admin" without rejecting the request when they
+// are not. Public endpoints use it to decide how much of a row to reveal.
+const isAdminRequest = async (request) => {
+  if (adminApiKey && secretsEqual(request.headers["x-admin-api-key"], adminApiKey)) return true;
+  return Boolean(await getAdminFromSession(request));
 };
 
 const requireAdminPermission = async (request, response, permission) => {
@@ -709,6 +760,8 @@ const serializeUser = (row, profile = null) => {
     created_at: row.created_at || null,
     updated_at: row.updated_at || null,
     last_login_at: row.last_login_at || null,
+    email_verified_at: row.email_verified_at || null,
+    email_verified: Boolean(row.email_verified_at),
     user_metadata: {
       full_name: fullName,
       name: fullName,
@@ -728,11 +781,29 @@ const userSelect = `
   is_active,
   created_at,
   updated_at,
-  last_login_at
+  last_login_at,
+  terms_accepted_at,
+  terms_version,
+  email_verified_at
 `;
 
+// Bump this whenever the terms themselves change, so an acceptance recorded
+// today cannot be mistaken for acceptance of a later text.
+const TERMS_VERSION = process.env.TERMS_VERSION || "2026-08-31";
+
 const getProfileByUserId = async (userId, db = pool) => {
-  const result = await db.query("select * from public.profiles where id = $1 limit 1", [userId]);
+  // Identity lives on app_users; profiles holds everything else. Joining here
+  // keeps the serialized profile shape unchanged for API consumers.
+  const result = await db.query(
+    `
+      select p.*, au.email, au.full_name, au.phone, au.birthdate
+      from public.profiles p
+      join public.app_users au on au.id = p.id
+      where p.id = $1
+      limit 1
+    `,
+    [userId],
+  );
   return result.rows[0] ? serializeProfile(result.rows[0]) : null;
 };
 
@@ -805,16 +876,17 @@ const getUserFromSession = async (request) => {
         au.created_at,
         au.updated_at,
         au.last_login_at,
+        au.email_verified_at,
         p.id as profile_id,
-        p.email as profile_email,
-        p.full_name as profile_full_name,
+        au.email as profile_email,
+        au.full_name as profile_full_name,
         p.first_name as profile_first_name,
         p.last_name as profile_last_name,
         p.bio as profile_bio,
-        p.phone as profile_phone,
+        au.phone as profile_phone,
         p.whatsapp_number as profile_whatsapp_number,
         p.avatar_url as profile_avatar_url,
-        p.birthdate as profile_birthdate,
+        au.birthdate as profile_birthdate,
         p.street as profile_street,
         p.city as profile_city,
         p.id_number_last4 as profile_id_number_last4,
@@ -920,6 +992,13 @@ const signupUser = async (request, body) => {
     error.statusCode = 400;
     throw error;
   }
+  // Enforced here rather than only in the form: a consent the server never
+  // checked is a consent that can be skipped by anything that is not the form.
+  if (body.accept_terms !== true && body.accepted_terms !== true) {
+    const error = new Error("The terms of use must be accepted");
+    error.statusCode = 400;
+    throw error;
+  }
 
   const { firstName, lastName } = splitFullName(fullName);
   const client = await pool.connect();
@@ -933,40 +1012,91 @@ const signupUser = async (request, body) => {
           full_name,
           phone,
           birthdate,
-          is_active
+          is_active,
+          terms_accepted_at,
+          terms_version
         )
-        values ($1, $2, $3, $4, $5, true)
+        values ($1, $2, $3, $4, $5, true, now(), $6)
         returning ${userSelect}
       `,
-      [email, hashPassword(password), fullName, phone, birthdate],
+      [email, hashPassword(password), fullName, phone, birthdate, TERMS_VERSION],
     );
 
     const profileResult = await client.query(
       `
         insert into public.profiles (
           id,
-          email,
-          full_name,
           first_name,
           last_name,
-          phone,
-          whatsapp_number,
-          birthdate
+          whatsapp_number
         )
-        values ($1, $2, $3, $4, $5, $6, $6, $7)
+        values ($1, $2, $3, $4)
         returning *
       `,
-      [userResult.rows[0].id, email, fullName, firstName, lastName, phone, birthdate],
+      [userResult.rows[0].id, firstName, lastName, phone],
     );
+
+    // Claim any unclaimed commerce identity that already used this email —
+    // typically orders placed as a guest before registering.
+    await client.query(
+      `
+        update public.shop_customers
+        set user_id = $1,
+            updated_at = now()
+        where lower(email) = $2
+          and user_id is null
+      `,
+      [userResult.rows[0].id, email],
+    );
+
+    await emitEvent(client, {
+      type: EVENT_TYPES.USER_REGISTERED,
+      entityType: "user",
+      entityId: userResult.rows[0].id,
+      origin: originFromRequest(request),
+      payload: {
+        email,
+        full_name: fullName,
+        phone,
+        // Consent has not been given at signup; a welcome flow must check
+        // marketing_consent before sending anything promotional.
+        marketing_consent: false,
+      },
+    });
 
     const token = await createUserSession(request, userResult.rows[0].id, client);
     await client.query("commit");
 
-    const profile = serializeProfile(profileResult.rows[0]);
+    // Identity now lives on app_users, so merge it back for the response shape.
+    const profile = serializeProfile({
+      ...profileResult.rows[0],
+      email,
+      full_name: fullName,
+      phone,
+      birthdate,
+    });
+    const user = serializeUser(userResult.rows[0], profile);
+
+    // After the commit, and never allowed to fail the signup: the account
+    // exists either way, and an unsent email is a resend away.
+    const verification = await issueEmailVerification(request, {
+      id: userResult.rows[0].id,
+      email: userResult.rows[0].email,
+      full_name: fullName,
+      email_verified_at: null,
+    }).catch(() => ({ sent: false, reason: "send_failed" }));
+
     return {
-      user: serializeUser(userResult.rows[0], profile),
+      user,
       profile,
       token,
+      email_verification: {
+        sent: verification.sent,
+        reason: verification.reason,
+        // Same debug affordance the password reset already has, so a local
+        // stack with no email provider is still testable end to end.
+        ...(verification.debug_otp ? { debug_otp: verification.debug_otp } : {}),
+      },
     };
   } catch (error) {
     await client.query("rollback");
@@ -1085,6 +1215,207 @@ const sendPasswordResetEmail = async (request, email, otp) => {
   }
 
   return { sent: true, reason: "sent" };
+};
+
+const hashEmailVerificationOtp = (email, otp) => createHmac("sha256", adminApiKey || databaseUrl)
+  .update(`verify:${normalizeEmail(email)}:${String(otp || "")}`)
+  .digest("hex");
+
+const sendEmailVerification = async (request, email, otp, fullName) => {
+  if (!resendApiKey) return { sent: false, reason: "not_configured" };
+
+  const verifyUrl = new URL("/verify-email", `${getPublicBaseUrl(request)}/`);
+  verifyUrl.searchParams.set("email", email);
+  verifyUrl.searchParams.set("otp", otp);
+
+  const greeting = String(fullName || "").trim().split(" ")[0];
+
+  let response;
+  try {
+    response = await fetchWithTimeout("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${resendApiKey}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        from: passwordResetFromEmail,
+        to: [email],
+        subject: "אימות כתובת המייל שלך - MIPO",
+        html: `
+          <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; background: #f8f8fb;">
+            <div style="background: #ffffff; border-radius: 20px; padding: 32px; text-align: center;">
+              <h1 style="margin: 0 0 12px; color: #111827;">MIPO</h1>
+              <p style="margin: 0 0 8px; color: #111827; font-weight: 700;">${greeting ? `היי ${greeting},` : "היי,"}</p>
+              <p style="margin: 0 0 24px; color: #4b5563;">כדי להשלים את ההרשמה נותר לאמת שהכתובת הזו שלך. הקוד תקף ל-${emailVerificationHours} שעות.</p>
+              <div style="font-size: 34px; letter-spacing: 8px; font-weight: 700; color: #6C63FF; margin: 24px 0;">${otp}</div>
+              <a href="${verifyUrl.toString()}" style="display: inline-block; background: #6C63FF; color: #ffffff; text-decoration: none; padding: 12px 22px; border-radius: 999px; font-weight: 700;">אימות הכתובת</a>
+              <p style="margin: 24px 0 0; color: #6b7280; font-size: 13px;">אם לא נרשמת ל-MIPO, אפשר להתעלם מההודעה ולא ייעשה דבר.</p>
+            </div>
+          </div>
+        `,
+      }),
+    }, 15_000);
+  } catch (error) {
+    console.error("Verification email request failed:", error.message);
+    return { sent: false, reason: "send_failed" };
+  }
+
+  if (!response.ok) {
+    const details = await response.text().catch(() => "");
+    console.error("Verification email failed:", response.status, details.slice(0, 300));
+    return { sent: false, reason: "send_failed" };
+  }
+
+  return { sent: true, reason: "sent" };
+};
+
+// Issues a fresh code and sends it. Never throws: signup calls this after the
+// account already exists, and an email provider having a bad minute must not
+// undo a registration that otherwise succeeded.
+const issueEmailVerification = async (request, user, { force = false } = {}) => {
+  if (!user?.id || !user?.email) return { sent: false, reason: "no_user" };
+  if (user.email_verified_at) return { sent: false, reason: "already_verified" };
+
+  const email = normalizeEmail(user.email);
+  try {
+    if (!force && emailVerificationResendMs > 0) {
+      const recent = await pool.query(
+        `
+          select email_verification_last_sent_at
+          from public.app_users
+          where id = $1
+            and email_verification_last_sent_at is not null
+            and email_verification_last_sent_at > now() - ($2::bigint * interval '1 millisecond')
+          limit 1
+        `,
+        [user.id, emailVerificationResendMs],
+      );
+      if (recent.rowCount > 0) {
+        const error = new Error("A verification email was just sent; wait a moment before asking for another");
+        error.statusCode = 429;
+        throw error;
+      }
+    }
+
+    const otp = generateOtp();
+    const expiresAt = new Date(Date.now() + emailVerificationTtlMs).toISOString();
+
+    await pool.query(
+      `
+        insert into public.email_verification_otps (email, user_id, otp_hash, expires_at, used, attempts, created_at, updated_at)
+        values ($1, $2, $3, $4, false, 0, now(), now())
+        on conflict (email) do update set
+          user_id = excluded.user_id,
+          otp_hash = excluded.otp_hash,
+          expires_at = excluded.expires_at,
+          used = false,
+          attempts = 0,
+          updated_at = now()
+      `,
+      [email, user.id, hashEmailVerificationOtp(email, otp), expiresAt],
+    );
+
+    await pool.query(
+      "update public.app_users set email_verification_last_sent_at = now(), updated_at = now() where id = $1",
+      [user.id],
+    );
+
+    const delivery = await sendEmailVerification(request, email, otp, user.full_name);
+    return {
+      sent: delivery.sent,
+      reason: delivery.reason,
+      ...(passwordResetDebug ? { debug_otp: otp } : {}),
+    };
+  } catch (error) {
+    if (error.statusCode === 429) throw error;
+    console.error("Issuing the verification email failed:", error.message);
+    return { sent: false, reason: "send_failed" };
+  }
+};
+
+// Unauthenticated on purpose: the link is opened wherever the mail is read,
+// which is often a different browser from the one that registered.
+const confirmEmailVerification = async (body) => {
+  const email = normalizeEmail(body.email);
+  const otp = String(body.otp || body.code || "").trim();
+
+  if (!email || !email.includes("@")) {
+    const error = new Error("A valid email is required");
+    error.statusCode = 400;
+    throw error;
+  }
+  if (!/^\d{6}$/.test(otp)) {
+    const error = new Error("A valid 6-digit code is required");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+
+    const otpResult = await client.query(
+      "select * from public.email_verification_otps where email = $1 for update",
+      [email],
+    );
+    const row = otpResult.rows[0];
+
+    // Already done is a success, not an error: people click the link twice.
+    if (!row) {
+      const already = await client.query(
+        "select email_verified_at from public.app_users where lower(email) = $1 limit 1",
+        [email],
+      );
+      await client.query("commit");
+      if (already.rows[0]?.email_verified_at) return { verified: true, already_verified: true };
+      const error = new Error("Invalid or expired verification code");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (row.used) {
+      await client.query("commit");
+      return { verified: true, already_verified: true };
+    }
+    if (new Date(row.expires_at).getTime() < Date.now()) {
+      const error = new Error("Invalid or expired verification code");
+      error.statusCode = 400;
+      throw error;
+    }
+    if (row.attempts >= 5) {
+      const error = new Error("Too many invalid verification attempts");
+      error.statusCode = 429;
+      throw error;
+    }
+
+    if (!secretsEqual(hashEmailVerificationOtp(email, otp), row.otp_hash)) {
+      await client.query(
+        "update public.email_verification_otps set attempts = attempts + 1, updated_at = now() where email = $1",
+        [email],
+      );
+      await client.query("commit");
+      const error = new Error("Invalid or expired verification code");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    await client.query(
+      "update public.app_users set email_verified_at = now(), updated_at = now() where id = $1 and email_verified_at is null",
+      [row.user_id],
+    );
+    await client.query(
+      "update public.email_verification_otps set used = true, updated_at = now() where email = $1",
+      [email],
+    );
+    await client.query("commit");
+    return { verified: true, already_verified: false };
+  } catch (error) {
+    await client.query("rollback").catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
 const requestPasswordReset = async (request, body) => {
@@ -1310,7 +1641,6 @@ const updateMyProfile = async (userId, body) => {
 
   if (fullName !== undefined) {
     const { firstName, lastName } = splitFullName(fullName);
-    pushProfile("full_name", fullName);
     pushProfile("first_name", firstName);
     pushProfile("last_name", lastName);
     pushApp("full_name", fullName);
@@ -1318,7 +1648,6 @@ const updateMyProfile = async (userId, body) => {
   if (fullName === undefined && firstName !== undefined) pushProfile("first_name", firstName);
   if (fullName === undefined && lastName !== undefined) pushProfile("last_name", lastName);
   if (phone !== undefined) {
-    pushProfile("phone", phone);
     pushApp("phone", phone);
   }
   if (whatsappNumber !== undefined) pushProfile("whatsapp_number", whatsappNumber);
@@ -1336,7 +1665,6 @@ const updateMyProfile = async (userId, body) => {
     pushProfile("ai_consent_date", aiConsentGiven ? new Date().toISOString() : null);
   }
   if (birthdate !== undefined) {
-    pushProfile("birthdate", birthdate);
     pushApp("birthdate", birthdate);
   }
 
@@ -1636,7 +1964,22 @@ const insertUserPet = async (userId, body) => {
     ],
   );
 
-  return serializePet(result.rows[0]);
+  const pet = result.rows[0];
+  await emitEvent(pool, {
+    type: EVENT_TYPES.PET_CREATED,
+    entityType: "pet",
+    entityId: pet.id,
+    payload: {
+      owner_user_id: userId,
+      name: pet.name,
+      type: pet.type,
+      breed: pet.breed,
+      birth_date: pet.birth_date,
+      microchip_number: pet.microchip_number,
+    },
+  });
+
+  return serializePet(pet);
 };
 
 const listUserPets = async (userId, archived = "false") => {
@@ -1674,13 +2017,14 @@ const getPublicPet = async (petId) => {
     `
       select
         p.*,
-        pr.full_name as owner_full_name,
-        pr.phone as owner_phone,
+        au.full_name as owner_full_name,
+        au.phone as owner_phone,
         pr.city as owner_city,
         pr.profile_visibility,
         pr.show_location
       from public.pets p
       left join public.profiles pr on pr.id = p.user_id
+      left join public.app_users au on au.id = p.user_id
       where p.id = $1 and p.archived = false
       limit 1
     `,
@@ -1728,6 +2072,28 @@ const getPublicPet = async (petId) => {
 const logPublicPetQrScan = async (petId) => {
   if (!uuidPattern.test(String(petId || ""))) return false;
 
+  // A scan of a pet currently marked lost is the highest-urgency signal in the
+  // system: someone is standing next to a missing animal right now. Emitted
+  // before the log write so a failure to log still raises the alert.
+  try {
+    const lost = await pool.query(
+      "select id, user_id, name, is_lost from public.pets where id = $1 and is_lost = true and archived = false",
+      [petId],
+    );
+    if (lost.rowCount > 0) {
+      const pet = lost.rows[0];
+      await emitEvent(pool, {
+        type: EVENT_TYPES.PET_QR_SCANNED,
+        entityType: "pet",
+        entityId: pet.id,
+        origin: "system",
+        payload: { pet_name: pet.name, owner_user_id: pet.user_id, is_lost: true },
+      });
+    }
+  } catch (error) {
+    console.warn("Failed to emit QR scan event", error.message);
+  }
+
   try {
     await pool.query(
       `
@@ -1755,6 +2121,15 @@ const updateUserPet = async (userId, petId, body) => {
     return `${column} = $${values.length}`;
   });
 
+  // Read the lost flag first so the update can be compared against it. Only a
+  // real transition emits — saving the form without changing it emits nothing.
+  const previous = Object.prototype.hasOwnProperty.call(payload, "is_lost")
+    ? (await pool.query(
+      "select is_lost from public.pets where id = $1 and user_id = $2",
+      [petId, userId],
+    )).rows[0] || null
+    : null;
+
   const result = await pool.query(
     `
       update public.pets
@@ -1765,7 +2140,27 @@ const updateUserPet = async (userId, petId, body) => {
     values,
   );
 
-  return result.rows[0] ? serializePet(result.rows[0]) : null;
+  const pet = result.rows[0];
+  if (!pet) return null;
+
+  if (previous && Boolean(previous.is_lost) !== Boolean(pet.is_lost)) {
+    await emitEvent(pool, {
+      type: pet.is_lost ? EVENT_TYPES.PET_MARKED_LOST : EVENT_TYPES.PET_FOUND,
+      entityType: "pet",
+      entityId: pet.id,
+      payload: {
+        owner_user_id: userId,
+        name: pet.name,
+        type: pet.type,
+        lost_since: pet.lost_since,
+        // Included so a finder-facing workflow does not have to read them back.
+        lost_reward_text: pet.is_lost ? pet.lost_reward_text : null,
+        lost_contact_phone: pet.is_lost && pet.lost_show_phone ? pet.lost_contact_phone : null,
+      },
+    });
+  }
+
+  return serializePet(pet);
 };
 
 const normalizeStorageKeyList = (value) => (
@@ -1795,15 +2190,18 @@ const listPetCharacterFileKeys = async (userId, petId = null) => {
   }
   const result = await pool.query(
     `
-      select character.source_storage_keys, asset.storage_key
+      select character.source_storage_keys, character.identity_image_key, asset.storage_key
       from public.pet_characters character
       left join public.pet_character_assets asset on asset.character_id = character.id
       where ${where.join(" and ")}
     `,
     values,
   );
+  // The retained identity photo is listed here too, so deleting a pet or its
+  // character removes the owner's uploaded picture with everything else.
   return [...new Set(result.rows.flatMap((row) => [
     ...normalizeStorageKeyList(row.source_storage_keys),
+    row.identity_image_key,
     row.storage_key,
   ]).filter(Boolean))];
 };
@@ -1950,6 +2348,20 @@ const processPetCharacterCandidates = async (characterId) => {
       newFiles.push({ ...stored, assetKey: candidate.key, assetType: "candidate" });
     }
 
+    // Image generation runs on the Google SDK with its own Vertex credential
+    // resolution, so it is metered rather than routed - it still belongs in one
+    // ledger. Priced per image, not per token.
+    await aiGateway.recordExternalUsage({
+      feature: "pet_character",
+      category: "image",
+      modelSlug: petCharacterImageModel,
+      quantity: generated.candidates.length,
+      unit: "image",
+      userId: character.user_id,
+      petId: character.pet_id,
+      metadata: { stage: "candidates" },
+    }).catch((error) => console.error("pet_character_usage_not_recorded", { message: error.message }));
+
     const client = await pool.connect();
     try {
       await client.query("begin");
@@ -1970,12 +2382,17 @@ const processPetCharacterCandidates = async (characterId) => {
             status = 'awaiting_selection',
             visual_identity = $2::jsonb,
             source_storage_keys = '[]'::jsonb,
+            -- Keep the first photo as the identity reference. Without it a
+            -- regeneration cannot happen without the owner finding and
+            -- uploading the picture again, and if they no longer have it the
+            -- avatar they got is the only one they can ever have.
+            identity_image_key = coalesce(identity_image_key, $4),
             model = $3,
             error_code = null,
             updated_at = now()
           where id = $1
         `,
-        [characterId, JSON.stringify(generated.visualIdentity), petCharacterImageModel],
+        [characterId, JSON.stringify(generated.visualIdentity), petCharacterImageModel, sourceKeys[0] || null],
       );
       await client.query("commit");
     } catch (error) {
@@ -1984,7 +2401,8 @@ const processPetCharacterCandidates = async (characterId) => {
     } finally {
       client.release();
     }
-    await deletePetCharacterFiles(sourceKeys);
+    // Everything but the retained identity photo.
+    await deletePetCharacterFiles(sourceKeys.filter((key) => key !== sourceKeys[0]));
   } catch (error) {
     await deletePetCharacterFiles([...sourceKeys, ...newFiles.map((file) => file.storageKey)]).catch(() => {});
     await markPetCharacterFailed(characterId, error);
@@ -2037,6 +2455,17 @@ const processPetCharacterExpressions = async (characterId) => {
       const stored = await storePetCharacterImage(expression);
       newFiles.push({ ...stored, assetKey: expression.key, assetType: "expression" });
     }
+
+    await aiGateway.recordExternalUsage({
+      feature: "pet_character",
+      category: "image",
+      modelSlug: petCharacterImageModel,
+      quantity: generated.length,
+      unit: "image",
+      userId: character.user_id,
+      petId: character.pet_id,
+      metadata: { stage: "expression_pack" },
+    }).catch((error) => console.error("pet_character_usage_not_recorded", { message: error.message }));
 
     const client = await pool.connect();
     try {
@@ -2101,11 +2530,6 @@ const startPetCharacterGeneration = async (userId, petId, body) => {
   const pet = await getUserPet(userId, petId);
   if (!pet) return null;
   const photos = Array.isArray(body.photos) ? body.photos : [];
-  if (photos.length < 1 || photos.length > 3) {
-    const error = new Error("Upload between one and three pet photos");
-    error.statusCode = 400;
-    throw error;
-  }
 
   const currentResult = await pool.query(
     "select * from public.pet_characters where user_id = $1 and pet_id = $2 limit 1",
@@ -2118,7 +2542,21 @@ const startPetCharacterGeneration = async (userId, petId, body) => {
     throw error;
   }
 
-  const oldFiles = current ? await listPetCharacterFileKeys(userId, petId) : [];
+  // Regenerating reuses the photo the avatar was built from. Asking for it
+  // again is asking the owner to still have it, and after a failed generation
+  // that is exactly when they are most likely not to.
+  const retainedIdentityKey = safeStorageKey(current?.identity_image_key) ? current.identity_image_key : null;
+  if (photos.length > 3 || (photos.length < 1 && !retainedIdentityKey)) {
+    const error = new Error("Upload between one and three pet photos");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // A regeneration from the retained photo must not delete that photo.
+  const oldFiles = current
+    ? (await listPetCharacterFileKeys(userId, petId))
+      .filter((key) => photos.length > 0 || key !== retainedIdentityKey)
+    : [];
   const uploaded = [];
   try {
     for (const photo of photos) {
@@ -2158,7 +2596,7 @@ const startPetCharacterGeneration = async (userId, petId, body) => {
           where id = $1
           returning *
         `,
-        [current.id, JSON.stringify(uploaded), petCharacterImageModel],
+        [current.id, JSON.stringify(uploaded.length > 0 ? uploaded : [retainedIdentityKey]), petCharacterImageModel],
       );
       character = updated.rows[0];
     } else {
@@ -2225,11 +2663,20 @@ const selectPetCharacterCandidate = async (userId, petId, candidateKey) => {
     updated = await client.query(
       `
         update public.pet_characters
-        set status = 'generating_pack', selected_candidate_key = $2, error_code = null, updated_at = now()
+        set
+          status = 'generating_pack',
+          selected_candidate_key = $2,
+          -- Record which of the two styles was chosen. The expression pack is
+          -- generated from the selected candidate image, so it inherits the
+          -- style automatically; storing it is what lets a later regeneration
+          -- stay in the style the owner picked.
+          style_key = $3,
+          error_code = null,
+          updated_at = now()
         where id = $1
         returning *
       `,
-      [character.id, key],
+      [character.id, key, key.startsWith("candidate-") ? key.slice("candidate-".length) : character.style_key],
     );
     await client.query("commit");
   } catch (error) {
@@ -2779,40 +3226,32 @@ const parseGeminiJson = (text) => {
   }
 };
 
-const callGeminiPetJson = async (parts, { temperature = 0.25 } = {}) => {
-  if (!geminiApiKey) {
-    const error = new Error("GEMINI_API_KEY is not configured");
-    error.statusCode = 503;
-    throw error;
-  }
+// Routed through the gateway: the model is chosen by capability, and the call
+// is metered into the usage and cost ledgers.
+const callGeminiPetJson = async (parts, {
+  temperature = 0.25,
+  feature = "ai_chat",
+  capability = "reasoning",
+  userId = null,
+  petId = null,
+  requestId,
+  traceId,
+} = {}) => {
+  const result = await aiGateway.runAiRequest({
+    feature,
+    capability,
+    parts,
+    temperature,
+    timeoutMs: 65000,
+    userId,
+    petId,
+    ...(requestId ? { requestId } : {}),
+    ...(traceId ? { traceId } : {}),
+  });
 
-  const response = await fetchWithTimeout(
-    `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiApiKey}`,
-    {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts }],
-        generationConfig: {
-          temperature,
-          responseMimeType: "application/json",
-        },
-      }),
-    },
-    65000,
-  );
-
-  if (!response.ok) {
-    const error = new Error(`Gemini request failed (${response.status})`);
-    error.statusCode = 502;
-    throw error;
-  }
-
-  const data = await response.json();
-  const text = data.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("") || "";
-  const parsed = parseGeminiJson(text);
+  const parsed = result.json ?? parseGeminiJson(result.text);
   if (!parsed) {
-    const error = new Error("Gemini returned an empty response");
+    const error = new Error("The AI provider returned an empty response");
     error.statusCode = 502;
     throw error;
   }
@@ -3146,10 +3585,16 @@ const createAiChatReply = async (auth, body) => {
     attachmentReferences,
   });
 
-  const result = await callGeminiPetJson([
-    { text: prompt },
-    ...attachmentParts,
-  ]);
+  const result = await callGeminiPetJson(
+    [{ text: prompt }, ...attachmentParts],
+    {
+      // Attachments mean the model has to read an image or a document.
+      feature: attachmentReferences.length > 0 ? "document_analysis" : "ai_chat",
+      capability: attachmentReferences.length > 0 ? "vision" : "reasoning",
+      userId: auth.user.id,
+      petId: selectedPet?.id || null,
+    },
+  );
 
   const content = safeText(result.content || result.message, 12000);
   if (!content) {
@@ -3269,7 +3714,26 @@ const createUserInsuranceClaim = async (userId, body) => {
     ],
   );
 
-  return serializeInsuranceClaim(result.rows[0]);
+  const claim = result.rows[0];
+  await emitEvent(pool, {
+    type: EVENT_TYPES.CLAIM_SUBMITTED,
+    entityType: "insurance_claim",
+    entityId: claim.id,
+    payload: {
+      claim_number: claim.claim_number,
+      owner_user_id: userId,
+      pet_id: claim.pet_id,
+      pet_name: claim.pet_name,
+      clinic_name: claim.clinic_name,
+      visit_date: claim.visit_date,
+      total_amount: claim.total_amount === null ? null : Number(claim.total_amount),
+      status: claim.status,
+      // Diagnosis and the owner's ID digits are deliberately left out — a
+      // claims workflow can read them back if it is entitled to.
+    },
+  });
+
+  return serializeInsuranceClaim(claim);
 };
 
 const serializeServiceBooking = (row) => ({
@@ -3371,7 +3835,26 @@ const createUserServiceBooking = async (userId, body) => {
     ],
   );
 
-  return serializeServiceBooking(result.rows[0]);
+  const booking = result.rows[0];
+  await emitEvent(pool, {
+    type: EVENT_TYPES.BOOKING_CREATED,
+    entityType: "service_booking",
+    entityId: booking.id,
+    payload: {
+      booking_number: booking.booking_number,
+      owner_user_id: userId,
+      pet_id: booking.pet_id,
+      service_type: booking.service_type,
+      service_name: booking.service_name,
+      provider_name: booking.provider_name,
+      requested_date: booking.requested_date,
+      start_date: booking.start_date,
+      total_price: booking.total_price === null ? null : Number(booking.total_price),
+      status: booking.status,
+    },
+  });
+
+  return serializeServiceBooking(booking);
 };
 
 const normalizePetType = (value) => {
@@ -3425,12 +3908,16 @@ const businessProductFields = {
   image_url: "image_url",
   images: "images",
   category: "category",
+  category_id: "category_id",
+  image_source_url: "image_source_url",
+  image_adopted_at: "image_adopted_at",
   in_stock: "in_stock",
   is_featured: "is_featured",
   sku: "sku",
   pet_type: "pet_type",
   flavors: "flavors",
   brand: "brand",
+  weight: "weight",
   weight_unit: "weight_unit",
   price_per_weight: "price_per_weight",
   source_url: "source_url",
@@ -3467,6 +3954,7 @@ const scrapedProductFields = {
   sale_price: "sale_price",
   image_url: "main_image_url",
   category: "sub_category",
+  category_id: "category_id",
   in_stock: "stock_status",
   sku: "sku",
   pet_type: "pet_type",
@@ -3477,6 +3965,13 @@ const scrapedProductFields = {
   is_flagged: "is_flagged",
   flagged_reason: "flagged_reason",
   flagged_at: "flagged_at",
+};
+
+const normalizeCategoryId = (value) => {
+  if (value === null || value === undefined || value === "") return null;
+  const id = String(value).trim();
+  if (!uuidPattern.test(id)) throw new Error("A valid category_id is required");
+  return id;
 };
 
 const normalizeFieldValue = (field, value, target = "business") => {
@@ -3500,6 +3995,10 @@ const normalizeFieldValue = (field, value, target = "business") => {
 
   if (field === "pet_type") {
     return normalizePetType(value);
+  }
+
+  if (field === "category_id") {
+    return normalizeCategoryId(value);
   }
 
   if (field === "in_stock" && target === "scraped") {
@@ -3542,12 +4041,14 @@ const normalizeProductPayload = (body) => {
     image_url: body.image_url || "/placeholder.svg",
     images: Array.isArray(body.images) ? body.images : [],
     category: body.category ?? null,
+    category_id: normalizeCategoryId(body.category_id),
     in_stock: body.in_stock ?? true,
     is_featured: body.is_featured ?? false,
     sku: body.sku ?? null,
     pet_type: normalizePetType(body.pet_type),
     flavors: Array.isArray(body.flavors) ? body.flavors : [],
     brand: body.brand ?? null,
+    weight: toNumber(body.weight),
     weight_unit: body.weight_unit ?? null,
     price_per_weight: toNumber(body.price_per_weight),
     source_url: body.source_url ?? null,
@@ -3639,6 +4140,9 @@ const mapScrapedProduct = (row) => ({
   image_url: row.main_image_url || "/placeholder.svg",
   images: row.main_image_url ? [row.main_image_url] : [],
   category: row.sub_category || row.main_category,
+  category_id: row.category_id ?? null,
+  category_slug: row.category_slug ?? null,
+  category_name: row.category_name ?? null,
   in_stock: row.stock_status === "in_stock" || row.stock_status === null,
   is_featured: false,
   business_id: null,
@@ -3655,10 +4159,61 @@ const mapScrapedProduct = (row) => ({
   source: "scraped",
 });
 
+// The category join is an enrichment, not a requirement. If the code is
+// deployed before 0025 runs, the catalogue must still serve products - joining
+// a table that does not exist yet would otherwise take the whole shop down.
+// Same fallback convention as listBreeds: 42P01 undefined_table,
+// 42703 undefined_column.
+const isMissingCategorySchema = (error) => error?.code === "42P01" || error?.code === "42703";
+
+const queryProductsWithCategories = async (table, orderBy) => {
+  try {
+    return await pool.query(`
+      select p.*, c.slug as category_slug, c.name_he as category_name
+      from public.${table} p
+      left join public.product_categories c on c.id = p.category_id
+      order by ${orderBy}
+    `);
+  } catch (error) {
+    if (!isMissingCategorySchema(error)) throw error;
+    return pool.query(`select p.* from public.${table} p order by ${orderBy}`);
+  }
+};
+
+// What a shop visitor is allowed to see about a product.
+//
+// mapBusinessProduct spreads the whole row, which carries cost_price,
+// supplier_id, suggested_price and the internal review flags. Those describe
+// Mipo's margin and buying decisions, not the product, and they were reaching
+// every visitor of /api/products. An allowlist rather than a blocklist, so a
+// column added later is private until someone deliberately publishes it.
+const PUBLIC_PRODUCT_FIELDS = [
+  "id", "name", "description", "price", "original_price", "sale_price",
+  "image_url", "images", "category", "category_id", "category_slug", "category_name",
+  "in_stock", "is_featured", "sku", "pet_type", "flavors", "brand",
+  "weight", "weight_unit", "price_per_weight", "ingredients", "benefits", "feeding_guide",
+  "product_attributes", "life_stage", "dog_size", "special_diet",
+  "breed_tags", "medical_tags", "kcal_per_kg", "safety_score",
+  "source_url", "source", "created_at", "updated_at",
+];
+
+const toPublicProduct = (product) => {
+  const publicProduct = {};
+  for (const field of PUBLIC_PRODUCT_FIELDS) {
+    if (Object.hasOwn(product, field)) publicProduct[field] = product[field];
+  }
+  return publicProduct;
+};
+
 const listProducts = async () => {
+  // The id is the tiebreaker, and it is what makes this list hold still.
+  // A bulk import gives every row the same created_at to the microsecond, and
+  // an ORDER BY with ties leaves the rest to the executor -- which reorders
+  // after an UPDATE, because the new row version is written at the end of the
+  // heap. That is why an edited product appeared to jump somewhere random.
   const [businessProducts, scrapedProducts] = await Promise.all([
-    pool.query("select * from public.business_products order by created_at desc"),
-    pool.query("select * from public.scraped_products order by scraped_at desc nulls last, created_at desc"),
+    queryProductsWithCategories("business_products", "p.created_at desc, p.id"),
+    queryProductsWithCategories("scraped_products", "p.scraped_at desc nulls last, p.created_at desc, p.id"),
   ]);
 
   return [
@@ -3746,66 +4301,166 @@ const ensureDefaultBusinessProfile = async () => {
   return defaultBusinessId;
 };
 
+// Images reach the catalogue four ways - scraping, a spreadsheet, a database
+// import, or somebody pasting a URL they found - and until now all four stored
+// the supplier's own address. That is not our image: it can change, it can be
+// resized, it can 404, and the supplier can see our traffic. Adoption downloads
+// the bytes once, normalizes them onto the shared canvas and stores them here,
+// after which the product points at us.
+//
+// Already-ours URLs pass straight through, so re-saving a product does not
+// re-download and re-encode an image we normalized yesterday.
+// Strips the buying trail from a public product row.
+const withoutSupplierOrigin = (product) => {
+  const { image_source_url: _origin, image_adopted_at: _adoptedAt, ...rest } = product;
+  return rest;
+};
+
+const isOwnedImageUrl = (value) => {
+  const url = String(value || "").trim();
+  return url.startsWith("/uploads/") || url === "/placeholder.svg" || url.startsWith("data:image/webp");
+};
+
+const backgroundRemovalEnabled = process.env.PRODUCT_IMAGE_REMOVE_BACKGROUND === "true";
+
+// Injected rather than imported so this file never picks a provider. Left null
+// until a remover is wired in; the pipeline then simply skips the stage.
+let productBackgroundRemover = backgroundRemovalEnabled
+  ? createGeminiBackgroundRemover({ apiKey: geminiApiKey })
+  : null;
+
+export const setProductBackgroundRemover = (remover) => {
+  productBackgroundRemover = typeof remover === "function" ? remover : null;
+};
+
+const adoptProductImage = async (imageUrl, { label = "product" } = {}) => {
+  const value = String(imageUrl || "").trim();
+  if (!value || isOwnedImageUrl(value)) return { url: value || null, adopted: false };
+
+  let sourceBuffer;
+  try {
+    sourceBuffer = value.startsWith("data:")
+      ? decodeAndValidateDataUrl(value, { maxBytes: maxUploadBytes, requireImage: true }).buffer
+      : await fetchImageBuffer(value);
+  } catch (error) {
+    // A bad image must not block the product. The row keeps whatever it had and
+    // the admin can see it was never adopted.
+    console.warn("product_image_not_adopted", {
+      label,
+      reason: error instanceof ImagePipelineError ? error.code : "decode_failed",
+    });
+    return { url: value, adopted: false, reason: error?.code || "decode_failed" };
+  }
+
+  try {
+    const normalized = await normalizeWithBackgroundRemoval(sourceBuffer, {
+      remover: backgroundRemovalEnabled ? productBackgroundRemover : null,
+      onWarning: (warning) => console.warn("product_image_warning", { label, ...warning }),
+    });
+
+    const fileName = `${Date.now()}-${randomUUID()}${normalized.extension}`;
+    await mkdir(uploadDir, { recursive: true });
+    await writeFile(path.join(uploadDir, fileName), normalized.buffer, { flag: "wx", mode: 0o644 });
+
+    return {
+      url: `/uploads/${fileName}`,
+      adopted: true,
+      width: normalized.width,
+      height: normalized.height,
+      bytes: normalized.bytes,
+      background_removed: normalized.background_removed,
+      original_url: value.startsWith("data:") ? null : value,
+    };
+  } catch (error) {
+    console.warn("product_image_not_adopted", { label, reason: error?.code || "normalize_failed" });
+    return { url: value, adopted: false, reason: error?.code || "normalize_failed" };
+  }
+};
+
+// Every image on a product, not just the primary one.
+const adoptProductImages = async (body, label) => {
+  const primary = await adoptProductImage(body.image_url, { label });
+  const gallery = Array.isArray(body.images) && body.images.length > 0
+    ? await Promise.all(body.images.map((image) => adoptProductImage(image, { label })))
+    : [];
+
+  return {
+    image_url: primary.url,
+    images: gallery.map((entry) => entry.url).filter(Boolean),
+    adopted: [primary, ...gallery].filter((entry) => entry.adopted).length,
+    // Kept so the catalogue can be rebuilt if our storage is ever lost.
+    image_source_url: primary.original_url || null,
+    image_adopted_at: primary.adopted ? new Date().toISOString() : null,
+  };
+};
+
 const createProduct = async (body) => {
   const payload = normalizeProductPayload(body);
   const businessId = body.business_id || await ensureDefaultBusinessProfile();
 
+  // Scraped, imported from a spreadsheet, or pasted by hand - the bytes become
+  // ours here, before the row is written.
+  const owned = await adoptProductImages(payload, payload.name);
+  payload.image_url = owned.image_url || "/placeholder.svg";
+  payload.images = owned.images;
+  payload.image_source_url = owned.image_source_url;
+  payload.image_adopted_at = owned.image_adopted_at;
+
+  // Columns and values come from one list. The hand-written placeholder block
+  // that used to be here silently fell one short of the column list when a
+  // column was added, and Postgres rejected the whole insert.
+  const productColumns = [
+    ["business_id", () => businessId],
+    ["name", () => payload.name],
+    ["description", () => payload.description],
+    ["price", () => payload.price],
+    ["original_price", () => payload.original_price],
+    ["sale_price", () => payload.sale_price],
+    ["image_url", () => payload.image_url],
+    ["images", () => payload.images],
+    ["category", () => payload.category],
+    ["in_stock", () => payload.in_stock],
+    ["is_featured", () => payload.is_featured],
+    ["sku", () => payload.sku],
+    ["pet_type", () => payload.pet_type],
+    ["flavors", () => payload.flavors],
+    ["brand", () => payload.brand],
+    ["weight", () => payload.weight],
+    ["weight_unit", () => payload.weight_unit],
+    ["price_per_weight", () => payload.price_per_weight],
+    ["source_url", () => payload.source_url],
+    ["ingredients", () => payload.ingredients],
+    ["benefits", () => JSON.stringify(payload.benefits)],
+    ["feeding_guide", () => JSON.stringify(payload.feeding_guide)],
+    ["product_attributes", () => JSON.stringify(payload.product_attributes)],
+    ["life_stage", () => payload.life_stage],
+    ["dog_size", () => payload.dog_size],
+    ["special_diet", () => payload.special_diet],
+    ["breed_tags", () => payload.breed_tags],
+    ["medical_tags", () => payload.medical_tags],
+    ["auto_restock", () => payload.auto_restock],
+    ["restock_interval_days", () => payload.restock_interval_days],
+    ["api_sync_enabled", () => payload.api_sync_enabled],
+    ["cost_price", () => payload.cost_price],
+    ["supplier_id", () => payload.supplier_id],
+    ["safety_score", () => payload.safety_score],
+    ["kcal_per_kg", () => payload.kcal_per_kg],
+    ["category_id", () => payload.category_id],
+    ["image_source_url", () => payload.image_source_url],
+    ["image_adopted_at", () => payload.image_adopted_at],
+  ];
+
   const result = await pool.query(
     `
       insert into public.business_products (
-        business_id, name, description, price, original_price, sale_price,
-        image_url, images, category, in_stock, is_featured, sku, pet_type,
-        flavors, brand, weight_unit, price_per_weight, source_url, ingredients,
-        benefits, feeding_guide, product_attributes, life_stage, dog_size, special_diet,
-        breed_tags, medical_tags, auto_restock, restock_interval_days, api_sync_enabled,
-        cost_price, supplier_id, safety_score, kcal_per_kg
+        ${productColumns.map(([column]) => column).join(", ")}
       )
       values (
-        $1, $2, $3, $4, $5, $6,
-        $7, $8, $9, $10, $11, $12, $13,
-        $14, $15, $16, $17, $18, $19,
-        $20, $21, $22, $23, $24, $25,
-        $26, $27, $28, $29, $30,
-        $31, $32, $33, $34
+        ${productColumns.map((_, index) => `$${index + 1}`).join(", ")}
       )
       returning *
     `,
-    [
-      businessId,
-      payload.name,
-      payload.description,
-      payload.price,
-      payload.original_price,
-      payload.sale_price,
-      payload.image_url,
-      payload.images,
-      payload.category,
-      payload.in_stock,
-      payload.is_featured,
-      payload.sku,
-      payload.pet_type,
-      payload.flavors,
-      payload.brand,
-      payload.weight_unit,
-      payload.price_per_weight,
-      payload.source_url,
-      payload.ingredients,
-      JSON.stringify(payload.benefits),
-      JSON.stringify(payload.feeding_guide),
-      JSON.stringify(payload.product_attributes),
-      payload.life_stage,
-      payload.dog_size,
-      payload.special_diet,
-      payload.breed_tags,
-      payload.medical_tags,
-      payload.auto_restock,
-      payload.restock_interval_days,
-      payload.api_sync_enabled,
-      payload.cost_price,
-      payload.supplier_id,
-      payload.safety_score,
-      payload.kcal_per_kg,
-    ],
+    productColumns.map(([, readValue]) => readValue()),
   );
 
   return mapBusinessProduct(result.rows[0]);
@@ -3821,7 +4476,30 @@ const fetchProductById = async (id, source) => {
   return result.rows[0] ? mapBusinessProduct(result.rows[0]) : null;
 };
 
+// A public caller does not know which table a product lives in.
+const fetchPublicProductById = async (id) => {
+  const [business, scraped] = await Promise.all([
+    pool.query("select * from public.business_products where id = $1", [id]),
+    pool.query("select * from public.scraped_products where id = $1", [id]),
+  ]);
+  if (business.rows[0]) return mapBusinessProduct(business.rows[0]);
+  if (scraped.rows[0]) return mapScrapedProduct(scraped.rows[0]);
+  return null;
+};
+
 const updateBusinessProduct = async (id, body) => {
+  // An edit can introduce a new supplier URL just as an import can, so the same
+  // rule applies: if it is not already ours, adopt it before it is stored.
+  if (Object.hasOwn(body, "image_url") || Object.hasOwn(body, "images")) {
+    const owned = await adoptProductImages(body, body.name || id);
+    if (Object.hasOwn(body, "image_url")) body.image_url = owned.image_url;
+    if (Object.hasOwn(body, "images")) body.images = owned.images;
+    if (owned.image_source_url) {
+      body.image_source_url = owned.image_source_url;
+      body.image_adopted_at = owned.image_adopted_at;
+    }
+  }
+
   const statement = buildUpdateStatement({
     table: "business_products",
     fields: businessProductFields,
@@ -3926,6 +4604,296 @@ const bulkDeleteProducts = async (ids) => {
     manual: businessResult.rowCount,
     scraped: scrapedResult.rowCount,
   };
+};
+
+const categorySlugPattern = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+const badRequest = (message) => {
+  const error = new Error(message);
+  error.statusCode = 400;
+  return error;
+};
+
+const normalizeCategoryAliases = (value) => {
+  if (value === undefined) return undefined;
+  if (value === null) return [];
+  if (!Array.isArray(value)) throw badRequest("aliases must be an array of strings");
+
+  const seen = new Set();
+  for (const entry of value) {
+    const alias = String(entry ?? "").trim().toLowerCase();
+    if (!alias) continue;
+    if (alias.length > 120) throw badRequest("An alias may be at most 120 characters");
+    seen.add(alias);
+  }
+  return [...seen];
+};
+
+const normalizeCategoryPayload = (body, { partial = false } = {}) => {
+  const payload = {};
+
+  if (!partial || Object.hasOwn(body, "name_he")) {
+    const nameHe = String(body.name_he ?? "").trim();
+    if (!nameHe) throw badRequest("Category name is required");
+    payload.name_he = nameHe;
+  }
+
+  if (!partial || Object.hasOwn(body, "slug")) {
+    const slug = String(body.slug ?? "").trim().toLowerCase();
+    if (!categorySlugPattern.test(slug)) {
+      throw badRequest("A slug must be lowercase letters, digits and single hyphens");
+    }
+    payload.slug = slug;
+  }
+
+  if (Object.hasOwn(body, "name_en")) payload.name_en = body.name_en ? String(body.name_en).trim() : null;
+  if (Object.hasOwn(body, "description")) payload.description = body.description ? String(body.description).trim() : null;
+  if (Object.hasOwn(body, "icon")) payload.icon = body.icon ? String(body.icon).trim() : null;
+  if (Object.hasOwn(body, "parent_id")) payload.parent_id = normalizeCategoryId(body.parent_id);
+  if (Object.hasOwn(body, "is_active")) payload.is_active = Boolean(body.is_active);
+  if (Object.hasOwn(body, "position")) {
+    const position = Number(body.position);
+    if (!Number.isInteger(position) || position < 0 || position > 100000) {
+      throw badRequest("position must be an integer between 0 and 100000");
+    }
+    payload.position = position;
+  }
+
+  return payload;
+};
+
+// Product counts are per-category, not rolled up into the parent: an admin
+// deleting a node needs to know what is attached to that exact node.
+const categoryListQuery = `
+  with counts as (
+    select category_id, count(*)::int as total
+    from (
+      select category_id from public.business_products where category_id is not null
+      union all
+      select category_id from public.scraped_products where category_id is not null
+    ) all_products
+    group by category_id
+  )
+  select
+    c.*,
+    coalesce(counts.total, 0) as product_count,
+    coalesce(aliases.list, '{}') as aliases
+  from public.product_categories c
+  left join counts on counts.category_id = c.id
+  left join lateral (
+    select array_agg(a.alias order by a.alias) as list
+    from public.product_category_aliases a
+    where a.category_id = c.id
+  ) aliases on true
+`;
+
+const listProductCategories = async ({ includeInactive = false } = {}) => {
+  try {
+    const result = await pool.query(
+      `${categoryListQuery}
+       ${includeInactive ? "" : "where c.is_active"}
+       order by c.position, c.name_he`,
+    );
+    return result.rows;
+  } catch (error) {
+    // Before 0025 runs there is no tree yet. An empty list lets the shop fall
+    // back to its built-in bar instead of rendering an error.
+    if (!isMissingCategorySchema(error)) throw error;
+    return [];
+  }
+};
+
+const getProductCategory = async (id) => {
+  if (!uuidPattern.test(String(id || ""))) return null;
+  const result = await pool.query(`${categoryListQuery} where c.id = $1`, [id]);
+  return result.rows[0] || null;
+};
+
+const assertCategoryParentIsSafe = async (client, id, parentId) => {
+  if (!parentId) return;
+  if (parentId === id) throw badRequest("A category cannot be its own parent");
+
+  const parent = await client.query("select 1 from public.product_categories where id = $1", [parentId]);
+  if (parent.rowCount === 0) throw badRequest("The parent category does not exist");
+
+  if (!id) return;
+
+  // Walking down from `id` is cheaper than walking up from `parentId` only when
+  // the tree is shallow, but either direction is correct; down keeps the guard
+  // readable — the new parent must not already sit below us.
+  const cycle = await client.query(
+    `
+      with recursive descendants as (
+        select id from public.product_categories where parent_id = $1
+        union all
+        select c.id
+        from public.product_categories c
+        join descendants d on c.parent_id = d.id
+      )
+      select 1 from descendants where id = $2
+    `,
+    [id, parentId],
+  );
+  if (cycle.rowCount > 0) throw badRequest("That parent would create a loop in the category tree");
+};
+
+const replaceCategoryAliases = async (client, categoryId, aliases) => {
+  await client.query("delete from public.product_category_aliases where category_id = $1", [categoryId]);
+  if (aliases.length === 0) return;
+  await client.query(
+    `
+      insert into public.product_category_aliases (alias, category_id)
+      select unnest($1::text[]), $2
+      on conflict (alias) do update set category_id = excluded.category_id
+    `,
+    [aliases, categoryId],
+  );
+};
+
+const createProductCategory = async (body) => {
+  const payload = normalizeCategoryPayload(body);
+  const aliases = normalizeCategoryAliases(body.aliases) ?? [];
+  const columns = Object.keys(payload);
+  const client = await pool.connect();
+  let categoryId;
+
+  try {
+    await client.query("begin");
+    await assertCategoryParentIsSafe(client, null, payload.parent_id ?? null);
+
+    const inserted = await client.query(
+      `
+        insert into public.product_categories (${columns.join(", ")})
+        values (${columns.map((_, index) => `$${index + 1}`).join(", ")})
+        returning id
+      `,
+      columns.map((column) => payload[column]),
+    );
+    categoryId = inserted.rows[0].id;
+    await replaceCategoryAliases(client, categoryId, aliases);
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw translateCategoryConflict(error);
+  } finally {
+    client.release();
+  }
+
+  // Read back outside the transaction so a failure here is not reported as a
+  // write conflict, and no rollback is attempted after the commit.
+  return getProductCategory(categoryId);
+};
+
+const updateProductCategory = async (id, body) => {
+  if (!uuidPattern.test(String(id || ""))) return null;
+  const payload = normalizeCategoryPayload(body, { partial: true });
+  const aliases = normalizeCategoryAliases(body.aliases);
+  const columns = Object.keys(payload);
+  if (columns.length === 0 && aliases === undefined) return getProductCategory(id);
+
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    if (Object.hasOwn(payload, "parent_id")) {
+      await assertCategoryParentIsSafe(client, id, payload.parent_id);
+    }
+
+    if (columns.length > 0) {
+      const updated = await client.query(
+        `
+          update public.product_categories
+          set ${columns.map((column, index) => `${column} = $${index + 2}`).join(", ")}, updated_at = now()
+          where id = $1
+          returning id
+        `,
+        [id, ...columns.map((column) => payload[column])],
+      );
+      if (updated.rowCount === 0) {
+        await client.query("rollback");
+        return null;
+      }
+    } else {
+      const exists = await client.query("select 1 from public.product_categories where id = $1", [id]);
+      if (exists.rowCount === 0) {
+        await client.query("rollback");
+        return null;
+      }
+    }
+
+    if (aliases !== undefined) await replaceCategoryAliases(client, id, aliases);
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw translateCategoryConflict(error);
+  } finally {
+    client.release();
+  }
+
+  return getProductCategory(id);
+};
+
+// Deleting a category never deletes products. Either the caller says where the
+// products go, or the delete is refused and the count is reported back.
+const deleteProductCategory = async (id, { reassignTo = null } = {}) => {
+  if (!uuidPattern.test(String(id || ""))) return { deleted: false, reason: "not_found" };
+  const target = normalizeCategoryId(reassignTo);
+  if (target === id) throw badRequest("Cannot reassign a category's products to itself");
+
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    const existing = await client.query("select 1 from public.product_categories where id = $1", [id]);
+    if (existing.rowCount === 0) {
+      await client.query("rollback");
+      return { deleted: false, reason: "not_found" };
+    }
+
+    const children = await client.query("select count(*)::int as total from public.product_categories where parent_id = $1", [id]);
+    if (children.rows[0].total > 0) {
+      await client.query("rollback");
+      return { deleted: false, reason: "has_children", children: children.rows[0].total };
+    }
+
+    const counts = await client.query(
+      `
+        select
+          (select count(*) from public.business_products where category_id = $1)
+          + (select count(*) from public.scraped_products where category_id = $1) as total
+      `,
+      [id],
+    );
+    const productCount = Number(counts.rows[0].total);
+
+    if (productCount > 0 && !target) {
+      await client.query("rollback");
+      return { deleted: false, reason: "has_products", products: productCount };
+    }
+
+    if (productCount > 0) {
+      const targetExists = await client.query("select 1 from public.product_categories where id = $1", [target]);
+      if (targetExists.rowCount === 0) throw badRequest("The category to reassign to does not exist");
+      await client.query("update public.business_products set category_id = $2 where category_id = $1", [id, target]);
+      await client.query("update public.scraped_products set category_id = $2 where category_id = $1", [id, target]);
+    }
+
+    await client.query("delete from public.product_categories where id = $1", [id]);
+    await client.query("commit");
+    return { deleted: true, reassigned: productCount > 0 ? productCount : 0 };
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+const translateCategoryConflict = (error) => {
+  if (error?.code !== "23505") return error;
+  if (error.constraint === "product_categories_slug_key") return badRequest("That slug is already in use");
+  if (String(error.constraint || "").includes("sibling_name") || String(error.constraint || "").includes("root_name")) {
+    return badRequest("A category with that name already exists at the same level");
+  }
+  return error;
 };
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -4218,7 +5186,7 @@ const normalizeRequestedOrderItems = (items) => {
 const resolveCatalogOrderItem = async (client, requestedItem) => {
   const findManual = () => client.query(
     `
-      select id, name, image_url, price, sale_price, in_stock
+      select id, name, image_url, price, sale_price, in_stock, sku, weight, weight_unit
       from public.business_products
       where id = $1
       for share
@@ -4227,7 +5195,17 @@ const resolveCatalogOrderItem = async (client, requestedItem) => {
   );
   const findScraped = () => client.query(
     `
-      select id, product_name, main_image_url, final_price, regular_price, sale_price, stock_status
+      select
+        id,
+        product_name,
+        main_image_url,
+        final_price,
+        regular_price,
+        sale_price,
+        stock_status,
+        sku,
+        weight,
+        weight_unit
       from public.scraped_products
       where id = $1
       for share
@@ -4279,6 +5257,11 @@ const resolveCatalogOrderItem = async (client, requestedItem) => {
     throw error;
   }
 
+  const trimmedOrNull = (value) => {
+    const text = String(value ?? "").trim();
+    return text || null;
+  };
+
   return {
     product_id: row.id,
     product_source: source,
@@ -4288,6 +5271,13 @@ const resolveCatalogOrderItem = async (client, requestedItem) => {
     price,
     variant: requestedItem.variant,
     size: requestedItem.size,
+    // Snapshotted for the warehouse label: what the catalog said at the moment
+    // the order was placed, not whatever it says when the label is printed.
+    // The manual catalog stores a number, the scraped one free text; both are
+    // kept verbatim as text so an unparseable imported value is not lost.
+    sku: trimmedOrNull(row.sku),
+    weight: trimmedOrNull(row.weight),
+    weight_unit: trimmedOrNull(row.weight_unit),
   };
 };
 
@@ -4298,34 +5288,98 @@ const resolveCatalogOrderItems = async (client, items) => {
   return resolved;
 };
 
-const normalizeShippingAddress = (shippingAddress) => {
-  const address = shippingAddress && typeof shippingAddress === "object" ? shippingAddress : {};
-  const normalized = {
-    fullName: String(address.fullName || address.full_name || "").trim(),
-    email: normalizeEmail(address.email),
-    phone: String(address.phone || "").trim(),
-    address: String(address.address || address.street || "").trim(),
-    city: String(address.city || "").trim(),
-    zipCode: String(address.zipCode || address.zip_code || address.postal_code || "").trim(),
-  };
+// The wording the customer ticks to accept an unattended delivery. It is copied
+// onto the order rather than referenced, so changing this text later cannot
+// rewrite what somebody already agreed to.
 
-  const isValid = normalized.fullName.length >= 2
-    && normalized.fullName.length <= 100
-    && normalized.email.length <= 255
-    && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized.email)
-    && /^[0-9]{9,15}$/.test(normalized.phone)
-    && normalized.address.length >= 5
-    && normalized.address.length <= 200
-    && normalized.city.length >= 2
-    && normalized.city.length <= 50
-    && /^[0-9]{5,7}$/.test(normalized.zipCode);
-  if (!isValid) {
-    const error = new Error("Invalid shipping details");
-    error.statusCode = 400;
-    throw error;
-  }
 
-  return normalized;
+// ─── Shipping profile ────────────────────────────────────────────────────────
+// The customer's current address, kept so the next checkout arrives filled in.
+// Deliberately separate from the address on an order: editing this must never
+// change where a past parcel was sent.
+
+const serializeShippingProfile = (row) => (row ? {
+  full_name: row.full_name || null,
+  phone: row.phone || null,
+  phone_secondary: row.phone_secondary || null,
+  city: row.city || null,
+  street: row.street || null,
+  building: row.building || null,
+  floor: row.floor || null,
+  apartment: row.apartment || null,
+  lobby_code: row.lobby_code || null,
+  entrance_type: row.entrance_type || "house",
+  zip_code: row.zip_code || null,
+  notes: row.notes || null,
+  leave_at_door: row.leave_at_door === true,
+  leave_at_door_at: row.leave_at_door_at || null,
+  updated_at: row.updated_at,
+} : null);
+
+const getShippingProfile = async (userId) => {
+  const result = await pool.query(
+    "select * from public.shipping_profiles where user_id = $1 limit 1",
+    [userId],
+  );
+  return serializeShippingProfile(result.rows[0] || null);
+};
+
+// Called after an order is placed as well as from the profile screen, so the
+// address a customer just used is the one waiting for them next time.
+const saveShippingProfile = async (userId, input) => {
+  const body = input && typeof input === "object" ? input : {};
+  const entranceType = (body.entranceType || body.entrance_type) === "building" ? "building" : "house";
+  const leaveAtDoor = body.leaveAtDoor === true || body.leave_at_door === true;
+  const values = [
+    userId,
+    boundedText(body.fullName ?? body.full_name, 100) || null,
+    boundedText(body.phone, 20) || null,
+    boundedText(body.phoneSecondary ?? body.phone_secondary, 20) || null,
+    boundedText(body.city, 50) || null,
+    boundedText(body.address ?? body.street, 200) || null,
+    boundedText(body.building, 20) || null,
+    boundedText(body.floor, 10) || null,
+    boundedText(body.apartment, 20) || null,
+    boundedText(body.lobbyCode ?? body.lobby_code, 30) || null,
+    entranceType,
+    boundedText(body.zipCode ?? body.zip_code, 10) || null,
+    boundedText(body.notes, 500) || null,
+    leaveAtDoor,
+    leaveAtDoor ? LEAVE_AT_DOOR_TERMS : null,
+    leaveAtDoor ? new Date().toISOString() : null,
+  ];
+
+  const result = await pool.query(
+    `
+      insert into public.shipping_profiles (
+        user_id, full_name, phone, phone_secondary, city, street, building,
+        floor, apartment, lobby_code, entrance_type, zip_code, notes,
+        leave_at_door, leave_at_door_terms, leave_at_door_at
+      ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+      on conflict (user_id) do update set
+        full_name = excluded.full_name,
+        phone = excluded.phone,
+        phone_secondary = excluded.phone_secondary,
+        city = excluded.city,
+        street = excluded.street,
+        building = excluded.building,
+        floor = excluded.floor,
+        apartment = excluded.apartment,
+        lobby_code = excluded.lobby_code,
+        entrance_type = excluded.entrance_type,
+        zip_code = excluded.zip_code,
+        notes = excluded.notes,
+        leave_at_door = excluded.leave_at_door,
+        -- Keep the earlier acceptance and its wording when the customer has not
+        -- re-agreed on this save.
+        leave_at_door_terms = coalesce(excluded.leave_at_door_terms, public.shipping_profiles.leave_at_door_terms),
+        leave_at_door_at = coalesce(excluded.leave_at_door_at, public.shipping_profiles.leave_at_door_at),
+        updated_at = now()
+      returning *
+    `,
+    values,
+  );
+  return serializeShippingProfile(result.rows[0]);
 };
 
 const calculateOrderAmounts = async (client, body, orderItems, shippingAddress) => {
@@ -4377,6 +5431,9 @@ const mapOrderItem = (row) => ({
   price: toMoney(row.price),
   variant: row.variant,
   size: row.size,
+  sku: row.sku || null,
+  weight: row.weight || null,
+  weight_unit: row.weight_unit || null,
   created_at: row.created_at,
 });
 
@@ -4429,7 +5486,7 @@ const attachOrderItems = async (orders) => {
   return orders.map((order) => mapOrder(order, itemsByOrder.get(order.id) || []));
 };
 
-const createOrder = async (body, currentUser = null) => {
+const createOrder = async (body, currentUser = null, eventOrigin = "app") => {
   const shippingAddress = normalizeShippingAddress(body.shipping_address || body.shippingData);
   const paymentMethod = String(body.payment_method || "credit-card");
   if (!["credit-card", "apple-pay", "google-pay", "bit", "paybox", "paypal", "cash-on-delivery"].includes(paymentMethod)) {
@@ -4456,6 +5513,17 @@ const createOrder = async (body, currentUser = null) => {
     error.statusCode = 400;
     throw error;
   }
+  // An order sends a confirmation, an invoice and delivery updates to the
+  // account's address, so this is the point where the address has to be
+  // proven. Guest checkout is untouched: it has no account to protect, and
+  // its address is entered per order rather than inherited from one.
+  if (currentUser && !currentUser.email_verified_at) {
+    const error = new Error("Verify your email address before placing an order");
+    error.statusCode = 403;
+    error.code = "email_verification_required";
+    throw error;
+  }
+
   const accessToken = currentUser ? null : createOpaqueToken();
   const client = await pool.connect();
 
@@ -4479,16 +5547,17 @@ const createOrder = async (body, currentUser = null) => {
     }
     const customerResult = await client.query(
       `
-        insert into public.shop_customers (email, full_name, phone, last_order_at)
-        values ($1, $2, $3, now())
-        on conflict (email) do update set
+        insert into public.shop_customers (email, full_name, phone, last_order_at, user_id)
+        values ($1, $2, $3, now(), $4)
+        on conflict (lower(email)) do update set
           full_name = excluded.full_name,
           phone = excluded.phone,
           last_order_at = now(),
-          updated_at = now()
+          updated_at = now(),
+          user_id = coalesce(public.shop_customers.user_id, excluded.user_id)
         returning id
       `,
-      [amounts.customerEmail, shippingAddress.fullName, shippingAddress.phone],
+      [amounts.customerEmail, shippingAddress.fullName, shippingAddress.phone, currentUser?.id || null],
     );
 
     const orderNumber = generateOrderNumber();
@@ -4554,35 +5623,33 @@ const createOrder = async (body, currentUser = null) => {
     );
 
     const order = orderResult.rows[0];
+    // Columns and values are derived from one list, so adding a column cannot
+    // leave the placeholder arithmetic behind and shift every row's values.
+    const orderItemColumns = [
+      ["order_id", () => order.id],
+      ["product_id", (item) => item.product_id],
+      ["product_source", (item) => item.product_source],
+      ["product_name", (item) => item.product_name],
+      ["product_image", (item) => item.product_image],
+      ["quantity", (item) => item.quantity],
+      ["price", (item) => item.price],
+      ["variant", (item) => item.variant],
+      ["size", (item) => item.size],
+      ["sku", (item) => item.sku ?? null],
+      ["weight", (item) => item.weight ?? null],
+      ["weight_unit", (item) => item.weight_unit ?? null],
+    ];
     const itemValues = [];
     const placeholders = orderItems.map((item, index) => {
-      const base = index * 9;
-      itemValues.push(
-        order.id,
-        item.product_id,
-        item.product_source,
-        item.product_name,
-        item.product_image,
-        item.quantity,
-        item.price,
-        item.variant,
-        item.size,
-      );
-      return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9})`;
+      const base = index * orderItemColumns.length;
+      for (const [, readValue] of orderItemColumns) itemValues.push(readValue(item));
+      return `(${orderItemColumns.map((_, offset) => `$${base + offset + 1}`).join(", ")})`;
     });
 
     const itemsResult = await client.query(
       `
         insert into public.order_items (
-          order_id,
-          product_id,
-          product_source,
-          product_name,
-          product_image,
-          quantity,
-          price,
-          variant,
-          size
+          ${orderItemColumns.map(([column]) => column).join(",\n          ")}
         )
         values ${placeholders.join(", ")}
         returning *
@@ -4594,7 +5661,36 @@ const createOrder = async (body, currentUser = null) => {
       await client.query("update public.coupons set used_count = used_count + 1, updated_at = now() where id = $1", [amounts.coupon.id]);
     }
 
+    await emitEvent(client, {
+      type: EVENT_TYPES.ORDER_CREATED,
+      entityType: "order",
+      entityId: order.id,
+      origin: eventOrigin,
+      payload: {
+        order_number: order.order_number,
+        user_id: order.user_id,
+        customer_id: order.customer_id,
+        customer_email: order.customer_email,
+        total: Number(order.total),
+        item_count: orderItems.length,
+        payment_method: order.payment_method,
+        payment_status: order.payment_status,
+        status: order.status,
+        order_type: order.order_type,
+        medical_urgency: order.medical_urgency,
+        coupon_code: amounts.coupon?.code || null,
+      },
+    });
+
     await client.query("commit");
+
+    // Remember where this went, so the next checkout arrives filled in. After
+    // the commit and swallowing failures on purpose: the order is placed, and
+    // failing to cache an address must not turn that into an error.
+    if (currentUser?.id) {
+      await saveShippingProfile(currentUser.id, shippingAddress).catch(() => {});
+    }
+
     return {
       order: mapOrder(order, itemsResult.rows.map(mapOrderItem)),
       accessToken,
@@ -4749,7 +5845,12 @@ const deleteMyAccount = async (userId, email) => {
       `,
       [userId, normalizedEmail],
     );
-    await client.query("delete from public.shop_customers where lower(email) = $1", [normalizedEmail]);
+    // Follows the user_id link as well as the email, so a commerce record created
+    // under a second checkout email is not left behind.
+    await client.query(
+      "delete from public.shop_customers where user_id = $1 or lower(email) = $2",
+      [userId, normalizedEmail],
+    );
     await client.query("delete from public.app_users where id = $1", [userId]);
     await client.query("commit");
   } catch (error) {
@@ -4865,6 +5966,263 @@ const listAdminAnalytics = async (daysInput) => {
   };
 };
 
+// An order belongs to the account that placed it, or — for a guest checkout —
+// to the account that has since claimed the commerce row, or to the guest row
+// itself. Same precedence customer_identities uses for identity_id, so the two
+// always agree on who a person is.
+const ORDER_IDENTITY_EXPRESSION = "coalesce(o.user_id, sc.user_id, o.customer_id)";
+
+const customerIdentityQuery = (where, tail) => `
+  with attributed_orders as (
+    select
+      ${ORDER_IDENTITY_EXPRESSION} as identity_id,
+      o.payment_status,
+      o.total,
+      coalesce(o.order_date, o.created_at) as placed_at
+    from public.orders o
+    left join public.shop_customers sc on sc.id = o.customer_id
+  ),
+  order_stats as (
+    select
+      identity_id,
+      count(*) as orders_count,
+      count(*) filter (where payment_status = 'paid') as paid_orders_count,
+      coalesce(sum(total) filter (where payment_status = 'paid'), 0) as total_spent,
+      max(placed_at) as last_order_at,
+      min(placed_at) as first_order_at
+    from attributed_orders
+    where identity_id is not null
+    group by identity_id
+  ),
+  pet_stats as (
+    select user_id, count(*) as pets_count
+    from public.pets
+    where not archived
+    group by user_id
+  )
+  select * from (
+    -- distinct on guards the one case the view cannot: two shop_customers rows
+    -- claimed by the same account would otherwise list that person twice.
+    select distinct on (ci.identity_id)
+      ci.identity_id,
+      ci.identity_kind,
+      ci.user_id,
+      ci.shop_customer_id,
+      ci.email,
+      ci.full_name,
+      ci.phone,
+      au.is_active,
+      au.last_login_at,
+      coalesce(au.created_at, sc.created_at) as created_at,
+      coalesce(os.last_order_at, ci.last_order_at) as last_order_at,
+      os.first_order_at,
+      coalesce(os.orders_count, 0) as orders_count,
+      coalesce(os.paid_orders_count, 0) as paid_orders_count,
+      coalesce(os.total_spent, 0) as total_spent,
+      coalesce(ps.pets_count, 0) as pets_count,
+      greatest(
+        coalesce(os.last_order_at, ci.last_order_at),
+        coalesce(au.created_at, sc.created_at)
+      ) as last_activity_at
+    from public.customer_identities ci
+    left join public.app_users au on au.id = ci.user_id
+    left join public.shop_customers sc on sc.id = ci.shop_customer_id
+    left join order_stats os on os.identity_id = ci.identity_id
+    left join pet_stats ps on ps.user_id = ci.user_id
+    ${where}
+    order by ci.identity_id, sc.created_at asc nulls last
+  ) customers
+  ${tail}
+`;
+
+const mapCustomerIdentity = (row) => ({
+  identity_id: row.identity_id,
+  identity_kind: row.identity_kind,
+  user_id: row.user_id,
+  shop_customer_id: row.shop_customer_id,
+  email: row.email,
+  full_name: row.full_name,
+  phone: row.phone,
+  is_active: row.is_active === null || row.is_active === undefined ? null : Boolean(row.is_active),
+  created_at: row.created_at,
+  last_login_at: row.last_login_at,
+  first_order_at: row.first_order_at,
+  last_order_at: row.last_order_at,
+  last_activity_at: row.last_activity_at,
+  orders_count: Number(row.orders_count || 0),
+  paid_orders_count: Number(row.paid_orders_count || 0),
+  total_spent: toMoney(row.total_spent),
+  pets_count: Number(row.pets_count || 0),
+});
+
+const listAdminCustomers = async ({ limit = 200, search = null, kind = null } = {}) => {
+  const values = [];
+  const where = [];
+
+  const term = String(search || "").trim();
+  if (term) {
+    values.push(`%${term.replace(/[%_\\]/g, (character) => `\\${character}`)}%`);
+    where.push(
+      `(ci.email ilike $${values.length} or ci.full_name ilike $${values.length} or ci.phone ilike $${values.length})`,
+    );
+  }
+
+  if (kind === "account" || kind === "guest") {
+    values.push(kind);
+    where.push(`ci.identity_kind = $${values.length}`);
+  }
+
+  values.push(Math.min(1000, Math.max(1, Number(limit) || 200)));
+
+  const result = await pool.query(
+    customerIdentityQuery(
+      where.length > 0 ? `where ${where.join(" and ")}` : "",
+      `order by last_activity_at desc nulls last, created_at desc nulls last limit $${values.length}`,
+    ),
+    values,
+  );
+
+  return result.rows.map(mapCustomerIdentity);
+};
+
+const getAdminCustomer = async (identityId) => {
+  if (!uuidPattern.test(String(identityId || ""))) return null;
+
+  const result = await pool.query(customerIdentityQuery("where ci.identity_id = $1", "limit 1"), [identityId]);
+  if (result.rowCount === 0) return null;
+
+  const customer = mapCustomerIdentity(result.rows[0]);
+
+  const orderRows = await pool.query(
+    `
+      select o.*
+      from public.orders o
+      left join public.shop_customers sc on sc.id = o.customer_id
+      where ${ORDER_IDENTITY_EXPRESSION} = $1
+      order by coalesce(o.order_date, o.created_at) desc
+      limit 100
+    `,
+    [customer.identity_id],
+  );
+
+  const subjects = await customerNoteSubjects(customer);
+
+  const [orders, pets, notes] = await Promise.all([
+    attachOrderItems(orderRows.rows),
+    customer.user_id ? listUserPets(customer.user_id, "all") : Promise.resolve([]),
+    listCustomerNotes(subjects),
+  ]);
+
+  return { customer, orders, pets, notes };
+};
+
+const CUSTOMER_NOTE_KINDS = ["note", "call", "whatsapp", "email", "meeting"];
+const MAX_CUSTOMER_NOTE_LENGTH = 5000;
+
+const mapCustomerNote = (row) => ({
+  id: row.id,
+  user_id: row.user_id,
+  shop_customer_id: row.shop_customer_id,
+  admin_user_id: row.admin_user_id,
+  author_name: row.author_name,
+  kind: row.kind,
+  body: row.body,
+  created_at: row.created_at,
+  updated_at: row.updated_at,
+});
+
+// Every row a note could have been filed against. An account may own several
+// shop_customers rows -- one per checkout email it has claimed -- and notes
+// written while those were still guests have to keep showing on the card.
+const customerNoteSubjects = async (customer) => {
+  if (!customer.user_id) {
+    return {
+      userId: null,
+      shopCustomerIds: customer.shop_customer_id ? [customer.shop_customer_id] : [],
+    };
+  }
+
+  const result = await pool.query("select id from public.shop_customers where user_id = $1", [customer.user_id]);
+  return { userId: customer.user_id, shopCustomerIds: result.rows.map((row) => row.id) };
+};
+
+const listCustomerNotes = async (subjects, limit = 200) => {
+  if (!subjects.userId && subjects.shopCustomerIds.length === 0) return [];
+
+  const result = await pool.query(
+    `
+      select *
+      from public.customer_notes
+      where ($1::uuid is not null and user_id = $1)
+         or shop_customer_id = any($2::uuid[])
+      order by created_at desc
+      limit $3
+    `,
+    [subjects.userId, subjects.shopCustomerIds, Math.min(500, Math.max(1, Number(limit) || 200))],
+  );
+  return result.rows.map(mapCustomerNote);
+};
+
+const createCustomerNote = async (customer, admin, body) => {
+  const kind = String(body.kind || "note").trim();
+  if (!CUSTOMER_NOTE_KINDS.includes(kind)) {
+    const error = new Error(`kind must be one of: ${CUSTOMER_NOTE_KINDS.join(", ")}`);
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const text = String(body.body || "").trim();
+  if (!text) {
+    const error = new Error("A note body is required");
+    error.statusCode = 400;
+    throw error;
+  }
+  if (text.length > MAX_CUSTOMER_NOTE_LENGTH) {
+    const error = new Error(`A note cannot exceed ${MAX_CUSTOMER_NOTE_LENGTH} characters`);
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // An account is filed under its user_id, which never changes. Only a guest,
+  // which has no account yet, is filed under its commerce row.
+  const result = await pool.query(
+    `
+      insert into public.customer_notes (user_id, shop_customer_id, admin_user_id, author_name, kind, body)
+      values ($1, $2, $3, $4, $5, $6)
+      returning *
+    `,
+    [
+      customer.user_id,
+      customer.user_id ? null : customer.shop_customer_id,
+      // The machine caller authenticated by ADMIN_API_KEY has the literal id
+      // "api-key" and no row in admin_users, so only a real admin is linked.
+      uuidPattern.test(String(admin?.id || "")) ? admin.id : null,
+      admin?.display_name || admin?.email || null,
+      kind,
+      text,
+    ],
+  );
+
+  return mapCustomerNote(result.rows[0]);
+};
+
+// Scoped to the customer on the URL so a guessed note id cannot reach a note
+// belonging to somebody else.
+const deleteCustomerNote = async (subjects, noteId) => {
+  if (!uuidPattern.test(String(noteId || ""))) return false;
+  if (!subjects.userId && subjects.shopCustomerIds.length === 0) return false;
+
+  const result = await pool.query(
+    `
+      delete from public.customer_notes
+      where id = $1
+        and (($2::uuid is not null and user_id = $2) or shop_customer_id = any($3::uuid[]))
+    `,
+    [noteId, subjects.userId, subjects.shopCustomerIds],
+  );
+  return result.rowCount > 0;
+};
+
 const getOrder = async (id) => {
   const result = uuidPattern.test(id)
     ? await pool.query("select * from public.orders where id = $1 limit 1", [id])
@@ -4894,7 +6252,7 @@ const canAccessOrder = async (request, order, accessToken) => {
   return verifyOpaqueToken(accessToken, order.accessTokenHash);
 };
 
-const updateOrder = async (id, body) => {
+const updateOrder = async (id, body, eventOrigin = "admin") => {
   const assignments = [];
   const values = [id];
 
@@ -4927,15 +6285,74 @@ const updateOrder = async (id, body) => {
 
   if (assignments.length === 0) return getOrder(id);
 
-  const result = await pool.query(
-    `
-      update public.orders
-      set ${assignments.join(", ")}, updated_at = now()
-      where id = $1
-      returning *
-    `,
-    values,
+  const previous = await pool.query(
+    "select status, payment_status, shipping_status, tracking_number from public.orders where id = $1",
+    [id],
   );
+  const before = previous.rows[0] || null;
+
+  const client = await pool.connect();
+  let result;
+  try {
+    await client.query("begin");
+    result = await client.query(
+      `
+        update public.orders
+        set ${assignments.join(", ")}, updated_at = now()
+        where id = $1
+        returning *
+      `,
+      values,
+    );
+
+    if (result.rowCount > 0 && before) {
+      const after = result.rows[0];
+      const base = {
+        order_number: after.order_number,
+        user_id: after.user_id,
+        customer_id: after.customer_id,
+        customer_email: after.customer_email,
+        total: Number(after.total),
+      };
+
+      // One event per field that actually moved. An admin saving a form
+      // without changing anything emits nothing.
+      if (before.status !== after.status || before.payment_status !== after.payment_status) {
+        await emitEvent(client, {
+          type: EVENT_TYPES.ORDER_STATUS_CHANGED,
+          entityType: "order",
+          entityId: id,
+          origin: eventOrigin,
+          payload: {
+            ...base,
+            status: { from: before.status, to: after.status },
+            payment_status: { from: before.payment_status, to: after.payment_status },
+          },
+        });
+      }
+
+      if (before.shipping_status !== after.shipping_status
+        || before.tracking_number !== after.tracking_number) {
+        await emitEvent(client, {
+          type: EVENT_TYPES.ORDER_SHIPPED,
+          entityType: "order",
+          entityId: id,
+          origin: eventOrigin,
+          payload: {
+            ...base,
+            shipping_status: { from: before.shipping_status, to: after.shipping_status },
+            tracking_number: after.tracking_number,
+          },
+        });
+      }
+    }
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback").catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
 
   if (result.rowCount === 0) return null;
   const [order] = await attachOrderItems(result.rows);
@@ -5519,36 +6936,99 @@ const handleCardcomWebhook = async (request, url) => {
     ],
   );
 
+  // The status change and its event are written together. The update stays
+  // conditional, so a webhook CardCom retries changes nothing the second time —
+  // and because the event is only emitted when a row actually changed, a
+  // duplicate delivery cannot produce a duplicate event either.
   if (isSuccess) {
     if (order.payment_status !== "paid") {
-      await pool.query(
-        `
-          update public.orders
-          set payment_status = 'paid',
-              payment_transaction_id = $2,
-              status = 'processing',
-              updated_at = now()
-          where id = $1
-            and payment_transaction_id = any($3::text[])
-            and payment_status <> 'paid'
-        `,
-        [order.id, lowProfileCode, acceptedPaymentIdentifiers],
-      );
+      const client = await pool.connect();
+      try {
+        await client.query("begin");
+        const updated = await client.query(
+          `
+            update public.orders
+            set payment_status = 'paid',
+                payment_transaction_id = $2,
+                status = 'processing',
+                updated_at = now()
+            where id = $1
+              and payment_transaction_id = any($3::text[])
+              and payment_status <> 'paid'
+            returning order_number, user_id, customer_id, customer_email, total, status
+          `,
+          [order.id, lowProfileCode, acceptedPaymentIdentifiers],
+        );
+
+        if (updated.rowCount > 0) {
+          const paid = updated.rows[0];
+          await emitEvent(client, {
+            type: EVENT_TYPES.ORDER_PAID,
+            entityType: "order",
+            entityId: order.id,
+            payload: {
+              order_number: paid.order_number,
+              user_id: paid.user_id,
+              customer_id: paid.customer_id,
+              customer_email: paid.customer_email,
+              total: Number(paid.total),
+              status: paid.status,
+              transaction_id: transactionId,
+              low_profile_code: lowProfileCode,
+            },
+          });
+        }
+        await client.query("commit");
+      } catch (error) {
+        await client.query("rollback").catch(() => {});
+        throw error;
+      } finally {
+        client.release();
+      }
     }
   } else if (order.payment_status !== "paid") {
-    await pool.query(
-      `
-        update public.orders
-        set payment_status = 'failed',
-            payment_transaction_id = null,
-            payment_url = null,
-            updated_at = now()
-        where id = $1
-          and payment_transaction_id = any($2::text[])
-          and payment_status <> 'paid'
-      `,
-      [order.id, acceptedPaymentIdentifiers],
-    );
+    const client = await pool.connect();
+    try {
+      await client.query("begin");
+      const updated = await client.query(
+        `
+          update public.orders
+          set payment_status = 'failed',
+              payment_transaction_id = null,
+              payment_url = null,
+              updated_at = now()
+          where id = $1
+            and payment_transaction_id = any($2::text[])
+            and payment_status <> 'paid'
+          returning order_number, user_id, customer_email, total
+        `,
+        [order.id, acceptedPaymentIdentifiers],
+      );
+
+      if (updated.rowCount > 0) {
+        const failed = updated.rows[0];
+        await emitEvent(client, {
+          type: EVENT_TYPES.ORDER_PAYMENT_FAILED,
+          entityType: "order",
+          entityId: order.id,
+          payload: {
+            order_number: failed.order_number,
+            user_id: failed.user_id,
+            customer_email: failed.customer_email,
+            total: Number(failed.total),
+            operation_response: operationResponse,
+            deal_response: dealResponse,
+            low_profile_code: lowProfileCode,
+          },
+        });
+      }
+      await client.query("commit");
+    } catch (error) {
+      await client.query("rollback").catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   const paymentStatus = order.payment_status === "paid" || isSuccess ? "paid" : "failed";
@@ -5577,6 +7057,19 @@ const createReport = async (body, reporterId = null) => {
       reporterId,
     ],
   );
+
+  await emitEvent(pool, {
+    type: EVENT_TYPES.CONTENT_REPORTED,
+    entityType: "content_report",
+    entityId: id,
+    payload: {
+      content_type: body.content_type || "product",
+      content_id: body.content_id || null,
+      reason: body.reason || "other",
+      reporter_id: reporterId,
+    },
+  });
+
   return { id };
 };
 
@@ -5642,10 +7135,36 @@ const uploadDataUrlFile = async (body, {
   };
 };
 
-const uploadImage = async (body) => uploadDataUrlFile(body, {
-  maxBytes: maxUploadBytes,
-  requireImage: true,
-});
+// A directly uploaded product image gets exactly the same treatment as an
+// imported one - same canvas, same format, same quality - so the catalogue does
+// not depend on how a given image happened to arrive.
+const uploadImage = async (body) => {
+  const { buffer } = decodeAndValidateDataUrl(body.data_url, {
+    maxBytes: maxUploadBytes,
+    requireImage: true,
+  });
+
+  const normalized = await normalizeWithBackgroundRemoval(buffer, {
+    remover: backgroundRemovalEnabled ? productBackgroundRemover : null,
+    onWarning: (warning) => console.warn("product_image_warning", { label: "upload", ...warning }),
+  });
+
+  const fileName = `${Date.now()}-${randomUUID()}${normalized.extension}`;
+  await mkdir(uploadDir, { recursive: true });
+  await writeFile(path.join(uploadDir, fileName), normalized.buffer, { flag: "wx", mode: 0o644 });
+
+  return {
+    url: `/uploads/${fileName}`,
+    file_name: fileName,
+    storage_key: fileName,
+    extension: normalized.extension,
+    content_type: normalized.content_type,
+    size: normalized.bytes,
+    width: normalized.width,
+    height: normalized.height,
+    background_removed: normalized.background_removed,
+  };
+};
 
 const userMediaContentTypes = new Set([
   "image/jpeg",
@@ -5946,7 +7465,12 @@ const handleRequest = async (request, response) => {
       const body = await readBody(request);
       if (!enforceRateLimit(request, response, "signup-email", rateLimits.signup, normalizeEmail(body.email))) return;
       const result = await signupUser(request, body);
-      sendJson(response, 201, { user: result.user, profile: result.profile }, { "set-cookie": buildUserCookie(request, result.token) });
+      sendJson(
+        response,
+        201,
+        { user: result.user, profile: result.profile, email_verification: result.email_verification },
+        { "set-cookie": buildUserCookie(request, result.token) },
+      );
       return;
     }
 
@@ -5958,6 +7482,36 @@ const handleRequest = async (request, response) => {
       sendJson(response, 200, { user: result.user, profile: result.profile }, {
         "set-cookie": buildUserCookie(request, result.token, { persistent: result.rememberMe }),
       });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/auth/email-verification/request") {
+      if (!enforceRateLimit(request, response, "email-verification-request-ip", rateLimits.emailVerificationRequest)) return;
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      if (!enforceRateLimit(request, response, "email-verification-request-user", rateLimits.emailVerificationRequest, auth.user.id)) return;
+      const result = await issueEmailVerification(request, {
+        id: auth.user.id,
+        email: auth.user.email,
+        full_name: auth.user.full_name,
+        email_verified_at: auth.user.email_verified_at,
+      }, { force: false });
+      sendJson(response, 200, {
+        ok: true,
+        sent: result.sent,
+        reason: isProduction ? (result.sent ? "sent" : result.reason) : result.reason,
+        ...(result.debug_otp ? { debug_otp: result.debug_otp } : {}),
+      });
+      return;
+    }
+
+    // Deliberately open: the link is followed wherever the mail is read, which
+    // is often not the browser that registered.
+    if (request.method === "POST" && url.pathname === "/api/auth/email-verification/confirm") {
+      if (!enforceRateLimit(request, response, "email-verification-confirm-ip", rateLimits.emailVerificationConfirm)) return;
+      const body = await readBody(request);
+      if (!enforceRateLimit(request, response, "email-verification-confirm-email", rateLimits.emailVerificationConfirm, normalizeEmail(body.email))) return;
+      sendJson(response, 200, await confirmEmailVerification(body));
       return;
     }
 
@@ -5990,7 +7544,14 @@ const handleRequest = async (request, response) => {
         return;
       }
 
-      sendJson(response, 200, auth);
+      // The panel is a separate identity with its own cookie, so being signed
+      // in here says nothing about it. Reporting whether the same browser also
+      // holds an admin session lets the app show the shortcut without a second
+      // request, and without depending on local storage -- which is scoped per
+      // origin, so it goes missing the moment the dev server moves to another
+      // port. Costs a query only when that cookie is actually present.
+      const admin = await getAdminFromSession(request);
+      sendJson(response, 200, { ...auth, is_admin: Boolean(admin) });
       return;
     }
 
@@ -6034,10 +7595,40 @@ const handleRequest = async (request, response) => {
       return;
     }
 
+    if (url.pathname === "/api/me/shipping-profile") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      if (request.method === "GET") {
+        sendJson(response, 200, { profile: await getShippingProfile(auth.user.id) });
+        return;
+      }
+      if (request.method === "PUT") {
+        const body = await readBody(request, 16 * 1024);
+        sendJson(response, 200, { profile: await saveShippingProfile(auth.user.id, body) });
+        return;
+      }
+      sendError(response, 405, "Method not allowed");
+      return;
+    }
+
     if (request.method === "PATCH" && url.pathname === "/api/me/marketing-consent") {
       const auth = await requireUser(request, response);
       if (!auth) return;
       sendJson(response, 200, { profile: await updateMyMarketingConsent(auth.user.id, await readBody(request)) });
+      return;
+    }
+
+    // What a user may see about their own consumption: credits and tokens.
+    // Provider, model and cost are never selected by this query.
+    if (request.method === "GET" && url.pathname === "/api/me/usage") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      const usageWindow = resolveWindow({
+        from: url.searchParams.get("from"),
+        to: url.searchParams.get("to"),
+        days: url.searchParams.get("days") || 30,
+      });
+      sendJson(response, 200, { usage: await getUserUsageSummary(pool, auth.user.id, usageWindow) });
       return;
     }
 
@@ -6514,6 +8105,67 @@ const handleRequest = async (request, response) => {
       return;
     }
 
+    if (request.method === "GET" && url.pathname === "/api/admin/dispatch-config") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      sendJson(response, 200, { warehouse_whatsapp: warehouseWhatsappNumber });
+      return;
+    }
+
+    // --- AI economics (admin) -------------------------------------------
+    // Read-only aggregation over the usage and cost ledgers.
+    const economicsWindow = () => resolveWindow({
+      from: url.searchParams.get("from"),
+      to: url.searchParams.get("to"),
+      days: url.searchParams.get("days"),
+    });
+
+    if (request.method === "GET" && url.pathname === "/api/admin/economics/overview") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      sendJson(response, 200, { overview: await getEconomicsOverview(pool, economicsWindow()) });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/economics/providers") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      sendJson(response, 200, { providers: await getCostByProvider(pool, economicsWindow()) });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/economics/models") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      sendJson(response, 200, { models: await getCostByModel(pool, economicsWindow()) });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/economics/features") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      sendJson(response, 200, { features: await getCostByFeature(pool, economicsWindow()) });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/economics/users") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      sendJson(response, 200, {
+        users: await getTopCostUsers(pool, economicsWindow(), url.searchParams.get("limit")),
+      });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/economics/timeline") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      sendJson(response, 200, {
+        timeline: await getEconomicsTimeline(pool, economicsWindow(), url.searchParams.get("bucket")),
+      });
+      return;
+    }
+
+    const economicsTraceMatch = url.pathname.match(/^\/api\/admin\/economics\/traces\/([A-Za-z0-9_-]{1,128})$/);
+    if (economicsTraceMatch && request.method === "GET") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      sendJson(response, 200, { trace: await getTrace(pool, economicsTraceMatch[1]) });
+      return;
+    }
+
     if (request.method === "GET" && url.pathname === "/api/admin/analytics") {
       if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
       sendJson(response, 200, await listAdminAnalytics(url.searchParams.get("days")));
@@ -6527,6 +8179,58 @@ const handleRequest = async (request, response) => {
       return;
     }
 
+    if (request.method === "GET" && url.pathname === "/api/admin/customers") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      sendJson(response, 200, {
+        customers: await listAdminCustomers({
+          limit: url.searchParams.get("limit") || 200,
+          search: url.searchParams.get("search"),
+          kind: url.searchParams.get("kind"),
+        }),
+      });
+      return;
+    }
+
+    const adminCustomerMatch = url.pathname.match(/^\/api\/admin\/customers\/([0-9a-fA-F-]{36})$/);
+    if (adminCustomerMatch && request.method === "GET") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      const customer = await getAdminCustomer(adminCustomerMatch[1]);
+      if (!customer) {
+        sendError(response, 404, "Customer not found");
+        return;
+      }
+      sendJson(response, 200, customer);
+      return;
+    }
+
+    const adminCustomerNotesMatch = url.pathname.match(/^\/api\/admin\/customers\/([0-9a-fA-F-]{36})\/notes$/);
+    if (adminCustomerNotesMatch && request.method === "POST") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      const detail = await getAdminCustomer(adminCustomerNotesMatch[1]);
+      if (!detail) {
+        sendError(response, 404, "Customer not found");
+        return;
+      }
+      const note = await createCustomerNote(detail.customer, request.admin, await readBody(request));
+      sendJson(response, 201, { note });
+      return;
+    }
+
+    const adminCustomerNoteMatch = url.pathname
+      .match(/^\/api\/admin\/customers\/([0-9a-fA-F-]{36})\/notes\/([0-9a-fA-F-]{36})$/);
+    if (adminCustomerNoteMatch && request.method === "DELETE") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      const detail = await getAdminCustomer(adminCustomerNoteMatch[1]);
+      if (!detail) {
+        sendError(response, 404, "Customer not found");
+        return;
+      }
+      const subjects = await customerNoteSubjects(detail.customer);
+      const deleted = await deleteCustomerNote(subjects, adminCustomerNoteMatch[2]);
+      sendJson(response, deleted ? 200 : 404, { deleted });
+      return;
+    }
+
     if (request.method === "PATCH" && url.pathname === "/api/admin/orders/bulk") {
       if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
       const body = await readBody(request);
@@ -6537,7 +8241,11 @@ const handleRequest = async (request, response) => {
     const adminOrderMatch = url.pathname.match(/^\/api\/admin\/orders\/([0-9a-fA-F-]{36})$/);
     if (adminOrderMatch && request.method === "PATCH") {
       if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
-      const order = await updateOrder(adminOrderMatch[1], await readBody(request));
+      const order = await updateOrder(
+        adminOrderMatch[1],
+        await readBody(request),
+        originFromRequest(request) === "automation" ? "automation" : "admin",
+      );
       if (!order) {
         sendError(response, 404, "Order not found");
         return;
@@ -6597,7 +8305,7 @@ const handleRequest = async (request, response) => {
       if (!enforceRateLimit(request, response, "order-create", rateLimits.orderCreate)) return;
       const body = await readBody(request);
       const auth = await getUserFromSession(request).catch(() => null);
-      const result = await createOrder(body, auth?.user || null);
+      const result = await createOrder(body, auth?.user || null, originFromRequest(request));
       sendJson(response, 201, {
         order: result.order,
         ...(result.accessToken ? { access_token: result.accessToken } : {}),
@@ -6638,7 +8346,96 @@ const handleRequest = async (request, response) => {
     }
 
     if (request.method === "GET" && url.pathname === "/api/products") {
-      sendJson(response, 200, { products: await listProducts() });
+      const products = await listProducts();
+      // Admin screens edit the full row; everyone else gets the public shape.
+      // The allowlist is what keeps the supplier origin off a shop response
+      // too: image_source_url and image_adopted_at are simply not in it.
+      const asAdmin = await isAdminRequest(request);
+      sendJson(response, 200, { products: asAdmin ? products : products.map(toPublicProduct) });
+      return;
+    }
+
+    // Public: the shop's filter bar. Active categories only.
+    if (request.method === "GET" && url.pathname === "/api/categories") {
+      sendJson(response, 200, { categories: await listProductCategories() });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/categories") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_READ))) return;
+      sendJson(response, 200, { categories: await listProductCategories({ includeInactive: true }) });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/admin/categories") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_CREATE))) return;
+      const category = await createProductCategory(await readBody(request));
+      await recordAdminAudit(request.admin, {
+        actionType: "product_category.created",
+        entityType: "product_category",
+        entityId: category.id,
+        newValues: category,
+      });
+      sendJson(response, 201, { category });
+      return;
+    }
+
+    const categoryMatch = url.pathname.match(/^\/api\/admin\/categories\/([0-9a-fA-F-]{36})$/);
+    if (categoryMatch && request.method === "PATCH") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_UPDATE))) return;
+      const previous = await getProductCategory(categoryMatch[1]);
+      const category = await updateProductCategory(categoryMatch[1], await readBody(request));
+      if (!category) {
+        sendError(response, 404, "Category not found");
+        return;
+      }
+      await recordAdminAudit(request.admin, {
+        actionType: "product_category.updated",
+        entityType: "product_category",
+        entityId: category.id,
+        oldValues: previous,
+        newValues: category,
+      });
+      sendJson(response, 200, { category });
+      return;
+    }
+
+    if (categoryMatch && request.method === "DELETE") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_DELETE))) return;
+      const previous = await getProductCategory(categoryMatch[1]);
+      const result = await deleteProductCategory(categoryMatch[1], {
+        reassignTo: url.searchParams.get("reassign_to"),
+      });
+
+      if (!result.deleted) {
+        // A refusal is not an error the admin screen should swallow — it needs
+        // the counts so it can offer a target category to move things into.
+        sendJson(response, result.reason === "not_found" ? 404 : 409, result);
+        return;
+      }
+
+      await recordAdminAudit(request.admin, {
+        actionType: "product_category.deleted",
+        entityType: "product_category",
+        entityId: categoryMatch[1],
+        oldValues: previous,
+        metadata: { reassigned: result.reassigned },
+      });
+      sendJson(response, 200, result);
+      return;
+    }
+
+    // A product page should not have to download the whole catalogue to render
+    // one product, and a shared product link has to work on its own.
+    const publicProductMatch = url.pathname.match(/^\/api\/products\/([0-9a-fA-F-]{36})$/);
+    if (publicProductMatch && request.method === "GET") {
+      const product = await fetchPublicProductById(publicProductMatch[1]);
+      if (!product) {
+        sendError(response, 404, "Product not found");
+        return;
+      }
+      const asAdmin = await isAdminRequest(request);
+      sendJson(response, 200, { product: asAdmin ? product : toPublicProduct(product) });
       return;
     }
 
@@ -6749,7 +8546,14 @@ const handleRequest = async (request, response) => {
     sendError(response, 404, "Not found");
   } catch (error) {
     if (!error.statusCode || error.statusCode >= 500) console.error(error);
-    sendError(response, error.statusCode || 500, error.statusCode ? error.message : "Internal server error");
+    // A code lets the client tell one 403 from another and offer the right
+    // next step, instead of matching on a message that may be translated.
+    sendError(
+      response,
+      error.statusCode || 500,
+      error.statusCode ? error.message : "Internal server error",
+      error.statusCode && error.code ? { code: error.code } : undefined,
+    );
   }
 };
 
@@ -6778,4 +8582,8 @@ server.listen(port, () => {
   resumePetCharacterJobs().catch((error) => {
     console.error("Failed to resume pet character generation", error);
   });
+  // No-op until AUTOMATION_WEBHOOK_URL is set. Events accumulate in the outbox
+  // either way, so enabling delivery later replays everything recorded while it
+  // was off.
+  startDispatcher({ pool });
 });
