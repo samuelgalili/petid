@@ -14,7 +14,7 @@ import {
   Phone, ShoppingBag, CreditCard, RefreshCw,
   Building2, FolderOpen, ChevronDown, ChevronUp, Stethoscope,
   Receipt, CalendarClock, Package, ExternalLink, Dog, Cat,
-  Cpu, Link2, TrendingUp, Lock, Wallet,
+  Cpu, Link2, TrendingUp, Lock, Wallet, ShieldCheck,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -287,6 +287,23 @@ const OwnerProfile = () => {
                 <h2 className="text-lg font-bold text-foreground truncate">{profile?.full_name || "משתמש"}</h2>
                 {profile?.id_verified && (
                   <BadgeCheck className="w-5 h-5 text-primary flex-shrink-0" />
+                )}
+                {/* Local development only. import.meta.env.DEV is false in any
+                    build, so this becomes dead code and is dropped entirely —
+                    the markup does not exist in the deployed bundle. */}
+                {import.meta.env.DEV && (
+                  <button
+                    type="button"
+                    // Goes to the panel, not the login form. With a live admin
+                    // session this lands straight in; without one the route
+                    // guard sends you to the form and back afterwards.
+                    onClick={() => navigate("/admin")}
+                    title="כניסה לפאנל הניהול (מקומי בלבד)"
+                    aria-label="כניסה לפאנל הניהול"
+                    className="ms-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-dashed border-mipo-violet/40 text-mipo-violet transition-colors hover:bg-mipo-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mipo-violet"
+                  >
+                    <ShieldCheck className="h-4 w-4" strokeWidth={1.5} />
+                  </button>
                 )}
               </div>
               {profile?.city && (
@@ -631,6 +648,7 @@ const OwnerProfile = () => {
             </Button>
           </div>
         </Section>
+
         </div>
       </div>
       <BottomNav />
