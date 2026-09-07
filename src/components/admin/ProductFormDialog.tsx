@@ -89,6 +89,7 @@ interface ProductData {
   sku?: string | null;
   flavors?: string[] | null;
   pet_type?: string | null;
+  weight?: number | null;
   weight_unit?: string | null;
   price_per_weight?: number | null;
   brand?: string | null;
@@ -788,6 +789,7 @@ export const ProductFormDialog = ({
               }
               return label;
             }) || [],
+            weight: scrapedProduct.variants?.[0]?.weight ?? null,
             weight_unit: scrapedProduct.variants?.[0]?.weight_unit || null,
           };
 
@@ -1571,6 +1573,22 @@ export const ProductFormDialog = ({
             </div>
 
             {/* Weight and Unit */}
+            <div>
+              {/* The warehouse label prints this per line, so it is not
+                  decorative: without it a picker has no weight to check. */}
+              <Label>משקל</Label>
+              <Input
+                type="number"
+                min="0"
+                step="0.001"
+                value={product.weight ?? ""}
+                onChange={(e) => onProductChange({
+                  ...product,
+                  weight: e.target.value === "" ? null : parseFloat(e.target.value),
+                })}
+                placeholder='לדוגמה: 12'
+              />
+            </div>
             <div>
               <Label>מחיר לפי משקל</Label>
               <Input

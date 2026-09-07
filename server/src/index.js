@@ -83,6 +83,10 @@ const petCharacterUploadDir = path.join(privateUploadDir, "pet-characters");
 const maxUploadBytes = Number(process.env.MAX_UPLOAD_BYTES || 5 * 1024 * 1024);
 const maxSocialUploadBytes = Number(process.env.MAX_SOCIAL_UPLOAD_BYTES || 25 * 1024 * 1024);
 const maxDocumentUploadBytes = Number(process.env.MAX_DOCUMENT_UPLOAD_BYTES || 10 * 1024 * 1024);
+// The logistics centre's WhatsApp number. Kept in configuration rather than in
+// code so it can change through the usual SSM sync without a rebuild; an admin
+// can still override it per send when it is missing or wrong.
+const warehouseWhatsappNumber = String(process.env.WAREHOUSE_WHATSAPP_NUMBER || "").trim() || null;
 const adminCookieName = "mipo_admin_session";
 const userCookieName = "mipo_user_session";
 const passwordResetOtpMinutes = Number(process.env.PASSWORD_RESET_OTP_MINUTES || 10);
@@ -3870,6 +3874,7 @@ const businessProductFields = {
   pet_type: "pet_type",
   flavors: "flavors",
   brand: "brand",
+  weight: "weight",
   weight_unit: "weight_unit",
   price_per_weight: "price_per_weight",
   source_url: "source_url",
@@ -4000,6 +4005,7 @@ const normalizeProductPayload = (body) => {
     pet_type: normalizePetType(body.pet_type),
     flavors: Array.isArray(body.flavors) ? body.flavors : [],
     brand: body.brand ?? null,
+    weight: toNumber(body.weight),
     weight_unit: body.weight_unit ?? null,
     price_per_weight: toNumber(body.price_per_weight),
     source_url: body.source_url ?? null,
@@ -4226,63 +4232,59 @@ const createProduct = async (body) => {
   const payload = normalizeProductPayload(body);
   const businessId = body.business_id || await ensureDefaultBusinessProfile();
 
+  // Columns and values come from one list. The hand-written placeholder block
+  // that used to be here silently fell one short of the column list when a
+  // column was added, and Postgres rejected the whole insert.
+  const productColumns = [
+    ["business_id", () => businessId],
+    ["name", () => payload.name],
+    ["description", () => payload.description],
+    ["price", () => payload.price],
+    ["original_price", () => payload.original_price],
+    ["sale_price", () => payload.sale_price],
+    ["image_url", () => payload.image_url],
+    ["images", () => payload.images],
+    ["category", () => payload.category],
+    ["in_stock", () => payload.in_stock],
+    ["is_featured", () => payload.is_featured],
+    ["sku", () => payload.sku],
+    ["pet_type", () => payload.pet_type],
+    ["flavors", () => payload.flavors],
+    ["brand", () => payload.brand],
+    ["weight", () => payload.weight],
+    ["weight_unit", () => payload.weight_unit],
+    ["price_per_weight", () => payload.price_per_weight],
+    ["source_url", () => payload.source_url],
+    ["ingredients", () => payload.ingredients],
+    ["benefits", () => JSON.stringify(payload.benefits)],
+    ["feeding_guide", () => JSON.stringify(payload.feeding_guide)],
+    ["product_attributes", () => JSON.stringify(payload.product_attributes)],
+    ["life_stage", () => payload.life_stage],
+    ["dog_size", () => payload.dog_size],
+    ["special_diet", () => payload.special_diet],
+    ["breed_tags", () => payload.breed_tags],
+    ["medical_tags", () => payload.medical_tags],
+    ["auto_restock", () => payload.auto_restock],
+    ["restock_interval_days", () => payload.restock_interval_days],
+    ["api_sync_enabled", () => payload.api_sync_enabled],
+    ["cost_price", () => payload.cost_price],
+    ["supplier_id", () => payload.supplier_id],
+    ["safety_score", () => payload.safety_score],
+    ["kcal_per_kg", () => payload.kcal_per_kg],
+    ["category_id", () => payload.category_id],
+  ];
+
   const result = await pool.query(
     `
       insert into public.business_products (
-        business_id, name, description, price, original_price, sale_price,
-        image_url, images, category, in_stock, is_featured, sku, pet_type,
-        flavors, brand, weight_unit, price_per_weight, source_url, ingredients,
-        benefits, feeding_guide, product_attributes, life_stage, dog_size, special_diet,
-        breed_tags, medical_tags, auto_restock, restock_interval_days, api_sync_enabled,
-        cost_price, supplier_id, safety_score, kcal_per_kg, category_id
+        ${productColumns.map(([column]) => column).join(", ")}
       )
       values (
-        $1, $2, $3, $4, $5, $6,
-        $7, $8, $9, $10, $11, $12, $13,
-        $14, $15, $16, $17, $18, $19,
-        $20, $21, $22, $23, $24, $25,
-        $26, $27, $28, $29, $30,
-        $31, $32, $33, $34, $35
+        ${productColumns.map((_, index) => `$${index + 1}`).join(", ")}
       )
       returning *
     `,
-    [
-      businessId,
-      payload.name,
-      payload.description,
-      payload.price,
-      payload.original_price,
-      payload.sale_price,
-      payload.image_url,
-      payload.images,
-      payload.category,
-      payload.in_stock,
-      payload.is_featured,
-      payload.sku,
-      payload.pet_type,
-      payload.flavors,
-      payload.brand,
-      payload.weight_unit,
-      payload.price_per_weight,
-      payload.source_url,
-      payload.ingredients,
-      JSON.stringify(payload.benefits),
-      JSON.stringify(payload.feeding_guide),
-      JSON.stringify(payload.product_attributes),
-      payload.life_stage,
-      payload.dog_size,
-      payload.special_diet,
-      payload.breed_tags,
-      payload.medical_tags,
-      payload.auto_restock,
-      payload.restock_interval_days,
-      payload.api_sync_enabled,
-      payload.cost_price,
-      payload.supplier_id,
-      payload.safety_score,
-      payload.kcal_per_kg,
-      payload.category_id,
-    ],
+    productColumns.map(([, readValue]) => readValue()),
   );
 
   return mapBusinessProduct(result.rows[0]);
@@ -4985,7 +4987,7 @@ const normalizeRequestedOrderItems = (items) => {
 const resolveCatalogOrderItem = async (client, requestedItem) => {
   const findManual = () => client.query(
     `
-      select id, name, image_url, price, sale_price, in_stock
+      select id, name, image_url, price, sale_price, in_stock, sku, weight, weight_unit
       from public.business_products
       where id = $1
       for share
@@ -4994,7 +4996,17 @@ const resolveCatalogOrderItem = async (client, requestedItem) => {
   );
   const findScraped = () => client.query(
     `
-      select id, product_name, main_image_url, final_price, regular_price, sale_price, stock_status
+      select
+        id,
+        product_name,
+        main_image_url,
+        final_price,
+        regular_price,
+        sale_price,
+        stock_status,
+        sku,
+        weight,
+        weight_unit
       from public.scraped_products
       where id = $1
       for share
@@ -5046,6 +5058,11 @@ const resolveCatalogOrderItem = async (client, requestedItem) => {
     throw error;
   }
 
+  const trimmedOrNull = (value) => {
+    const text = String(value ?? "").trim();
+    return text || null;
+  };
+
   return {
     product_id: row.id,
     product_source: source,
@@ -5055,6 +5072,13 @@ const resolveCatalogOrderItem = async (client, requestedItem) => {
     price,
     variant: requestedItem.variant,
     size: requestedItem.size,
+    // Snapshotted for the warehouse label: what the catalog said at the moment
+    // the order was placed, not whatever it says when the label is printed.
+    // The manual catalog stores a number, the scraped one free text; both are
+    // kept verbatim as text so an unparseable imported value is not lost.
+    sku: trimmedOrNull(row.sku),
+    weight: trimmedOrNull(row.weight),
+    weight_unit: trimmedOrNull(row.weight_unit),
   };
 };
 
@@ -5144,6 +5168,9 @@ const mapOrderItem = (row) => ({
   price: toMoney(row.price),
   variant: row.variant,
   size: row.size,
+  sku: row.sku || null,
+  weight: row.weight || null,
+  weight_unit: row.weight_unit || null,
   created_at: row.created_at,
 });
 
@@ -5333,35 +5360,33 @@ const createOrder = async (body, currentUser = null, eventOrigin = "app") => {
     );
 
     const order = orderResult.rows[0];
+    // Columns and values are derived from one list, so adding a column cannot
+    // leave the placeholder arithmetic behind and shift every row's values.
+    const orderItemColumns = [
+      ["order_id", () => order.id],
+      ["product_id", (item) => item.product_id],
+      ["product_source", (item) => item.product_source],
+      ["product_name", (item) => item.product_name],
+      ["product_image", (item) => item.product_image],
+      ["quantity", (item) => item.quantity],
+      ["price", (item) => item.price],
+      ["variant", (item) => item.variant],
+      ["size", (item) => item.size],
+      ["sku", (item) => item.sku ?? null],
+      ["weight", (item) => item.weight ?? null],
+      ["weight_unit", (item) => item.weight_unit ?? null],
+    ];
     const itemValues = [];
     const placeholders = orderItems.map((item, index) => {
-      const base = index * 9;
-      itemValues.push(
-        order.id,
-        item.product_id,
-        item.product_source,
-        item.product_name,
-        item.product_image,
-        item.quantity,
-        item.price,
-        item.variant,
-        item.size,
-      );
-      return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9})`;
+      const base = index * orderItemColumns.length;
+      for (const [, readValue] of orderItemColumns) itemValues.push(readValue(item));
+      return `(${orderItemColumns.map((_, offset) => `$${base + offset + 1}`).join(", ")})`;
     });
 
     const itemsResult = await client.query(
       `
         insert into public.order_items (
-          order_id,
-          product_id,
-          product_source,
-          product_name,
-          product_image,
-          quantity,
-          price,
-          variant,
-          size
+          ${orderItemColumns.map(([column]) => column).join(",\n          ")}
         )
         values ${placeholders.join(", ")}
         returning *
@@ -7764,6 +7789,12 @@ const handleRequest = async (request, response) => {
         return;
       }
       sendJson(response, 200, { activity });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/dispatch-config") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      sendJson(response, 200, { warehouse_whatsapp: warehouseWhatsappNumber });
       return;
     }
 

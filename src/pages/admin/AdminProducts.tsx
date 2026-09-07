@@ -63,6 +63,7 @@ interface ProductData {
   sale_price?: number | null;
   images?: string[] | null;
   brand?: string | null;
+  weight?: number | null;
   weight_unit?: string | null;
   price_per_weight?: number | null;
   ingredients?: string | null;
@@ -231,6 +232,10 @@ const AdminProducts = () => {
         pet_type: normalizeProductPetType(product.pet_type),
         flavors: product.flavors || null,
         brand: product.brand || null,
+        // `?? null` rather than `|| null`: this payload is an allowlist, so a
+        // field missing from it is dropped without a word, and a weight of 0 is
+        // still a value the admin typed.
+        weight: product.weight ?? null,
         weight_unit: product.weight_unit || null,
         price_per_weight: product.price_per_weight || null,
         source_url: product.source_url || null,
