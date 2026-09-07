@@ -54,6 +54,7 @@ import Auth from "@/pages/Auth";
 import Signup from "@/pages/Signup";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
+import VerifyEmail from "@/pages/VerifyEmail";
 import Install from "@/pages/Install";
 
 const MainShell = lazy(() => import("@/components/MainShell"));
@@ -65,6 +66,8 @@ export const authRoutes: RouteObject[] = [
   { path: "/signup", element: <PageTransition><Signup /></PageTransition> },
   { path: "/forgot-password", element: <PageTransition><ForgotPassword /></PageTransition> },
   { path: "/reset-password", element: <PageTransition><ResetPassword /></PageTransition> },
+  // Open: the link is followed wherever the mail is read, often on another device.
+  { path: "/verify-email", element: <VerifyEmail /> },
   { path: "/install", element: <PageTransition><Install /></PageTransition> },
   { path: "/onboarding", element: <Protected><LazyPage component={Onboarding} pageName="הצטרפות" /></Protected> },
 ];

@@ -76,6 +76,11 @@ const passwordResetOtpTtlMs = Math.max(1, passwordResetOtpMinutes) * 60 * 1000;
 const passwordResetDebug = process.env.PASSWORD_RESET_DEBUG === "true";
 const resendApiKey = process.env.RESEND_API_KEY;
 const passwordResetFromEmail = process.env.PASSWORD_RESET_FROM_EMAIL || "MIPO <onboarding@resend.dev>";
+// A verification link is followed at leisure, often on another device, so it
+// lives far longer than a password reset code.
+const emailVerificationHours = Math.max(1, Number(process.env.EMAIL_VERIFICATION_HOURS || 24));
+const emailVerificationTtlMs = emailVerificationHours * 60 * 60 * 1000;
+const emailVerificationResendMs = Math.max(0, Number(process.env.EMAIL_VERIFICATION_RESEND_SECONDS || 60)) * 1000;
 const configuredAdminSessionHours = Number(process.env.ADMIN_SESSION_HOURS || 8);
 const adminSessionHours = Number.isFinite(configuredAdminSessionHours) && configuredAdminSessionHours > 0
   ? configuredAdminSessionHours
@@ -300,6 +305,8 @@ const rateLimits = {
   userLogin: { limit: 20, windowMs: 15 * 60 * 1000 },
   signup: { limit: 8, windowMs: 60 * 60 * 1000 },
   passwordResetRequest: { limit: 5, windowMs: 60 * 60 * 1000 },
+  emailVerificationRequest: { limit: 6, windowMs: 60 * 60 * 1000 },
+  emailVerificationConfirm: { limit: 15, windowMs: 15 * 60 * 1000 },
   passwordResetConfirm: { limit: 10, windowMs: 15 * 60 * 1000 },
   orderCreate: { limit: 20, windowMs: 10 * 60 * 1000 },
   paymentCreate: { limit: 20, windowMs: 10 * 60 * 1000 },
@@ -715,6 +722,8 @@ const serializeUser = (row, profile = null) => {
     created_at: row.created_at || null,
     updated_at: row.updated_at || null,
     last_login_at: row.last_login_at || null,
+    email_verified_at: row.email_verified_at || null,
+    email_verified: Boolean(row.email_verified_at),
     user_metadata: {
       full_name: fullName,
       name: fullName,
@@ -736,7 +745,8 @@ const userSelect = `
   updated_at,
   last_login_at,
   terms_accepted_at,
-  terms_version
+  terms_version,
+  email_verified_at
 `;
 
 // Bump this whenever the terms themselves change, so an acceptance recorded
@@ -828,6 +838,7 @@ const getUserFromSession = async (request) => {
         au.created_at,
         au.updated_at,
         au.last_login_at,
+        au.email_verified_at,
         p.id as profile_id,
         au.email as profile_email,
         au.full_name as profile_full_name,
@@ -1026,10 +1037,28 @@ const signupUser = async (request, body) => {
       phone,
       birthdate,
     });
+    const user = serializeUser(userResult.rows[0], profile);
+
+    // After the commit, and never allowed to fail the signup: the account
+    // exists either way, and an unsent email is a resend away.
+    const verification = await issueEmailVerification(request, {
+      id: userResult.rows[0].id,
+      email: userResult.rows[0].email,
+      full_name: fullName,
+      email_verified_at: null,
+    }).catch(() => ({ sent: false, reason: "send_failed" }));
+
     return {
-      user: serializeUser(userResult.rows[0], profile),
+      user,
       profile,
       token,
+      email_verification: {
+        sent: verification.sent,
+        reason: verification.reason,
+        // Same debug affordance the password reset already has, so a local
+        // stack with no email provider is still testable end to end.
+        ...(verification.debug_otp ? { debug_otp: verification.debug_otp } : {}),
+      },
     };
   } catch (error) {
     await client.query("rollback");
@@ -1148,6 +1177,207 @@ const sendPasswordResetEmail = async (request, email, otp) => {
   }
 
   return { sent: true, reason: "sent" };
+};
+
+const hashEmailVerificationOtp = (email, otp) => createHmac("sha256", adminApiKey || databaseUrl)
+  .update(`verify:${normalizeEmail(email)}:${String(otp || "")}`)
+  .digest("hex");
+
+const sendEmailVerification = async (request, email, otp, fullName) => {
+  if (!resendApiKey) return { sent: false, reason: "not_configured" };
+
+  const verifyUrl = new URL("/verify-email", `${getPublicBaseUrl(request)}/`);
+  verifyUrl.searchParams.set("email", email);
+  verifyUrl.searchParams.set("otp", otp);
+
+  const greeting = String(fullName || "").trim().split(" ")[0];
+
+  let response;
+  try {
+    response = await fetchWithTimeout("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${resendApiKey}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        from: passwordResetFromEmail,
+        to: [email],
+        subject: "אימות כתובת המייל שלך - MIPO",
+        html: `
+          <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; background: #f8f8fb;">
+            <div style="background: #ffffff; border-radius: 20px; padding: 32px; text-align: center;">
+              <h1 style="margin: 0 0 12px; color: #111827;">MIPO</h1>
+              <p style="margin: 0 0 8px; color: #111827; font-weight: 700;">${greeting ? `היי ${greeting},` : "היי,"}</p>
+              <p style="margin: 0 0 24px; color: #4b5563;">כדי להשלים את ההרשמה נותר לאמת שהכתובת הזו שלך. הקוד תקף ל-${emailVerificationHours} שעות.</p>
+              <div style="font-size: 34px; letter-spacing: 8px; font-weight: 700; color: #6C63FF; margin: 24px 0;">${otp}</div>
+              <a href="${verifyUrl.toString()}" style="display: inline-block; background: #6C63FF; color: #ffffff; text-decoration: none; padding: 12px 22px; border-radius: 999px; font-weight: 700;">אימות הכתובת</a>
+              <p style="margin: 24px 0 0; color: #6b7280; font-size: 13px;">אם לא נרשמת ל-MIPO, אפשר להתעלם מההודעה ולא ייעשה דבר.</p>
+            </div>
+          </div>
+        `,
+      }),
+    }, 15_000);
+  } catch (error) {
+    console.error("Verification email request failed:", error.message);
+    return { sent: false, reason: "send_failed" };
+  }
+
+  if (!response.ok) {
+    const details = await response.text().catch(() => "");
+    console.error("Verification email failed:", response.status, details.slice(0, 300));
+    return { sent: false, reason: "send_failed" };
+  }
+
+  return { sent: true, reason: "sent" };
+};
+
+// Issues a fresh code and sends it. Never throws: signup calls this after the
+// account already exists, and an email provider having a bad minute must not
+// undo a registration that otherwise succeeded.
+const issueEmailVerification = async (request, user, { force = false } = {}) => {
+  if (!user?.id || !user?.email) return { sent: false, reason: "no_user" };
+  if (user.email_verified_at) return { sent: false, reason: "already_verified" };
+
+  const email = normalizeEmail(user.email);
+  try {
+    if (!force && emailVerificationResendMs > 0) {
+      const recent = await pool.query(
+        `
+          select email_verification_last_sent_at
+          from public.app_users
+          where id = $1
+            and email_verification_last_sent_at is not null
+            and email_verification_last_sent_at > now() - ($2::bigint * interval '1 millisecond')
+          limit 1
+        `,
+        [user.id, emailVerificationResendMs],
+      );
+      if (recent.rowCount > 0) {
+        const error = new Error("A verification email was just sent; wait a moment before asking for another");
+        error.statusCode = 429;
+        throw error;
+      }
+    }
+
+    const otp = generateOtp();
+    const expiresAt = new Date(Date.now() + emailVerificationTtlMs).toISOString();
+
+    await pool.query(
+      `
+        insert into public.email_verification_otps (email, user_id, otp_hash, expires_at, used, attempts, created_at, updated_at)
+        values ($1, $2, $3, $4, false, 0, now(), now())
+        on conflict (email) do update set
+          user_id = excluded.user_id,
+          otp_hash = excluded.otp_hash,
+          expires_at = excluded.expires_at,
+          used = false,
+          attempts = 0,
+          updated_at = now()
+      `,
+      [email, user.id, hashEmailVerificationOtp(email, otp), expiresAt],
+    );
+
+    await pool.query(
+      "update public.app_users set email_verification_last_sent_at = now(), updated_at = now() where id = $1",
+      [user.id],
+    );
+
+    const delivery = await sendEmailVerification(request, email, otp, user.full_name);
+    return {
+      sent: delivery.sent,
+      reason: delivery.reason,
+      ...(passwordResetDebug ? { debug_otp: otp } : {}),
+    };
+  } catch (error) {
+    if (error.statusCode === 429) throw error;
+    console.error("Issuing the verification email failed:", error.message);
+    return { sent: false, reason: "send_failed" };
+  }
+};
+
+// Unauthenticated on purpose: the link is opened wherever the mail is read,
+// which is often a different browser from the one that registered.
+const confirmEmailVerification = async (body) => {
+  const email = normalizeEmail(body.email);
+  const otp = String(body.otp || body.code || "").trim();
+
+  if (!email || !email.includes("@")) {
+    const error = new Error("A valid email is required");
+    error.statusCode = 400;
+    throw error;
+  }
+  if (!/^\d{6}$/.test(otp)) {
+    const error = new Error("A valid 6-digit code is required");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+
+    const otpResult = await client.query(
+      "select * from public.email_verification_otps where email = $1 for update",
+      [email],
+    );
+    const row = otpResult.rows[0];
+
+    // Already done is a success, not an error: people click the link twice.
+    if (!row) {
+      const already = await client.query(
+        "select email_verified_at from public.app_users where lower(email) = $1 limit 1",
+        [email],
+      );
+      await client.query("commit");
+      if (already.rows[0]?.email_verified_at) return { verified: true, already_verified: true };
+      const error = new Error("Invalid or expired verification code");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (row.used) {
+      await client.query("commit");
+      return { verified: true, already_verified: true };
+    }
+    if (new Date(row.expires_at).getTime() < Date.now()) {
+      const error = new Error("Invalid or expired verification code");
+      error.statusCode = 400;
+      throw error;
+    }
+    if (row.attempts >= 5) {
+      const error = new Error("Too many invalid verification attempts");
+      error.statusCode = 429;
+      throw error;
+    }
+
+    if (!secretsEqual(hashEmailVerificationOtp(email, otp), row.otp_hash)) {
+      await client.query(
+        "update public.email_verification_otps set attempts = attempts + 1, updated_at = now() where email = $1",
+        [email],
+      );
+      await client.query("commit");
+      const error = new Error("Invalid or expired verification code");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    await client.query(
+      "update public.app_users set email_verified_at = now(), updated_at = now() where id = $1 and email_verified_at is null",
+      [row.user_id],
+    );
+    await client.query(
+      "update public.email_verification_otps set used = true, updated_at = now() where email = $1",
+      [email],
+    );
+    await client.query("commit");
+    return { verified: true, already_verified: false };
+  } catch (error) {
+    await client.query("rollback").catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
 const requestPasswordReset = async (request, body) => {
@@ -4621,6 +4851,17 @@ const createOrder = async (body, currentUser = null, eventOrigin = "app") => {
     error.statusCode = 400;
     throw error;
   }
+  // An order sends a confirmation, an invoice and delivery updates to the
+  // account's address, so this is the point where the address has to be
+  // proven. Guest checkout is untouched: it has no account to protect, and
+  // its address is entered per order rather than inherited from one.
+  if (currentUser && !currentUser.email_verified_at) {
+    const error = new Error("Verify your email address before placing an order");
+    error.statusCode = 403;
+    error.code = "email_verification_required";
+    throw error;
+  }
+
   const accessToken = currentUser ? null : createOpaqueToken();
   const client = await pool.connect();
 
@@ -6530,7 +6771,12 @@ const handleRequest = async (request, response) => {
       const body = await readBody(request);
       if (!enforceRateLimit(request, response, "signup-email", rateLimits.signup, normalizeEmail(body.email))) return;
       const result = await signupUser(request, body);
-      sendJson(response, 201, { user: result.user, profile: result.profile }, { "set-cookie": buildUserCookie(request, result.token) });
+      sendJson(
+        response,
+        201,
+        { user: result.user, profile: result.profile, email_verification: result.email_verification },
+        { "set-cookie": buildUserCookie(request, result.token) },
+      );
       return;
     }
 
@@ -6542,6 +6788,36 @@ const handleRequest = async (request, response) => {
       sendJson(response, 200, { user: result.user, profile: result.profile }, {
         "set-cookie": buildUserCookie(request, result.token, { persistent: result.rememberMe }),
       });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/auth/email-verification/request") {
+      if (!enforceRateLimit(request, response, "email-verification-request-ip", rateLimits.emailVerificationRequest)) return;
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      if (!enforceRateLimit(request, response, "email-verification-request-user", rateLimits.emailVerificationRequest, auth.user.id)) return;
+      const result = await issueEmailVerification(request, {
+        id: auth.user.id,
+        email: auth.user.email,
+        full_name: auth.user.full_name,
+        email_verified_at: auth.user.email_verified_at,
+      }, { force: false });
+      sendJson(response, 200, {
+        ok: true,
+        sent: result.sent,
+        reason: isProduction ? (result.sent ? "sent" : result.reason) : result.reason,
+        ...(result.debug_otp ? { debug_otp: result.debug_otp } : {}),
+      });
+      return;
+    }
+
+    // Deliberately open: the link is followed wherever the mail is read, which
+    // is often not the browser that registered.
+    if (request.method === "POST" && url.pathname === "/api/auth/email-verification/confirm") {
+      if (!enforceRateLimit(request, response, "email-verification-confirm-ip", rateLimits.emailVerificationConfirm)) return;
+      const body = await readBody(request);
+      if (!enforceRateLimit(request, response, "email-verification-confirm-email", rateLimits.emailVerificationConfirm, normalizeEmail(body.email))) return;
+      sendJson(response, 200, await confirmEmailVerification(body));
       return;
     }
 
@@ -7396,7 +7672,14 @@ const handleRequest = async (request, response) => {
     sendError(response, 404, "Not found");
   } catch (error) {
     if (!error.statusCode || error.statusCode >= 500) console.error(error);
-    sendError(response, error.statusCode || 500, error.statusCode ? error.message : "Internal server error");
+    // A code lets the client tell one 403 from another and offer the right
+    // next step, instead of matching on a message that may be translated.
+    sendError(
+      response,
+      error.statusCode || 500,
+      error.statusCode ? error.message : "Internal server error",
+      error.statusCode && error.code ? { code: error.code } : undefined,
+    );
   }
 };
 
