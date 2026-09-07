@@ -69,6 +69,7 @@ test.describe("Admin role permissions", () => {
       "/admin/analytics",
       "/admin/notifications",
       "/admin/orders",
+      "/admin/customers",
       "/admin/coupons",
       "/admin/settings",
       "/admin/categories",

@@ -732,7 +732,18 @@ const userSelect = `
 `;
 
 const getProfileByUserId = async (userId, db = pool) => {
-  const result = await db.query("select * from public.profiles where id = $1 limit 1", [userId]);
+  // Identity lives on app_users; profiles holds everything else. Joining here
+  // keeps the serialized profile shape unchanged for API consumers.
+  const result = await db.query(
+    `
+      select p.*, au.email, au.full_name, au.phone, au.birthdate
+      from public.profiles p
+      join public.app_users au on au.id = p.id
+      where p.id = $1
+      limit 1
+    `,
+    [userId],
+  );
   return result.rows[0] ? serializeProfile(result.rows[0]) : null;
 };
 
@@ -806,15 +817,15 @@ const getUserFromSession = async (request) => {
         au.updated_at,
         au.last_login_at,
         p.id as profile_id,
-        p.email as profile_email,
-        p.full_name as profile_full_name,
+        au.email as profile_email,
+        au.full_name as profile_full_name,
         p.first_name as profile_first_name,
         p.last_name as profile_last_name,
         p.bio as profile_bio,
-        p.phone as profile_phone,
+        au.phone as profile_phone,
         p.whatsapp_number as profile_whatsapp_number,
         p.avatar_url as profile_avatar_url,
-        p.birthdate as profile_birthdate,
+        au.birthdate as profile_birthdate,
         p.street as profile_street,
         p.city as profile_city,
         p.id_number_last4 as profile_id_number_last4,
@@ -945,24 +956,40 @@ const signupUser = async (request, body) => {
       `
         insert into public.profiles (
           id,
-          email,
-          full_name,
           first_name,
           last_name,
-          phone,
-          whatsapp_number,
-          birthdate
+          whatsapp_number
         )
-        values ($1, $2, $3, $4, $5, $6, $6, $7)
+        values ($1, $2, $3, $4)
         returning *
       `,
-      [userResult.rows[0].id, email, fullName, firstName, lastName, phone, birthdate],
+      [userResult.rows[0].id, firstName, lastName, phone],
+    );
+
+    // Claim any unclaimed commerce identity that already used this email —
+    // typically orders placed as a guest before registering.
+    await client.query(
+      `
+        update public.shop_customers
+        set user_id = $1,
+            updated_at = now()
+        where lower(email) = $2
+          and user_id is null
+      `,
+      [userResult.rows[0].id, email],
     );
 
     const token = await createUserSession(request, userResult.rows[0].id, client);
     await client.query("commit");
 
-    const profile = serializeProfile(profileResult.rows[0]);
+    // Identity now lives on app_users, so merge it back for the response shape.
+    const profile = serializeProfile({
+      ...profileResult.rows[0],
+      email,
+      full_name: fullName,
+      phone,
+      birthdate,
+    });
     return {
       user: serializeUser(userResult.rows[0], profile),
       profile,
@@ -1310,7 +1337,6 @@ const updateMyProfile = async (userId, body) => {
 
   if (fullName !== undefined) {
     const { firstName, lastName } = splitFullName(fullName);
-    pushProfile("full_name", fullName);
     pushProfile("first_name", firstName);
     pushProfile("last_name", lastName);
     pushApp("full_name", fullName);
@@ -1318,7 +1344,6 @@ const updateMyProfile = async (userId, body) => {
   if (fullName === undefined && firstName !== undefined) pushProfile("first_name", firstName);
   if (fullName === undefined && lastName !== undefined) pushProfile("last_name", lastName);
   if (phone !== undefined) {
-    pushProfile("phone", phone);
     pushApp("phone", phone);
   }
   if (whatsappNumber !== undefined) pushProfile("whatsapp_number", whatsappNumber);
@@ -1336,7 +1361,6 @@ const updateMyProfile = async (userId, body) => {
     pushProfile("ai_consent_date", aiConsentGiven ? new Date().toISOString() : null);
   }
   if (birthdate !== undefined) {
-    pushProfile("birthdate", birthdate);
     pushApp("birthdate", birthdate);
   }
 
@@ -1674,13 +1698,14 @@ const getPublicPet = async (petId) => {
     `
       select
         p.*,
-        pr.full_name as owner_full_name,
-        pr.phone as owner_phone,
+        au.full_name as owner_full_name,
+        au.phone as owner_phone,
         pr.city as owner_city,
         pr.profile_visibility,
         pr.show_location
       from public.pets p
       left join public.profiles pr on pr.id = p.user_id
+      left join public.app_users au on au.id = p.user_id
       where p.id = $1 and p.archived = false
       limit 1
     `,
@@ -4479,16 +4504,17 @@ const createOrder = async (body, currentUser = null) => {
     }
     const customerResult = await client.query(
       `
-        insert into public.shop_customers (email, full_name, phone, last_order_at)
-        values ($1, $2, $3, now())
-        on conflict (email) do update set
+        insert into public.shop_customers (email, full_name, phone, last_order_at, user_id)
+        values ($1, $2, $3, now(), $4)
+        on conflict (lower(email)) do update set
           full_name = excluded.full_name,
           phone = excluded.phone,
           last_order_at = now(),
-          updated_at = now()
+          updated_at = now(),
+          user_id = coalesce(public.shop_customers.user_id, excluded.user_id)
         returning id
       `,
-      [amounts.customerEmail, shippingAddress.fullName, shippingAddress.phone],
+      [amounts.customerEmail, shippingAddress.fullName, shippingAddress.phone, currentUser?.id || null],
     );
 
     const orderNumber = generateOrderNumber();
@@ -4749,7 +4775,12 @@ const deleteMyAccount = async (userId, email) => {
       `,
       [userId, normalizedEmail],
     );
-    await client.query("delete from public.shop_customers where lower(email) = $1", [normalizedEmail]);
+    // Follows the user_id link as well as the email, so a commerce record created
+    // under a second checkout email is not left behind.
+    await client.query(
+      "delete from public.shop_customers where user_id = $1 or lower(email) = $2",
+      [userId, normalizedEmail],
+    );
     await client.query("delete from public.app_users where id = $1", [userId]);
     await client.query("commit");
   } catch (error) {
@@ -4863,6 +4894,263 @@ const listAdminAnalytics = async (daysInput) => {
     chat_feedback: chatFeedback,
     breeds: [...dogBreeds, ...catBreeds],
   };
+};
+
+// An order belongs to the account that placed it, or — for a guest checkout —
+// to the account that has since claimed the commerce row, or to the guest row
+// itself. Same precedence customer_identities uses for identity_id, so the two
+// always agree on who a person is.
+const ORDER_IDENTITY_EXPRESSION = "coalesce(o.user_id, sc.user_id, o.customer_id)";
+
+const customerIdentityQuery = (where, tail) => `
+  with attributed_orders as (
+    select
+      ${ORDER_IDENTITY_EXPRESSION} as identity_id,
+      o.payment_status,
+      o.total,
+      coalesce(o.order_date, o.created_at) as placed_at
+    from public.orders o
+    left join public.shop_customers sc on sc.id = o.customer_id
+  ),
+  order_stats as (
+    select
+      identity_id,
+      count(*) as orders_count,
+      count(*) filter (where payment_status = 'paid') as paid_orders_count,
+      coalesce(sum(total) filter (where payment_status = 'paid'), 0) as total_spent,
+      max(placed_at) as last_order_at,
+      min(placed_at) as first_order_at
+    from attributed_orders
+    where identity_id is not null
+    group by identity_id
+  ),
+  pet_stats as (
+    select user_id, count(*) as pets_count
+    from public.pets
+    where not archived
+    group by user_id
+  )
+  select * from (
+    -- distinct on guards the one case the view cannot: two shop_customers rows
+    -- claimed by the same account would otherwise list that person twice.
+    select distinct on (ci.identity_id)
+      ci.identity_id,
+      ci.identity_kind,
+      ci.user_id,
+      ci.shop_customer_id,
+      ci.email,
+      ci.full_name,
+      ci.phone,
+      au.is_active,
+      au.last_login_at,
+      coalesce(au.created_at, sc.created_at) as created_at,
+      coalesce(os.last_order_at, ci.last_order_at) as last_order_at,
+      os.first_order_at,
+      coalesce(os.orders_count, 0) as orders_count,
+      coalesce(os.paid_orders_count, 0) as paid_orders_count,
+      coalesce(os.total_spent, 0) as total_spent,
+      coalesce(ps.pets_count, 0) as pets_count,
+      greatest(
+        coalesce(os.last_order_at, ci.last_order_at),
+        coalesce(au.created_at, sc.created_at)
+      ) as last_activity_at
+    from public.customer_identities ci
+    left join public.app_users au on au.id = ci.user_id
+    left join public.shop_customers sc on sc.id = ci.shop_customer_id
+    left join order_stats os on os.identity_id = ci.identity_id
+    left join pet_stats ps on ps.user_id = ci.user_id
+    ${where}
+    order by ci.identity_id, sc.created_at asc nulls last
+  ) customers
+  ${tail}
+`;
+
+const mapCustomerIdentity = (row) => ({
+  identity_id: row.identity_id,
+  identity_kind: row.identity_kind,
+  user_id: row.user_id,
+  shop_customer_id: row.shop_customer_id,
+  email: row.email,
+  full_name: row.full_name,
+  phone: row.phone,
+  is_active: row.is_active === null || row.is_active === undefined ? null : Boolean(row.is_active),
+  created_at: row.created_at,
+  last_login_at: row.last_login_at,
+  first_order_at: row.first_order_at,
+  last_order_at: row.last_order_at,
+  last_activity_at: row.last_activity_at,
+  orders_count: Number(row.orders_count || 0),
+  paid_orders_count: Number(row.paid_orders_count || 0),
+  total_spent: toMoney(row.total_spent),
+  pets_count: Number(row.pets_count || 0),
+});
+
+const listAdminCustomers = async ({ limit = 200, search = null, kind = null } = {}) => {
+  const values = [];
+  const where = [];
+
+  const term = String(search || "").trim();
+  if (term) {
+    values.push(`%${term.replace(/[%_\\]/g, (character) => `\\${character}`)}%`);
+    where.push(
+      `(ci.email ilike $${values.length} or ci.full_name ilike $${values.length} or ci.phone ilike $${values.length})`,
+    );
+  }
+
+  if (kind === "account" || kind === "guest") {
+    values.push(kind);
+    where.push(`ci.identity_kind = $${values.length}`);
+  }
+
+  values.push(Math.min(1000, Math.max(1, Number(limit) || 200)));
+
+  const result = await pool.query(
+    customerIdentityQuery(
+      where.length > 0 ? `where ${where.join(" and ")}` : "",
+      `order by last_activity_at desc nulls last, created_at desc nulls last limit $${values.length}`,
+    ),
+    values,
+  );
+
+  return result.rows.map(mapCustomerIdentity);
+};
+
+const getAdminCustomer = async (identityId) => {
+  if (!uuidPattern.test(String(identityId || ""))) return null;
+
+  const result = await pool.query(customerIdentityQuery("where ci.identity_id = $1", "limit 1"), [identityId]);
+  if (result.rowCount === 0) return null;
+
+  const customer = mapCustomerIdentity(result.rows[0]);
+
+  const orderRows = await pool.query(
+    `
+      select o.*
+      from public.orders o
+      left join public.shop_customers sc on sc.id = o.customer_id
+      where ${ORDER_IDENTITY_EXPRESSION} = $1
+      order by coalesce(o.order_date, o.created_at) desc
+      limit 100
+    `,
+    [customer.identity_id],
+  );
+
+  const subjects = await customerNoteSubjects(customer);
+
+  const [orders, pets, notes] = await Promise.all([
+    attachOrderItems(orderRows.rows),
+    customer.user_id ? listUserPets(customer.user_id, "all") : Promise.resolve([]),
+    listCustomerNotes(subjects),
+  ]);
+
+  return { customer, orders, pets, notes };
+};
+
+const CUSTOMER_NOTE_KINDS = ["note", "call", "whatsapp", "email", "meeting"];
+const MAX_CUSTOMER_NOTE_LENGTH = 5000;
+
+const mapCustomerNote = (row) => ({
+  id: row.id,
+  user_id: row.user_id,
+  shop_customer_id: row.shop_customer_id,
+  admin_user_id: row.admin_user_id,
+  author_name: row.author_name,
+  kind: row.kind,
+  body: row.body,
+  created_at: row.created_at,
+  updated_at: row.updated_at,
+});
+
+// Every row a note could have been filed against. An account may own several
+// shop_customers rows -- one per checkout email it has claimed -- and notes
+// written while those were still guests have to keep showing on the card.
+const customerNoteSubjects = async (customer) => {
+  if (!customer.user_id) {
+    return {
+      userId: null,
+      shopCustomerIds: customer.shop_customer_id ? [customer.shop_customer_id] : [],
+    };
+  }
+
+  const result = await pool.query("select id from public.shop_customers where user_id = $1", [customer.user_id]);
+  return { userId: customer.user_id, shopCustomerIds: result.rows.map((row) => row.id) };
+};
+
+const listCustomerNotes = async (subjects, limit = 200) => {
+  if (!subjects.userId && subjects.shopCustomerIds.length === 0) return [];
+
+  const result = await pool.query(
+    `
+      select *
+      from public.customer_notes
+      where ($1::uuid is not null and user_id = $1)
+         or shop_customer_id = any($2::uuid[])
+      order by created_at desc
+      limit $3
+    `,
+    [subjects.userId, subjects.shopCustomerIds, Math.min(500, Math.max(1, Number(limit) || 200))],
+  );
+  return result.rows.map(mapCustomerNote);
+};
+
+const createCustomerNote = async (customer, admin, body) => {
+  const kind = String(body.kind || "note").trim();
+  if (!CUSTOMER_NOTE_KINDS.includes(kind)) {
+    const error = new Error(`kind must be one of: ${CUSTOMER_NOTE_KINDS.join(", ")}`);
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const text = String(body.body || "").trim();
+  if (!text) {
+    const error = new Error("A note body is required");
+    error.statusCode = 400;
+    throw error;
+  }
+  if (text.length > MAX_CUSTOMER_NOTE_LENGTH) {
+    const error = new Error(`A note cannot exceed ${MAX_CUSTOMER_NOTE_LENGTH} characters`);
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // An account is filed under its user_id, which never changes. Only a guest,
+  // which has no account yet, is filed under its commerce row.
+  const result = await pool.query(
+    `
+      insert into public.customer_notes (user_id, shop_customer_id, admin_user_id, author_name, kind, body)
+      values ($1, $2, $3, $4, $5, $6)
+      returning *
+    `,
+    [
+      customer.user_id,
+      customer.user_id ? null : customer.shop_customer_id,
+      // The machine caller authenticated by ADMIN_API_KEY has the literal id
+      // "api-key" and no row in admin_users, so only a real admin is linked.
+      uuidPattern.test(String(admin?.id || "")) ? admin.id : null,
+      admin?.display_name || admin?.email || null,
+      kind,
+      text,
+    ],
+  );
+
+  return mapCustomerNote(result.rows[0]);
+};
+
+// Scoped to the customer on the URL so a guessed note id cannot reach a note
+// belonging to somebody else.
+const deleteCustomerNote = async (subjects, noteId) => {
+  if (!uuidPattern.test(String(noteId || ""))) return false;
+  if (!subjects.userId && subjects.shopCustomerIds.length === 0) return false;
+
+  const result = await pool.query(
+    `
+      delete from public.customer_notes
+      where id = $1
+        and (($2::uuid is not null and user_id = $2) or shop_customer_id = any($3::uuid[]))
+    `,
+    [noteId, subjects.userId, subjects.shopCustomerIds],
+  );
+  return result.rowCount > 0;
 };
 
 const getOrder = async (id) => {
@@ -5990,7 +6278,14 @@ const handleRequest = async (request, response) => {
         return;
       }
 
-      sendJson(response, 200, auth);
+      // The panel is a separate identity with its own cookie, so being signed
+      // in here says nothing about it. Reporting whether the same browser also
+      // holds an admin session lets the app show the shortcut without a second
+      // request, and without depending on local storage -- which is scoped per
+      // origin, so it goes missing the moment the dev server moves to another
+      // port. Costs a query only when that cookie is actually present.
+      const admin = await getAdminFromSession(request);
+      sendJson(response, 200, { ...auth, is_admin: Boolean(admin) });
       return;
     }
 
@@ -6524,6 +6819,58 @@ const handleRequest = async (request, response) => {
       if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
       const limit = Math.min(500, Math.max(1, Number(url.searchParams.get("limit") || 200)));
       sendJson(response, 200, { orders: await listOrders({ limit }) });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/customers") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      sendJson(response, 200, {
+        customers: await listAdminCustomers({
+          limit: url.searchParams.get("limit") || 200,
+          search: url.searchParams.get("search"),
+          kind: url.searchParams.get("kind"),
+        }),
+      });
+      return;
+    }
+
+    const adminCustomerMatch = url.pathname.match(/^\/api\/admin\/customers\/([0-9a-fA-F-]{36})$/);
+    if (adminCustomerMatch && request.method === "GET") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      const customer = await getAdminCustomer(adminCustomerMatch[1]);
+      if (!customer) {
+        sendError(response, 404, "Customer not found");
+        return;
+      }
+      sendJson(response, 200, customer);
+      return;
+    }
+
+    const adminCustomerNotesMatch = url.pathname.match(/^\/api\/admin\/customers\/([0-9a-fA-F-]{36})\/notes$/);
+    if (adminCustomerNotesMatch && request.method === "POST") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      const detail = await getAdminCustomer(adminCustomerNotesMatch[1]);
+      if (!detail) {
+        sendError(response, 404, "Customer not found");
+        return;
+      }
+      const note = await createCustomerNote(detail.customer, request.admin, await readBody(request));
+      sendJson(response, 201, { note });
+      return;
+    }
+
+    const adminCustomerNoteMatch = url.pathname
+      .match(/^\/api\/admin\/customers\/([0-9a-fA-F-]{36})\/notes\/([0-9a-fA-F-]{36})$/);
+    if (adminCustomerNoteMatch && request.method === "DELETE") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      const detail = await getAdminCustomer(adminCustomerNoteMatch[1]);
+      if (!detail) {
+        sendError(response, 404, "Customer not found");
+        return;
+      }
+      const subjects = await customerNoteSubjects(detail.customer);
+      const deleted = await deleteCustomerNote(subjects, adminCustomerNoteMatch[2]);
+      sendJson(response, deleted ? 200 : 404, { deleted });
       return;
     }
 

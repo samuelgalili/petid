@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAwsAdminAuth } from "@/hooks/useAwsAdminAuth";
+import { MipoApiError } from "@/lib/mipoApi";
 
 type AdminLoginLocationState = {
   from?: string;
@@ -17,6 +18,22 @@ type AdminLoginLocationState = {
 // asks for the change again, which revokes the new session, which sends them
 // back to the login. That is the loop a newly provisioned admin cannot escape.
 const NOT_A_DESTINATION = ["/admin/login", "/admin/change-password"];
+
+// Mirrors loginErrorMessage in components/LoginForm.tsx, which the customer
+// login already uses. Showing "wrong credentials" for every failure is what
+// turns a rate-limit lockout into a loop: the admin retries, each retry
+// extends the window, and nothing on screen says that waiting is the answer.
+const adminLoginErrorMessage = (error: unknown): string => {
+  const status = error instanceof MipoApiError ? error.status : null;
+
+  if (status === 401) return "האימייל או הסיסמה שגויים.";
+  if (status === 429) return "בוצעו יותר מדי ניסיונות התחברות. נסו שוב בעוד כמה דקות.";
+  if (status === 403) return "לחשבון הזה אין הרשאת ניהול.";
+  if (status === 0) return "אין חיבור לשרת. בדקו את החיבור ונסו שוב.";
+  if (status !== null && status >= 500) return "שירות ההתחברות אינו זמין כרגע. נסו שוב בעוד כמה דקות.";
+
+  return "אירעה תקלה לא צפויה. נסו שוב.";
+};
 
 const AdminLogin = () => {
   const navigate = useNavigate();
@@ -46,8 +63,8 @@ const AdminLogin = () => {
     try {
       const loggedInAdmin = await login(email, password);
       navigate(loggedInAdmin.must_change_password ? "/admin/change-password" : redirectTo, { replace: true });
-    } catch {
-      setError("פרטי ההתחברות אינם תקינים");
+    } catch (caught) {
+      setError(adminLoginErrorMessage(caught));
     } finally {
       setIsSubmitting(false);
     }
