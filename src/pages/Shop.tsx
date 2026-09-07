@@ -29,7 +29,7 @@ import { FleetSafetyAlert } from "@/components/fleet/FleetSafetyAlert";
 import { SlideToConfirm } from "@/components/shop/SlideToConfirm";
 import { ProductInfoDrawer } from "@/components/shop/ProductInfoDrawer";
 import { useCarePlan } from "@/hooks/useCarePlan";
-import { createContentReport, getShopProducts } from "@/lib/mipoApi";
+import { createContentReport, getProductCategories, getShopProducts } from "@/lib/mipoApi";
 
 const asPrice = (value: number | string | null | undefined) => {
   const parsed = typeof value === "string" ? Number.parseFloat(value) : value;
@@ -45,8 +45,9 @@ const readStoredStrings = (key: string): string[] => {
   }
 };
 
-const subCategories = [
-  { id: "all", label: "הכל" },
+// Used only when the categories endpoint is unavailable (an older API, or a
+// network error). The live bar comes from the database - see categoryTabs.
+const FALLBACK_SUB_CATEGORIES = [
   { id: "food", label: "מזון" },
   { id: "treats", label: "חטיפים" },
   { id: "toys", label: "צעצועים" },
@@ -54,6 +55,8 @@ const subCategories = [
   { id: "grooming", label: "טיפוח" },
   { id: "accessories", label: "אביזרים" },
 ];
+
+const ALL_CATEGORIES_TAB = { id: "all", label: "הכל", categoryId: null as string | null, icon: null as string | null };
 
 const Shop = () => {
   const navigate = useNavigate();
@@ -169,6 +172,74 @@ const Shop = () => {
     gcTime: 1000 * 60 * 5, // 5 minutes
   });
 
+  // The filter bar is the category tree, not a list baked into this file.
+  const { data: dbCategories = [], isError: isCategoriesError } = useQuery({
+    queryKey: ["shop-categories"],
+    queryFn: getProductCategories,
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
+  });
+
+  const categoryTabs = useMemo(() => {
+    if (isCategoriesError || dbCategories.length === 0) {
+      return [ALL_CATEGORIES_TAB, ...FALLBACK_SUB_CATEGORIES.map((entry) => ({ ...entry, categoryId: null, icon: null }))];
+    }
+    // Only top-level categories go in the bar; children are reachable through
+    // their parent until the shop grows a second level of navigation.
+    return [
+      ALL_CATEGORIES_TAB,
+      ...dbCategories
+        .filter((category) => !category.parent_id)
+        .map((category) => ({
+          id: category.slug,
+          label: category.name_he,
+          categoryId: category.id,
+          icon: category.icon,
+        })),
+    ];
+  }, [dbCategories, isCategoriesError]);
+
+  // A parent tab also shows everything filed under its children. Alongside the
+  // ids we collect the text values that mean the same category, so a product
+  // that has not been assigned to the tree yet still lands under its tab
+  // instead of silently disappearing from every filter.
+  const categoryMatchersBySlug = useMemo(() => {
+    const byId = new Map(dbCategories.map((category) => [category.id, category]));
+    const childrenByParent = new Map<string, string[]>();
+    for (const category of dbCategories) {
+      if (!category.parent_id) continue;
+      const siblings = childrenByParent.get(category.parent_id) ?? [];
+      siblings.push(category.id);
+      childrenByParent.set(category.parent_id, siblings);
+    }
+
+    const map = new Map<string, { ids: Set<string>; texts: Set<string> }>();
+    for (const category of dbCategories) {
+      const ids = new Set<string>([category.id]);
+      const queue = [category.id];
+      while (queue.length > 0) {
+        for (const childId of childrenByParent.get(queue.pop()!) ?? []) {
+          if (ids.has(childId)) continue;
+          ids.add(childId);
+          queue.push(childId);
+        }
+      }
+
+      const texts = new Set<string>();
+      for (const id of ids) {
+        const node = byId.get(id);
+        if (!node) continue;
+        texts.add(node.slug);
+        texts.add(node.name_he.toLowerCase());
+        if (node.name_en) texts.add(node.name_en.toLowerCase());
+        for (const alias of node.aliases || []) texts.add(alias);
+      }
+
+      map.set(category.slug, { ids, texts });
+    }
+    return map;
+  }, [dbCategories]);
+
   // Transform database products to the format expected by the UI
   const products = useMemo(() => {
     console.log("Transforming products, dbProducts count:", dbProducts.length);
@@ -193,7 +264,8 @@ const Shop = () => {
         image: p.image_url || "/placeholder.svg",
         inStock: p.in_stock ?? true,
         freeShipping: price >= 199,
-        category: p.category,
+        category: p.category_name || p.category,
+        categoryId: p.category_id ?? null,
         petType: p.pet_type,
         isFlagged: p.is_flagged || false,
         flaggedReason: p.flagged_reason,
@@ -226,14 +298,25 @@ const Shop = () => {
     }
 
     if (selectedCategory !== "all") {
-      const selected = subCategories.find((category) => category.id === selectedCategory);
-      const categoryTerms = [selectedCategory, selected?.label || ""]
-        .map((term) => term.toLowerCase())
-        .filter(Boolean);
-      result = result.filter((product) => {
-        const category = product.category?.toLowerCase() || "";
-        return categoryTerms.some((term) => category === term || category.includes(term));
-      });
+      const selected = categoryTabs.find((category) => category.id === selectedCategory);
+      const matchers = categoryMatchersBySlug.get(selectedCategory);
+
+      if (selected?.categoryId && matchers) {
+        result = result.filter((product) =>
+          product.categoryId
+            ? matchers.ids.has(product.categoryId)
+            : matchers.texts.has((product.category || "").trim().toLowerCase()),
+        );
+      } else {
+        // Fallback path: no category tree available, match the free-text column.
+        const categoryTerms = [selectedCategory, selected?.label || ""]
+          .map((term) => term.toLowerCase())
+          .filter(Boolean);
+        result = result.filter((product) => {
+          const category = product.category?.toLowerCase() || "";
+          return categoryTerms.some((term) => category === term || category.includes(term));
+        });
+      }
     }
 
     if (showDealsOnly) {
@@ -257,7 +340,7 @@ const Shop = () => {
 
     console.log("Filtered products:", result.length);
     return result;
-  }, [products, sortBy, showDealsOnly, activeTab, favorites, searchQuery, selectedCategory]);
+  }, [products, sortBy, showDealsOnly, activeTab, favorites, searchQuery, selectedCategory, categoryTabs, categoryMatchersBySlug]);
 
   const addToSearchHistory = useCallback((query: string) => {
     if (!query.trim()) return;
@@ -511,7 +594,7 @@ const Shop = () => {
       <div className="bg-background">
         <div className="mx-auto max-w-6xl">
           <div className="flex gap-2 overflow-x-auto px-4 py-3 scrollbar-hide sm:px-6">
-            {subCategories.map((category) => (
+            {categoryTabs.map((category) => (
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
@@ -521,6 +604,7 @@ const Shop = () => {
                     : "bg-card border border-border/30 text-foreground hover:bg-muted/50 hover:border-primary/30"
                 }`}
               >
+                {category.icon ? `${category.icon} ` : ""}
                 {category.label}
               </button>
             ))}

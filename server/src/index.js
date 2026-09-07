@@ -3820,6 +3820,7 @@ const businessProductFields = {
   image_url: "image_url",
   images: "images",
   category: "category",
+  category_id: "category_id",
   in_stock: "in_stock",
   is_featured: "is_featured",
   sku: "sku",
@@ -3862,6 +3863,7 @@ const scrapedProductFields = {
   sale_price: "sale_price",
   image_url: "main_image_url",
   category: "sub_category",
+  category_id: "category_id",
   in_stock: "stock_status",
   sku: "sku",
   pet_type: "pet_type",
@@ -3872,6 +3874,13 @@ const scrapedProductFields = {
   is_flagged: "is_flagged",
   flagged_reason: "flagged_reason",
   flagged_at: "flagged_at",
+};
+
+const normalizeCategoryId = (value) => {
+  if (value === null || value === undefined || value === "") return null;
+  const id = String(value).trim();
+  if (!uuidPattern.test(id)) throw new Error("A valid category_id is required");
+  return id;
 };
 
 const normalizeFieldValue = (field, value, target = "business") => {
@@ -3895,6 +3904,10 @@ const normalizeFieldValue = (field, value, target = "business") => {
 
   if (field === "pet_type") {
     return normalizePetType(value);
+  }
+
+  if (field === "category_id") {
+    return normalizeCategoryId(value);
   }
 
   if (field === "in_stock" && target === "scraped") {
@@ -3937,6 +3950,7 @@ const normalizeProductPayload = (body) => {
     image_url: body.image_url || "/placeholder.svg",
     images: Array.isArray(body.images) ? body.images : [],
     category: body.category ?? null,
+    category_id: normalizeCategoryId(body.category_id),
     in_stock: body.in_stock ?? true,
     is_featured: body.is_featured ?? false,
     sku: body.sku ?? null,
@@ -4034,6 +4048,9 @@ const mapScrapedProduct = (row) => ({
   image_url: row.main_image_url || "/placeholder.svg",
   images: row.main_image_url ? [row.main_image_url] : [],
   category: row.sub_category || row.main_category,
+  category_id: row.category_id ?? null,
+  category_slug: row.category_slug ?? null,
+  category_name: row.category_name ?? null,
   in_stock: row.stock_status === "in_stock" || row.stock_status === null,
   is_featured: false,
   business_id: null,
@@ -4050,10 +4067,31 @@ const mapScrapedProduct = (row) => ({
   source: "scraped",
 });
 
+// The category join is an enrichment, not a requirement. If the code is
+// deployed before 0025 runs, the catalogue must still serve products - joining
+// a table that does not exist yet would otherwise take the whole shop down.
+// Same fallback convention as listBreeds: 42P01 undefined_table,
+// 42703 undefined_column.
+const isMissingCategorySchema = (error) => error?.code === "42P01" || error?.code === "42703";
+
+const queryProductsWithCategories = async (table, orderBy) => {
+  try {
+    return await pool.query(`
+      select p.*, c.slug as category_slug, c.name_he as category_name
+      from public.${table} p
+      left join public.product_categories c on c.id = p.category_id
+      order by ${orderBy}
+    `);
+  } catch (error) {
+    if (!isMissingCategorySchema(error)) throw error;
+    return pool.query(`select p.* from public.${table} p order by ${orderBy}`);
+  }
+};
+
 const listProducts = async () => {
   const [businessProducts, scrapedProducts] = await Promise.all([
-    pool.query("select * from public.business_products order by created_at desc"),
-    pool.query("select * from public.scraped_products order by scraped_at desc nulls last, created_at desc"),
+    queryProductsWithCategories("business_products", "p.created_at desc"),
+    queryProductsWithCategories("scraped_products", "p.scraped_at desc nulls last, p.created_at desc"),
   ]);
 
   return [
@@ -4153,7 +4191,7 @@ const createProduct = async (body) => {
         flavors, brand, weight_unit, price_per_weight, source_url, ingredients,
         benefits, feeding_guide, product_attributes, life_stage, dog_size, special_diet,
         breed_tags, medical_tags, auto_restock, restock_interval_days, api_sync_enabled,
-        cost_price, supplier_id, safety_score, kcal_per_kg
+        cost_price, supplier_id, safety_score, kcal_per_kg, category_id
       )
       values (
         $1, $2, $3, $4, $5, $6,
@@ -4161,7 +4199,7 @@ const createProduct = async (body) => {
         $14, $15, $16, $17, $18, $19,
         $20, $21, $22, $23, $24, $25,
         $26, $27, $28, $29, $30,
-        $31, $32, $33, $34
+        $31, $32, $33, $34, $35
       )
       returning *
     `,
@@ -4200,6 +4238,7 @@ const createProduct = async (body) => {
       payload.supplier_id,
       payload.safety_score,
       payload.kcal_per_kg,
+      payload.category_id,
     ],
   );
 
@@ -4321,6 +4360,296 @@ const bulkDeleteProducts = async (ids) => {
     manual: businessResult.rowCount,
     scraped: scrapedResult.rowCount,
   };
+};
+
+const categorySlugPattern = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+const badRequest = (message) => {
+  const error = new Error(message);
+  error.statusCode = 400;
+  return error;
+};
+
+const normalizeCategoryAliases = (value) => {
+  if (value === undefined) return undefined;
+  if (value === null) return [];
+  if (!Array.isArray(value)) throw badRequest("aliases must be an array of strings");
+
+  const seen = new Set();
+  for (const entry of value) {
+    const alias = String(entry ?? "").trim().toLowerCase();
+    if (!alias) continue;
+    if (alias.length > 120) throw badRequest("An alias may be at most 120 characters");
+    seen.add(alias);
+  }
+  return [...seen];
+};
+
+const normalizeCategoryPayload = (body, { partial = false } = {}) => {
+  const payload = {};
+
+  if (!partial || Object.hasOwn(body, "name_he")) {
+    const nameHe = String(body.name_he ?? "").trim();
+    if (!nameHe) throw badRequest("Category name is required");
+    payload.name_he = nameHe;
+  }
+
+  if (!partial || Object.hasOwn(body, "slug")) {
+    const slug = String(body.slug ?? "").trim().toLowerCase();
+    if (!categorySlugPattern.test(slug)) {
+      throw badRequest("A slug must be lowercase letters, digits and single hyphens");
+    }
+    payload.slug = slug;
+  }
+
+  if (Object.hasOwn(body, "name_en")) payload.name_en = body.name_en ? String(body.name_en).trim() : null;
+  if (Object.hasOwn(body, "description")) payload.description = body.description ? String(body.description).trim() : null;
+  if (Object.hasOwn(body, "icon")) payload.icon = body.icon ? String(body.icon).trim() : null;
+  if (Object.hasOwn(body, "parent_id")) payload.parent_id = normalizeCategoryId(body.parent_id);
+  if (Object.hasOwn(body, "is_active")) payload.is_active = Boolean(body.is_active);
+  if (Object.hasOwn(body, "position")) {
+    const position = Number(body.position);
+    if (!Number.isInteger(position) || position < 0 || position > 100000) {
+      throw badRequest("position must be an integer between 0 and 100000");
+    }
+    payload.position = position;
+  }
+
+  return payload;
+};
+
+// Product counts are per-category, not rolled up into the parent: an admin
+// deleting a node needs to know what is attached to that exact node.
+const categoryListQuery = `
+  with counts as (
+    select category_id, count(*)::int as total
+    from (
+      select category_id from public.business_products where category_id is not null
+      union all
+      select category_id from public.scraped_products where category_id is not null
+    ) all_products
+    group by category_id
+  )
+  select
+    c.*,
+    coalesce(counts.total, 0) as product_count,
+    coalesce(aliases.list, '{}') as aliases
+  from public.product_categories c
+  left join counts on counts.category_id = c.id
+  left join lateral (
+    select array_agg(a.alias order by a.alias) as list
+    from public.product_category_aliases a
+    where a.category_id = c.id
+  ) aliases on true
+`;
+
+const listProductCategories = async ({ includeInactive = false } = {}) => {
+  try {
+    const result = await pool.query(
+      `${categoryListQuery}
+       ${includeInactive ? "" : "where c.is_active"}
+       order by c.position, c.name_he`,
+    );
+    return result.rows;
+  } catch (error) {
+    // Before 0025 runs there is no tree yet. An empty list lets the shop fall
+    // back to its built-in bar instead of rendering an error.
+    if (!isMissingCategorySchema(error)) throw error;
+    return [];
+  }
+};
+
+const getProductCategory = async (id) => {
+  if (!uuidPattern.test(String(id || ""))) return null;
+  const result = await pool.query(`${categoryListQuery} where c.id = $1`, [id]);
+  return result.rows[0] || null;
+};
+
+const assertCategoryParentIsSafe = async (client, id, parentId) => {
+  if (!parentId) return;
+  if (parentId === id) throw badRequest("A category cannot be its own parent");
+
+  const parent = await client.query("select 1 from public.product_categories where id = $1", [parentId]);
+  if (parent.rowCount === 0) throw badRequest("The parent category does not exist");
+
+  if (!id) return;
+
+  // Walking down from `id` is cheaper than walking up from `parentId` only when
+  // the tree is shallow, but either direction is correct; down keeps the guard
+  // readable — the new parent must not already sit below us.
+  const cycle = await client.query(
+    `
+      with recursive descendants as (
+        select id from public.product_categories where parent_id = $1
+        union all
+        select c.id
+        from public.product_categories c
+        join descendants d on c.parent_id = d.id
+      )
+      select 1 from descendants where id = $2
+    `,
+    [id, parentId],
+  );
+  if (cycle.rowCount > 0) throw badRequest("That parent would create a loop in the category tree");
+};
+
+const replaceCategoryAliases = async (client, categoryId, aliases) => {
+  await client.query("delete from public.product_category_aliases where category_id = $1", [categoryId]);
+  if (aliases.length === 0) return;
+  await client.query(
+    `
+      insert into public.product_category_aliases (alias, category_id)
+      select unnest($1::text[]), $2
+      on conflict (alias) do update set category_id = excluded.category_id
+    `,
+    [aliases, categoryId],
+  );
+};
+
+const createProductCategory = async (body) => {
+  const payload = normalizeCategoryPayload(body);
+  const aliases = normalizeCategoryAliases(body.aliases) ?? [];
+  const columns = Object.keys(payload);
+  const client = await pool.connect();
+  let categoryId;
+
+  try {
+    await client.query("begin");
+    await assertCategoryParentIsSafe(client, null, payload.parent_id ?? null);
+
+    const inserted = await client.query(
+      `
+        insert into public.product_categories (${columns.join(", ")})
+        values (${columns.map((_, index) => `$${index + 1}`).join(", ")})
+        returning id
+      `,
+      columns.map((column) => payload[column]),
+    );
+    categoryId = inserted.rows[0].id;
+    await replaceCategoryAliases(client, categoryId, aliases);
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw translateCategoryConflict(error);
+  } finally {
+    client.release();
+  }
+
+  // Read back outside the transaction so a failure here is not reported as a
+  // write conflict, and no rollback is attempted after the commit.
+  return getProductCategory(categoryId);
+};
+
+const updateProductCategory = async (id, body) => {
+  if (!uuidPattern.test(String(id || ""))) return null;
+  const payload = normalizeCategoryPayload(body, { partial: true });
+  const aliases = normalizeCategoryAliases(body.aliases);
+  const columns = Object.keys(payload);
+  if (columns.length === 0 && aliases === undefined) return getProductCategory(id);
+
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    if (Object.hasOwn(payload, "parent_id")) {
+      await assertCategoryParentIsSafe(client, id, payload.parent_id);
+    }
+
+    if (columns.length > 0) {
+      const updated = await client.query(
+        `
+          update public.product_categories
+          set ${columns.map((column, index) => `${column} = $${index + 2}`).join(", ")}, updated_at = now()
+          where id = $1
+          returning id
+        `,
+        [id, ...columns.map((column) => payload[column])],
+      );
+      if (updated.rowCount === 0) {
+        await client.query("rollback");
+        return null;
+      }
+    } else {
+      const exists = await client.query("select 1 from public.product_categories where id = $1", [id]);
+      if (exists.rowCount === 0) {
+        await client.query("rollback");
+        return null;
+      }
+    }
+
+    if (aliases !== undefined) await replaceCategoryAliases(client, id, aliases);
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw translateCategoryConflict(error);
+  } finally {
+    client.release();
+  }
+
+  return getProductCategory(id);
+};
+
+// Deleting a category never deletes products. Either the caller says where the
+// products go, or the delete is refused and the count is reported back.
+const deleteProductCategory = async (id, { reassignTo = null } = {}) => {
+  if (!uuidPattern.test(String(id || ""))) return { deleted: false, reason: "not_found" };
+  const target = normalizeCategoryId(reassignTo);
+  if (target === id) throw badRequest("Cannot reassign a category's products to itself");
+
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    const existing = await client.query("select 1 from public.product_categories where id = $1", [id]);
+    if (existing.rowCount === 0) {
+      await client.query("rollback");
+      return { deleted: false, reason: "not_found" };
+    }
+
+    const children = await client.query("select count(*)::int as total from public.product_categories where parent_id = $1", [id]);
+    if (children.rows[0].total > 0) {
+      await client.query("rollback");
+      return { deleted: false, reason: "has_children", children: children.rows[0].total };
+    }
+
+    const counts = await client.query(
+      `
+        select
+          (select count(*) from public.business_products where category_id = $1)
+          + (select count(*) from public.scraped_products where category_id = $1) as total
+      `,
+      [id],
+    );
+    const productCount = Number(counts.rows[0].total);
+
+    if (productCount > 0 && !target) {
+      await client.query("rollback");
+      return { deleted: false, reason: "has_products", products: productCount };
+    }
+
+    if (productCount > 0) {
+      const targetExists = await client.query("select 1 from public.product_categories where id = $1", [target]);
+      if (targetExists.rowCount === 0) throw badRequest("The category to reassign to does not exist");
+      await client.query("update public.business_products set category_id = $2 where category_id = $1", [id, target]);
+      await client.query("update public.scraped_products set category_id = $2 where category_id = $1", [id, target]);
+    }
+
+    await client.query("delete from public.product_categories where id = $1", [id]);
+    await client.query("commit");
+    return { deleted: true, reassigned: productCount > 0 ? productCount : 0 };
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+const translateCategoryConflict = (error) => {
+  if (error?.code !== "23505") return error;
+  if (error.constraint === "product_categories_slug_key") return badRequest("That slug is already in use");
+  if (String(error.constraint || "").includes("sibling_name") || String(error.constraint || "").includes("root_name")) {
+    return badRequest("A category with that name already exists at the same level");
+  }
+  return error;
 };
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -7562,6 +7891,76 @@ const handleRequest = async (request, response) => {
 
     if (request.method === "GET" && url.pathname === "/api/products") {
       sendJson(response, 200, { products: await listProducts() });
+      return;
+    }
+
+    // Public: the shop's filter bar. Active categories only.
+    if (request.method === "GET" && url.pathname === "/api/categories") {
+      sendJson(response, 200, { categories: await listProductCategories() });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/admin/categories") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_READ))) return;
+      sendJson(response, 200, { categories: await listProductCategories({ includeInactive: true }) });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/admin/categories") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_CREATE))) return;
+      const category = await createProductCategory(await readBody(request));
+      await recordAdminAudit(request.admin, {
+        actionType: "product_category.created",
+        entityType: "product_category",
+        entityId: category.id,
+        newValues: category,
+      });
+      sendJson(response, 201, { category });
+      return;
+    }
+
+    const categoryMatch = url.pathname.match(/^\/api\/admin\/categories\/([0-9a-fA-F-]{36})$/);
+    if (categoryMatch && request.method === "PATCH") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_UPDATE))) return;
+      const previous = await getProductCategory(categoryMatch[1]);
+      const category = await updateProductCategory(categoryMatch[1], await readBody(request));
+      if (!category) {
+        sendError(response, 404, "Category not found");
+        return;
+      }
+      await recordAdminAudit(request.admin, {
+        actionType: "product_category.updated",
+        entityType: "product_category",
+        entityId: category.id,
+        oldValues: previous,
+        newValues: category,
+      });
+      sendJson(response, 200, { category });
+      return;
+    }
+
+    if (categoryMatch && request.method === "DELETE") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_DELETE))) return;
+      const previous = await getProductCategory(categoryMatch[1]);
+      const result = await deleteProductCategory(categoryMatch[1], {
+        reassignTo: url.searchParams.get("reassign_to"),
+      });
+
+      if (!result.deleted) {
+        // A refusal is not an error the admin screen should swallow — it needs
+        // the counts so it can offer a target category to move things into.
+        sendJson(response, result.reason === "not_found" ? 404 : 409, result);
+        return;
+      }
+
+      await recordAdminAudit(request.admin, {
+        actionType: "product_category.deleted",
+        entityType: "product_category",
+        entityId: categoryMatch[1],
+        oldValues: previous,
+        metadata: { reassigned: result.reassigned },
+      });
+      sendJson(response, 200, result);
       return;
     }
 

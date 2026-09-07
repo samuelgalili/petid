@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Sparkles, ImageIcon, Loader2, ExternalLink, Search, Upload, Globe, X, Check, FileSpreadsheet, Package, ChevronDown, ChevronUp, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,7 +33,7 @@ import {
 } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { normalizeProductPetType } from "@/lib/productStore";
-import { createAdminProduct, invokeProductIntelFunction } from "@/lib/mipoApi";
+import { createAdminProduct, getAdminProductCategories, invokeProductIntelFunction } from "@/lib/mipoApi";
 import { BulkProductImport } from "./BulkProductImport";
 import { toSafeHttpUrl } from "@/lib/safeExternalUrl";
 import {
@@ -82,6 +83,7 @@ interface ProductData {
   image_url: string;
   images?: string[] | null;
   category: string | null;
+  category_id?: string | null;
   in_stock: boolean | null;
   is_featured: boolean | null;
   sku?: string | null;
@@ -111,6 +113,8 @@ interface ProductFormDialogProps {
   isUploading: boolean;
 }
 
+const UNASSIGNED_CATEGORY = "__unassigned__";
+
 const categories = [
   { value: "dry-food", label: "אוכל יבש" },
   { value: "wet-food", label: "אוכל רטוב" },
@@ -136,6 +140,24 @@ export const ProductFormDialog = ({
   isUploading,
 }: ProductFormDialogProps) => {
   const { toast } = useToast();
+
+  // Flattened so children render indented under their parent in one Select.
+  const { data: categoryTree = [] } = useQuery({
+    queryKey: ["admin", "product-categories"],
+    queryFn: getAdminProductCategories,
+    staleTime: 1000 * 60 * 5,
+  });
+  const treeCategories = useMemo(() => {
+    const roots = categoryTree.filter((category) => !category.parent_id);
+    roots.sort((a, b) => a.position - b.position || a.name_he.localeCompare(b.name_he, "he"));
+    return roots.flatMap((root) => [
+      root,
+      ...categoryTree
+        .filter((category) => category.parent_id === root.id)
+        .sort((a, b) => a.position - b.position || a.name_he.localeCompare(b.name_he, "he")),
+    ]);
+  }, [categoryTree]);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const additionalImageInputRef = useRef<HTMLInputElement>(null);
   const [isEnriching, setIsEnriching] = useState(false);
@@ -1389,11 +1411,39 @@ export const ProductFormDialog = ({
               />
             </div>
 
-            {/* Category */}
+            {/* Category tree - this is what the shop filters on */}
             <div>
-              <Label>קטגוריה</Label>
-              <Select 
-                value={product.category || ""} 
+              <Label>קטגוריה בחנות</Label>
+              <Select
+                value={product.category_id || UNASSIGNED_CATEGORY}
+                onValueChange={(value) =>
+                  onProductChange({ ...product, category_id: value === UNASSIGNED_CATEGORY ? null : value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="בחירת קטגוריה" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={UNASSIGNED_CATEGORY}>ללא קטגוריה</SelectItem>
+                  {treeCategories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.parent_id ? "— " : ""}
+                      {cat.icon ? `${cat.icon} ` : ""}
+                      {cat.name_he}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="mt-1 text-xs text-muted-foreground">
+                הקטגוריה שקובעת איפה המוצר מופיע בסרגל הסינון בחנות.
+              </p>
+            </div>
+
+            {/* Free-text category, kept for imports and enrichment */}
+            <div>
+              <Label>קטגוריית ייבוא (טקסט חופשי)</Label>
+              <Select
+                value={product.category || ""}
                 onValueChange={(value) => onProductChange({ ...product, category: value })}
               >
                 <SelectTrigger>

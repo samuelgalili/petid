@@ -9,7 +9,11 @@ export interface MipoProduct {
   sale_price?: number | string | null;
   image_url: string;
   images?: string[] | null;
+  /** Free-text category kept for imports. The tree is category_id. */
   category: string | null;
+  category_id?: string | null;
+  category_slug?: string | null;
+  category_name?: string | null;
   pet_type?: string | null;
   in_stock: boolean | null;
   is_featured?: boolean | null;
@@ -597,7 +601,7 @@ const userSessionHintKey = "mipo_user_session_hint";
 const adminSessionHintKey = "mipo_admin_session_hint";
 
 export class MipoApiError extends Error {
-  constructor(message: string, public readonly status: number) {
+  constructor(message: string, public readonly status: number, public readonly body?: unknown) {
     super(message);
     this.name = "MipoApiError";
   }
@@ -634,7 +638,7 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const body = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new MipoApiError(body?.error || `API request failed with ${response.status}`, response.status);
+    throw new MipoApiError(body?.error || `API request failed with ${response.status}`, response.status, body);
   }
 
   return body as T;
@@ -656,7 +660,7 @@ async function adminApiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     if (response.status === 401) {
       throw new Error("נדרשת התחברות מנהל");
     }
-    throw new MipoApiError(body?.error || `API request failed with ${response.status}`, response.status);
+    throw new MipoApiError(body?.error || `API request failed with ${response.status}`, response.status, body);
   }
 
   return body as T;
@@ -1410,6 +1414,81 @@ export async function bulkUpdateAdminOrders(ids: string[], updates: Partial<Pick
 export async function getShopProducts(): Promise<MipoProduct[]> {
   const result = await apiFetch<{ products: MipoProduct[] }>("/products");
   return result.products;
+}
+
+export interface MipoProductCategory {
+  id: string;
+  parent_id: string | null;
+  slug: string;
+  name_he: string;
+  name_en: string | null;
+  description: string | null;
+  icon: string | null;
+  position: number;
+  is_active: boolean;
+  product_count: number;
+  aliases: string[];
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface MipoCategoryDeleteResult {
+  deleted: boolean;
+  reason?: "not_found" | "has_children" | "has_products";
+  children?: number;
+  products?: number;
+  reassigned?: number;
+}
+
+export async function getProductCategories(): Promise<MipoProductCategory[]> {
+  const result = await apiFetch<{ categories: MipoProductCategory[] }>("/categories");
+  return result.categories;
+}
+
+export async function getAdminProductCategories(): Promise<MipoProductCategory[]> {
+  const result = await adminApiFetch<{ categories: MipoProductCategory[] }>("/admin/categories");
+  return result.categories;
+}
+
+export async function createAdminProductCategory(
+  category: Partial<MipoProductCategory>,
+): Promise<MipoProductCategory> {
+  const result = await adminApiFetch<{ category: MipoProductCategory }>("/admin/categories", {
+    method: "POST",
+    body: JSON.stringify(category),
+  });
+  return result.category;
+}
+
+export async function updateAdminProductCategory(
+  categoryId: string,
+  updates: Partial<MipoProductCategory>,
+): Promise<MipoProductCategory> {
+  const result = await adminApiFetch<{ category: MipoProductCategory }>(
+    `/admin/categories/${encodeURIComponent(categoryId)}`,
+    { method: "PATCH", body: JSON.stringify(updates) },
+  );
+  return result.category;
+}
+
+// A refusal (children or products still attached) comes back as 409 with the
+// counts, so the caller can offer to move the products somewhere first.
+export async function deleteAdminProductCategory(
+  categoryId: string,
+  reassignTo?: string | null,
+): Promise<MipoCategoryDeleteResult> {
+  const query = reassignTo ? `?reassign_to=${encodeURIComponent(reassignTo)}` : "";
+  try {
+    return await adminApiFetch<MipoCategoryDeleteResult>(
+      `/admin/categories/${encodeURIComponent(categoryId)}${query}`,
+      { method: "DELETE" },
+    );
+  } catch (error) {
+    if (error instanceof MipoApiError && error.status === 409 && error.body) {
+      return error.body as MipoCategoryDeleteResult;
+    }
+    throw error;
+  }
 }
 
 export async function getBreedInfo(petType: "dog" | "cat"): Promise<MipoBreedInfo[]> {
