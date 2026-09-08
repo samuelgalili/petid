@@ -121,7 +121,15 @@ const main = async () => {
     const response = await fetch(`${BASE}/api/auth/signup`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email, password: "smoke-test-password", full_name: "Smoke Test" }),
+      // accept_terms is enforced by the server, not only by the form, so
+      // signup answers 400 without it. The app sends it; this script did not,
+      // which is why it read a working signup as broken.
+      body: JSON.stringify({
+        email,
+        password: "smoke-test-password",
+        full_name: "Smoke Test",
+        accept_terms: true,
+      }),
     });
     expectNotServerError(response, "signup");
     expectStatus(response, [200, 201], "signup");
