@@ -27,41 +27,44 @@ you.
 
 ## One-time setup in GitHub
 
-This needs an environment that does not exist yet. Without it the deploy job
-fails at "Configure SSH" — before it has touched the host — so a half-finished
-setup cannot hurt production.
+Two clicks and one variable. Nothing has to be created, and no key has to be
+moved — the approval goes on the `production` environment that already exists
+and already holds the SSH key.
 
-**Settings → Environments → New environment**, named exactly:
+That last point is the whole reason the setup looks like this. A GitHub secret
+cannot be read back after it is saved. An earlier version of this gate used a
+second environment, `production-apply`, which would have needed its own copy of
+`MIPO_AWS_SSH_PRIVATE_KEY` — and nobody can copy a value they cannot read, so it
+would have meant generating a new SSH key and installing it on the server. The
+gate now needs neither.
 
-```
-production-apply
-```
+### 1. Put the reviewer on the existing environment
 
-Then, inside it:
+**Settings → Environments → `production`**
 
-1. **Required reviewers** — add yourself. Optionally also Shahar.
-   Leave "Prevent self-review" off, or nobody can approve their own merge.
+- **Required reviewers** — add yourself. Optionally also Shahar.
+  Leave "Prevent self-review" off, or nobody can approve their own merge.
 
-2. **Environment secrets** — add:
+Leave its secret and variables exactly as they are.
 
-   | Name | Value |
-   |------|-------|
-   | `MIPO_AWS_SSH_PRIVATE_KEY` | the same key as in the existing `production` environment |
+This is safe to do only because the quality gate is no longer bound to an
+environment: it uses no secrets, so it does not need one. If you ever bind it
+again, the approval prompt will fire before the tests run and the gate becomes
+theatre.
 
-   Secrets are per-environment; the new environment cannot see the old one's.
+### 2. Add one repository variable
 
-3. **Environment variables** — copy these across from `production`:
+**Settings → Secrets and variables → Actions → Variables → New repository
+variable**
 
-   | Name | Value today |
-   |------|-------------|
-   | `MIPO_AWS_HOST` | `63.183.241.110` |
-   | `MIPO_AWS_USER` | `ubuntu` |
-   | `MIPO_REMOTE_PATH` | `/opt/mipo` |
-   | `MIPO_PUBLIC_BASE_URL` | `https://mipo.pet` |
+| Name | Value |
+|------|-------|
+| `MIPO_PUBLIC_BASE_URL` | `https://mipo.pet` |
 
-The existing `production` environment stays as it is — the quality gate still
-reads its variables, and it must **not** get a required reviewer, or you would
-be asked to approve before the tests have run.
+This is what the frontend is built against. It is a variable, not a secret —
+it is a public URL. Strictly speaking the workflow already falls back to this
+exact value, so the build works without it; set it anyway, so the address the
+bundle is built with is written down somewhere you can change it.
 
 ## Approving a deploy
 

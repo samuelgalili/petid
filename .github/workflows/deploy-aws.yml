@@ -19,14 +19,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
-    # Host, paths and secrets all resolve from the GitHub Environment, so the
-    # same workflow serves both. Configure them under
-    # Settings → Environments → production / staging.
-    environment: ${{ github.ref_name == 'aws-migration' && 'production' || 'staging' }}
-
+    # Deliberately NOT bound to a GitHub Environment.
+    #
+    # This job uses no secrets — it only needs a base URL to build against, and
+    # that is a repository variable. Binding it to 'production' would mean the
+    # approval prompt fires the moment the run starts, so you would be asked to
+    # approve a release before a single test had run. Leaving it unbound is what
+    # lets the required reviewer sit on the deploy job alone, where the approval
+    # is worth something, on the environment that already holds the SSH key.
     env:
-      MIPO_AWS_HOST: ${{ vars.MIPO_AWS_HOST || (github.ref_name == 'aws-migration' && '63.183.241.110' || '') }}
-      MIPO_PUBLIC_BASE_URL: ${{ vars.MIPO_PUBLIC_BASE_URL }}
+      MIPO_PUBLIC_BASE_URL: ${{ vars.MIPO_PUBLIC_BASE_URL || 'https://mipo.pet' }}
 
     steps:
       - name: Checkout
@@ -88,8 +90,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          public_base_url="${MIPO_PUBLIC_BASE_URL:-http://${MIPO_AWS_HOST}}"
-          VITE_APP_URL="$public_base_url" VITE_API_URL=/api npm run build
+          # Always set: the env above falls back to the production URL. The old
+          # http://$MIPO_AWS_HOST fallback is gone with the environment binding,
+          # and an empty VITE_APP_URL would bake relative share links into the
+          # bundle rather than fail, so this is checked rather than defaulted.
+          if [ -z "${MIPO_PUBLIC_BASE_URL}" ]; then
+            echo "MIPO_PUBLIC_BASE_URL is empty. Set the repository variable" >&2
+            echo "MIPO_PUBLIC_BASE_URL (Settings → Secrets and variables → Actions → Variables)." >&2
+            exit 1
+          fi
+          VITE_APP_URL="$MIPO_PUBLIC_BASE_URL" VITE_API_URL=/api npm run build
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
@@ -136,16 +146,18 @@ jobs:
     timeout-minutes: 30
     if: github.ref_name == 'aws-migration' || github.ref_name == 'staging'
 
-    # A separate environment from the quality gate's, and the only one that
-    # carries a required reviewer. Approval is therefore asked for after the
-    # tests have run and gone green, not before them: what you are approving is
-    # a build you can already see the result of. Staging keeps deploying without
-    # a gate — it exists to be deployed to.
+    # The only job bound to an environment, and therefore the only place a
+    # required reviewer can pause things. Approval is asked for after the tests
+    # have run and gone green, not before them: what you are approving is a
+    # build whose result you can already see. Staging keeps deploying without a
+    # gate — it exists to be deployed to.
     #
-    # 'production-apply' must hold MIPO_AWS_SSH_PRIVATE_KEY and the MIPO_AWS_*
-    # variables; see docs/DEPLOY_APPROVAL.md. Without the key this job stops at
-    # "Configure SSH" before it has touched the host.
-    environment: ${{ github.ref_name == 'aws-migration' && 'production-apply' || 'staging' }}
+    # This is the EXISTING 'production' environment, the one that already holds
+    # MIPO_AWS_SSH_PRIVATE_KEY. Nothing has to be copied: a GitHub secret cannot
+    # be read back once saved, so a second environment would have needed a brand
+    # new SSH key on the server. Adding the reviewer here needs no key at all.
+    # See docs/DEPLOY_APPROVAL.md.
+    environment: ${{ github.ref_name == 'aws-migration' && 'production' || 'staging' }}
 
     env:
       MIPO_AWS_HOST: ${{ vars.MIPO_AWS_HOST || (github.ref_name == 'aws-migration' && '63.183.241.110' || '') }}
