@@ -7,6 +7,7 @@
 --   pets.microchip_number       a globally unique registry number, unconstrained
 --   business_products.sku       nullable and non-unique, so a catalogue sync
 --                               keyed on SKU can match zero rows, one, or five
+--                               (still true — see the note in section 1)
 --   orders.tracking_number      free text, so two orders could carry the same
 --   insurance_claims            no reference at all — only a uuid
 --   pet_service_bookings        the same
@@ -19,10 +20,17 @@
 -- ── 1. Refuse to run on data that already violates what we are about to
 --       enforce, and say exactly which rows, rather than failing later with a
 --       constraint-violation stack trace mid-deploy.
+-- SKU is deliberately not in this guard. The production catalogue has SKUs
+-- repeated across rows, and this block previously refused the whole migration
+-- because of them — which stopped the deploy after 0019 had already dropped the
+-- identity columns, leaving the running API querying columns that were gone.
+-- A catalogue tidy-up is not something a deploy should perform on its own, and
+-- it is not a reason to take the site down. The unique index on SKU therefore
+-- moves to a later migration, to be run once the duplicates are resolved. The
+-- query that lists them is in the comment below.
 do $$
 declare
   dup_chip integer;
-  dup_sku integer;
   dup_track integer;
 begin
   select count(*) into dup_chip from (
@@ -31,23 +39,17 @@ begin
     group by btrim(microchip_number) having count(*) > 1
   ) d;
 
-  select count(*) into dup_sku from (
-    select 1 from public.business_products
-    where sku is not null and btrim(sku) <> ''
-    group by btrim(sku) having count(*) > 1
-  ) d;
-
   select count(*) into dup_track from (
     select 1 from public.orders
     where tracking_number is not null and btrim(tracking_number) <> ''
     group by btrim(tracking_number) having count(*) > 1
   ) d;
 
-  if dup_chip > 0 or dup_sku > 0 or dup_track > 0 then
+  if dup_chip > 0 or dup_track > 0 then
     raise exception using
       message = format(
-        'Duplicate identifiers block this migration: %s microchip, %s sku, %s tracking_number',
-        dup_chip, dup_sku, dup_track),
+        'Duplicate identifiers block this migration: %s microchip, %s tracking_number',
+        dup_chip, dup_track),
       hint = 'Resolve the duplicates first. The queries are in the comment below this block.';
   end if;
 end
@@ -72,9 +74,9 @@ create unique index if not exists uq_pets_microchip_number
   on public.pets (btrim(microchip_number))
   where microchip_number is not null and btrim(microchip_number) <> '';
 
-create unique index if not exists uq_business_products_sku
-  on public.business_products (btrim(sku))
-  where sku is not null and btrim(sku) <> '';
+-- No index on business_products.sku here: 0001 already created
+-- idx_business_products_sku, and the unique one this migration used to add is
+-- deferred until the duplicates are resolved. See the note above the guard.
 
 create unique index if not exists uq_orders_tracking_number
   on public.orders (btrim(tracking_number))
