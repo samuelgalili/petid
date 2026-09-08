@@ -4710,6 +4710,81 @@ const listProductCategories = async ({ includeInactive = false } = {}) => {
   }
 };
 
+/**
+ * What the catalogue calls things that the category tree has never heard of.
+ *
+ * The shop filters by the tree. A product whose free-text category matches no
+ * alias has no place in it and vanishes from every filter — silently, which is
+ * why this went unnoticed. This is that work queue, largest first: the value as
+ * the catalogue writes it, and how many products carry it.
+ */
+const listUnmatchedProductCategories = async () => {
+  const [values, totals] = await Promise.all([
+    pool.query(`
+      select btrim(p.category) as value, count(*)::int as product_count
+      from public.business_products p
+      where p.category_id is null
+        and p.category is not null
+        and btrim(p.category) <> ''
+      group by btrim(p.category)
+      order by count(*) desc, btrim(p.category)
+      limit 200
+    `),
+    pool.query(`
+      select
+        count(*) filter (where category_id is null)::int as without_category,
+        count(*) filter (
+          where category_id is null and (category is null or btrim(category) = '')
+        )::int as without_any_label,
+        count(*)::int as total
+      from public.business_products
+    `),
+  ]);
+
+  return { values: values.rows, totals: totals.rows[0] };
+};
+
+/**
+ * Adopts one free-text value into a category: records it as an alias and files
+ * every product carrying it. One click instead of editing a comma-separated
+ * list by hand and then wondering why nothing moved.
+ */
+const adoptCategoryValue = async (categoryId, rawValue) => {
+  const value = String(rawValue ?? "").trim().toLowerCase();
+  if (!value) throw badRequest("A value to adopt is required");
+  if (value.length > 120) throw badRequest("That value is too long to be a category name");
+
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    const category = await client.query(
+      "select id from public.product_categories where id = $1",
+      [categoryId],
+    );
+    if (category.rowCount === 0) {
+      await client.query("rollback");
+      return null;
+    }
+
+    await client.query(
+      `
+        insert into public.product_category_aliases (alias, category_id)
+        values ($1, $2)
+        on conflict (alias) do update set category_id = excluded.category_id
+      `,
+      [value, categoryId],
+    );
+    const filed = await applyCategoryAliasesToProducts(client, categoryId);
+    await client.query("commit");
+    return { alias: value, products_filed: filed };
+  } catch (error) {
+    await client.query("rollback").catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
 const getProductCategory = async (id) => {
   if (!uuidPattern.test(String(id || ""))) return null;
   const result = await pool.query(`${categoryListQuery} where c.id = $1`, [id]);
@@ -4744,17 +4819,49 @@ const assertCategoryParentIsSafe = async (client, id, parentId) => {
   if (cycle.rowCount > 0) throw badRequest("That parent would create a loop in the category tree");
 };
 
+/**
+ * Files the products whose free-text category matches one of this category's
+ * aliases and that have no category of their own yet.
+ *
+ * 0025 ran this once, against a fixed list of aliases, and never again. Every
+ * value the catalogue actually uses that was not on that list — "אוכל רטוב",
+ * for one, where the list had "מזון רטוב" — left its products with no
+ * category_id at all, and the shop's filter drops them the moment any category
+ * is chosen. An admin could add the missing alias and nothing whatsoever
+ * happened, because writing an alias never touched a product.
+ *
+ * Only rows with category_id null are claimed: a product an admin has filed
+ * somewhere deliberately is not re-filed behind their back.
+ */
+const applyCategoryAliasesToProducts = async (client, categoryId) => {
+  const result = await client.query(
+    `
+      update public.business_products p
+      set category_id = a.category_id, updated_at = now()
+      from public.product_category_aliases a
+      where a.category_id = $1
+        and p.category_id is null
+        and p.category is not null
+        and lower(btrim(p.category)) = a.alias
+    `,
+    [categoryId],
+  );
+  return result.rowCount;
+};
+
 const replaceCategoryAliases = async (client, categoryId, aliases) => {
   await client.query("delete from public.product_category_aliases where category_id = $1", [categoryId]);
-  if (aliases.length === 0) return;
-  await client.query(
-    `
-      insert into public.product_category_aliases (alias, category_id)
-      select unnest($1::text[]), $2
-      on conflict (alias) do update set category_id = excluded.category_id
-    `,
-    [aliases, categoryId],
-  );
+  if (aliases.length > 0) {
+    await client.query(
+      `
+        insert into public.product_category_aliases (alias, category_id)
+        select unnest($1::text[]), $2
+        on conflict (alias) do update set category_id = excluded.category_id
+      `,
+      [aliases, categoryId],
+    );
+  }
+  return applyCategoryAliasesToProducts(client, categoryId);
 };
 
 const createProductCategory = async (body) => {
@@ -8388,6 +8495,32 @@ const handleRequest = async (request, response) => {
     if (request.method === "GET" && url.pathname === "/api/admin/categories") {
       if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_READ))) return;
       sendJson(response, 200, { categories: await listProductCategories({ includeInactive: true }) });
+      return;
+    }
+
+    // The work queue: what the catalogue calls things that no category claims.
+    if (request.method === "GET" && url.pathname === "/api/admin/categories/unmatched") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_READ))) return;
+      sendJson(response, 200, await listUnmatchedProductCategories());
+      return;
+    }
+
+    const adoptMatch = url.pathname.match(/^\/api\/admin\/categories\/([0-9a-fA-F-]{36})\/adopt$/);
+    if (adoptMatch && request.method === "POST") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_UPDATE))) return;
+      const body = await readBody(request);
+      const result = await adoptCategoryValue(adoptMatch[1], body.value);
+      if (!result) {
+        sendError(response, 404, "Category not found");
+        return;
+      }
+      await recordAdminAudit(request.admin, {
+        actionType: "product_category.adopted_value",
+        entityType: "product_category",
+        entityId: adoptMatch[1],
+        newValues: result,
+      });
+      sendJson(response, 200, result);
       return;
     }
 
