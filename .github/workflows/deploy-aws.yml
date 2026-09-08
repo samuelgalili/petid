@@ -78,6 +78,12 @@ jobs:
       - name: Typecheck active application
         run: npm run typecheck
 
+      # Typecheck follows only what src/main.tsx reaches, so a file the app has
+      # stopped importing stops being checked at all. This covers the rest of
+      # src/: it fails on any import pointing at a module that is not on disk.
+      - name: Every import under src/ resolves
+        run: npm run check:imports
+
       - name: Build production frontend
         shell: bash
         run: |

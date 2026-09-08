@@ -68,6 +68,7 @@ import {
   toggleSocialSave,
   voteSocialPoll,
 } from "./social.js";
+import { resolveCatalogProducts } from "./catalogRecommendations.js";
 import {
   generateCharacterCandidates,
   generateCharacterExpressions,
@@ -3466,17 +3467,10 @@ const compactHealthSummaryForAi = (summary) => summary ? {
   } : null,
 } : null;
 
-const normalizeAiProducts = (products) => (Array.isArray(products) ? products : [])
-  .map((product) => ({
-    id: String(product?.id || "").trim(),
-    name: String(product?.name || "").trim(),
-    price: product?.price === null || product?.price === undefined ? null : Number(product.price),
-    sale_price: product?.sale_price === null || product?.sale_price === undefined ? null : Number(product.sale_price),
-    image_url: product?.image_url || null,
-    category: product?.category || null,
-  }))
-  .filter((product) => product.id && product.name)
-  .slice(0, 6);
+// The model's `products` array is a shopping intent, not a product list. It is
+// resolved against the catalogue in resolveCatalogProducts, and anything that
+// does not match a real, in-stock row is dropped rather than shown.
+// See server/src/catalogRecommendations.js for why.
 
 const buildPetAiPrompt = ({
   auth,
@@ -3518,11 +3512,17 @@ Available UI action tags inside content when useful:
 [ACTION:SHOW_ADOPTION_TRAITS]
 [ACTION:SHOW_ADOPTION_REQUIREMENTS]
 
+Shopping:
+- You do not have the Mipo Store catalogue and you do not know any product, price, SKU or stock level. Never state one.
+- "products" is a search, not an answer. Put short product descriptions in it -- a type, a category or a brand, in the user's language -- and the store will look them up and show the real cards. Two or three entries at most.
+- Leave "products" empty unless the user is actually asking what to buy.
+- Do not describe the products in your text as if you had seen them. The store decides what exists; if nothing matches, no cards are shown.
+
 Return JSON only with this shape:
 {
   "content": "assistant message text, optionally with UI tags",
   "suggestions": ["short quick reply 1", "short quick reply 2"],
-  "products": [],
+  "products": ["מזון יבש לגורים", "חטיפי אילוף"],
   "botSource": "gemini"
 }
 
@@ -3610,7 +3610,9 @@ const createAiChatReply = async (auth, body) => {
     suggestions: Array.isArray(result.suggestions)
       ? result.suggestions.map((suggestion) => safeText(suggestion, 80)).filter(Boolean).slice(0, 4)
       : [],
-    products: normalizeAiProducts(result.products),
+    products: await resolveCatalogProducts(pool, result.products, {
+      petType: selectedPet?.type || null,
+    }),
     botSource: result.botSource || "gemini",
   };
 };
