@@ -62,6 +62,11 @@ jobs:
       - name: Typecheck active application
         run: npm run typecheck
 
+      # Covers the part of src/ the typecheck above cannot see: anything the
+      # running app no longer imports. Fails on an import with no module behind it.
+      - name: Every import under src/ resolves
+        run: npm run check:imports
+
       - name: Build application
         run: npm run build
 
