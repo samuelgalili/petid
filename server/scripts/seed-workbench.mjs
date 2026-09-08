@@ -166,26 +166,27 @@ const main = async () => {
         "select id from public.business_products where business_id = $1 and name = $2",
         [businessId, product.name]);
 
-      const values = [
-        businessId, product.name, product.price, product.sku,
-        product.weight, product.weightUnit,
-        product.categorySlug ? categoryIdBySlug.get(product.categorySlug) : null,
-        product.categoryText,
-      ];
+      const categoryId = product.categorySlug ? categoryIdBySlug.get(product.categorySlug) : null;
+      // Each statement is given exactly the parameters it names. Passing the
+      // same array to both left $1 and $2 unreferenced in the update, and
+      // Postgres cannot infer a type for a parameter no expression uses:
+      // "could not determine data type of parameter $1". It only showed on a
+      // second run, because the first always takes the insert.
+      const shared = [product.price, product.sku, product.weight, product.weightUnit, categoryId, product.categoryText];
 
       if (existing.rows[0]) {
         await client.query(`
           update public.business_products
-          set price = $3, sku = $4, weight = $5, weight_unit = $6, category_id = $7, category = $8,
+          set price = $1, sku = $2, weight = $3, weight_unit = $4, category_id = $5, category = $6,
               in_stock = true, updated_at = now()
-          where id = $9`,
-          [...values, existing.rows[0].id]);
+          where id = $7`,
+          [...shared, existing.rows[0].id]);
       } else {
         await client.query(`
           insert into public.business_products
-            (business_id, name, price, sku, weight, weight_unit, category_id, category, in_stock, image_url)
+            (price, sku, weight, weight_unit, category_id, category, business_id, name, in_stock, image_url)
           values ($1, $2, $3, $4, $5, $6, $7, $8, true, '/placeholder.svg')`,
-          values);
+          [...shared, businessId, product.name]);
       }
       written += 1;
     }
