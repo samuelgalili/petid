@@ -12,8 +12,13 @@ name: Database integration
 
 on:
   push:
-    branches: ["**"]
+    # aws-migration is excluded here and called from deploy-aws.yml instead, so
+    # that the deploy actually waits for this job. Run as a separate workflow it
+    # gated nothing: it started in parallel with the deploy and a red result
+    # arrived after the release was already live.
+    branches-ignore: [aws-migration]
   pull_request:
+  workflow_call:
   workflow_dispatch:
 
 permissions:

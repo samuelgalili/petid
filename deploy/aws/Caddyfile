@@ -30,12 +30,34 @@
 	# index-normally value — never an empty header.
 	header X-Robots-Tag "{$MIPO_ROBOTS_POLICY:all}"
 
+	# X-Forwarded-For is replaced, not appended to. Caddy's default is to append
+	# the peer to whatever the client sent, and the API reads the header to
+	# decide which rate-limit bucket a request falls into — so a client that
+	# sends its own value gets a fresh bucket on every request and the per-IP
+	# limit on the login endpoint stops existing. The same value is recorded on
+	# session rows, so it also has to be one nobody chose for themselves.
 	handle /api/* {
-		reverse_proxy mipo-api:3000
+		reverse_proxy mipo-api:3000 {
+			header_up X-Forwarded-For {remote_host}
+		}
 	}
 
 	handle /uploads/* {
-		reverse_proxy mipo-api:3000
+		reverse_proxy mipo-api:3000 {
+			header_up X-Forwarded-For {remote_host}
+		}
+	}
+
+	# Hashed build assets are served before the single-page fallback below, and
+	# without it. Under try_files a chunk that no longer exists — every deploy
+	# replaces them all, and a browser with the app already open still asks for
+	# the old names — would be answered with index.html and a 200, so the
+	# browser would refuse an HTML file where it expected a module and the
+	# screen would go blank with nothing in the server logs. A 404 is the truth,
+	# and it is something the app can react to.
+	handle /assets/* {
+		root * /srv/www
+		file_server
 	}
 
 	handle {

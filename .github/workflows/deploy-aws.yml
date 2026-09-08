@@ -97,7 +97,11 @@ jobs:
           name: aws-frontend-${{ github.sha }}
           path: dist/
           if-no-files-found: error
-          retention-days: 1
+          # Long enough to survive a wait for approval. At one day, a merge on
+          # a Friday that nobody approves until Monday would be met with
+          # "artifact not found" the moment it was approved, and the only way
+          # out would be re-running the whole quality gate.
+          retention-days: 14
 
       - name: Upload Playwright diagnostics
         uses: actions/upload-artifact@v4
@@ -110,9 +114,18 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  # The one check that runs real requests against the real schema, and proves
+  # nothing selects a column a migration removed. It existed before the incident
+  # and would have caught it — but as its own workflow it ran alongside the
+  # deploy instead of in front of it, so a red result changed nothing. Now the
+  # deploy waits for it.
+  schema:
+    name: Database integration
+    uses: ./.github/workflows/db-integration.yml
+
   deploy:
     name: Deploy tested build
-    needs: quality
+    needs: [quality, schema]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     if: github.ref_name == 'aws-migration' || github.ref_name == 'staging'
@@ -133,6 +146,9 @@ jobs:
       MIPO_AWS_USER: ${{ vars.MIPO_AWS_USER || 'ubuntu' }}
       MIPO_REMOTE_PATH: ${{ vars.MIPO_REMOTE_PATH || '/opt/mipo' }}
       MIPO_PUBLIC_BASE_URL: ${{ vars.MIPO_PUBLIC_BASE_URL }}
+      # Set the repository variable MIPO_SKIP_DRYRUN to 1 only to get past a
+      # rehearsal that is itself broken — see deploy/aws/dry-run-migrations.sh.
+      MIPO_SKIP_DRYRUN: ${{ vars.MIPO_SKIP_DRYRUN }}
 
     steps:
       - name: Verify deploy target
@@ -195,7 +211,14 @@ jobs:
           ssh -i ~/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 "${MIPO_AWS_USER}@${MIPO_AWS_HOST}" \
             "sudo mkdir -p '${MIPO_REMOTE_PATH}/server' '${MIPO_REMOTE_PATH}/deploy/aws' '${MIPO_REMOTE_PATH}/dist' '${MIPO_REMOTE_PATH}/uploads' '${MIPO_REMOTE_PATH}/private-uploads' && sudo chown -R '${MIPO_AWS_USER}:${MIPO_AWS_USER}' '${MIPO_REMOTE_PATH}' && sudo chmod 700 '${MIPO_REMOTE_PATH}/private-uploads'"
 
-      - name: Sync files
+      # The frontend is deliberately NOT synced here. Caddy serves that
+      # directory straight off the disk, so the moment it lands it is live —
+      # and everything below this point (build, dump, rehearsal, migrations,
+      # restart) takes minutes. Sending it now would put the new frontend in
+      # front of the old API for the whole of that window, which is how the
+      # shop's category filter silently emptied itself on 8 September. It goes
+      # up after the API is healthy, in "Publish the frontend".
+      - name: Sync the server and deploy files
         run: |
           set -euo pipefail
           remote="${MIPO_AWS_USER}@${MIPO_AWS_HOST}"
@@ -210,17 +233,15 @@ jobs:
 
           rsync -az --delete \
             -e "ssh ${ssh_args}" \
+            --exclude .env \
+            --exclude '.env.*' \
             deploy/aws/ "${remote}:${MIPO_REMOTE_PATH}/deploy/aws/"
 
-          rsync -az --delete \
-            -e "ssh ${ssh_args}" \
-            dist/ "${remote}:${MIPO_REMOTE_PATH}/dist/"
-
-      - name: Run migrations and restart services
+      - name: Run migrations and restart the API
         run: |
           set -euo pipefail
           ssh -i ~/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 "${MIPO_AWS_USER}@${MIPO_AWS_HOST}" \
-            "MIPO_REMOTE_PATH='${MIPO_REMOTE_PATH}' MIPO_DEPLOY_SHA='${GITHUB_SHA::12}' bash -s" <<'REMOTE'
+            "MIPO_REMOTE_PATH='${MIPO_REMOTE_PATH}' MIPO_DEPLOY_SHA='${GITHUB_SHA::12}' MIPO_SKIP_DRYRUN='${MIPO_SKIP_DRYRUN}' bash -s" <<'REMOTE'
           set -euo pipefail
           cd "$MIPO_REMOTE_PATH"
           compose_file="$MIPO_REMOTE_PATH/deploy/aws/docker-compose.yml"
@@ -240,9 +261,31 @@ jobs:
           bash "$MIPO_REMOTE_PATH/deploy/aws/dry-run-migrations.sh" "$MIPO_REMOTE_PATH" </dev/null
 
           docker compose -f "$compose_file" run --rm --no-deps -T mipo-api node src/applyMigrations.js </dev/null
+
+          # --wait blocks on the container healthcheck, which now asks
+          # /api/health/schema rather than /api/health: a build whose queries no
+          # longer match the schema fails here instead of being called healthy.
           docker compose -f "$compose_file" up -d --force-recreate --no-deps --wait --wait-timeout 60 mipo-api
-          docker compose -f "$compose_file" up -d --force-recreate --no-deps caddy
           docker compose -f "$compose_file" ps
+          REMOTE
+
+      # Only now, with the API up and answering against the schema it was built
+      # for, does the frontend that expects it become visible.
+      - name: Publish the frontend
+        run: |
+          set -euo pipefail
+          remote="${MIPO_AWS_USER}@${MIPO_AWS_HOST}"
+          ssh_args="-i $HOME/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20"
+
+          rsync -az --delete \
+            -e "ssh ${ssh_args}" \
+            dist/ "${remote}:${MIPO_REMOTE_PATH}/dist/"
+
+          ssh -i ~/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 "${MIPO_AWS_USER}@${MIPO_AWS_HOST}" \
+            "MIPO_REMOTE_PATH='${MIPO_REMOTE_PATH}' bash -s" <<'REMOTE'
+          set -euo pipefail
+          compose_file="$MIPO_REMOTE_PATH/deploy/aws/docker-compose.yml"
+          docker compose -f "$compose_file" up -d --force-recreate --no-deps caddy
           REMOTE
 
       - name: Smoke test the deployed environment
@@ -250,4 +293,9 @@ jobs:
           set -euo pipefail
           base_url="${MIPO_PUBLIC_BASE_URL:-http://${MIPO_AWS_HOST}}"
           curl --fail --show-error --silent --max-time 15 "$base_url/api/health"
+          # The check that would have failed the 8 September deploy instead of
+          # passing it: every probe reads the columns a hot path selects, so a
+          # schema the deployed build cannot use is a red deploy, not a green
+          # one over a site nobody can log into.
+          curl --fail --show-error --silent --max-time 15 "$base_url/api/health/schema"
           curl --fail --show-error --silent --max-time 15 --head "$base_url/" >/dev/null

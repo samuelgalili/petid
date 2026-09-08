@@ -11,7 +11,11 @@ services:
       UPLOAD_DIR: /app/uploads
       PRIVATE_UPLOAD_DIR: /app/private-uploads
     healthcheck:
-      test: ["CMD-SHELL", "wget --quiet --tries=1 --output-document=/dev/null http://127.0.0.1:3000/api/health || exit 1"]
+      # /api/health/schema, not /api/health: the latter is `select 1`, which
+      # answers just as happily on a schema this build cannot use. `up --wait`
+      # blocks on this, so a container whose code and schema disagree now fails
+      # the deploy instead of being declared healthy.
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --output-document=/dev/null http://127.0.0.1:3000/api/health/schema || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3

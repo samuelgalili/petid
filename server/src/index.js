@@ -29,7 +29,7 @@ import {
   hashOpaqueToken,
   verifyOpaqueToken,
 } from "./security.js";
-import { checkDatabaseHealth } from "./health.js";
+import { checkDatabaseHealth, checkSchemaHealth } from "./health.js";
 import { createProviderRegistry } from "./aiProviders.js";
 import { createAiGateway, newRequestId, newTraceId } from "./aiGateway.js";
 import {
@@ -311,10 +311,17 @@ const adminUserSelect = `
   last_login_at
 `;
 
+// The LAST entry, not the first. X-Forwarded-For is a list a client can start
+// and each proxy appends to, so the leftmost value is whatever the caller chose
+// to write and the rightmost is what the proxy in front of us actually saw. The
+// Caddyfile replaces the header outright, which makes this a second lock on the
+// same door: rate limiting by IP is only a limit if the client cannot pick its
+// own address, and this value is also recorded on session rows.
 const getRequestIp = (request) => {
   const forwardedFor = request.headers["x-forwarded-for"];
   if (typeof forwardedFor === "string" && forwardedFor.trim()) {
-    return forwardedFor.split(",")[0].trim();
+    const hops = forwardedFor.split(",").map((hop) => hop.trim()).filter(Boolean);
+    if (hops.length > 0) return hops[hops.length - 1];
   }
   return request.socket?.remoteAddress || null;
 };
@@ -7392,6 +7399,23 @@ const handleRequest = async (request, response) => {
         return;
       }
       sendJson(response, 200, { ok: true, service: "mipo-api" });
+      return;
+    }
+
+    // What the container healthcheck and the deploy's smoke test ask, because
+    // "the database answers" is not the same question as "the schema still has
+    // what this build selects". See the note in health.js: on 8 September both
+    // of those checks passed for four hours while every authenticated request
+    // was failing. Reports which probe failed and why; the probes read no data
+    // and return none.
+    if (request.method === "GET" && url.pathname === "/api/health/schema") {
+      const schema = await checkSchemaHealth(pool);
+      sendJson(response, schema.ok ? 200 : 503, {
+        ok: schema.ok,
+        service: "mipo-api",
+        checked: schema.checked,
+        ...(schema.ok ? {} : { failures: schema.failures }),
+      });
       return;
     }
 

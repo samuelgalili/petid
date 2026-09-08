@@ -48,6 +48,19 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
+# An escape hatch, because a rehearsal that cannot run must not be able to hold
+# every deploy hostage. The restore is a production dump going into a stock
+# postgres image; an extension or a server setting the plain image cannot
+# reproduce would fail it for a reason that has nothing to do with the
+# migrations, and that would be discovered during an incident, when deploying
+# is the thing you most need to do. Set MIPO_SKIP_DRYRUN=1 (a repository
+# variable is enough) to go around it, deliberately and visibly.
+if [[ "${MIPO_SKIP_DRYRUN:-}" == "1" ]]; then
+  echo "dry-run: SKIPPED — MIPO_SKIP_DRYRUN=1 is set." >&2
+  echo "dry-run: the migrations will run against production without a rehearsal." >&2
+  exit 0
+fi
+
 if [[ -z "$DUMP" ]]; then
   if [[ -f "${BACKUP_DIR}/.last-dump" ]]; then
     DUMP="$(cat "${BACKUP_DIR}/.last-dump")"
