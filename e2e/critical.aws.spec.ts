@@ -302,12 +302,21 @@ test.describe("AWS application smoke tests", () => {
     await expect(page).toHaveURL(/\/checkout$/);
     await expect(page.getByRole("heading", { name: "כתובת למשלוח" })).toBeVisible();
 
+    // The delivery profile split the old single "street address" line into a
+    // street and a house number, and made the leave-at-door acknowledgement a
+    // condition of continuing rather than a preference.
     await page.getByLabel(/שם מלא/).fill("ישראל ישראלי");
     await page.getByLabel(/אימייל/).fill("israel@example.com");
     await page.getByLabel(/מספר טלפון/).fill("0501234567");
-    await page.getByLabel(/כתובת רחוב/).fill("רחוב הרצל 123");
-    await page.getByLabel(/עיר/).fill("תל אביב");
+    await page.getByLabel(/^רחוב/).fill("הרצל");
+    await page.getByLabel(/מס׳ בית/).fill("123");
+    await page.getByLabel(/^עיר/).fill("תל אביב");
     await page.getByLabel(/מיקוד/).fill("12345");
+
+    const leaveAtDoor = page.getByRole("checkbox");
+    await leaveAtDoor.click();
+    await expect(leaveAtDoor).toBeChecked();
+
     await page.getByRole("button", { name: "המשך", exact: true }).click();
 
     await expect(page.getByRole("heading", { name: "אמצעי תשלום" })).toBeVisible();
@@ -329,6 +338,17 @@ test.describe("AWS application smoke tests", () => {
       payment_method: "cash-on-delivery",
       expected_total: 109,
       items: [{ product_id: catalog[0].id, name: cartItem.name, quantity: 1 }],
+      // The house number and the acknowledgement travel with the order: the
+      // warehouse label is printed from these, and a street without a number
+      // is not an address anyone can deliver to.
+      shipping_address: {
+        address: "הרצל",
+        building: "123",
+        entranceType: "house",
+        city: "תל אביב",
+        zipCode: "12345",
+        leaveAtDoor: true,
+      },
     });
   });
 
