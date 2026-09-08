@@ -19,14 +19,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
-    # Host, paths and secrets all resolve from the GitHub Environment, so the
-    # same workflow serves both. Configure them under
-    # Settings → Environments → production / staging.
-    environment: ${{ github.ref_name == 'aws-migration' && 'production' || 'staging' }}
-
+    # Deliberately no `environment:` here. A protected environment asks for its
+    # approval when the FIRST job that targets it starts — so if this job
+    # declared one, you would be asked to approve before a single test had run,
+    # which is approval of nothing. Reading repository-level variables instead
+    # keeps this job unprotected, and moves the approval to the deploy job
+    # below, where there is a green result to look at.
     env:
       MIPO_AWS_HOST: ${{ vars.MIPO_AWS_HOST || (github.ref_name == 'aws-migration' && '63.183.241.110' || '') }}
-      MIPO_PUBLIC_BASE_URL: ${{ vars.MIPO_PUBLIC_BASE_URL }}
+      MIPO_PUBLIC_BASE_URL: ${{ vars.MIPO_PUBLIC_BASE_URL || 'https://mipo.pet' }}
 
     steps:
       - name: Checkout
@@ -130,16 +131,12 @@ jobs:
     timeout-minutes: 30
     if: github.ref_name == 'aws-migration' || github.ref_name == 'staging'
 
-    # A separate environment from the quality gate's, and the only one that
-    # carries a required reviewer. Approval is therefore asked for after the
-    # tests have run and gone green, not before them: what you are approving is
-    # a build you can already see the result of. Staging keeps deploying without
-    # a gate — it exists to be deployed to.
-    #
-    # 'production-apply' must hold MIPO_AWS_SSH_PRIVATE_KEY and the MIPO_AWS_*
-    # variables; see docs/DEPLOY_APPROVAL.md. Without the key this job stops at
-    # "Configure SSH" before it has touched the host.
-    environment: ${{ github.ref_name == 'aws-migration' && 'production-apply' || 'staging' }}
+    # The only job that targets a protected environment, which is what puts the
+    # approval here rather than in front of the tests. It keeps using the
+    # existing 'production' environment and the SSH key already stored in it —
+    # a new environment would need its own copy of that secret, and GitHub
+    # cannot show you a secret once saved. See docs/DEPLOY_APPROVAL.md.
+    environment: ${{ github.ref_name == 'aws-migration' && 'production' || 'staging' }}
 
     env:
       MIPO_AWS_HOST: ${{ vars.MIPO_AWS_HOST || (github.ref_name == 'aws-migration' && '63.183.241.110' || '') }}
