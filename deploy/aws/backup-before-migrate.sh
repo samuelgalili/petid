@@ -107,6 +107,11 @@ fi
 
 echo "backup: wrote $(du -h "$target" | cut -f1) to ${target}"
 
+# Where the next step finds it. dry-run-migrations.sh restores this exact dump
+# rather than guessing at the newest file in the directory.
+printf '%s\n' "$target" > "${BACKUP_DIR}/.last-dump"
+chmod 600 "${BACKUP_DIR}/.last-dump"
+
 # Keep a bounded history: these are full copies of customer data, so an
 # unbounded pile on a web server is a liability, not a safety net.
 ls -1t "${BACKUP_DIR}"/*.sql.gz 2>/dev/null | tail -n "+$((KEEP + 1))" | while read -r old; do

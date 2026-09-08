@@ -117,7 +117,16 @@ jobs:
     timeout-minutes: 30
     if: github.ref_name == 'aws-migration' || github.ref_name == 'staging'
 
-    environment: ${{ github.ref_name == 'aws-migration' && 'production' || 'staging' }}
+    # A separate environment from the quality gate's, and the only one that
+    # carries a required reviewer. Approval is therefore asked for after the
+    # tests have run and gone green, not before them: what you are approving is
+    # a build you can already see the result of. Staging keeps deploying without
+    # a gate — it exists to be deployed to.
+    #
+    # 'production-apply' must hold MIPO_AWS_SSH_PRIVATE_KEY and the MIPO_AWS_*
+    # variables; see docs/DEPLOY_APPROVAL.md. Without the key this job stops at
+    # "Configure SSH" before it has touched the host.
+    environment: ${{ github.ref_name == 'aws-migration' && 'production-apply' || 'staging' }}
 
     env:
       MIPO_AWS_HOST: ${{ vars.MIPO_AWS_HOST || (github.ref_name == 'aws-migration' && '63.183.241.110' || '') }}
@@ -222,6 +231,13 @@ jobs:
           # Migrations run automatically on every deploy and some of them are
           # destructive. Dump first, and stop here if the dump cannot be made.
           bash "$MIPO_REMOTE_PATH/deploy/aws/backup-before-migrate.sh" "$MIPO_REMOTE_PATH" "deploy-${MIPO_DEPLOY_SHA:-unknown}"
+
+          # Then rehearse them against a throwaway copy of that dump. A
+          # migration that trips over production's own data — as 0021 did over
+          # six duplicate SKUs — now fails here, with production untouched,
+          # instead of halfway through the real run with the schema already
+          # changed and the previous API still serving against it.
+          bash "$MIPO_REMOTE_PATH/deploy/aws/dry-run-migrations.sh" "$MIPO_REMOTE_PATH" </dev/null
 
           docker compose -f "$compose_file" run --rm --no-deps -T mipo-api node src/applyMigrations.js </dev/null
           docker compose -f "$compose_file" up -d --force-recreate --no-deps --wait --wait-timeout 60 mipo-api

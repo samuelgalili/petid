@@ -62,6 +62,26 @@ jobs:
       - name: Install server dependencies
         run: npm ci --prefix server
 
+      # The deploy rehearses every migration against a throwaway copy of
+      # production's own dump before touching production. That rehearsal is the
+      # one thing now standing between a data-dependent migration failure and an
+      # outage, so it is exercised here, on a real Docker daemon and a real
+      # dump, rather than running for the first time on the production host.
+      #
+      # Placed before the migrations below, so the dump it restores comes from a
+      # database they have not been applied to: the rehearsal then really does
+      # apply all of them, which is the path that matters. It uses its own
+      # throwaway container and leaves this job's database alone.
+      - name: Rehearse the deploy's migration dry-run
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/backups"
+          pg_dump --no-owner --no-privileges --format=plain "$DATABASE_URL" \
+            | gzip -9 > "$GITHUB_WORKSPACE/backups/ci-baseline.sql.gz"
+          printf '%s\n' "$GITHUB_WORKSPACE/backups/ci-baseline.sql.gz" \
+            > "$GITHUB_WORKSPACE/backups/.last-dump"
+          bash deploy/aws/dry-run-migrations.sh "$GITHUB_WORKSPACE" </dev/null
+
       # Uses the real runner, so the migration ledger and its checksum
       # verification are exercised too — not just the SQL.
       - name: Apply migrations
