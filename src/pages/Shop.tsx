@@ -58,6 +58,81 @@ const FALLBACK_SUB_CATEGORIES = [
 
 const ALL_CATEGORIES_TAB = { id: "all", label: "הכל", categoryId: null as string | null, icon: null as string | null };
 
+// How many of a category's products a row previews before "הכל" is offered.
+const CATEGORY_PREVIEW_COUNT = 10;
+
+type ShopCardProduct = {
+  id: string;
+  name: string;
+  description?: string | null;
+  image: string;
+  price: number;
+  originalPrice?: number | null;
+  isFlagged?: boolean | null;
+};
+
+// One card, used by both the category rows and the expanded grid. Defined out
+// here rather than inside Shop so it is not a new component type on every
+// render, which would remount every image in the shop.
+const ShopProductCard = ({
+  product,
+  activePet,
+  isFavorite,
+  onToggleFavorite,
+}: {
+  product: ShopCardProduct;
+  activePet: Parameters<typeof checkProductSafety>[1];
+  isFavorite: boolean;
+  onToggleFavorite: (productId: string, event: React.MouseEvent) => void;
+}) => {
+  const safety = checkProductSafety(`${product.name} ${product.description}`, activePet);
+
+  return (
+    <div className="relative rounded-lg overflow-hidden bg-card shadow-sm border border-border/30">
+      <div className="relative aspect-square bg-muted">
+        {safety.level !== "safe" && (
+          <SafetyBadge level={safety.level} reason={safety.reason} compact />
+        )}
+        <OptimizedImage
+          src={product.image}
+          alt={product.name}
+          className={`w-full h-full ${product.isFlagged ? "opacity-50" : ""} ${
+            safety.level === "unsafe" ? "opacity-40 grayscale" : ""
+          }`}
+          objectFit="cover"
+          sizes="(max-width: 639px) 128px, 160px"
+        />
+
+        <button
+          onClick={(event) => onToggleFavorite(product.id, event)}
+          className="absolute top-1 right-1 flex h-11 w-11 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm shadow-sm"
+          aria-label={isFavorite ? "הסר ממועדפים" : "הוסף למועדפים"}
+        >
+          <Heart
+            className={`w-4 h-4 ${isFavorite ? "fill-destructive text-destructive" : "text-muted-foreground"}`}
+            strokeWidth={2}
+          />
+        </button>
+
+        {product.originalPrice && product.originalPrice > product.price && (
+          <div className="absolute top-1 left-1 bg-red-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full">
+            -{Math.round((1 - product.price / product.originalPrice) * 100)}%
+          </div>
+        )}
+      </div>
+
+      <div className="p-2">
+        <h3 className="mb-0.5 line-clamp-1 text-xs font-medium text-foreground sm:text-sm">
+          {product.name}
+        </h3>
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold text-primary">₪{product.price}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Shop = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -287,6 +362,9 @@ const Shop = () => {
     ).slice(0, 5);
   }, [searchQuery, products]);
 
+  // Which category row the shopper opened in full. Null means the carousels.
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+
   const filteredAndSortedProducts = useMemo(() => {
     console.log("Filtering products, total:", products.length);
     let result = [...products];
@@ -341,6 +419,10 @@ const Shop = () => {
     console.log("Filtered products:", result.length);
     return result;
   }, [products, sortBy, showDealsOnly, activeTab, favorites, searchQuery, selectedCategory, categoryTabs, categoryMatchersBySlug]);
+
+  useEffect(() => {
+    setExpandedCategory(null);
+  }, [selectedCategory, searchQuery, activeTab, showDealsOnly]);
 
   const addToSearchHistory = useCallback((query: string) => {
     if (!query.trim()) return;
@@ -623,95 +705,93 @@ const Shop = () => {
         {/* Medical Pharmacy Section */}
         {activeTab === "grid" && <MedicalPharmacy />}
 
-        {/* Group products by category and display as carousels */}
-        {activeTab === "grid" && filteredAndSortedProducts.length > 0 && (
-          <>
-            {/* Get unique categories from products */}
-            {(() => {
-              const productsByCategory = filteredAndSortedProducts.reduce((acc, product) => {
-                const category = product.category || 'אחר';
-                if (!acc[category]) {
-                  acc[category] = [];
-                }
-                acc[category].push(product);
-                return acc;
-              }, {} as Record<string, typeof filteredAndSortedProducts>);
+        {/* Products, grouped by category. A row is a preview; "הכל" opens the
+            whole category, which is the only way to reach a product past the
+            tenth in it. */}
+        {filteredAndSortedProducts.length > 0 && (() => {
+          const productsByCategory = filteredAndSortedProducts.reduce((acc, product) => {
+            const category = product.category || "אחר";
+            if (!acc[category]) acc[category] = [];
+            acc[category].push(product);
+            return acc;
+          }, {} as Record<string, typeof filteredAndSortedProducts>);
 
-              return Object.entries(productsByCategory).map(([category, categoryProducts]) => (
-                <div key={category} className="mb-6">
-                  {/* Category Header */}
-                  <div className="flex items-center justify-between px-4 py-3 sm:px-6">
-                    <h2 className="text-base font-bold text-foreground">{category}</h2>
-                    <button className="min-h-11 px-3 text-sm text-primary font-medium">הכל ←</button>
+          const entries = expandedCategory && productsByCategory[expandedCategory]
+            ? [[expandedCategory, productsByCategory[expandedCategory]] as const]
+            : Object.entries(productsByCategory);
+
+          return entries.map(([category, categoryProducts]) => {
+            const isExpanded = expandedCategory === category;
+            const shown = isExpanded ? categoryProducts : categoryProducts.slice(0, CATEGORY_PREVIEW_COUNT);
+            const hasMore = categoryProducts.length > CATEGORY_PREVIEW_COUNT;
+
+            return (
+              <div key={category} className="mb-6">
+                <div className="flex items-center justify-between px-4 py-3 sm:px-6">
+                  <h2 className="text-base font-bold text-foreground">
+                    {category}
+                    <span className="mr-2 text-xs font-normal text-muted-foreground">
+                      {isExpanded ? `${categoryProducts.length} מוצרים` : `${shown.length} מתוך ${categoryProducts.length}`}
+                    </span>
+                  </h2>
+                  {isExpanded ? (
+                    <button
+                      type="button"
+                      onClick={() => setExpandedCategory(null)}
+                      className="min-h-11 px-3 text-sm font-medium text-primary"
+                    >
+                      → חזרה
+                    </button>
+                  ) : hasMore ? (
+                    <button
+                      type="button"
+                      onClick={() => setExpandedCategory(category)}
+                      className="min-h-11 px-3 text-sm font-medium text-primary"
+                    >
+                      הכל ({categoryProducts.length}) ←
+                    </button>
+                  ) : null}
+                </div>
+
+                {isExpanded ? (
+                  <div className="grid grid-cols-2 gap-3 px-4 sm:grid-cols-3 sm:px-6 lg:grid-cols-4">
+                    {shown.map((product) => (
+                      <div
+                        key={product.id}
+                        onClick={() => handleProductClick(product)}
+                        className="cursor-pointer"
+                      >
+                        <ShopProductCard
+                          product={product}
+                          activePet={activePet}
+                          isFavorite={favorites.includes(product.id)}
+                          onToggleFavorite={toggleFavorite}
+                        />
+                      </div>
+                    ))}
                   </div>
-                  
-                  {/* Horizontal Carousel - Compact for quick shopping */}
+                ) : (
                   <div className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide snap-x snap-mandatory sm:px-6">
-                    {categoryProducts.slice(0, 10).map((product) => (
+                    {shown.map((product) => (
                       <div
                         key={product.id}
                         onClick={() => handleProductClick(product)}
                         className="w-32 flex-shrink-0 cursor-pointer snap-start sm:w-40"
                       >
-                        {/* Compact Card */}
-                        <div className="relative rounded-lg overflow-hidden bg-card shadow-sm border border-border/30">
-                          {/* Small Square Image */}
-                          <div className="relative aspect-square bg-muted">
-                            {(() => {
-                              const safety = checkProductSafety(`${product.name} ${product.description}`, activePet);
-                              return safety.level !== "safe" && (
-                                <SafetyBadge level={safety.level} reason={safety.reason} compact />
-                              );
-                            })()}
-                            <OptimizedImage
-                              src={product.image}
-                              alt={product.name}
-                              className={`w-full h-full ${product.isFlagged ? 'opacity-50' : ''} ${
-                                checkProductSafety(`${product.name} ${product.description}`, activePet).level === "unsafe" ? 'opacity-40 grayscale' : ''
-                              }`}
-                              objectFit="cover"
-                              sizes="(max-width: 639px) 128px, 160px"
-                            />
-                            
-                            {/* Wishlist button - smaller */}
-                            <button
-                              onClick={(e) => toggleFavorite(product.id, e)}
-                              className="absolute top-1 right-1 flex h-11 w-11 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm shadow-sm"
-                              aria-label={favorites.includes(product.id) ? "הסר ממועדפים" : "הוסף למועדפים"}
-                            >
-                              <Heart 
-                                className={`w-4 h-4 ${favorites.includes(product.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`}
-                                strokeWidth={2} 
-                              />
-                            </button>
-
-                            {/* Sale badge - smaller */}
-                            {product.originalPrice && product.originalPrice > product.price && (
-                              <div className="absolute top-1 left-1 bg-red-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full">
-                                -{Math.round((1 - product.price / product.originalPrice) * 100)}%
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* Minimal Product Info */}
-                          <div className="p-2">
-                            <h3 className="mb-0.5 line-clamp-1 text-xs font-medium text-foreground sm:text-sm">
-                              {product.name}
-                            </h3>
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-bold text-primary">₪{product.price}</span>
-                              
-                            </div>
-                          </div>
-                        </div>
+                        <ShopProductCard
+                          product={product}
+                          activePet={activePet}
+                          isFavorite={favorites.includes(product.id)}
+                          onToggleFavorite={toggleFavorite}
+                        />
                       </div>
                     ))}
                   </div>
-                </div>
-              ));
-            })()}
-          </>
-        )}
+                )}
+              </div>
+            );
+          });
+        })()}
 
         {/* Loading State */}
         {(isLoadingProducts || isFetching) && filteredAndSortedProducts.length === 0 && (
