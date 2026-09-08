@@ -35,14 +35,36 @@ fi
 # secret and sourcing it would put all of them in this shell.
 # `|| true` because grep exits 1 when the key is absent, and `set -e` would
 # kill the script before the explanatory error below could be printed.
-DATABASE_URL="$(grep -E '^DATABASE_URL=' "$ENV_FILE" | head -1 | cut -d= -f2- || true)"
+DATABASE_URL="$(grep -E '^[[:space:]]*(export[[:space:]]+)?DATABASE_URL=' "$ENV_FILE" | head -1 | cut -d= -f2- || true)"
+
+# Carriage returns and stray spaces have to go before anything looks at the
+# value. A CR left on the end survives the -z test below, and pg_dump then
+# reads the whole thing as a database name rather than a URI: it quietly falls
+# back to a local unix socket, which does not exist in the container, and the
+# error names a missing socket instead of the malformed variable that caused it.
+DATABASE_URL="$(printf '%s' "$DATABASE_URL" | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
 DATABASE_URL="${DATABASE_URL%\"}"
 DATABASE_URL="${DATABASE_URL#\"}"
+DATABASE_URL="${DATABASE_URL%\'}"
+DATABASE_URL="${DATABASE_URL#\'}"
+DATABASE_URL="$(printf '%s' "$DATABASE_URL" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
 
 if [[ -z "$DATABASE_URL" ]]; then
   echo "backup: DATABASE_URL is not set in $ENV_FILE" >&2
   exit 1
 fi
+
+# Anything that is not a connection URI would send pg_dump to a local socket,
+# so say so here rather than let it fail three lines later with an error about
+# the socket. The value itself is never printed: it carries the password.
+case "$DATABASE_URL" in
+  postgres://*|postgresql://*) ;;
+  *)
+    echo "backup: DATABASE_URL in $ENV_FILE is not a postgres:// connection string" >&2
+    echo "backup: it is ${#DATABASE_URL} characters and starts with '${DATABASE_URL%%:*}'" >&2
+    exit 1
+    ;;
+esac
 
 mkdir -p "$BACKUP_DIR"
 chmod 700 "$BACKUP_DIR"
