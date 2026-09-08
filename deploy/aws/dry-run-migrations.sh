@@ -93,9 +93,15 @@ docker run -d --name "$DB_CONTAINER" --network "$NETWORK" \
 
 # The image is ready before postgres is. Wait for it to answer rather than
 # sleeping a guessed number of seconds.
+#
+# The probe asks over TCP (-h 127.0.0.1), which is the only honest question
+# here. The postgres entrypoint starts a temporary server during initialisation
+# that listens on the unix socket alone, then stops it and starts the real one.
+# A socket probe answers "ready" during that window, and the restore — which
+# connects over the network — is then refused. CI caught exactly that.
 ready=""
 for _ in $(seq 1 60); do
-  if docker exec "$DB_CONTAINER" pg_isready -U "$DB_USER" -d "$DB_NAME" >/dev/null 2>&1; then
+  if docker exec "$DB_CONTAINER" pg_isready -h 127.0.0.1 -U "$DB_USER" -d "$DB_NAME" >/dev/null 2>&1; then
     ready="yes"
     break
   fi
