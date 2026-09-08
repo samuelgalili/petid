@@ -27,41 +27,37 @@ you.
 
 ## One-time setup in GitHub
 
-This needs an environment that does not exist yet. Without it the deploy job
-fails at "Configure SSH" — before it has touched the host — so a half-finished
-setup cannot hurt production.
+Two small changes, and neither involves a secret. This matters: GitHub will not
+show you a secret once it is saved, and the SSH key for the production host
+exists nowhere else we could find — so any plan that needed a second copy of it
+was a plan that could not be carried out.
 
-**Settings → Environments → New environment**, named exactly:
+**1. Add yourself as a reviewer on the environment that already exists.**
 
-```
-production-apply
-```
+Settings → Environments → **production** → tick **Required reviewers** → add
+yourself → **Save protection rules**. Leave "Prevent self-review" off, or you
+cannot approve your own merge.
 
-Then, inside it:
+Nothing else about that environment changes. The SSH key already stored in it
+stays where it is.
 
-1. **Required reviewers** — add yourself. Optionally also Shahar.
-   Leave "Prevent self-review" off, or nobody can approve their own merge.
+**2. Add one repository variable.**
 
-2. **Environment secrets** — add:
+Settings → Secrets and variables → Actions → **Variables** tab →
+**New repository variable**:
 
-   | Name | Value |
-   |------|-------|
-   | `MIPO_AWS_SSH_PRIVATE_KEY` | the same key as in the existing `production` environment |
+| Name | Value |
+|------|-------|
+| `MIPO_PUBLIC_BASE_URL` | `https://mipo.pet` |
 
-   Secrets are per-environment; the new environment cannot see the old one's.
+This is what the quality gate reads now that it no longer targets an
+environment — which is the whole point of the change: a protected environment
+asks for its approval when the *first* job targeting it starts, so leaving the
+quality gate on it would have asked you to approve before a single test had run.
+A repository variable is visible and editable, and it is not a secret.
 
-3. **Environment variables** — copy these across from `production`:
-
-   | Name | Value today |
-   |------|-------------|
-   | `MIPO_AWS_HOST` | `63.183.241.110` |
-   | `MIPO_AWS_USER` | `ubuntu` |
-   | `MIPO_REMOTE_PATH` | `/opt/mipo` |
-   | `MIPO_PUBLIC_BASE_URL` | `https://mipo.pet` |
-
-The existing `production` environment stays as it is — the quality gate still
-reads its variables, and it must **not** get a required reviewer, or you would
-be asked to approve before the tests have run.
+The code carries `https://mipo.pet` as a fallback, so a forgotten variable
+degrades to the right value rather than to an empty one.
 
 ## Approving a deploy
 
