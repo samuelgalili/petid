@@ -153,9 +153,12 @@ jobs:
           [ "$orphans" -ge 3 ] || { echo "::error::expected products with no category_id, got $orphans" >&2; exit 1; }
           [ "$biggest" -eq 27 ] || { echo "::error::expected a 27-product category, got $biggest" >&2; exit 1; }
 
-          # And re-running must not multiply anything.
+          # And re-running must not multiply anything. Counted before and after
+          # rather than compared against distinct names, because some of these
+          # products are meant to share a SKU and an earlier migration seeds a
+          # catalogue of its own: the only honest question is whether the
+          # number of rows changed.
+          before="$(psql "$DATABASE_URL" -tAc "select count(*) from public.business_products")"
           node server/scripts/seed-workbench.mjs >/dev/null
-          again="$(psql "$DATABASE_URL" -tAc "select count(*) from public.business_products")"
-          once="$(psql "$DATABASE_URL" -tAc "
-            select count(distinct name) from public.business_products")"
-          [ "$again" -eq "$once" ] || { echo "::error::re-seeding duplicated rows: $again rows, $once names" >&2; exit 1; }
+          after="$(psql "$DATABASE_URL" -tAc "select count(*) from public.business_products")"
+          [ "$before" -eq "$after" ] || { echo "::error::re-seeding changed the row count: $before then $after" >&2; exit 1; }

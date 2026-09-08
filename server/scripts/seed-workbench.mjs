@@ -109,14 +109,19 @@ const main = async () => {
     await client.query("begin");
 
     // ── the business every product hangs off ────────────────────────────
-    const business = await client.query(`
+    // Looked up by name before inserting. `on conflict do nothing` was wrong
+    // here: business_name carries no unique constraint, so nothing ever
+    // conflicted, every run created another business, and the products — which
+    // are keyed on (business_id, name) — were re-inserted under it. A second
+    // run doubled the catalogue.
+    const BUSINESS_NAME = "MIPO Workbench";
+    const found = await client.query(
+      "select id from public.business_profiles where business_name = $1 order by created_at limit 1",
+      [BUSINESS_NAME]);
+    const businessId = found.rows[0]?.id ?? (await client.query(`
       insert into public.business_profiles (business_name, business_type, city, email)
-      values ('MIPO Workbench', 'shop', 'תל אביב', 'shop@mipo.local')
-      on conflict do nothing
-      returning id`);
-    const businessId = business.rows[0]?.id
-      ?? (await client.query("select id from public.business_profiles order by created_at limit 1")).rows[0]?.id;
-    if (!businessId) throw new Error("could not create or find a business profile");
+      values ($1, 'shop', 'תל אביב', 'shop@mipo.local')
+      returning id`, [BUSINESS_NAME])).rows[0].id;
 
     // ── people ──────────────────────────────────────────────────────────
     await client.query(`
