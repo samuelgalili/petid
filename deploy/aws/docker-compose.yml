@@ -60,6 +60,14 @@ services:
   #   docker compose --profile staging up -d postgres
   #
   # It is not published to the host; only the mipo network can reach it.
+  #
+  # STAGING_DB_PASSWORD deliberately does not use the ${VAR:?message} form.
+  # Compose interpolates the entire file before it decides which profiles are
+  # active, so a required variable here aborts every compose command on the
+  # production host — where the variable does not exist and this service never
+  # runs. That is what stopped the deploy at "docker compose build". Left unset
+  # it resolves to empty and the postgres image refuses to initialise without a
+  # password, so the mistake is still caught, on staging, where it belongs.
   postgres:
     image: postgres:16-alpine
     profiles: ["staging"]
@@ -67,7 +75,7 @@ services:
     environment:
       POSTGRES_DB: ${STAGING_DB_NAME:-mipo}
       POSTGRES_USER: ${STAGING_DB_USER:-mipo}
-      POSTGRES_PASSWORD: ${STAGING_DB_PASSWORD:?set STAGING_DB_PASSWORD in the staging .env}
+      POSTGRES_PASSWORD: ${STAGING_DB_PASSWORD:-}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${STAGING_DB_USER:-mipo} -d ${STAGING_DB_NAME:-mipo}"]
       interval: 20s
