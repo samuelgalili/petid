@@ -35,3 +35,9 @@ supabase/.temp/
 # Claude Code
 CLAUDE.md
 .claude/
+
+# Database dumps. A production dump is a full copy of every customer record;
+# it must never end up in the repository, on any branch, by any accident.
+*.sql.gz
+*.dump
+backups/

@@ -122,3 +122,40 @@ jobs:
 
       - name: Server unit tests
         run: npm test --prefix server
+
+      # The work environment is only useful if its data reproduces the problems
+      # production actually has, so the seed is run here against a real schema
+      # and checked for them. Run last: it writes products, and the checks above
+      # should see the database as the migrations left it.
+      - name: Seed the work environment and check it reproduces production's faults
+        run: |
+          set -euo pipefail
+          node server/scripts/seed-workbench.mjs
+
+          duplicates="$(psql "$DATABASE_URL" -tAc "
+            select count(*) from (
+              select 1 from public.business_products
+              where sku is not null and btrim(sku) <> ''
+              group by btrim(sku) having count(*) > 1) d")"
+          orphans="$(psql "$DATABASE_URL" -tAc "
+            select count(*) from public.business_products
+            where category_id is null and category is not null")"
+          biggest="$(psql "$DATABASE_URL" -tAc "
+            select count(*) from public.business_products p
+            join public.product_categories c on c.id = p.category_id
+            where c.slug = 'food-dry'")"
+
+          echo "duplicate SKU groups: $duplicates   uncategorised: $orphans   biggest category: $biggest"
+
+          # Production had six duplicate SKUs, and that is what stopped a deploy
+          # halfway through. A workbench without them cannot show that failure.
+          [ "$duplicates" -eq 6 ] || { echo "::error::expected 6 duplicate SKU groups, got $duplicates" >&2; exit 1; }
+          [ "$orphans" -ge 3 ] || { echo "::error::expected products with no category_id, got $orphans" >&2; exit 1; }
+          [ "$biggest" -eq 27 ] || { echo "::error::expected a 27-product category, got $biggest" >&2; exit 1; }
+
+          # And re-running must not multiply anything.
+          node server/scripts/seed-workbench.mjs >/dev/null
+          again="$(psql "$DATABASE_URL" -tAc "select count(*) from public.business_products")"
+          once="$(psql "$DATABASE_URL" -tAc "
+            select count(distinct name) from public.business_products")"
+          [ "$again" -eq "$once" ] || { echo "::error::re-seeding duplicated rows: $again rows, $once names" >&2; exit 1; }

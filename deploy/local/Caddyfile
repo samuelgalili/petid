@@ -1,0 +1,32 @@
+# Deliberately the same routing as production's Caddyfile, minus TLS and the
+# real hostnames. The order of the handle blocks is the part that matters: an
+# asset that no longer exists must 404 rather than be answered with index.html,
+# and that behaviour should be the same in the place you look at it as in the
+# place it ships to.
+
+:8080 {
+	encode zstd gzip
+
+	handle /api/* {
+		reverse_proxy mipo-api:3000 {
+			header_up X-Forwarded-For {remote_host}
+		}
+	}
+
+	handle /uploads/* {
+		reverse_proxy mipo-api:3000 {
+			header_up X-Forwarded-For {remote_host}
+		}
+	}
+
+	handle /assets/* {
+		root * /srv/www
+		file_server
+	}
+
+	handle {
+		root * /srv/www
+		try_files {path} /index.html
+		file_server
+	}
+}
