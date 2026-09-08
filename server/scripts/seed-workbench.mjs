@@ -187,12 +187,16 @@ const main = async () => {
 
     await client.query("commit");
 
-    const duplicates = await pool.query(`
+    // On `client`, not `pool`. The pool holds a single connection and this one
+    // is still checked out until the finally block below, so asking the pool
+    // here waits for a connection that only this function can return: the
+    // script hangs until CI kills the job.
+    const duplicates = await client.query(`
       select count(*)::int as groups from (
         select 1 from public.business_products
         where sku is not null and btrim(sku) <> ''
         group by btrim(sku) having count(*) > 1) d`);
-    const orphans = await pool.query(`
+    const orphans = await client.query(`
       select count(*)::int as n from public.business_products
       where category_id is null and category is not null`);
 
