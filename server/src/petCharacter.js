@@ -25,27 +25,36 @@ export const CHARACTER_EXPRESSIONS = [
 const allowedGeneratedMimeTypes = new Set(["image/png", "image/webp"]);
 
 /**
- * The realistic style is the pet as it actually looks: real anatomy, real fur,
- * real proportions, photographed rather than drawn. The chibi style keeps the
- * same identity - the same markings, the same colours - on deliberately
- * stylised proportions.
+ * Both styles are 3D character renders, and the choice between them is about
+ * proportion, not about medium.
+ *
+ * Realistic keeps the animal's real anatomy and its real fur, rendered with
+ * volume and depth rather than drawn flat. Chibi keeps the same identity - the
+ * same markings, the same colours, the same eyes - on deliberately compact
+ * proportions. Neither is an illustration: the earlier versions of these
+ * prompts produced flat 2D artwork, because one of them asked for a photograph
+ * and both were silent about dimensional form.
  *
  * Both must stay recognisably *this* pet. The uploaded photo is the identity
- * reference, not a breed hint, so neither style is allowed to prettify the
- * animal into a generic one.
+ * reference, not a breed hint, so neither style may prettify the animal into a
+ * generic one.
  */
-const candidateStyles = {
+export const STYLE_DIRECTION = {
   realistic: [
-    "photorealistic rendering with realistic anatomy, realistic fur detail and direction,",
-    "realistic eyes with natural catchlights, natural proportions and soft natural lighting.",
-    "It must read as this animal actually looks in its photographs, never as an illustration,",
-    "cartoon or anime",
+    "a photorealistic 3D character render: true dimensional form with real volume and depth,",
+    "realistic anatomy and proportions, volumetric fur with visible strand direction and",
+    "light passing through it at the edges, moist realistic eyes with genuine catchlights,",
+    "and soft directional studio lighting that models the body. It must read as a",
+    "high-end CG render of this exact animal - the way a feature animation studio would",
+    "render a real pet - never as a flat drawing, a 2D illustration or line art",
   ].join(" "),
   chibi: [
-    "warm chibi character art with deliberately compact proportions and a larger head,",
-    "clean rounded forms, soft shading and a restrained palette. Keep the real coat",
-    "colours, markings and eye colour exactly; stylise the proportions, never the identity.",
-    "Charming and premium, never childish or mascot-like",
+    "a stylised 3D character render with deliberately compact proportions and a larger head:",
+    "smooth rounded dimensional forms with real volume, soft plush fur shading, gentle",
+    "subsurface warmth, and soft directional studio lighting that models the shapes. Modern",
+    "3D animated feature quality. Keep the real coat colours, markings and eye colour exactly;",
+    "stylise the proportions, never the identity. Charming and premium, never childish,",
+    "never mascot-like, and never a flat 2D illustration",
   ].join(" "),
 };
 
@@ -150,6 +159,8 @@ Art direction:
   pixel that is not the animal itself must be transparent. No backdrop, no
   colour fill, no white, no gradient, no ground plane, no cast or contact
   shadow, no vignette. The animal is cut out and floats alone.
+- The shading stays ON the animal: light and shade across the body are what give
+  it dimensional form, since there is no ground beneath it to catch a shadow.
 - Crisp production-ready finish with clean edges around fur.
 - This becomes the pet's permanent visual identity in the app, so it must stay consistent and reusable.
 `.trim();
@@ -158,6 +169,7 @@ export const buildExpressionPrompt = ({ petName, expression, visualIdentity }) =
 Use the first supplied image as the canonical character master for ${petName}. Render the exact same character in a new reaction pose: ${expressionDirections[expression]}.
 
 Preserve exactly:
+- the 3D rendered medium: the same dimensional form, volume, material treatment and lighting as the master. The reaction must not be flatter or more illustrated than the character it copies.
 - silhouette, body proportions, coat colors and every distinctive marking
 - face, muzzle, ears, eyes, tail, rendering style, material treatment, lighting, and camera angle
 - identity notes: ${JSON.stringify(visualIdentity)}
@@ -299,7 +311,7 @@ export const generateCharacterCandidates = async ({
       client,
       imageModel,
       parts: [
-        { text: buildCandidatePrompt({ petName, petType, visualIdentity, style: candidateStyles[CHARACTER_STYLES[index]] }) },
+        { text: buildCandidatePrompt({ petName, petType, visualIdentity, style: STYLE_DIRECTION[CHARACTER_STYLES[index]] }) },
         ...referenceParts(references),
       ],
     });

@@ -143,26 +143,41 @@ export default {
   			'30': '7.5rem'
   		},
 		colors: {
-			mipo: {
-				ink: 'hsl(var(--mipo-ink) / <alpha-value>)',
-				muted: 'hsl(var(--mipo-muted) / <alpha-value>)',
-				surface: 'hsl(var(--mipo-surface) / <alpha-value>)',
-				soft: 'hsl(var(--mipo-soft) / <alpha-value>)',
-				'soft-deep': 'hsl(var(--mipo-soft-deep) / <alpha-value>)',
-				line: 'hsl(var(--mipo-line) / <alpha-value>)',
-				coral: 'hsl(var(--mipo-coral) / <alpha-value>)',
-				peach: 'hsl(var(--mipo-peach) / <alpha-value>)',
-				pink: 'hsl(var(--mipo-pink) / <alpha-value>)',
-				violet: 'hsl(var(--mipo-violet) / <alpha-value>)',
-				blue: 'hsl(var(--mipo-blue) / <alpha-value>)',
-				cyan: 'hsl(var(--mipo-cyan) / <alpha-value>)'
-			},
 			border: 'hsl(var(--border))',
 			input: 'hsl(var(--input))',
 			ring: 'hsl(var(--ring))',
 			background: 'hsl(var(--background))',
 			foreground: 'hsl(var(--foreground))',
 			mipo: {
+				// The Gen-3 surface tokens, and the reason they are here rather
+				// than in a block of their own.
+				//
+				// They used to sit in a separate `mipo` key earlier in this same
+				// object, which this one then replaced outright — an object
+				// literal keeps only the last value for a repeated key, and
+				// Tailwind says nothing about it. So bg-mipo-surface,
+				// text-mipo-ink, border-mipo-line, bg-mipo-soft and
+				// text-mipo-muted generated no CSS at all, across 258 usages in
+				// 19 files.
+				//
+				// In light mode that was almost invisible: an unstyled sheet over
+				// a white page still looks white, and unstyled text inherits a
+				// dark colour. In dark mode the mood sheet had no background of
+				// its own — the pet and the orbit showed straight through it and
+				// its buttons vanished into the page.
+				//
+				// The names below this comment keep the definitions they already
+				// had, so nothing that renders today changes colour. The
+				// alpha-value form is what makes bg-mipo-surface/90 work.
+				ink: 'hsl(var(--mipo-ink) / <alpha-value>)',
+				muted: 'hsl(var(--mipo-muted) / <alpha-value>)',
+				surface: 'hsl(var(--mipo-surface) / <alpha-value>)',
+				soft: 'hsl(var(--mipo-soft) / <alpha-value>)',
+				'soft-deep': 'hsl(var(--mipo-soft-deep) / <alpha-value>)',
+				line: 'hsl(var(--mipo-line) / <alpha-value>)',
+				violet: 'hsl(var(--mipo-violet) / <alpha-value>)',
+				peach: 'hsl(var(--mipo-peach) / <alpha-value>)',
+
 				pink: 'hsl(var(--mipo-pink))',
 				'pink-light': 'hsl(var(--mipo-pink-light))',
 				'pink-hover': 'hsl(var(--mipo-pink-hover))',
