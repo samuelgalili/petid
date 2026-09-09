@@ -55,13 +55,36 @@
 	# browser would refuse an HTML file where it expected a module and the
 	# screen would go blank with nothing in the server logs. A 404 is the truth,
 	# and it is something the app can react to.
+	# Every name under /assets/ carries a content hash, so a given URL's bytes
+	# never change. Cache it for a year and immutably: the browser does not even
+	# revalidate, and a deploy publishes new names rather than new contents.
 	handle /assets/* {
 		root * /srv/www
+		header Cache-Control "public, max-age=31536000, immutable"
 		file_server
 	}
 
+	# Everything else, and this is the part that matters.
+	#
+	# Nothing here set Cache-Control at all, which does not mean "do not cache" —
+	# it means the browser invents a lifetime, and browsers heuristically cache a
+	# 200 that carries no freshness information. index.html and sw.js are exactly
+	# the two files that must never be held: index.html names the hashed bundles,
+	# and sw.js is what fetches new versions of everything else. Hold those two
+	# and a visitor keeps running an old build indefinitely, with no way to tell
+	# and nothing a later deploy can do about it.
+	#
+	# That is not hypothetical. On 9 September one browser was serving a build
+	# old enough to still contain a home screen that had been replaced weeks
+	# earlier, while a different browser on the same phone showed the current
+	# one. The shop looked broken in the stale browser for the same reason: an
+	# old bundle calling an API that had moved on.
+	#
+	# no-cache is not no-store. The file is still stored; it is revalidated, and
+	# an unchanged one comes back as a 304 with no body.
 	handle {
 		root * /srv/www
+		header Cache-Control "no-cache"
 		try_files {path} /index.html
 		file_server
 	}
