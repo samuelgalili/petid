@@ -2301,6 +2301,7 @@ const storePetCharacterImage = async ({ buffer, contentType }) => {
 
 const characterErrorCode = (error) => {
   if (error?.code === "INVALID_REFERENCE_PHOTOS") return "invalid_reference_photos";
+  if (error?.code === "REFERENCE_PHOTOS_FACE_ONLY") return "reference_photos_face_only";
   if (error?.code === "NO_GENERATED_IMAGE") return "generation_blocked";
   if (error?.code === "INCONSISTENT_CHARACTER_PACK") return "generation_inconsistent";
   if (/429|resource exhausted|quota/i.test(String(error?.message || ""))) return "temporarily_unavailable";

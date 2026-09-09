@@ -18,7 +18,11 @@ export const CHARACTER_EXPRESSIONS = [
   "attentive",
 ];
 
-const allowedGeneratedMimeTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
+// PNG and WebP only. JPEG has no alpha channel, so accepting one would mean
+// storing an avatar with a background baked in and no way to tell afterwards --
+// the failure would be invisible until someone looked at the app. A JPEG here
+// fails as NO_GENERATED_IMAGE instead, which is the honest outcome.
+const allowedGeneratedMimeTypes = new Set(["image/png", "image/webp"]);
 
 /**
  * The realistic style is the pet as it actually looks: real anatomy, real fur,
@@ -33,9 +37,9 @@ const allowedGeneratedMimeTypes = new Set(["image/png", "image/jpeg", "image/web
 const candidateStyles = {
   realistic: [
     "photorealistic rendering with realistic anatomy, realistic fur detail and direction,",
-    "realistic eyes with natural catchlights, natural proportions, soft natural lighting",
-    "and a soft grounded shadow. It must read as a professionally photographed pet,",
-    "never as an illustration, cartoon, 3D cartoon or anime",
+    "realistic eyes with natural catchlights, natural proportions and soft natural lighting.",
+    "It must read as this animal actually looks in its photographs, never as an illustration,",
+    "cartoon or anime",
   ].join(" "),
   chibi: [
     "warm chibi character art with deliberately compact proportions and a larger head,",
@@ -142,7 +146,11 @@ Art direction:
 - Recognisability matters more than charm: this must read as this specific animal, not a nicer one of the same breed.
 - Show the whole animal - head, neck, torso, every visible leg and paw, and the tail. Do not crop them.
 - Square 1:1 composition with generous breathing room around the body.
-- Clean warm-neutral background (#F7F7F5), soft grounded shadow, crisp production-ready finish.
+- FULLY TRANSPARENT BACKGROUND. Return a PNG with a real alpha channel: every
+  pixel that is not the animal itself must be transparent. No backdrop, no
+  colour fill, no white, no gradient, no ground plane, no cast or contact
+  shadow, no vignette. The animal is cut out and floats alone.
+- Crisp production-ready finish with clean edges around fur.
 - This becomes the pet's permanent visual identity in the app, so it must stay consistent and reusable.
 `.trim();
 
@@ -154,7 +162,7 @@ Preserve exactly:
 - face, muzzle, ears, eyes, tail, rendering style, material treatment, lighting, and camera angle
 - identity notes: ${JSON.stringify(visualIdentity)}
 
-Keep the same square composition and warm-neutral background (#F7F7F5). Show one full-body character only. No text, logo, border, clothing, extra animals, people, or unrelated props. The emotional change must come from pose and expression, not from changing the character design.
+Keep the same square composition and the same fully transparent background: a PNG with a real alpha channel, no backdrop, no ground plane and no cast shadow. Show one full-body character only. No text, logo, border, clothing, extra animals, people, or unrelated props. The emotional change must come from pose and expression, not from changing the character design.
 `.trim();
 
 export const buildPackValidationPrompt = ({ petName, expressionKeys, visualIdentity }) => `
@@ -174,7 +182,7 @@ const analyzeReferences = async ({ client, visionModel, references, petName, pet
       role: "user",
       parts: [
         {
-          text: `Review these reference photos for creating a digital character of ${petName}, a ${petType || "pet"}. Return JSON only with this shape: {"valid":boolean,"reason":string,"species":string,"coat_colors":[string],"distinctive_markings":[string],"ear_shape":string,"eye_color":string,"face_shape":string,"body_shape":string,"tail":string}. valid is true only if every image clearly shows the same single animal, the visible species is compatible with ${petType || "the registered pet type"}, at least one image clearly shows the face, and the pet is not heavily occluded. Keep every description factual and concise.`,
+          text: `Review these reference photos for creating a digital character of ${petName}, a ${petType || "pet"}. Return JSON only with this shape: {"valid":boolean,"full_body_visible":boolean,"reason":string,"species":string,"coat_colors":[string],"distinctive_markings":[string],"ear_shape":string,"eye_color":string,"face_shape":string,"body_shape":string,"tail":string}. valid is true only if every image clearly shows the same single animal, the visible species is compatible with ${petType || "the registered pet type"}, at least one image clearly shows the face, and the pet is not heavily occluded. Set full_body_visible to true only if at least one image shows the animal's whole body - torso, legs and tail - and not only the head, face or an upper-body crop. Keep every description factual and concise.`,
         },
         ...referenceParts(references),
       ],
@@ -185,12 +193,32 @@ const analyzeReferences = async ({ client, visionModel, references, petName, pet
     },
   });
 
-  const parsed = parseJsonText(response.text);
+  return assertUsableReferences(parseJsonText(response.text));
+};
+
+/**
+ * What the photo review has to establish before anything is generated.
+ *
+ * The second check is the quiet failure behind "it doesn't look like my pet".
+ * The prompt asks for a full-body avatar, so given nothing but a head the model
+ * invents the torso, legs and tail — and the expression pack then reproduces
+ * that invented body six more times, consistently and wrongly. Stopping to ask
+ * for a photo of the whole animal costs the owner one upload and is the
+ * difference between their pet and a plausible animal of the same breed.
+ */
+export const assertUsableReferences = (parsed) => {
   if (!parsed || parsed.valid !== true) {
     const error = new Error(parsed?.reason || "The reference photos could not be validated");
     error.code = "INVALID_REFERENCE_PHOTOS";
     throw error;
   }
+
+  if (parsed.full_body_visible !== true) {
+    const error = new Error("The reference photos show only the pet's face");
+    error.code = "REFERENCE_PHOTOS_FACE_ONLY";
+    throw error;
+  }
+
   return parsed;
 };
 
