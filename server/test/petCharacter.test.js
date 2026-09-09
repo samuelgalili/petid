@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   CHARACTER_CANDIDATE_KEYS,
   CHARACTER_STYLES,
+  assertUsableReferences,
   buildCandidatePrompt,
   buildExpressionPrompt,
   buildPackValidationPrompt,
@@ -130,4 +131,91 @@ test("the shared candidate prompt no longer forces a house style", () => {
   assert.match(prompt, /Do not crop/);
   // Identity beats flattery.
   assert.match(prompt, /not a nicer one of the same breed/);
+});
+
+// The avatar has to be a cut-out of the pet, not the pet standing on a plate.
+// Both prompts previously asked for a warm-neutral #F7F7F5 background and a
+// grounded shadow, which is exactly what the generated avatars came back with.
+
+test("the candidate prompt demands a real alpha channel and forbids any backdrop", () => {
+  const prompt = buildCandidatePrompt({
+    petName: "מיצי",
+    petType: "cat",
+    visualIdentity: { coat_colors: ["seal point"] },
+    style: "photorealistic rendering",
+  });
+
+  assert.match(prompt, /FULLY TRANSPARENT BACKGROUND/);
+  assert.match(prompt, /alpha channel/i);
+  assert.match(prompt, /no ground plane/i);
+  assert.doesNotMatch(prompt, /F7F7F5/);
+  assert.doesNotMatch(prompt, /grounded shadow/i);
+});
+
+test("the expression prompt keeps the transparency rather than reintroducing a background", () => {
+  const prompt = buildExpressionPrompt({
+    petName: "מיצי",
+    expression: "happy",
+    visualIdentity: {},
+  });
+
+  assert.match(prompt, /transparent background/i);
+  assert.doesNotMatch(prompt, /F7F7F5/);
+});
+
+test("a JPEG is refused, because it cannot carry transparency", () => {
+  // Accepting one would store an avatar with the background baked in, and
+  // nothing downstream could tell that the transparency had been lost.
+  assert.throws(
+    () => extractGeneratedImage({
+      candidates: [{ content: { parts: [{ inlineData: { mimeType: "image/jpeg", data: "AAAA" } }] } }],
+    }),
+    (error) => error.code === "NO_GENERATED_IMAGE",
+  );
+});
+
+test("PNG and WebP are both accepted, since both carry an alpha channel", () => {
+  for (const mimeType of ["image/png", "image/webp"]) {
+    const result = extractGeneratedImage({
+      candidates: [{ content: { parts: [{ inlineData: { mimeType, data: Buffer.from("x").toString("base64") } }] } }],
+    });
+    assert.equal(result.contentType, mimeType);
+  }
+});
+
+test("both styles are still offered, so the owner picks between them", () => {
+  // Realistic or chibi is the owner's choice, not the system's.
+  assert.deepEqual(CHARACTER_STYLES, ["realistic", "chibi"]);
+  assert.equal(CHARACTER_CANDIDATE_KEYS.length, 2);
+});
+
+// A photo of the face alone passes every other check and then produces a body
+// the model made up. These are the cases that decide whether the owner is asked
+// for a better photo or quietly given a different animal.
+
+test("a full-body reference passes the photo review", () => {
+  const parsed = { valid: true, full_body_visible: true, species: "cat" };
+  assert.equal(assertUsableReferences(parsed), parsed);
+});
+
+test("a face-only reference is refused with its own code", () => {
+  assert.throws(
+    () => assertUsableReferences({ valid: true, full_body_visible: false, species: "cat" }),
+    (error) => error.code === "REFERENCE_PHOTOS_FACE_ONLY",
+  );
+});
+
+test("a missing full_body_visible is treated as face-only, not as permission", () => {
+  // An older or truncated response must not be read as a yes.
+  assert.throws(
+    () => assertUsableReferences({ valid: true, species: "cat" }),
+    (error) => error.code === "REFERENCE_PHOTOS_FACE_ONLY",
+  );
+});
+
+test("an unusable photo set still fails as invalid before the body check", () => {
+  assert.throws(
+    () => assertUsableReferences({ valid: false, reason: "two different animals" }),
+    (error) => error.code === "INVALID_REFERENCE_PHOTOS" && /two different animals/.test(error.message),
+  );
 });

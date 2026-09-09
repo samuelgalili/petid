@@ -8,6 +8,13 @@ import { VitePWA } from "vite-plugin-pwa";
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
 
+  // index.html carries this as <meta name="mipo-version">, so anyone can see
+  // which build their browser is running and compare it with the version
+  // /api/health reports. The deploy sets it to the commit. Without a default
+  // Vite leaves the literal "%VITE_APP_VERSION%" in the page, so a build that
+  // was not given one says "dev".
+  process.env.VITE_APP_VERSION = process.env.VITE_APP_VERSION || env.VITE_APP_VERSION || "dev";
+
   return {
     server: {
       host: "::",

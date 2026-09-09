@@ -414,8 +414,14 @@ test.describe("AWS application smoke tests", () => {
     await page.goto("/feed");
     await expect(page.getByText("הטיול הראשון של לוקה בפארק")).toBeVisible();
     await expect(page.getByText("פארק הירקון")).toBeVisible();
-    await page.getByRole("button", { name: "אהבתי" }).click();
-    await expect(page.getByText("5 אהבו")).toBeVisible();
-    await expect(page.getByRole("button", { name: "אהבתי" })).toHaveAttribute("aria-pressed", "true");
+    // The feed is a full-screen reel now, so the count sits beside the heart
+    // rather than reading "5 אהבו" under the photo. What is under test is
+    // unchanged: the reaction reaches the server, and the count the server
+    // returns is the count the viewer ends up seeing.
+    const like = page.getByRole("button", { name: "אהבתי" });
+    await expect(like).toHaveAttribute("aria-pressed", "false");
+    await like.click();
+    await expect(like).toHaveAttribute("aria-pressed", "true");
+    await expect(like).toContainText("5");
   });
 });

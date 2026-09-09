@@ -99,7 +99,10 @@ jobs:
             echo "MIPO_PUBLIC_BASE_URL (Settings → Secrets and variables → Actions → Variables)." >&2
             exit 1
           fi
-          VITE_APP_URL="$MIPO_PUBLIC_BASE_URL" VITE_API_URL=/api npm run build
+          # The same twelve characters the API reports from /api/health, so the
+          # page and the server can be compared without guessing.
+          VITE_APP_VERSION="${GITHUB_SHA::12}" \
+            VITE_APP_URL="$MIPO_PUBLIC_BASE_URL" VITE_API_URL=/api npm run build
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
@@ -317,3 +320,23 @@ jobs:
           # one over a site nobody can log into.
           curl --fail --show-error --silent --max-time 15 "$base_url/api/health/schema"
           curl --fail --show-error --silent --max-time 15 --head "$base_url/" >/dev/null
+
+          # And prove the API answering is the one this run built. On 8 September
+          # every check above passed for four hours while the previous container
+          # was still serving, because nothing asked which build it was.
+          #
+          # A wrong version fails the deploy: it means the container was not
+          # replaced. "unknown" only warns — it means MIPO_DEPLOY_SHA did not
+          # reach the container, which is a plumbing gap and not a bad release.
+          # Tighten this to a failure once a green deploy has reported a real
+          # version.
+          expected="${GITHUB_SHA::12}"
+          reported="$(curl --fail --silent --max-time 15 "$base_url/api/health" \
+            | sed -n 's/.*"version":"\([^"]*\)".*/\1/p')"
+          echo "deployed version: ${reported:-<absent>}   expected: ${expected}"
+          if [ -z "$reported" ] || [ "$reported" = "unknown" ]; then
+            echo "::warning::The API did not report a deploy version; MIPO_DEPLOY_SHA is not reaching the container."
+          elif [ "$reported" != "$expected" ]; then
+            echo "::error::The API reports version '${reported}' but this run deployed '${expected}'. The container was not replaced." >&2
+            exit 1
+          fi

@@ -41,3 +41,10 @@ CLAUDE.md
 *.sql.gz
 *.dump
 backups/
+
+# User media. The API writes uploads here when it runs locally, and neither
+# directory was ignored — so a photo, or a scanned insurance claim out of
+# private-uploads/, would show up as an untracked file waiting to be committed
+# by accident. On the server these are Docker volumes and never come from git.
+uploads/
+private-uploads/

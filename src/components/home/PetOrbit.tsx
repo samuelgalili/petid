@@ -81,16 +81,23 @@ const PetOrbit = ({
     <div className={cn("relative mx-auto h-[340px] w-[340px] max-w-full", className)}>
       <span aria-hidden="true" className="absolute inset-[30px] rounded-full border border-dashed border-mipo-line/90" />
 
-      <motion.button
-        whileTap={{ scale: 0.97 }}
-        onClick={onPetClick}
-        aria-label={`מצב הרוח והדמות של ${petName} — עדכון`}
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-      >
-        <div className={cn(
-          "mipo-gradient-ring relative h-[166px] w-[166px] shadow-[0_18px_42px_rgba(96,165,250,0.20)]",
-          isCharacter && "shadow-[0_20px_52px_rgba(139,92,246,0.24)]",
-        )}>
+      {/* Centred by the wrapper, not by a transform on the button itself.
+          whileTap animates `transform`, and Framer Motion owns that property
+          outright once it does: the -translate-x-1/2/-translate-y-1/2 that used
+          to centre this button were discarded on the first tap, so the pet
+          dropped 85px down the screen and stayed there — the transform was
+          left as `none` after the animation finished. Any transform this button
+          needs now belongs to Framer alone. */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={onPetClick}
+          aria-label={`מצב הרוח והדמות של ${petName} — עדכון`}
+        >
+          <div className={cn(
+            "mipo-gradient-ring relative h-[166px] w-[166px] shadow-[0_18px_42px_rgba(96,165,250,0.20)]",
+            isCharacter && "shadow-[0_20px_52px_rgba(139,92,246,0.24)]",
+          )}>
           {isCharacter && mood === "excited" && !reduceMotion && (
             <>
               <motion.span
@@ -133,8 +140,9 @@ const PetOrbit = ({
               </motion.div>
             )}
           </div>
-        </div>
-      </motion.button>
+          </div>
+        </motion.button>
+      </div>
 
       {slots.slice(0, 4).map((slot, i) => (
         <motion.div
