@@ -12,8 +12,13 @@ name: Database integration
 
 on:
   push:
-    branches: ["**"]
+    # aws-migration is excluded here and called from deploy-aws.yml instead, so
+    # that the deploy actually waits for this job. Run as a separate workflow it
+    # gated nothing: it started in parallel with the deploy and a red result
+    # arrived after the release was already live.
+    branches-ignore: [aws-migration]
   pull_request:
+  workflow_call:
   workflow_dispatch:
 
 permissions:
@@ -62,6 +67,26 @@ jobs:
       - name: Install server dependencies
         run: npm ci --prefix server
 
+      # The deploy rehearses every migration against a throwaway copy of
+      # production's own dump before touching production. That rehearsal is the
+      # one thing now standing between a data-dependent migration failure and an
+      # outage, so it is exercised here, on a real Docker daemon and a real
+      # dump, rather than running for the first time on the production host.
+      #
+      # Placed before the migrations below, so the dump it restores comes from a
+      # database they have not been applied to: the rehearsal then really does
+      # apply all of them, which is the path that matters. It uses its own
+      # throwaway container and leaves this job's database alone.
+      - name: Rehearse the deploy's migration dry-run
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/backups"
+          pg_dump --no-owner --no-privileges --format=plain "$DATABASE_URL" \
+            | gzip -9 > "$GITHUB_WORKSPACE/backups/ci-baseline.sql.gz"
+          printf '%s\n' "$GITHUB_WORKSPACE/backups/ci-baseline.sql.gz" \
+            > "$GITHUB_WORKSPACE/backups/.last-dump"
+          bash deploy/aws/dry-run-migrations.sh "$GITHUB_WORKSPACE" </dev/null
+
       # Uses the real runner, so the migration ledger and its checksum
       # verification are exercised too — not just the SQL.
       - name: Apply migrations
@@ -97,3 +122,81 @@ jobs:
 
       - name: Server unit tests
         run: npm test --prefix server
+
+      # The work environment is only useful if its data reproduces the problems
+      # production actually has, so the seed is run here against a real schema
+      # and checked for them. Run last: it writes products, and the checks above
+      # should see the database as the migrations left it.
+      - name: Seed the work environment and check it reproduces production's faults
+        run: |
+          set -euo pipefail
+          node server/scripts/seed-workbench.mjs
+
+          duplicates="$(psql "$DATABASE_URL" -tAc "
+            select count(*) from (
+              select 1 from public.business_products
+              where sku is not null and btrim(sku) <> ''
+              group by btrim(sku) having count(*) > 1) d")"
+          orphans="$(psql "$DATABASE_URL" -tAc "
+            select count(*) from public.business_products
+            where category_id is null and category is not null")"
+          biggest="$(psql "$DATABASE_URL" -tAc "
+            select count(*) from public.business_products p
+            join public.product_categories c on c.id = p.category_id
+            where c.slug = 'food-dry'")"
+
+          echo "duplicate SKU groups: $duplicates   uncategorised: $orphans   biggest category: $biggest"
+
+          # Production had six duplicate SKUs, and that is what stopped a deploy
+          # halfway through. A workbench without them cannot show that failure.
+          [ "$duplicates" -eq 6 ] || { echo "::error::expected 6 duplicate SKU groups, got $duplicates" >&2; exit 1; }
+          [ "$orphans" -ge 3 ] || { echo "::error::expected products with no category_id, got $orphans" >&2; exit 1; }
+          [ "$biggest" -eq 27 ] || { echo "::error::expected a 27-product category, got $biggest" >&2; exit 1; }
+
+          # And re-running must not multiply anything. Counted before and after
+          # rather than compared against distinct names, because some of these
+          # products are meant to share a SKU and an earlier migration seeds a
+          # catalogue of its own: the only honest question is whether the
+          # number of rows changed.
+          before="$(psql "$DATABASE_URL" -tAc "select count(*) from public.business_products")"
+          node server/scripts/seed-workbench.mjs >/dev/null
+          after="$(psql "$DATABASE_URL" -tAc "select count(*) from public.business_products")"
+          [ "$before" -eq "$after" ] || { echo "::error::re-seeding changed the row count: $before then $after" >&2; exit 1; }
+
+      # Adding an alias has to move products. It did not: the alias was written
+      # and the catalogue stayed exactly where it was, so an admin could add
+      # "אוכל רטוב" as often as they liked and the shop's filter would still
+      # lose those products. This is that mechanism, on real rows.
+      - name: An adopted category value files the products carrying it
+        run: |
+          set -euo pipefail
+          value="$(psql "$DATABASE_URL" -tAc "
+            select btrim(category) from public.business_products
+            where category_id is null and category is not null and btrim(category) <> ''
+            group by btrim(category) order by count(*) desc limit 1")"
+          [ -n "$value" ] || { echo "::error::the seed left nothing uncategorised to test with" >&2; exit 1; }
+
+          waiting="$(psql "$DATABASE_URL" -tAc "
+            select count(*) from public.business_products
+            where category_id is null and lower(btrim(category)) = lower('$value')")"
+          echo "unmatched value: '$value' on $waiting products"
+
+          # The same two statements the server runs when a value is adopted.
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -q -c "
+            insert into public.product_category_aliases (alias, category_id)
+            select lower(btrim('$value')), id from public.product_categories where slug = 'other'
+            on conflict (alias) do update set category_id = excluded.category_id"
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -q -c "
+            update public.business_products p
+            set category_id = a.category_id, updated_at = now()
+            from public.product_category_aliases a
+            where a.category_id = (select id from public.product_categories where slug = 'other')
+              and p.category_id is null
+              and p.category is not null
+              and lower(btrim(p.category)) = a.alias"
+
+          left="$(psql "$DATABASE_URL" -tAc "
+            select count(*) from public.business_products
+            where category_id is null and lower(btrim(category)) = lower('$value')")"
+          echo "still unfiled after adopting it: $left"
+          [ "$left" -eq 0 ] || { echo "::error::adopting '$value' left $left products unfiled" >&2; exit 1; }

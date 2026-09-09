@@ -39,9 +39,11 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import {
+  adoptProductCategoryValue,
   createAdminProductCategory,
   deleteAdminProductCategory,
   getAdminProductCategories,
+  getUnmatchedProductCategories,
   updateAdminProductCategory,
   type MipoProductCategory,
 } from "@/lib/mipoApi";
@@ -142,6 +144,133 @@ const filterTree = (nodes: CategoryNode[], term: string): CategoryNode[] => {
   };
 
   return nodes.map(walk).filter((node): node is CategoryNode => node !== null);
+};
+
+/**
+ * What the catalogue calls things that no category claims.
+ *
+ * The shop filters by the category tree, so a product whose free-text category
+ * matches nothing has no place in it and disappears the moment a shopper picks
+ * a category — silently, which is how it went unnoticed. This is that queue.
+ * Adopting a value both records it as an alias and files every product using
+ * it, which is the part that used to be missing: editing the alias list wrote
+ * the alias and left the products exactly where they were.
+ */
+const UnmatchedCategories = ({
+  categories,
+  onFiled,
+}: {
+  categories: MipoProductCategory[];
+  onFiled: () => void;
+}) => {
+  const { toast } = useToast();
+  const [chosen, setChosen] = useState<Record<string, string>>({});
+
+  const unmatchedQuery = useQuery({
+    queryKey: ["admin", "product-categories", "unmatched"],
+    queryFn: getUnmatchedProductCategories,
+  });
+
+  const adopt = useMutation({
+    mutationFn: ({ categoryId, value }: { categoryId: string; value: string }) =>
+      adoptProductCategoryValue(categoryId, value),
+    onSuccess: (result, variables) => {
+      toast({
+        title: `שויכו ${result.products_filed} מוצרים`,
+        description: `״${variables.value}״ מוכר מעכשיו כקטגוריה, וכל מוצר שנושא אותו שויך.`,
+      });
+      unmatchedQuery.refetch();
+      onFiled();
+    },
+    onError: (error: Error) => {
+      toast({ title: "השיוך נכשל", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const data = unmatchedQuery.data;
+  const values = data?.values ?? [];
+
+  return (
+    <Card className="mt-6">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <AlertTriangle className="h-5 w-5 text-amber-500" />
+          מוצרים שאינם מופיעים בסינון
+          {data && (
+            <span className="text-sm font-normal text-muted-foreground">
+              {data.totals.without_category} מתוך {data.totals.total} מוצרים ללא קטגוריה
+            </span>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {unmatchedQuery.isLoading ? (
+          <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            בודק את הקטלוג...
+          </div>
+        ) : unmatchedQuery.isError ? (
+          <div className="flex flex-col items-center gap-3 py-8 text-center">
+            <p className="text-sm text-muted-foreground">
+              {(unmatchedQuery.error as Error)?.message || "הבדיקה נכשלה"}
+            </p>
+            <Button variant="outline" onClick={() => unmatchedQuery.refetch()}>נסו שוב</Button>
+          </div>
+        ) : values.length === 0 ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            {data && data.totals.without_any_label > 0
+              ? `כל שם קטגוריה בקטלוג מוכר. ${data.totals.without_any_label} מוצרים לא נושאים שם קטגוריה כלל — אותם צריך לשייך ידנית במסך המוצרים.`
+              : "כל מוצר בקטלוג משויך לקטגוריה."}
+          </p>
+        ) : (
+          <div className="space-y-2">
+            <p className="pb-2 text-sm text-muted-foreground">
+              הערכים האלה מופיעים בקטלוג ואינם מוכרים לאף קטגוריה, אז המוצרים שנושאים
+              אותם נעלמים מהסינון בחנות. בחרו קטגוריה לכל ערך כדי לשייך את כולם.
+            </p>
+
+            {values.map((row) => (
+              <div
+                key={row.value}
+                className="flex flex-wrap items-center gap-3 rounded-xl border p-3"
+              >
+                <span className="font-medium">{row.value}</span>
+                <Badge variant="secondary">{row.product_count} מוצרים</Badge>
+
+                <div className="ms-auto flex items-center gap-2">
+                  <Select
+                    value={chosen[row.value] || ""}
+                    onValueChange={(value) => setChosen((state) => ({ ...state, [row.value]: value }))}
+                  >
+                    <SelectTrigger className="w-56">
+                      <SelectValue placeholder="שייך לקטגוריה..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.icon ? `${category.icon} ` : ""}
+                          {category.name_he}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Button
+                    disabled={!chosen[row.value] || adopt.isPending}
+                    onClick={() =>
+                      adopt.mutate({ categoryId: chosen[row.value], value: row.value })
+                    }
+                  >
+                    {adopt.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "שייך"}
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 };
 
 const AdminCategories = () => {
@@ -450,6 +579,8 @@ const AdminCategories = () => {
                 )}
               </CardContent>
             </Card>
+
+            <UnmatchedCategories categories={categories} onFiled={invalidate} />
           </TabsContent>
 
           <TabsContent value="brands" className="mt-6">

@@ -17,6 +17,7 @@
     "lint:strict": "eslint . --max-warnings=0",
     "typecheck": "tsc -p tsconfig.active.json --pretty false",
     "typecheck:all": "tsc -p tsconfig.app.json --pretty false",
+    "check:imports": "node scripts/check-imports.mjs",
     "test:e2e": "playwright test",
     "preview": "vite preview"
   },

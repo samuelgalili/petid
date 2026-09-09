@@ -1499,6 +1499,33 @@ export async function getAdminProductCategories(): Promise<MipoProductCategory[]
   return result.categories;
 }
 
+export interface MipoUnmatchedCategories {
+  /** Free-text values in the catalogue that no category claims, largest first. */
+  values: Array<{ value: string; product_count: number }>;
+  totals: {
+    /** Products with no category at all — these vanish from every shop filter. */
+    without_category: number;
+    /** Of those, the ones that do not even carry a free-text label. */
+    without_any_label: number;
+    total: number;
+  };
+}
+
+export async function getUnmatchedProductCategories(): Promise<MipoUnmatchedCategories> {
+  return adminApiFetch<MipoUnmatchedCategories>("/admin/categories/unmatched");
+}
+
+/** Records the value as an alias of the category and files every product using it. */
+export async function adoptProductCategoryValue(
+  categoryId: string,
+  value: string,
+): Promise<{ alias: string; products_filed: number }> {
+  return adminApiFetch<{ alias: string; products_filed: number }>(
+    `/admin/categories/${encodeURIComponent(categoryId)}/adopt`,
+    { method: "POST", body: JSON.stringify({ value }) },
+  );
+}
+
 export async function createAdminProductCategory(
   category: Partial<MipoProductCategory>,
 ): Promise<MipoProductCategory> {

@@ -1,0 +1,87 @@
+# The work environment: the whole of MIPO on your own machine.
+#
+# Deliberately the same shape as production — Postgres, the API image built from
+# the same Dockerfile, and Caddy serving the built frontend — because a work
+# environment is only worth having if a thing that works here works there. What
+# differs is written down: plain HTTP on port 8080, a local database instead of
+# RDS, and NODE_ENV left unset so the API does not demand the production keys.
+#
+# Bring it up with scripts/workbench.sh, which builds the frontend, waits for
+# the database, and applies the migrations. Nothing here touches production.
+
+name: mipo-workbench
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: mipo
+      POSTGRES_USER: mipo
+      POSTGRES_PASSWORD: mipo
+    # Published so you can point TablePlus, psql or anything else at it.
+    # localhost only, and not the 5432 you might have running for something else.
+    ports:
+      - "127.0.0.1:55432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U mipo -d mipo"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - workbench_pgdata:/var/lib/postgresql/data
+    networks:
+      - mipo
+
+  mipo-api:
+    build:
+      context: ../../server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://mipo:mipo@postgres:5432/mipo
+      DB_SSL: "false"
+      PORT: "3000"
+      UPLOAD_DIR: /app/uploads
+      PRIVATE_UPLOAD_DIR: /app/private-uploads
+      PUBLIC_APP_URL: http://localhost:8080
+      # Verification codes and reset codes come back in the response instead of
+      # an email, so the flows can be walked through without a mail provider.
+      # The server refuses to start with this on when NODE_ENV=production, which
+      # is exactly the guard that should exist.
+      PASSWORD_RESET_DEBUG: "true"
+      ADMIN_API_KEY: workbench-admin-api-key
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --output-document=/dev/null http://127.0.0.1:3000/api/health/schema || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+    volumes:
+      - workbench_uploads:/app/uploads
+      - workbench_private_uploads:/app/private-uploads
+    networks:
+      - mipo
+
+  caddy:
+    image: caddy:2.9-alpine
+    restart: unless-stopped
+    depends_on:
+      - mipo-api
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ../../dist:/srv/www:ro
+    networks:
+      - mipo
+
+networks:
+  mipo:
+
+volumes:
+  workbench_pgdata:
+  workbench_uploads:
+  workbench_private_uploads:

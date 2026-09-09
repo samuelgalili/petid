@@ -98,6 +98,22 @@ const main = async () => {
     expectStatus(await fetch(`${BASE}/api/health`), [200], "health");
   });
 
+  // The deploy's own gate: the container healthcheck blocks on this and the
+  // post-deploy smoke test asks for it. Running it here, against a schema built
+  // by the real migrations, is what keeps the probes in health.js honest — a
+  // probe naming a column that no longer exists fails the build rather than
+  // failing every deploy afterwards.
+  await check("GET /api/health/schema answers for every probe", async () => {
+    const response = await fetch(`${BASE}/api/health/schema`);
+    const body = await response.json();
+    if (response.status !== 200) {
+      throw new Error(`schema health: ${JSON.stringify(body.failures || body)}`);
+    }
+    if (!body.checked || body.checked < 1) {
+      throw new Error(`schema health ran no probes: ${JSON.stringify(body)}`);
+    }
+  });
+
   await check("GET /api/db/health stays behind admin auth", async () => {
     // Not a liveness check — the authenticated calls below prove the database
     // is reachable. This asserts the route has not been left open.

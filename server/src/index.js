@@ -29,7 +29,7 @@ import {
   hashOpaqueToken,
   verifyOpaqueToken,
 } from "./security.js";
-import { checkDatabaseHealth } from "./health.js";
+import { checkDatabaseHealth, checkSchemaHealth } from "./health.js";
 import { createProviderRegistry } from "./aiProviders.js";
 import { createAiGateway, newRequestId, newTraceId } from "./aiGateway.js";
 import {
@@ -68,6 +68,7 @@ import {
   toggleSocialSave,
   voteSocialPoll,
 } from "./social.js";
+import { resolveCatalogProducts } from "./catalogRecommendations.js";
 import {
   generateCharacterCandidates,
   generateCharacterExpressions,
@@ -311,10 +312,17 @@ const adminUserSelect = `
   last_login_at
 `;
 
+// The LAST entry, not the first. X-Forwarded-For is a list a client can start
+// and each proxy appends to, so the leftmost value is whatever the caller chose
+// to write and the rightmost is what the proxy in front of us actually saw. The
+// Caddyfile replaces the header outright, which makes this a second lock on the
+// same door: rate limiting by IP is only a limit if the client cannot pick its
+// own address, and this value is also recorded on session rows.
 const getRequestIp = (request) => {
   const forwardedFor = request.headers["x-forwarded-for"];
   if (typeof forwardedFor === "string" && forwardedFor.trim()) {
-    return forwardedFor.split(",")[0].trim();
+    const hops = forwardedFor.split(",").map((hop) => hop.trim()).filter(Boolean);
+    if (hops.length > 0) return hops[hops.length - 1];
   }
   return request.socket?.remoteAddress || null;
 };
@@ -3466,17 +3474,10 @@ const compactHealthSummaryForAi = (summary) => summary ? {
   } : null,
 } : null;
 
-const normalizeAiProducts = (products) => (Array.isArray(products) ? products : [])
-  .map((product) => ({
-    id: String(product?.id || "").trim(),
-    name: String(product?.name || "").trim(),
-    price: product?.price === null || product?.price === undefined ? null : Number(product.price),
-    sale_price: product?.sale_price === null || product?.sale_price === undefined ? null : Number(product.sale_price),
-    image_url: product?.image_url || null,
-    category: product?.category || null,
-  }))
-  .filter((product) => product.id && product.name)
-  .slice(0, 6);
+// The model's `products` array is a shopping intent, not a product list. It is
+// resolved against the catalogue in resolveCatalogProducts, and anything that
+// does not match a real, in-stock row is dropped rather than shown.
+// See server/src/catalogRecommendations.js for why.
 
 const buildPetAiPrompt = ({
   auth,
@@ -3518,11 +3519,17 @@ Available UI action tags inside content when useful:
 [ACTION:SHOW_ADOPTION_TRAITS]
 [ACTION:SHOW_ADOPTION_REQUIREMENTS]
 
+Shopping:
+- You do not have the Mipo Store catalogue and you do not know any product, price, SKU or stock level. Never state one.
+- "products" is a search, not an answer. Put short product descriptions in it -- a type, a category or a brand, in the user's language -- and the store will look them up and show the real cards. Two or three entries at most.
+- Leave "products" empty unless the user is actually asking what to buy.
+- Do not describe the products in your text as if you had seen them. The store decides what exists; if nothing matches, no cards are shown.
+
 Return JSON only with this shape:
 {
   "content": "assistant message text, optionally with UI tags",
   "suggestions": ["short quick reply 1", "short quick reply 2"],
-  "products": [],
+  "products": ["מזון יבש לגורים", "חטיפי אילוף"],
   "botSource": "gemini"
 }
 
@@ -3610,7 +3617,9 @@ const createAiChatReply = async (auth, body) => {
     suggestions: Array.isArray(result.suggestions)
       ? result.suggestions.map((suggestion) => safeText(suggestion, 80)).filter(Boolean).slice(0, 4)
       : [],
-    products: normalizeAiProducts(result.products),
+    products: await resolveCatalogProducts(pool, result.products, {
+      petType: selectedPet?.type || null,
+    }),
     botSource: result.botSource || "gemini",
   };
 };
@@ -4703,6 +4712,81 @@ const listProductCategories = async ({ includeInactive = false } = {}) => {
   }
 };
 
+/**
+ * What the catalogue calls things that the category tree has never heard of.
+ *
+ * The shop filters by the tree. A product whose free-text category matches no
+ * alias has no place in it and vanishes from every filter — silently, which is
+ * why this went unnoticed. This is that work queue, largest first: the value as
+ * the catalogue writes it, and how many products carry it.
+ */
+const listUnmatchedProductCategories = async () => {
+  const [values, totals] = await Promise.all([
+    pool.query(`
+      select btrim(p.category) as value, count(*)::int as product_count
+      from public.business_products p
+      where p.category_id is null
+        and p.category is not null
+        and btrim(p.category) <> ''
+      group by btrim(p.category)
+      order by count(*) desc, btrim(p.category)
+      limit 200
+    `),
+    pool.query(`
+      select
+        count(*) filter (where category_id is null)::int as without_category,
+        count(*) filter (
+          where category_id is null and (category is null or btrim(category) = '')
+        )::int as without_any_label,
+        count(*)::int as total
+      from public.business_products
+    `),
+  ]);
+
+  return { values: values.rows, totals: totals.rows[0] };
+};
+
+/**
+ * Adopts one free-text value into a category: records it as an alias and files
+ * every product carrying it. One click instead of editing a comma-separated
+ * list by hand and then wondering why nothing moved.
+ */
+const adoptCategoryValue = async (categoryId, rawValue) => {
+  const value = String(rawValue ?? "").trim().toLowerCase();
+  if (!value) throw badRequest("A value to adopt is required");
+  if (value.length > 120) throw badRequest("That value is too long to be a category name");
+
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    const category = await client.query(
+      "select id from public.product_categories where id = $1",
+      [categoryId],
+    );
+    if (category.rowCount === 0) {
+      await client.query("rollback");
+      return null;
+    }
+
+    await client.query(
+      `
+        insert into public.product_category_aliases (alias, category_id)
+        values ($1, $2)
+        on conflict (alias) do update set category_id = excluded.category_id
+      `,
+      [value, categoryId],
+    );
+    const filed = await applyCategoryAliasesToProducts(client, categoryId);
+    await client.query("commit");
+    return { alias: value, products_filed: filed };
+  } catch (error) {
+    await client.query("rollback").catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
 const getProductCategory = async (id) => {
   if (!uuidPattern.test(String(id || ""))) return null;
   const result = await pool.query(`${categoryListQuery} where c.id = $1`, [id]);
@@ -4737,17 +4821,49 @@ const assertCategoryParentIsSafe = async (client, id, parentId) => {
   if (cycle.rowCount > 0) throw badRequest("That parent would create a loop in the category tree");
 };
 
+/**
+ * Files the products whose free-text category matches one of this category's
+ * aliases and that have no category of their own yet.
+ *
+ * 0025 ran this once, against a fixed list of aliases, and never again. Every
+ * value the catalogue actually uses that was not on that list — "אוכל רטוב",
+ * for one, where the list had "מזון רטוב" — left its products with no
+ * category_id at all, and the shop's filter drops them the moment any category
+ * is chosen. An admin could add the missing alias and nothing whatsoever
+ * happened, because writing an alias never touched a product.
+ *
+ * Only rows with category_id null are claimed: a product an admin has filed
+ * somewhere deliberately is not re-filed behind their back.
+ */
+const applyCategoryAliasesToProducts = async (client, categoryId) => {
+  const result = await client.query(
+    `
+      update public.business_products p
+      set category_id = a.category_id, updated_at = now()
+      from public.product_category_aliases a
+      where a.category_id = $1
+        and p.category_id is null
+        and p.category is not null
+        and lower(btrim(p.category)) = a.alias
+    `,
+    [categoryId],
+  );
+  return result.rowCount;
+};
+
 const replaceCategoryAliases = async (client, categoryId, aliases) => {
   await client.query("delete from public.product_category_aliases where category_id = $1", [categoryId]);
-  if (aliases.length === 0) return;
-  await client.query(
-    `
-      insert into public.product_category_aliases (alias, category_id)
-      select unnest($1::text[]), $2
-      on conflict (alias) do update set category_id = excluded.category_id
-    `,
-    [aliases, categoryId],
-  );
+  if (aliases.length > 0) {
+    await client.query(
+      `
+        insert into public.product_category_aliases (alias, category_id)
+        select unnest($1::text[]), $2
+        on conflict (alias) do update set category_id = excluded.category_id
+      `,
+      [aliases, categoryId],
+    );
+  }
+  return applyCategoryAliasesToProducts(client, categoryId);
 };
 
 const createProductCategory = async (body) => {
@@ -7395,6 +7511,23 @@ const handleRequest = async (request, response) => {
       return;
     }
 
+    // What the container healthcheck and the deploy's smoke test ask, because
+    // "the database answers" is not the same question as "the schema still has
+    // what this build selects". See the note in health.js: on 8 September both
+    // of those checks passed for four hours while every authenticated request
+    // was failing. Reports which probe failed and why; the probes read no data
+    // and return none.
+    if (request.method === "GET" && url.pathname === "/api/health/schema") {
+      const schema = await checkSchemaHealth(pool);
+      sendJson(response, schema.ok ? 200 : 503, {
+        ok: schema.ok,
+        service: "mipo-api",
+        checked: schema.checked,
+        ...(schema.ok ? {} : { failures: schema.failures }),
+      });
+      return;
+    }
+
     if (request.method === "GET" && url.pathname === "/api/db/health") {
       if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
       await pool.query("select 1");
@@ -8364,6 +8497,32 @@ const handleRequest = async (request, response) => {
     if (request.method === "GET" && url.pathname === "/api/admin/categories") {
       if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_READ))) return;
       sendJson(response, 200, { categories: await listProductCategories({ includeInactive: true }) });
+      return;
+    }
+
+    // The work queue: what the catalogue calls things that no category claims.
+    if (request.method === "GET" && url.pathname === "/api/admin/categories/unmatched") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_READ))) return;
+      sendJson(response, 200, await listUnmatchedProductCategories());
+      return;
+    }
+
+    const adoptMatch = url.pathname.match(/^\/api\/admin\/categories\/([0-9a-fA-F-]{36})\/adopt$/);
+    if (adoptMatch && request.method === "POST") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_UPDATE))) return;
+      const body = await readBody(request);
+      const result = await adoptCategoryValue(adoptMatch[1], body.value);
+      if (!result) {
+        sendError(response, 404, "Category not found");
+        return;
+      }
+      await recordAdminAudit(request.admin, {
+        actionType: "product_category.adopted_value",
+        entityType: "product_category",
+        entityId: adoptMatch[1],
+        newValues: result,
+      });
+      sendJson(response, 200, result);
       return;
     }
 

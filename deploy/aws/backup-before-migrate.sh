@@ -35,7 +35,13 @@ fi
 # secret and sourcing it would put all of them in this shell.
 # `|| true` because grep exits 1 when the key is absent, and `set -e` would
 # kill the script before the explanatory error below could be printed.
-DATABASE_URL="$(grep -E '^[[:space:]]*(export[[:space:]]+)?DATABASE_URL=' "$ENV_FILE" | head -1 | cut -d= -f2- || true)"
+# The LAST definition, not the first: docker compose's env_file applies later
+# definitions over earlier ones, so a corrected DATABASE_URL appended to the
+# bottom of .env — a very ordinary way to fix a connection string — is the one
+# the API and the migrations actually use. Taking the first would dump one
+# database while the migrations ran against another, and the rehearsal that
+# restores that dump would then vouch for the wrong data.
+DATABASE_URL="$(grep -E '^[[:space:]]*(export[[:space:]]+)?DATABASE_URL=' "$ENV_FILE" | tail -1 | cut -d= -f2- || true)"
 
 # Carriage returns and stray spaces have to go before anything looks at the
 # value. A CR left on the end survives the -z test below, and pg_dump then
@@ -106,6 +112,11 @@ if [[ "$size" -lt 1024 ]]; then
 fi
 
 echo "backup: wrote $(du -h "$target" | cut -f1) to ${target}"
+
+# Where the next step finds it. dry-run-migrations.sh restores this exact dump
+# rather than guessing at the newest file in the directory.
+printf '%s\n' "$target" > "${BACKUP_DIR}/.last-dump"
+chmod 600 "${BACKUP_DIR}/.last-dump"
 
 # Keep a bounded history: these are full copies of customer data, so an
 # unbounded pile on a web server is a liability, not a safety net.

@@ -111,14 +111,26 @@ const readSpecAttributes = (attributes: unknown): Array<{ label: string; value: 
     .filter((row) => row.value !== "");
 };
 
-const SPEC_LABELS: Array<{ key: keyof MipoProduct; label: string }> = [
+// Shown for every product whether or not there is a value, so that two
+// products describe themselves in the same shape. A page that simply omits
+// what it does not know ends wherever the data happens to run out: a well
+// filled product ran to 2066px with six sections and a plain one to 1091px
+// with none, and the second reads as a broken page rather than a simple one.
+const ALWAYS_SPEC_LABELS: Array<{ key: keyof MipoProduct; label: string }> = [
+  { key: "sku", label: "מק״ט" },
   { key: "brand", label: "מותג" },
+];
+
+// Genuinely specific to some products. A chew toy with "קלוריות לק״ג: לא צוין"
+// is not more consistent, only more absurd, so these appear only when there is
+// something to say.
+const OPTIONAL_SPEC_LABELS: Array<{ key: keyof MipoProduct; label: string }> = [
   { key: "life_stage", label: "שלב חיים" },
   { key: "dog_size", label: "גודל מומלץ" },
-  { key: "weight_unit", label: "משקל" },
   { key: "kcal_per_kg", label: "קלוריות לק״ג" },
-  { key: "sku", label: "מק״ט" },
 ];
+
+const NOT_SPECIFIED = "לא צוין";
 
 const SAFETY_STYLES: Record<SafetyLevel, { wrap: string; text: string; Icon: typeof ShieldCheck }> = {
   safe: { wrap: "bg-emerald-500/10 border-emerald-500/25", text: "text-emerald-600 dark:text-emerald-400", Icon: ShieldCheck },
@@ -202,11 +214,30 @@ const ProductDetailAws = () => {
 
   const specs = useMemo(() => {
     if (!product) return [];
-    const named = SPEC_LABELS
-      .map(({ key, label }) => ({ label, value: product[key] }))
-      .filter((row) => row.value !== null && row.value !== undefined && row.value !== "")
-      .map((row) => ({ label: row.label, value: labelValue(String(row.value)) }));
-    return [...named, ...readSpecAttributes(product.product_attributes)];
+
+    const present = (value: unknown) => value !== null && value !== undefined && value !== "";
+    const shown = (value: unknown) => (present(value) ? labelValue(String(value)) : NOT_SPECIFIED);
+
+    const always = ALWAYS_SPEC_LABELS.map(({ key, label }) => ({ label, value: shown(product[key]) }));
+
+    // Weight used to read the unit column, so a 12 kg sack reported "משקל: kg".
+    // The number lives in `weight`; the unit only qualifies it.
+    const weight = present(product.weight)
+      ? [labelValue(String(product.weight)), product.weight_unit].filter(Boolean).join(" ")
+      : NOT_SPECIFIED;
+
+    const optional = OPTIONAL_SPEC_LABELS
+      .filter(({ key }) => present(product[key]))
+      .map(({ key, label }) => ({ label, value: labelValue(String(product[key])) }));
+
+    return [
+      ...always,
+      { label: "משקל", value: weight },
+      { label: "קטגוריה", value: product.category_name || product.category || NOT_SPECIFIED },
+      { label: "מלאי", value: product.in_stock === false ? "אזל מהמלאי" : "במלאי" },
+      ...optional,
+      ...readSpecAttributes(product.product_attributes),
+    ];
   }, [product]);
 
   const outOfStock = product?.in_stock === false;
@@ -444,11 +475,19 @@ const ProductDetailAws = () => {
 
         {/* ------------------------------------------- everything we know */}
         <div className="max-w-2xl space-y-6 md:col-span-2">
-          {product.description && (
-            <Section title="תיאור">
+          {/* Always rendered, with or without a description. A product that
+              simply drops the section reads as an unfinished page rather than
+              a product nobody has written about yet — and the shopper cannot
+              tell which of the two they are looking at. */}
+          <Section title="תיאור">
+            {product.description ? (
               <p className="text-sm leading-7 text-muted-foreground">{product.description}</p>
-            </Section>
-          )}
+            ) : (
+              <p className="text-sm leading-7 text-muted-foreground/70">
+                עדיין לא נכתב תיאור למוצר הזה. המפרט למטה מרכז את מה שידוע עליו.
+              </p>
+            )}
+          </Section>
 
           {benefits.length > 0 && (
             <Section title="למה זה טוב" icon={Check}>
@@ -489,23 +528,31 @@ const ProductDetailAws = () => {
             </Section>
           )}
 
-          {specs.length > 0 && (
-            <Section title="מפרט" icon={Package}>
-              <dl className="overflow-hidden rounded-xl border">
-                {specs.map((row, index) => (
-                  <div
-                    key={row.label}
-                    className={`flex items-baseline justify-between gap-4 px-4 py-2.5 text-sm ${
-                      index % 2 === 0 ? "bg-muted/30" : ""
-                    }`}
+          {/* The backbone: every product answers these, so every page ends the
+              same way. A missing value says so rather than disappearing. */}
+          <Section title="מפרט" icon={Package}>
+            <dl className="overflow-hidden rounded-xl border">
+              {specs.map((row, index) => (
+                <div
+                  key={row.label}
+                  className={`flex items-baseline justify-between gap-4 px-4 py-2.5 text-sm ${
+                    index % 2 === 0 ? "bg-muted/30" : ""
+                  }`}
+                >
+                  <dt className="text-muted-foreground">{row.label}</dt>
+                  <dd
+                    className={
+                      row.value === NOT_SPECIFIED
+                        ? "text-muted-foreground/60"
+                        : "font-medium tabular-nums"
+                    }
                   >
-                    <dt className="text-muted-foreground">{row.label}</dt>
-                    <dd className="font-medium tabular-nums">{row.value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </Section>
-          )}
+                    {row.value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </Section>
         </div>
       </main>
     </div>
