@@ -10,6 +10,13 @@ services:
       PORT: "3000"
       UPLOAD_DIR: /app/uploads
       PRIVATE_UPLOAD_DIR: /app/private-uploads
+      # The commit this container was recreated for, reported by /api/health.
+      # `:-` and not `:?`: compose interpolates this whole file before it
+      # applies profiles, so a required-variable form here would abort every
+      # compose command on the host — which is how a deploy stalled on
+      # 8 September. Started by hand without it, the API answers "unknown",
+      # which is honest and harmless.
+      MIPO_DEPLOY_SHA: ${MIPO_DEPLOY_SHA:-}
     healthcheck:
       # /api/health/schema, not /api/health: the latter is `select 1`, which
       # answers just as happily on a schema this build cannot use. `up --wait`

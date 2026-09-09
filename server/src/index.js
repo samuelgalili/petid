@@ -145,6 +145,17 @@ const petCharacterAiConfigured = Boolean(geminiApiKey || vertexAiApiKey || verte
 const maxAiAttachmentBytes = Number(process.env.MAX_AI_ATTACHMENT_BYTES || 15 * 1024 * 1024);
 const isProduction = process.env.NODE_ENV === "production";
 
+// Which build is answering. The deploy already knew this -- it passes the
+// commit to the remote shell -- but only ever used it to name a backup file,
+// so from outside there was no way to tell what production was running.
+//
+// That gap cost real time twice. On 8 September the API served an old build
+// against a migrated schema for four hours. On 9 September one browser was
+// running a frontend weeks out of date while another on the same phone was
+// current, and answering "is my change live?" took an hour of investigation
+// that this line answers in a second.
+const deployVersion = process.env.MIPO_DEPLOY_SHA || "unknown";
+
 if (!databaseUrl) {
   throw new Error("DATABASE_URL is required");
 }
@@ -7504,10 +7515,10 @@ const handleRequest = async (request, response) => {
 
     if (request.method === "GET" && url.pathname === "/api/health") {
       if (!(await checkDatabaseHealth(pool))) {
-        sendJson(response, 503, { ok: false, service: "mipo-api", error: "Database unavailable" });
+        sendJson(response, 503, { ok: false, service: "mipo-api", version: deployVersion, error: "Database unavailable" });
         return;
       }
-      sendJson(response, 200, { ok: true, service: "mipo-api" });
+      sendJson(response, 200, { ok: true, service: "mipo-api", version: deployVersion });
       return;
     }
 
