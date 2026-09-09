@@ -5,6 +5,7 @@ import {
   CHARACTER_CANDIDATE_KEYS,
   CHARACTER_STYLES,
   assertUsableReferences,
+  STYLE_DIRECTION,
   buildCandidatePrompt,
   buildExpressionPrompt,
   buildPackValidationPrompt,
@@ -218,4 +219,33 @@ test("an unusable photo set still fails as invalid before the body check", () =>
     () => assertUsableReferences({ valid: false, reason: "two different animals" }),
     (error) => error.code === "INVALID_REFERENCE_PHOTOS" && /two different animals/.test(error.message),
   );
+});
+
+// Both styles are 3D character renders. The first versions of these prompts
+// produced flat 2D artwork: one asked for a photograph, the other for
+// "character art", and neither said anything about dimensional form.
+
+test("both styles ask for a 3D render, and neither forbids one", () => {
+  for (const style of CHARACTER_STYLES) {
+    const prompt = buildCandidatePrompt({
+      petName: "מיצי",
+      petType: "cat",
+      visualIdentity: {},
+      style: STYLE_DIRECTION[style],
+    });
+    assert.match(prompt, /3D character render/i, `${style} should ask for a 3D render`);
+  }
+});
+
+test("the realistic style no longer rules out the dimensional look it now needs", () => {
+  // It used to end with "never as an illustration, cartoon, 3D cartoon or anime",
+  // which forbade the very thing being asked for.
+  assert.doesNotMatch(STYLE_DIRECTION.realistic, /3D cartoon/i);
+  assert.match(STYLE_DIRECTION.realistic, /volume and depth/i);
+});
+
+test("the expression pack has to match the master's medium, not just its markings", () => {
+  const prompt = buildExpressionPrompt({ petName: "מיצי", expression: "happy", visualIdentity: {} });
+  assert.match(prompt, /3D rendered medium/i);
+  assert.match(prompt, /must not be flatter or more illustrated/i);
 });
