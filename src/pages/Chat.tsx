@@ -566,7 +566,12 @@ const ChatContent = () => {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               onClick={scrollToBottom}
-              className="absolute left-1/2 -translate-x-1/2 bottom-24 z-sticky h-11 w-11 rounded-full bg-card/90 backdrop-blur-md border border-border/40 shadow-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+              /* Centred with inset-x-0 + mx-auto rather than -translate-x-1/2:
+                 the animate and whileTap props hand `transform` to Framer
+                 Motion, which then discards whatever transform the class list
+                 set. The same conflict pushed the pet avatar off-centre on the
+                 home screen — see src/components/home/PetOrbit.tsx. */
+              className="absolute inset-x-0 mx-auto bottom-24 z-sticky h-11 w-11 rounded-full bg-card/90 backdrop-blur-md border border-border/40 shadow-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
               whileTap={{ scale: 0.9 }}
             >
               <ChevronDown className="w-5 h-5" />

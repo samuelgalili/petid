@@ -1,12 +1,8 @@
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import {
-  Bookmark,
   Camera,
-  Heart,
   Loader2,
   MapPin,
-  MessageCircle,
-  MoreHorizontal,
   Plus,
   Send,
   Sparkles,
@@ -19,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 
 import defaultPetAvatar from "@/assets/default-pet-avatar.png";
 import { MipoLogo } from "@/components/MipoLogo";
+import { MomentReel } from "@/components/moments/MomentReel";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -100,114 +97,60 @@ const MipoFeed = () => {
     }
   };
 
+  // Web Share is a phone API. On a desktop browser it is simply absent, so the
+  // link is copied instead of the button appearing to do nothing.
+  const sharePost = async (post: MipoSocialPost) => {
+    const url = `${window.location.origin}/post/${post.id}`;
+    if (navigator.share) {
+      await navigator.share({ title: "Mipo", url }).catch(() => {});
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({ title: "הקישור הועתק" });
+    } catch {
+      toast({ title: "לא הצלחנו להעתיק את הקישור", variant: "destructive" });
+    }
+  };
+
   return (
-    <main className="min-h-screen bg-mipo-soft pb-24" dir="rtl">
-      <div className="mipo-shell min-h-screen bg-mipo-soft pb-20">
-        <header className="sticky top-0 z-sticky flex items-center justify-between border-b border-mipo-line/60 bg-mipo-surface/90 px-5 py-3 backdrop-blur-xl">
-          <button onClick={() => navigate("/profile")} className="mipo-icon-button" aria-label="פרופיל משתמש">
-            <UserRound className="h-5 w-5" strokeWidth={1.7} />
-          </button>
-          <MipoLogo variant="horizontal" size="sm" showAnimals={false} />
-          <button onClick={() => setComposerOpen(true)} className="mipo-icon-button" aria-label="יצירת פוסט">
-            <Plus className="h-5 w-5" />
-          </button>
-        </header>
+    <main className="relative bg-black" dir="rtl">
+      {/* The header floats over the reel rather than taking a band from it:
+          a full-screen Moment stops being full-screen the moment a bar of
+          chrome sits above it. */}
+      <header className="pointer-events-none absolute inset-x-0 top-0 z-sticky flex items-center justify-between px-5 pt-4">
+        <button
+          onClick={() => navigate("/profile")}
+          className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm"
+          aria-label="פרופיל משתמש"
+        >
+          <UserRound className="h-5 w-5" strokeWidth={1.7} />
+        </button>
+        <MipoLogo variant="horizontal" size="sm" showAnimals={false} />
+        <button
+          onClick={() => setComposerOpen(true)}
+          className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm"
+          aria-label="יצירת רגע"
+        >
+          <Plus className="h-5 w-5" />
+        </button>
+      </header>
 
-        <section className="border-b border-mipo-line/60 bg-mipo-surface px-4 py-4">
-          <div className="flex gap-4 overflow-x-auto scrollbar-hide">
-            <button onClick={() => setComposerOpen(true)} className="flex shrink-0 flex-col items-center gap-1.5">
-              <span className="relative flex h-16 w-16 items-center justify-center rounded-full border border-dashed border-mipo-muted/40 bg-mipo-soft">
-                <Plus className="h-6 w-6 text-mipo-ink" />
-              </span>
-              <span className="text-[11px] font-medium text-mipo-muted">הרגע שלך</span>
-            </button>
-            {pets.map((pet) => (
-              <button key={pet.id} onClick={() => navigate(`/pet-profile/${pet.id}`)} className="flex shrink-0 flex-col items-center gap-1.5">
-                <span className="mipo-gradient-ring">
-                  <img src={pet.avatar_url || defaultPetAvatar} alt={pet.name} className="h-[58px] w-[58px] rounded-full border-[3px] border-white object-cover" />
-                </span>
-                <span className="max-w-16 truncate text-[11px] font-medium text-mipo-ink">{pet.name}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {loading ? (
-          <FeedLoading />
-        ) : posts.length === 0 ? (
-          <EmptyFeed onCreate={() => setComposerOpen(true)} />
-        ) : (
-          <section className="space-y-3 py-3">
-            {posts.map((post) => (
-              <article key={post.id} className="overflow-hidden border-y border-mipo-line/70 bg-mipo-surface sm:mx-3 sm:rounded-[1.5rem] sm:border">
-                <div className="flex items-center gap-3 px-4 py-3">
-                  <span className="mipo-gradient-ring p-[2px]">
-                    <img
-                      src={post.pet?.avatar_url || post.creator.avatar_url || defaultPetAvatar}
-                      alt=""
-                      className="h-10 w-10 rounded-full border-2 border-white object-cover"
-                    />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-mipo-ink">
-                      {post.pet?.name || post.creator.display_name}
-                    </p>
-                    <p className="flex items-center gap-1 truncate text-xs text-mipo-muted">
-                      {post.location && <MapPin className="h-3 w-3" />}
-                      {post.location || formatPostDate(post.published_at)}
-                    </p>
-                  </div>
-                  <button className="mipo-icon-button mipo-icon-button--ghost" aria-label="אפשרויות פוסט">
-                    <MoreHorizontal className="h-5 w-5" />
-                  </button>
-                </div>
-
-                <div className="relative aspect-[4/5] overflow-hidden bg-mipo-soft-deep">
-                  {post.media_type === "video" ? (
-                    <video src={post.media_url} controls playsInline className="h-full w-full object-cover" />
-                  ) : (
-                    <img src={post.media_url} alt={post.caption || "רגע מהקהילה"} className="h-full w-full object-cover" />
-                  )}
-                </div>
-
-                <div className="px-4 pb-4 pt-3">
-                  <div className="flex items-center gap-1">
-                    <ActionButton label="אהבתי" onClick={() => void handleLike(post)} active={post.viewer_has_liked}>
-                      <Heart className={cn("h-[22px] w-[22px]", post.viewer_has_liked && "fill-mipo-coral text-mipo-coral")} />
-                    </ActionButton>
-                    <ActionButton label="תגובות" onClick={() => setCommentsPost(post)}>
-                      <MessageCircle className="h-[22px] w-[22px]" />
-                    </ActionButton>
-                    <ActionButton label="שיתוף" onClick={() => void navigator.share?.({ title: "Mipo", url: `${window.location.origin}/post/${post.id}` })}>
-                      <Send className="h-[21px] w-[21px]" />
-                    </ActionButton>
-                    <div className="flex-1" />
-                    <ActionButton label="שמירה" onClick={() => void handleSave(post)} active={post.viewer_has_saved}>
-                      <Bookmark className={cn("h-[22px] w-[22px]", post.viewer_has_saved && "fill-mipo-ink")} />
-                    </ActionButton>
-                  </div>
-                  {post.reaction_count > 0 && (
-                    <p className="mt-2 text-sm font-semibold text-mipo-ink">{post.reaction_count.toLocaleString("he-IL")} אהבו</p>
-                  )}
-                  {post.caption && (
-                    <p className="mt-1.5 text-sm leading-6 text-mipo-ink">
-                      <strong>{post.pet?.name || post.creator.display_name}</strong>{" "}{post.caption}
-                    </p>
-                  )}
-                  {post.poll_question && (
-                    <Poll post={post} onVote={(index) => void handleVote(post, index)} />
-                  )}
-                  {post.allow_comments && (
-                    <button onClick={() => setCommentsPost(post)} className="mt-2 inline-flex min-h-11 items-center text-sm text-mipo-muted">
-                      {post.comment_count > 0 ? `הצגת כל ${post.comment_count} התגובות` : "הוספת תגובה"}
-                    </button>
-                  )}
-                </div>
-              </article>
-            ))}
-          </section>
-        )}
-      </div>
+      {loading ? (
+        <FeedLoading />
+      ) : posts.length === 0 ? (
+        <EmptyFeed onCreate={() => setComposerOpen(true)} />
+      ) : (
+        <MomentReel
+          posts={posts}
+          onLike={(post) => void handleLike(post)}
+          onSave={(post) => void handleSave(post)}
+          onComments={(post) => setCommentsPost(post)}
+          onShare={(post) => void sharePost(post)}
+          onVote={(post, index) => void handleVote(post, index)}
+          onRefresh={() => void loadFeed()}
+        />
+      )}
 
       <AnimatePresence>
         {composerOpen && (
@@ -233,35 +176,7 @@ const MipoFeed = () => {
   );
 };
 
-const ActionButton = ({ children, label, onClick, active }: { children: React.ReactNode; label: string; onClick: () => void; active?: boolean }) => (
-  <button onClick={onClick} aria-label={label} aria-pressed={active} className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-mipo-ink active:scale-90">
-    {children}
-  </button>
-);
 
-const Poll = ({ post, onVote }: { post: MipoSocialPost; onVote: (index: number) => void }) => {
-  const total = post.poll_results.reduce((sum, count) => sum + count, 0);
-  return (
-    <div className="mt-3 rounded-2xl bg-mipo-soft p-3">
-      <p className="mb-2 text-sm font-semibold text-mipo-ink">{post.poll_question}</p>
-      <div className="space-y-2">
-        {post.poll_options.map((option, index) => {
-          const count = post.poll_results[index] || 0;
-          const percent = total ? Math.round((count / total) * 100) : 0;
-          return (
-            <button key={option} onClick={() => onVote(index)} className="relative flex min-h-11 w-full overflow-hidden rounded-xl border border-mipo-line/80 bg-mipo-surface px-3 text-right text-sm">
-              <span className="absolute inset-y-0 right-0 bg-mipo-blue/15" style={{ width: `${percent}%` }} />
-              <span className="relative flex w-full items-center justify-between">
-                <span className={cn(post.viewer_poll_option === index && "font-semibold")}>{option}</span>
-                {total > 0 && <span className="text-xs text-mipo-muted">{percent}%</span>}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
 
 const PostComposer = ({ pets, activePetId, onClose, onCreated }: {
   pets: Array<{ id: string; name: string }>;
@@ -410,28 +325,26 @@ const CommentsSheet = ({ post, onClose, onCountChange }: { post: MipoSocialPost;
 };
 
 const FeedLoading = () => (
-  <div className="space-y-3 py-3">
-    {[0, 1].map((item) => (
-      <div key={item} className="animate-pulse bg-white sm:mx-3 sm:rounded-3xl">
-        <div className="flex items-center gap-3 p-4"><div className="h-10 w-10 rounded-full bg-mipo-soft" /><div className="h-4 w-28 rounded bg-mipo-soft" /></div>
-        <div className="aspect-[4/5] bg-mipo-soft-deep" />
-        <div className="m-4 h-4 w-36 rounded bg-mipo-soft" />
-      </div>
-    ))}
+  <div className="flex h-[calc(100dvh-68px-env(safe-area-inset-bottom))] animate-pulse flex-col justify-end bg-neutral-900 p-4">
+    <div className="flex items-center gap-2.5">
+      <div className="h-10 w-10 rounded-full bg-white/15" />
+      <div className="h-4 w-28 rounded bg-white/15" />
+    </div>
+    <div className="mt-3 h-4 w-2/3 rounded bg-white/10" />
+    <div className="mt-2 h-4 w-1/3 rounded bg-white/10" />
   </div>
 );
 
 const EmptyFeed = ({ onCreate }: { onCreate: () => void }) => (
-  <div className="px-6 py-20 text-center">
-    <div className="mipo-gradient-ring mx-auto w-fit p-[3px]">
-      <span className="flex h-20 w-20 items-center justify-center rounded-full bg-white"><Video className="h-8 w-8 text-mipo-ink" /></span>
+  <div className="flex h-[calc(100dvh-68px-env(safe-area-inset-bottom))] flex-col items-center justify-center px-6 text-center">
+    <div className="mipo-gradient-ring w-fit p-[3px]">
+      <span className="flex h-20 w-20 items-center justify-center rounded-full bg-neutral-900"><Video className="h-8 w-8 text-white" /></span>
     </div>
-    <h1 className="mt-6 text-2xl font-semibold text-mipo-ink">הפיד מתחיל ברגע אחד</h1>
-    <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-mipo-muted">שתפו תמונה או סרטון, תייגו את חיית המחמד והתחילו את הקהילה של Mipo.</p>
+    <h1 className="mt-6 text-2xl font-semibold text-white">הפיד מתחיל ברגע אחד</h1>
+    <p className="mt-2 max-w-xs text-sm leading-6 text-white/70">שתפו תמונה או סרטון, תייגו את חיית המחמד והתחילו את הקהילה של Mipo.</p>
     <button onClick={onCreate} className="mipo-gradient-button mt-6 px-6"><Camera className="h-5 w-5" />יצירת הרגע הראשון</button>
   </div>
 );
 
-const formatPostDate = (value: string) => new Intl.DateTimeFormat("he-IL", { day: "numeric", month: "short" }).format(new Date(value));
 
 export default MipoFeed;
