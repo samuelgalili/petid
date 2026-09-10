@@ -129,10 +129,14 @@ export const NrcPlanCard = ({ petName, weight, dailyKcal, recommendations }: Nrc
         <Sparkles className="w-4 h-4 text-violet-600" />
         <span className="text-sm font-semibold">תוכנית תזונה NRC 2006 — {petName}</span>
       </div>
-      {weight && dailyKcal && (
+      {/* A "MER: N kcal/יום" badge sat beside the weight. Nothing renders this
+          card, and a daily calorie figure presented as a plan is the
+          authoritative feeding guidance DD-02 rules out — so the weight stays
+          and the derived calorie number does not.
+          See docs/pet-intelligence/34 and 54 §P0.1. */}
+      {weight && (
         <div className="flex gap-3 mb-2">
           <Badge variant="outline" className="text-xs">משקל: {weight} ק"ג</Badge>
-          <Badge variant="outline" className="text-xs">MER: {dailyKcal} kcal/יום</Badge>
         </div>
       )}
       <ul className="space-y-1">

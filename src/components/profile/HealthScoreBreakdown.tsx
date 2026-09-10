@@ -21,6 +21,7 @@ import { FelineDiabeticCare } from "./FelineDiabeticCare";
 import { FelineDashboard } from "./FelineDashboard";
 import { useNavigate } from "react-router-dom";
 import { getMyPetHealthSummary, type MipoPet } from "@/lib/mipoApi";
+import { petAgeInMonths } from "@/lib/petAge";
 
 interface Pet {
   id: string;
@@ -131,7 +132,9 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
         !!pet.birth_date, !!pet.breed, !!pd?.weight,
         pd?.is_neutered !== null, !!pd?.current_food,
         !!pd?.last_vet_visit, pd?.has_insurance !== null,
-        !!pd?.health_notes, !!pet.avatar_url, !!pet.size,
+        // pet.size was counted here. The API does not return it, so it was
+        // always false and completion could never reach 100%.
+        !!pd?.health_notes, !!pet.avatar_url,
       ];
       setProfileCompletion(Math.round((fields.filter(Boolean).length / fields.length) * 100));
 
@@ -165,8 +168,8 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
   // Life stage calculation (species-aware: cats mature faster)
   const isCat = pet.type === 'cat';
   const lifeStage = useMemo(() => {
-    if (!pet.birth_date) return { label: 'לא ידוע', months: 0, stage: 'unknown' as const };
-    const totalMonths = Math.floor((Date.now() - new Date(pet.birth_date).getTime()) / (1000 * 60 * 60 * 24 * 30));
+    const totalMonths = petAgeInMonths(pet);
+    if (totalMonths === null) return { label: 'לא ידוע', months: 0, stage: 'unknown' as const };
     if (isCat) {
       // Cat life stages differ from dogs
       if (totalMonths < 6) return { label: 'גור', months: totalMonths, stage: 'puppy' as const };
@@ -182,7 +185,7 @@ export const HealthScoreBreakdown = ({ pet, isOpen, onClose }: HealthScoreBreakd
     const years = Math.floor(totalMonths / 12);
     if (years > 7) return { label: 'סניור', months: totalMonths, stage: 'senior' as const };
     return { label: 'בוגר/ת', months: totalMonths, stage: 'adult' as const };
-  }, [pet.birth_date, isCat]);
+  }, [pet, isCat]);
 
   // Breed detection
   const isShihTzu = useMemo(() => {

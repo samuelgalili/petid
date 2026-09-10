@@ -193,17 +193,16 @@ function generateInsights(
 ): Insight[] {
   const insights: Insight[] = [];
 
-  // Nutrition insight (MIPO Scientific Standard)
-  if (snapshot.nrc) {
-    insights.push({
-      icon: Sparkles,
-      type: "nutrition",
-      title: isHe ? `צריכת אנרגיה יומית של ${petName}` : `${petName}'s daily energy needs`,
-      description: isHe
-        ? `לפי התקן המדעי של MIPO, ${petName} צריך/ה בערך ${snapshot.nrc.mer} קק"ל ביום. אנחנו עוקבים בשבילך.`
-        : `Based on MIPO's Scientific Standard, ${petName} needs around ${snapshot.nrc.mer} kcal/day. We're tracking for you.`,
-    });
-  }
+  // A nutrition insight stood here presenting snapshot.nrc.mer to the owner as
+  // "לפי התקן המדעי של MIPO" / "Based on MIPO's Scientific Standard". MER is a
+  // maintenance-energy estimate from body weight; calling it a Mipo standard and
+  // giving an owner a daily calorie figure is exactly the authoritative feeding
+  // guidance DD-02 rules out. This panel is not rendered today, and it must not
+  // start rendering that.
+  //
+  // RER/MER stays as internal intelligence. It becomes owner-facing only if a
+  // reviewed Nutrition specification says so. See docs/pet-intelligence/34 and
+  // 54 §P0.1.
 
   // Health records insight
   if (snapshot.vetVisits.length > 0) {

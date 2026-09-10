@@ -768,6 +768,10 @@ export const smartScrapeProduct = async (body) => {
     ingredients: product.ingredients,
     benefits: product.benefits || [],
     feeding_guide: extracted.feedingGuide || [],
+    // A model read this off the supplier's page. That is not the same as the
+    // manufacturer confirming it, and the owner-facing label depends on being
+    // able to tell the difference.
+    feeding_guide_source: (extracted.feedingGuide || []).length > 0 ? "ai_extracted" : "unknown",
     product_attributes: product.productAttributes || {},
     life_stage: product.lifeStage,
     dog_size: product.dogSize,

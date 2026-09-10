@@ -3910,6 +3910,12 @@ const jsonFields = new Set([
   "product_attributes",
 ]);
 
+// The catalogue's feeding guide is the only owner-facing feeding number in the
+// product, so it has to be able to say where it came from. 'ai_extracted' is a
+// model's reading of the supplier page; only 'manufacturer_confirmed' may be
+// presented to an owner as the manufacturer's own guidance.
+const FEEDING_GUIDE_SOURCES = new Set(["ai_extracted", "manufacturer_confirmed", "unknown"]);
+
 const booleanFields = new Set([
   "in_stock",
   "is_featured",
@@ -3945,6 +3951,7 @@ const businessProductFields = {
   ingredients: "ingredients",
   benefits: "benefits",
   feeding_guide: "feeding_guide",
+  feeding_guide_source: "feeding_guide_source",
   product_attributes: "product_attributes",
   life_stage: "life_stage",
   dog_size: "dog_size",
@@ -4076,6 +4083,11 @@ const normalizeProductPayload = (body) => {
     ingredients: body.ingredients ?? null,
     benefits: Array.isArray(body.benefits) ? body.benefits : [],
     feeding_guide: Array.isArray(body.feeding_guide) ? body.feeding_guide : [],
+    // Allowlisted, so a caller cannot claim a guide is manufacturer-confirmed
+    // by sending an arbitrary string. Only the three known states are stored.
+    feeding_guide_source: FEEDING_GUIDE_SOURCES.has(body.feeding_guide_source)
+      ? body.feeding_guide_source
+      : "unknown",
     product_attributes: body.product_attributes && typeof body.product_attributes === "object" ? body.product_attributes : {},
     life_stage: body.life_stage ?? null,
     dog_size: body.dog_size ?? null,
@@ -4212,7 +4224,8 @@ const PUBLIC_PRODUCT_FIELDS = [
   "id", "name", "description", "price", "original_price", "sale_price",
   "image_url", "images", "category", "category_id", "category_slug", "category_name",
   "in_stock", "is_featured", "sku", "pet_type", "flavors", "brand",
-  "weight", "weight_unit", "price_per_weight", "ingredients", "benefits", "feeding_guide",
+  "weight", "weight_unit", "price_per_weight", "ingredients", "benefits",
+  "feeding_guide", "feeding_guide_source",
   "product_attributes", "life_stage", "dog_size", "special_diet",
   "breed_tags", "medical_tags", "kcal_per_kg", "safety_score",
   "source_url", "source", "created_at", "updated_at",

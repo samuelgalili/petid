@@ -18,8 +18,11 @@ interface FelineDiabeticCareProps {
 export const FelineDiabeticCare = ({ petName, weight }: FelineDiabeticCareProps) => {
   const [remissionScore] = useState(64); // simulated remission potential %
 
-  // Estimated daily caloric need for diabetic cat (lower end)
-  const dailyKcal = weight ? Math.round(weight * 40) : null;
+  // A daily calorie figure was derived here as weight x 40 and shown to the
+  // owner of a *diabetic* cat as "צריכת קלוריות יומית מומלצת". A diet-managed
+  // condition is the last place Mipo should be inventing an energy target: that
+  // number comes from a vet, or from the food the cat is actually on. DD-02.
+  // See docs/pet-intelligence/34 and 54 §P0.1.
 
   return (
     <motion.div
@@ -86,13 +89,11 @@ export const FelineDiabeticCare = ({ petName, weight }: FelineDiabeticCareProps)
           ))}
         </div>
 
-        {dailyKcal && (
-          <div className="mt-2.5 p-2 bg-card rounded-lg border border-border/15 text-center">
-            <p className="text-[9px] text-muted-foreground">צריכת קלוריות יומית מומלצת</p>
-            <p className="text-sm font-bold text-foreground">~{dailyKcal} קק״ל/יום</p>
-            <p className="text-[8px] text-muted-foreground">מבוסס על {weight} ק״ג × 40 קק״ל/ק״ג</p>
-          </div>
-        )}
+        <div className="mt-2.5 p-2 bg-card rounded-lg border border-border/15 text-center">
+          <p className="text-[9px] text-muted-foreground">
+            את כמות המזון היומית קבעו יחד עם הווטרינר/ית, ולפי הנחיות המזון עצמו.
+          </p>
+        </div>
       </div>
 
       {/* === Remission Tracker === */}

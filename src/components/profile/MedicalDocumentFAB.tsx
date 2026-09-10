@@ -28,6 +28,7 @@ import {
   updateMyProfile,
 } from "@/lib/mipoApi";
 import { formatLocalDate, parseLocalDate } from "@/lib/dateOnly";
+import { petAgeMonthsFromBirthDate } from "@/lib/petAge";
 
 interface MedicalDocumentFABProps {
   petId: string;
@@ -96,7 +97,8 @@ export const MedicalDocumentFAB = ({ petId, petName, petBirthDate, petBreed, onC
     const bl = petBreed.toLowerCase();
     if (!bl.includes('shih') && !bl.includes('שיצו') && !bl.includes('שי טסו')) return null;
 
-    const ageMonths = Math.round((Date.now() - new Date(petBirthDate).getTime()) / (1000 * 60 * 60 * 24 * 30));
+    const ageMonths = petAgeMonthsFromBirthDate(petBirthDate);
+    if (ageMonths === null) return null;
     const keys = Object.keys(SHIH_TZU_WEIGHT).map(Number).sort((a, b) => a - b);
     let closest = keys[0];
     for (const k of keys) {

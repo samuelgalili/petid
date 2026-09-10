@@ -17,6 +17,9 @@ export interface PetProfile {
   avatar_url: string | null;
   weight: number | null;
   birth_date: string | null;
+  /** Derived once, on the server. Preferred over recomputing from birth_date — see src/lib/petAge.ts. */
+  age_years: number | null;
+  age_months: number | null;
   medical_conditions: string[] | null;
   theme_color: string | null; // user-assigned accent color
 }
@@ -89,6 +92,8 @@ export const PetPreferenceProvider: React.FC<{ children: React.ReactNode }> = ({
         avatar_url: p.avatar_url || null,
         weight: p.weight ?? null,
         birth_date: p.birth_date || null,
+        age_years: p.age_years ?? null,
+        age_months: p.age_months ?? null,
         medical_conditions: p.medical_conditions || null,
         theme_color: p.theme_color || PET_COLORS[i % PET_COLORS.length],
       }));

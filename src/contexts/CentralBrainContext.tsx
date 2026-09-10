@@ -1,9 +1,29 @@
 /**
- * CentralBrainContext — Multi-Agent Mesh Central Brain Hub.
- * Pre-loads ALL pet data (MIPO, Breed, Chip Number, NRC, documents, medical)
- * so every agent (Danny/Sarah/Roni/etc.) queries the Brain before responding.
- * 
- * Exposes brainSnapshot for the admin Visual Debugger overlay.
+ * CentralBrainContext — pre-loaded pet context for the Guardian panel and the
+ * admin Brain debugger.
+ *
+ * ── Status, and why it is still here ──────────────────────────────────────
+ * This provider is mounted globally but has no rendered consumers today:
+ * PetGuardianPanel and BrainDebuggerOverlay both import it and neither is
+ * rendered anywhere. It was fetching the pet, its vet visits and fifteen
+ * documents on every active-pet change, and nothing read the result. That
+ * fetch is now lazy — it runs when a consumer actually mounts (see
+ * useCentralBrain below), so with no consumers it costs nothing.
+ *
+ * It is deliberately NOT deleted. It is the only place in the repository where
+ * document-extraction shape, profile-versus-document discrepancy detection and
+ * source precedence were worked out, and those are the concepts P1 moves to the
+ * server. See docs/pet-intelligence/54 §3 for the per-capability disposition:
+ *
+ *   calculateNrc          → server, internal only. NEVER owner-facing feeding
+ *                           guidance (DD-02). Currently unreachable.
+ *   OcrRecord             → informs pet_document_extractions (doc 40).
+ *                           setOcrRecords is [] — there is no producer.
+ *   detectDiscrepancies   → informs petFactResolution (doc 45). Cannot fire
+ *                           while ocrRecords is empty.
+ *   getField precedence   → informs the source hierarchy (doc 45).
+ *   resolveDiscrepancy    → becomes a fact confirmation write.
+ *   brainSnapshot         → stays client-side, re-sourced from Pet 360.
  */
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { usePetPreference } from "./PetPreferenceContext";
@@ -113,17 +133,11 @@ function detectDiscrepancies(
     });
   }
 
-  // Check vet name discrepancy
-  const profileVet = petData.vet_name;
-  const ocrVet = ocrRecords.find(r => r.provider_name)?.provider_name;
-  if (profileVet && ocrVet && profileVet.toLowerCase() !== ocrVet.toLowerCase()) {
-    alerts.push({
-      field: "vet_name",
-      profileValue: profileVet,
-      documentValue: ocrVet,
-      source: "OCR scan",
-    });
-  }
+  // A vet-name comparison stood here reading `petData.vet_name`. That column is
+  // one of the eleven the API never returns (docs/pet-intelligence/31), so the
+  // profile side was always undefined and the check could never fire even once
+  // OCR records exist. The clinic name on pet_vet_visits is the live field; the
+  // comparison belongs there, on the server, in P1.
 
   return alerts;
 }
@@ -184,9 +198,10 @@ export const CentralBrainProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
   }, [activePet?.id]);
 
-  useEffect(() => {
-    fetchBrainData();
-  }, [fetchBrainData]);
+  // Deliberately not fetched here. The provider wraps the whole app, so an
+  // effect at this level ran three requests per active-pet change for data
+  // nothing was reading. useCentralBrain triggers the load instead, so the cost
+  // is paid only by a screen that actually wants it.
 
   // NRC calculation
   const nrc = useMemo(() => {
@@ -221,24 +236,13 @@ export const CentralBrainProvider: React.FC<{ children: React.ReactNode }> = ({ 
       if (ocrVal) return String(ocrVal);
     }
 
-    // 4. Check document titles/descriptions
-    const searchTerms: Record<string, string[]> = {
-      microchip_number: ["שבב", "chip", "microchip"],
-      license_number: ["רישיון", "license"],
-      breed: ["גזע", "breed"],
-    };
-    const terms = searchTerms[fieldName];
-    if (terms) {
-      for (const doc of documents) {
-        const text = `${doc.title || ""} ${doc.description || ""}`.toLowerCase();
-        if (terms.some(t => text.includes(t))) {
-          return `[Found in document: "${doc.title}"]`;
-        }
-      }
-    }
-
+    // A fourth tier searched document titles for keywords and returned the
+    // literal string `[Found in document: "..."]`. That is not a value: a
+    // caller asking for a microchip number would have rendered that sentence
+    // where the number goes. Finding a document that mentions a chip is not
+    // knowing the chip number — that is what extraction is for (doc 40).
     return null;
-  }, [petData, ocrRecords, documents, resolvedFields]);
+  }, [petData, ocrRecords, resolvedFields]);
 
   // Resolve discrepancy
   const resolveDiscrepancy = useCallback((field: string, chosenValue: string) => {
@@ -271,10 +275,22 @@ export const CentralBrainProvider: React.FC<{ children: React.ReactNode }> = ({ 
   );
 };
 
+/**
+ * Subscribing to the brain is what loads it.
+ *
+ * The provider holds the state; this hook asks for the data. With no mounted
+ * consumer nothing is fetched, which is the case today.
+ */
 export const useCentralBrain = () => {
   const context = useContext(CentralBrainContext);
   if (context === undefined) {
     throw new Error("useCentralBrain must be used within a CentralBrainProvider");
   }
+
+  const { refreshBrain } = context;
+  useEffect(() => {
+    refreshBrain();
+  }, [refreshBrain]);
+
   return context;
 };

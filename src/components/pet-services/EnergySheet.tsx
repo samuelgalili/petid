@@ -7,6 +7,23 @@ import { useState, useEffect, useCallback } from "react";
 import { Zap } from "lucide-react";
 import { ProductRecommendationSheet, ProductWithLabel } from "./ProductRecommendationSheet";
 import { fetchRecommendedProductGroups, type RecommendedProduct } from "@/lib/productRecommendations";
+import { getBreedInfo, type MipoBreedInfo } from "@/lib/mipoApi";
+import { breedActivityMinutes, breedEnergyLabelHe } from "@/lib/petActivity";
+
+/**
+ * The pet carries a breed *name*; the energy level lives in breed_information.
+ * Matching is on either spelling and is deliberately exact: a partial match on
+ * a mixed breed ("לברדור + פודל") would pick whichever parent sorted first and
+ * present it as the animal's own energy level.
+ */
+const findBreed = (breeds: MipoBreedInfo[], breedName?: string | null): MipoBreedInfo | null => {
+  const wanted = String(breedName || "").trim().toLowerCase();
+  if (!wanted) return null;
+  return breeds.find((breed) => (
+    breed.breed_name?.trim().toLowerCase() === wanted
+    || breed.breed_name_he?.trim().toLowerCase() === wanted
+  )) || null;
+};
 
 interface Pet {
   id: string;
@@ -24,6 +41,7 @@ export const EnergySheet = ({ pet, isOpen, onClose }: EnergySheetProps) => {
   const [toyProducts, setToyProducts] = useState<RecommendedProduct[]>([]);
   const [puzzleProducts, setPuzzleProducts] = useState<RecommendedProduct[]>([]);
   const [feedingGameProducts, setFeedingGameProducts] = useState<RecommendedProduct[]>([]);
+  const [breedInfo, setBreedInfo] = useState<MipoBreedInfo | null>(null);
   const [loading, setLoading] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -56,39 +74,34 @@ export const EnergySheet = ({ pet, isOpen, onClose }: EnergySheetProps) => {
       setToyProducts(groups.toys || []);
       setPuzzleProducts(groups.puzzles || []);
       setFeedingGameProducts(groups.feedingGames || []);
+
+      // Breed reference data is where energy level actually lives. Without it
+      // this sheet has nothing to say about activity, and says so.
+      const breeds = await getBreedInfo(pet.type).catch(() => [] as MipoBreedInfo[]);
+      setBreedInfo(findBreed(breeds, pet.breed));
     } catch (error) {
       console.error('Error fetching energy products:', error);
       setToyProducts([]);
       setPuzzleProducts([]);
       setFeedingGameProducts([]);
+      setBreedInfo(null);
     } finally {
       setLoading(false);
     }
-  }, [pet.type]);
+  }, [pet.type, pet.breed]);
 
   useEffect(() => {
     if (!isOpen) return;
     fetchData();
   }, [isOpen, fetchData]);
 
-  // Get recommended activity minutes
-  const getActivityMinutes = (): number => {
-    const exercise = pet.breed?.toLowerCase() || '';
-    if (exercise.includes('very high') || exercise.includes('גבוהה מאוד')) return 90;
-    if (exercise.includes('high') || exercise.includes('גבוה')) return 60;
-    if (exercise.includes('moderate') || exercise.includes('medium') || exercise.includes('בינוני')) return 45;
-    if (exercise.includes('low') || exercise.includes('נמוך')) return 30;
-    return 45; // default
-  };
-
-  const getEnergyLevel = () => {
-    const level = pet.breed?.toLowerCase() || '';
-    if (level.includes('very high') || level.includes('גבוהה מאוד')) return 'גבוהה מאוד';
-    if (level.includes('high') || level.includes('גבוה')) return 'גבוהה';
-    if (level.includes('medium') || level.includes('moderate') || level.includes('בינוני')) return 'בינונית';
-    if (level.includes('low') || level.includes('נמוך')) return 'נמוכה';
-    return 'בינונית';
-  };
+  // Both of these matched `pet.breed` — the breed's *name* — against the string
+  // "high". A breed name never contains it, so every pet was told 45 minutes
+  // and "בינונית" whatever its breed. They now read the breed's energy level
+  // from breed_information, through the same helper the profile screen uses,
+  // and return null when the breed is unknown rather than inventing a default.
+  const activityMinutes = breedActivityMinutes(breedInfo);
+  const energyLabel = breedEnergyLabelHe(breedInfo);
 
   const allProducts: ProductWithLabel[] = [
     ...toyProducts.map(p => ({ ...p, label: 'צעצוע' })),
@@ -100,11 +113,15 @@ export const EnergySheet = ({ pet, isOpen, onClose }: EnergySheetProps) => {
     <div className="space-y-2">
       <div className="flex items-center gap-2 mb-2">
         <Zap className="w-4 h-4 text-primary" />
-        <span className="font-semibold text-foreground">רמת אנרגיה: {getEnergyLevel()}</span>
+        <span className="font-semibold text-foreground">
+          רמת אנרגיה: {energyLabel ?? 'לא ידועה'}
+        </span>
       </div>
-      <p className="text-sm text-primary font-bold">
-        {getActivityMinutes()} דקות פעילות מומלצות ביום
-      </p>
+      {activityMinutes !== null && (
+        <p className="text-sm text-primary font-bold">
+          {activityMinutes} דקות פעילות מומלצות ביום — טיפוסי לגזע
+        </p>
+      )}
       <p className="text-xs text-muted-foreground mt-2">
         לחיות מחמד עם רמת אנרגיה גבוהה נדרשים צעצועים בעלי אתגר וגירויים שונים כדי למנוע שעמום.
       </p>

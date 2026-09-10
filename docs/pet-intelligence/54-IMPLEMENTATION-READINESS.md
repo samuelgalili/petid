@@ -1,7 +1,16 @@
 # 54 — Implementation Readiness & Canonical Reconciliation
 
 **Repository:** `samuelgalili/petid` · **Branch:** `claude/mifo-project-oq44tl` ·
-**Base:** `049a8b58` · Analysis only. No code, no migrations, no production change.
+**Base:** `049a8b58`
+
+> **Sections 1–15 are the pre-sprint analysis. Section 16 is the result.**
+> The P0 sprint has since run, and it corrected one claim made below: §1 and §6
+> state that the breed-midpoint weight fed owner-facing numbers. It did not —
+> `breedInfo` in `TopRecommendation` is permanently `null`, so that branch could
+> never execute. The `weight × [20,30]` calculation was live via `pet.weight`;
+> its breed fallback was dead code. See §16.1. The sprint also found more of
+> every category than §1–§15 predicted: five feeding calculations, eight age
+> implementations, and a `Math.random()` product score.
 
 ---
 
@@ -558,7 +567,15 @@ retired feeding formulas · remove `SmartRecommendations` keyword maps · deprec
 
 ---
 
-## 15. Verdict
+## 15. Verdict — superseded by §16
+
+The verdict below was written **before** the P0 sprint. It said
+`IMPLEMENTATION_READY: NO` and listed five blockers. Those blockers have been
+worked; §16 records what was actually done, what was found along the way, and
+the current answer. The original text is kept because the reasoning still
+explains why the sprint happened.
+
+### The pre-sprint verdict, as written
 
 ### Conditions
 
@@ -612,3 +629,199 @@ IMPLEMENTATION_READY: NO
 **Path to YES:** complete P0.1–P0.5 and answer R-01 and R-02. Then this
 document's conditions are met and P1 can begin on data that is correct rather
 than merely modelled.
+
+
+---
+
+# 16. P0 Implementation Result
+
+Implemented on `claude/mifo-project-oq44tl`. Analysis was correct on the
+substance and **incomplete on the count**: the sprint found more of every
+category than §1–§15 predicted.
+
+## 16.1 What the sprint found that this document had missed
+
+| # | Finding | How it was found |
+|---|---|---|
+| 1 | **`breedInfo` in `TopRecommendation` is permanently `null`** — `setBreedInfo(null)` at line 110 is the only call, and nothing fetches breeds | grep for every `setBreedInfo` |
+| 2 | So the **breed-midpoint weight path could never fire**. §1 and §6 said it fed owner-facing numbers. It does not, and did not. **That was wrong and is corrected here.** The `weight × [20,30]` calculation was still live via `pet.weight` | as above |
+| 3 | **Five feeding calculations, not four.** `FelineDiabeticCare` computes `weight × 40` kcal/day and shows it to the owner of a **diabetic cat** as "צריכת קלוריות יומית מומלצת" — and it **is** rendered, through `HealthScoreBreakdown` | search for `weight * <n>` |
+| 4 | **Eight age implementations, not six.** `PreventiveCareEngine` and `MedicalDocumentFAB` each had their own, both on a flat 30-day month | search for `Date.now() - …birth` |
+| 5 | **`getFoodScore` returned `Math.random()`** — a "food suitability" score between 70 and 95. Never called | reading the file |
+| 6 | **`asTextList` could not read `feeding_guide`.** The import pipeline writes `[{range, amount}]`; the reader looked only for `text`/`title`/`label`/`value`, so every entry collapsed to `""` and the product page's feeding section **never rendered** | tracing the catalogue path |
+| 7 | **`profileCompletion` could never reach 100%** — `pet.size` counted toward a total of 6 and is a column the API never returns, so it capped at 83% and the celebration could not fire | tracing `pet.size` |
+| 8 | **The size editor silently discarded its input** — it PATCHed `{size}`, which `normalizePetPayload` does not allowlist, then showed "הנתונים עודכנו בהצלחה ✓" and reloaded. Its entry point (`openEditModal('size')`) is never called | tracing the write path |
+| 9 | **`PetGuardianPanel` presents MER as "לפי התקן המדעי של MIPO"**, and `NrcPlanCard` renders a `MER:` badge. Neither is rendered today — both would violate DD-02 the moment they were | final validation search |
+
+## 16.2 Status
+
+```
+P0.1 Feeding        COMPLETE
+P0.2 Age            COMPLETE
+P0.3 Activity       COMPLETE
+P0.4 Size           COMPLETE
+P0.5 Central Brain  COMPLETE
+P0.6 Breed Boundary COMPLETE
+P0.7 Tests          COMPLETE
+P0.8 Quality Gates  COMPLETE
+```
+
+### P0.1 — Feeding
+Five calculations retired from the owner-facing path; one source remains.
+
+| Logic | Location | Action |
+|---|---|---|
+| `weight × [20,30]` under "Fetch manufacturer feeding guidelines" | `TopRecommendation` | **removed** |
+| 2–4% by age band → `recommendedGrams` | `TopRecommendation` | **removed** |
+| 2–3% flat → `dailyAmount` | `FeedingSheet` | **removed** |
+| `weight × 40` kcal for a diabetic cat | `FelineDiabeticCare` | **removed**, replaced with "decide with your vet, and by the food's own guidance" |
+| `Math.random()` food score | `TopRecommendation` | **removed** |
+| RER/MER | `CentralBrainContext` | **kept, internal.** Not rendered; the two places that would have rendered it are neutralised with the reason recorded |
+
+New: `src/lib/feedingGuidance.ts` — the single resolver. Takes a **product**,
+never a pet weight. Reads all three shapes the column actually holds. Returns
+`null` when there is no guidance, and the UI then shows nothing.
+
+**Provenance:** migration `0035_feeding_guide_source.sql` adds
+`business_products.feeding_guide_source` (`ai_extracted` | `manufacturer_confirmed`
+| `unknown`, CHECK-constrained, default `unknown`), backfills rows that already
+hold a guide to `ai_extracted` — which is how every one of them got there — and
+is idempotent. `productIntel` sets it on write. The API allowlists the value, so
+a caller cannot claim `manufacturer_confirmed` by sending a string.
+
+**Labels:** only `manufacturer_confirmed` renders "הנחיות יצרן". Everything else,
+including `unknown`, renders "מידע שחולץ מדף המוצר". Enum names are never shown.
+
+### P0.2 — Age
+One derivation. `src/lib/petAge.ts` prefers the API's `age_years`/`age_months`
+and falls back to the server's own constant (30.4375 days) when a caller has
+only a birth date. Eight implementations migrated: `petSafetyScore`,
+`TopRecommendation` (×3), `PetHealthScore`, `HealthScoreBreakdown`, `PetCard`,
+`PreventiveCareEngine`, `MedicalDocumentFAB`. `PetProfile` now carries the API's
+age so the safety score can use it.
+
+### P0.3 — Activity
+`src/lib/petActivity.ts` — one derivation from `breed_information`, shared by
+`TopRecommendation` and `EnergySheet`. The bug is fixed: `EnergySheet` now reads
+the breed record rather than searching the breed's *name* for "high", and
+returns **null** when the breed is unknown instead of defaulting every pet to
+45 minutes and "בינונית".
+
+### P0.4 — Size
+Every read of the dead `pet.size` removed (5 sites, plus 2 in the health
+scores). No column restored, no duplicate field introduced. The unreachable size
+editor — which silently discarded what it was given — is gone. Completion is now
+out of 5 and can reach 100%. Display falls back to the breed's `size_category`,
+labelled as the breed's.
+
+### P0.5 — Central Brain
+The provider no longer fetches on mount. `useCentralBrain` triggers the load, so
+with no mounted consumer — which is the case today — **nothing is fetched**.
+`getField`'s fourth tier, which returned the literal string
+`[Found in document: "…"]` where a value belongs, is removed. The dead
+`petData.vet_name` comparison is removed. Everything else is kept, with a header
+recording the per-capability disposition for P1.
+
+### P0.6 — Breed boundary
+The weight editor no longer pre-fills from the breed midpoint — an owner could
+previously press save and turn a breed average into their animal's recorded
+weight as `USER_PROVIDED`. Breed weight now displays as
+`"20-30 ק"ג טיפוסי לגזע"`. No breed value is persisted as a pet fact anywhere.
+
+### P0.7 — Tests
+Four new suites, 43 tests, following the repository's existing convention (a
+faithful JS port of the TS module, so `npm test` covers the arithmetic without
+adding a TypeScript runner — the same approach `petSafetyScore.test.js` uses).
+
+```
+server/test/petAge.test.js           14  API-wins, birthday boundaries, leap day,
+                                         future date, missing date, null-not-zero,
+                                         client/server agreement
+server/test/feedingGuidance.test.js  13  no invention, all three column shapes,
+                                         AI never labelled as manufacturer,
+                                         unknown treated conservatively
+server/test/petActivity.test.js      11  the breed-NAME regression, all levels,
+                                         "very high" before "high", bad input
+server/test/breedBoundary.test.js     5  range ≠ weight, life expectancy ≠ age
+```
+
+### P0.8 — Quality gates
+
+```
+TYPECHECK:          PASS   tsc -p tsconfig.active.json
+LINT:               PASS   eslint . --quiet
+UNIT TESTS:         PASS   173/173 (server, node --test)
+INTEGRATION TESTS:  NOT AFFECTED   requires a live AI provider credential
+IMPORT CHECK:       PASS   every import under src/ resolves
+BUILD:              PASS   vite build
+MIGRATION:          PASS   34/34 applied to a real PostgreSQL 16; backfill,
+                           CHECK rejection and re-runnability all verified
+```
+
+Playwright e2e was **not run**: it needs a built preview server and a browser,
+and none of the changed surfaces has an e2e spec. Not claimed as passing.
+
+## 16.3 Remaining occurrences — all reviewed, all intentional
+
+| File | Occurrence | Owner-facing? | Canonical? | Why it stays |
+|---|---|---|---|---|
+| `AdoptionPostCard.tsx:123` | `pet.size` | yes | n/a | A **different type** — `AdoptionPet`, an adoption listing with its own `size: string`. Unrelated to the pet profile |
+| `CentralBrainContext.tsx:110-113` | `rer`, `mer` | **no** | internal | Kept per DD-02 as internal intelligence. No consumer renders it |
+| `PetGuardianPanel.tsx` | MER insight | **no** | — | Removed. The component is not rendered; the comment records why it must not come back |
+| `ChatActionCards.tsx:132` | `MER:` badge | **no** | — | Removed. Comment retains the reason |
+| `BusinessCRM.tsx:37,40` | "MER מחושב: 1,320 kcal/יום" | yes, in a demo | no | **Hardcoded mock strings** in a demo customer dataset. Not a calculation, not pet data |
+| `FelineObesityCare.tsx:56-59` | `weight * 0.01`, `* 0.02` | yes | — | A **weekly weight-loss rate** (1–2%/week), not a feeding amount. Different concept, outside DD-02. Flagged for the Nutrition spec |
+| `PetHealthScore.tsx`, `HealthScoreBreakdown.tsx` | `Date.now() - vDate` ÷ 30 days | yes | — | **Vet-visit recency**, not pet age. A different derived value; out of P0.2's scope |
+| `PetHealthScore.tsx:260`, `VaccineCountdown`, `RecoveryBanner` | `Date.now()` day counts | yes | — | Countdowns to a future date. Not age |
+| `petAge.ts:7`, `54` | "30.44", "365" | no | — | Prose describing the constants that were removed |
+| `sidebar.tsx:539` | `Math.random() * 40` | no | — | A skeleton-loader width. Not data |
+
+## 16.4 Result
+
+```
+P0 IMPLEMENTATION RESULT
+
+P0.1 Feeding:       PASS
+P0.2 Age:           PASS
+P0.3 Activity:      PASS
+P0.4 Size:          PASS
+P0.5 Central Brain: PASS
+P0.6 Breed:         PASS
+P0.7 Tests:         PASS
+P0.8 Quality Gates: PASS
+```
+
+Against the fourteen conditions:
+
+| # | Condition | |
+|---|---|---|
+| 1 | Owner-facing feeding guidance has exactly one canonical path | ✅ `feedingGuidance.ts`, product-sourced |
+| 2 | Feeding does not use invented generic percentages | ✅ five removed |
+| 3 | Breed midpoint cannot become actual pet weight | ✅ path removed, test pins it |
+| 4 | Age has one canonical calculation | ✅ eight consolidated |
+| 5 | Duplicate derived writers removed for the affected values | ✅ age, activity, energy, feeding, size |
+| 6 | Activity uses the correct source | ✅ `breed_information`, not the breed name |
+| 7 | Dead `pet.size` is no longer a dependency | ✅ |
+| 8 | CentralBrain has no unnecessary global runtime behaviour | ✅ lazy; zero fetches with zero consumers |
+| 9 | Provenance sufficient for owner-facing feeding guidance | ✅ three-state column, CHECK-constrained, honest labels |
+| 10 | Tests pass | ✅ 173/173 |
+| 11 | Typecheck passes | ✅ |
+| 12 | Lint passes | ✅ |
+| 13 | Build passes | ✅ |
+| 14 | No critical P0 correctness issue remains | ✅ |
+
+```
+IMPLEMENTATION_READY_FOR_P1: YES
+```
+
+### Carried into P1, not blocking
+
+- **R-01 is answered in code, not by decision.** `feeding_guide` now declares
+  its provenance and is labelled honestly. Whether an admin flow should let a
+  human promote a guide to `manufacturer_confirmed` is a P1 product call — no
+  writer sets that value today.
+- **R-03 health score** still has no owner in the data contract. Out of P0 scope.
+- `FelineObesityCare`'s weight-loss rate wants a look from whoever writes the
+  Nutrition specification.
+- `PetGuardianPanel` and `BrainDebuggerOverlay` remain unrendered. Retiring or
+  re-sourcing them is P4 (`53` DD-11).
