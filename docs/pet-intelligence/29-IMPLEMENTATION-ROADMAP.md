@@ -35,6 +35,17 @@ Nothing later is safe without these.
 **Free-standing quick wins, any time:** 0.4's coercion fix, 0.6, and creating
 `qr_scan_logs` so the QR trail stops being discarded (OD-16).
 
+### Added by the data-contract phase (`30`–`53`)
+
+| # | Item | Priority | Ref |
+|---|---|---|---|
+| 0.9 | **Pick one feeding calculation.** Two exist in the client and disagree — `CentralBrainContext` (RER/MER) and `TopRecommendation` (% of body weight). Owners see different numbers depending on the screen. | **P0** — a live defect | DD-02 |
+| 0.10 | **Canonical weight in grams**, with the unit on the observation. `pets.weight_unit` is dead and a budgerigar is 0.035 kg. | P0 | DD-01 |
+| 0.11 | **`ingredient_terms` vocabulary** with `is_derivative`. The only place a pet fact and a product row actually meet. | P0 — prerequisite for `52` | `34` |
+| 0.12 | Fix `InsuranceSheet.tsx` — it renders a field the API never sends. | S, any time | DD-14 |
+| 0.13 | Encrypt `insurance_claims.owner_id_number`; check `ai_consent_given` before clinical AI calls. | P0 (security) | DD-16, DD-18 |
+| 2.7 | Convert `breed_information.weight_range_kg` from free text to two numerics **before** `size_band` gates anything. | with P3 | DD-15 |
+
 ---
 
 ## P1 — Pet 360

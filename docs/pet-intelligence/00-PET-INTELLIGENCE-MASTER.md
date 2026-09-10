@@ -25,6 +25,16 @@ findings were wrong or imprecise, and the corrections change the design.**
 | Document intelligence = MISSING | **CONFIRMED** | `pet_documents` has 13 columns, none of them a status or an extraction. |
 | AI Gateway, outbox, CRM identity, health tables, social | **CONFIRMED** | unchanged |
 
+> **Superseded in part by the data-contract phase (`30`–`53`).** A second
+> verification pass corrected one of the findings below and added two more:
+> `breed_information` is **not** unused — `TopRecommendation.tsx` reads
+> `energy_level`, `exercise_needs`, `weight_range_kg` and
+> `life_expectancy_years`; and `src/contexts/CentralBrainContext.tsx` (mounted in
+> `App.tsx:116`) already implements RER/MER energy calculation, an OCR record
+> shape, and profile-vs-document discrepancy detection — with no server producer.
+> There are also **two disagreeing feeding calculations** in the client. See
+> `30-DATA-DICTIONARY.md` §1.
+
 ### Three findings the previous audit missed entirely
 
 1. **`qr_scan_logs` does not exist.** `logPublicPetQrScan` (`index.js:2120`) inserts
@@ -191,3 +201,19 @@ Verified against the repository, per §53 of the brief:
 | 27 | Source of truth |
 | 28 | Open decisions |
 | 29 | Implementation roadmap |
+
+### Data-contract phase (30–53)
+
+Documents 00–29 are the architecture. **30–53 are the canonical data contract**
+— what Mipo knows about a pet, where each thing lives, and under what rules.
+
+| # | Document |
+|---|---|
+| 30 | Data dictionary master — verification, the nine categories |
+| 31 | Pet core contract — all 57 columns classified |
+| 32 | Species · 33 Health · 34 Nutrition · 35 Behavior · 36 Preferences |
+| 37 | Activity · 38 Social · 39 Commerce · 40 Documents |
+| 41 | Observations · 42 Events · 43 Derived · 44 AI inference |
+| 45 | Provenance · 46 Fact registry · 47 Units · 48 Temporal model |
+| 49 | Ownership matrix · 50 Classification · 51 Existing→target mapping |
+| 52 | Product matching data contract · 53 Open decisions |
