@@ -825,3 +825,72 @@ IMPLEMENTATION_READY_FOR_P1: YES
   Nutrition specification.
 - `PetGuardianPanel` and `BrainDebuggerOverlay` remain unrendered. Retiring or
   re-sourcing them is P4 (`53` DD-11).
+
+---
+
+# 17. P1 Foundation Status
+
+Built. Full record in `55-P1-FOUNDATION-IMPLEMENTATION.md`.
+
+## 17.1 What P1 changed about this document's conclusions
+
+Nothing was found to be wrong. Two things were found to be **incomplete**, and
+both are recorded in `55`:
+
+- **§7 Provenance Reconciliation** treated the seven source types as settled.
+  Building the registry showed that `46`'s worked example for
+  `preference.toy_type` lists an eighth, `BEHAVIOR_DERIVED`, which `45` never
+  defines. It is not implemented; adding it is a change to `45`, not a value a
+  definition can introduce.
+- **§8 Fact / Observation / Event Boundary** said observations and facts need
+  separate tables. It did not say what an observation's *source* list is, and it
+  differs from a fact's: `PURCHASE_DERIVED` and `AI_INFERRED` cannot make an
+  observation at all. That is now a CHECK constraint.
+
+Four document-vs-document conflicts surfaced while implementing, each resolved
+in writing rather than silently: the weight unit (`46` vs `47`/DD-01 → grams),
+the registry column names (`03` vs `46` → `46`), `RETRACTED` vs `REJECTED` (→
+`RETRACTED` for the status, `REJECTED` for the verification), and
+`health.allergy` as an enum over a table that does not exist (→ string with
+`normalized_value`). `55` §16.
+
+## 17.2 The one real bug the sprint found
+
+`pg` returns timestamps as `Date` objects and `String(date)` drops the
+milliseconds. Two writes inside the same second produced a fact whose
+`effective_to` landed before its own `effective_from`. The
+`pet_facts_window` CHECK constraint rejected it — the schema caught what the code
+had got wrong, which is the argument for putting the invariant in both places.
+Fixed in `petFactRegistry.js` and `petFactResolution.js`, with a regression test.
+
+## 17.3 Status
+
+| # | Condition | Result |
+|---|---|---|
+| 1 | Registry rejects unknown keys | ✅ `UNKNOWN_FACT_KEY` |
+| 2 | Fact values validated against the definition | ✅ eight types, enum, range, unit |
+| 3 | Provenance enforced, no silent promotion | ✅ verification never read from a request |
+| 4 | Temporal and lifecycle rules work | ✅ supersession, backdating, five states, audit trail |
+| 5 | Observations distinct from facts | ✅ separate table and source rules |
+| 6 | Events have stable identity and the right pet | ✅ `outbox_events.pet_id` |
+| 7 | Ownership enforced | ✅ 7/7 entry points, 404 not 403 |
+| 8 | No duplicate canonical writers introduced | ✅ derived keys accept `SYSTEM_DERIVED` only |
+| 9 | Existing Pet behaviour intact | ✅ `serializePet` untouched |
+| 10 | Migrations safe and reversible | ✅ 38/38, re-run clean, rollback executed |
+| 11 | Tests pass | ✅ 257/257 unit, 46/46 integration |
+| 12 | Typecheck passes | ✅ |
+| 13 | Lint passes | ✅ |
+| 14 | Build passes | ✅ |
+
+```
+P1_FOUNDATION_READY: YES
+```
+
+## 17.4 What P1 deliberately did not do
+
+The foundation has no consumers. `serializePet` and `normalizePetPayload` are
+byte-identical, every screen reads what it read before, the eleven dead columns
+are untouched, and no existing feature was migrated onto facts. The migration
+strategy is ADD → VALIDATE → BACKFILL → DUAL WRITE → DUAL READ → CUTOVER, and
+this sprint is the first three. There is no rule engine, no decay, no timeline
+projection, and no AI reasoning — `55` §15 lists all eleven limitations.
