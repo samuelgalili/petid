@@ -105,9 +105,15 @@ src/components/BottomNav.tsx
 ```
 
 The shop and the pet dashboard are **not** in the bottom nav. The shop is
-reached from `ProductCarousel` on the home screen and from the orbit's "חנות"
-slot; the pet dashboard only from the orbit's "בריאות" slot and from
-`OwnerProfile`.
+reached from the orbit's "חנות" slot, from the pet dashboard's sheets
+(`HealthScoreBreakdown`, `BreedHealthTips`, `ProductsSheet`,
+`RecommendedProducts`) and from the feed's product cards; the pet dashboard only
+from the orbit's "בריאות" slot and from `OwnerProfile`.
+
+*(Corrected. An earlier version of this line said the shop is also reached from
+`ProductCarousel` on the home screen. `ProductCarousel` is not rendered by
+`MipoHome` — `grep` finds no importer at all, so it belongs in the unreferenced
+list rather than in a navigation path.)*
 
 ### Areas the brief asked about that do not exist
 
