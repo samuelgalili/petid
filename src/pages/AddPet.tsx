@@ -95,7 +95,10 @@ const AddPet = () => {
     breed: "",
     secondary_breed: "",
     is_mixed: false,
-    is_neutered: "false"
+    // Empty, not "false". A pre-selected "לא" is a claim the owner never made:
+    // the control showed an answer they had not given, and submitting recorded
+    // "not neutered" as a fact about their pet. Unknown has to look unknown.
+    is_neutered: ""
   });
   const [personalityTags, setPersonalityTags] = useState<string[]>([]);
   const [activities, setActivities] = useState<string[]>([]);
@@ -342,7 +345,9 @@ const AddPet = () => {
         gender: formData.gender || null,
         breed: breedValue,
         breed_confidence: breedConfidence !== null ? Math.round(breedConfidence * 100) : null,
-        is_neutered: formData.is_neutered === "true",
+        // null when the owner did not answer, so the column records "unknown"
+        // instead of "no". The API keeps a null here rather than coercing it.
+        is_neutered: formData.is_neutered === "" ? null : formData.is_neutered === "true",
         avatar_url: avatarUrl,
         personality_tags: personalityTags.length > 0 ? personalityTags : null,
         favorite_activities: activities.length > 0 ? activities : null,
@@ -1081,7 +1086,7 @@ const AddPet = () => {
                   <Label className="text-mipo-ink">מעוקר/מסורס?</Label>
                   <Select value={formData.is_neutered} onValueChange={(val) => setFormData(prev => ({ ...prev, is_neutered: val }))}>
                     <SelectTrigger className="mipo-input h-12">
-                      <SelectValue />
+                      <SelectValue placeholder="לא צוין" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="true">כן</SelectItem>

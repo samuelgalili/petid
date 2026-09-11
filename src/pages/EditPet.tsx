@@ -31,7 +31,9 @@ const EditPet = () => {
     breed: "",
     birthDate: null as Date | null,
     gender: "",
-    is_neutered: "false"
+    // Empty means the owner has not said. See the load and save below: an
+    // unknown status has to survive a trip through this form unchanged.
+    is_neutered: ""
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [tempBirthDate, setTempBirthDate] = useState<Date>(new Date());
@@ -53,7 +55,12 @@ const EditPet = () => {
           breed: data.breed || "",
           birthDate: data.birth_date ? new Date(data.birth_date) : null,
           gender: data.gender || "",
-          is_neutered: data.is_neutered ? "true" : "false"
+          // A null column means nobody has answered yet. Rendering that as "לא"
+          // turned opening the form into an assertion: the owner saw an answer
+          // they never gave, and saving wrote it to the database as fact.
+          is_neutered: data.is_neutered === null || data.is_neutered === undefined
+            ? ""
+            : data.is_neutered ? "true" : "false"
         });
       } catch (error: unknown) {
         toast({ title: "שגיאה", description: errorMessage(error, "שגיאה בטעינת חיית המחמד"), variant: "destructive" });
@@ -76,7 +83,7 @@ const EditPet = () => {
         breed: formData.breed || null,
         birth_date: formData.birthDate ? format(formData.birthDate, "yyyy-MM-dd") : null,
         gender: formData.gender || null,
-        is_neutered: formData.is_neutered === "true"
+        is_neutered: formData.is_neutered === "" ? null : formData.is_neutered === "true"
       });
       
       toast({ title: "הפרטים עודכנו בהצלחה!" });
@@ -219,7 +226,7 @@ const EditPet = () => {
             onValueChange={(value) => setFormData({ ...formData, is_neutered: value })}
           >
             <SelectTrigger className="h-12">
-              <SelectValue />
+              <SelectValue placeholder="לא צוין" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="true">כן</SelectItem>
