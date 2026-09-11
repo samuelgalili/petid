@@ -234,6 +234,98 @@ const main = async () => {
     expectNotServerError(publicView, "public pet");
   });
 
+  // Create used to write nineteen of the forty-two columns the API accepts and
+  // answer 201 anyway. This asserts against a real database that what the owner
+  // sent is what came back, because only a real round trip can tell the
+  // difference between a column that was stored and one that was discarded.
+  await check("POST /api/me/pets stores every field it accepts", async () => {
+    const sent = {
+      name: "Parity Dog",
+      type: "dog",
+      microchip_number: "900000000000001",
+      vet_clinic_name: "Smoke Clinic",
+      vet_clinic_phone: "03-0000000",
+      insurance_company: "Smoke Insurance",
+      has_insurance: true,
+      current_food: "Smoke Kibble",
+      color: "black",
+      next_vet_visit: "2027-01-15",
+      lost_contact_phone: "050-0000000",
+    };
+
+    const created = await authed("/api/me/pets", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(sent),
+    });
+    expectStatus(created, [200, 201], "create pet with full payload");
+
+    const body = await created.json();
+    const pet = body.pet || body;
+
+    // Date-only columns come back from pg as Date objects, so the API renders
+    // them as full ISO timestamps ("2027-01-15T00:00:00.000Z") rather than the
+    // "2027-01-15" that was sent. That is longstanding behaviour of every date
+    // column here and is not what this check is about, so compare the date part.
+    const comparable = (value) => {
+      const text = String(value ?? "");
+      return /^\d{4}-\d{2}-\d{2}T/.test(text) ? text.slice(0, 10) : text;
+    };
+
+    const dropped = Object.keys(sent).filter((field) => {
+      const expected = sent[field];
+      const actual = pet[field];
+      return typeof expected === "boolean"
+        ? actual !== expected
+        : comparable(actual) !== comparable(expected);
+    });
+
+    if (dropped.length > 0) {
+      throw new Error(`create accepted but did not store: ${dropped.join(", ")}`);
+    }
+  });
+
+  // A negative age breaks the feeding portion, the life stage and the
+  // preventive-care schedule, so the value is refused rather than stored.
+  await check("POST /api/me/pets refuses a birth date in the future", async () => {
+    const nextYear = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const created = await authed("/api/me/pets", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: "Time Traveller", type: "dog", birth_date: nextYear }),
+    });
+    expectStatus(created, [400], "future birth date");
+  });
+
+  // Today's date must still be accepted wherever the owner is: a date-only
+  // value carries no timezone, so the bound has a day of slack.
+  await check("POST /api/me/pets accepts a birth date of today", async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const created = await authed("/api/me/pets", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: "Newborn", type: "cat", birth_date: today }),
+    });
+    expectStatus(created, [200, 201], "birth date of today");
+  });
+
+  // Unknown has to stay unknown. The add-pet form used to pre-select "no", and
+  // the column recorded a claim the owner never made.
+  await check("POST /api/me/pets keeps an unanswered neuter status null", async () => {
+    const created = await authed("/api/me/pets", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: "Unstated", type: "cat", is_neutered: null }),
+    });
+    expectStatus(created, [200, 201], "null neuter status");
+
+    const body = await created.json();
+    const pet = body.pet || body;
+    if (pet.is_neutered !== null) {
+      throw new Error(`expected is_neutered null, got ${JSON.stringify(pet.is_neutered)}`);
+    }
+  });
+
   shutdown();
   await sleep(300);
 

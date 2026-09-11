@@ -1898,7 +1898,29 @@ const normalizePetPayload = (body, { partial = false } = {}) => {
     if (has(field)) payload[field] = body[field] === null ? null : String(body[field] || "").trim() || null;
   }
 
-  if (has("birth_date") || has("birthDate")) payload.birth_date = normalizeDateOnly(body.birth_date || body.birthDate);
+  if (has("birth_date") || has("birthDate")) {
+    payload.birth_date = normalizeDateOnly(body.birth_date || body.birthDate);
+
+    // A pet cannot have been born tomorrow, and accepting one poisons
+    // everything downstream: age comes out negative, and the life stage derived
+    // from age decides the feeding portion, the preventive-care schedule and
+    // the health score. Rejecting it here keeps the bad value out of the column
+    // rather than leaving every reader to defend against it.
+    //
+    // The bound is tomorrow in UTC, not today. Date-only values carry no
+    // timezone, and an owner east of UTC can legitimately be on a calendar date
+    // the server has not reached yet. One day of slack accepts a birth date of
+    // "today" anywhere on earth while still refusing the mistakes this is for --
+    // a mistyped year, or a date months out.
+    if (payload.birth_date) {
+      const latestAcceptable = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      if (payload.birth_date > latestAcceptable) {
+        const error = new Error("Birth date cannot be in the future");
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+  }
   if (has("last_vet_visit") || has("lastVetVisit")) payload.last_vet_visit = normalizeDateOnly(body.last_vet_visit || body.lastVetVisit);
   if (has("next_vet_visit") || has("nextVetVisit")) payload.next_vet_visit = normalizeDateOnly(body.next_vet_visit || body.nextVetVisit);
   if (has("insurance_expiry_date") || has("insuranceExpiryDate")) payload.insurance_expiry_date = normalizeDateOnly(body.insurance_expiry_date || body.insuranceExpiryDate);
@@ -1935,58 +1957,34 @@ const normalizePetPayload = (body, { partial = false } = {}) => {
 
 const insertUserPet = async (userId, body) => {
   const payload = normalizePetPayload(body);
+
+  // The columns are derived from the payload rather than written out by hand.
+  //
+  // A hand-written list is a second allowlist that has to be kept in step with
+  // normalizePetPayload's, and it was not. normalizePetPayload accepts
+  // forty-two columns; this insert wrote nineteen of them. The other
+  // twenty-three -- the microchip number, every vet-clinic field, the insurance
+  // fields, the licence fields and all eight lost-pet fields -- were read,
+  // validated, and then dropped, while the request was answered 201 Created.
+  // An owner who typed a microchip number into the add-pet form was told it was
+  // saved when it was not.
+  //
+  // updateUserPet already builds its assignments this way, so create and update
+  // now store the same set: a field added to normalizePetPayload is honoured by
+  // both paths or by neither, and the two cannot drift apart again.
+  //
+  // Every key comes from normalizePetPayload's own allowlist, each one a literal
+  // written in this file, so no request can put text into the column list.
+  // Columns the payload does not carry are left out and the table's defaults
+  // apply to them.
+  const columns = ["user_id", ...Object.keys(payload)];
   const result = await pool.query(
     `
-      insert into public.pets (
-        user_id,
-        name,
-        type,
-        breed,
-        secondary_breed,
-        is_mixed,
-        breed_confidence,
-        avatar_url,
-        weight,
-        birth_date,
-        gender,
-        is_neutered,
-        medical_conditions,
-        health_notes,
-        personality_tags,
-        favorite_activities,
-        activities,
-        theme_color,
-        archived,
-        archived_at
-      )
-      values (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-        $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
-      )
+      insert into public.pets (${columns.join(", ")})
+      values (${columns.map((_, index) => `$${index + 1}`).join(", ")})
       returning *
     `,
-    [
-      userId,
-      payload.name,
-      payload.type,
-      payload.breed || null,
-      payload.secondary_breed || null,
-      payload.is_mixed || false,
-      payload.breed_confidence || null,
-      payload.avatar_url || null,
-      payload.weight || null,
-      payload.birth_date || null,
-      payload.gender || null,
-      Object.prototype.hasOwnProperty.call(payload, "is_neutered") ? payload.is_neutered : null,
-      payload.medical_conditions || null,
-      payload.health_notes || null,
-      payload.personality_tags || null,
-      payload.favorite_activities || null,
-      payload.activities || null,
-      payload.theme_color || null,
-      payload.archived || false,
-      payload.archived_at || null,
-    ],
+    [userId, ...Object.keys(payload).map((column) => payload[column])],
   );
 
   const pet = result.rows[0];
