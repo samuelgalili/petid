@@ -8,15 +8,18 @@
 // Lifted out of ProductInfoDrawer so the drawer and the product page cannot
 // drift apart and show the same pet two different numbers for the same product.
 
+import { petAgeInMonths } from "@/lib/petAge";
+
 export interface PetSafetyContext {
   birthDate?: string | null;
+  /** The API's own age, preferred over recomputing from birthDate. */
+  ageYears?: number | null;
+  ageMonths?: number | null;
   breed?: string | null;
   medicalConditions?: string[] | null;
 }
 
 export type SafetyLevel = "safe" | "caution" | "unsafe";
-
-const MONTH_MS = 1000 * 60 * 60 * 24 * 30.44;
 
 // Conditions where what the animal eats is part of the treatment.
 const DIET_SENSITIVE_CONDITIONS = ["allergies", "digestive", "kidney", "urinary", "heart"];
@@ -35,13 +38,13 @@ export const isFoodCategory = (category?: string | null): boolean => {
   return FOOD_CATEGORIES.has(value);
 };
 
-export const petAgeInMonths = (birthDate?: string | null): number | null => {
-  if (!birthDate) return null;
-  const born = new Date(birthDate).getTime();
-  if (!Number.isFinite(born)) return null;
-  const months = Math.floor((Date.now() - born) / MONTH_MS);
-  return months >= 0 ? months : null;
-};
+// Age used its own 30.44-day month here, against the server's 30.4375. The
+// difference is small and the principle is not: one derivation, one answer.
+const contextAgeInMonths = (pet: PetSafetyContext): number | null => petAgeInMonths({
+  age_years: pet.ageYears,
+  age_months: pet.ageMonths,
+  birth_date: pet.birthDate,
+});
 
 /**
  * Adjust a product's base score for one pet. Returns null when the product has
@@ -59,7 +62,7 @@ export const computePetAdjustedScore = (
 
   let adjusted = base;
 
-  const ageMonths = petAgeInMonths(pet.birthDate);
+  const ageMonths = contextAgeInMonths(pet);
   if (ageMonths !== null) {
     if (ageMonths < 6) adjusted -= 0.8;
     else if (ageMonths < 12) adjusted -= 0.3;
@@ -104,7 +107,7 @@ export const explainAdjustment = (
   if (Math.abs(Number(baseScore) - adjusted) < 0.05) return null;
 
   const who = petName || "החיה שלך";
-  const ageMonths = petAgeInMonths(pet.birthDate);
+  const ageMonths = contextAgeInMonths(pet);
   const reasons: string[] = [];
 
   if (ageMonths !== null) {

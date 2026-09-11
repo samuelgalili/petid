@@ -10,6 +10,7 @@ import {
   Pill, Baby, MapPin, X, ExternalLink
 } from "lucide-react";
 import { getMyPetHealthSummary } from "@/lib/mipoApi";
+import { petAgeMonthsFromBirthDate } from "@/lib/petAge";
 
 interface PreventiveCareEngineProps {
   petId: string;
@@ -48,11 +49,11 @@ export const PreventiveCareEngine = ({
   const [lastDeworming, setLastDeworming] = useState<string | null>(null);
   const [showEmergency, setShowEmergency] = useState(false);
 
-  const ageMonths = useMemo(() => {
-    if (!birthDate) return 0;
-    const birth = new Date(birthDate);
-    return Math.floor((Date.now() - birth.getTime()) / (1000 * 60 * 60 * 24 * 30));
-  }, [birthDate]);
+  // A flat 30-day month was used here; the canonical derivation uses the
+  // server's 30.4375. Unknown stays 0 rather than null because every schedule
+  // below indexes on a number — but note that 0 means "no birth date", not
+  // "newborn", and the schedules treat both the same way today.
+  const ageMonths = useMemo(() => petAgeMonthsFromBirthDate(birthDate) ?? 0, [birthDate]);
 
 	  useEffect(() => {
 	    const fetchData = async () => {

@@ -4,6 +4,7 @@ import { memo, useMemo, useState, type CSSProperties } from "react";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { toast } from "sonner";
 import { updateMyPet } from "@/lib/mipoApi";
+import { petAge, type PetAgeInput } from "@/lib/petAge";
 
 interface PetCardPet {
   id: string;
@@ -30,14 +31,13 @@ interface PetCardProps {
   onDeleted?: () => void;
 }
 
-const getAge = (birthDate: string | null): string | null => {
-  if (!birthDate) return null;
-  const birth = new Date(birthDate);
-  const now = new Date();
-  const years = Math.floor((now.getTime() - birth.getTime()) / (1000 * 60 * 60 * 24 * 365.25));
-  const months = Math.floor(((now.getTime() - birth.getTime()) % (1000 * 60 * 60 * 24 * 365.25)) / (1000 * 60 * 60 * 24 * 30.44));
-  if (years > 0) return `${years} ${years === 1 ? 'שנה' : 'שנים'}`;
-  if (months > 0) return `${months} ${months === 1 ? 'חודש' : 'חודשים'}`;
+// A 365.25-day year and a 30.44-day month were computed here; the server uses
+// 30.4375 and already returns age_years/age_months. One derivation, one answer.
+const getAge = (pet: PetAgeInput): string | null => {
+  const age = petAge(pet);
+  if (age === null) return null;
+  if (age.years > 0) return `${age.years} ${age.years === 1 ? 'שנה' : 'שנים'}`;
+  if (age.months > 0) return `${age.months} ${age.months === 1 ? 'חודש' : 'חודשים'}`;
   return 'גור';
 };
 
@@ -90,7 +90,7 @@ export const PetCard = memo(({
 }: PetCardProps) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const age = useMemo(() => getAge(pet.birth_date), [pet.birth_date]);
+  const age = useMemo(() => getAge(pet), [pet]);
   const genderIcon = useMemo(() => getGenderIcon(pet.gender), [pet.gender]);
   const genderColor = useMemo(() => getGenderColor(pet.gender), [pet.gender]);
   const petEmoji = pet.type === 'dog' ? '🐕' : '🐈';

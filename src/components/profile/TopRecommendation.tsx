@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { DateWheelPicker } from "@/components/ui/date-wheel-picker";
-import { SizeWheelPicker, WeightWheelPicker } from "@/components/ui/wheel-picker";
+import { WeightWheelPicker } from "@/components/ui/wheel-picker";
 import { useToast } from "@/hooks/use-toast";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
@@ -15,6 +15,8 @@ import { PetQRCode } from "@/components/profile/PetQRCode";
 import { useCelebration } from "@/hooks/useCelebration";
 import { getMyOrders, updateMyPet } from "@/lib/mipoApi";
 import { formatLocalDate } from "@/lib/dateOnly";
+import { formatPetAgeHe, petAge, petAgeInYears } from "@/lib/petAge";
+import { breedActivityMinutes, breedEnergyLevel } from "@/lib/petActivity";
 
 interface Pet {
   id: string;
@@ -24,7 +26,8 @@ interface Pet {
   birth_date?: string;
   age_years?: number;
   age_months?: number;
-  size?: string;
+  // `size` is deliberately absent: the API does not return it, so declaring it
+  // here only invited code to read a field that is always undefined.
   weight?: number;
   avatar_url?: string;
   user_id?: string;
@@ -79,13 +82,11 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
   const [hasTriggeredCelebration, setHasTriggeredCelebration] = useState(false);
   const [breedInfo, setBreedInfo] = useState<BreedInfo | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [editField, setEditField] = useState<'age' | 'size' | 'weight' | null>(null);
+  const [editField, setEditField] = useState<'age' | 'weight' | null>(null);
   const [birthDate, setBirthDate] = useState<Date>(new Date());
-  const [sizeValue, setSizeValue] = useState<string>('');
   const [weightValue, setWeightValue] = useState<number>(10);
   const [saving, setSaving] = useState(false);
   const [recentPurchases, setRecentPurchases] = useState<Array<{id: string; product_name: string; product_image: string | null; quantity: number; price: number; created_at: string}>>([]);
-  const [feedingGuideline, setFeedingGuideline] = useState<{min: number; max: number} | null>(null);
   const [medicalConditions, setMedicalConditions] = useState<string[]>([]);
   const [currentFood, setCurrentFood] = useState<string | null>(null);
   const [medicalAffectedCircles, setMedicalAffectedCircles] = useState<Set<string>>(new Set());
@@ -159,81 +160,40 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
     fetchRecentPurchases();
   }, [user?.email]);
 
-  // Fetch manufacturer feeding guidelines based on pet weight and age
-  useEffect(() => {
-    const fetchFeedingGuidelines = async () => {
-      // Get pet weight
-      let weightKg: number | null = pet.weight || null;
-      if (!weightKg && breedInfo?.weight_range_kg) {
-        const match = breedInfo.weight_range_kg.match(/(\d+)-(\d+)/);
-        if (match) weightKg = (parseInt(match[1]) + parseInt(match[2])) / 2;
-      }
-      if (!weightKg) return;
-
-      // Determine age group
-      let ageGroup = 'adult';
-      if (pet.birth_date) {
-        const { years, months } = calculateAge(pet.birth_date);
-        const ageYears = years + months / 12;
-        if (ageYears < 0.5) ageGroup = 'puppy';
-        else if (ageYears < 1.5) ageGroup = 'junior';
-        else if (ageYears > 7) ageGroup = 'senior';
-      }
-
-      const multiplier = ageGroup === 'puppy' || ageGroup === 'junior' ? [30, 45] : ageGroup === 'senior' ? [18, 25] : [20, 30];
-      setFeedingGuideline({
-        min: Math.round(weightKg * multiplier[0]),
-        max: Math.round(weightKg * multiplier[1]),
-      });
-    };
-
-    fetchFeedingGuidelines();
-  }, [pet.weight, pet.birth_date, breedInfo?.weight_range_kg]);
+  // Feeding guidance used to be computed here, under a comment that said it
+  // fetched manufacturer guidelines. It fetched nothing: it multiplied the
+  // pet's weight by a constant (20-30 g/kg, 30-45 for a puppy, 18-25 for a
+  // senior) and, when the owner had given no weight, substituted the midpoint
+  // of the breed's published weight range. Three different screens did the same
+  // thing with three different constants, so the same animal was given
+  // different numbers depending on where you looked.
+  //
+  // Mipo no longer derives a feeding amount for an owner. The product's own
+  // guidance is the single owner-facing source (src/lib/feedingGuidance.ts),
+  // and it carries its provenance. Where there is no product guidance this
+  // screen shows nothing, which is the honest outcome.
+  // See docs/pet-intelligence/34-NUTRITION-DATA-CONTRACT.md and 54 §P0.1.
 
   // Check if using AI data - use birth_date for age calculation
   const hasUserBirthDate = !!pet.birth_date;
   const isAgeFromBreed = !hasUserBirthDate && breedInfo?.life_expectancy_years;
-  const isSizeFromBreed = !pet.size && breedInfo?.size_category;
+  // Breed data is a prior about the breed, never a fact about this animal, so
+  // these only ever drive a visible "from the breed" hint next to the value.
+  // `pet.size` was previously read here; it is a column the API does not return
+  // (see docs/pet-intelligence/31), so the hint could never appear. Size now
+  // comes from the same place it is displayed from.
+  const isSizeFromBreed = !!breedInfo?.size_category;
   const isWeightFromBreed = !pet.weight && breedInfo?.weight_range_kg;
 
-  // Calculate age from birth_date
-  const calculateAge = (birthDateStr: string) => {
-    const birth = new Date(birthDateStr);
-    const now = new Date();
-    let years = now.getFullYear() - birth.getFullYear();
-    let months = now.getMonth() - birth.getMonth();
-    
-    if (months < 0) {
-      years--;
-      months += 12;
-    }
-    if (now.getDate() < birth.getDate()) {
-      months--;
-      if (months < 0) {
-        years--;
-        months += 12;
-      }
-    }
-    return { years, months };
-  };
+  // A calendar-arithmetic age lived here, one of six implementations in the
+  // client with three different month lengths. Age is derived once, on the
+  // server, and returned as age_years/age_months. See src/lib/petAge.ts.
 
   // Format age display
   const getAgeDisplay = () => {
-    if (pet.birth_date) {
-      const { years, months } = calculateAge(pet.birth_date);
-      const yearsText = years === 1 ? 'שנה' : 'שנים';
-      const monthsText = months === 1 ? 'חודש' : 'חודשים';
-      
-      if (years > 0 && months > 0) {
-        return `${years} ${yearsText} ו-${months} ${monthsText}`;
-      }
-      if (years > 0) {
-        return `${years} ${yearsText}`;
-      }
-      if (months > 0) {
-        return `${months} ${monthsText}`;
-      }
-      return 'פחות מחודש';
+    const formatted = formatPetAgeHe(pet);
+    if (formatted) {
+      return petAge(pet)?.totalMonths === 0 ? 'פחות מחודש' : formatted;
     }
     if (breedInfo?.life_expectancy_years) {
       return `~${breedInfo.life_expectancy_years.split('-')[0]} שנים`;
@@ -249,9 +209,11 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
       'large': 'גדול',
       'extra_large': 'ענק',
     };
-    if (pet.size) {
-      return sizes[pet.size] || pet.size;
-    }
+    // `pet.size` was read first here. It is a column the API does not return
+    // (docs/pet-intelligence/31), so this branch could never be taken and the
+    // editor that wrote it silently discarded the value server-side. Size is a
+    // derived value in P1 (weight + breed); until then the breed's typical size
+    // is the only thing there is, and it is shown as the breed's, not the pet's.
     if (breedInfo?.size_category) {
       return sizes[breedInfo.size_category] || breedInfo.size_category;
     }
@@ -263,88 +225,29 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
     if (pet.weight) {
       return `${pet.weight} ק"ג`;
     }
+    // The breed's published range, shown as the breed's — never as this
+    // animal's weight. docs/pet-intelligence/54 §P0.6.
     if (breedInfo?.weight_range_kg) {
-      return `~${breedInfo.weight_range_kg} ק"ג`;
+      return `${breedInfo.weight_range_kg} ק"ג טיפוסי לגזע`;
     }
     return 'לא צוין';
   };
 
-  // Calculate recommended daily feeding in grams based on weight, age, and activity
-  const getRecommendedFeedingGrams = (): number | null => {
-    // Get weight - from pet data or breed average
-    let weightKg: number | null = null;
-    if (pet.weight) {
-      weightKg = pet.weight;
-    } else if (breedInfo?.weight_range_kg) {
-      // Parse weight range and take average
-      const range = breedInfo.weight_range_kg;
-      const match = range.match(/(\d+)-(\d+)/);
-      if (match) {
-        weightKg = (parseInt(match[1]) + parseInt(match[2])) / 2;
-      } else {
-        const singleMatch = range.match(/(\d+)/);
-        if (singleMatch) {
-          weightKg = parseInt(singleMatch[1]);
-        }
-      }
-    }
-    
-    if (!weightKg) return null;
-    
-    // Calculate age in years for adjustment
-    let ageYears = 3; // default adult
-    if (pet.birth_date) {
-      const { years, months } = calculateAge(pet.birth_date);
-      ageYears = years + (months / 12);
-    }
-    
-    // Base calculation: 2-3% of body weight for adults
-    // Puppies/kittens need more (3-4%), seniors need less (1.5-2%)
-    let percentageOfWeight = 0.025; // 2.5% default for adults
-    
-    if (ageYears < 1) {
-      percentageOfWeight = 0.04; // 4% for puppies/kittens
-    } else if (ageYears < 2) {
-      percentageOfWeight = 0.03; // 3% for young adults
-    } else if (ageYears > 7) {
-      percentageOfWeight = 0.02; // 2% for seniors
-    }
-    
-    // Convert to grams (weight in kg * percentage * 1000)
-    const dailyGrams = Math.round(weightKg * percentageOfWeight * 1000);
-    
-    return dailyGrams;
-  };
-
-  const recommendedGrams = getRecommendedFeedingGrams();
+  // A second body-weight-percentage feeding calculation lived here (4% under a
+  // year, 3% under two, 2.5% adult, 2% over seven), falling back to the midpoint
+  // of the breed's weight range when the owner had given no weight. It disagreed
+  // with the one above it in this same file, and with a third in FeedingSheet.
+  // Mipo no longer derives a feeding amount for an owner; the product's own
+  // guidance is the single source. See src/lib/feedingGuidance.ts.
 
   // Get recommended activity minutes based on energy_level (1-5 scale) or exercise_needs
-  const getActivityMinutes = (): number | null => {
-    // Use energy_level from breed_information if available
-    if (breedInfo?.energy_level) {
-      const levels: Record<number, number> = { 1: 20, 2: 30, 3: 45, 4: 60, 5: 90 };
-      return levels[breedInfo.energy_level] || 45;
-    }
-    // Fallback to exercise_needs text
-    const exercise = breedInfo?.exercise_needs?.toLowerCase() || '';
-    if (exercise.includes('very high') || exercise.includes('גבוהה מאוד')) return 90;
-    if (exercise.includes('high') || exercise.includes('גבוה')) return 60;
-    if (exercise.includes('moderate') || exercise.includes('medium') || exercise.includes('בינוני')) return 45;
-    if (exercise.includes('low') || exercise.includes('נמוך')) return 30;
-    return null;
-  };
+  // Shared with EnergySheet, which derived the same thing from the breed's
+  // *name* and so always returned the medium default. See src/lib/petActivity.ts.
+  const getActivityMinutes = (): number | null => breedActivityMinutes(breedInfo);
 
-  // Get energy level value (1-5) for visual display
-  const getEnergyLevel = (): number => {
-    if (breedInfo?.energy_level) return breedInfo.energy_level;
-    const mins = getActivityMinutes();
-    if (!mins) return 3;
-    if (mins >= 90) return 5;
-    if (mins >= 60) return 4;
-    if (mins >= 45) return 3;
-    if (mins >= 30) return 2;
-    return 1;
-  };
+  // 1-5 for the visual bar. Falls back to the middle only for display; a null
+  // level means "we do not know" and the label beside it says so.
+  const getEnergyLevel = (): number => breedEnergyLevel(breedInfo) ?? 3;
 
   // Get grooming frequency level using grooming_freq (1-5) or grooming_needs
   const getGroomingLevel = (): number => {
@@ -409,7 +312,7 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
   const activityMinutes = getActivityMinutes();
 
   // Open edit modal
-  const openEditModal = (field: 'age' | 'size' | 'weight') => {
+  const openEditModal = (field: 'age' | 'weight') => {
     if (!isOwner) return;
     setEditField(field);
     if (field === 'age') {
@@ -419,16 +322,14 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
       } else {
         setBirthDate(new Date());
       }
-    } else if (field === 'size') {
-      // Set size from pet data or breed default
-      setSizeValue(pet.size || breedInfo?.size_category || 'medium');
     } else if (field === 'weight') {
-      // Set weight from pet data or parse from breed range
+      // Seeded from the breed's weight range when the owner had not given one.
+      // The owner then only had to press save for a breed average to become
+      // their animal's recorded weight, as USER_PROVIDED — a breed statistic
+      // laundered into a pet fact. The picker now starts neutral and the number
+      // that gets saved is one somebody actually chose.
       if (pet.weight) {
         setWeightValue(pet.weight);
-      } else if (breedInfo?.weight_range_kg) {
-        const avgWeight = parseInt(breedInfo.weight_range_kg.split('-')[0]) || 10;
-        setWeightValue(avgWeight);
       } else {
         setWeightValue(10);
       }
@@ -448,8 +349,6 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
         // Save birth_date
         const formattedDate = formatLocalDate(birthDate);
         updateData = { birth_date: formattedDate };
-      } else if (editField === 'size') {
-        updateData = { size: sizeValue || null };
       } else if (editField === 'weight') {
         updateData = { weight: weightValue || null };
       }
@@ -492,15 +391,14 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
 
   // Computed: Life stage label
   const lifeStage = useMemo(() => {
-    if (!pet.birth_date) return null;
-    const { years, months } = calculateAge(pet.birth_date);
-    const totalMonths = years * 12 + months;
-    if (totalMonths < 6) return 'גור';
-    if (totalMonths < 12) return 'גור צעיר';
-    if (totalMonths < 24) return 'צעיר/ה';
-    if (years > 7) return 'סניור';
+    const age = petAge(pet);
+    if (age === null) return null;
+    if (age.totalMonths < 6) return 'גור';
+    if (age.totalMonths < 12) return 'גור צעיר';
+    if (age.totalMonths < 24) return 'צעיר/ה';
+    if (age.years > 7) return 'סניור';
     return 'בוגר/ת';
-  }, [pet.birth_date]);
+  }, [pet]);
 
   // Computed: Primary breed trait (breed-specific critical need)
   const primaryBreedTrait = useMemo(() => {
@@ -572,7 +470,6 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
   const getFieldLabel = () => {
     switch(editField) {
       case 'age': return 'גיל (בשנים)';
-      case 'size': return 'גודל';
       case 'weight': return 'משקל (ק"ג)';
       default: return '';
     }
@@ -580,7 +477,9 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
 
   // #5 Health status color
   const getHealthDotColor = () => {
-    if (pet.birth_date && pet.weight && pet.size) return 'bg-green-500';
+    // Was gated on pet.size, which the API never returns, so this could never
+    // be green however complete the profile was.
+    if (pet.birth_date && pet.weight) return 'bg-green-500';
     if (pet.birth_date || pet.weight) return 'bg-amber-500';
     return 'bg-red-400';
   };
@@ -588,11 +487,12 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
   // #14 Profile completion
   const profileCompletion = useMemo(() => {
     let score = 0;
-    const total = 6;
+    // Five, not six: pet.size counted toward the total but could never be set,
+    // so completion capped at 83% and the 100% celebration could never fire.
+    const total = 5;
     if (pet.name) score++;
     if (pet.breed) score++;
     if (pet.birth_date) score++;
-    if (pet.size) score++;
     if (pet.weight) score++;
     if (pet.avatar_url) score++;
     return Math.round((score / total) * 100);
@@ -650,11 +550,11 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
     }
   };
 
-  // #19 Food suitability (simplified)
-  const getFoodScore = (): number | null => {
-    if (!feedingGuideline) return null;
-    return Math.min(95, 70 + Math.floor(Math.random() * 25)); // Placeholder until real data
-  };
+  // A "food suitability" score lived here and returned
+  // `Math.min(95, 70 + Math.floor(Math.random() * 25))` — a random number
+  // between 70 and 95, marked as a placeholder. Nothing called it. Removed
+  // rather than left for someone to wire up: a percentage with no model behind
+  // it is the thing docs/pet-intelligence/52 exists to prevent.
 
   // AI Insights badges based on breed and medical conditions
   const aiInsights = useMemo(() => {
@@ -757,10 +657,8 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
     let mobility = 60;
     if (hasIngredient(['glucosamine', 'גלוקוזאמין', 'joint', 'מפרק', 'chondroitin', 'כונדרואיטין', 'mobility'])) mobility = 82;
     if (hasIngredient(['msm', 'hyaluronic', 'היאלורונ'])) mobility = Math.min(100, mobility + 10);
-    if (pet.birth_date) {
-      const ageYears = (Date.now() - new Date(pet.birth_date).getTime()) / (1000 * 60 * 60 * 24 * 365);
-      if (ageYears > 8 && mobility === 60) mobility = 40;
-    }
+    const ageYears = petAgeInYears(pet);
+    if (ageYears !== null && ageYears > 8 && mobility === 60) mobility = 40;
     const breedLower2 = (pet.breed || '').toLowerCase();
     if (['לברדור', 'גולדן', 'רועה גרמני', 'labrador', 'golden'].some(b => breedLower2.includes(b)) && mobility === 60) mobility = 50;
 
@@ -1194,29 +1092,16 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
             whileTap={{ scale: 0.97 }}
             onClick={onFeedingOpen}
             className="relative flex flex-col items-center p-3 bg-card/70 backdrop-blur-sm hover:bg-primary/8 rounded-2xl border border-border/20 hover:border-primary/30 transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-primary/5 group"
-            aria-label={`האכלה: ${recommendedGrams || 0} גרם`}
+            aria-label="האכלה"
           >
-            <div className="w-full h-1.5 bg-muted-foreground/10 rounded-full mb-2 overflow-hidden">
-              <motion.div 
-                initial={{ width: 0 }}
-                animate={{ width: feedingGuideline ? `${Math.min((feedingGuideline.max / 500) * 100, 100)}%` : recommendedGrams ? `${Math.min((recommendedGrams / 500) * 100, 100)}%` : '50%' }}
-                transition={{ delay: 0.2, duration: 0.5 }}
-                className="h-full bg-primary rounded-full"
-              />
-            </div>
             <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1.5 transition-colors ${
               medicalAffectedCircles.has('feeding') ? 'bg-amber-500/15 group-hover:bg-amber-500/25' : 'bg-primary/10 group-hover:bg-primary/20'
             }`}>
               {pet.type === 'dog' ? <Bone className={`w-5 h-5 ${medicalAffectedCircles.has('feeding') ? 'text-amber-500' : 'text-primary'}`} /> : <Fish className={`w-5 h-5 ${medicalAffectedCircles.has('feeding') ? 'text-amber-500' : 'text-primary'}`} />}
             </div>
             <span className="text-xs font-semibold text-foreground">האכלה</span>
-            {feedingGuideline ? (
-              <span className="text-[10px] text-primary font-bold mt-0.5">{feedingGuideline.min}-{feedingGuideline.max} גרם</span>
-            ) : recommendedGrams ? (
-              <span className="text-[10px] text-primary font-bold mt-0.5">~{recommendedGrams} גרם</span>
-            ) : (
-              <span className="text-[10px] text-muted-foreground mt-0.5">—</span>
-            )}
+            {/* No amount here. The product's own guidance is the only
+                owner-facing feeding number, and it lives on the product. */}
           </motion.button>
 
           {/* Shedding/Fur Button */}
@@ -1287,44 +1172,12 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
             <span className="text-[11px] font-bold text-foreground">מדדי בריאות יומיים</span>
           </div>
           
-          {/* Daily Fed Meter */}
-          {recommendedGrams && (
-            <div className="mb-3 p-2.5 bg-card rounded-xl border border-border/20">
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-1.5">
-                  {pet.type === 'dog' ? <Bone className="w-3.5 h-3.5 text-primary" strokeWidth={1.5} /> : <Fish className="w-3.5 h-3.5 text-primary" strokeWidth={1.5} />}
-                  <span className="text-[10px] font-bold text-foreground">צריכה יומית מומלצת</span>
-                </div>
-                <span className="text-xs font-bold text-primary">
-                  {feedingGuideline ? `${feedingGuideline.min}-${feedingGuideline.max}` : `~${recommendedGrams}`} גרם
-                </span>
-              </div>
-              <div className="w-full h-3 bg-muted rounded-full overflow-hidden relative">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${Math.min((recommendedGrams / (feedingGuideline?.max || recommendedGrams * 1.2)) * 100, 100)}%` }}
-                  transition={{ delay: 0.6, duration: 1, ease: "easeOut" }}
-                  className="h-full bg-gradient-to-l from-primary to-primary/70 rounded-full"
-                />
-                {/* Target markers */}
-                {feedingGuideline && (
-                  <>
-                    <div className="absolute top-0 bottom-0 border-r border-dashed border-foreground/20" style={{ left: `${(feedingGuideline.min / (feedingGuideline.max * 1.2)) * 100}%` }} />
-                    <div className="absolute top-0 bottom-0 border-r border-dashed border-foreground/20" style={{ left: `${(feedingGuideline.max / (feedingGuideline.max * 1.2)) * 100}%` }} />
-                  </>
-                )}
-              </div>
-              {lifeStage && (
-                <p className="text-[9px] text-muted-foreground mt-1">
-                  {lifeStage === 'גור' || lifeStage === 'גור צעיר' 
-                    ? `${pet.name} ${lifeStage} — נדרש חלבון גבוה לבניית עצמות`
-                    : lifeStage === 'סניור'
-                    ? `${pet.name} ${lifeStage} — מומלץ מזון דל-שומן`
-                    : `${pet.name} ${lifeStage} — תזונה מאוזנת`}
-                </p>
-              )}
-            </div>
-          )}
+          {/* The "recommended daily intake" meter that stood here rendered a
+              body-weight-percentage number as if it were a guideline, with
+              dashed "target" markers around a second percentage. Both are gone.
+              Feeding guidance now comes from the product the owner actually
+              buys, on the product page, with its provenance stated.
+              See docs/pet-intelligence/34 and 54 §P0.1. */}
 
           {/* Energy Prediction Bar */}
           <div className="mb-2 p-2.5 bg-card rounded-xl border border-border/20">
@@ -1519,8 +1372,6 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
                   <p className="text-xs text-muted-foreground">
                     {editField === 'age' 
                       ? `מתי נולד/ה ${pet.name}? זה עוזר לי להתאים תזונה ובריאות.`
-                      : editField === 'size' 
-                      ? `מה הגודל של ${pet.name}? זה משפיע על המלצות מוצרים.`
                       : `כמה שוקל/ת ${pet.name}? זה חיוני לחישוב כמות מזון.`
                     }
                   </p>
@@ -1566,12 +1417,6 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
                       </motion.div>
                     )}
                   </div>
-                ) : editField === 'size' ? (
-                  <SizeWheelPicker
-                    value={sizeValue}
-                    onChange={setSizeValue}
-                    defaultFromBreed={breedInfo?.size_category}
-                  />
                 ) : editField === 'weight' ? (
                   <WeightWheelPicker
                     value={weightValue}

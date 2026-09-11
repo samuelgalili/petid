@@ -31,6 +31,7 @@ import {
   SAFETY_LABEL_HE,
   type SafetyLevel,
 } from "@/lib/petSafetyScore";
+import { feedingGuidanceSourceLabelHe, readFeedingGuidance } from "@/lib/feedingGuidance";
 
 const FREE_SHIPPING_THRESHOLD = 199;
 const SHIPPING_ESTIMATE_HE = "3-5 ימי עסקים";
@@ -192,15 +193,19 @@ const ProductDetailAws = () => {
   const safetyScore = useMemo(
     () => computePetAdjustedScore(product?.safety_score, {
       birthDate: pet?.birth_date,
+      ageYears: pet?.age_years,
+      ageMonths: pet?.age_months,
       breed: pet?.breed,
       medicalConditions: pet?.medical_conditions,
     }, product?.category),
-    [product?.safety_score, product?.category, pet?.birth_date, pet?.breed, pet?.medical_conditions],
+    [product?.safety_score, product?.category, pet?.birth_date, pet?.age_years, pet?.age_months, pet?.breed, pet?.medical_conditions],
   );
   const safetyLevel = safetyLevelFor(safetyScore);
   const safetyNote = useMemo(
     () => explainAdjustment(product?.safety_score, safetyScore, {
       birthDate: pet?.birth_date,
+      ageYears: pet?.age_years,
+      ageMonths: pet?.age_months,
       breed: pet?.breed,
       medicalConditions: pet?.medical_conditions,
     }, product?.category, pet?.name),
@@ -208,7 +213,12 @@ const ProductDetailAws = () => {
   );
 
   const benefits = useMemo(() => asTextList(product?.benefits), [product?.benefits]);
-  const feedingGuide = useMemo(() => asTextList(product?.feeding_guide), [product?.feeding_guide]);
+  // asTextList cannot read this column: the import pipeline stores
+  // `[{range, amount}]`, and asTextList only looks for text/title/label/value,
+  // so every entry collapsed to "" and the section never rendered. It is the
+  // only owner-facing feeding guidance there is now, so it reads through the
+  // shared resolver, which also carries the provenance.
+  const feedingGuidance = useMemo(() => readFeedingGuidance(product), [product]);
   const variantGroups = useMemo(() => readVariantGroups(product?.product_attributes), [product?.product_attributes]);
   const flavors = useMemo(() => (product?.flavors || []).filter(Boolean), [product?.flavors]);
 
@@ -508,13 +518,16 @@ const ProductDetailAws = () => {
             </Section>
           )}
 
-          {feedingGuide.length > 0 && (
+          {feedingGuidance && (
             <Section title="הוראות האכלה" icon={Utensils}>
               <ul className="space-y-1.5">
-                {feedingGuide.map((line) => (
+                {feedingGuidance.lines.map((line) => (
                   <li key={line} className="text-sm leading-6 text-muted-foreground">{line}</li>
                 ))}
               </ul>
+              <p className="mt-2 text-xs text-muted-foreground/80">
+                {feedingGuidanceSourceLabelHe(feedingGuidance.source)}
+              </p>
             </Section>
           )}
 

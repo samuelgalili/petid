@@ -19,25 +19,23 @@ interface FeedingSheetProps {
 }
 
 export const FeedingSheet = ({ pet, isOpen, onClose }: FeedingSheetProps) => {
-  const [dietaryNote, setDietaryNote] = useState('חלקו לשתי ארוחות במהלך היום');
+  // Generic, and true of any pet. It replaced a line that varied with a
+  // percentage-derived amount; there is no amount here any more to vary with.
+  const dietaryNote = 'חלקו לשתי ארוחות במהלך היום. לכמות המדויקת — ראו את הנחיות המוצר.';
   const [dryFoodProducts, setDryFoodProducts] = useState<RecommendedProduct[]>([]);
   const [wetFoodProducts, setWetFoodProducts] = useState<RecommendedProduct[]>([]);
   const [loading, setLoading] = useState(false);
-  const [dailyAmount, setDailyAmount] = useState<string>('');
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const weight = pet.weight || 0;
-      if (weight) {
-        const minGrams = Math.round(weight * 20); // 2%
-        const maxGrams = Math.round(weight * 30); // 3%
-        setDailyAmount(`${minGrams}-${maxGrams} גרם`);
-      } else {
-        setDailyAmount('');
-      }
-      setDietaryNote(weight ? 'התאימו את הכמות לפי רמת הפעילות והנחיות הווטרינר' : 'חלקו לשתי ארוחות במהלך היום');
-
+      // A daily amount was computed here as weight x 20 to weight x 30 grams —
+      // 2% to 3% of body weight — and shown as "כמות יומית מומלצת". Two other
+      // screens computed the same thing with different constants, so the same
+      // animal got different numbers depending on where the owner looked.
+      // Mipo no longer derives a feeding amount; the product's own guidance is
+      // the single owner-facing source, and it is on the product page with its
+      // provenance. See src/lib/feedingGuidance.ts and docs/pet-intelligence/34.
       const groups = await fetchRecommendedProductGroups([
         {
           key: 'dry',
@@ -64,7 +62,7 @@ export const FeedingSheet = ({ pet, isOpen, onClose }: FeedingSheetProps) => {
     } finally {
       setLoading(false);
     }
-  }, [pet.type, pet.weight]);
+  }, [pet.type]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -80,9 +78,6 @@ export const FeedingSheet = ({ pet, isOpen, onClose }: FeedingSheetProps) => {
       title="מזון מומלץ"
       infoContent={
         <div className="text-sm">
-          <p className="font-semibold text-primary mb-1">
-            כמות יומית מומלצת: {dailyAmount || 'לפי משקל'}
-          </p>
           <p className="text-xs text-muted-foreground">
             {dietaryNote}
           </p>

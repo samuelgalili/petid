@@ -32,6 +32,8 @@ export interface MipoProduct {
   ingredients?: string | null;
   benefits?: unknown[] | null;
   feeding_guide?: unknown[] | null;
+  /** Where feeding_guide came from. Only "manufacturer_confirmed" may be shown to an owner as the manufacturer's own guidance. */
+  feeding_guide_source?: "ai_extracted" | "manufacturer_confirmed" | "unknown" | null;
   product_attributes?: Record<string, unknown> | null;
   weight?: number | string | null;
   weight_unit?: string | null;

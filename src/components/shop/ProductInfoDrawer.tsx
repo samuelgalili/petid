@@ -48,6 +48,8 @@ export const ProductInfoDrawer = ({ product, petName, onClose, onAddToCart, onAd
     product.safetyScore,
     {
       birthDate: activePet?.birth_date,
+      ageYears: activePet?.age_years,
+      ageMonths: activePet?.age_months,
       breed: activePet?.breed,
       medicalConditions: activePet?.medical_conditions,
     },

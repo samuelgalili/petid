@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { GlowRing } from "@/components/ui/GlowRing";
 import { AdaptiveBackground } from "@/components/ui/AdaptiveBackground";
 import { getMyPetHealthSummary, type MipoPet } from "@/lib/mipoApi";
+import { petAgeInYears } from "@/lib/petAge";
 
 interface Pet {
   id: string;
@@ -148,7 +149,8 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
       petData.has_insurance !== null && petData.has_insurance !== undefined,
       !!petData.health_notes,
       !!pet.avatar_url,
-      !!pet.size,
+      // pet.size was counted here. The API does not return it, so it was always
+      // false and completion could never reach 100%.
     ];
     return Math.round((fields.filter(Boolean).length / fields.length) * 100);
   }, [pet, petData]);
@@ -196,12 +198,10 @@ export const PetHealthScore = ({ pet, onViewDetails, refreshKey }: PetHealthScor
     if (!petData) return false;
     const conditions = petData.medical_conditions || [];
     if (conditions.length >= 2) return true;
-    if (pet.birth_date) {
-      const ageYears = (Date.now() - new Date(pet.birth_date).getTime()) / (1000 * 60 * 60 * 24 * 365);
-      if (ageYears > 8) return true;
-    }
+    const ageYears = petAgeInYears(pet);
+    if (ageYears !== null && ageYears > 8) return true;
     return false;
-  }, [pet.birth_date, petData]);
+  }, [pet, petData]);
 
   const hasInsurance = petData?.has_insurance === true;
   const insuranceExpired = useMemo(() => {
