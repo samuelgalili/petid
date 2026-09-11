@@ -35,7 +35,7 @@ Six things define the current state, and each is verified in the sections below:
    score and the home screen's attention line, which therefore cannot fire.
 
 3. **Activity does not exist.** No walks, no steps, no distance, no GPS, no
-   check-ins, no park visits. `dog_parks` is a table with 20 columns that no
+   check-ins, no park visits. `dog_parks` is a table with 24 columns that no
    server route and no screen reads. "Dog walker" is a booking form with three
    hard-coded walkers.
 
@@ -614,7 +614,7 @@ body-weight-percentage calculations are gone, and `RER`/`MER` survives only in
 | Walks | no table, no route, no screen |
 | Steps, distance, calories | none |
 | Activity level | derived from **breed reference data** in `src/lib/petActivity.ts`; never measured |
-| Parks | `dog_parks` (20 columns) exists in migration `0011`; **no server route and no screen reads it** |
+| Parks | `dog_parks` (24 columns) exists in migration `0011`; **no server route and no screen reads it** |
 | Check-ins | none |
 | Activity history | none |
 | Activity events | none |
@@ -818,7 +818,7 @@ SYSTEM (exists, exposed to nobody)
   outbox_events (incl. pet_id, payload_version)
   ai_requests / usage_events / cost_events  — per-pet AI spend
   qr_scan_logs                              — written by index.js:2125, absent from all 38 migrations
-  dog_parks                                 — 20 columns, zero readers
+  dog_parks                                 — 24 columns, zero readers
   breed_information                         — read by 2 screens only
   11 dead pets columns
   localStorage: mipo-care-plan:<petId>, mipo-mood-<petId>-<date>
@@ -961,7 +961,7 @@ defaulted.
   │   │  pet_fact_transitions                             │ │
   │   │  pet_observations   ← only the 0039 backfill      │ │
   │   └───────────────────────────────────────────────────┘ │
-  │   * dog_parks: 20 columns, zero readers                │
+  │   * dog_parks: 24 columns, zero readers                │
   └───────────────────────────────────────────────────────┘
 ```
 
@@ -1149,7 +1149,7 @@ The whole P1 foundation is also in this category — see §19.
 - **Everything in `pet_facts` / `pet_observations`** (§19).
 - **Per-pet AI spend** — `ai_requests.pet_id` is populated on every call; no
   screen, user or admin, shows it.
-- **`dog_parks`** — 20 columns, zero readers.
+- **`dog_parks`** — 24 columns, zero readers.
 - **`breed_information`** — 40 columns, read by two screens; the pet dashboard's
   breed section never fetches it.
 - **`CentralBrainContext`** — mounted app-wide, zero rendered consumers, and
