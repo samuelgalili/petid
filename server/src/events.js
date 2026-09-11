@@ -32,6 +32,21 @@ export const EVENT_TYPES = Object.freeze({
   PET_FOUND: "pet.found",
   PET_QR_SCANNED: "pet.qr_scanned",
 
+  // One generic fact event rather than one per key, precisely because there is
+  // then a single place to get the disclosure rule right: a fact event carries
+  // the namespace and key, never the value. The outbox delivers to an external
+  // endpoint, and a payload reading "Blue is allergic to chicken" is a health
+  // disclosure the owner never agreed to. A consumer that needs the value reads
+  // it back through an authorized API.
+  PET_FACT_CREATED: "pet_fact.created",
+  PET_FACT_SUPERSEDED: "pet_fact.superseded",
+  PET_FACT_DISPUTED: "pet_fact.disputed",
+  PET_FACT_CONFIRMED: "pet_fact.confirmed",
+  PET_FACT_RESOLVED: "pet_fact.resolved",
+  PET_FACT_RETRACTED: "pet_fact.retracted",
+
+  PET_OBSERVATION_RECORDED: "pet_observation.recorded",
+
   CLAIM_SUBMITTED: "insurance_claim.submitted",
   BOOKING_CREATED: "service_booking.created",
   CONTENT_REPORTED: "content.reported",
@@ -51,6 +66,14 @@ export const emitEvent = async (client, {
   entityId = null,
   payload = {},
   origin = EVENT_ORIGINS.APP,
+  // The pet an event is about, when there is one. Carried as a column rather
+  // than left inside the payload so "everything that happened to Blue" does
+  // not require knowing every entity type that can reference a pet — the same
+  // reason ai_requests, usage_events and cost_events all carry pet_id.
+  petId = null,
+  // Bump when a payload's shape changes incompatibly. Every existing type is
+  // version 1, which is true: there has only ever been one shape.
+  payloadVersion = 1,
 }) => {
   try {
     if (!eventTypeValues.has(type)) {
@@ -60,11 +83,13 @@ export const emitEvent = async (client, {
 
     const result = await client.query(
       `
-        insert into public.outbox_events (event_type, entity_type, entity_id, payload, origin)
-        values ($1, $2, $3, $4::jsonb, $5)
+        insert into public.outbox_events (
+          event_type, entity_type, entity_id, payload, origin, pet_id, payload_version
+        )
+        values ($1, $2, $3, $4::jsonb, $5, $6, $7)
         returning id
       `,
-      [type, entityType, entityId, JSON.stringify(payload ?? {}), origin],
+      [type, entityType, entityId, JSON.stringify(payload ?? {}), origin, petId, payloadVersion],
     );
     return result.rows[0]?.id || null;
   } catch (error) {
@@ -130,7 +155,8 @@ export const claimDueEvents = async (client, { limit = 20, deliverAutomationOrig
         limit $1
         for update skip locked
       )
-      returning id, event_type, entity_type, entity_id, payload, origin, occurred_at, attempts
+      returning id, event_type, entity_type, entity_id, payload, payload_version,
+                pet_id, origin, occurred_at, attempts
     `,
     [limit],
   );
@@ -181,9 +207,13 @@ export const buildDeliveryBody = (event) => JSON.stringify({
   id: event.id,
   type: event.event_type,
   entity: { type: event.entity_type, id: event.entity_id },
+  // Null for everything that is not about one animal. A subscriber can filter
+  // on it without a table of which entity types imply a pet.
+  pet_id: event.pet_id ?? null,
   origin: event.origin,
   occurred_at: event.occurred_at,
   attempt: event.attempts,
+  payload_version: event.payload_version ?? 1,
   data: event.payload,
 });
 

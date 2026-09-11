@@ -80,6 +80,7 @@ import {
   originFromRequest,
   startDispatcher,
 } from "./events.js";
+import { createPetFactService } from "./petFactService.js";
 
 const port = Number(process.env.PORT || 3000);
 const databaseUrl = process.env.DATABASE_URL;
@@ -206,6 +207,11 @@ const pool = new Pool({
 const aiProviderRegistry = createProviderRegistry({ geminiApiKey, geminiModel });
 const aiGateway = createAiGateway({ pool, registry: aiProviderRegistry });
 setProductIntelAiGateway(aiGateway);
+
+// Pet facts are never written from a route handler. Everything goes through
+// this service, which is where the registry, provenance, lifecycle, temporal
+// and ownership rules are enforced together and in one transaction.
+const petFacts = createPetFactService({ pool });
 
 const jsonHeaders = {
   "content-type": "application/json; charset=utf-8",
@@ -8042,6 +8048,116 @@ const handleRequest = async (request, response) => {
       if (!auth) return;
       const deleted = await deletePetCharacter(auth.user.id, myPetCharacterMatch[1]);
       sendJson(response, deleted ? 200 : 404, { deleted });
+      return;
+    }
+
+    // --- Pet Intelligence foundation -------------------------------------
+    //
+    // Every one of these routes passes auth.user.id to the service, and the
+    // service resolves the pet with `where id = $1 and user_id = $2`. The pet
+    // id in the path is an assertion by the caller and is never treated as an
+    // authorization; a pet belonging to someone else answers 404, so the route
+    // does not disclose that it exists.
+
+    const myPetFactHistoryMatch = url.pathname.match(
+      /^\/api\/me\/pets\/([0-9a-fA-F-]{36})\/facts\/([a-z_]{1,32})\/([a-z0-9_]{1,64})\/history$/,
+    );
+    if (myPetFactHistoryMatch && request.method === "GET") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      sendJson(response, 200, {
+        facts: await petFacts.getFactHistory(
+          auth.user.id,
+          myPetFactHistoryMatch[1],
+          myPetFactHistoryMatch[2],
+          myPetFactHistoryMatch[3],
+        ),
+      });
+      return;
+    }
+
+    const myPetFactLifecycleMatch = url.pathname.match(
+      /^\/api\/me\/pets\/([0-9a-fA-F-]{36})\/facts\/([0-9a-fA-F-]{36})$/,
+    );
+    if (myPetFactLifecycleMatch && request.method === "PATCH") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      sendJson(response, 200, {
+        fact: await petFacts.updateFactLifecycle(
+          auth.user.id,
+          myPetFactLifecycleMatch[1],
+          myPetFactLifecycleMatch[2],
+          await readBody(request, 16 * 1024),
+        ),
+      });
+      return;
+    }
+
+    const myPetFactsMatch = url.pathname.match(/^\/api\/me\/pets\/([0-9a-fA-F-]{36})\/facts$/);
+    if (myPetFactsMatch && request.method === "GET") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      sendJson(response, 200, {
+        facts: await petFacts.listFacts(auth.user.id, myPetFactsMatch[1], {
+          namespace: url.searchParams.get("namespace"),
+          key: url.searchParams.get("key"),
+          history: url.searchParams.get("history") === "true",
+        }),
+      });
+      return;
+    }
+
+    if (myPetFactsMatch && request.method === "POST") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      const body = await readBody(request, 64 * 1024);
+      // An owner acting in the app is USER_PROVIDED, whatever the request
+      // body says. A client cannot claim to be a vet or the rule engine.
+      const written = await petFacts.writeFact(auth.user.id, myPetFactsMatch[1], {
+        ...body,
+        source_type: "USER_PROVIDED",
+        source_channel: "APP",
+      }, { actorType: "user", actorId: auth.user.id });
+      sendJson(response, written.outcome === "UNCHANGED" ? 200 : 201, written);
+      return;
+    }
+
+    const myPetObservationsMatch = url.pathname.match(
+      /^\/api\/me\/pets\/([0-9a-fA-F-]{36})\/observations$/,
+    );
+    if (myPetObservationsMatch && request.method === "GET") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      sendJson(response, 200, {
+        observations: await petFacts.listObservations(auth.user.id, myPetObservationsMatch[1], {
+          type: url.searchParams.get("type"),
+          limit: url.searchParams.get("limit"),
+        }),
+      });
+      return;
+    }
+
+    if (myPetObservationsMatch && request.method === "POST") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      const body = await readBody(request, 32 * 1024);
+      const recorded = await petFacts.recordObservation(auth.user.id, myPetObservationsMatch[1], {
+        ...body,
+        source_type: "USER_PROVIDED",
+      });
+      sendJson(response, 201, recorded);
+      return;
+    }
+
+    const myPetEventsMatch = url.pathname.match(/^\/api\/me\/pets\/([0-9a-fA-F-]{36})\/events$/);
+    if (myPetEventsMatch && request.method === "GET") {
+      const auth = await requireUser(request, response);
+      if (!auth) return;
+      sendJson(response, 200, {
+        events: await petFacts.listEvents(auth.user.id, myPetEventsMatch[1], {
+          limit: url.searchParams.get("limit"),
+        }),
+      });
       return;
     }
 
