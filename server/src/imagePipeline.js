@@ -30,8 +30,9 @@ const MAX_SOURCE_BYTES = Number(process.env.MAX_IMAGE_SOURCE_BYTES || 15 * 1024 
 const FETCH_TIMEOUT_MS = Number(process.env.IMAGE_FETCH_TIMEOUT_MS || 20000);
 
 // The whole download, headers and body together. FETCH_TIMEOUT_MS bounds each
-// individual request; without a second ceiling a server that answers promptly
-// and then drips the body one byte at a time holds the connection open forever.
+// individual request only up to its headers; without a second ceiling a server
+// that answers promptly and then drips the body one byte at a time - or sends
+// the headers and then says nothing at all - holds the connection open forever.
 const TOTAL_DOWNLOAD_TIMEOUT_MS = Number(
   process.env.IMAGE_DOWNLOAD_TIMEOUT_MS || FETCH_TIMEOUT_MS * 3,
 );
@@ -89,61 +90,92 @@ export const fetchImageBuffer = async (imageUrl, {
   maxRedirects = MAX_IMAGE_REDIRECTS,
   fetchRemote = fetchValidatedRemoteUrl,
 } = {}) => {
+  // One deadline for the whole exchange, expressed as an abort rather than as a
+  // check inside the read loop. A loop check only runs when a chunk arrives,
+  // and the case worth defending against is precisely the server that sends
+  // headers and then goes silent: no chunk ever arrives, so no check ever runs.
+  // Aborting reaches through the guard and tears the socket down instead.
+  const download = new AbortController();
+  let deadlineExceeded = false;
+  const deadlineTimer = setTimeout(() => {
+    deadlineExceeded = true;
+    download.abort();
+  }, totalTimeoutMs);
   const deadline = Date.now() + totalTimeoutMs;
 
-  let response;
+  // Our own abort and the guard's per-request abort both surface as AbortError,
+  // and both mean the same thing to a caller: the source ran out of time.
+  const isTimeout = (error) => deadlineExceeded || error?.name === "AbortError";
+
   try {
-    ({ response } = await fetchRemote(String(imageUrl ?? ""), {
-      timeoutMs,
-      maxRedirects,
-    }));
-  } catch (error) {
-    // The guard's own refusals carry statusCode 400 and a human-readable
-    // message that names the rule, not the host it resolved to. Mapping them
-    // onto ImagePipelineError keeps the contract callers already depend on:
-    // adoptProductImage reads error.code and logs it.
-    if (error?.name === "AbortError") {
-      throw new ImagePipelineError("Timed out fetching the image", "fetch_timeout");
+    let response;
+    try {
+      ({ response } = await fetchRemote(String(imageUrl ?? ""), {
+        timeoutMs,
+        maxRedirects,
+        signal: download.signal,
+      }));
+    } catch (error) {
+      // The guard's own refusals carry statusCode 400 and a human-readable
+      // message that names the rule, not the host it resolved to. Mapping them
+      // onto ImagePipelineError keeps the contract callers already depend on:
+      // adoptProductImage reads error.code and logs it.
+      if (isTimeout(error)) {
+        throw new ImagePipelineError("Timed out fetching the image", "fetch_timeout");
+      }
+      if (error?.statusCode === 400) {
+        throw new ImagePipelineError(error.message || "Image URL is not allowed", "url_rejected");
+      }
+      throw new ImagePipelineError("Could not fetch the image", "fetch_failed");
     }
-    if (error?.statusCode === 400) {
-      throw new ImagePipelineError(error.message || "Image URL is not allowed", "url_rejected");
-    }
-    throw new ImagePipelineError("Could not fetch the image", "fetch_failed");
-  }
 
-  if (!response.ok) {
-    await response.body?.cancel?.().catch(() => {});
-    throw new ImagePipelineError(`Image source responded with ${response.status}`, "fetch_status");
-  }
-
-  const contentType = response.headers.get("content-type");
-  if (contentType && !ALLOWED_CONTENT_TYPES.test(contentType.trim())) {
-    await response.body?.cancel?.().catch(() => {});
-    throw new ImagePipelineError("Image source did not return an image", "unsupported_content_type");
-  }
-
-  const declared = Number(response.headers.get("content-length") || 0);
-  if (declared > maxBytes) {
-    await response.body?.cancel?.().catch(() => {});
-    throw new ImagePipelineError("Image is larger than the allowed size", "too_large");
-  }
-
-  const chunks = [];
-  let total = 0;
-  for await (const chunk of response.body) {
-    if (Date.now() > deadline) {
+    if (!response.ok) {
       await response.body?.cancel?.().catch(() => {});
-      throw new ImagePipelineError("Timed out fetching the image", "fetch_timeout");
+      throw new ImagePipelineError(`Image source responded with ${response.status}`, "fetch_status");
     }
-    total += chunk.length;
-    // Content-Length is a claim, not a guarantee. Count what actually arrives.
-    if (total > maxBytes) {
+
+    const contentType = response.headers.get("content-type");
+    if (contentType && !ALLOWED_CONTENT_TYPES.test(contentType.trim())) {
+      await response.body?.cancel?.().catch(() => {});
+      throw new ImagePipelineError("Image source did not return an image", "unsupported_content_type");
+    }
+
+    const declared = Number(response.headers.get("content-length") || 0);
+    if (declared > maxBytes) {
       await response.body?.cancel?.().catch(() => {});
       throw new ImagePipelineError("Image is larger than the allowed size", "too_large");
     }
-    chunks.push(chunk);
+
+    const chunks = [];
+    let total = 0;
+    try {
+      for await (const chunk of response.body) {
+        // Secondary ceiling. The abort above is what stops a silent body; this
+        // still bounds a dripping one if fetchRemote ever ignores the signal.
+        if (Date.now() > deadline) {
+          throw new ImagePipelineError("Timed out fetching the image", "fetch_timeout");
+        }
+        total += chunk.length;
+        // Content-Length is a claim, not a guarantee. Count what arrives.
+        if (total > maxBytes) {
+          throw new ImagePipelineError("Image is larger than the allowed size", "too_large");
+        }
+        chunks.push(chunk);
+      }
+    } catch (error) {
+      await response.body?.cancel?.().catch(() => {});
+      if (error instanceof ImagePipelineError) throw error;
+      if (isTimeout(error)) {
+        throw new ImagePipelineError("Timed out fetching the image", "fetch_timeout");
+      }
+      throw new ImagePipelineError("Could not fetch the image", "fetch_failed");
+    }
+    return Buffer.concat(chunks);
+  } finally {
+    // Success, refusal, timeout or stream error - the timer never outlives the
+    // call.
+    clearTimeout(deadlineTimer);
   }
-  return Buffer.concat(chunks);
 };
 
 /**

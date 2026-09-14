@@ -53,10 +53,10 @@
 | 2 | הפניות ידניות ומאומתות | **מקסימום 3** |
 | 3 | בדיקת `content-type` | `image/*` · `application/octet-stream` · `binary/octet-stream` |
 | 4 | תקרת בייטים בזרימה | **15 MB** (`MAX_IMAGE_SOURCE_BYTES`) |
-| 5 | timeout לבקשה | **20 שניות** (`IMAGE_FETCH_TIMEOUT_MS`) |
-| 6 | **timeout כולל להורדה** | **60 שניות** — חדש |
+| 5 | timeout לבקשה — **עד ה-headers בלבד** | **20 שניות** (`IMAGE_FETCH_TIMEOUT_MS`) |
+| 6 | **timeout כולל להורדה** — headers **וגוף** | **60 שניות** (`IMAGE_DOWNLOAD_TIMEOUT_MS`) |
 | 7 | ביטול גוף בכל דחייה | `body.cancel()` |
-| 8 | מיפוי שגיאות | `url_rejected` · `unsupported_content_type` |
+| 8 | מיפוי שגיאות | `url_rejected` · `unsupported_content_type` · `fetch_timeout` |
 
 ### שתי החלטות שראוי שיהיו מפורשות
 
@@ -67,12 +67,29 @@
 **`octet-stream` מתקבל.** כמה CDN-ים מגישים תמונות כך, ודחייה הייתה שוברת
 ייבוא עובד.
 
-**ה-timeout הכולל חדש.** ה-timeout הקודם כיסה את ההמתנה ל-headers בלבד; שרת
-שעונה מהר ואז מטפטף את הגוף החזיק חיבור לנצח.
+### שני ה-timeout — מה כל אחד באמת מכסה
+
+**`IMAGE_FETCH_TIMEOUT_MS` (20 שניות) מכסה בקשה בודדת עד ה-headers שלה, ולא
+מעבר לכך.** הוא ממומש כ-`AbortController` ב-`fetchValidatedRemoteUrl`, וה-timer
+שלו מנוקה ברגע שה-headers מגיעים. בשרשרת הפניות הוא מתחיל מחדש בכל hop.
+
+**`IMAGE_DOWNLOAD_TIMEOUT_MS` (60 שניות כברירת מחדל — פי שלושה מהראשון) מכסה
+את כל החליפה: חיבור, headers וגוף התשובה במלואו.** הוא ממומש כ-abort של
+`fetchImageBuffer` עצמו, שמועבר אל השומר כ-`signal` ונשאר מחובר לתשובה גם אחרי
+שה-headers התקבלו. לכן הוא קוטע גם שרת ששלח headers ואז **שתק לחלוטין** ולא
+שלח בייט אחד — מקרה שבדיקת deadline בתוך לולאת הקריאה לעולם אינה תופסת, משום
+שהיא רצה רק כשמגיע chunk.
+
+בכל אחד מהמצבים האלה התוצאה היא `ImagePipelineError` עם `code: "fetch_timeout"`,
+וההודעה אינה חושפת את הכתובת שאליה נפתר השם.
+
+**מה שני אלה אינם מכסים:** תקרת מקביליות. `adoptProductImages` מוריד את כל
+תמונות הגלריה ב-`Promise.all` ללא הגבלה על מספרן — ראה `C-4` בסקירה. זו משימה
+נפרדת.
 
 ---
 
-## 4. בדיקות — 25, כולן חדשות
+## 4. בדיקות — 26 בקובץ
 
 `server/test/imageFetchSafety.test.js`. **אף בדיקה אינה פונה לאתר צד שלישי או
 לשירות metadata אמיתי** — DNS מוזרק, ותשובות מגיעות משרת loopback מקומי.
@@ -82,21 +99,41 @@
 | כתובות | loopback · unspecified · RFC1918 · CGNAT · multicast · link-local · metadata · IPv6 loopback/ULA/link-local · IPv4-mapped |
 | URL ראשוני | `localhost` · IP literal פנימי · **hostname ציבורי שנפתר פנימה** · תשובה מעורבת · IP מספרי · אישורים ב-URL |
 | הפניות | הפניה ל-IP פנימי · **הפניה יחסית** · חריגה מהמגבלה · **לולאה** · `Location` חסר |
-| תשובה | תמונה תקינה · HTML נדחה · octet-stream מתקבל · non-2xx · גוף חורג · timeout |
+| תשובה | תמונה תקינה · HTML נדחה · octet-stream מתקבל · non-2xx · גוף חורג |
+| timeout | **headers שוגרו וגוף שותק** · **הבחנה בין timeout לפני ה-headers ואחריהם** |
 | חיווט | שלוש בדיקות שהשומר האמיתי מחובר · הודעה שאינה חושפת כתובת |
 
 ### הוכחה שהבדיקות תופסות
 
-החזרת `imagePipeline.js` לגרסה הפגיעה:
+**חיווט השומר.** החזרת `imagePipeline.js` לגרסה שלפני תיקון ה-SSRF:
 
 ```
-20/25 עוברות · 5 נכשלות
+5 נכשלות
   16 · an HTML response is refused even when the URL ends in .jpg
-  22 · refuses a private destination through the real guard
-  23 · refuses localhost through the real guard
-  24 · refuses a non-http protocol through the real guard
-  25 · a rejection message names the rule, not the resolved address
+  23 · refuses a private destination through the real guard
+  24 · refuses localhost through the real guard
+  25 · refuses a non-http protocol through the real guard
+  26 · a rejection message names the rule, not the resolved address
 ```
+
+**מחזור ה-timeout.** החזרת `imagePipeline.js` **ו-`urlSafety.js`** לגרסת
+`67bdae58` — שבה ה-timer מנוקה אחרי ה-headers ובדיקת ה-deadline יושבת בתוך
+לולאת הקריאה:
+
+```
+not ok 1 - headers flushed, body remains silent - the download still times out
+  failureType: 'testTimeoutFailure'   error: 'test timed out after 15000ms'
+not ok 2 - the deadline fires after headers arrive, not while waiting for them
+  failureType: 'testTimeoutFailure'   error: 'test timed out after 15000ms'
+```
+
+שתיהן **נתלות** מול הקוד הפגיע — וזו בדיוק הפגיעוּת. שתי הבדיקות נושאות
+`{ timeout: 15_000 }` מפורש, אחרת הן היו תולות את ה-CI במקום להיכשל.
+
+> הגרסה הקודמת של מסמך זה מנתה 25 בדיקות ותיארה בדיקת timeout שהוכח שאינה
+> בודקת את מה ששמה טען. ה-handler שלה קרא `writeHead()` בלי `flushHeaders()`,
+> ולכן Node כלל לא שיגר את ה-headers וה-abort נפל בהמתנה להם — כלומר נבדק
+> timeout של headers, לא של גוף. תוקן.
 
 ---
 

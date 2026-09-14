@@ -245,6 +245,9 @@ const withServer = async (handler, run) => {
   try {
     return await run(`http://127.0.0.1:${port}`);
   } finally {
+    // The stalled-body tests deliberately leave a request open. Without this,
+    // close() would wait on that socket and the suite would hang.
+    server.closeAllConnections?.();
     server.close();
     await once(server, "close");
   }
@@ -253,9 +256,17 @@ const withServer = async (handler, run) => {
 // The guard would refuse 127.0.0.1, correctly. These tests are about what the
 // downloader does with a response it was allowed to make, so the guard is
 // replaced with a pass-through that still uses redirect: manual.
-const unguardedFetch = async (input, { timeoutMs = 5000 } = {}) => {
+//
+// It forwards the caller's signal the same way fetchValidatedRemoteUrl does,
+// because that forwarding is the thing under test in the stalled-body cases: a
+// stand-in that swallowed the signal would make the downloader look safer here
+// than it is in production.
+const unguardedFetch = async (input, { timeoutMs = 5000, signal } = {}) => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+  // Left attached, as in urlSafety: the caller's signal has to stay wired to
+  // the response body it is about to read.
+  signal?.addEventListener("abort", () => controller.abort(), { once: true });
   try {
     const response = await fetch(String(input), {
       redirect: "manual",
@@ -342,20 +353,83 @@ test("an honest oversized Content-Length is refused before the body is read", as
   });
 });
 
-test("a stalled response times out instead of hanging", async () => {
-  await withServer((_request, response) => {
-    response.writeHead(200, { "content-type": "image/jpeg" });
-    // Headers, then silence. No end().
-  }, async (base) => {
+// A handler that delivers the headers for real and then never says another
+// word. writeHead() alone is not enough: Node buffers those headers and sends
+// nothing until the first write or end(), so a client aborting against it is
+// still waiting for headers and never reaches the body at all. flushHeaders()
+// is what puts the exchange into the state this suite needs to test.
+const flushHeadersThenSilence = (_request, response) => {
+  response.writeHead(200, {
+    "content-type": "image/jpeg",
+    "transfer-encoding": "chunked",
+  });
+  response.flushHeaders();
+  // No write. No end(). The connection stays open.
+};
+
+// Bounded explicitly: against an implementation that does not cover the body
+// these two hang rather than fail, and a test that can hang CI forever is not a
+// regression test. The ceiling is far above the deadlines they exercise.
+test("headers flushed, body remains silent - the download still times out", { timeout: 15_000 }, async () => {
+  await withServer(flushHeadersThenSilence, async (base) => {
+    const started = Date.now();
     await assert.rejects(
       () => fetchImageBuffer(`${base}/x.jpg`, {
-        fetchRemote: (input) => unguardedFetch(input, { timeoutMs: 300 }),
-        timeoutMs: 300,
-        totalTimeoutMs: 300,
+        // The per-request ceiling is deliberately far higher than the total one.
+        // If this test ever passed because the client gave up waiting for
+        // headers, it would have to take at least 5s; the total deadline is what
+        // has to fire, and it has to fire while the body is awaited.
+        fetchRemote: (input, options) => unguardedFetch(input, { ...options, timeoutMs: 5000 }),
+        timeoutMs: 5000,
+        totalTimeoutMs: 400,
       }),
-      (error) => error instanceof ImagePipelineError,
+      (error) => {
+        assert.ok(error instanceof ImagePipelineError, "must use the module's error type");
+        assert.equal(error.code, "fetch_timeout", "must be classified as a timeout");
+        assert.equal(error.statusCode, 400);
+        assert.doesNotMatch(error.message, /\d+\.\d+\.\d+\.\d+/, "must not echo an address");
+        return true;
+      },
+    );
+    assert.ok(
+      Date.now() - started < 3000,
+      "must abort on the total deadline, not on the per-request header timeout",
     );
   });
+});
+
+test("the deadline fires after headers arrive, not while waiting for them", { timeout: 15_000 }, async () => {
+  // The distinction the previous version of this suite could not make. Both
+  // shapes must time out, but only the second proves the body is covered, so
+  // the test records whether headers were in hand when the clock ran out.
+  const attempt = async (handler) => {
+    let headersReceived = false;
+    return withServer(handler, async (base) => {
+      const error = await fetchImageBuffer(`${base}/x.jpg`, {
+        fetchRemote: async (input, options) => {
+          const result = await unguardedFetch(input, { ...options, timeoutMs: 400 });
+          headersReceived = true;
+          return result;
+        },
+        timeoutMs: 400,
+        totalTimeoutMs: 400,
+      }).then(() => null, (caught) => caught);
+      return { headersReceived, error };
+    });
+  };
+
+  // Headers never leave the server: the timeout belongs to the header wait.
+  const beforeHeaders = await attempt((_request, response) => {
+    response.writeHead(200, { "content-type": "image/jpeg" });
+  });
+  assert.equal(beforeHeaders.headersReceived, false, "headers must not have arrived");
+  assert.equal(beforeHeaders.error?.code, "fetch_timeout");
+
+  // Headers arrive, body never does: the timeout belongs to the body wait.
+  const afterHeaders = await attempt(flushHeadersThenSilence);
+  assert.equal(afterHeaders.headersReceived, true, "headers must have arrived first");
+  assert.equal(afterHeaders.error?.code, "fetch_timeout");
+  assert.ok(afterHeaders.error instanceof ImagePipelineError);
 });
 
 // ─── the guard is actually wired in ──────────────────────────────────────────
