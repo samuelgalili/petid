@@ -216,6 +216,88 @@ flowchart TD
 
 ---
 
+## 3A · שלושת הרבדים
+
+`CQ-12` מחייב הבחנה מפורשת בין שלושה מושגים שהיום מעורבבים.
+
+### רובד 1 — Discovery / Source Product
+
+**`scraped_products`.** נתונים שנקלטו מאתר ספק או מקובץ ייבוא.
+
+- אין בעלים, ולא יהיה לו.
+- **לעולם אינו ניתן לרכישה.**
+- אינו יוצר מוכר.
+- הוא **רשומת ה-provenance** ונשמר כמות שהוא.
+- אין להניח שלמוצר שנקצר יש בעלות חוקית או מסחרית כלשהי.
+
+### רובד 2 — Canonical Commercial Product — *מושגי, לא פיזי*
+
+הזהות המשותפת: "אותו פריט בעולם", שמוכר א' ומוכר ב' מוכרים שניהם.
+
+**ההמלצה: לא לבנות את הרובד הזה כטבלה עכשיו.**
+
+הנימוק כפול. ראשית, ה-brief אוסר במפורש להוסיף הפשטת קטלוג שנייה מתחרה.
+שנית — ורציני יותר — רובד קנוני משותף פותח את **בעיית התאמת המוצרים**:
+להכריע ששתי שורות של שני מוכרים הן אותו פריט. זו בעיה קשה בפני עצמה, היא
+דורשת התאמה לפי ברקוד או GTIN שאין היום, וה-MVP אינו זקוק לה.
+
+**בינתיים `source_record_id` הוא זהות המוצר הקנונית בפועל:** שתי רשומות
+מסחריות שאומצו מאותה שורת discovery **הן** אותו מוצר, ואפשר לקבץ אותן בלי
+טבלה נוספת.
+
+**וזו בדיוק הסיבה ש-`UNIQUE(source_record_id)` אסור** — האילוץ הזה היה הופך
+את שדה הקיבוץ לשדה בלעדיות, ואוסר את ריבוי המוכרים.
+
+### רובד 3 — Seller-specific Commercial Listing
+
+**`business_products`.** רשומת ההיצע של מוכר יחיד — וזה מה שהטבלה כבר היום.
+
+| מאפיין | לכל מוכר בנפרד |
+|---|---|
+| מחיר | ✓ נעול באימוץ (`CD-06`) |
+| זמינות ומלאי | ✓ |
+| הגדרות שילוח | ✓ |
+| תנאי עמלה | ✓ |
+| תוכן ייחודי | ✓ |
+| סטטוס | ✓ |
+
+**בעלות נאכפת מבנית:** `business_id NOT NULL` + FK ל-`business_profiles`
+עם `ON DELETE CASCADE`.
+
+### מה נדרש כדי לקדם את רובד 2 לטבלה אמיתית
+
+לא היום, אבל התנאי ראוי שיהיה רשום: **מזהה חיצוני יציב** — GTIN, EAN או
+ברקוד יצרן. בלי אחד כזה, כל רובד קנוני משותף יישען על התאמת מחרוזות, וזה
+מייצר קישורים שגויים בין מוצרים של מוכרים שונים.
+
+---
+
+## 3B · מפת הקשרים
+
+```mermaid
+erDiagram
+    SCRAPED_PRODUCTS ||..o{ BUSINESS_PRODUCTS : "source_record_id (ללא FK)"
+    BUSINESS_PROFILES ||--o{ BUSINESS_PRODUCTS : "business_id NOT NULL FK"
+    BUSINESS_PRODUCTS ||--o{ INVENTORY : "מוצע"
+    BUSINESS_PROFILES ||--o{ SELLER_ORDERS : "מוצע"
+    ORDERS ||--o{ SELLER_ORDERS : "מוצע"
+    SELLER_ORDERS ||--o{ ORDER_ITEMS : "מוצע"
+    ORDERS ||--o{ ORDER_ITEMS : "FK קיים"
+    BUSINESS_PRODUCTS }o..o{ ORDER_ITEMS : "product_id — ללא FK, מצולם"
+```
+
+| קשר | מצב |
+|---|---|
+| `business_profiles` → `business_products` | **קיים** — FK, `NOT NULL` |
+| `scraped_products` → `business_products` | **מוצע** — `source_record_id`, **ללא FK** בכוונה: provenance חייב לשרוד מחיקת מקור |
+| `business_products` → `inventory` | **מוצע** — `(product, variant, warehouse, quantity, reserved)` |
+| `orders` → `seller_orders` → `order_items` | **מוצע** — היום `order_items` תלוי ישירות ב-`orders` |
+| `business_products` ↛ `order_items` | **מכוון: ללא FK.** זה מה שמגן על ההיסטוריה |
+
+**Mipo Shop אינו חריג במפה הזו** — הוא שורה ב-`business_profiles` ככל מוכר.
+
+---
+
 ## 4. דוח תאימות לנתונים קיימים
 
 | # | נבדק | תוצאה |
@@ -232,25 +314,79 @@ flowchart TD
 **מסקנה: אף הזמנה קיימת לא יכולה להישבר משינוי בקטלוג.** זו לא הערכה — זו
 תוצאה של היעדר FK והיעדר JOIN, ושניהם אומתו.
 
-### שאילתות שחייבות לרוץ על פרודקשן לפני ביצוע
+### אימות מול פרודקשן — חובה לפני כל מיגרציה
 
-לא ניתן להריץ מכאן. **שלוש שאילתות קריאה בלבד:**
+**אין להסיק שההגירה בטוחה מבדיקת סכמה בלבד.** ארבע שאילתות קריאה. **התוצאות
+טרם סופקו — כולן `PENDING`. אין להמציא תוצאות.**
 
 ```sql
--- 1. כמה פריטי הזמנה מפנים למוצר שנקצר?
-select product_source, count(*)
-from public.order_items group by product_source;
-
--- 2. האם קיים מזהה בשתי הטבלאות? (Q3 אמפירית)
-select b.id from public.business_products b
-join public.scraped_products s on s.id = b.id;
-
--- 3. כמה מוצרים שנקצרו נמכרו אי פעם?
-select count(distinct product_id) from public.order_items
-where product_source = 'scraped';
+-- PQ-1 · פילוח פריטי ההזמנה לפי מקור
+SELECT
+  product_source,
+  COUNT(*) AS order_item_count
+FROM public.order_items
+GROUP BY product_source
+ORDER BY product_source;
 ```
 
-תוצאת שאילתה 1 קובעת אם המעבר כמעט חינם או דורש זהירות.
+```sql
+-- PQ-2 · האם קיים מזהה בשתי הטבלאות (Q3 אמפירית)
+SELECT
+  b.id AS business_product_id,
+  s.id AS scraped_product_id
+FROM public.business_products b
+JOIN public.scraped_products s
+  ON s.id = b.id;
+```
+
+```sql
+-- PQ-3 · כמה מוצרים שנקצרו נמכרו אי פעם
+SELECT
+  COUNT(DISTINCT product_id) AS scraped_product_ids_in_orders
+FROM public.order_items
+WHERE product_source = 'scraped';
+```
+
+```sql
+-- PQ-4 · פריטי הזמנה ללא מקור רשום
+SELECT
+  COUNT(*) AS missing_product_source_count
+FROM public.order_items
+WHERE product_source IS NULL;
+```
+
+| # | מה נקבע לפי התוצאה | סטטוס |
+|---|---|---|
+| PQ-1 | היקף המוצרים שנקצרו בהזמנות → עלות M-3/M-4 | **PENDING** |
+| PQ-2 | האם ייחודיות המזהים מופרת בפועל | **PENDING** |
+| PQ-3 | כמה מוצרי discovery נמכרו | **PENDING** |
+| PQ-4 | **פריטים שלא ניתן לייחס למקור** — עמודה nullable | **PENDING** |
+
+**PQ-4 חשובה במיוחד ולא הייתה ברשימה שלי קודם.** `product_source` הוא
+nullable. פריט הזמנה ישן עשוי לא לשאת מקור כלל, ואז לא ניתן לדעת מאיזו טבלה
+הוא הגיע. אם המספר גדול, PQ-1 אינה מספרת את כל הסיפור.
+
+---
+
+## 4A · תאימות היסטורית — חמש הראיות
+
+`CD-02` כלל 9 דורש שהזמנות ונתונים היסטוריים לא יישברו. **זו אינה הבטחה —
+אלה חמש עובדות מבניות שאומתו מול הסכמה החיה.**
+
+| # | עובדה | ראיה |
+|---|---|---|
+| 1 | **`order_items.product_id` הוא nullable** | `information_schema` — `is_nullable = YES` |
+| 2 | **אין FK מ-`order_items` לקטלוג** | `pg_constraint` — שלושה אילוצים בלבד: PK, FK ל-`orders`, `CHECK (quantity > 0)` |
+| 3 | **`product_source` רושם את המקור** | עמודה קיימת, מקבלת `manual` / `scraped` |
+| 4 | **שדות ההזמנה מצולמים** | `product_name` (`NOT NULL`), `product_image`, `price`, `sku`, `weight`, `weight_unit`, `variant`, `size` |
+| 5 | **קריאת הזמנה אינה עושה JOIN לקטלוג** | `mapOrderItem` מחזיר 14 מפתחות, כולם מהשורה. אף שאילתת הזמנה אינה מצרפת טבלת מוצרים |
+
+**המסקנה שנובעת:** פריט הזמנה מרונדר במלואו בלי לגעת בקטלוג. הסרת
+`scraped_products` מהחנות ומפתרון ההזמנה אינה יכולה לשנות הזמנה שכבר בוצעה.
+
+**הסייג:** עובדה 3 תלויה בכך ש-`product_source` אכן מולא. הוא **nullable** —
+ולכן `PQ-4` נדרשת. אם קיימים פריטים ללא מקור, לא ניתן לייחס אותם לטבלה, וזה
+משנה את מה ש-`PQ-1` מספרת.
 
 ---
 
@@ -340,3 +476,34 @@ flowchart LR
 - **תוכן פרודקשן.** אין גישה. שלוש השאילתות בסעיף 4 חייבות לרוץ שם.
 - **היקף `scraped_products`** בפועל — לא ידוע כמה שורות ואיזה חלק מהקטלוג.
 - **n8n** — מוגדר בסשן ונכשל בחיבור; צינור הייבוא לא נבדק מקצה לקצה.
+
+---
+
+## 9. השלב הבא — `Canonical Catalog Migration Plan`
+
+**לא בוצע. מוצע בלבד.** נדרש אישור מפורש ותוצאות `PQ-1`…`PQ-4` לפני התחלה.
+
+### תנאי כניסה
+
+| # | תנאי | סטטוס |
+|---|---|---|
+| E-1 | `PQ-1`…`PQ-4` הורצו והתוצאות סופקו | ⛔ **PENDING** |
+| E-2 | `CD-03` (עמלות) הוכרע | ⛔ פתוח |
+| E-3 | `CD-04` (תשלומים למוכרים) הוכרע | ⛔ פתוח |
+| E-4 | `CQ-13` — מי מאשר אימוץ | ⛔ פתוח |
+| E-5 | אישור מפורש לשינוי סכמה | ⛔ ממתין |
+
+### תוכן השלב
+
+1. **M-1** מיגרציה אדיטיבית — 5 עמודות provenance, כולן nullable
+2. **M-2** מילוי `source_kind='manual'` לשורות קיימות
+3. **M-5** זרימת אימוץ באדמין
+4. **M-6** Mipo Shop כמוכר רגיל
+5. **M-3 + M-4** הסרת `scraped_products` מהרשימה ומפתרון ההזמנה — **הרגע שבו ההחלטה נכנסת לתוקף**
+6. **M-7** הסרת fallback `defaultBusinessId`
+7. אילוץ `UNIQUE (business_id, source_kind, source_record_id)` — **רק לאחר `PQ-2`**
+
+### מה השלב הזה אינו כולל
+
+מלאי כישות (`M-8`), `seller_orders`, עמלות, תשלומים, RBAC של מוכרים. כל אחד
+מהם שלב נפרד עם אישור נפרד.
