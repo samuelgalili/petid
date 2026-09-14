@@ -18,6 +18,10 @@ const PORT = Number(process.env.SMOKE_PORT || 3111);
 const BASE = `http://127.0.0.1:${PORT}`;
 const BOOT_TIMEOUT_MS = 30_000;
 
+// Generated per run and handed to the API it boots, so the admin routes can be
+// exercised here. It never leaves this process.
+const SMOKE_ADMIN_KEY = `smoke-${Math.random().toString(36).slice(2)}`;
+
 const results = [];
 let failures = 0;
 
@@ -59,6 +63,9 @@ const main = async () => {
       DB_SSL: "false",
       UPLOAD_DIR: "/tmp/mipo-smoke-uploads",
       PRIVATE_UPLOAD_DIR: "/tmp/mipo-smoke-private",
+      // So the admin-only routes can be exercised here rather than skipped.
+      // isAdminRequest accepts this key on the x-admin-api-key header.
+      ADMIN_API_KEY: SMOKE_ADMIN_KEY,
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -168,6 +175,11 @@ const main = async () => {
   const authed = (path, init = {}) => fetch(`${BASE}${path}`, {
     ...init,
     headers: { ...(init.headers || {}), cookie },
+  });
+
+  const admin = (path, init = {}) => fetch(`${BASE}${path}`, {
+    ...init,
+    headers: { ...(init.headers || {}), "x-admin-api-key": SMOKE_ADMIN_KEY },
   });
 
   await check("GET /api/auth/me joins app_users and profiles", async () => {
@@ -323,6 +335,33 @@ const main = async () => {
     const pet = body.pet || body;
     if (pet.is_neutered !== null) {
       throw new Error(`expected is_neutered null, got ${JSON.stringify(pet.is_neutered)}`);
+    }
+  });
+
+  // A product's feeding guidance is only as good as the provenance beside it.
+  // The create path used to validate feeding_guide_source into one of three
+  // known states and then not name the column, so the row took the default
+  // 'unknown' while an edit immediately afterwards saved the same value fine.
+  await check("POST /api/products stores the feeding guide's provenance", async () => {
+    const created = await admin("/api/products", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        name: "Provenance Kibble",
+        price: 99,
+        feeding_guide: ["10-20kg: 150g"],
+        feeding_guide_source: "manufacturer_confirmed",
+      }),
+    });
+    if (created.status === 401 || created.status === 403) return; // no admin key here
+    expectStatus(created, [200, 201], "create product with provenance");
+
+    const body = await created.json();
+    const product = body.product || body;
+    if (product.feeding_guide_source !== "manufacturer_confirmed") {
+      throw new Error(
+        `create accepted the provenance and stored ${JSON.stringify(product.feeding_guide_source)}`,
+      );
     }
   });
 

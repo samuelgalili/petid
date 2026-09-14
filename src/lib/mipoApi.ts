@@ -344,7 +344,6 @@ export interface MipoProfile {
   street?: string | null;
   city?: string | null;
   id_number_last4?: string | null;
-  id_verified?: boolean | null;
   marketing_consent?: boolean | null;
   marketing_consent_date?: string | null;
   marketing_unsubscribed_at?: string | null;
