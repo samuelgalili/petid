@@ -16,6 +16,7 @@ import {
 } from "./productIntel.js";
 import { fallbackBreeds } from "./referenceData.js";
 import { assertLegacyIntakeAllowed, sourceHostForLog } from "./legacyIntakeFreeze.js";
+import { assertLegacyProductCreationDisabled } from "./legacyProductCreation.js";
 import { measureLegacyExposure } from "./legacyExposureMeasurement.js";
 import {
   DEFAULT_OWNERSHIP_STATE,
@@ -4010,10 +4011,17 @@ const scrapedProductFields = {
   flagged_at: "flagged_at",
 };
 
+// A rejected product payload is the caller's mistake, not the server's. These
+// throws carried no statusCode, so the top-level handler reported 500 and told
+// an admin the system had broken when in fact their input was refused - and the
+// real reason was replaced by "Internal server error". The rules below are
+// unchanged; only the status they are reported with.
+const invalidProductInput = (message) => Object.assign(new Error(message), { statusCode: 400 });
+
 const normalizeCategoryId = (value) => {
   if (value === null || value === undefined || value === "") return null;
   const id = String(value).trim();
-  if (!uuidPattern.test(id)) throw new Error("A valid category_id is required");
+  if (!uuidPattern.test(id)) throw invalidProductInput("A valid category_id is required");
   return id;
 };
 
@@ -4022,13 +4030,13 @@ const normalizeFieldValue = (field, value, target = "business") => {
 
   if (field === "name") {
     const name = typeof value === "string" ? value.trim() : "";
-    if (!name) throw new Error("Product name is required");
+    if (!name) throw invalidProductInput("Product name is required");
     return name;
   }
 
   if (field === "price") {
     const price = toNumber(value);
-    if (!price || price <= 0) throw new Error("A valid product price is required");
+    if (!price || price <= 0) throw invalidProductInput("A valid product price is required");
     return price;
   }
 
@@ -4072,8 +4080,8 @@ const normalizeProductPayload = (body) => {
   const name = typeof body.name === "string" ? body.name.trim() : "";
   const price = toNumber(body.price);
 
-  if (!name) throw new Error("Product name is required");
-  if (!price || price <= 0) throw new Error("A valid product price is required");
+  if (!name) throw invalidProductInput("Product name is required");
+  if (!price || price <= 0) throw invalidProductInput("A valid product price is required");
 
   return {
     name,
@@ -4619,10 +4627,22 @@ const submitOwnershipDecision = async (productId, body, admin) => {
 };
 
 const createProduct = async (body) => {
-  // First, before anything writes. normalizeProductPayload is pure, but
+  // Stage 0: the legacy creation path is closed unconditionally, and this is the
+  // write boundary rather than only the route, so an internal caller cannot
+  // reach the insert by going around HTTP. Nothing below this line runs.
+  //
+  // It comes before every side effect for the same reason the G-1 freeze did:
   // ensureDefaultBusinessProfile inserts a business_profiles row and
-  // adoptProductImages downloads bytes to disk - a refusal after either would
-  // leave an artifact behind for a product that was never created.
+  // adoptProductImages downloads bytes to disk, so a refusal placed after
+  // either would leave an artifact behind for a product that was never created.
+  // It also means the defaultBusinessId fallback on the line below is now
+  // unreachable for creation, which is the point - no new product may acquire an
+  // owner nobody chose.
+  assertLegacyProductCreationDisabled();
+
+  // Retained deliberately, though unreachable while the block above stands: it
+  // is the inner gate, and whichever path eventually replaces this one must
+  // still refuse a scraped-backed payload that has not been through review.
   assertLegacyIntakeAllowed(body, "POST /api/products");
 
   const payload = normalizeProductPayload(body);
@@ -8982,15 +9002,27 @@ const handleRequest = async (request, response) => {
       return;
     }
 
+    // Stage 0: closed. The permission check still runs first, so an unauthorised
+    // caller gets its usual answer and learns nothing new, and so that the audit
+    // row below can name who attempted it.
     if (request.method === "POST" && url.pathname === "/api/products") {
       if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_CREATE))) return;
-      const product = await createProduct(await readBody(request));
+      const attempted = await readBody(request);
       await recordAdminAudit(request.admin, {
-        actionType: "product.created",
-        entityId: product.id,
-        newValues: product,
+        actionType: "product.creation_blocked",
+        // No product name, no payload, no URL: enough to see that someone is
+        // still trying and through which shape of import, nothing more.
+        metadata: {
+          route: "POST /api/products",
+          had_source_provenance: Boolean(String(attempted?.source_url ?? "").trim()),
+        },
       });
-      sendJson(response, 201, { product });
+      sendError(
+        response,
+        410,
+        "Legacy product creation is no longer supported. Use Product Intake.",
+        { code: "LEGACY_PRODUCT_CREATION_DISABLED" },
+      );
       return;
     }
 

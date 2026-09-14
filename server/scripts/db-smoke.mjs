@@ -338,56 +338,55 @@ const main = async () => {
     }
   });
 
-  // A product's feeding guidance is only as good as the provenance beside it.
-  // The create path used to validate feeding_guide_source into one of three
-  // known states and then not name the column, so the row took the default
-  // 'unknown' while an edit immediately afterwards saved the same value fine.
-  await check("POST /api/products stores the feeding guide's provenance", async () => {
-    const created = await admin("/api/products", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        name: "Provenance Kibble",
-        price: 99,
-        feeding_guide: ["10-20kg: 150g"],
-        feeding_guide_source: "manufacturer_confirmed",
-      }),
+  // Stage 0. Every legacy import path - hand-written, URL, scrape, CSV, Excel,
+  // quick import and duplication - reaches the catalogue through this one route,
+  // so one check per payload shape proves all of them are closed.
+  //
+  // These replace the earlier G-1 checks, which expected 409 for a scraped-backed
+  // payload. That refusal still exists inside createProduct, but nothing reaches
+  // it any more: creation is now refused outright, before the payload is even
+  // inspected, so every shape gets the same 410.
+  const legacyCreatePayloads = {
+    "hand-written product": { name: "Stage0 Manual", price: 42 },
+    "URL / scrape import": {
+      name: "Stage0 Scraped", price: 55,
+      source_url: "https://supplier.example.com/product/stage0",
+    },
+    "spreadsheet import (CSV/Excel)": {
+      name: "Stage0 Spreadsheet", price: 30, sku: "CSV-1", category: "other", in_stock: true,
+    },
+    "quick import": {
+      name: "Stage0 Quick", price: 61, brand: "B", supplier_id: null,
+      source_url: "https://supplier.example.com/quick",
+    },
+    "duplicate of an existing product": {
+      name: "Stage0 Duplicate (העתק)", price: 99, business_id: "cf941cc4-e1d1-4d7c-8122-a5df81a1e53c",
+    },
+  };
+
+  for (const [label, payload] of Object.entries(legacyCreatePayloads)) {
+    await check(`POST /api/products is closed for a ${label}`, async () => {
+      const response = await admin("/api/products", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (response.status === 401 || response.status === 403) return; // no admin key here
+      expectStatus(response, [410], `${label} must be refused with 410 Gone`);
+
+      const body = await response.json();
+      if (body.details?.code !== "LEGACY_PRODUCT_CREATION_DISABLED") {
+        throw new Error(`expected LEGACY_PRODUCT_CREATION_DISABLED, got ${JSON.stringify(body.details)}`);
+      }
+      // The refusal must not describe the machine that refused.
+      const serialized = JSON.stringify(body);
+      if (/postgres|business_products|defaultBusinessId|token|secret/i.test(serialized)) {
+        throw new Error("the refusal leaked internal detail");
+      }
     });
-    if (created.status === 401 || created.status === 403) return; // no admin key here
-    expectStatus(created, [200, 201], "create product with provenance");
+  }
 
-    const body = await created.json();
-    const product = body.product || body;
-    if (product.feeding_guide_source !== "manufacturer_confirmed") {
-      throw new Error(
-        `create accepted the provenance and stored ${JSON.stringify(product.feeding_guide_source)}`,
-      );
-    }
-  });
-
-  // G-1. The unit tests prove the guard's contract; these two prove it is
-  // actually wired into the route, and - the part a pure function cannot show -
-  // that a refusal leaves nothing behind.
-  await check("POST /api/products refuses a scraped-backed create", async () => {
-    const response = await admin("/api/products", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        name: "Frozen Intake Probe",
-        price: 55,
-        source_url: "https://supplier.example.com/product/frozen-probe",
-      }),
-    });
-    if (response.status === 401 || response.status === 403) return; // no admin key here
-    expectStatus(response, [409], "scraped-backed create must be refused");
-
-    const body = await response.json();
-    if (body.details?.code !== "LEGACY_INTAKE_FROZEN") {
-      throw new Error(`expected LEGACY_INTAKE_FROZEN, got ${JSON.stringify(body.details)}`);
-    }
-  });
-
-  await check("a refused scraped-backed create leaves no partial row", async () => {
+  await check("a refused create adds nothing to the catalogue", async () => {
     const before = await fetch(`${BASE}/api/products`);
     if (!before.ok) return;
     const countBefore = (await before.json()).products.length;
@@ -396,23 +395,63 @@ const main = async () => {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        name: "Frozen Intake Probe Two",
+        name: "Stage0 Probe Two",
         price: 77,
         // An image the pipeline would have downloaded had the guard run late.
         image_url: "https://supplier.example.com/img/probe.jpg",
-        source_url: "https://supplier.example.com/product/frozen-probe-2",
+        source_url: "https://supplier.example.com/product/stage0-2",
       }),
     });
     if (response.status === 401 || response.status === 403) return;
-    expectStatus(response, [409], "second scraped-backed create must be refused");
+    expectStatus(response, [410], "create must be refused");
 
     const after = await fetch(`${BASE}/api/products`);
     const products = (await after.json()).products;
     if (products.length !== countBefore) {
       throw new Error(`catalogue grew from ${countBefore} to ${products.length} on a refused create`);
     }
-    if (products.some((product) => String(product.name).startsWith("Frozen Intake Probe"))) {
+    if (products.some((product) => String(product.name).startsWith("Stage0"))) {
       throw new Error("a refused create still produced a catalogue row");
+    }
+  });
+
+  await check("a product created before the closure is still readable", async () => {
+    // The seed migration leaves products behind. Closing creation must not make
+    // anything that already exists unreadable.
+    const listed = await fetch(`${BASE}/api/products`);
+    expectStatus(listed, [200], "public catalogue still reads");
+    const products = (await listed.json()).products;
+    if (products.length === 0) return; // nothing seeded in this database
+
+    const detail = await fetch(`${BASE}/api/products/${products[0].id}`);
+    expectStatus(detail, [200], "an existing product's detail route still reads");
+  });
+
+  // D-8. Invalid input is the caller's mistake, and must not be reported as an
+  // internal failure. The update path is still live, so this is not academic.
+  await check("invalid product input is rejected with 400, not 500", async () => {
+    const listed = await fetch(`${BASE}/api/products`);
+    if (!listed.ok) return;
+    const products = (await listed.json()).products;
+    if (products.length === 0) return;
+
+    for (const [label, patch] of Object.entries({
+      "zero price": { price: 0 },
+      "blank name": { name: "   " },
+      "malformed category_id": { category_id: "not-a-uuid" },
+    })) {
+      const response = await admin(`/api/products/${products[0].id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(patch),
+      });
+      if (response.status === 401 || response.status === 403) return; // no admin key here
+      expectStatus(response, [400], `${label} must be a 400`);
+
+      const body = await response.json();
+      if (/internal server error/i.test(JSON.stringify(body))) {
+        throw new Error(`${label} was reported as an internal error instead of bad input`);
+      }
     }
   });
 
