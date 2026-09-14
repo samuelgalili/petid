@@ -3,8 +3,8 @@
 Where each piece of data the system collects should live, decided per entity
 against a fixed test rather than per taste.
 
-**Status:** entity 1 of 5 complete — `user`. Remaining: `pet`, `product`,
-`supplier`, `order`.
+**Status:** complete — all five entities. `user`, `product`, `supplier`,
+`order`, `pet`.
 
 > Every count in this document was produced by a command, and the command is
 > named beside it. Column counts come from `information_schema` on a database
@@ -219,22 +219,194 @@ settled by `pet_fact_definitions` and should be copied rather than reinvented:
 
 ---
 
+## WF-12 · Product — inventory and decision
+
+`business_products`, **53 columns** (`information_schema`). Four have zero
+references anywhere in the server.
+
+### F-011 · `feeding_guide_source` is validated and then dropped at create
+
+The same shape as `F-001` on pets, landing on the one field P0 added to stop
+the system misrepresenting where a feeding number came from.
+
+| | |
+|---|---|
+| `normalizeProductPayload` | accepts **36** fields, and validates this one into three known states with a comment saying why: so a caller cannot claim a guide is manufacturer-confirmed by sending an arbitrary string |
+| `productColumns` (create) | inserts **38** columns, and this is not among them |
+| the update field map | **does** carry it — an edit saves the same value correctly |
+| column default | `'unknown'::text`, NOT NULL |
+| `PUBLIC_PRODUCT_FIELDS` | includes it — the value is published |
+
+Proved against a real database rather than read: a create carrying
+`manufacturer_confirmed` stores `unknown`; the identical value saves fine
+through an edit immediately afterwards.
+
+**Type:** bug, data loss. **Severity: P1, not P0** — `unknown` is treated as
+`ai_extracted` for labelling, the conservative direction, so no product is
+falsely labelled as manufacturer-confirmed. A true provenance is lost, not a
+false one invented. No writer sends `manufacturer_confirmed` today (the admin
+flow is unbuilt), so live impact is near zero — and the gap detonates the day
+that flow is built.
+
+### F-012 · Four dead product columns
+
+`average_rating`, `review_count`, `commission_rate`, `supplier_link` — zero
+references in the server, and none of them appear in `PUBLIC_PRODUCT_FIELDS`,
+so no shop response could carry them even if they were filled.
+
+There is no reviews table and no rating writer. The only rating figures in the
+codebase are hardcoded in `src/components/admin/ai-service/AIAnalytics.tsx`
+(456, 312, 156, 58, 28 across five star bands) — and that component has **zero
+importers**, so nobody sees them. Debt, not a user-visible fabrication.
+
+`commission_rate` and `supplier_link` are the commercial half of a supplier
+relationship that does not exist yet — see `WF-13`.
+
+**Type:** debt. **Decision needed:** drop, or keep as the declared shape of a
+reviews feature that is not being built this quarter.
+
+### Classification
+
+| Data point | History | Mixed trust | Can conflict | Reasoned over | Verdict |
+|---|---|---|---|---|---|
+| `price` | **yes** — commercially | no — admin or import, both authoritative | no | no | column (+ event if price history is wanted) |
+| `feeding_guide_source` | no | **yes** — a model reading a product page, or a human confirming | **yes** | **yes** — decides the label an owner is shown | **FACT-shaped**, but see below |
+| everything else | no | no | no | no | column |
+
+**`product` does not need a fact layer.** `feeding_guide_source` scores three,
+which by the test points at a fact — but it is a single enum on a catalogue row
+whose authoritative source is the shop itself, and the provenance question is
+already answered by the column's own three values. The right fix is to write
+the column at create, not to build a registry. This is the case where the test
+points one way and the cost points the other, and the cost wins; recorded here
+so the reasoning is visible rather than silently overridden.
+
+Price history, if wanted, belongs in events — append-only, honest about time —
+not in a widened row.
+
+---
+
+## WF-13 · Supplier — inventory and decision
+
+`business_profiles`, **25 columns**, of which **10 have zero references**:
+`logo_url`, `cover_image_url`, `working_hours`, `services`, `price_range`,
+`total_reviews`, `view_count`, `verification_requested_at`,
+`verification_notes`, `verified_by`.
+
+**There is no supplier entity in any meaningful sense.** The table has exactly
+one writer — `ensureDefaultBusinessProfile`, a bootstrap that inserts a single
+row named "Mipo Shop" and sets 9 of the 25 columns. There is no CRUD, no admin
+screen, no route. Every product resolves to `DEFAULT_BUSINESS_ID`.
+
+The ten dead columns describe a supplier directory — opening hours, services, a
+price range, reviews, a verification workflow with a reviewer and notes. None
+of it is implemented. `verification_requested_at`, `verification_notes` and
+`verified_by` are a three-column approval flow with no approver.
+
+### F-013 · A supplier directory exists as a schema and nothing else
+
+**Type:** debt. **Decision needed:** this is a product question. If Mipo will
+list third-party suppliers, this table is a reasonable starting shape and the
+right move is to leave it. If not, 10 columns and a table are describing a
+product that does not exist.
+
+**`supplier` does not need a fact layer.** It does not yet need anything: there
+is one row and no second source to disagree with it.
+
+---
+
+## WF-14 · Order — inventory and decision
+
+`orders`, **31 columns**, **zero dead**. The only entity examined in this
+document with no unused column at all.
+
+Orders are also the cleanest read/write contract in the system, and worth
+recording as the pattern the others should follow:
+
+- `mapOrder` is an explicit allowlist of 29 keys. It excludes
+  `access_token_hash`, `payment_transaction_id` and `payment_url`, which are
+  then attached to the returned object as **non-enumerable** properties — so
+  `canAccessOrder` can read the hash in process while `JSON.stringify` cannot
+  put it on the wire. Verified by round-tripping a seeded order through the
+  real serializer: none of the three appear in the response body.
+- `createOrder` reads each field from the request explicitly and passes every
+  one to the insert. There is no allowlist to fall out of step with.
+- `normalizeShippingAddress` builds a fixed 16-key object and **throws 400**
+  on invalid input rather than accepting and discarding it.
+- `order_items` already derives its columns and values from one list, with a
+  comment explaining that the hand-written version fell out of step when a
+  column was added.
+
+### Classification
+
+Order data is an immutable record of a transaction. History is the row itself;
+there is one source; nothing disagrees. **`order` does not need a fact layer**,
+and its existing shape needs no change.
+
+---
+
+## WF-03 · Pet — decision
+
+Fully mapped in `03-PET-LIFECYCLE.md`: **57 columns, 11 dead**, one seam, six
+findings (`F-001` to `F-006`).
+
+**`pet` is the one entity that needs a fact layer, and it already has one.**
+It is the only entity where all four questions answer yes across many fields:
+weight and conditions change and the trend is the signal; sources range from a
+vet document to a model's guess to a purchase; those sources contradict each
+other; and feeding, life stage, safety score and preventive care are all
+reasoned from them.
+
+The layer is built, deployed and has no writers (`F-005`). The next stage is
+DUAL WRITE, and the natural first key is weight: it already has a backfill
+(`0039`), a registry definition, and an entry in the service's
+`FACT_PRODUCING_OBSERVATIONS` map.
+
+---
+
+## Summary across all five entities
+
+| Entity | Columns | Dead | Needs a fact layer? |
+|---|---|---|---|
+| `user` | 58 | 20 | No — consent is better served by events plus the provenance column that already exists |
+| `pet` | 57 | 11 | **Yes — already built, no writers yet** |
+| `product` | 53 | 4 | No — one enum, fixed by writing it at create |
+| `supplier` | 25 | 10 | No — one bootstrap row, no second source |
+| `order` | 31 | **0** | No — an immutable transaction record |
+| **Total** | **224** | **45** | **1 of 5** |
+
+Forty-five dead columns is 20% of the modelled surface. None of them is
+urgent; together they are why the schema cannot be trusted as documentation of
+what the system does.
+
+**The single recommendation, if only one thing is done:** connect one writer to
+the pet fact layer. Everything else in this document is cleanup. That one is
+the difference between a system that can remember and a system that has a place
+to remember in.
+
+---
+
 ## Findings opened here
 
-| ID | Finding | Type | Status |
-|---|---|---|---|
-| `F-007` | Twenty dead columns on the user surface, including four that duplicate an address the orders table already stores properly | debt | open |
-| `F-008` | `show_location` is read by the public pet view and written by nothing, so the city is never shown and the control does not exist | dead feature | open |
-| `F-009` | Consent has no provenance: `consent_method` is empty, history is limited to the last transition, and imported consent cannot be distinguished | bug (compliance) | open |
-| `F-010` | `id_verified` is not a column, is always false, and is rendered to every user as "ת״ז לא מאומת" | bug (user-visible) | open |
+| ID | Entity | Finding | Type | Status |
+|---|---|---|---|---|
+| `F-007` | user | Twenty dead columns, four of them a second address the orders table already stores properly | debt | open |
+| `F-008` | user | `show_location` is read by the public pet view and written by nothing | dead feature | open |
+| `F-009` | user | Consent has no provenance; `consent_method` is empty and imported consent is indistinguishable | bug (compliance) | open |
+| `F-010` | user | `id_verified` is not a column, is always false, and renders as "ת״ז לא מאומת" to everyone | bug (user-visible) | open |
+| `F-011` | product | `feeding_guide_source` is validated then dropped at create; an edit saves it fine | bug (data loss, P1) | open |
+| `F-012` | product | Four dead columns; no reviews table exists and the only rating figures are hardcoded in an unimported component | debt | open |
+| `F-013` | supplier | A supplier directory exists as ten dead columns and a three-column approval flow with no approver | debt | open |
 
 ---
 
 ```
-DATA_GOVERNANCE: IN PROGRESS
-entities: 1/5 (user)
-columns examined: 58 · recommended as facts: 0 · gaps: a=20 b=1 c=4
+DATA_GOVERNANCE: COMPLETE
+entities: 5/5
+columns examined: 224 · recommended as facts: 1 entity (pet, already built)
+gaps: a=45 b=1 c=4
 ```
 
-`a` = collected and unused · `b` = used and not collected · `c` = collected
-twice (the four address columns, against `orders.shipping_address`).
+`a` = collected and unused · `b` = used and not collected (`show_location`) ·
+`c` = collected twice (the four user address columns, against
+`orders.shipping_address`).
