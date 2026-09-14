@@ -570,6 +570,44 @@ with it, it passes.
 
 ---
 
+## 5C. G-7 — Legacy Exposure Measurement · **IMPLEMENTED, READ-ONLY**
+
+**Status:** implemented and tested. **No migration, no writes, no production access.**
+Full report: [`LEGACY-EXPOSURE-MEASUREMENT.md`](./LEGACY-EXPOSURE-MEASUREMENT.md).
+
+**No exposure figures exist yet**, and none are recorded anywhere in this repository. The
+only database reachable from this environment is a local scratch instance; numbers from it
+would be arithmetic on fixtures that read exactly like production numbers on a page.
+
+| | |
+|---|---|
+| Route | `GET /api/admin/products/legacy-exposure` |
+| Permission | `PRODUCTS_OWNERSHIP_REVIEW` — reused deliberately: same audience as the G-6 queue, and a second permission would carry identical grants |
+| Module | `server/src/legacyExposureMeasurement.js` |
+| Writes | **none**, including no audit row for the read itself |
+
+**Measured when pointed at a real database:** population, public exposure, purchase
+exposure (including an upper bound on variant-price exposure), order exposure, ownership
+review counts, content provenance, and breakdowns by business, category, month and order
+exposure.
+
+**Returns `UNRECONSTRUCTIBLE`, with no number attached:** which products came through the
+legacy intake path; which carry a fallback `business_id`; who owns anything; publication
+state. A test asserts these fields carry no `count` key.
+
+**Returns `UNMEASURABLE_SERVER_SIDE`:** cart exposure — `localStorage` only, no cart table,
+no telemetry.
+
+**The risk this checkpoint surfaced:** `listAdminAnalytics` calls the same `listProducts()`
+as the public catalogue. A hardcoded row filter there would restate every admin number and
+blind reviewers to the rows they must review. Any future visibility filter must be a
+call-site parameter.
+
+**Proof of no writes:** a test snapshots row counts *and an `md5` digest of every row*
+across six tables, runs the measurement twice, and requires byte-identical results.
+
+---
+
 ## 6. F-4 — variant price bug and remediation boundary
 
 ### 6.1 The bug, as verified

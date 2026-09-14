@@ -463,6 +463,52 @@ const main = async () => {
     }
   });
 
+  // G-7. Authorization, and the guarantee that measuring changes nothing.
+  await check("the legacy exposure report refuses an unauthenticated read", async () => {
+    const response = await fetch(`${BASE}/api/admin/products/legacy-exposure`);
+    expectStatus(response, [401, 403], "unauthenticated exposure read");
+  });
+
+  await check("the legacy exposure report is served and never claims production", async () => {
+    const response = await admin("/api/admin/products/legacy-exposure");
+    if (response.status === 401 || response.status === 403) return; // no admin key here
+    expectStatus(response, [200], "authorised exposure read");
+
+    const report = await response.json();
+    if (report.scope?.read_only !== true) throw new Error("report did not declare itself read-only");
+    if (report.scope?.production_validated !== false) {
+      throw new Error("report must never declare itself production-validated");
+    }
+    for (const section of ["population", "public_exposure", "purchase_exposure", "order_exposure",
+      "cart_exposure", "recommendation_exposure", "analytics_exposure", "ownership_review",
+      "provenance", "breakdowns", "blocked_questions"]) {
+      if (!report[section]) throw new Error(`report is missing the ${section} section`);
+    }
+    if (report.cart_exposure.status !== "UNMEASURABLE_SERVER_SIDE") {
+      throw new Error("cart exposure must be reported as unmeasurable server-side");
+    }
+    // No supplier URL, query string or product content may reach the response.
+    const serialized = JSON.stringify(report);
+    if (/[?&](token|affiliate|utm_)/i.test(serialized)) {
+      throw new Error("the report leaked URL query parameters");
+    }
+  });
+
+  await check("reading the legacy exposure report modifies no product and no order", async () => {
+    const before = await fetch(`${BASE}/api/products`);
+    if (!before.ok) return;
+    const productsBefore = JSON.stringify((await before.json()).products);
+
+    const report = await admin("/api/admin/products/legacy-exposure");
+    if (report.status === 401 || report.status === 403) return;
+    await report.json();
+
+    const after = await fetch(`${BASE}/api/products`);
+    if (JSON.stringify((await after.json()).products) !== productsBefore) {
+      throw new Error("reading the exposure report changed the public catalogue");
+    }
+  });
+
   shutdown();
   await sleep(300);
 

@@ -16,6 +16,7 @@ import {
 } from "./productIntel.js";
 import { fallbackBreeds } from "./referenceData.js";
 import { assertLegacyIntakeAllowed, sourceHostForLog } from "./legacyIntakeFreeze.js";
+import { measureLegacyExposure } from "./legacyExposureMeasurement.js";
 import {
   DEFAULT_OWNERSHIP_STATE,
   OWNERSHIP_ENTITY_TYPE,
@@ -8861,6 +8862,16 @@ const handleRequest = async (request, response) => {
         newValues: result,
       });
       sendJson(response, 200, result);
+      return;
+    }
+
+    // G-7 · legacy exposure measurement. Strictly read-only: every statement
+    // behind it is a SELECT, and no audit row is written for reading it -
+    // the repository audits mutations, not reads, and inventing an exception
+    // here would make a measurement route the only GET in the API that writes.
+    if (request.method === "GET" && url.pathname === "/api/admin/products/legacy-exposure") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_OWNERSHIP_REVIEW))) return;
+      sendJson(response, 200, await measureLegacyExposure(pool));
       return;
     }
 
