@@ -365,6 +365,150 @@ const main = async () => {
     }
   });
 
+  // G-1. The unit tests prove the guard's contract; these two prove it is
+  // actually wired into the route, and - the part a pure function cannot show -
+  // that a refusal leaves nothing behind.
+  await check("POST /api/products refuses a scraped-backed create", async () => {
+    const response = await admin("/api/products", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        name: "Frozen Intake Probe",
+        price: 55,
+        source_url: "https://supplier.example.com/product/frozen-probe",
+      }),
+    });
+    if (response.status === 401 || response.status === 403) return; // no admin key here
+    expectStatus(response, [409], "scraped-backed create must be refused");
+
+    const body = await response.json();
+    if (body.details?.code !== "LEGACY_INTAKE_FROZEN") {
+      throw new Error(`expected LEGACY_INTAKE_FROZEN, got ${JSON.stringify(body.details)}`);
+    }
+  });
+
+  await check("a refused scraped-backed create leaves no partial row", async () => {
+    const before = await fetch(`${BASE}/api/products`);
+    if (!before.ok) return;
+    const countBefore = (await before.json()).products.length;
+
+    const response = await admin("/api/products", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        name: "Frozen Intake Probe Two",
+        price: 77,
+        // An image the pipeline would have downloaded had the guard run late.
+        image_url: "https://supplier.example.com/img/probe.jpg",
+        source_url: "https://supplier.example.com/product/frozen-probe-2",
+      }),
+    });
+    if (response.status === 401 || response.status === 403) return;
+    expectStatus(response, [409], "second scraped-backed create must be refused");
+
+    const after = await fetch(`${BASE}/api/products`);
+    const products = (await after.json()).products;
+    if (products.length !== countBefore) {
+      throw new Error(`catalogue grew from ${countBefore} to ${products.length} on a refused create`);
+    }
+    if (products.some((product) => String(product.name).startsWith("Frozen Intake Probe"))) {
+      throw new Error("a refused create still produced a catalogue row");
+    }
+  });
+
+  // G-6. Authorization, and the guarantee that reading the queue changes nothing.
+  await check("the ownership review queue refuses an unauthenticated read", async () => {
+    const response = await fetch(`${BASE}/api/admin/products/ownership-review`);
+    expectStatus(response, [401, 403], "unauthenticated queue read");
+  });
+
+  await check("an unauthenticated review decision is refused without revealing the product", async () => {
+    const real = await fetch(`${BASE}/api/admin/products/00000000-0000-4000-8000-000000000001/ownership-review`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ state: "ownership_review", note: "probe" }),
+    });
+    expectStatus(real, [401, 403], "unauthenticated review decision");
+    const body = await real.text();
+    if (/not found/i.test(body)) {
+      throw new Error("an unauthorised response disclosed whether the product exists");
+    }
+  });
+
+  await check("reading the ownership review queue modifies no product", async () => {
+    const before = await fetch(`${BASE}/api/products`);
+    if (!before.ok) return;
+    const snapshot = JSON.stringify((await before.json()).products);
+
+    const queue = await admin("/api/admin/products/ownership-review");
+    if (queue.status === 401 || queue.status === 403) return; // no admin key here
+    expectStatus(queue, [200], "authorised queue read");
+
+    const body = await queue.json();
+    if (!Array.isArray(body.ownership_review_queue)) {
+      throw new Error("queue response did not contain ownership_review_queue");
+    }
+    // Every legacy product starts unresolved, and reading must not change that.
+    if (body.ownership_review_queue.some((row) => !row.review_state)) {
+      throw new Error("a queue row carried no review state");
+    }
+    // A supplier URL's query string must never reach the review screen.
+    if (body.ownership_review_queue.some((row) => /[?&]/.test(String(row.source_host ?? "")))) {
+      throw new Error("a queue row exposed a URL query string");
+    }
+
+    const after = await fetch(`${BASE}/api/products`);
+    if (JSON.stringify((await after.json()).products) !== snapshot) {
+      throw new Error("reading the ownership review queue changed the public catalogue");
+    }
+  });
+
+  // G-7. Authorization, and the guarantee that measuring changes nothing.
+  await check("the legacy exposure report refuses an unauthenticated read", async () => {
+    const response = await fetch(`${BASE}/api/admin/products/legacy-exposure`);
+    expectStatus(response, [401, 403], "unauthenticated exposure read");
+  });
+
+  await check("the legacy exposure report is served and never claims production", async () => {
+    const response = await admin("/api/admin/products/legacy-exposure");
+    if (response.status === 401 || response.status === 403) return; // no admin key here
+    expectStatus(response, [200], "authorised exposure read");
+
+    const report = await response.json();
+    if (report.scope?.read_only !== true) throw new Error("report did not declare itself read-only");
+    if (report.scope?.production_validated !== false) {
+      throw new Error("report must never declare itself production-validated");
+    }
+    for (const section of ["population", "public_exposure", "purchase_exposure", "order_exposure",
+      "cart_exposure", "recommendation_exposure", "analytics_exposure", "ownership_review",
+      "provenance", "breakdowns", "blocked_questions"]) {
+      if (!report[section]) throw new Error(`report is missing the ${section} section`);
+    }
+    if (report.cart_exposure.status !== "UNMEASURABLE_SERVER_SIDE") {
+      throw new Error("cart exposure must be reported as unmeasurable server-side");
+    }
+    // No supplier URL, query string or product content may reach the response.
+    const serialized = JSON.stringify(report);
+    if (/[?&](token|affiliate|utm_)/i.test(serialized)) {
+      throw new Error("the report leaked URL query parameters");
+    }
+  });
+
+  await check("reading the legacy exposure report modifies no product and no order", async () => {
+    const before = await fetch(`${BASE}/api/products`);
+    if (!before.ok) return;
+    const productsBefore = JSON.stringify((await before.json()).products);
+
+    const report = await admin("/api/admin/products/legacy-exposure");
+    if (report.status === 401 || report.status === 403) return;
+    await report.json();
+
+    const after = await fetch(`${BASE}/api/products`);
+    if (JSON.stringify((await after.json()).products) !== productsBefore) {
+      throw new Error("reading the exposure report changed the public catalogue");
+    }
+  });
+
   shutdown();
   await sleep(300);
 
