@@ -116,17 +116,36 @@ export const validateRemoteHttpUrl = async (input, { lookupFn = lookup } = {}) =
   return url;
 };
 
+// Bridges a caller's signal onto one request's own controller.
+//
+// The per-request timeout below is cleared the moment the headers arrive, so on
+// its own it bounds nothing but the wait for those headers. A caller that needs
+// the *body* bounded too passes its own signal, which stays live for as long as
+// it holds the response, and aborting it tears the body down.
+const linkExternalAbort = (controller, externalSignal) => {
+  if (!externalSignal) return () => {};
+  if (externalSignal.aborted) {
+    controller.abort(externalSignal.reason);
+    return () => {};
+  }
+  const forward = () => controller.abort(externalSignal.reason);
+  externalSignal.addEventListener("abort", forward, { once: true });
+  return () => externalSignal.removeEventListener("abort", forward);
+};
+
 export const fetchValidatedRemoteUrl = async (input, {
   headers = {},
   timeoutMs = 35_000,
   maxRedirects = 5,
   fetchFn = fetch,
   lookupFn = lookup,
+  signal,
 } = {}) => {
   let currentUrl = await validateRemoteHttpUrl(input, { lookupFn });
 
   for (let redirectCount = 0; redirectCount <= maxRedirects; redirectCount += 1) {
     const controller = new AbortController();
+    const unlink = linkExternalAbort(controller, signal);
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
     let response;
     try {
@@ -137,14 +156,25 @@ export const fetchValidatedRemoteUrl = async (input, {
         signal: controller.signal,
         dispatcher: safeRemoteDispatcher,
       });
+    } catch (error) {
+      unlink();
+      throw error;
     } finally {
+      // Headers are in, or the request failed outright. Either way this timer
+      // has done its job and must not outlive the call.
       clearTimeout(timeout);
     }
 
     if (response.status < 300 || response.status >= 400) {
+      // Deliberately not unlinked: the caller's signal has to stay wired to the
+      // response it is about to read, or aborting it would leave the body
+      // running. The listener sits on the caller's own signal and is collected
+      // with it.
       return { response, finalUrl: currentUrl.toString() };
     }
 
+    // This response is about to be discarded, so the link goes with it.
+    unlink();
     if (redirectCount === maxRedirects) throw urlError("Too many URL redirects");
     const location = response.headers.get("location");
     if (!location) throw urlError("Remote server returned an invalid redirect");

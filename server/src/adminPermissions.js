@@ -11,6 +11,10 @@ export const ADMIN_PERMISSIONS = Object.freeze({
   PRODUCTS_DELETE: "products.delete",
   PRODUCT_ASSETS_UPLOAD: "product_assets.upload",
   PRODUCT_TOOLS_USE: "product_tools.use",
+  // Deciding who owns a legacy product is not an editing action. It is left
+  // out of PRODUCT_MANAGER below on purpose: being able to change a price must
+  // not carry the authority to settle ownership, so only a full admin has it.
+  PRODUCTS_OWNERSHIP_REVIEW: "products.ownership_review",
 });
 
 const rolePermissions = Object.freeze({
