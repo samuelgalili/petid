@@ -15,6 +15,7 @@ import {
   smartScrapeProduct,
 } from "./productIntel.js";
 import { fallbackBreeds } from "./referenceData.js";
+import { assertLegacyIntakeAllowed } from "./legacyIntakeFreeze.js";
 import {
   getCardcomString,
   isSuccessfulCardcomCharge,
@@ -4432,6 +4433,12 @@ const adoptProductImages = async (body, label) => {
 };
 
 const createProduct = async (body) => {
+  // First, before anything writes. normalizeProductPayload is pure, but
+  // ensureDefaultBusinessProfile inserts a business_profiles row and
+  // adoptProductImages downloads bytes to disk - a refusal after either would
+  // leave an artifact behind for a product that was never created.
+  assertLegacyIntakeAllowed(body, "POST /api/products");
+
   const payload = normalizeProductPayload(body);
   const businessId = body.business_id || await ensureDefaultBusinessProfile();
 

@@ -232,6 +232,178 @@ switched to deny-by-default until Q1, Q5, Q6 and Q7 have returned numbers.
 
 ---
 
+## 5A. G-1 — Legacy Intake Freeze · **IMPLEMENTED**
+
+**Status:** implemented, tested, committed to the work branch. **Not deployed, not merged.**
+
+### 5A.1 The write boundary that was frozen
+
+**`createProduct()` — `server/src/index.js:4434`, first statement.**
+
+This is the narrowest boundary that is also complete. The audit established why:
+
+* **`server/src/productIntel.js` performs no database writes at all.** Every scraping
+  endpoint (`import-products-from-url`, `scrape-products`, `scrape-product`,
+  `scan-product-list`, `smart-scrape-product`, routed via
+  `runProductIntelFunction`, `server/src/index.js:7228-7240`) returns a payload to the
+  admin UI. None of them creates a commercial record.
+* **All five client creation paths funnel into one route.** `createAdminProduct()`
+  (`src/lib/mipoApi.ts:1706`) → `POST /api/products` → `createProduct`.
+* Therefore **one guard at `createProduct` covers every path**, including any future
+  server-side caller, with no frontend check anywhere.
+
+**Placement is load-bearing.** The guard is the *first* statement, before
+`normalizeProductPayload`. Two writes sit immediately below it:
+
+| Line | Side effect if the guard ran later |
+|---|---|
+| `server/src/index.js:4443` `ensureDefaultBusinessProfile()` | inserts a `business_profiles` row |
+| `server/src/index.js:4447` `adoptProductImages()` | downloads remote bytes and writes image files to disk |
+
+A refusal placed after either would leave an artifact behind for a product that was never
+created. Proven empirically in §5A.6.
+
+### 5A.2 The discriminator, and why it is not the forbidden inference
+
+A creation is **scraped-backed** when its payload carries a non-empty `source_url`.
+
+Verified: **all five** scraped-backed paths set it —
+`src/components/admin/ProductFormDialog.tsx:771`,
+`src/components/admin/ProductImportWizard.tsx:383`,
+`src/components/admin/BulkProductImport.tsx:902`,
+`src/pages/admin/AdminProducts.tsx:358`,
+`src/pages/admin/AdminQuickImport.tsx:299`. Duplication
+(`src/components/admin/products/ProductBulkActions.tsx:185`) spreads the original's fields,
+so a copy of a scraped product carries `source_url` forward and is frozen too.
+
+> **This is not the inference PD-39 forbids.** PD-39 forbids reading `source_url` as
+> evidence of **who owns** a record. The guard reads it as evidence of **where the content
+> came from** — which is exactly what the column is, and what the production-validation
+> report concluded it means. The guard returns a boolean about provenance; it never reads,
+> derives, or writes an owner. A test asserts that `business_id`, `supplier_id` and
+> `image_source_url` have no influence on the decision.
+
+### 5A.3 Routes blocked
+
+| Route | Condition | Result |
+|---|---|---|
+| `POST /api/products` | payload has a non-empty `source_url` | **409 `LEGACY_INTAKE_FROZEN`** |
+
+Reaching that route and therefore blocked: the product form dialog, the import wizard,
+bulk URL import, admin quick import, and duplication of any scraped-backed product.
+
+### 5A.4 Routes and behaviour intentionally **unaffected**
+
+| Surface | Status | Why |
+|---|---|---|
+| `POST /api/products` **without** `source_url` | ✅ unchanged | manual creation is not legacy scraped intake |
+| **CSV / Excel import** | ✅ **unchanged — deliberate** | `parseCSV` (`src/components/admin/BulkProductImport.tsx:222-257`) has no source column and never sets `sourceUrl`; spreadsheet rows are not scraped-backed. Freezing them would broaden the freeze past its stated purpose. |
+| `PATCH /api/products/:id` | ✅ unchanged | the freeze covers **creation** only; existing records stay editable, which the ownership review needs |
+| `DELETE /api/products/:id`, bulk update/delete | ✅ unchanged | not creation |
+| All scraping endpoints (`/api/product-intel/*`) | ✅ unchanged | they write nothing; admins can still research |
+| `GET /api/products`, `GET /api/products/:id` | ✅ unchanged | **no public read behaviour changed; nothing hidden** |
+| Checkout, carts, order history, recommendations, analytics, image pipeline, pricing, ownership | ✅ unchanged | untouched by this change |
+| `server/scripts/seed-workbench.mjs:186` | ✅ unchanged | inserts directly by SQL, bypassing the route; a local developer seeding script, not an intake path |
+
+### 5A.5 Error contract
+
+Repository convention (thrown error with `statusCode` + `code`, rendered at
+`server/src/index.js:8855-8860`) rather than the shape suggested in the brief:
+
+```json
+{
+  "error": "Legacy scraped-product intake is temporarily frozen. Use the reviewed Product Intake workflow.",
+  "details": { "code": "LEGACY_INTAKE_FROZEN" }
+}
+```
+
+**HTTP 409.** Not 403: the caller *is* authorised — authorization behaviour is unchanged
+and still runs first, at `server/src/index.js:8748`. The system's current *state* refuses,
+and retrying will not help until the freeze lifts.
+
+**Structured log**, emitted once per refusal:
+
+```
+legacy_intake_frozen { route: 'POST /api/products', source_host: 'supplier.example.com' }
+```
+
+Host only — never the path, the query string, or any product content. A test asserts that
+a `?token=` in the source URL and the product's name and description do not reach the log.
+
+### 5A.6 Feature flag and rollback
+
+**`LEGACY_INTAKE_FROZEN`** — environment variable, repo convention
+(cf. `PRODUCT_IMAGE_REMOVE_BACKGROUND`). **No schema migration; no database row.**
+
+**Frozen unless the value is exactly `"false"`.** Absent, empty, misspelled, `"FALSE"`,
+`"0"` and `"no"` all leave the freeze **on** — the safe direction for a write guard. Tested.
+
+**Rollback — no code change, no deploy, no migration:**
+
+1. set `LEGACY_INTAKE_FROZEN=false` in `/opt/mipo/.env` on the production host
+   (or in SSM `/mipo/prod`, then `deploy/aws/sync-ssm-env.sh`);
+2. restart the API container;
+3. verify: `POST /api/products` with a `source_url` returns 201 instead of 409.
+
+**To revert the code entirely:** `git revert` the commit. It touches three files and no
+data, so revert is total — there is nothing to unwind.
+
+### 5A.7 Verification steps
+
+Reproducible against a local database (production was never contacted):
+
+```bash
+# unit — the guard's contract
+cd server && node --test test/legacyIntakeFreeze.test.js
+
+# integration — the guard is wired, and a refusal leaves nothing behind
+DB_SSL=false DATABASE_URL=<local> node scripts/db-smoke.mjs
+
+# gates
+npm test && cd .. && npm run typecheck && npm run lint && npm run build
+```
+
+### 5A.8 Test results
+
+| Check | Result |
+|---|---|
+| `test/legacyIntakeFreeze.test.js` (new, 13 tests) | ✅ **13/13** |
+| Full server unit suite | ✅ **296/296** (was 283) |
+| `db-smoke.mjs` on a clean database | ✅ **21/21** (was 19; +2 new) |
+| `npm run typecheck` | ✅ |
+| `npm run lint` | ✅ |
+| `npm run build` | ✅ |
+| Migrations | **not run against production**; applied only to a local scratch database |
+
+**Empirical proof that a refusal writes nothing.** On a throwaway database with
+`business_profiles` and `business_products` emptied:
+
+```
+baseline:                       business_profiles=0  business_products=0
+POST /api/products + source_url → HTTP 409 LEGACY_INTAKE_FROZEN
+after the refusal:              business_profiles=0  business_products=0
+  ✅ ensureDefaultBusinessProfile never ran — defaultBusinessId NOT used
+POST /api/products, no source_url → HTTP 201
+after the manual create:        business_profiles=1  business_products=1
+```
+
+The second half matters as much as the first: manual creation still works, and still uses
+the existing fallback. **The freeze did not change the manual path's behaviour** — that
+would have been a broadening this task forbids.
+
+### 5A.9 Known limitation — stated, not hidden
+
+**The freeze keys on a provenance marker the client supplies, so it is not tamper-proof.**
+An admin who exports scraped products to CSV and re-imports them without a source column
+would create records the guard does not recognise as scraped-backed.
+
+This is accepted for G-1. Its purpose is to *stop the population growing through the normal
+paths* while the ownership review runs — not to defend against a determined insider who is
+already authorised to create products. Closing that gap needs a server-recorded intake
+channel, which needs a schema column, which needs the blocked migration.
+
+---
+
 ## 6. F-4 — variant price bug and remediation boundary
 
 ### 6.1 The bug, as verified

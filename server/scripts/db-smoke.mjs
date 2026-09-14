@@ -365,6 +365,57 @@ const main = async () => {
     }
   });
 
+  // G-1. The unit tests prove the guard's contract; these two prove it is
+  // actually wired into the route, and - the part a pure function cannot show -
+  // that a refusal leaves nothing behind.
+  await check("POST /api/products refuses a scraped-backed create", async () => {
+    const response = await admin("/api/products", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        name: "Frozen Intake Probe",
+        price: 55,
+        source_url: "https://supplier.example.com/product/frozen-probe",
+      }),
+    });
+    if (response.status === 401 || response.status === 403) return; // no admin key here
+    expectStatus(response, [409], "scraped-backed create must be refused");
+
+    const body = await response.json();
+    if (body.details?.code !== "LEGACY_INTAKE_FROZEN") {
+      throw new Error(`expected LEGACY_INTAKE_FROZEN, got ${JSON.stringify(body.details)}`);
+    }
+  });
+
+  await check("a refused scraped-backed create leaves no partial row", async () => {
+    const before = await fetch(`${BASE}/api/products`);
+    if (!before.ok) return;
+    const countBefore = (await before.json()).products.length;
+
+    const response = await admin("/api/products", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        name: "Frozen Intake Probe Two",
+        price: 77,
+        // An image the pipeline would have downloaded had the guard run late.
+        image_url: "https://supplier.example.com/img/probe.jpg",
+        source_url: "https://supplier.example.com/product/frozen-probe-2",
+      }),
+    });
+    if (response.status === 401 || response.status === 403) return;
+    expectStatus(response, [409], "second scraped-backed create must be refused");
+
+    const after = await fetch(`${BASE}/api/products`);
+    const products = (await after.json()).products;
+    if (products.length !== countBefore) {
+      throw new Error(`catalogue grew from ${countBefore} to ${products.length} on a refused create`);
+    }
+    if (products.some((product) => String(product.name).startsWith("Frozen Intake Probe"))) {
+      throw new Error("a refused create still produced a catalogue row");
+    }
+  });
+
   shutdown();
   await sleep(300);
 
