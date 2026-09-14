@@ -4470,6 +4470,14 @@ const createProduct = async (body) => {
     ["ingredients", () => payload.ingredients],
     ["benefits", () => JSON.stringify(payload.benefits)],
     ["feeding_guide", () => JSON.stringify(payload.feeding_guide)],
+    // Beside the guide, not apart from it. normalizeProductPayload validates
+    // this into one of three known states so a caller cannot claim a guide is
+    // manufacturer-confirmed by sending an arbitrary string -- and then this
+    // list did not name the column, so every created product took the default
+    // 'unknown' and the validated value was discarded. An edit saved the same
+    // value correctly, which is what made it hard to see. A number an owner
+    // feeds their animal on is only as good as the provenance beside it.
+    ["feeding_guide_source", () => payload.feeding_guide_source],
     ["product_attributes", () => JSON.stringify(payload.product_attributes)],
     ["life_stage", () => payload.life_stage],
     ["dog_size", () => payload.dog_size],
