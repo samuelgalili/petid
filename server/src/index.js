@@ -758,7 +758,6 @@ const serializeProfile = (row) => row ? ({
   street: row.street || null,
   city: row.city || null,
   id_number_last4: row.id_number_last4 || null,
-  id_verified: row.id_verified || false,
   marketing_consent: row.marketing_consent || false,
   marketing_consent_date: row.marketing_consent_date || null,
   marketing_unsubscribed_at: row.marketing_unsubscribed_at || null,

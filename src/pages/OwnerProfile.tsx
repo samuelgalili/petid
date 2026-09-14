@@ -10,11 +10,11 @@ import { PageTransition } from "@/components/PageTransition";
 import BottomNav from "@/components/BottomNav";
 import { motion } from "framer-motion";
 import {
-  ChevronRight, MapPin, BadgeCheck, PawPrint, Shield, FileText,
+  ChevronRight, MapPin, PawPrint, Shield, FileText,
   Phone, ShoppingBag, CreditCard, RefreshCw,
   Building2, FolderOpen, ChevronDown, ChevronUp, Stethoscope,
   Receipt, CalendarClock, Package, ExternalLink, Dog, Cat,
-  Cpu, Link2, TrendingUp, Lock, Wallet, ShieldCheck,
+  Cpu, TrendingUp, Lock, Wallet, ShieldCheck,
   MoreVertical, Pencil, Archive, FolderClock,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -297,9 +297,6 @@ const OwnerProfile = () => {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <h2 className="text-lg font-bold text-foreground truncate">{profile?.full_name || "משתמש"}</h2>
-                {profile?.id_verified && (
-                  <BadgeCheck className="w-5 h-5 text-primary flex-shrink-0" />
-                )}
                 {/* Local development only. import.meta.env.DEV is false in any
                     build, so this becomes dead code and is dropped entirely —
                     the markup does not exist in the deployed bundle. */}
@@ -328,14 +325,6 @@ const OwnerProfile = () => {
                 <p className="text-xs text-muted-foreground mb-2">{profile.phone}</p>
               )}
               <div className="flex items-center gap-1.5 flex-wrap">
-                {profile?.id_verified ? (
-                  <Badge variant="success" className="text-[10px]">
-                    <BadgeCheck className="w-3 h-3 ml-1" />
-                    ת״ז מאומת
-                  </Badge>
-                ) : (
-                  <Badge variant="muted" className="text-[10px]">ת״ז לא מאומת</Badge>
-                )}
                 {/* Pet count summary */}
                 {dogCount > 0 && (
                   <Badge variant="outline" className="text-[10px] gap-1">
@@ -453,9 +442,6 @@ const OwnerProfile = () => {
                     <div className="flex items-center justify-center gap-1 mt-2">
                       <Cpu className="w-3 h-3 text-muted-foreground" strokeWidth={1.5} />
                       <span className="text-[9px] text-muted-foreground">שבב מקושר</span>
-                      {profile?.id_verified && (
-                        <Link2 className="w-3 h-3 text-primary" strokeWidth={1.5} />
-                      )}
                     </div>
                   )}
                   </button>
