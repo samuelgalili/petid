@@ -90,3 +90,19 @@ Final accepted decisions only. Rationale, evidence and line references live in
 |---|---|
 | **PD-37** | **No migration may be written until the production validation queries in §13 of the design document are answered.** The ownership split (PD-14) and the catalogue-size impact of PD-08 both rest on assumptions that are unverified against production data. |
 | **PD-38** | Publication backfill must preserve the currently-visible catalogue. The `draft` default must never be allowed to unpublish the live shop. |
+
+## Legacy isolation
+
+Source: [`LEGACY-CATALOG-ISOLATION.md`](./LEGACY-CATALOG-ISOLATION.md).
+
+| ID | Decision |
+|---|---|
+| **PD-39** | **Legacy ownership is unresolved — and unrecoverable.** The fallback assignment at `server/src/index.js:4436` records nothing, so a fallback row and a deliberate one are byte-identical. Ownership **must not** be inferred from `source_url`, `image_source_url`, `supplier_id`, a fallback `business_id`, a supplier website, or historical purchasability. Every legacy record is `unresolved` until a human review says otherwise. No legacy record is ever auto-assigned to Mipo Shop or auto-reassigned to another Seller. Only a holder of `PRODUCTS_OWNERSHIP_REVIEW` may change ownership; every change is audited and reversible; conflicting claims stay unpublishable and never resolve by default or by timeout. **This supersedes the rejected `source_url` heuristic in `FINAL-DESIGN-DECISION.md` §CQ-07.** |
+| **PD-40** | **Legacy Catalog Isolation.** `unresolved` and `ownership_review` records are **visible internally only** — never public, purchasable, cart-eligible, recommendable, repeat-purchase eligible, or migratable. `rejected` records are archived, never deleted, and **never migrated**. No default variant is ever auto-created for an unresolved record. Isolation is applied at the `listProducts` chokepoint **as a call-site parameter, not a hardcoded filter**, so admin screens and analytics keep reading the unfiltered set. Gates G-1…G-7 are introduced independently; **G-2 (checkout allowlist) and G-7 (Seller allowlist) may not default to deny until Q1, Q5, Q6 and Q7 return numbers.** The catalogue is not hidden until impact is measured on public shop, checkout, repeat purchase, existing carts, order history and recommendations — of which only order history is currently cleared. |
+| **PD-41** | **New Intake Independence.** The new intake pipeline shares no table, default or code path with legacy ownership, and is buildable and shippable while every legacy record remains `unresolved`. It requires all nine stages — explicit Seller, raw source record, adoption event, price approval, availability, variant configuration, image approval, content approval, publication approval — and **none may be skipped or defaulted**. The `defaultBusinessId` fallback is **not available** on this path: a missing Seller is an error, never a default. Availability is set deliberately; the legacy "unknown stock ⇒ in stock" behaviour (`server/src/index.js:4182`) is not carried forward. A legacy record can enter only through an explicit adoption event, which an `unresolved` row can never satisfy. |
+
+## Correction to an earlier decision
+
+| ID | Decision |
+|---|---|
+| **PD-42** | **F-4 cannot be remediated before the additive migration.** Resolving a variant price requires `product_variants` to exist, so the earlier note treating F-4 as independently fixable was wrong. What *can* ship with no migration is the ambiguity guard: a variant string matching zero or several priced variants is **rejected with 409**, never silently charged at the base price. That converts a silent mischarge into a visible failure and is a **customer-visible behaviour change requiring business sign-off**. |
