@@ -16,6 +16,7 @@
 
 import { createHash } from "node:crypto";
 import sharp from "sharp";
+import { fetchValidatedRemoteUrl } from "./urlSafety.js";
 
 // One canvas for the whole catalogue. Square because the shop grid, the cart
 // row and the product page all reserve square space; a mixed catalogue is what
@@ -27,6 +28,27 @@ export const IMAGE_PRESETS = Object.freeze({
 
 const MAX_SOURCE_BYTES = Number(process.env.MAX_IMAGE_SOURCE_BYTES || 15 * 1024 * 1024);
 const FETCH_TIMEOUT_MS = Number(process.env.IMAGE_FETCH_TIMEOUT_MS || 20000);
+
+// The whole download, headers and body together. FETCH_TIMEOUT_MS bounds each
+// individual request; without a second ceiling a server that answers promptly
+// and then drips the body one byte at a time holds the connection open forever.
+const TOTAL_DOWNLOAD_TIMEOUT_MS = Number(
+  process.env.IMAGE_DOWNLOAD_TIMEOUT_MS || FETCH_TIMEOUT_MS * 3,
+);
+
+// A redirect chain longer than this is a loop or a redirector, not a CDN.
+const MAX_IMAGE_REDIRECTS = 3;
+
+// What a response may claim to be. image/* is the expected answer; the two
+// octet-stream spellings are here because several CDNs serve images with them
+// and rejecting those would break working imports.
+//
+// A response carrying no Content-Type at all is allowed through: some origins
+// omit it, and sharp decodes the bytes immediately afterwards, so a non-image
+// still fails — just one step later. What this check is really for is the
+// response that is confidently something else: an HTML error page, a JSON body,
+// a login redirect landing page.
+const ALLOWED_CONTENT_TYPES = /^(image\/|application\/octet-stream|binary\/octet-stream)/i;
 
 // sharp decodes many formats; this is what we accept as a source.
 const DECODABLE = new Set(["jpeg", "jpg", "png", "webp", "gif", "avif", "tiff", "svg"]);
@@ -43,51 +65,82 @@ export class ImagePipelineError extends Error {
 /**
  * Fetch a remote image so we can host it ourselves.
  *
- * Guarded rather than trusting: the URL usually comes from a scraper, which
- * means it is attacker-influenced input. Only http(s), only image responses,
- * and a hard byte ceiling enforced while streaming so a hostile server cannot
- * exhaust memory by advertising a small Content-Length and sending more.
+ * The URL is attacker-influenced: it is collected from a supplier's HTML by the
+ * scraper, so the page that names it is not ours and neither is the server it
+ * points at. An admin triggering the import does not make the URL trustworthy.
+ *
+ * Every request therefore goes through fetchValidatedRemoteUrl, which is the
+ * same guard the scraper already uses rather than a second one written here:
+ * the initial URL is resolved and refused if it lands on a loopback, private,
+ * link-local or otherwise reserved address; redirects are handled manually and
+ * each hop is re-validated; and the connection itself resolves through a lookup
+ * that blocks non-public addresses, so a name that passes validation and then
+ * changes answer cannot be reached either.
+ *
+ * On top of that: a hard byte ceiling enforced while streaming, so a hostile
+ * server cannot exhaust memory by advertising a small Content-Length and
+ * sending more; a deadline covering the body as well as the headers; and a
+ * check that the response does not claim to be something other than an image.
  */
-export const fetchImageBuffer = async (imageUrl, { maxBytes = MAX_SOURCE_BYTES } = {}) => {
-  let parsed;
-  try {
-    parsed = new URL(String(imageUrl));
-  } catch {
-    throw new ImagePipelineError("Image URL is not valid", "invalid_url");
-  }
-  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-    throw new ImagePipelineError("Only http and https images can be fetched", "unsupported_protocol");
-  }
+export const fetchImageBuffer = async (imageUrl, {
+  maxBytes = MAX_SOURCE_BYTES,
+  timeoutMs = FETCH_TIMEOUT_MS,
+  totalTimeoutMs = TOTAL_DOWNLOAD_TIMEOUT_MS,
+  maxRedirects = MAX_IMAGE_REDIRECTS,
+  fetchRemote = fetchValidatedRemoteUrl,
+} = {}) => {
+  const deadline = Date.now() + totalTimeoutMs;
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   let response;
   try {
-    response = await fetch(parsed.toString(), { signal: controller.signal, redirect: "follow" });
+    ({ response } = await fetchRemote(String(imageUrl ?? ""), {
+      timeoutMs,
+      maxRedirects,
+    }));
   } catch (error) {
-    throw new ImagePipelineError(
-      error?.name === "AbortError" ? "Timed out fetching the image" : "Could not fetch the image",
-      error?.name === "AbortError" ? "fetch_timeout" : "fetch_failed",
-    );
-  } finally {
-    clearTimeout(timer);
+    // The guard's own refusals carry statusCode 400 and a human-readable
+    // message that names the rule, not the host it resolved to. Mapping them
+    // onto ImagePipelineError keeps the contract callers already depend on:
+    // adoptProductImage reads error.code and logs it.
+    if (error?.name === "AbortError") {
+      throw new ImagePipelineError("Timed out fetching the image", "fetch_timeout");
+    }
+    if (error?.statusCode === 400) {
+      throw new ImagePipelineError(error.message || "Image URL is not allowed", "url_rejected");
+    }
+    throw new ImagePipelineError("Could not fetch the image", "fetch_failed");
   }
 
   if (!response.ok) {
+    await response.body?.cancel?.().catch(() => {});
     throw new ImagePipelineError(`Image source responded with ${response.status}`, "fetch_status");
+  }
+
+  const contentType = response.headers.get("content-type");
+  if (contentType && !ALLOWED_CONTENT_TYPES.test(contentType.trim())) {
+    await response.body?.cancel?.().catch(() => {});
+    throw new ImagePipelineError("Image source did not return an image", "unsupported_content_type");
   }
 
   const declared = Number(response.headers.get("content-length") || 0);
   if (declared > maxBytes) {
+    await response.body?.cancel?.().catch(() => {});
     throw new ImagePipelineError("Image is larger than the allowed size", "too_large");
   }
 
   const chunks = [];
   let total = 0;
   for await (const chunk of response.body) {
+    if (Date.now() > deadline) {
+      await response.body?.cancel?.().catch(() => {});
+      throw new ImagePipelineError("Timed out fetching the image", "fetch_timeout");
+    }
     total += chunk.length;
     // Content-Length is a claim, not a guarantee. Count what actually arrives.
-    if (total > maxBytes) throw new ImagePipelineError("Image is larger than the allowed size", "too_large");
+    if (total > maxBytes) {
+      await response.body?.cancel?.().catch(() => {});
+      throw new ImagePipelineError("Image is larger than the allowed size", "too_large");
+    }
     chunks.push(chunk);
   }
   return Buffer.concat(chunks);

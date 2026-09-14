@@ -193,8 +193,11 @@ response = await fetch(parsed.toString(), { signal, redirect: "follow" });
 התמונה נאספות מ-HTML של ספק שאינו בשליטתנו** — כלומר התוכן ששולט ב-URL אינו
 מהימן גם כשהיוזם הוא אדמין.
 
-**המלצה:** `fetchImageBuffer` יעבור דרך `validateRemoteHttpUrl`. **לא בוצע** —
-זהו שינוי קוד.
+**סטטוס: תוקן.** `fetchImageBuffer` עובר עכשיו דרך `fetchValidatedRemoteUrl`
+— אותו שומר שהקוצר כבר משתמש בו, לא מאמת שני. פירוט מלא:
+`docs/commerce/image-fetch-security.md`.
+
+**`CD-08` ו-`CD-09` לא מומשו** ואינם מושפעים מהתיקון הזה.
 
 ### 4.3 עשרת שדות המטא-דאטה
 
