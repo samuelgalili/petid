@@ -416,6 +416,53 @@ const main = async () => {
     }
   });
 
+  // G-6. Authorization, and the guarantee that reading the queue changes nothing.
+  await check("the ownership review queue refuses an unauthenticated read", async () => {
+    const response = await fetch(`${BASE}/api/admin/products/ownership-review`);
+    expectStatus(response, [401, 403], "unauthenticated queue read");
+  });
+
+  await check("an unauthenticated review decision is refused without revealing the product", async () => {
+    const real = await fetch(`${BASE}/api/admin/products/00000000-0000-4000-8000-000000000001/ownership-review`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ state: "ownership_review", note: "probe" }),
+    });
+    expectStatus(real, [401, 403], "unauthenticated review decision");
+    const body = await real.text();
+    if (/not found/i.test(body)) {
+      throw new Error("an unauthorised response disclosed whether the product exists");
+    }
+  });
+
+  await check("reading the ownership review queue modifies no product", async () => {
+    const before = await fetch(`${BASE}/api/products`);
+    if (!before.ok) return;
+    const snapshot = JSON.stringify((await before.json()).products);
+
+    const queue = await admin("/api/admin/products/ownership-review");
+    if (queue.status === 401 || queue.status === 403) return; // no admin key here
+    expectStatus(queue, [200], "authorised queue read");
+
+    const body = await queue.json();
+    if (!Array.isArray(body.ownership_review_queue)) {
+      throw new Error("queue response did not contain ownership_review_queue");
+    }
+    // Every legacy product starts unresolved, and reading must not change that.
+    if (body.ownership_review_queue.some((row) => !row.review_state)) {
+      throw new Error("a queue row carried no review state");
+    }
+    // A supplier URL's query string must never reach the review screen.
+    if (body.ownership_review_queue.some((row) => /[?&]/.test(String(row.source_host ?? "")))) {
+      throw new Error("a queue row exposed a URL query string");
+    }
+
+    const after = await fetch(`${BASE}/api/products`);
+    if (JSON.stringify((await after.json()).products) !== snapshot) {
+      throw new Error("reading the ownership review queue changed the public catalogue");
+    }
+  });
+
   shutdown();
   await sleep(300);
 

@@ -404,6 +404,172 @@ channel, which needs a schema column, which needs the blocked migration.
 
 ---
 
+## 5B. G-6 — Ownership Review Queue · **IMPLEMENTED, MIGRATION-FREE**
+
+**Status:** implemented, tested, committed to the work branch. **Not deployed, not merged.**
+**No migration. No schema change. No production data touched.**
+
+### 5B.1 Why there is no migration
+
+The review state is **not a column**. It is the most recent `admin_audit_log` row for the
+product under `entity_type = 'product_ownership_review'`. A product with no such row is
+`unresolved` — the truthful default, which costs nothing to store.
+
+`admin_audit_log` already has everything required: `action_type`, `entity_type`,
+`entity_id text`, `old_values jsonb`, `new_values jsonb`, `metadata jsonb`, `created_at`,
+and three actor columns. **Verified append-only**: across the whole repository there is no
+`UPDATE` and no `DELETE` against it — only inserts, at three call sites.
+
+That gives three properties a dedicated status column would not:
+
+1. **The decision *is* the audit record.** One `INSERT`. "A decision without history" and
+   "history without a decision" are not hazards to be defended against — they are
+   unrepresentable.
+2. **A verified decision cannot be silently changed.** Correcting one means appending a
+   new decision above it; the earlier one stays visible forever.
+3. **It ships while the migration is still blocked.**
+
+> **One limitation, stated plainly.** Deriving state from the newest audit row means the
+> queue does a `distinct on` over the audit table. At the current catalogue size that is
+> fine. If the audit table grows large, a materialised `product_ownership_review` table
+> becomes worth having — that is a migration-task decision, not a blocker now.
+
+### 5B.2 Where the state lives, and what it is *not*
+
+| Constraint | How it is met |
+|---|---|
+| Not `business_id` | **Verified: no new code writes `business_products` at all.** Every `INSERT`/`UPDATE`/`DELETE` against that table is pre-existing (`server/src/index.js:4692`, `4813`, `4823`, `4835`, `5069`, `5219`). `ownershipReview.js` contains no write to it. |
+| Not `supplier_id` | never read as ownership; the queue displays it as a field the reviewer may see, nothing more |
+| Not `source_url` | only its **host** is surfaced, and only as "a provenance marker exists" — never as evidence of ownership |
+| Not publication/`is_active`/`status` | no such column is read or written; ownership review is a separate axis entirely |
+
+**A verified decision does not reassign the product.** It records who a named human says
+owns it. Moving the product is a later, separate, explicitly-approved act.
+
+### 5B.3 Routes added
+
+| Method | Route | Permission | Effect |
+|---|---|---|---|
+| `GET` | `/api/admin/products/ownership-review` | `PRODUCTS_OWNERSHIP_REVIEW` | the queue — **read-only** |
+| `GET` | `/api/admin/products/:id/ownership-review` | `PRODUCTS_OWNERSHIP_REVIEW` | full decision history for one product |
+| `POST` | `/api/admin/products/:id/ownership-review` | `PRODUCTS_OWNERSHIP_REVIEW` | records one decision |
+
+`listProducts()`, `GET /api/products` and every public response are **unchanged**.
+
+### 5B.4 Permission
+
+**`PRODUCTS_OWNERSHIP_REVIEW` = `"products.ownership_review"`**
+(`server/src/adminPermissions.js`), enforced through the existing
+`requireAdminPermission` convention.
+
+**Deliberately not granted to `PRODUCT_MANAGER`.** A role that can create and edit
+products — including change prices — does **not** gain authority to settle ownership. Only
+the full `admin` role (`"*"`) holds it.
+
+Authorization runs **before** the body is read and before the product is looked up, so an
+unauthorised caller receives an identical `403` whether or not the product exists.
+
+### 5B.5 State machine
+
+```
+unresolved ──────► ownership_review ──┬──► verified_mipo_shop ──┐
+                        ▲             ├──► verified_external_seller ──┤
+                        │             ├──► rejected ───────────┤
+                        │             └──► unresolved          │
+                        └────────────── reopen ────────────────┘
+```
+
+* **A verified state is unreachable from `unresolved`** — a review must be opened first,
+  which puts a named reviewer on the record before any conclusion exists.
+* **A settled decision may only be corrected by reopening**, which appends. It is never
+  flipped in place, and the superseded decision stays in history.
+
+### 5B.6 Seller validation — and a deviation, stated
+
+Both verified states require an **explicit `seller_id` in the request**, validated to
+exist and to have `is_verified = true` (the repository's only marker of a real seller).
+
+> **Deviation from the brief.** The brief asked for an explicit Seller ID only for
+> `verified_external_seller`. This implementation requires one for `verified_mipo_shop`
+> too, because **there is no column designating which business profile is Mipo Shop**.
+> Resolving it by the `defaultBusinessId` constant would reintroduce exactly the fallback
+> whose invisibility caused this whole problem, and resolving it by name would be a guess.
+> Requiring the reviewer to name it keeps the decision human and explicit.
+>
+> **What this cannot do:** the server verifies the named profile exists and is verified; it
+> **cannot independently confirm the profile is Mipo Shop**. An `is_house_seller` column
+> would let it. Deferred to the migration task.
+
+If no eligible profile is named, the request fails with `OWNERSHIP_REVIEW_CONFLICT` and
+**nothing is written** — no profile is created.
+
+### 5B.7 Atomicity
+
+One transaction per decision:
+
+1. request parsed **before a connection is taken** — a malformed request never opens a
+   transaction;
+2. `begin`;
+3. `pg_advisory_xact_lock` on the product (transaction-scoped, released by commit or
+   rollback) — the repo already uses this primitive in `applyMigrations.js:43`;
+4. product read, history read, transition validated, seller validated;
+5. **one `INSERT`** that is simultaneously the decision and its audit record;
+6. `commit`, or `rollback` on any failure.
+
+`created_at` is written as `clock_timestamp()`, not the `now()` default — **a bug the
+tests caught.** `now()` is the *transaction* timestamp, so two decisions written in one
+transaction carried an identical `created_at` and "the newest decision" fell back to
+ordering by a random uuid.
+
+The existing `recordAdminAudit` helper is **not** used here: it writes on the pool rather
+than a caller's client, and swallows failures in a `try/catch`. Both are right for its
+existing callers and wrong for an atomic decision.
+
+### 5B.8 Audit fields
+
+| Field | Value |
+|---|---|
+| `action_type` | `product_ownership.<new state>` |
+| `entity_type` | `product_ownership_review` |
+| `entity_id` | product id |
+| `old_values` | `{ state, business_id_at_decision }` — what the reviewer was looking at, recorded as context, endorsed as evidence of nothing |
+| `new_values` | `{ state, seller_id, note }` |
+| `metadata` | `{ product_source, correlation_id }` |
+| actor | `actor_admin_user_id`, `actor_email`, `actor_role` |
+| `created_at` | `clock_timestamp()` |
+
+**Never written:** tokens, URL query strings, full source URLs, product descriptions,
+customer data. A test asserts no URL and no product content appears in the record.
+
+### 5B.9 Test results
+
+| Check | Result |
+|---|---|
+| `test/ownershipReview.test.js` (new, 26 tests) | ✅ **26/26** |
+| Full server suite, with a database | ✅ **322/322** |
+| Full server suite, no database | ✅ 310 pass, **12 skipped cleanly** |
+| `db-smoke.mjs` on a fresh database | ✅ **24/24** (was 21; +3 for G-6) |
+| typecheck · lint · build | ✅ ✅ ✅ |
+| Migrations | **not run against production** — local scratch database only |
+
+**The advisory lock is proven load-bearing.** With the lock removed, the interleaving test
+*"a reviewer cannot decide from state another reviewer has already superseded"* **fails**;
+with it, it passes.
+
+> An earlier version of that test passed with the lock removed and therefore proved
+> nothing. It was replaced with one that forces reviewer A to pause after reading state
+> and before writing, which is the actual hazard.
+
+### 5B.10 What is still blocked
+
+* **Everything G-6 produces is a recorded human decision, not a reassignment.** Acting on
+  a verified decision — actually moving a product to its Seller — needs the migration.
+* An `is_house_seller` designation column (§5B.6).
+* A materialised review table, if the audit table grows (§5B.1).
+* Q1–Q7 remain unrun; no production access.
+
+---
+
 ## 6. F-4 — variant price bug and remediation boundary
 
 ### 6.1 The bug, as verified

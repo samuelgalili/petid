@@ -15,7 +15,17 @@ import {
   smartScrapeProduct,
 } from "./productIntel.js";
 import { fallbackBreeds } from "./referenceData.js";
-import { assertLegacyIntakeAllowed } from "./legacyIntakeFreeze.js";
+import { assertLegacyIntakeAllowed, sourceHostForLog } from "./legacyIntakeFreeze.js";
+import {
+  DEFAULT_OWNERSHIP_STATE,
+  OWNERSHIP_ENTITY_TYPE,
+  OWNERSHIP_STATES,
+  allowedTransitionsFrom,
+  deriveOwnershipState,
+  parseOwnershipDecision,
+  recordOwnershipDecision,
+  toHistoryEntry,
+} from "./ownershipReview.js";
 import {
   getCardcomString,
   isSuccessfulCardcomCharge,
@@ -4432,6 +4442,181 @@ const adoptProductImages = async (body, label) => {
   };
 };
 
+// ─── G-6 · ownership review ──────────────────────────────────────────────────
+//
+// Read side of the queue, and the one write: a recorded decision. Neither
+// touches business_products. The queue is a SELECT; the decision is an INSERT
+// into admin_audit_log and nothing else.
+
+// Both catalogue tables can hold a legacy product, and they name their columns
+// differently. Only the fields the queue shows are selected - no description,
+// no ingredients, nothing that would put product content into a review screen
+// that does not need it.
+const ownershipQueueSources = Object.freeze({
+  manual: `
+    select id, name, business_id, supplier_id, source_url, created_at, updated_at, 'manual' as source
+    from public.business_products
+  `,
+  scraped: `
+    select id, product_name as name, null::uuid as business_id, null::uuid as supplier_id,
+           product_url as source_url, created_at, updated_at, 'scraped' as source
+    from public.scraped_products
+  `,
+});
+
+const listOwnershipReviewQueue = async ({ state = null, limit = null } = {}) => {
+  const requestedLimit = Number(limit);
+  const cap = Number.isFinite(requestedLimit) && requestedLimit > 0
+    ? Math.min(Math.trunc(requestedLimit), 500)
+    : 200;
+
+  const result = await pool.query(
+    `
+      with catalogue as (
+        ${ownershipQueueSources.manual}
+        union all
+        ${ownershipQueueSources.scraped}
+      ),
+      -- One row per product: its most recent ownership decision, if any.
+      latest as (
+        select distinct on (entity_id)
+               entity_id, new_values, old_values, created_at, actor_email, actor_role
+          from public.admin_audit_log
+         where entity_type = $1
+         order by entity_id, created_at desc, id desc
+      )
+      select c.*,
+             b.business_name,
+             b.is_verified as business_is_verified,
+             l.new_values as latest_new_values,
+             l.created_at as last_reviewed_at,
+             l.actor_email as last_reviewed_by,
+             (select count(*) from public.admin_audit_log a
+               where a.entity_type = $1 and a.entity_id = c.id::text) as review_count,
+             exists (select 1 from public.order_items oi where oi.product_id = c.id) as has_order_exposure
+        from catalogue c
+        left join public.business_profiles b on b.id = c.business_id
+        left join latest l on l.entity_id = c.id::text
+       order by c.created_at desc, c.id
+       limit $2
+    `,
+    [OWNERSHIP_ENTITY_TYPE, cap],
+  );
+
+  const rows = result.rows.map((row) => {
+    const reviewState = deriveOwnershipState(
+      row.latest_new_values ? [{ new_values: row.latest_new_values }] : [],
+    );
+    return {
+      product_id: row.id,
+      product_name: row.name,
+      product_source: row.source,
+      business_id: row.business_id,
+      business_name: row.business_name ?? null,
+      business_is_verified: row.business_is_verified ?? null,
+      supplier_id: row.supplier_id,
+      // Host only. A supplier URL can carry a session token or an affiliate id
+      // in its query string, and none of that belongs in a review screen.
+      source_host: sourceHostForLog(row.source_url),
+      // Whether a provenance marker exists at all - never what it implies.
+      // A source host is evidence of where the CONTENT came from and is not,
+      // on its own or combined with anything else here, evidence of ownership.
+      has_provenance: Boolean(String(row.source_url ?? "").trim()),
+      has_order_exposure: row.has_order_exposure === true,
+      review_state: reviewState,
+      allowed_transitions: allowedTransitionsFrom(reviewState),
+      review_count: Number(row.review_count),
+      last_reviewed_at: row.last_reviewed_at ?? null,
+      last_reviewed_by: row.last_reviewed_by ?? null,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    };
+  });
+
+  const filtered = state ? rows.filter((row) => row.review_state === state) : rows;
+
+  return {
+    ownership_review_queue: filtered,
+    counts: filtered.reduce((totals, row) => {
+      totals[row.review_state] = (totals[row.review_state] || 0) + 1;
+      return totals;
+    }, {}),
+    states: Object.values(OWNERSHIP_STATES),
+    default_state: DEFAULT_OWNERSHIP_STATE,
+  };
+};
+
+const findOwnershipProduct = async (client, productId) => {
+  const manual = await client.query(
+    "select id, business_id, 'manual' as source from public.business_products where id = $1",
+    [productId],
+  );
+  if (manual.rows[0]) return manual.rows[0];
+  const scraped = await client.query(
+    "select id, null::uuid as business_id, 'scraped' as source from public.scraped_products where id = $1",
+    [productId],
+  );
+  return scraped.rows[0] || null;
+};
+
+const findOwnershipSeller = async (client, sellerId) => {
+  const result = await client.query(
+    "select id, business_name, is_verified from public.business_profiles where id = $1",
+    [sellerId],
+  );
+  return result.rows[0] || null;
+};
+
+const findOwnershipHistory = async (client, productId) => {
+  const result = await client.query(
+    `
+      select old_values, new_values, created_at, actor_email, actor_role
+        from public.admin_audit_log
+       where entity_type = $1 and entity_id = $2
+       order by created_at desc, id desc
+    `,
+    [OWNERSHIP_ENTITY_TYPE, productId],
+  );
+  return result.rows;
+};
+
+// Full decision history for one product, newest first. Read-only, and the only
+// place a reviewer can see that a settled decision was once something else.
+const getOwnershipReviewHistory = async (productId) => {
+  const rows = await findOwnershipHistory(pool, productId);
+  return {
+    product_id: productId,
+    review_state: deriveOwnershipState(rows),
+    history: rows.map(toHistoryEntry),
+  };
+};
+
+const submitOwnershipDecision = async (productId, body, admin) => {
+  // Parsed before a connection is taken: a malformed request must not open a
+  // transaction, and must never reach the database at all.
+  const decision = parseOwnershipDecision(body);
+
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    const recorded = await recordOwnershipDecision(client, {
+      productId,
+      decision,
+      actor: admin,
+      sellerLookup: findOwnershipSeller,
+      productLookup: findOwnershipProduct,
+      historyLookup: findOwnershipHistory,
+    });
+    await client.query("commit");
+    return recorded;
+  } catch (error) {
+    await client.query("rollback").catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
 const createProduct = async (body) => {
   // First, before anything writes. normalizeProductPayload is pure, but
   // ensureDefaultBusinessProfile inserts a business_profiles row and
@@ -8676,6 +8861,41 @@ const handleRequest = async (request, response) => {
         newValues: result,
       });
       sendJson(response, 200, result);
+      return;
+    }
+
+    // G-6 · ownership review queue. Read-only: it selects, joins and counts,
+    // and writes nothing. It is a separate route from the catalogue on purpose
+    // - listProducts and the public product responses are untouched by this.
+    if (request.method === "GET" && url.pathname === "/api/admin/products/ownership-review") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_OWNERSHIP_REVIEW))) return;
+      sendJson(response, 200, await listOwnershipReviewQueue({
+        state: url.searchParams.get("state"),
+        limit: url.searchParams.get("limit"),
+      }));
+      return;
+    }
+
+    const ownershipMatch = url.pathname.match(
+      /^\/api\/admin\/products\/([0-9a-fA-F-]{36})\/ownership-review$/,
+    );
+    if (ownershipMatch && request.method === "GET") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_OWNERSHIP_REVIEW))) return;
+      sendJson(response, 200, await getOwnershipReviewHistory(ownershipMatch[1]));
+      return;
+    }
+
+    if (ownershipMatch && request.method === "POST") {
+      // Authorization first, before the body is read and before the product is
+      // looked up, so an unauthorised caller cannot learn whether this id
+      // exists: every rejection is the same 403 regardless.
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_OWNERSHIP_REVIEW))) return;
+      const decision = await submitOwnershipDecision(
+        ownershipMatch[1],
+        await readBody(request),
+        request.admin,
+      );
+      sendJson(response, 200, { ownership_review: decision });
       return;
     }
 
