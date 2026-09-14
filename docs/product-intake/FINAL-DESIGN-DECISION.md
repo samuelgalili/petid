@@ -500,6 +500,21 @@ This is a hypothesis derived from how the columns are written
 (`server/src/index.js:4373-4416`); it **requires production validation** (§13) before a
 migration relies on it.
 
+> ### ⛔ CORRECTION — this assumption has since been REJECTED
+>
+> See [`PRODUCTION-VALIDATION-Q1-Q7.md`](./PRODUCTION-VALIDATION-Q1-Q7.md) §4-E and §10.
+>
+> `source_url` and `image_source_url` describe **content provenance, not ownership**, and
+> under the accepted interpretation rules a `source_url` is explicitly not a defensible
+> ownership basis. Worse, the assignment branch in
+> `server/src/index.js:4436` is **not recorded anywhere**, so a fallback assignment and a
+> deliberate one produce byte-identical rows.
+>
+> **Ownership cannot be reconstructed from production data by any query.** The A/B/C split
+> above must not be used to assign ownership. Every existing row is class **C ·
+> unresolved** until a human business ownership review decides otherwise. Q2 is still
+> worth running, but only to size the *content* split.
+
 ### CQ-08 — Legacy carts
 
 Target `CartItem` — every new field optional, so an old stored cart stays valid:
@@ -692,7 +707,7 @@ becomes sellable.
 
 | # | Risk | Severity | Mitigation |
 |---|---|---|---|
-| R-1 | Class A/B/C ownership split (§CQ-07) rests on an **unvalidated assumption** about `source_url` | **high** | run the §13 queries against production first; do not migrate until the split is confirmed |
+| R-1 | ~~Class A/B/C ownership split (§CQ-07) rests on an unvalidated assumption about `source_url`~~ → **ASSUMPTION REJECTED.** Ownership provenance was never recorded and **cannot be reconstructed by any query** | **high** | no query resolves this. Requires a **human business ownership review**. See `PRODUCTION-VALIDATION-Q1-Q7.md` §4-E |
 | R-2 | Removing scraped products from the public feed **shrinks the visible catalogue**, possibly to near-zero | **high** | measure the split first (§13 Q1); stage the change behind an adoption backfill |
 | R-3 | Default-variant backfill on a listing whose `flavors` implies several real variants creates one variant where several belong | medium | backfill the default only; parse `flavors` into real variants as a separate, reviewable job |
 | R-4 | In-flight carts during deploy hold lines with no `variantId` | medium | resolution is already lazy and client-side (§CQ-08); no coordinated deploy needed |
