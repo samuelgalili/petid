@@ -426,6 +426,62 @@ does not reach the shop — it simply fails to publish.
 | **D-4** | **Farm-animal products (18) are out of scope for phase 1** | They pass through `raw_import_records` but stop at draft, so adding them later is an approval, not a second migration |
 | **D-5** | **Each legacy product becomes one product with one default variant** | Forced by §4: the data carries no variant grouping |
 | **D-6** | **The cart stays in the browser** (decided earlier, M9) | Checkout already resolves price server-side; a server cart would add no price safety |
+| **D-7** | **Proceed with the current images. The rights question is deferred, deliberately and knowingly** (2026-09-15) | See §8.1. Nothing is gated on it; the exposure is recorded rather than blocked |
+
+### 8.1 D-7 · the image rights position, written down rather than remembered
+
+`C-26` found 164 products marked **"Ready for visual and rights review"** by the
+importer, all of them already normalized and hosted by us. Only one is flagged
+in `needs_image_review`, so the question appears in no queue.
+
+The facts, as established in conversation on 2026-09-15:
+
+* Every product in the catalogue is sold by MIPO itself. There is one business
+  and it is ours (**D-1**).
+* **The images were taken from the websites of MIPO's customers** — businesses
+  MIPO has a working relationship with.
+* Those sources number **more than 50** distinct sites.
+* **MIPO dropships.** It never holds the goods.
+
+Three things follow, and they are recorded because each one closes off an
+option that would otherwise be reached for later:
+
+1. **A commercial relationship is not a licence.** Working with someone does not
+   convey a right to their photographs. The gap between "they would almost
+   certainly agree" and "they agreed" is one email and one record.
+2. **The customer may not hold the right either.** A shop's website commonly
+   carries the *manufacturer's* images. Asking an intermediary for a right they
+   do not have produces a yes that is worth nothing. The rights chain has more
+   than one link.
+3. **Own photography is not available.** Dropshipping means the products are
+   never in our hands. This is the option that would otherwise look like the
+   safe fallback, and it is not on the table at all.
+
+So the only route that resolves this at the source is **manufacturer media
+kits** — brand asset portals, which most pet-food and accessory makers run for
+retailers precisely because they want their products shown well. `brand` is
+populated on 312 of 375 products, and a market with 50+ reseller sites is
+usually served by far fewer manufacturers, so that is also the *smaller* list to
+work through. Measuring brand concentration is the first step whenever this is
+picked up.
+
+**The decision taken is to proceed now and resolve this later.** That is a
+business risk call and it is the owner's to make. What engineering owes it is
+that the deferral is written down, that the data needed to resolve it later is
+preserved, and that nothing quietly hardens into a blocker in the meantime:
+
+* **`source_url` and `supplier_name` are not to be deleted.** They are the only
+  record of which site an image came from, and therefore the only thing that
+  makes the future fix a finite task rather than an impossible one. Stripping
+  provenance would not reduce the exposure; it would remove the ability to end it.
+* **An earlier proposal in this document — that the publication gate require a
+  recorded rights basis — is withdrawn.** At this scale it would close the shop.
+  The right shape is to record and report the exposure, not to block on it.
+  Whether to gate is a decision for when the number is small.
+* The cutout work (§9 Phase 3) changes none of this. A cutout of a photograph is
+  a derivative of that photograph; `server/scripts/cutoutProductImages.mjs` says
+  so in its own header so that nobody later reads a clean white background as a
+  clean legal one.
 
 ---
 
@@ -466,8 +522,22 @@ runner wraps each file in one transaction — so it would need splitting across
 two migrations, and every future species would need another one.
 
 ### Phase 3 · Images
-Run `adoptProductImages.mjs` (dry-run first) for the 86 foreign images. The 69
-with no image are D-2's queue.
+
+`adoptProductImages.mjs` (dry-run first) for the 86 still pointing at a
+supplier's server. The 69 with no image at all are **D-2**'s admin queue.
+
+Then `cutoutProductImages.mjs`, which is new: the cutout capability existed but
+ran only on manual upload, so nothing had ever applied it to the catalogue. It
+writes a **transparent** cutout rather than one flattened onto white, because
+the app has a dark mode and a white-baked image is a white rectangle on a dark
+page — and because transparency can be flattened later while flattening cannot
+be undone. The page supplies the background.
+
+`--limit` defaults to 5, not everything: `backgroundRemoval.js` says of itself
+that it is *"NOT VERIFIED END TO END"* against the live API, so the first run is
+a handful of products.
+
+Per **D-7** this is a presentation change only and carries no rights claim.
 
 ### Phase 4 · Category attribute schema
 Build §6.1 and populate `is_required` from §2.3's fill rates.
