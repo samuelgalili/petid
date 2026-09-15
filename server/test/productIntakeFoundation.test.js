@@ -128,12 +128,19 @@ dbTest("an unknown role is still refused", async () => {
 
 dbTest("M1b modified no existing admin row", async () => {
   await withDb(async (client) => {
+    // Only rows that existed when 0041 ran are M1b's business. Asking the whole
+    // table would fail as soon as a seller_admin is legitimately created - and
+    // creating one is the entire point of the migration, so the test would be
+    // red precisely when the feature works.
     const { rows } = await client.query(
-      `select count(*) filter (where updated_at > created_at) as touched,
-              count(*) filter (where role not in ('admin','product_manager')) as non_platform
-         from public.admin_users`,
+      `select count(*) filter (where a.updated_at > m.applied_at) as touched,
+              count(*) filter (where a.role not in ('admin','product_manager')) as non_platform
+         from public.admin_users a
+         join public.schema_migrations m
+           on m.filename = '0041_admin_seller_roles.sql'
+        where a.created_at < m.applied_at`,
     );
-    assert.equal(Number(rows[0].touched), 0, "the migration must not have modified any row");
+    assert.equal(Number(rows[0].touched), 0, "the migration must not have modified any row that predates it");
     assert.equal(Number(rows[0].non_platform), 0, "no pre-existing row may have gained a Seller role");
   });
 });

@@ -194,16 +194,24 @@ dbTest("the login and session column list still resolves", async () => {
 
 dbTest("existing admin rows are untouched by the migration", async () => {
   await withDb(async (client) => {
-    // Any row that predates this transaction: business_id must be NULL, and the
-    // migration must not have bumped updated_at on it.
+    // "Existing" means existing WHEN THE MIGRATION RAN, and the only thing that
+    // knows when that was is schema_migrations.applied_at. Asking the whole
+    // table instead makes this fail the moment anything legitimately creates a
+    // scoped admin afterwards - a seed, the smoke suite, a developer - which
+    // says nothing about the migration and is a red for the wrong reason.
+    // Scoped to rows that predate it, the claim is exactly as strong and stops
+    // depending on what else has touched the database since.
     const { rows } = await client.query(
-      `select count(*) filter (where business_id is not null) as scoped,
-              count(*) filter (where updated_at > created_at) as touched,
+      `select count(*) filter (where a.business_id is not null) as scoped,
+              count(*) filter (where a.updated_at > m.applied_at) as touched,
               count(*) as total
-         from public.admin_users`,
+         from public.admin_users a
+         join public.schema_migrations m
+           on m.filename = '0040_add_admin_users_business_id.sql'
+        where a.created_at < m.applied_at`,
     );
-    assert.equal(Number(rows[0].scoped), 0, "no existing admin may have been given a Seller");
-    assert.equal(Number(rows[0].touched), 0, "the migration must not have modified any row");
+    assert.equal(Number(rows[0].scoped), 0, "no admin predating the migration may have been given a Seller");
+    assert.equal(Number(rows[0].touched), 0, "the migration must not have modified any row that predates it");
   });
 });
 

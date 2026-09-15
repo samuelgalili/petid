@@ -198,10 +198,18 @@ dbTest("commercial_status is NOT NULL and defaults to none", async () => {
 
 dbTest("no existing business was approved by the migration", async () => {
   await withDb(async (client) => {
+    // The claim is about the migration, so it is scoped to the rows the
+    // migration saw. A business approved afterwards is an approval somebody
+    // made deliberately - the feature working - and must not read as the
+    // migration having legitimised anything. Over the whole table this test
+    // would fail as soon as the first real Seller is approved.
     const { rows } = await client.query(
-      `select count(*) filter (where commercial_status <> 'none') as approved_or_pending,
+      `select count(*) filter (where b.commercial_status <> 'none') as approved_or_pending,
               count(*) as total
-         from public.business_profiles`,
+         from public.business_profiles b
+         join public.schema_migrations m
+           on m.filename = '0049_add_business_commercial_status.sql'
+        where b.created_at < m.applied_at`,
     );
     assert.equal(
       Number(rows[0].approved_or_pending), 0,
