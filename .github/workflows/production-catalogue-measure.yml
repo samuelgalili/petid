@@ -23,14 +23,25 @@
 # environment, same connection handling, same static guard, same redaction.
 # Nothing here is a new access route: it borrows the one that already exists.
 #
-# The SQL block is 12 SELECT statements wrapped in BEGIN /
-# SET TRANSACTION READ ONLY / ROLLBACK: 15 statements in total.
+# The SQL block is 20 SELECT statements wrapped in BEGIN /
+# SET TRANSACTION READ ONLY / ROLLBACK: 23 statements in total.
+#
+# C-01..C-12 are the first pass. C-13..C-20 were added after it ran, to settle
+# four things the first pass could only guess at, because it deliberately read
+# attribute KEY names and not values:
+#
+#   * C-13/C-14 - whether the 'animal' attribute holds the species that
+#     pet_type cannot express. 141 products (38%) sit in pet_type = 'other'.
+#   * C-16/C-17 - whether family_code groups variants of one product, which is
+#     what decides how catalog_products and product_variants are built.
+#   * C-19/C-20 - how much of the category normalisation the 57 EXISTING
+#     aliases already solve. 241 products carry free text and no category_id.
 #
 # Product data is commercial data, not personal data. Even so, nothing below
-# selects a product name, a description or a supplier URL: every statement
-# returns counts, category labels and attribute KEY names. C-07 returns the key
-# names inside product_attributes because those are what become variant axes,
-# and a key name is a schema fact rather than content.
+# selects a product name, a description, a supplier URL or a barcode value:
+# every statement returns counts, taxonomy labels and attribute key names.
+# C-17 counts DISTINCT names within a family without selecting one, and C-18
+# counts barcodes and their duplicate groups without listing a code.
 
 name: C-0 catalogue measurement (read-only)
 
@@ -378,6 +389,121 @@ jobs:
                  (select count(*) from public.business_products) as business_products,
                  (select count(*) from public.product_categories) as categories_defined,
                  (select count(*) from public.product_category_aliases) as category_aliases;
+
+          \echo '### C-13 - the animal vocabulary actually in use'
+          -- Run C-09 found 141 products (38%) sitting in pet_type = 'other'.
+          -- The import envelope carries its own 'animal' key on 266 products,
+          -- and the guess is that it holds the real species. A guess from a KEY
+          -- NAME is not a measurement, so this reads the values.
+
+          select coalesce(bp.product_attributes ->> 'animal', '(absent)') as animal_value,
+                 count(*) as products
+            from public.business_products bp
+           group by 1
+           order by products desc
+           limit 30;
+
+          \echo '### C-14 - animal x pet_type: does the attribute know more than the column?'
+          -- The decisive cross-tab. If the 'other' rows carry distinct animal
+          -- values, the species data already exists and pet_species is a
+          -- migration rather than a research project. If they are all absent or
+          -- all identical, the data is simply not there.
+
+          select coalesce(bp.pet_type::text, '(null)') as pet_type,
+                 coalesce(bp.product_attributes ->> 'animal', '(absent)') as animal_value,
+                 count(*) as products
+            from public.business_products bp
+           group by 1, 2
+           order by products desc
+           limit 40;
+
+          \echo '### C-15 - the product_type vocabulary, against what is already categorised'
+
+          select coalesce(bp.product_attributes ->> 'product_type', '(absent)') as product_type,
+                 count(*) as products,
+                 count(*) filter (where bp.category_id is not null) as already_categorised
+            from public.business_products bp
+           group by 1
+           order by products desc
+           limit 40;
+
+          \echo '### C-16 - family_code: how many products share one family'
+          -- If families routinely hold 2-6 products, family_code is the variant
+          -- grouping the new model needs - one catalog_product with several
+          -- product_variants. If every family holds exactly one, it is just
+          -- another per-product code and variants must be derived some other
+          -- way.
+
+          select fam.products_in_family,
+                 count(*) as families
+            from (select bp.product_attributes ->> 'family_code' as family_code,
+                         count(*) as products_in_family
+                    from public.business_products bp
+                   where bp.product_attributes ->> 'family_code' is not null
+                   group by 1) fam
+           group by 1
+           order by fam.products_in_family;
+
+          \echo '### C-17 - do products in one family actually differ, and how'
+          -- A family whose members differ by weight is a variant axis. A family
+          -- whose members have identical names and weights is a duplicate, not
+          -- a variant. Counts only: no name is ever selected.
+
+          select count(*) as families_with_multiple_products,
+                 count(*) filter (where f.distinct_weights > 1) as differ_by_weight,
+                 count(*) filter (where f.distinct_sizes > 1) as differ_by_dog_size,
+                 count(*) filter (where f.distinct_names > 1) as differ_by_name,
+                 count(*) filter (where f.distinct_prices > 1) as differ_by_price
+            from (select bp.product_attributes ->> 'family_code' as family_code,
+                         count(*) as n,
+                         count(distinct bp.product_attributes ->> 'משקל') as distinct_weights,
+                         count(distinct bp.dog_size) as distinct_sizes,
+                         count(distinct lower(btrim(bp.name))) as distinct_names,
+                         count(distinct bp.price) as distinct_prices
+                    from public.business_products bp
+                   where bp.product_attributes ->> 'family_code' is not null
+                   group by 1
+                  having count(*) > 1) f;
+
+          \echo '### C-18 - barcode as an identifier: coverage and uniqueness'
+          -- Counted and compared, never listed.
+
+          select count(*) filter (where btrim(coalesce(bp.product_attributes ->> 'barcode', '')) <> '') as with_barcode,
+                 count(distinct bp.product_attributes ->> 'barcode') as distinct_barcodes,
+                 count(*) filter (where btrim(coalesce(bp.sku, '')) <> '') as with_sku,
+                 (select count(*)
+                    from (select bp2.product_attributes ->> 'barcode' as code
+                            from public.business_products bp2
+                           where btrim(coalesce(bp2.product_attributes ->> 'barcode', '')) <> ''
+                           group by 1
+                          having count(*) > 1) dupes) as duplicate_barcode_groups
+            from public.business_products bp;
+
+          \echo '### C-19 - can the existing aliases already categorise the 241?'
+          -- 57 category aliases are defined and were never applied to these
+          -- rows. This says how much of the category normalisation is already
+          -- solved and how much needs a human to invent a mapping.
+
+          select count(*) as uncategorised,
+                 count(*) filter (where a.category_id is not null) as resolvable_by_existing_alias,
+                 count(*) filter (where a.category_id is null) as needs_a_new_alias
+            from public.business_products bp
+            left join public.product_category_aliases a
+              on a.alias = lower(btrim(bp.category))
+           where bp.category_id is null;
+
+          \echo '### C-20 - which free-text category values have no alias yet'
+
+          select lower(btrim(bp.category)) as category_text,
+                 count(*) as products
+            from public.business_products bp
+            left join public.product_category_aliases a
+              on a.alias = lower(btrim(bp.category))
+           where bp.category_id is null
+             and a.category_id is null
+           group by 1
+           order by products desc
+           limit 30;
 
           ROLLBACK;
           -- C0-SQL-END
