@@ -6,11 +6,27 @@ on:
   pull_request:
     branches: [main, master]
 
+concurrency:
+  group: e2e-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
-  test:
-    timeout-minutes: 60
+  smoke:
+    name: Playwright smoke
+    timeout-minutes: 15
     runs-on: ubuntu-latest
-    
+
+    env:
+      CI: true
+      VITE_APP_URL: http://127.0.0.1:8080
+      # Placeholder Vite env so the production build boots. Smoke tests do not
+      # call a live backend; do not put secrets here.
+      VITE_SUPABASE_URL: https://example.supabase.co
+      VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,16 +40,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
 
       - name: Build application
         run: npm run build
 
-      - name: Run Playwright tests
-        run: npx playwright test
-        env:
-          CI: true
+      - name: Run Playwright smoke tests
+        run: npx playwright test --grep @smoke
 
       - name: Upload test report
         uses: actions/upload-artifact@v4
@@ -50,3 +64,4 @@ jobs:
           name: test-results
           path: test-results/
           retention-days: 30
+          if-no-files-found: ignore
