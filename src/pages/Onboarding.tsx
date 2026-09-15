@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -18,7 +18,13 @@ import { MipoLogo } from "@/components/MipoLogo";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { createMyPet, uploadMyImage } from "@/lib/mipoApi";
+import {
+  mapOnboardingGender,
+  readStoredOnboardingDraft,
+  writeStoredOnboardingDraft,
+  type OnboardingPetDraft,
+} from "@/lib/mipoOnboardingDraft";
+import { createMyPet, getMyPet, MipoApiError, uploadMyImage } from "@/lib/mipoApi";
 import { MIPO_GRADIENT_STOPS } from "@/lib/mipoTheme";
 import { cn } from "@/lib/utils";
 
@@ -33,22 +39,43 @@ const stepForPhase: Record<Phase, number> = {
   success: 5,
 };
 
+const markOnboardingComplete = () => {
+  try {
+    localStorage.setItem("onboardingCompleted", "true");
+    localStorage.setItem("mipo-onboarding-complete", "true");
+  } catch {
+    // ignore storage quota / private mode
+  }
+};
+
 const Onboarding = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { refresh, setPetType } = usePetPreference();
   const fileRef = useRef<HTMLInputElement>(null);
+  const draftRef = useRef<OnboardingPetDraft | null>(null);
+  const persistInFlight = useRef(false);
+  const persistedPetId = useRef<string | null>(null);
+  const detailsSaveLock = useRef(false);
+  const resumeStarted = useRef(false);
+  const fileRefState = useRef<File | null>(null);
   const [phase, setPhase] = useState<Phase>("welcome");
   const [petType, setSelectedPetType] = useState<"dog" | "cat">("dog");
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState("");
   const [name, setName] = useState("");
   const [breed, setBreed] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   useEffect(() => () => {
     if (preview.startsWith("blob:")) URL.revokeObjectURL(preview);
   }, [preview]);
+
+  useEffect(() => {
+    fileRefState.current = file;
+  }, [file]);
 
   const chooseType = (type: "dog" | "cat") => {
     setSelectedPetType(type);
@@ -60,46 +87,185 @@ const Onboarding = () => {
     if (!nextFile) return;
     if (preview.startsWith("blob:")) URL.revokeObjectURL(preview);
     setFile(nextFile);
-    setPreview(URL.createObjectURL(nextFile));
-    setPhase("reveal");
+    const reader = new FileReader();
+    reader.onerror = () => {
+      setPreview(URL.createObjectURL(nextFile));
+      setPhase("reveal");
+    };
+    reader.onload = () => {
+      setPreview(String(reader.result));
+      setPhase("reveal");
+    };
+    reader.readAsDataURL(nextFile);
   };
 
-  const createPet = async () => {
-    if (!name.trim()) return;
-    if (!user) {
-      navigate("/auth", { replace: true });
-      return;
-    }
+  const hydrateFromDraft = useCallback((stored: OnboardingPetDraft) => {
+    draftRef.current = stored;
+    setName(stored.name);
+    setBreed(stored.breed || "");
+    setSelectedPetType(stored.petType);
+    setPetType(stored.petType);
+    if (stored.avatarUrl) setPreview(stored.avatarUrl);
+    if (stored.petId) persistedPetId.current = stored.petId;
+  }, [setPetType]);
 
+  const persistPet = useCallback(async (nextDraft?: OnboardingPetDraft): Promise<boolean> => {
+    if (persistInFlight.current) return false;
+
+    const stored = readStoredOnboardingDraft();
+    const draft = nextDraft ?? draftRef.current ?? stored;
+    if (draft) draftRef.current = draft;
+
+    persistInFlight.current = true;
+    setSaving(true);
+    setSaveError("");
     try {
-      setPhase("creating");
-      const avatarUrl = file ? (await uploadMyImage(file)).url : null;
+      if (!user) {
+        if (draft) writeStoredOnboardingDraft(draft);
+        throw new Error("צריך להתחבר כדי לשמור את חיית המחמד.");
+      }
+
+      const existingId = persistedPetId.current || stored?.petId;
+      if (existingId) {
+        try {
+          const existing = await getMyPet(existingId);
+          if (existing?.id) {
+            persistedPetId.current = existing.id;
+            try {
+              localStorage.setItem("activePetId", existing.id);
+            } catch {
+              // ignore storage quota / private mode
+            }
+            markOnboardingComplete();
+            await refresh();
+            return true;
+          }
+        } catch (error) {
+          if (!(error instanceof MipoApiError) || (error.status !== 404 && error.status !== 403)) {
+            throw error;
+          }
+        }
+        persistedPetId.current = null;
+      }
+
+      if (!draft?.name) {
+        const message = "חסרים פרטי חיית המחמד. חזרו אחורה ונסו שוב.";
+        setSaveError(message);
+        toast({ title: "לא הצלחנו לשמור את הפרופיל", description: message, variant: "destructive" });
+        return false;
+      }
+
+      let avatarUrl = draft.avatarUrl || null;
+      const imageFile = fileRefState.current;
+      if (imageFile) {
+        try {
+          avatarUrl = (await uploadMyImage(imageFile)).url;
+        } catch (error) {
+          if (!avatarUrl) throw error;
+        }
+      }
+
+      const gender = mapOnboardingGender(draft.gender);
       const pet = await createMyPet({
-        name: name.trim(),
-        type: petType,
-        pet_type: petType,
-        breed: breed.trim() || null,
+        name: draft.name,
+        type: draft.petType,
+        pet_type: draft.petType,
+        breed: draft.breed.trim() || null,
         avatar_url: avatarUrl,
+        ...(gender ? { gender } : {}),
       });
-      localStorage.setItem("onboardingCompleted", "true");
-      localStorage.setItem("activePetId", pet.id);
+      if (!pet?.id) throw new Error("הפרופיל לא נוצר.");
+
+      persistedPetId.current = pet.id;
+      try {
+        localStorage.setItem("activePetId", pet.id);
+        writeStoredOnboardingDraft({ ...draft, petId: pet.id, avatarUrl: avatarUrl || draft.avatarUrl });
+        markOnboardingComplete();
+      } catch {
+        // ignore storage quota / private mode
+      }
       await refresh();
-      setPhase("success");
-      confetti({
-        particleCount: 120,
-        spread: 90,
-        origin: { y: 0.62 },
-        colors: [...MIPO_GRADIENT_STOPS],
-      });
-    } catch (error) {
+      return true;
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "לא הצלחנו לשמור את הפרופיל. נסו שוב.";
+      setSaveError(message);
       toast({
-        title: "לא הצלחנו ליצור את הפרופיל",
-        description: error instanceof Error ? error.message : "נסו שוב בעוד רגע",
+        title: "לא הצלחנו לשמור את הפרופיל",
+        description: message,
         variant: "destructive",
       });
-      setPhase("details");
+      return false;
+    } finally {
+      persistInFlight.current = false;
+      setSaving(false);
     }
+  }, [refresh, toast, user]);
+
+  const celebrate = () => {
+    confetti({
+      particleCount: 120,
+      spread: 90,
+      origin: { y: 0.62 },
+      colors: [...MIPO_GRADIENT_STOPS],
+    });
   };
+
+  const handleDetailsSave = () => {
+    if (!name.trim()) return;
+    if (detailsSaveLock.current || persistInFlight.current) return;
+    detailsSaveLock.current = true;
+
+    const draft: OnboardingPetDraft = {
+      name: name.trim(),
+      breed: breed.trim(),
+      petType,
+      avatarUrl: preview.startsWith("data:image/") ? preview : (draftRef.current?.avatarUrl || ""),
+      photoUrl: preview.startsWith("data:image/") ? preview : "",
+    };
+    draftRef.current = draft;
+    writeStoredOnboardingDraft(draft);
+
+    void (async () => {
+      if (!user) {
+        detailsSaveLock.current = false;
+        navigate("/auth", { replace: true });
+        return;
+      }
+      resumeStarted.current = true;
+      setPhase("success");
+      const ok = await persistPet(draft);
+      if (ok) celebrate();
+    })();
+  };
+
+  const finish = async () => {
+    if (persistInFlight.current || saving) return;
+    const ok = await persistPet();
+    if (!ok) return;
+    markOnboardingComplete();
+    navigate("/", { replace: true });
+  };
+
+  useEffect(() => {
+    const stored = readStoredOnboardingDraft();
+    if (stored) hydrateFromDraft(stored);
+  }, [hydrateFromDraft]);
+
+  useEffect(() => {
+    if (authLoading || resumeStarted.current) return;
+    const stored = readStoredOnboardingDraft();
+    if (!stored?.name) return;
+    hydrateFromDraft(stored);
+
+    if (!user) return;
+
+    resumeStarted.current = true;
+    detailsSaveLock.current = true;
+    setPhase("success");
+    void persistPet(stored).then((ok) => {
+      if (ok) celebrate();
+    });
+  }, [authLoading, hydrateFromDraft, persistPet, user]);
 
   return (
     <main className="mipo-screen min-h-[100dvh]" dir="rtl">
@@ -115,7 +281,7 @@ const Onboarding = () => {
               className={cn(
                 "h-1 rounded-full",
                 step <= stepForPhase[phase] ? "bg-[image:var(--gradient-primary)]" : "bg-mipo-ink/[0.08]",
-                phase === "creating" && step === 4 && "animate-pulse",
+                (phase === "creating" || saving) && step === 4 && "animate-pulse",
               )}
             />
           ))}
@@ -204,8 +370,8 @@ const Onboarding = () => {
                   <input value={breed} onChange={(event) => setBreed(event.target.value)} maxLength={120} placeholder="למשל גולדן רטריבר" className="mipo-input mt-2 min-h-14 w-full px-4 text-base outline-none" />
                 </label>
               </div>
-              <button disabled={!name.trim() || phase === "creating"} onClick={() => void createPet()} className="mipo-gradient-button mt-8 w-full px-6">
-                {phase === "creating" ? <><Loader2 className="h-5 w-5 animate-spin" />יוצרים את העולם של {name || "החבר שלך"}</> : "יצירת הפרופיל"}
+              <button disabled={!name.trim() || phase === "creating" || saving} onClick={handleDetailsSave} className="mipo-gradient-button mt-8 w-full px-6">
+                {phase === "creating" || saving ? <><Loader2 className="h-5 w-5 animate-spin" />יוצרים את העולם של {name || "החבר שלך"}</> : "יצירת הפרופיל"}
               </button>
             </Screen>
           )}
@@ -219,10 +385,26 @@ const Onboarding = () => {
                 </div>
                 <span className="absolute bottom-1 left-1 flex h-12 w-12 items-center justify-center rounded-full bg-[#15151A] text-white shadow-xl"><Check className="h-6 w-6" /></span>
               </div>
-              <p className="mt-8 text-sm font-semibold text-mipo-muted">הפרופיל מוכן</p>
-              <h1 className="mt-2 text-4xl font-semibold tracking-[-0.04em] text-mipo-ink">ברוכים הבאים, {name}</h1>
-              <p className="mt-4 max-w-xs text-base leading-7 text-mipo-muted">מכאן כל תובנה, שיחה ורגע קהילתי נבנים במיוחד בשבילכם.</p>
-              <button onClick={() => navigate("/", { replace: true })} className="mipo-gradient-button mt-9 w-full max-w-sm px-6">כניסה לעולם של Mipo</button>
+              {saveError ? (
+                <>
+                  <p className="mt-8 text-sm font-semibold text-mipo-muted">עוד רגע</p>
+                  <h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-mipo-ink">לא הצלחנו לשמור את {name || "הפרופיל"}</h1>
+                  <p className="mt-4 max-w-xs text-base leading-7 text-mipo-muted">{saveError}</p>
+                </>
+              ) : (
+                <>
+                  <p className="mt-8 text-sm font-semibold text-mipo-muted">{saving ? "שומרים את הפרופיל" : "הפרופיל מוכן"}</p>
+                  <h1 className="mt-2 text-4xl font-semibold tracking-[-0.04em] text-mipo-ink">ברוכים הבאים, {name}</h1>
+                  <p className="mt-4 max-w-xs text-base leading-7 text-mipo-muted">מכאן כל תובנה, שיחה ורגע קהילתי נבנים במיוחד בשבילכם.</p>
+                </>
+              )}
+              <button
+                disabled={saving}
+                onClick={() => void finish()}
+                className="mipo-gradient-button mt-9 w-full max-w-sm px-6"
+              >
+                {saving ? <><Loader2 className="h-5 w-5 animate-spin" />שומרים…</> : saveError ? "נסו שוב" : "כניסה לעולם של Mipo"}
+              </button>
             </Screen>
           )}
         </AnimatePresence>

@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AuthLoadingSkeleton } from "@/components/AuthLoadingSkeleton";
 import { MipoLogo } from "@/components/MipoLogo";
 import { PawPrint, Sparkles, Users } from "lucide-react";
+import { readStoredOnboardingDraft } from "@/lib/mipoOnboardingDraft";
 import { getMyPets } from "@/lib/mipoApi";
 
 const cardVariants = {
@@ -24,6 +25,8 @@ const Signup = () => {
         if (pets.length > 0) {
           localStorage.setItem('onboardingCompleted', 'true');
           navigate("/");
+        } else if (readStoredOnboardingDraft()?.name) {
+          navigate("/onboarding");
         } else {
           const onboardingCompleted = localStorage.getItem('onboardingCompleted');
           if (onboardingCompleted === 'true') {
