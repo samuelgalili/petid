@@ -262,11 +262,11 @@ const Checkout = () => {
 
     if (!result.ok) {
       setErrors(result.errors);
-      return false;
+      return result;
     }
 
     setErrors({});
-    return true;
+    return result;
   };
 
   const handleInputChange = (field: ShippingFieldName, value: string) => {
@@ -278,9 +278,13 @@ const Checkout = () => {
 
   const handleNextStep = () => {
     if (currentStep === 1) {
-      if (validateShipping()) {
+      const result = validateShipping();
+      if (result.ok) {
         setCurrentStep(2);
-      } else {
+        return;
+      }
+      const hasFieldErrors = Object.keys(result.errors).some((key) => key !== "acceptedTerms");
+      if (hasFieldErrors) {
         toast({
           title: "שגיאת אימות",
           description: "אנא בדוק את כל השדות ונסה שוב",
