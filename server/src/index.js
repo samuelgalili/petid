@@ -16,7 +16,6 @@ import {
 } from "./productIntel.js";
 import { fallbackBreeds } from "./referenceData.js";
 import { assertLegacyIntakeAllowed, sourceHostForLog } from "./legacyIntakeFreeze.js";
-import { assertLegacyProductCreationDisabled } from "./legacyProductCreation.js";
 import { measureLegacyExposure } from "./legacyExposureMeasurement.js";
 import {
   DEFAULT_OWNERSHIP_STATE,
@@ -4698,22 +4697,28 @@ const submitOwnershipDecision = async (productId, body, admin) => {
 };
 
 const createProduct = async (body) => {
-  // Stage 0: the legacy creation path is closed unconditionally, and this is the
-  // write boundary rather than only the route, so an internal caller cannot
-  // reach the insert by going around HTTP. Nothing below this line runs.
+  // Stage 0's unconditional close is NOT wired up here, and that is a decision
+  // taken on 2026-09-15 rather than an oversight.
   //
-  // It comes before every side effect for the same reason the G-1 freeze did:
-  // ensureDefaultBusinessProfile inserts a business_profiles row and
-  // adoptProductImages downloads bytes to disk, so a refusal placed after
-  // either would leave an artifact behind for a product that was never created.
-  // It also means the defaultBusinessId fallback on the line below is now
-  // unreachable for creation, which is the point - no new product may acquire an
-  // owner nobody chose.
-  assertLegacyProductCreationDisabled();
-
-  // Retained deliberately, though unreachable while the block above stands: it
-  // is the inner gate, and whichever path eventually replaces this one must
-  // still refuse a scraped-backed payload that has not been through review.
+  // legacyProductCreation.js is written, tested and right about the problem: an
+  // audit proved a product created through this route with no review, no image,
+  // no variant and no chosen seller was listed publicly and purchased end to
+  // end. Closing the route is the correct answer to that.
+  //
+  // What was not yet true when it was written is that a replacement exists.
+  // Product Intake's routes ship in this same deploy, but nothing in the admin
+  // UI speaks to them - the Seller admin screen, the review queue and the intake
+  // wizard are still to build. Calling assertLegacyProductCreationDisabled()
+  // today would close AdminProducts, ProductFormDialog, ProductImportWizard and
+  // ProductBulkActions - every way a product can be added - and leave adding one
+  // to hand-written API calls.
+  //
+  // So the close ships with the UI that replaces it, as one change. Until then
+  // this route behaves exactly as it does in production today, G-1's freeze
+  // included.
+  //
+  // Deliberately still no flag. A switch would let this reopen quietly later;
+  // wiring it up is one line and it belongs in the commit that ships the UI.
   assertLegacyIntakeAllowed(body, "POST /api/products");
 
   const payload = normalizeProductPayload(body);
@@ -9271,27 +9276,24 @@ const handleRequest = async (request, response) => {
       return;
     }
 
-    // Stage 0: closed. The permission check still runs first, so an unauthorised
-    // caller gets its usual answer and learns nothing new, and so that the audit
-    // row below can name who attempted it.
+    // Stage 0's close is not wired up here yet. See createProduct's comment for
+    // the dated reason: legacyProductCreation.js is written and tested, but the
+    // admin screens it would close are the only way to add a product until the
+    // intake UI exists, so the close ships with that UI as one change.
+    //
+    // Until then this route does what production does today: G-1's freeze
+    // inside createProduct still refuses a scraped-backed payload, which is the
+    // path the Stage 0 audit actually found reaching the public catalogue
+    // unreviewed.
     if (request.method === "POST" && url.pathname === "/api/products") {
       if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_CREATE))) return;
-      const attempted = await readBody(request);
+      const product = await createProduct(await readBody(request));
       await recordAdminAudit(request.admin, {
-        actionType: "product.creation_blocked",
-        // No product name, no payload, no URL: enough to see that someone is
-        // still trying and through which shape of import, nothing more.
-        metadata: {
-          route: "POST /api/products",
-          had_source_provenance: Boolean(String(attempted?.source_url ?? "").trim()),
-        },
+        actionType: "product.created",
+        entityId: product.id,
+        newValues: product,
       });
-      sendError(
-        response,
-        410,
-        "Legacy product creation is no longer supported. Use Product Intake.",
-        { code: "LEGACY_PRODUCT_CREATION_DISABLED" },
-      );
+      sendJson(response, 201, { product });
       return;
     }
 

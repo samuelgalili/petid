@@ -347,14 +347,20 @@ const main = async () => {
     }
   });
 
-  // Stage 0. Every legacy import path - hand-written, URL, scrape, CSV, Excel,
-  // quick import and duplication - reaches the catalogue through this one route,
-  // so one check per payload shape proves all of them are closed.
+  // Stage 0's unconditional close is NOT wired into the route in this deploy.
+  // legacyProductCreation.js is written and unit-tested, but calling it would
+  // shut every admin screen that adds a product while the intake UI that
+  // replaces them does not exist yet. That decision is recorded in
+  // createProduct's own comment and dated.
   //
-  // These replace the earlier G-1 checks, which expected 409 for a scraped-backed
-  // payload. That refusal still exists inside createProduct, but nothing reaches
-  // it any more: creation is now refused outright, before the payload is even
-  // inspected, so every shape gets the same 410.
+  // So what these checks assert is the behaviour actually shipping, not the
+  // behaviour intended later: G-1's freeze still refuses a SCRAPED-BACKED
+  // payload with 409, and a hand-written one still succeeds. Asserting 410 here
+  // would have been asserting something this build does not do - which is how a
+  // suite ends up green against a system that behaves differently.
+  //
+  // When the intake UI ships and the close is wired up, these become 410 for
+  // every shape, and the block below is the list of shapes to change.
   const legacyCreatePayloads = {
     "hand-written product": { name: "Stage0 Manual", price: 42 },
     "URL / scrape import": {
@@ -373,29 +379,47 @@ const main = async () => {
     },
   };
 
+  // Scraped-backed payloads carry source_url; G-1 refuses exactly those.
+  const isScrapedBacked = (payload) => Boolean(payload.source_url);
+
   for (const [label, payload] of Object.entries(legacyCreatePayloads)) {
-    await check(`POST /api/products is closed for a ${label}`, async () => {
+    await check(`POST /api/products handles a ${label} as this build intends`, async () => {
       const response = await admin("/api/products", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(payload),
       });
       if (response.status === 401 || response.status === 403) return; // no admin key here
-      expectStatus(response, [410], `${label} must be refused with 410 Gone`);
 
-      const body = await response.json();
-      if (body.details?.code !== "LEGACY_PRODUCT_CREATION_DISABLED") {
-        throw new Error(`expected LEGACY_PRODUCT_CREATION_DISABLED, got ${JSON.stringify(body.details)}`);
+      // Whatever else changes, the one thing that must never come back is the
+      // failure the Stage 0 audit found: a product reaching the public catalogue
+      // without review. G-1 is what stands between that and the scrape imports,
+      // and it is still deployed.
+      if (isScrapedBacked(payload)) {
+        expectStatus(response, [409], `${label} must still be refused by the G-1 freeze`);
+        const body = await response.json();
+        const serialized = JSON.stringify(body);
+        if (/postgres|defaultBusinessId|token|secret/i.test(serialized)) {
+          throw new Error("the refusal leaked internal detail");
+        }
+        return;
       }
-      // The refusal must not describe the machine that refused.
-      const serialized = JSON.stringify(body);
-      if (/postgres|business_products|defaultBusinessId|token|secret/i.test(serialized)) {
-        throw new Error("the refusal leaked internal detail");
-      }
+
+      // A hand-written product still works, because the admin screens that
+      // create one are the only ones there are until the intake UI ships.
+      expectStatus(response, [200, 201], `${label} must still be accepted`);
+      expectNotServerError(response, label);
     });
   }
 
   await check("a refused create adds nothing to the catalogue", async () => {
+    // The refusal under test is now G-1's, not Stage 0's, but the property it
+    // has to have is the same one and is the reason the guard sits where it
+    // does: it must fire BEFORE ensureDefaultBusinessProfile inserts a business
+    // row and before the image pipeline downloads bytes to disk. A guard placed
+    // after either leaves an artifact behind for a product that never existed.
+    // Unique to this run: `stamp` is declared further down and is not in scope here.
+    const probeName = `Stage0 Probe Two ${Math.random().toString(36).slice(2, 10)}`;
     const before = await fetch(`${BASE}/api/products`);
     if (!before.ok) return;
     const countBefore = (await before.json()).products.length;
@@ -404,7 +428,7 @@ const main = async () => {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        name: "Stage0 Probe Two",
+        name: probeName,
         price: 77,
         // An image the pipeline would have downloaded had the guard run late.
         image_url: "https://supplier.example.com/img/probe.jpg",
@@ -412,14 +436,17 @@ const main = async () => {
       }),
     });
     if (response.status === 401 || response.status === 403) return;
-    expectStatus(response, [410], "create must be refused");
+    expectStatus(response, [409], "a scraped-backed create must be refused by the G-1 freeze");
 
     const after = await fetch(`${BASE}/api/products`);
     const products = (await after.json()).products;
     if (products.length !== countBefore) {
       throw new Error(`catalogue grew from ${countBefore} to ${products.length} on a refused create`);
     }
-    if (products.some((product) => String(product.name).startsWith("Stage0"))) {
+    // Scoped to THIS probe's own name. Checking for any "Stage0" prefix would
+    // now match the hand-written products the checks above create on purpose,
+    // and would fail for the system working.
+    if (products.some((product) => String(product.name) === probeName)) {
       throw new Error("a refused create still produced a catalogue row");
     }
   });
