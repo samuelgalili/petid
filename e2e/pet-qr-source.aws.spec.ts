@@ -69,13 +69,9 @@ async function mockSignedInProfile(page: Page, pet: Record<string, unknown>) {
 }
 
 async function openExpandedProfile(page: Page) {
-  await page.goto("/profile");
-  await expect(page.getByText("לוקה").first()).toBeVisible();
-  const infoTab = page.getByRole("button", { name: "מידע" });
-  if (!(await infoTab.isVisible())) {
-    await page.getByRole("button", { name: "לוקה" }).click();
-  }
-  await expect(infoTab).toBeVisible();
+  await page.goto(`/pet-profile/${petId}`);
+  await expect(page.getByRole("heading", { name: "לוקה" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "מידע" })).toBeVisible();
 }
 
 async function openPetQr(page: Page) {
@@ -110,7 +106,8 @@ test.describe("Q4 Gate2 QR source vs Master", () => {
     await expect(center).not.toHaveAttribute("src", MASTER);
     const src = await center.getAttribute("src");
     expect(src).toBeTruthy();
-    expect(src).toMatch(/dog-official|cat-official|\.svg|\.png/i);
+    // Vite may serve the official icon as a hashed asset or an inlined data:image/svg+xml.
+    expect(src).toMatch(/dog-official|cat-official|\.svg|\.png|data:image\/svg\+xml/i);
   });
 
   test("neither source nor Master → QR uses the type icon", async ({ page }) => {
@@ -118,7 +115,7 @@ test.describe("Q4 Gate2 QR source vs Master", () => {
     await openPetQr(page);
     const src = await page.getByTestId("pet-qr-center-image").getAttribute("src");
     expect(src).toBeTruthy();
-    expect(src).toMatch(/dog-official|cat-official|\.svg|\.png/i);
+    expect(src).toMatch(/dog-official|cat-official|\.svg|\.png|data:image\/svg\+xml/i);
   });
 
   test("data:image source is accepted in QR", async ({ page }) => {
