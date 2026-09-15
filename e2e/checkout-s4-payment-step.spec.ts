@@ -18,6 +18,7 @@ function fakeJwt() {
 }
 
 async function mockCheckoutBackend(page: Page) {
+  const paymentRequests: string[] = [];
   const user = {
     id: TEST_USER_ID,
     aud: "authenticated",
@@ -97,19 +98,22 @@ async function mockCheckoutBackend(page: Page) {
     });
   });
 
-  // Never allow a live charge in this spec.
+  // Block any accidental live charge and record whether payment was invoked.
   await page.route("**/functions/v1/create-shop-payment**", async (route) => {
+    paymentRequests.push(route.request().url());
     await route.fulfill({
       status: 403,
       contentType: "application/json",
       body: JSON.stringify({ error: "S4 test must not charge" }),
     });
   });
+
+  return { paymentRequests };
 }
 
 test.describe("AC-S4 checkout to payment (no charge)", () => {
   test("filled formatted address + terms reaches payment step", async ({ page }) => {
-    await mockCheckoutBackend(page);
+    const { paymentRequests } = await mockCheckoutBackend(page);
 
     await page.addInitScript(({ token, userId, email }) => {
       localStorage.setItem("mipo-onboarding-complete", "true");
@@ -181,6 +185,11 @@ test.describe("AC-S4 checkout to payment (no charge)", () => {
       fullPage: true,
     });
 
+    const autoCharge = page
+      .waitForRequest((req) => req.url().includes("create-shop-payment"), { timeout: 1500 })
+      .then(() => true)
+      .catch(() => false);
+
     await page.getByRole("checkbox", { name: /אני מסכים/ }).click();
     await page.getByTestId("checkout-continue").click();
 
@@ -188,8 +197,11 @@ test.describe("AC-S4 checkout to payment (no charge)", () => {
     await expect(page.getByText("כרטיס אשראי")).toBeVisible();
     await expect(page.getByText("שגיאת אימות")).toHaveCount(0);
 
-    // AC-S4-4: stop on payment. Never place an order.
-    await expect(page.getByText(/בצע הזמנה/)).toHaveCount(0);
+    // AC-S4-4: reaching payment is enough. The place-order button may remain
+    // visible (correct product behavior) — do not click it, and no charge
+    // may fire automatically.
+    expect(await autoCharge, "create-shop-payment must not run automatically").toBe(false);
+    expect(paymentRequests).toEqual([]);
     await page.screenshot({
       path: "test-results/s4_payment_step_no_charge.png",
       fullPage: true,
