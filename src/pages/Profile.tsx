@@ -41,6 +41,7 @@ interface Pet {
   age_months?: number;
   size?: string;
   avatar_url?: string;
+  source_image_url?: string | null;
   weight?: number | null;
 }
 
