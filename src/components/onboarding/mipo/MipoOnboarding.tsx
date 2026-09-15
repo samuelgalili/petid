@@ -7,12 +7,14 @@
  *   - Inserts a real `pets` row (source of truth) with Master `avatar_url`
  *   - localStorage: mipo-onboarding-complete = "true" (gate still works)
  *   - localStorage: mipo-pet-draft = { name, breed, ageGroup, gender, avatarUrl, petType }
+ *   - OAuth / remount: session + stored draft resume persistPet (reload full draft from localStorage)
+ *   - Existing petId still refresh() + activePetId so PetPreference comes from DB
  *   - Navigates to /feed
  *
  * The generated avatar is also reused everywhere via <AvatarCompanion />.
  */
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Camera, Check, Loader2, Sparkles, ArrowLeft, ArrowRight } from "lucide-react";
@@ -73,6 +75,36 @@ interface PetDraft {
   petType: "dog" | "cat";
   avatarUrl: string;      // generated, full-body
   photoUrl: string;       // original user upload (square)
+}
+
+interface StoredPetDraft extends PetDraft {
+  petId?: string;
+}
+
+const MIPO_DRAFT_KEY = "mipo-pet-draft";
+
+function readStoredDraft(): StoredPetDraft | null {
+  try {
+    const raw = localStorage.getItem(MIPO_DRAFT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<StoredPetDraft> | null;
+    if (!parsed?.name) return null;
+    const petType = parsed.petType === "cat" ? "cat" : parsed.petType === "dog" ? "dog" : null;
+    if (!petType) return null;
+    return {
+      name: parsed.name,
+      breed: parsed.breed || "",
+      breedHe: parsed.breedHe,
+      ageGroup: parsed.ageGroup === "Puppy" || parsed.ageGroup === "Senior" ? parsed.ageGroup : "Adult",
+      gender: parsed.gender === "Female" ? "Female" : "Male",
+      petType,
+      avatarUrl: parsed.avatarUrl || "",
+      photoUrl: parsed.photoUrl || "",
+      petId: parsed.petId,
+    };
+  } catch {
+    return null;
+  }
 }
 
 /* ============================================================
@@ -551,6 +583,7 @@ const AuthStep: React.FC<{
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
+        // Return to the app; MipoOnboarding mount resumes persistPet from the draft.
         options: { redirectTo: `${window.location.origin}/feed` },
       });
       if (error) throw error;
@@ -716,31 +749,44 @@ export const MipoOnboarding: React.FC<{ onComplete?: () => void }> = ({ onComple
   };
 
   const persistPet = useCallback(async (nextDraft?: PetDraft): Promise<boolean> => {
-    if (persistedPetId.current) return true;
     if (persistInFlight.current) return false;
 
-    try {
-      const stored = JSON.parse(localStorage.getItem("mipo-pet-draft") || "{}") as { petId?: string };
-      if (stored?.petId) {
-        persistedPetId.current = stored.petId;
-        return true;
-      }
-    } catch {
-      // ignore malformed draft
-    }
-
-    const draft = nextDraft ?? draftRef.current;
-    if (!draft?.name) {
-      const message = "Pet details are missing. Go back and try again.";
-      setSaveError(message);
-      toast({ title: "Couldn't save pet", description: message, variant: "destructive" });
-      return false;
-    }
+    const stored = readStoredDraft();
+    const draft = nextDraft ?? draftRef.current ?? stored;
+    if (draft) draftRef.current = draft;
 
     persistInFlight.current = true;
     setSaving(true);
     setSaveError("");
     try {
+      const existingId = persistedPetId.current || stored?.petId;
+      if (existingId) {
+        const { data: existing, error: lookupError } = await supabase
+          .from("pets")
+          .select("id")
+          .eq("id", existingId)
+          .maybeSingle();
+        if (lookupError) throw lookupError;
+        if (existing?.id) {
+          persistedPetId.current = existing.id;
+          try {
+            localStorage.setItem("activePetId", existing.id);
+          } catch {
+            // ignore storage quota / private mode
+          }
+          await refreshPets();
+          return true;
+        }
+        persistedPetId.current = null;
+      }
+
+      if (!draft?.name) {
+        const message = "Pet details are missing. Go back and try again.";
+        setSaveError(message);
+        toast({ title: "Couldn't save pet", description: message, variant: "destructive" });
+        return false;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setStep("auth");
@@ -762,7 +808,7 @@ export const MipoOnboarding: React.FC<{ onComplete?: () => void }> = ({ onComple
       persistedPetId.current = petData.id;
       try {
         localStorage.setItem("activePetId", petData.id);
-        localStorage.setItem("mipo-pet-draft", JSON.stringify({ ...draft, petId: petData.id }));
+        localStorage.setItem(MIPO_DRAFT_KEY, JSON.stringify({ ...draft, petId: petData.id }));
         localStorage.setItem("mipo-onboarding-complete", "true");
       } catch {
         // ignore storage quota / private mode
@@ -800,7 +846,7 @@ export const MipoOnboarding: React.FC<{ onComplete?: () => void }> = ({ onComple
     };
     draftRef.current = draft;
     try {
-      localStorage.setItem("mipo-pet-draft", JSON.stringify(draft));
+      localStorage.setItem(MIPO_DRAFT_KEY, JSON.stringify(draft));
     } catch {}
     setPetName(form.name);
 
@@ -820,6 +866,71 @@ export const MipoOnboarding: React.FC<{ onComplete?: () => void }> = ({ onComple
     setStep("complete");
     void persistPet();
   };
+
+  const hydrateFromDraft = useCallback((stored: StoredPetDraft) => {
+    draftRef.current = stored;
+    setPetName(stored.name);
+    if (stored.avatarUrl) setAvatarUrl(stored.avatarUrl);
+    if (stored.photoUrl) setPhotoUrl(stored.photoUrl);
+    if (stored.breed) setBreed(stored.breed);
+    if (stored.petType) setPetType(stored.petType);
+    if (stored.petId) persistedPetId.current = stored.petId;
+  }, []);
+
+  const resumeStarted = useRef(false);
+  const stepRef = useRef(step);
+  stepRef.current = step;
+
+  useEffect(() => {
+    const stored = readStoredDraft();
+    if (stored) hydrateFromDraft(stored);
+  }, [hydrateFromDraft]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const resumeIfNeeded = async (sessionUserId?: string | null) => {
+      if (cancelled || resumeStarted.current) return;
+      const stored = readStoredDraft();
+      if (!stored?.name) return;
+
+      hydrateFromDraft(stored);
+
+      if (!sessionUserId) {
+        const { data: { session } } = await supabase.auth.getSession();
+        sessionUserId = session?.user?.id ?? null;
+      }
+      if (cancelled || resumeStarted.current) return;
+
+      const current = stepRef.current;
+      if (current !== "splash" && current !== "auth" && current !== "complete") {
+        return;
+      }
+
+      if (!sessionUserId) {
+        setStep((s) => (s === "splash" ? "auth" : s));
+        return;
+      }
+
+      resumeStarted.current = true;
+      detailsSaveLock.current = true;
+      setStep("complete");
+      await persistPet(stored);
+    };
+
+    void resumeIfNeeded();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
+        void resumeIfNeeded(session?.user?.id ?? null);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, [hydrateFromDraft, persistPet]);
 
   const finish = async () => {
     if (persistInFlight.current || saving) return;
