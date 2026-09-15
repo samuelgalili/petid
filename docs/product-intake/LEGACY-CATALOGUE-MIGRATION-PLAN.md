@@ -1,13 +1,20 @@
 # Legacy catalogue migration — measurement, product page, and plan
 
-**Status:** measured, designed, **not built**. No migration has run and no schema
-has changed. Every number below was read from production on 2026-09-15.
+**Status:** measured and designed. **Phase 1 is deployed and verified in
+production** (2026-09-15, `3a6a324a`); phases 2–6 are not built. Every number
+below was read from production.
 
 **Source:** the `C-0 catalogue measurement (read-only)` workflow
 (`.github/workflows/production-catalogue-measure.yml`), runs **#2** (12
-statements), **#4** (20) and **#6** (23), all against the production database
-inside `BEGIN` / `SET TRANSACTION READ ONLY` / `ROLLBACK`. Nothing on the host
-was modified; every run ended `C-0 complete.`
+statements), **#4** (20), **#6** (23) and **#9** (29, post-deploy), all against
+the production database inside `BEGIN` / `SET TRANSACTION READ ONLY` /
+`ROLLBACK`. Nothing on the host was modified; every run ended `C-0 complete.`
+
+> **Reading order note.** Sections 2–7 describe the catalogue **as measured
+> before the deploy**, and are left as they were written: they are what the
+> decisions were made from, and rewriting them would hide the fact that the
+> predictions were made in advance. §9 Phase 1 records what actually happened
+> when it ran. Where a number has since changed, Phase 1 says so.
 
 The catalogue is **375 products, all owned by one business** — the
 `ensureDefaultBusinessProfile()` fallback `cf941cc4…`, which has no owner user.
@@ -487,7 +494,7 @@ preserved, and that nothing quietly hardens into a blocker in the meantime:
 
 ## 9. The plan
 
-### Phase 1 · Two alias rows — **built, not deployed**
+### Phase 1 · Two alias rows — ✅ **DEPLOYED AND VERIFIED**
 
 `server/sql/0051_hyphenated_food_category_aliases.sql`. `dry-food` and
 `wet-food` into `product_category_aliases`, then the same backfill `0034` ran.
@@ -509,6 +516,36 @@ It deliberately does **not** re-file products already sitting under the parent
 because of those stale aliases: a row filed by the old alias and a row an admin
 chose to file under `food` are indistinguishable, and overwriting an admin's
 decision to correct a migration's is the worse of the two errors.
+
+#### What happened when it ran
+
+Deployed 2026-09-15 as part of `3a6a324a`, and then measured rather than
+assumed. `C-0` run **#9**, against production, after the deploy:
+
+| | Predicted before (`C-21`, run #6) | **Measured after** (run #9) |
+|---|---|---|
+| `categorised_today` | 134 | **375** |
+| `by_0051` | 241 | — (already applied) |
+| `still_uncategorised` | **0** | **0** |
+| Free-text values with no alias (`C-20`) | `dry-food` 226, `wet-food` 15 | **0 rows** |
+
+**Every product in the catalogue is now filed. The prediction was exact.**
+
+The live defect is closed: a shopper filtering to אוכל יבש saw 3 products where
+229 existed. They now see all of them.
+
+Two independent traces that the migration is what did it, rather than something
+else having changed:
+
+* `C-27` reports `newest_update` as **2026-09-15 15:42:23**, which is the
+  minute the deploy ran, and `never_updated_at_all` fell from 80 to 33 — the
+  backfill touching rows, visible in the data rather than in a log.
+* `C-28` reports `neither = 187`, the same number `C-22` had **simulated**
+  before the deploy. The auto-approval rule's 19% → 50% is now measured.
+
+Nothing else moved: 375 products, 1 business, the review flags unchanged at
+134 and 98, and `family_code` still 12 families that are still not variants.
+Eleven migrations ran and no business datum shifted except the one intended to.
 
 ### Phase 2 · `pet_species`
 Replace the `pet_type` enum with a lookup table. Source: `animal` where present,
