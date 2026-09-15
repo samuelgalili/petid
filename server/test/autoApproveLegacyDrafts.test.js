@@ -156,12 +156,25 @@ dbTest("nothing auto-approved is published, and none of it could be", async () =
     // constraint rather than by this script's good behaviour, which is the
     // strongest answer available.
     assert.equal(rows[0].published, 0, "approval must never publish");
-    if (rows[0].products > 0) {
-      assert.equal(rows[0].with_variant, 0,
-        "approval creates no variant - so no_active_variant holds and the shop stays unchanged");
-      assert.equal(rows[0].with_priced_offer, 0);
-      assert.equal(rows[0].with_approved_image, 0);
-    }
+
+    // with_variant and with_priced_offer USED to be asserted at zero here, and
+    // that was correct while approval was the last step in the chain. Phase 4b
+    // now legitimately creates a variant, a priced offer and inventory for
+    // approved products, so those two assertions went red because a later step
+    // worked. That is the fourth whole-table end-state claim in this migration
+    // to need rescoping; the rule is standing by now.
+    //
+    // "Approval itself creates no variant" is still true and still tested -
+    // in autoApproval.test.js, which takes a single draft through approval and
+    // reads the gate's counters immediately, before anything else can touch it.
+    // That test is scoped to one act, so a later phase cannot invalidate it.
+    //
+    // What survives here is the claim that outlives every phase: approval
+    // publishes nothing, and no script approves an image.
+    assert.equal(rows[0].with_approved_image, 0,
+      "OD-3 requires an approved image, and no script may assert that we are allowed to use one");
+    void rows[0].with_variant;
+    void rows[0].with_priced_offer;
   });
 });
 
