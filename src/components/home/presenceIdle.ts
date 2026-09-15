@@ -4,8 +4,10 @@ import type { CharacterMood } from "@/lib/characterBehavior";
  * Living idle for Home Presence (breath + sway).
  *
  * Same family as the PetHeroVisual polish in PRs #15/#18 — not a merge of those
- * branches. Mood only changes amplitude and tempo. Photos and generated
- * characters both idle; `prefers-reduced-motion` freezes this to identity.
+ * branches. Runtime motion is the matching CSS keyframes in `src/index.css`
+ * (`presence-idle-*`); these tokens stay the documented source for those
+ * curves. Mood only changes amplitude and tempo. Photos and generated
+ * characters both idle; `prefers-reduced-motion` freezes the disc.
  */
 export const PRESENCE_IDLE = {
   neutral: {
@@ -42,5 +44,3 @@ export const PRESENCE_IDLE = {
   CharacterMood,
   { scale: number[]; y: number[]; rotate: number[]; duration: number }
 >;
-
-export const PRESENCE_IDLE_STILL = { y: 0, rotate: 0, scale: 1 } as const;

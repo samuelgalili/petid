@@ -3,7 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import type { CharacterMood } from "@/lib/characterBehavior";
 import { cn } from "@/lib/utils";
 import PresenceAurora from "@/components/home/PresenceAurora";
-import { PRESENCE_IDLE, PRESENCE_IDLE_STILL } from "@/components/home/presenceIdle";
+import { PRESENCE_IDLE } from "@/components/home/presenceIdle";
 
 export type OrbitSlot = {
   /** Stable key, also used for the attention lookup */
@@ -99,13 +99,11 @@ const PetOrbit = ({
                 />
               </>
             )}
-            <motion.div
+            <div
               className="relative z-[1] h-full w-full overflow-hidden rounded-full border-[5px] border-white bg-mipo-soft dark:border-mipo-surface"
               data-presence-idle={still ? "still" : "live"}
-              animate={still ? PRESENCE_IDLE_STILL : { y: idle.y, rotate: idle.rotate, scale: idle.scale }}
-              transition={still
-                ? { duration: 0 }
-                : { duration: idle.duration, repeat: Infinity, ease: "easeInOut" }}
+              data-presence-mood={mood}
+              style={still ? undefined : { animationDuration: `${idle.duration}s` }}
             >
               {loading ? (
                 <div className="h-full w-full animate-pulse bg-mipo-soft" />
@@ -126,7 +124,7 @@ const PetOrbit = ({
                   </AnimatePresence>
                 </div>
               )}
-            </motion.div>
+            </div>
           </div>
         </motion.button>
       </div>

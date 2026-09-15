@@ -79,6 +79,8 @@ test.describe("Home Presence visual", () => {
     await expect(page.getByRole("img", { name: "לוקה" })).toBeVisible();
 
     const idle = page.locator("[data-presence-idle='live']");
+    const idleAnim = await idle.evaluate((el) => getComputedStyle(el).animationName);
+    expect(idleAnim).toContain("presence-idle");
     const firstTransform = await idle.evaluate((el) => getComputedStyle(el).transform);
     await expect.poll(async () => idle.evaluate((el) => getComputedStyle(el).transform), {
       timeout: 2500,
@@ -103,6 +105,7 @@ test.describe("Home Presence visual", () => {
     await expect(page.locator(".presence-aurora__wash")).toBeVisible();
 
     const idle = page.locator("[data-presence-idle='still']");
+    await expect(idle).toHaveCSS("animation-name", "none");
     const firstTransform = await idle.evaluate((el) => getComputedStyle(el).transform);
     await page.waitForTimeout(400);
     await expect(idle).toHaveCSS("transform", firstTransform);
