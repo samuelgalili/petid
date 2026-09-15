@@ -1,0 +1,266 @@
+# One-shot — mark Cardcom order MIPO-20260811-CA060E as payment failed.
+#
+# Manual only. Owner-approved write of a single production row. Unlike D-18
+# this workflow CHANGES production: it sets payment_status = 'failed' and
+# clears payment_transaction_id / payment_url on that order, and only that
+# order. The UPDATE is guarded so a paid row is never overwritten.
+#
+# It exists because the production database is reachable only from the API
+# host, and the only credential that reaches that host is the deploy SSH key,
+# which lives in the 'production' GitHub Environment. This job borrows that
+# existing path rather than creating a second one — no new key, no new IAM,
+# no new database role.
+#
+# Two things it deliberately does NOT do, both of which the deploy does:
+#   * it never rsyncs, builds, migrates, restarts or publishes anything;
+#   * it never writes a file on the host, not even a temporary one.
+#
+# The connection string is handled the way D-18 and backup-before-migrate.sh
+# handle it, and for the same reasons: read from .env without sourcing it
+# (the file holds every production secret), passed to the container by NAME
+# rather than by value, and never printed by this workflow.
+#
+# What "by name" does and does not buy, stated precisely because the
+# convenient version of this sentence is false:
+#   * `docker run`'s argv holds the literal text "$DATABASE_URL". So does
+#     what `docker inspect` records. Neither carries the value.
+#   * The psql process inside the container DOES receive the URI as an
+#     argument, and the host's process list can see container processes.
+#     For the seconds the run lasts, the value is visible there.
+# So this is not protection against every process-list exposure. It bounds
+# the exposure to the host itself — where anyone who can run ps can already
+# read /opt/mipo/.env — and keeps the value out of docker's persisted
+# metadata.
+
+name: Cardcom failed-mark CA060E (one-shot)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type  MARK-FAILED  here (that exact text) to confirm this one-shot write'
+        required: true
+        default: ''
+
+permissions:
+  contents: read
+
+# The deploy's own production group, so this write and a deploy can never
+# run at the same time. The literal 'aws-production', not deploy-aws.yml's
+# branch-derived expression: this workflow targets the production host
+# whichever branch it is dispatched from.
+concurrency:
+  group: aws-production
+  cancel-in-progress: false
+
+jobs:
+  mark-failed:
+    name: Mark CA060E payment failed
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # The same environment the deploy job uses: it already holds
+    # MIPO_AWS_SSH_PRIVATE_KEY, and its required reviewer means a
+    # production write is an approved, logged event.
+    environment: production
+
+    env:
+      MIPO_AWS_HOST: ${{ vars.MIPO_AWS_HOST || '63.183.241.110' }}
+      MIPO_AWS_USER: ${{ vars.MIPO_AWS_USER || 'ubuntu' }}
+      MIPO_REMOTE_PATH: ${{ vars.MIPO_REMOTE_PATH || '/opt/mipo' }}
+
+    steps:
+      - name: Confirm intent
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          set -euo pipefail
+          if [ "$CONFIRMATION" != "MARK-FAILED" ]; then
+            # The instruction comes FIRST and the status code LAST, because the
+            # other way round taught somebody to type the status code into the
+            # box. A message that causes the mistake it is warning about is a
+            # bad message, however correct it is.
+            echo "Nothing was contacted. Production was not touched." >&2
+            echo "" >&2
+            echo "The confirmation box has to contain exactly this text:" >&2
+            echo "" >&2
+            echo "    MARK-FAILED" >&2
+            echo "" >&2
+            echo "Eleven characters: M A R K hyphen F A I L E D, capitals." >&2
+            echo "Re-run the workflow and type it into the 'confirmation' field." >&2
+            echo "" >&2
+            echo "(This job reports the status code BLOCKED-PROD when it stops" >&2
+            echo " early. That code is output, never input - do not type it.)" >&2
+            exit 1
+          fi
+          echo "Confirmed: one-shot Cardcom failed-mark for MIPO-20260811-CA060E."
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.MIPO_AWS_SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SSH_PRIVATE_KEY:-}" ]; then
+            echo "BLOCKED-PROD: the production environment has no MIPO_AWS_SSH_PRIVATE_KEY." >&2
+            echo "There is no other route to the database, and no fallback will be attempted." >&2
+            exit 1
+          fi
+          if [ -z "${MIPO_AWS_HOST}" ]; then
+            echo "BLOCKED-PROD: MIPO_AWS_HOST is empty for the production environment." >&2
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/mipo_aws_key
+          chmod 600 ~/.ssh/mipo_aws_key
+          ssh-keyscan -T 30 -H "$MIPO_AWS_HOST" >> ~/.ssh/known_hosts || true
+          echo "SSH configured for ${MIPO_AWS_USER}@${MIPO_AWS_HOST}"
+
+      - name: Mark CA060E failed on production
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 \
+            "${MIPO_AWS_USER}@${MIPO_AWS_HOST}" \
+            "MIPO_REMOTE_PATH='${MIPO_REMOTE_PATH}' bash -s" <<'REMOTE'
+          set -euo pipefail
+          # No `set -x` anywhere in this script, on purpose: tracing would echo
+          # the line that expands DATABASE_URL.
+
+          ENV_FILE="${MIPO_REMOTE_PATH}/.env"
+          PG_IMAGE="${MIPO_PG_IMAGE:-postgres:16-alpine}"
+
+          if [ ! -f "$ENV_FILE" ]; then
+            echo "BLOCKED-PROD: no env file at $ENV_FILE" >&2
+            exit 1
+          fi
+
+          # Read DATABASE_URL without sourcing the file: .env holds every
+          # production secret and sourcing it would put all of them in this
+          # shell. The LAST definition wins, matching how docker compose's
+          # env_file resolves duplicates.
+          DATABASE_URL="$(grep -E '^[[:space:]]*(export[[:space:]]+)?DATABASE_URL=' "$ENV_FILE" | tail -1 | cut -d= -f2- || true)"
+          DATABASE_URL="$(printf '%s' "$DATABASE_URL" | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+          DATABASE_URL="${DATABASE_URL%\"}"; DATABASE_URL="${DATABASE_URL#\"}"
+          DATABASE_URL="${DATABASE_URL%\'}"; DATABASE_URL="${DATABASE_URL#\'}"
+
+          if [ -z "$DATABASE_URL" ]; then
+            echo "BLOCKED-PROD: DATABASE_URL is not set in $ENV_FILE" >&2
+            exit 1
+          fi
+
+          # Shape check only, and it reports nothing derived from the value —
+          # not the URI, not its length, not the scheme, host, user, port or
+          # database name. A length is a real disclosure: it bounds the
+          # password. The check either passes or names the expected shape.
+          case "$DATABASE_URL" in
+            postgres://*|postgresql://*) ;;
+            *)
+              echo "BLOCKED-PROD: DATABASE_URL in $ENV_FILE does not begin with postgres:// or postgresql://." >&2
+              exit 1
+              ;;
+          esac
+
+          echo "Connection string located in $ENV_FILE. Not printed."
+
+          MARK_SQL="$(cat <<'SQL'
+          \pset pager off
+          \timing off
+
+          \echo '========== BEFORE =========='
+          SELECT id, order_number, payment_status, payment_transaction_id, payment_url, total, status, updated_at
+          FROM public.orders
+          WHERE id = '8fff9d22-3a5c-47cb-a277-d88bd982e6ee'
+             OR order_number = 'MIPO-20260811-CA060E';
+
+          \echo '========== UPDATE RETURNING =========='
+          UPDATE public.orders
+          SET payment_status = 'failed',
+              payment_transaction_id = NULL,
+              payment_url = NULL,
+              updated_at = now()
+          WHERE id = '8fff9d22-3a5c-47cb-a277-d88bd982e6ee'
+            AND order_number = 'MIPO-20260811-CA060E'
+            AND payment_status IS DISTINCT FROM 'paid'
+          RETURNING id, order_number, payment_status, payment_transaction_id, payment_url, total, updated_at;
+
+          \if :ROW_COUNT
+            \echo 'UPDATE affected one or more rows. See UPDATE RETURNING above.'
+          \else
+            \echo '0 rows updated. The WHERE guard did not match — already paid, or id and order_number did not both match. Current status follows in AFTER.'
+          \endif
+
+          \echo '========== AFTER =========='
+          SELECT id, order_number, payment_status, payment_transaction_id, payment_url, total, status, updated_at
+          FROM public.orders
+          WHERE id = '8fff9d22-3a5c-47cb-a277-d88bd982e6ee'
+             OR order_number = 'MIPO-20260811-CA060E';
+          SQL
+          )"
+          export MARK_SQL
+          export DATABASE_URL
+
+          # Connection details are redacted from the output. libpq never prints
+          # the password, but it does name the host, the port, the user and the
+          # database in its connection errors, and this output goes into a
+          # GitHub Actions log. Two rules:
+          #
+          #   * any postgres:// or postgresql:// URI, wherever it appears;
+          #   * the whole of any line libpq emits as "psql: error: ...", which
+          #     is where every connection-time detail comes from.
+          #
+          # Server-side SQL errors are NOT redacted: they arrive as "ERROR: ..."
+          # lines, carry no connection details, and are the diagnostic the run
+          # exists to produce.
+          redact() {
+            sed -E \
+              -e 's#postgres(ql)?://[^[:space:]"]*#<redacted-connection-string>#g' \
+              -e 's#^psql: error:.*#psql: error: <connection details redacted>#'
+          }
+
+          # Both values are passed by NAME, so `docker run`'s own argv — the
+          # command line visible on the host and the one `docker inspect`
+          # records — holds the literal text "$DATABASE_URL", never its value.
+          # stdin is /dev/null so the container cannot consume the rest of this
+          # script, and no file is written anywhere on the host: the SQL
+          # travels in an environment variable.
+          #
+          # errexit is lifted for the pipeline only, so the real exit code can
+          # be read from PIPESTATUS and turned into a specific message rather
+          # than an anonymous failure. pipefail stays on throughout.
+          set +e
+          docker run --rm \
+            -e PGCONNECT_TIMEOUT=15 \
+            --env DATABASE_URL \
+            --env MARK_SQL \
+            "$PG_IMAGE" \
+            sh -c 'printf "%s\n" "$MARK_SQL" | psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -X' </dev/null 2>&1 | redact
+          psql_status="${PIPESTATUS[0]}"
+          set -e
+
+          case "$psql_status" in
+            0)
+              echo "One-shot complete. No host files were written; no deploy ran."
+              ;;
+            2)
+              echo "BLOCKED-PROD: could not connect to the database (psql exit 2). Details redacted above." >&2
+              exit 2
+              ;;
+            3)
+              echo "One-shot failed: a statement was rejected by the server (psql exit 3). The server error is above, unredacted." >&2
+              exit 3
+              ;;
+            *)
+              echo "One-shot failed: docker/psql exited ${psql_status}." >&2
+              exit "$psql_status"
+              ;;
+          esac
+          REMOTE
+
+      - name: Remove the key
+        if: always()
+        run: |
+          set -euo pipefail
+          rm -f ~/.ssh/mipo_aws_key
+          echo "Key removed from the runner."
