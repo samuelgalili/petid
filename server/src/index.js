@@ -73,6 +73,7 @@ import {
 } from "./adminPermissions.js";
 import { adminProductView } from "./sellerScope.js";
 import { createProductIntakeRoutes } from "./productIntakeRoutes.js";
+import { createPublicCatalog } from "./publicCatalog.js";
 import {
   archiveSocialPost,
   createSocialComment,
@@ -653,6 +654,8 @@ const handleProductIntakeRoute = createProductIntakeRoutes({
   requireAdminPermission,
   recordAdminAudit,
 });
+
+const publicCatalog = createPublicCatalog({ pool });
 
 const bootstrapAdmin = async (body) => {
   const email = normalizeEmail(body.email);
@@ -7822,6 +7825,35 @@ const handleRequest = async (request, response) => {
     // a transaction - and that shape is the security property. Scattering these
     // through the chain below would make it a convention instead of a rule.
     if (await handleProductIntakeRoute(request, response, url)) return;
+
+    // The public catalogue, read from the new model. Served ALONGSIDE
+    // /api/products, not instead of it: everything a shopper can see today
+    // lives in business_products, none of it has been through intake, and
+    // legacy ownership is deliberately not legitimised retroactively. Switching
+    // the existing route over would empty the shop. The cutover is its own
+    // change, once there is something here to serve.
+    if (request.method === "GET" && url.pathname === "/api/catalog") {
+      sendJson(response, 200, {
+        products: await publicCatalog.listCatalog({
+          categoryId: url.searchParams.get("category_id"),
+          limit: url.searchParams.get("limit"),
+          offset: url.searchParams.get("offset"),
+        }),
+      });
+      return;
+    }
+
+    const catalogProductMatch = url.pathname.match(/^\/api\/catalog\/([0-9a-fA-F-]{36})$/);
+    if (catalogProductMatch && request.method === "GET") {
+      const product = await publicCatalog.getCatalogProduct(catalogProductMatch[1]);
+      if (!product) {
+        // Unpublished, Seller suspended, or never existed - all the same answer.
+        sendError(response, 404, "Product not found");
+        return;
+      }
+      sendJson(response, 200, { product });
+      return;
+    }
 
     if (request.method === "GET" && url.pathname === "/api/health") {
       if (!(await checkDatabaseHealth(pool))) {

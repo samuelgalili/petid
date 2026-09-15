@@ -20,11 +20,28 @@
 // session the session decides; a body naming a different Seller is refused (and
 // audited) rather than quietly overridden, because the attempt is worth seeing.
 
+import { createHash } from "node:crypto";
 import { ADMIN_PERMISSIONS } from "./adminPermissions.js";
+import {
+  DRAFT_STATES,
+  PUBLICATION_STATES,
+  allowedDraftTransitions,
+  draftSubmissionBlockers,
+  isDraftTransitionAllowed,
+  isPublicationTransitionAllowed,
+  mayApproveDraft,
+} from "./productIntakeState.js";
 import { sellerIneligibilityReason } from "./sellerEligibility.js";
 import { mayActOnRow, resolveWriteBusinessId, sessionSellerScope, NO_ACCESS } from "./sellerScope.js";
 
 const UUID = "([0-9a-fA-F-]{36})";
+
+const SOURCE_SYSTEMS = Object.freeze(["url", "scrape", "csv", "xlsx", "manual", "api"]);
+
+/** Host only - a full URL in an audit row is a URL in a log. */
+const hostOf = (value) => {
+  try { return new URL(String(value)).hostname || null; } catch { return null; }
+};
 const route = (method, pattern) => ({ method, pattern: new RegExp(`^${pattern}$`) });
 
 /** Draft columns a caller may set. Anything else in the body is ignored. */
@@ -626,51 +643,42 @@ export const createProductIntakeRoutes = ({
   //
   // OD-2: never stored. A stored "ready" flag is a claim that drifts from the
   // rows it describes - delete the last variant and the flag still says ready.
-  // This reads the live rows every time, and reports which conditions are
-  // unmet so an admin can see exactly what is missing.
-  const publicationReadiness = async (request, response, match) => {
-    if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PUBLICATION_READ))) return true;
-    const admin = request.admin;
+  // This reads the live rows every time and reports which conditions are unmet,
+  // so an admin sees exactly what is missing.
+  //
+  // The query and the report are extracted because publish() has to evaluate
+  // the identical gate inside its own transaction. Two copies of a gate is one
+  // gate and one near-miss.
+  const READINESS_SQL = `
+    select p.id, p.owning_business_id, p.name, p.category_id, p.publication_state,
+           d.state as draft_state,
+           b.is_verified, b.commercial_status,
+           (select count(*) from public.product_variants v
+             where v.catalog_product_id = p.id and v.archived_at is null
+               and v.status = 'ACTIVE')::int as active_variants,
+           (select count(*) from public.product_variants v
+             join public.seller_offers o on o.product_variant_id = v.id
+            where v.catalog_product_id = p.id and v.archived_at is null
+              and o.archived_at is null and o.status = 'ACTIVE' and o.price > 0)::int as priced_offers,
+           (select count(*) from public.product_variants v
+             join public.seller_offers o on o.product_variant_id = v.id
+             join public.inventory i on i.seller_offer_id = o.id
+            where v.catalog_product_id = p.id and o.archived_at is null
+              and i.availability is not null)::int as offers_with_availability,
+           (select count(*) from public.product_media m
+             where m.catalog_product_id = p.id and m.archived_at is null
+               and m.approved_at is not null)::int as approved_images
+      from public.catalog_products p
+      join public.product_drafts d on d.id = p.origin_draft_id
+      join public.business_profiles b on b.id = p.owning_business_id
+     where p.id = $1`;
 
-    const { rows } = await pool.query(
-      `select p.id, p.owning_business_id, p.name, p.category_id, p.publication_state,
-              d.state as draft_state,
-              b.is_verified, b.commercial_status,
-              (select count(*) from public.product_variants v
-                where v.catalog_product_id = p.id and v.archived_at is null
-                  and v.status = 'ACTIVE')::int as active_variants,
-              (select count(*) from public.product_variants v
-                join public.seller_offers o on o.product_variant_id = v.id
-               where v.catalog_product_id = p.id and v.archived_at is null
-                 and o.archived_at is null and o.status = 'ACTIVE' and o.price > 0)::int as priced_offers,
-              (select count(*) from public.product_variants v
-                join public.seller_offers o on o.product_variant_id = v.id
-                join public.inventory i on i.seller_offer_id = o.id
-               where v.catalog_product_id = p.id and o.archived_at is null
-                 and i.availability is not null)::int as offers_with_availability,
-              (select count(*) from public.product_media m
-                where m.catalog_product_id = p.id and m.archived_at is null
-                  and m.approved_at is not null)::int as approved_images
-         from public.catalog_products p
-         join public.product_drafts d on d.id = p.origin_draft_id
-         join public.business_profiles b on b.id = p.owning_business_id
-        where p.id = $1`,
-      [match[1]],
-    );
-
-    if (rows.length === 0 || !mayActOnRow(admin, rows[0].owning_business_id)) {
-      if (rows.length > 0) await auditCrossSellerAttempt(admin, "catalog_product", match[1]);
-      sendError(response, 404, "Not found");
-      return true;
-    }
-
-    const row = rows[0];
+  const readinessReport = (row) => {
     const unmet = [];
-    // Condition 1: the Seller is approved. Evaluated by the shared predicate,
-    // so this gate, provisioning and checkout cannot drift apart. The reason
-    // code distinguishes 'pending' from 'suspended' from 'none' - a business
-    // preparing its catalogue and one whose approval was withdrawn are both
-    // blocked, but an admin should not have to guess which.
+    // Condition 1: the Seller is approved. Evaluated by the shared predicate so
+    // this gate, provisioning and checkout cannot drift apart. The reason code
+    // distinguishes pending from suspended from none - all three are blocked,
+    // but an admin should not have to guess which.
     const sellerReason = sellerIneligibilityReason(row);
     if (sellerReason) unmet.push(sellerReason);
     if (row.draft_state !== "APPROVED") unmet.push("draft_not_approved");
@@ -682,19 +690,496 @@ export const createProductIntakeRoutes = ({
     // OD-3, decided: an approved image is mandatory.
     if (row.approved_images < 1) unmet.push("no_approved_image");
 
-    sendJson(response, 200, {
+    return {
       product_id: row.id,
       publication_state: row.publication_state,
       ready: unmet.length === 0,
       unmet,
       seller: {
-        // Reported so the admin screen can say "pending approval" rather than
-        // only "not ready". Never business_type: a category is not a status.
+        // So an admin screen can say "pending approval" rather than only "not
+        // ready". Never business_type: a category is not a status.
         eligible: sellerReason === null,
         commercial_status: row.commercial_status,
         is_verified: row.is_verified,
       },
-    });
+    };
+  };
+
+  const publicationReadiness = async (request, response, match) => {
+    if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PUBLICATION_READ))) return true;
+    const admin = request.admin;
+
+    const { rows } = await pool.query(READINESS_SQL, [match[1]]);
+    if (rows.length === 0 || !mayActOnRow(admin, rows[0].owning_business_id)) {
+      if (rows.length > 0) await auditCrossSellerAttempt(admin, "catalog_product", match[1]);
+      sendError(response, 404, "Not found");
+      return true;
+    }
+    sendJson(response, 200, readinessReport(rows[0]));
+    return true;
+  };
+
+  // ── 9 · the chain: import → draft → review → product → publication ─────────
+  //
+  // Without these the tables below are unreachable: nothing could create a raw
+  // record, nothing could turn a draft into a product, and nothing could
+  // publish one. The permissions DRAFT_SUBMIT, DRAFT_REVIEW and
+  // PUBLICATION_PUBLISH existed with no route to use them.
+
+  /** POST /api/admin/intake/imports - record what the source actually said. */
+  const createImport = async (request, response) => {
+    if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.INTAKE_WRITE))) return true;
+    const admin = request.admin;
+    const body = await readBody(request);
+
+    const resolved = resolveWriteBusinessId(admin, body?.business_id);
+    if (!resolved.ok) {
+      if (resolved.attemptedCrossSeller) await auditCrossSellerAttempt(admin, "raw_import_record", null);
+      sendError(response, resolved.status, resolved.error);
+      return true;
+    }
+
+    const sourceSystem = String(body?.source_system ?? "").trim();
+    if (!SOURCE_SYSTEMS.includes(sourceSystem)) {
+      sendError(response, 400, `source_system must be one of: ${SOURCE_SYSTEMS.join(", ")}`);
+      return true;
+    }
+    if (body?.payload === undefined || body?.payload === null || typeof body.payload !== "object") {
+      sendError(response, 400, "payload must be an object: the source record, verbatim");
+      return true;
+    }
+
+    const payload = JSON.stringify(body.payload);
+    // Computed here rather than trusted from the caller: a hash the client
+    // chooses is not a hash of anything.
+    const payloadHash = createHash("sha256").update(payload).digest("hex");
+
+    try {
+      const { rows } = await pool.query(
+        `insert into public.raw_import_records
+           (business_id, source_system, source_record_id, source_url, source_host,
+            payload, payload_hash, content_type, import_batch_id, created_by)
+         values ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10)
+         returning id, business_id, source_system, source_record_id, source_host,
+                   payload_hash, imported_at`,
+        [
+          resolved.businessId,
+          sourceSystem,
+          body?.source_record_id ?? null,
+          body?.source_url ?? null,
+          hostOf(body?.source_url),
+          payload,
+          payloadHash,
+          body?.content_type ?? null,
+          body?.import_batch_id ?? null,
+          admin.id === "api-key" ? null : admin.id,
+        ],
+      );
+
+      await recordAdminAudit(admin, {
+        actionType: "raw_import_record.created",
+        entityType: "raw_import_record",
+        entityId: rows[0].id,
+        // Host only. Never the full URL, never the payload.
+        metadata: {
+          business_id: resolved.businessId,
+          source_system: sourceSystem,
+          source_host: hostOf(body?.source_url),
+        },
+      });
+      sendJson(response, 201, { import: rows[0] });
+    } catch (error) {
+      if (error.code === "23505") {
+        sendError(response, 409, "This Seller has already imported that source record", {
+          code: "DUPLICATE_SOURCE_RECORD",
+        });
+        return true;
+      }
+      throw error;
+    }
+    return true;
+  };
+
+  /** POST /api/admin/intake/drafts - start correcting, or author by hand. */
+  const createDraft = async (request, response) => {
+    if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.INTAKE_WRITE))) return true;
+    const admin = request.admin;
+    const body = await readBody(request);
+
+    const rawId = body?.raw_import_record_id ?? null;
+    const client = await pool.connect();
+    try {
+      await client.query("begin");
+
+      let businessId;
+      if (rawId) {
+        // The draft inherits the raw record's Seller. It is never taken from
+        // the body, and never defaulted.
+        const { rows } = await client.query(
+          "select id, business_id from public.raw_import_records where id = $1 for share",
+          [rawId],
+        );
+        if (rows.length === 0 || !mayActOnRow(admin, rows[0].business_id)) {
+          await client.query("rollback");
+          if (rows.length > 0) await auditCrossSellerAttempt(admin, "raw_import_record", rawId);
+          sendError(response, 404, "Not found");
+          return true;
+        }
+        businessId = rows[0].business_id;
+      } else {
+        const resolved = resolveWriteBusinessId(admin, body?.business_id);
+        if (!resolved.ok) {
+          await client.query("rollback");
+          sendError(response, resolved.status, resolved.error);
+          return true;
+        }
+        businessId = resolved.businessId;
+      }
+
+      const { rows } = await client.query(
+        `insert into public.product_drafts
+           (business_id, raw_import_record_id, state, name, description, brand,
+            category_id, pet_type, attributes, proposed_price, created_by)
+         values ($1, $2, 'DRAFT', $3, $4, $5, $6, $7, coalesce($8::jsonb, '{}'::jsonb), $9, $10)
+         returning *`,
+        [
+          businessId,
+          rawId,
+          body?.name ?? null,
+          body?.description ?? null,
+          body?.brand ?? null,
+          body?.category_id ?? null,
+          body?.pet_type ?? null,
+          body?.attributes ? JSON.stringify(body.attributes) : null,
+          body?.proposed_price ?? null,
+          admin.id === "api-key" ? null : admin.id,
+        ],
+      );
+      await client.query("commit");
+
+      await recordAdminAudit(admin, {
+        actionType: "product_draft.created",
+        entityType: "product_draft",
+        entityId: rows[0].id,
+        newValues: { business_id: businessId, raw_import_record_id: rawId },
+      });
+      sendJson(response, 201, { draft: rows[0] });
+      return true;
+    } catch (error) {
+      await client.query("rollback").catch(() => {});
+      if (error.code === "23505") {
+        sendError(response, 409, "A live draft already exists for that source record", {
+          code: "DRAFT_ALREADY_EXISTS",
+        });
+        return true;
+      }
+      throw error;
+    } finally {
+      client.release();
+    }
+  };
+
+  /** POST /api/admin/intake/drafts/:id/submit - DRAFT → IN_REVIEW. */
+  const submitDraft = async (request, response, match) => {
+    if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.DRAFT_SUBMIT))) return true;
+    const admin = request.admin;
+
+    const outcome = await withOwnedRow(
+      admin,
+      { sql: "select * from public.product_drafts where id = $1 for update", params: [match[1]] },
+      async (client, draft) => {
+        if (!isDraftTransitionAllowed(draft.state, DRAFT_STATES.IN_REVIEW)) {
+          return {
+            status: 409,
+            body: {
+              error: "INVALID_STATE_TRANSITION",
+              from: draft.state,
+              to: DRAFT_STATES.IN_REVIEW,
+              allowed: allowedDraftTransitions(draft.state),
+            },
+          };
+        }
+        const blockers = draftSubmissionBlockers(draft);
+        if (blockers.length > 0) {
+          return { status: 400, body: { error: "DRAFT_INCOMPLETE", blockers } };
+        }
+
+        const { rows } = await client.query(
+          `update public.product_drafts
+              set state = 'IN_REVIEW', submitted_by = $2, submitted_at = clock_timestamp(),
+                  updated_by = $2, updated_at = now()
+            where id = $1 returning *`,
+          [draft.id, admin.id === "api-key" ? null : admin.id],
+        );
+        return {
+          status: 200,
+          body: { draft: rows[0] },
+          audit: {
+            actionType: "product_draft.submitted",
+            entityType: "product_draft",
+            entityId: draft.id,
+            oldValues: { state: draft.state },
+            newValues: { state: "IN_REVIEW" },
+          },
+        };
+      },
+    );
+
+    if (outcome.crossSeller) await auditCrossSellerAttempt(admin, "product_draft", match[1]);
+    if (outcome.audit) await recordAdminAudit(admin, outcome.audit);
+    sendJson(response, outcome.status, outcome.body);
+    return true;
+  };
+
+  /**
+   * POST /api/admin/intake/drafts/:id/approve - IN_REVIEW → APPROVED, and the
+   * only place a catalog_product is ever created.
+   *
+   * Both writes happen in one transaction. A draft that says APPROVED with no
+   * product, or a product with no approved draft behind it, is exactly the kind
+   * of half-state the intake chain exists to prevent.
+   */
+  const approveDraft = async (request, response, match) => {
+    if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.DRAFT_REVIEW))) return true;
+    const admin = request.admin;
+
+    const outcome = await withOwnedRow(
+      admin,
+      { sql: "select * from public.product_drafts where id = $1 for update", params: [match[1]] },
+      async (client, draft) => {
+        if (!isDraftTransitionAllowed(draft.state, DRAFT_STATES.APPROVED)) {
+          return {
+            status: 409,
+            body: {
+              error: "INVALID_STATE_TRANSITION",
+              from: draft.state,
+              to: DRAFT_STATES.APPROVED,
+              allowed: allowedDraftTransitions(draft.state),
+            },
+          };
+        }
+        // The submitter may not approve. seller_admin does not hold
+        // DRAFT_REVIEW at all, but a product_manager who submitted this draft
+        // holds both - so the rule has to exist here too.
+        if (!mayApproveDraft(admin.id, draft.submitted_by)) {
+          return {
+            status: 403,
+            body: {
+              error: "SELF_APPROVAL_FORBIDDEN",
+              detail: "the admin who submitted a draft may not approve it",
+            },
+          };
+        }
+
+        const product = await client.query(
+          `insert into public.catalog_products
+             (owning_business_id, origin_draft_id, name, description, brand,
+              category_id, pet_type, attributes, created_by)
+           values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+           returning *`,
+          [
+            draft.business_id, draft.id, draft.name, draft.description, draft.brand,
+            draft.category_id, draft.pet_type, draft.attributes,
+            admin.id === "api-key" ? null : admin.id,
+          ],
+        );
+
+        const { rows } = await client.query(
+          `update public.product_drafts
+              set state = 'APPROVED', approved_catalog_product_id = $2,
+                  reviewed_by = $3, reviewed_at = clock_timestamp(),
+                  updated_by = $3, updated_at = now()
+            where id = $1 returning *`,
+          [draft.id, product.rows[0].id, admin.id === "api-key" ? null : admin.id],
+        );
+
+        return {
+          status: 201,
+          body: { draft: rows[0], product: product.rows[0] },
+          audit: {
+            actionType: "product_draft.approved",
+            entityType: "product_draft",
+            entityId: draft.id,
+            oldValues: { state: draft.state },
+            newValues: { state: "APPROVED", catalog_product_id: product.rows[0].id },
+          },
+        };
+      },
+    );
+
+    if (outcome.crossSeller) await auditCrossSellerAttempt(admin, "product_draft", match[1]);
+    if (outcome.audit) await recordAdminAudit(admin, outcome.audit);
+    sendJson(response, outcome.status, outcome.body);
+    return true;
+  };
+
+  /** POST /api/admin/intake/drafts/:id/reject - a reason is required. */
+  const rejectDraft = async (request, response, match) => {
+    if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.DRAFT_REVIEW))) return true;
+    const admin = request.admin;
+    const body = await readBody(request);
+
+    const reason = String(body?.review_note ?? "").trim();
+    if (!reason) {
+      sendError(response, 400, "review_note is required: a rejection without a reason is not a review");
+      return true;
+    }
+
+    const outcome = await withOwnedRow(
+      admin,
+      { sql: "select * from public.product_drafts where id = $1 for update", params: [match[1]] },
+      async (client, draft) => {
+        if (!isDraftTransitionAllowed(draft.state, DRAFT_STATES.REJECTED)) {
+          return {
+            status: 409,
+            body: {
+              error: "INVALID_STATE_TRANSITION",
+              from: draft.state,
+              to: DRAFT_STATES.REJECTED,
+              allowed: allowedDraftTransitions(draft.state),
+            },
+          };
+        }
+        const { rows } = await client.query(
+          `update public.product_drafts
+              set state = 'REJECTED', review_note = $2, reviewed_by = $3,
+                  reviewed_at = clock_timestamp(), updated_by = $3, updated_at = now()
+            where id = $1 returning *`,
+          [draft.id, reason, admin.id === "api-key" ? null : admin.id],
+        );
+        return {
+          status: 200,
+          body: { draft: rows[0] },
+          audit: {
+            actionType: "product_draft.rejected",
+            entityType: "product_draft",
+            entityId: draft.id,
+            oldValues: { state: draft.state },
+            newValues: { state: "REJECTED" },
+          },
+        };
+      },
+    );
+
+    if (outcome.crossSeller) await auditCrossSellerAttempt(admin, "product_draft", match[1]);
+    if (outcome.audit) await recordAdminAudit(admin, outcome.audit);
+    sendJson(response, outcome.status, outcome.body);
+    return true;
+  };
+
+  /**
+   * POST /api/admin/intake/products/:id/publish
+   *
+   * The gate is evaluated INSIDE the transaction that publishes, against rows
+   * locked for the duration. Reading readiness and then publishing in a second
+   * statement is a race: the last approved image can be archived in between,
+   * and the product goes live without one.
+   */
+  const publishProduct = async (request, response, match) => {
+    if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PUBLICATION_PUBLISH))) return true;
+    const admin = request.admin;
+
+    const outcome = await withOwnedRow(
+      admin,
+      {
+        sql: "select id, owning_business_id, publication_state from public.catalog_products where id = $1 for update",
+        params: [match[1]],
+        ownerColumn: "owning_business_id",
+      },
+      async (client, product) => {
+        if (!isPublicationTransitionAllowed(product.publication_state, PUBLICATION_STATES.PUBLISHED)) {
+          return {
+            status: 409,
+            body: {
+              error: "INVALID_STATE_TRANSITION",
+              from: product.publication_state,
+              to: PUBLICATION_STATES.PUBLISHED,
+            },
+          };
+        }
+
+        const { rows: gate } = await client.query(READINESS_SQL, [product.id]);
+        const report = readinessReport(gate[0]);
+        if (!report.ready) {
+          return { status: 409, body: { error: "PUBLICATION_GATE_FAILED", ...report } };
+        }
+
+        const { rows } = await client.query(
+          `update public.catalog_products
+              set publication_state = 'PUBLISHED', published_at = clock_timestamp(),
+                  published_by = $2, unpublished_at = null, unpublished_reason = null,
+                  updated_by = $2, updated_at = now()
+            where id = $1 returning *`,
+          [product.id, admin.id === "api-key" ? null : admin.id],
+        );
+        return {
+          status: 200,
+          body: { product: rows[0] },
+          audit: {
+            actionType: "catalog_product.published",
+            entityType: "catalog_product",
+            entityId: product.id,
+            oldValues: { publication_state: product.publication_state },
+            newValues: { publication_state: "PUBLISHED" },
+          },
+        };
+      },
+    );
+
+    if (outcome.crossSeller) await auditCrossSellerAttempt(admin, "catalog_product", match[1]);
+    if (outcome.audit) await recordAdminAudit(admin, outcome.audit);
+    sendJson(response, outcome.status, outcome.body);
+    return true;
+  };
+
+  /** POST /api/admin/intake/products/:id/unpublish - no gate; withdrawal is always allowed. */
+  const unpublishProduct = async (request, response, match) => {
+    if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PUBLICATION_PUBLISH))) return true;
+    const admin = request.admin;
+    const body = await readBody(request);
+
+    const outcome = await withOwnedRow(
+      admin,
+      {
+        sql: "select id, owning_business_id, publication_state from public.catalog_products where id = $1 for update",
+        params: [match[1]],
+        ownerColumn: "owning_business_id",
+      },
+      async (client, product) => {
+        if (!isPublicationTransitionAllowed(product.publication_state, PUBLICATION_STATES.UNPUBLISHED)) {
+          return {
+            status: 409,
+            body: {
+              error: "INVALID_STATE_TRANSITION",
+              from: product.publication_state,
+              to: PUBLICATION_STATES.UNPUBLISHED,
+            },
+          };
+        }
+        const { rows } = await client.query(
+          `update public.catalog_products
+              set publication_state = 'UNPUBLISHED', unpublished_at = clock_timestamp(),
+                  unpublished_reason = $2, updated_by = $3, updated_at = now()
+            where id = $1 returning *`,
+          [product.id, body?.reason ?? null, admin.id === "api-key" ? null : admin.id],
+        );
+        return {
+          status: 200,
+          body: { product: rows[0] },
+          audit: {
+            actionType: "catalog_product.unpublished",
+            entityType: "catalog_product",
+            entityId: product.id,
+            oldValues: { publication_state: product.publication_state },
+            newValues: { publication_state: "UNPUBLISHED" },
+          },
+        };
+      },
+    );
+
+    if (outcome.crossSeller) await auditCrossSellerAttempt(admin, "catalog_product", match[1]);
+    if (outcome.audit) await recordAdminAudit(admin, outcome.audit);
+    sendJson(response, outcome.status, outcome.body);
     return true;
   };
 
@@ -711,6 +1196,13 @@ export const createProductIntakeRoutes = ({
     [route("POST", `/api/admin/intake/products/${UUID}/media`), adoptMedia],
     [route("POST", `/api/admin/intake/media/${UUID}/approve`), approveMedia],
     [route("GET", `/api/admin/intake/products/${UUID}/publication-readiness`), publicationReadiness],
+    [route("POST", "/api/admin/intake/imports"), createImport],
+    [route("POST", "/api/admin/intake/drafts"), createDraft],
+    [route("POST", `/api/admin/intake/drafts/${UUID}/submit`), submitDraft],
+    [route("POST", `/api/admin/intake/drafts/${UUID}/approve`), approveDraft],
+    [route("POST", `/api/admin/intake/drafts/${UUID}/reject`), rejectDraft],
+    [route("POST", `/api/admin/intake/products/${UUID}/publish`), publishProduct],
+    [route("POST", `/api/admin/intake/products/${UUID}/unpublish`), unpublishProduct],
   ];
 
   /** Returns true when the request was handled. */

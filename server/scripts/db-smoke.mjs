@@ -812,6 +812,358 @@ const main = async () => {
       }
     });
 
+    // The whole chain, end to end, through HTTP as a real Seller admin:
+    // import → draft → submit → approve → variant → offer → inventory → image
+    // → publish. Before these routes existed there was no way to get a product
+    // into the new model at all, and no test could have noticed.
+    //
+    // Approval needs a second actor, because the submitter may not approve.
+    let platformCookie = null;
+    const platformPassword = `Smoke-${Math.random().toString(36).slice(2)}B2!`;
+    await check("a platform product_manager can log in", async () => {
+      await isolationPool.query(
+        `insert into public.admin_users
+           (email, password_hash, display_name, role, is_active, must_change_password)
+         values ($1, $2, 'Smoke PM', 'product_manager', true, false)`,
+        [`smoke-pm-${stamp}@example.com`, hashPassword(platformPassword)],
+      );
+      const response = await fetch(`${BASE}/api/admin/login`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: `smoke-pm-${stamp}@example.com`, password: platformPassword }),
+      });
+      expectStatus(response, [200], "pm login");
+      platformCookie = (response.headers.get("set-cookie") || "").split(";")[0];
+      if (!platformCookie) throw new Error("no pm session cookie");
+    });
+
+    const asPlatform = (path, init = {}) => fetch(`${BASE}${path}`, {
+      ...init,
+      headers: { "content-type": "application/json", cookie: platformCookie, ...(init.headers || {}) },
+    });
+
+    const chain = {};
+
+    await check("chain 1/8 · a Seller records a raw import", async () => {
+      const response = await asSeller("/api/admin/intake/imports", {
+        method: "POST",
+        body: JSON.stringify({
+          source_system: "csv",
+          source_record_id: `SUP-${stamp}`,
+          source_url: "https://supplier.example/catalog/item?token=secret",
+          payload: { name: "קולר לכלב", price: "49.90" },
+        }),
+      });
+      expectStatus(response, [201], "create import");
+      const { import: record } = await response.json();
+      chain.importId = record.id;
+      if (record.business_id !== fixture.businessA) throw new Error("the import was not scoped to the session Seller");
+      if (record.source_host !== "supplier.example") throw new Error("source_host was not derived");
+      if (!record.payload_hash) throw new Error("no payload hash was computed");
+    });
+
+    await check("chain 1b · the same Seller cannot import that record twice", async () => {
+      const response = await asSeller("/api/admin/intake/imports", {
+        method: "POST",
+        body: JSON.stringify({
+          source_system: "csv",
+          source_record_id: `SUP-${stamp}`,
+          payload: { name: "duplicate" },
+        }),
+      });
+      if (response.status !== 409) throw new Error(`expected 409, got ${response.status}`);
+    });
+
+    await check("chain 2/8 · a draft is created from the raw record", async () => {
+      const category = (await isolationPool.query(
+        "select id from public.product_categories where is_active = true limit 1",
+      )).rows[0];
+      chain.categoryId = category?.id ?? null;
+
+      const response = await asSeller("/api/admin/intake/drafts", {
+        method: "POST",
+        body: JSON.stringify({
+          raw_import_record_id: chain.importId,
+          name: "קולר לכלב",
+          category_id: chain.categoryId,
+        }),
+      });
+      expectStatus(response, [201], "create draft");
+      const { draft } = await response.json();
+      chain.draftId = draft.id;
+      if (draft.business_id !== fixture.businessA) throw new Error("the draft did not inherit the Seller");
+      if (draft.state !== "DRAFT") throw new Error(`state was ${draft.state}`);
+    });
+
+    await check("chain 3/8 · a draft cannot skip review", async () => {
+      // DRAFT -> APPROVED is not a transition. Approval is attempted before
+      // submission, and must be refused on the state, not on the permission.
+      const response = await asPlatform(`/api/admin/intake/drafts/${chain.draftId}/approve`, {
+        method: "POST",
+      });
+      if (response.status !== 409) throw new Error(`expected 409, got ${response.status}`);
+      const body = await response.json();
+      if (body.error !== "INVALID_STATE_TRANSITION") throw new Error(`error was ${body.error}`);
+    });
+
+    await check("chain 4/8 · the Seller submits the draft for review", async () => {
+      const response = await asSeller(`/api/admin/intake/drafts/${chain.draftId}/submit`, {
+        method: "POST",
+      });
+      expectStatus(response, [200], "submit draft");
+      const { draft } = await response.json();
+      if (draft.state !== "IN_REVIEW") throw new Error(`state was ${draft.state}`);
+      if (!draft.submitted_by) throw new Error("the submitter was not recorded");
+    });
+
+    await check("chain 4b · a Seller cannot approve - it has no review permission", async () => {
+      const response = await asSeller(`/api/admin/intake/drafts/${chain.draftId}/approve`, {
+        method: "POST",
+      });
+      if (response.status !== 403) throw new Error(`expected 403, got ${response.status}`);
+    });
+
+    await check("chain 5/8 · a reviewer approves, creating the catalogue product", async () => {
+      const response = await asPlatform(`/api/admin/intake/drafts/${chain.draftId}/approve`, {
+        method: "POST",
+      });
+      expectStatus(response, [201], "approve draft");
+      const { draft, product } = await response.json();
+      chain.productId = product.id;
+      if (draft.state !== "APPROVED") throw new Error(`draft state was ${draft.state}`);
+      if (product.origin_draft_id !== chain.draftId) throw new Error("the product does not trace to the draft");
+      if (product.publication_state !== "UNPUBLISHED") {
+        throw new Error(`a new product must be UNPUBLISHED, got ${product.publication_state}`);
+      }
+      if (product.owning_business_id !== fixture.businessA) throw new Error("wrong owner");
+    });
+
+    await check("chain 5b · publishing is refused while the gate is unmet", async () => {
+      const response = await asSeller(`/api/admin/intake/products/${chain.productId}/publish`, {
+        method: "POST",
+      });
+      if (response.status !== 409) throw new Error(`expected 409, got ${response.status}`);
+      const body = await response.json();
+      if (body.error !== "PUBLICATION_GATE_FAILED") throw new Error(`error was ${body.error}`);
+      for (const expected of ["no_active_variant", "no_priced_offer", "no_availability", "no_approved_image"]) {
+        if (!body.unmet.includes(expected)) throw new Error(`expected ${expected} in unmet: ${body.unmet}`);
+      }
+    });
+
+    await check("chain 6/8 · a variant and a priced offer are added", async () => {
+      const variant = await asSeller(`/api/admin/intake/products/${chain.productId}/variants`, {
+        method: "POST",
+        body: JSON.stringify({ option_signature: "size=S", options: { size: "S" }, label: "S" }),
+      });
+      expectStatus(variant, [201], "create variant");
+      chain.variantId = (await variant.json()).variant.id;
+
+      const offer = await asSeller(`/api/admin/intake/variants/${chain.variantId}/offers`, {
+        method: "POST",
+        body: JSON.stringify({ price: 49.9, sku: `SKU-${stamp}` }),
+      });
+      expectStatus(offer, [201], "create offer");
+      const created = (await offer.json()).offer;
+      chain.offerId = created.id;
+      if (created.business_id !== fixture.businessA) throw new Error("the offer was not scoped to the session Seller");
+      if (created.status !== "INACTIVE") throw new Error("a new offer must start INACTIVE");
+    });
+
+    await check("chain 7/8 · inventory and an approved image are added", async () => {
+      await isolationPool.query(
+        "update public.seller_offers set status = 'ACTIVE' where id = $1", [chain.offerId],
+      );
+      const inventory = await asSeller(`/api/admin/intake/offers/${chain.offerId}/inventory`, {
+        method: "PUT",
+        body: JSON.stringify({ availability: "IN_STOCK", quantity: 5 }),
+      });
+      expectStatus(inventory, [200], "set inventory");
+
+      const media = await asSeller(`/api/admin/intake/products/${chain.productId}/media`, {
+        method: "POST",
+        body: JSON.stringify({ storage_path: `/uploads/smoke-${stamp}.jpg`, checksum: `sum-${stamp}` }),
+      });
+      expectStatus(media, [201], "adopt media");
+      chain.mediaId = (await media.json()).media.id;
+
+      // A Seller may adopt but may not approve: MEDIA_APPROVE is a platform
+      // permission.
+      const sellerApprove = await asSeller(`/api/admin/intake/media/${chain.mediaId}/approve`, {
+        method: "POST",
+      });
+      if (sellerApprove.status !== 403) {
+        throw new Error(`a Seller approved its own image: ${sellerApprove.status}`);
+      }
+      const approve = await asPlatform(`/api/admin/intake/media/${chain.mediaId}/approve`, {
+        method: "POST",
+      });
+      expectStatus(approve, [200], "approve media");
+    });
+
+    await check("chain 8/8 · the gate passes and the product publishes", async () => {
+      const readiness = await asSeller(
+        `/api/admin/intake/products/${chain.productId}/publication-readiness`,
+      );
+      expectStatus(readiness, [200], "readiness");
+      const report = await readiness.json();
+      if (!report.ready) throw new Error(`still not ready: ${report.unmet.join(", ")}`);
+
+      const response = await asSeller(`/api/admin/intake/products/${chain.productId}/publish`, {
+        method: "POST",
+      });
+      expectStatus(response, [200], "publish");
+      const { product } = await response.json();
+      if (product.publication_state !== "PUBLISHED") throw new Error(`state was ${product.publication_state}`);
+      if (!product.published_at || !product.published_by) {
+        throw new Error("a published product must record when and by whom");
+      }
+    });
+
+    await check("chain 8b · the raw record was never edited", async () => {
+      const { rows } = await isolationPool.query(
+        "select payload from public.raw_import_records where id = $1", [chain.importId],
+      );
+      if (rows[0].payload.name !== "קולר לכלב" || rows[0].payload.price !== "49.90") {
+        throw new Error("the raw record changed while the draft was corrected");
+      }
+    });
+
+    await check("chain 8c · unpublishing works and needs no gate", async () => {
+      const response = await asSeller(`/api/admin/intake/products/${chain.productId}/unpublish`, {
+        method: "POST",
+        body: JSON.stringify({ reason: "smoke test" }),
+      });
+      expectStatus(response, [200], "unpublish");
+      const { product } = await response.json();
+      if (product.publication_state !== "UNPUBLISHED") throw new Error(`state was ${product.publication_state}`);
+    });
+
+    await check("chain · a reviewer cannot approve a draft they submitted themselves", async () => {
+      // The chain above had the Seller submit and the product_manager approve,
+      // so self-approval was never actually attempted through the route. A
+      // product_manager holds BOTH DRAFT_SUBMIT and DRAFT_REVIEW, which is the
+      // only way this can arise - and it is the case the permission model
+      // cannot catch on its own.
+      const draft = await asPlatform("/api/admin/intake/drafts", {
+        method: "POST",
+        body: JSON.stringify({
+          business_id: fixture.businessA,
+          name: "טיוטה של המאשר",
+          category_id: chain.categoryId,
+        }),
+      });
+      expectStatus(draft, [201], "pm creates a draft");
+      const draftId = (await draft.json()).draft.id;
+
+      const submit = await asPlatform(`/api/admin/intake/drafts/${draftId}/submit`, { method: "POST" });
+      expectStatus(submit, [200], "pm submits");
+
+      const approve = await asPlatform(`/api/admin/intake/drafts/${draftId}/approve`, { method: "POST" });
+      if (approve.status !== 403) {
+        throw new Error(`self-approval returned ${approve.status}; a review that did not happen`);
+      }
+      const body = await approve.json();
+      if (body.error !== "SELF_APPROVAL_FORBIDDEN") throw new Error(`error was ${body.error}`);
+
+      // And no product was created behind it.
+      const { rows } = await isolationPool.query(
+        "select approved_catalog_product_id, state from public.product_drafts where id = $1", [draftId],
+      );
+      if (rows[0].state !== "IN_REVIEW" || rows[0].approved_catalog_product_id) {
+        throw new Error("the refused approval left state behind");
+      }
+    });
+
+    // The public catalogue on the new model. The product published above must
+    // appear; then every reason it should stop appearing is applied in turn.
+    await check("catalog · a published product with a live offer is visible", async () => {
+      // Re-publish: 8c unpublished it.
+      await asSeller(`/api/admin/intake/products/${chain.productId}/publish`, { method: "POST" });
+      const response = await fetch(`${BASE}/api/catalog`);
+      expectStatus(response, [200], "catalog list");
+      const { products } = await response.json();
+      const row = products.find((p) => p.id === chain.productId);
+      if (!row) throw new Error("the published product is not in the public catalogue");
+      if (!row.offer_id || !row.seller_id) throw new Error("the row carries no offer or seller");
+      if (Number(row.price) !== 49.9) throw new Error(`price was ${row.price}`);
+      if (!row.image_path) throw new Error("no approved image was resolved");
+    });
+
+    await check("catalog · the detail route returns offers, and leaks nothing internal", async () => {
+      const response = await fetch(`${BASE}/api/catalog/${chain.productId}`);
+      expectStatus(response, [200], "catalog detail");
+      const { product } = await response.json();
+      if (!Array.isArray(product.offers) || product.offers.length < 1) {
+        throw new Error("no offers on the product");
+      }
+      const serialized = JSON.stringify(product);
+      for (const leak of ["cost_price", "commission_rate", "supplier_id", "owning_business_id",
+        "origin_draft_id", "source_url", "payload"]) {
+        if (serialized.includes(leak)) throw new Error(`${leak} reached a public response`);
+      }
+    });
+
+    await check("catalog · an unpublished product disappears", async () => {
+      await asSeller(`/api/admin/intake/products/${chain.productId}/unpublish`, {
+        method: "POST", body: JSON.stringify({ reason: "smoke" }),
+      });
+      const detail = await fetch(`${BASE}/api/catalog/${chain.productId}`);
+      if (detail.status !== 404) throw new Error(`expected 404, got ${detail.status}`);
+      await asSeller(`/api/admin/intake/products/${chain.productId}/publish`, { method: "POST" });
+    });
+
+    await check("catalog · suspending the Seller removes it without unpublishing", async () => {
+      // The stored publication_state still says PUBLISHED. Visibility is
+      // re-checked at read time precisely so a suspended Seller stops selling
+      // immediately rather than when somebody remembers to unpublish.
+      await isolationPool.query(
+        "update public.business_profiles set commercial_status = 'suspended' where id = $1",
+        [fixture.businessA],
+      );
+      try {
+        const detail = await fetch(`${BASE}/api/catalog/${chain.productId}`);
+        if (detail.status !== 404) {
+          throw new Error(`a suspended Seller's product was still served: ${detail.status}`);
+        }
+        const { rows } = await isolationPool.query(
+          "select publication_state from public.catalog_products where id = $1", [chain.productId],
+        );
+        if (rows[0].publication_state !== "PUBLISHED") {
+          throw new Error("the test did not actually exercise the read-time check");
+        }
+      } finally {
+        await isolationPool.query(
+          "update public.business_profiles set commercial_status = 'approved' where id = $1",
+          [fixture.businessA],
+        );
+      }
+    });
+
+    await check("catalog · going out of stock removes it from the catalogue", async () => {
+      await asSeller(`/api/admin/intake/offers/${chain.offerId}/inventory`, {
+        method: "PUT", body: JSON.stringify({ availability: "OUT_OF_STOCK" }),
+      });
+      try {
+        const detail = await fetch(`${BASE}/api/catalog/${chain.productId}`);
+        if (detail.status !== 404) throw new Error(`out of stock but still served: ${detail.status}`);
+      } finally {
+        await asSeller(`/api/admin/intake/offers/${chain.offerId}/inventory`, {
+          method: "PUT", body: JSON.stringify({ availability: "IN_STOCK", quantity: 5 }),
+        });
+      }
+    });
+
+    await check("catalog · the legacy /api/products route is unchanged", async () => {
+      const response = await fetch(`${BASE}/api/products`);
+      expectStatus(response, [200], "legacy catalogue");
+      const { products } = await response.json();
+      // The new model's product must NOT appear here: nothing was migrated, and
+      // the legacy route still reads business_products.
+      if (products.some((p) => p.id === chain.productId)) {
+        throw new Error("the new-model product leaked into the legacy route");
+      }
+    });
+
     await check("a cross-Seller attempt is audited", async () => {
       const { rows } = await isolationPool.query(
         `select count(*)::int as n from public.admin_audit_log
@@ -831,6 +1183,7 @@ const main = async () => {
         ["delete from public.product_drafts where id = any($1)", [[fixture.draftB, fixture.draftA]]],
         ["delete from public.business_products where id = $1", [fixture.productB]],
         ["delete from public.admin_users where id = $1", [fixture.adminA]],
+        ["delete from public.admin_users where email like $1", [`smoke-pm-%`]],
         ["delete from public.business_profiles where id = any($1)",
           [[fixture.businessA, fixture.businessB, fixture.businessPending]]],
       ];
