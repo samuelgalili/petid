@@ -1,0 +1,520 @@
+# D-18 — Production admin & business population, read-only.
+#
+# Manual only. This workflow measures production; it never changes it. It exists
+# because D-18 cannot be answered from a development environment: the production
+# database is reachable only from the API host, and the only credential that
+# reaches that host is the deploy SSH key, which lives in the 'production'
+# GitHub Environment. This job borrows that existing path rather than creating a
+# second one - no new key, no new IAM, no new database role.
+#
+# Two things it deliberately does NOT do, both of which the deploy does:
+#   * it never rsyncs, builds, migrates, restarts or publishes anything;
+#   * it never writes a file on the host, not even a temporary one.
+#
+# The connection string is handled the way backup-before-migrate.sh handles it,
+# and for the same reasons: read from .env without sourcing it (the file holds
+# every production secret), passed to the container by NAME rather than by
+# value, and never printed by this workflow.
+#
+# What "by name" does and does not buy, stated precisely because the convenient
+# version of this sentence is false:
+#   * `docker run`'s argv holds the literal text "$DATABASE_URL". So does what
+#     `docker inspect` records. Neither carries the value.
+#   * The psql process inside the container DOES receive the URI as an argument,
+#     and the host's process list can see container processes. For the seconds
+#     the run lasts, the value is visible there.
+# So this is not protection against every process-list exposure. It bounds the
+# exposure to the host itself - where anyone who can run ps can already read
+# /opt/mipo/.env - and keeps the value out of docker's persisted metadata.
+#
+# The SQL block is 24 SELECT statements wrapped in BEGIN /
+# SET TRANSACTION READ ONLY / ROLLBACK: 27 statements in total. D18-19 is not
+# among them; it is a shell presence check for ADMIN_API_KEY and lives in the
+# validation report, not here.
+
+name: D-18 production read-only
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type READ-ONLY to confirm this run only measures production'
+        required: true
+        default: ''
+
+permissions:
+  contents: read
+
+# The deploy's own production group, so D-18 and a deploy can never run at the
+# same time. This is not about log tidiness: every statement below takes an
+# ACCESS SHARE lock for the duration of the transaction, and a deploy migration
+# takes ACCESS EXCLUSIVE. Overlapping them would make a read-only measurement
+# block a production migration, and then queue every query behind it.
+#
+# The literal 'aws-production', not deploy-aws.yml's
+# `aws-${{ github.ref_name == 'aws-migration' && 'production' || 'staging' }}`:
+# that expression resolves by BRANCH, and this workflow targets the production
+# host whichever branch it is dispatched from. Copying the expression would put
+# a run dispatched from any other branch into 'aws-staging' and defeat the
+# serialisation. 'aws-production' is exactly the value that expression produces
+# for aws-migration, which is the group a production deploy actually holds.
+concurrency:
+  group: aws-production
+  cancel-in-progress: false
+
+jobs:
+  measure:
+    name: Measure production (read-only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # The same environment the deploy job uses, and the reason this workflow is
+    # possible at all: it already holds MIPO_AWS_SSH_PRIVATE_KEY, and its
+    # required reviewer means a production measurement is an approved, logged
+    # event rather than something anybody can trigger unseen.
+    environment: production
+
+    env:
+      MIPO_AWS_HOST: ${{ vars.MIPO_AWS_HOST || '63.183.241.110' }}
+      MIPO_AWS_USER: ${{ vars.MIPO_AWS_USER || 'ubuntu' }}
+      MIPO_REMOTE_PATH: ${{ vars.MIPO_REMOTE_PATH || '/opt/mipo' }}
+
+    steps:
+      - name: Confirm intent
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          set -euo pipefail
+          if [ "$CONFIRMATION" != "READ-ONLY" ]; then
+            echo "BLOCKED-PROD: confirmation input must be exactly READ-ONLY." >&2
+            echo "Got something else. Refusing to touch production." >&2
+            exit 1
+          fi
+          echo "Confirmed: read-only measurement."
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # The SQL below is the thing that runs against production, so it is
+      # checked before anything connects rather than trusted because it was
+      # reviewed once. This fails the job on any statement that is not a SELECT,
+      # including one added later by somebody who meant well.
+      - name: Verify the embedded SQL is read-only
+        run: |
+          set -euo pipefail
+          workflow=".github/workflows/production-d18-readonly.yml"
+
+          # The markers are matched WHOLE-LINE and anchored. An unanchored
+          # pattern matched this very line - the marker name appears in the
+          # extraction command itself - so the block captured started here
+          # rather than at the SQL, and swallowed the SSH step and the
+          # DATABASE_URL prelude along with it. Anchoring fixes that: this line
+          # is not a line consisting solely of the marker.
+          sql="$(sed -n '/^[[:space:]]*-- D18-SQL-BEGIN$/,/^[[:space:]]*-- D18-SQL-END$/p' "$workflow")"
+          if [ -z "$sql" ]; then
+            echo "Could not extract the SQL block - the markers are missing." >&2
+            exit 1
+          fi
+
+          # Statement-initial write verbs. Checked at the start of a line so a
+          # word like "update" inside a comment or a column alias does not trip
+          # it, and a real statement cannot hide behind leading whitespace.
+          if printf '%s\n' "$sql" | grep -inE \
+            '^[[:space:]]*(insert|update|delete|alter|drop|create|grant|revoke|truncate|copy|call|do|vacuum|reindex|refresh|comment|lock|analyze|cluster|security)\b'; then
+            echo "A non-SELECT statement is present in the D-18 SQL block. Refusing to run." >&2
+            exit 1
+          fi
+
+          for required in 'BEGIN;' 'SET TRANSACTION READ ONLY;' 'ROLLBACK;'; do
+            if ! printf '%s\n' "$sql" | grep -qF "$required"; then
+              echo "The SQL block is missing: $required" >&2
+              exit 1
+            fi
+          done
+
+          # Counted as STATEMENTS, not as lines. Comments and psql
+          # meta-commands are dropped, the rest is split on ';', and each
+          # fragment is classified by its first word. Counting lines beginning
+          # with "select" overcounts: D18-22 is one statement containing a
+          # UNION ALL, so it contributes two such lines.
+          statements="$(printf '%s\n' "$sql" \
+            | grep -vE '^[[:space:]]*--' \
+            | grep -vE '^[[:space:]]*\\' \
+            | tr '\n' ' ' | tr ';' '\n' \
+            | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
+            | grep -v '^$')"
+
+          select_count="$(printf '%s\n' "$statements" | grep -ciE '^select' || true)"
+          total_count="$(printf '%s\n' "$statements" | grep -c '' || true)"
+          other="$(printf '%s\n' "$statements" | grep -ivE '^select' || true)"
+          other_count="$(printf '%s\n' "$other" | grep -c '^.' || true)"
+
+          # Exactly three non-SELECT statements are permitted, and only these.
+          if [ "$other_count" -ne 3 ]; then
+            echo "Expected exactly 3 non-SELECT statements (BEGIN, SET TRANSACTION READ ONLY, ROLLBACK); found ${other_count}:" >&2
+            printf '%s\n' "$other" >&2
+            exit 1
+          fi
+          if ! printf '%s\n' "$other" | grep -qiE '^begin$' \
+            || ! printf '%s\n' "$other" | grep -qiE '^set transaction read only$' \
+            || ! printf '%s\n' "$other" | grep -qiE '^rollback$'; then
+            echo "The three non-SELECT statements are not exactly BEGIN / SET TRANSACTION READ ONLY / ROLLBACK:" >&2
+            printf '%s\n' "$other" >&2
+            exit 1
+          fi
+
+          echo "SQL block verified: ${select_count} SELECT statements plus BEGIN, SET TRANSACTION READ ONLY and ROLLBACK (${total_count} statements in total). No write statements."
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.MIPO_AWS_SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SSH_PRIVATE_KEY:-}" ]; then
+            echo "BLOCKED-PROD: the production environment has no MIPO_AWS_SSH_PRIVATE_KEY." >&2
+            echo "There is no other route to the database, and no fallback will be attempted." >&2
+            exit 1
+          fi
+          if [ -z "${MIPO_AWS_HOST}" ]; then
+            echo "BLOCKED-PROD: MIPO_AWS_HOST is empty for the production environment." >&2
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/mipo_aws_key
+          chmod 600 ~/.ssh/mipo_aws_key
+          ssh-keyscan -T 30 -H "$MIPO_AWS_HOST" >> ~/.ssh/known_hosts || true
+          echo "SSH configured for ${MIPO_AWS_USER}@${MIPO_AWS_HOST}"
+
+      - name: Run D-18 against production
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 \
+            "${MIPO_AWS_USER}@${MIPO_AWS_HOST}" \
+            "MIPO_REMOTE_PATH='${MIPO_REMOTE_PATH}' bash -s" <<'REMOTE'
+          set -euo pipefail
+          # No `set -x` anywhere in this script, on purpose: tracing would echo
+          # the line that expands DATABASE_URL.
+
+          ENV_FILE="${MIPO_REMOTE_PATH}/.env"
+          PG_IMAGE="${MIPO_PG_IMAGE:-postgres:16-alpine}"
+
+          if [ ! -f "$ENV_FILE" ]; then
+            echo "BLOCKED-PROD: no env file at $ENV_FILE" >&2
+            exit 1
+          fi
+
+          # Read DATABASE_URL without sourcing the file: .env holds every
+          # production secret and sourcing it would put all of them in this
+          # shell. The LAST definition wins, matching how docker compose's
+          # env_file resolves duplicates - so a corrected connection string
+          # appended to the bottom of .env is the one the API actually uses, and
+          # therefore the one worth measuring.
+          DATABASE_URL="$(grep -E '^[[:space:]]*(export[[:space:]]+)?DATABASE_URL=' "$ENV_FILE" | tail -1 | cut -d= -f2- || true)"
+          DATABASE_URL="$(printf '%s' "$DATABASE_URL" | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+          DATABASE_URL="${DATABASE_URL%\"}"; DATABASE_URL="${DATABASE_URL#\"}"
+          DATABASE_URL="${DATABASE_URL%\'}"; DATABASE_URL="${DATABASE_URL#\'}"
+
+          if [ -z "$DATABASE_URL" ]; then
+            echo "BLOCKED-PROD: DATABASE_URL is not set in $ENV_FILE" >&2
+            exit 1
+          fi
+
+          # Shape check only, and it reports nothing derived from the value -
+          # not the URI, not its length, not the scheme, host, user, port or
+          # database name. A length is a real disclosure: it bounds the
+          # password. The check either passes or names the expected shape.
+          case "$DATABASE_URL" in
+            postgres://*|postgresql://*) ;;
+            *)
+              echo "BLOCKED-PROD: DATABASE_URL in $ENV_FILE does not begin with postgres:// or postgresql://." >&2
+              exit 1
+              ;;
+          esac
+
+          echo "Connection string located in $ENV_FILE. Not printed."
+
+          D18_SQL="$(cat <<'SQL'
+          -- D18-SQL-BEGIN
+          \pset pager off
+          \timing off
+
+          BEGIN;
+          SET TRANSACTION READ ONLY;
+
+          \echo '### D18-20..23 - deployed state: role constraint, 0040, migration ledger'
+          -- Run first on purpose. If 0040 is not applied, the column list below
+          -- already says so before D18-05 fails on the missing column - which
+          -- makes the failure a finding rather than a puzzle.
+
+          select pg_get_constraintdef(oid) as role_check_definition
+            from pg_constraint
+           where conrelid = 'public.admin_users'::regclass
+             and conname  = 'admin_users_role_check';
+
+          select column_name, data_type, is_nullable, column_default
+            from information_schema.columns
+           where table_schema = 'public' and table_name = 'admin_users'
+           order by ordinal_position;
+
+          select conname as name, pg_get_constraintdef(oid) as definition
+            from pg_constraint
+           where conrelid = 'public.admin_users'::regclass
+           union all
+          select indexname, indexdef
+            from pg_indexes
+           where schemaname = 'public' and tablename = 'admin_users';
+
+          select count(*)      as applied_migrations,
+                 max(filename) as last_migration
+            from public.schema_migrations;
+
+          \echo '### D18-01..02 - admin population'
+          select count(*)                                     as admins_total,
+                 count(*) filter (where is_active)            as admins_active,
+                 count(*) filter (where not is_active)        as admins_inactive,
+                 count(*) filter (where must_change_password) as must_change_password
+            from public.admin_users;
+
+          select min(created_at) as first_admin_created_at,
+                 max(created_at) as last_admin_created_at,
+                 count(*) filter (where last_login_at is null) as never_logged_in
+            from public.admin_users;
+
+          \echo '### D18-03..04 - role distribution, including unexpected roles'
+          select role,
+                 count(*)                          as n,
+                 count(*) filter (where is_active) as active_n
+            from public.admin_users
+           group by role
+           order by n desc;
+
+          -- Written so a zero is reported as a zero. A GROUP BY alone cannot
+          -- distinguish "no such rows" from "the query missed it".
+          select count(*) filter (where role = 'admin')           as role_admin,
+                 count(*) filter (where role = 'product_manager') as role_product_manager,
+                 count(*) filter (where role = 'seller_admin')    as role_seller_admin,
+                 count(*) filter (where role = 'readonly_admin')  as role_readonly_admin,
+                 count(*) filter (where role not in
+                   ('admin','product_manager','seller_admin','readonly_admin')) as role_other
+            from public.admin_users;
+
+          \echo '### D18-05..06 - business_id population, and role x scope'
+          select count(*)                                       as admins_total,
+                 count(*) filter (where business_id is null)     as business_id_null,
+                 count(*) filter (where business_id is not null) as business_id_set,
+                 count(distinct business_id)                     as distinct_businesses
+            from public.admin_users;
+
+          select role,
+                 count(*) filter (where business_id is null)     as platform_scope,
+                 count(*) filter (where business_id is not null) as seller_scope,
+                 count(*)                                        as n
+            from public.admin_users
+           group by role
+           order by role;
+
+          \echo '### D18-07..09 - admin to business mapping, existence, verification, type'
+          -- Technical UUIDs only. No email, no display name. is_verified is
+          -- printed as-is because it is nullable and therefore three-valued.
+          select au.id                    as admin_user_id,
+                 au.role,
+                 au.is_active,
+                 au.business_id,
+                 (bp.id is not null)      as business_exists,
+                 bp.is_verified,
+                 bp.business_type,
+                 bp.created_at            as business_created_at,
+                 (bp.user_id is not null) as business_has_owner_user
+            from public.admin_users au
+            left join public.business_profiles bp on bp.id = au.business_id
+           where au.business_id is not null
+           order by au.business_id, au.id;
+
+          -- The foreign key should make this impossible. "The constraint
+          -- exists" and "the constraint holds for every row" are different
+          -- statements, so it is asked rather than assumed.
+          select count(*) as dangling_business_id
+            from public.admin_users au
+            left join public.business_profiles bp on bp.id = au.business_id
+           where au.business_id is not null
+             and bp.id is null;
+
+          select business_id, count(*) as admins_for_this_business
+            from public.admin_users
+           where business_id is not null
+           group by business_id
+          having count(*) > 1
+           order by admins_for_this_business desc;
+
+          \echo '### D18-10..15 - seller-like business population'
+          -- business_type is a category, never evidence of a commercial status.
+          -- Nothing below infers "Seller" from business_type = shop.
+          select count(*)                                     as businesses_total,
+                 count(*) filter (where is_verified is true)  as verified_true,
+                 count(*) filter (where is_verified is false) as verified_false,
+                 count(*) filter (where is_verified is null)  as verified_null
+            from public.business_profiles;
+
+          select business_type,
+                 count(*)                                     as n,
+                 count(*) filter (where is_verified is true)  as verified_true,
+                 count(*) filter (where is_verified is false) as verified_false,
+                 count(*) filter (where is_verified is null)  as verified_null
+            from public.business_profiles
+           group by business_type
+           order by n desc;
+
+          -- Commercial ACTIVITY - the closest thing this schema has to evidence
+          -- of selling. A business with catalogue rows is doing something; a
+          -- 'shop' row with none is a label somebody picked from a dropdown.
+          select bp.business_type,
+                 bp.is_verified,
+                 count(distinct bp.id) as businesses,
+                 count(prod.id)        as products
+            from public.business_profiles bp
+            left join public.business_products prod on prod.business_id = bp.id
+           group by bp.business_type, bp.is_verified
+           order by products desc;
+
+          select business_id, count(*) as products
+            from public.business_products
+           group by business_id
+           order by products desc
+           limit 20;
+
+          -- The fallback business. DEFAULT_BUSINESS_ID defaults in code to this
+          -- uuid (index.js:100); production may override it via SSM, in which
+          -- case this returns no row and the override is worth checking too.
+          select id, business_type, is_verified, is_featured, created_at,
+                 (user_id is not null) as has_owner_user
+            from public.business_profiles
+           where id = 'cf941cc4-e1d1-4d7c-8122-a5df81a1e53c';
+
+          select count(*) as products_on_default_business
+            from public.business_products
+           where business_id = 'cf941cc4-e1d1-4d7c-8122-a5df81a1e53c';
+
+          \echo '### D18-16..18 - active sessions and operational access'
+          -- No token hashes, no IP addresses, no user agents.
+          select count(*)                                  as sessions_total,
+                 count(*) filter (where expires_at > now()) as sessions_live,
+                 count(distinct admin_user_id)
+                   filter (where expires_at > now())        as distinct_admins_live,
+                 max(last_seen_at)                          as most_recent_activity
+            from public.admin_sessions;
+
+          select au.role,
+                 count(distinct au.id) filter (where s.expires_at > now())
+                   as admins_with_live_session
+            from public.admin_users au
+            left join public.admin_sessions s on s.admin_user_id = au.id
+           group by au.role
+           order by au.role;
+
+          select count(*) filter (where last_login_at >= now() - interval '7 days')  as active_7d,
+                 count(*) filter (where last_login_at >= now() - interval '30 days') as active_30d,
+                 count(*) filter (where last_login_at >= now() - interval '90 days') as active_90d,
+                 count(*) filter (where last_login_at is null)                       as never
+            from public.admin_users;
+
+          \echo '### D18-24..25 - anomalies'
+          -- Duplicate identities detected WITHOUT selecting an email.
+          select count(*) as duplicate_email_groups
+            from (select lower(email)
+                    from public.admin_users
+                   group by lower(email)
+                  having count(*) > 1) dupes;
+
+          -- The M1b acceptance test expressed as data. A non-zero answer in
+          -- either of the first two columns means M1b's proposed CHECK would
+          -- abort the migration mid-deploy.
+          select
+            count(*) filter (where business_id is not null
+                               and role in ('admin','product_manager'))       as platform_role_with_business,
+            count(*) filter (where role not in ('admin','product_manager'))   as unexpected_role,
+            count(*) filter (where not is_active and business_id is not null) as inactive_but_scoped
+            from public.admin_users;
+
+          ROLLBACK;
+          -- D18-SQL-END
+          SQL
+          )"
+          export D18_SQL
+          export DATABASE_URL
+
+          # Connection details are redacted from the output. libpq never prints
+          # the password, but it does name the host, the port, the user and the
+          # database in its connection errors, and this output goes into a
+          # GitHub Actions log. Two rules:
+          #
+          #   * any postgres:// or postgresql:// URI, wherever it appears;
+          #   * the whole of any line libpq emits as "psql: error: ...", which
+          #     is where every connection-time detail comes from.
+          #
+          # Server-side SQL errors are NOT redacted: they arrive as "ERROR: ..."
+          # lines, carry no connection details, and are the diagnostic the run
+          # exists to produce.
+          redact() {
+            sed -E \
+              -e 's#postgres(ql)?://[^[:space:]"]*#<redacted-connection-string>#g' \
+              -e 's#^psql: error:.*#psql: error: <connection details redacted>#'
+          }
+
+          # Both values are passed by NAME, so `docker run`'s own argv - the
+          # command line visible on the host and the one `docker inspect`
+          # records - holds the literal text "$DATABASE_URL", never its value.
+          # This is NOT a claim that the value is absent from every process
+          # list: the psql process inside the container receives the URI as an
+          # argument, so it is visible in the host's process list for the few
+          # seconds the run lasts. That exposure is bounded by who can already
+          # read this file - anyone able to run ps here can read
+          # /opt/mipo/.env directly - but it is real, and worth stating rather
+          # than glossing.
+          #
+          # stdin is /dev/null so the container cannot consume the rest of this
+          # script, and no file is written anywhere on the host: the SQL travels
+          # in an environment variable.
+          #
+          # SET TRANSACTION READ ONLY inside the block means a stray write would
+          # be refused by PostgreSQL itself, not merely absent by intention.
+          #
+          # errexit is lifted for the pipeline only, so the real exit code can
+          # be read from PIPESTATUS and turned into a specific message rather
+          # than an anonymous failure. pipefail stays on throughout.
+          set +e
+          docker run --rm \
+            -e PGCONNECT_TIMEOUT=15 \
+            --env DATABASE_URL \
+            --env D18_SQL \
+            "$PG_IMAGE" \
+            sh -c 'printf "%s\n" "$D18_SQL" | psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -X' </dev/null 2>&1 | redact
+          psql_status="${PIPESTATUS[0]}"
+          set -e
+
+          # psql's documented exit codes, which is what makes a connection
+          # failure distinguishable from a SQL failure even after redaction.
+          case "$psql_status" in
+            0)
+              echo "D-18 complete. Nothing on this host was modified."
+              ;;
+            2)
+              echo "BLOCKED-PROD: could not connect to the database (psql exit 2). Details redacted above." >&2
+              exit 2
+              ;;
+            3)
+              echo "D-18 failed: a statement was rejected by the server (psql exit 3). The server error is above, unredacted." >&2
+              exit 3
+              ;;
+            *)
+              echo "D-18 failed: docker/psql exited ${psql_status}." >&2
+              exit "$psql_status"
+              ;;
+          esac
+          REMOTE
+
+      - name: Remove the key
+        if: always()
+        run: |
+          set -euo pipefail
+          rm -f ~/.ssh/mipo_aws_key
+          echo "Key removed from the runner."
