@@ -759,12 +759,19 @@ export const MipoOnboarding: React.FC<{ onComplete?: () => void }> = ({ onComple
     setSaving(true);
     setSaveError("");
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setStep("auth");
+        throw new Error("You're not signed in. Please sign in to save your pet.");
+      }
+
       const existingId = persistedPetId.current || stored?.petId;
       if (existingId) {
         const { data: existing, error: lookupError } = await supabase
           .from("pets")
           .select("id")
           .eq("id", existingId)
+          .eq("user_id", user.id)
           .maybeSingle();
         if (lookupError) throw lookupError;
         if (existing?.id) {
@@ -785,12 +792,6 @@ export const MipoOnboarding: React.FC<{ onComplete?: () => void }> = ({ onComple
         setSaveError(message);
         toast({ title: "Couldn't save pet", description: message, variant: "destructive" });
         return false;
-      }
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setStep("auth");
-        throw new Error("You're not signed in. Please sign in to save your pet.");
       }
 
       const { data: petData, error: insertError } = await supabase.from("pets").insert({
