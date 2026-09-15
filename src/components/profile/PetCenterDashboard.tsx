@@ -541,6 +541,8 @@ const resolveHeroSrc = (avatarUrl: string | null | undefined, fallbackSrc: strin
   if (!trimmed) return fallbackSrc;
   if (isValidUrl(trimmed)) return trimmed;
   if (trimmed.startsWith("/") && trimmed.length > 1) return trimmed;
+  // upload-avatar persists pets.avatar_url as data:image/{png|jpeg|webp|gif};base64,...
+  if (trimmed.startsWith("data:image/")) return trimmed;
   return fallbackSrc;
 };
 
