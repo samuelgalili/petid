@@ -1,10 +1,16 @@
 // M1 · admin_users.business_id.
 //
-// The column is capacity, not capability: nothing reads it yet, and no role can
-// use it until admin_users_role_check is relaxed. So what these tests actually
-// guard is that adding it changed nothing - login still resolves, existing rows
-// are untouched, and the constraint that protects the isolation model later is
-// really enforced by the database rather than only intended.
+// When M1 shipped alone the column was capacity, not capability: nothing read
+// it and no role could use it, so these tests guarded that adding it changed
+// nothing - login still resolves, existing rows are untouched, and the
+// constraint the isolation model rests on is really enforced by the database.
+//
+// M1b has since relaxed admin_users_role_check and added
+// admin_users_scope_check, so the column is now in use. What is tested here is
+// still M1's own guarantees - the foreign key, ON DELETE RESTRICT, no backfill,
+// login unaffected - but they are exercised through a role the scope check
+// permits. The four-role model itself is covered in
+// productIntakeFoundation.test.js.
 //
 // Every test runs against a real PostgreSQL, because a constraint that only
 // exists in a migration file is not a constraint.
@@ -34,9 +40,14 @@ const withDb = async (fn) => {
   }
 };
 
+// The role follows the scope, because since M1b the database insists on it:
+// admin_users_scope_check makes a platform role carrying a business_id - and a
+// Seller role without one - unrepresentable. A helper that always said 'admin'
+// would now fail every scoped case for the wrong reason, reporting a check
+// violation where the test is asking about a foreign key.
 const seedAdmin = (client, email, extra = "") => client.query(
   `insert into public.admin_users (email, password_hash, display_name, role, is_active${extra ? ", business_id" : ""})
-   values ($1, 'x', 'Scope Test', 'admin', true${extra ? ", $2" : ""})
+   values ($1, 'x', 'Scope Test', ${extra ? "'seller_admin'" : "'admin'"}, true${extra ? ", $2" : ""})
    returning id, business_id, updated_at`,
   extra ? [email, extra] : [email],
 ).then((r) => r.rows[0]);
@@ -127,16 +138,36 @@ dbTest("deleting a business that an admin points at is refused, not cascaded", a
   });
 });
 
-dbTest("an admin can be returned to platform scope by setting business_id to NULL", async () => {
+dbTest("returning an admin to platform scope requires changing role and scope together", async () => {
   await withDb(async (client) => {
     const business = await seedBusiness(client);
     await seedAdmin(client, "back-to-platform@example.com", business);
-    await client.query("update public.admin_users set business_id = null where email = $1",
-      ["back-to-platform@example.com"]);
+
+    // Nulling the scope alone would leave a seller_admin with no Seller, which
+    // reads as platform-wide access. Since M1b the database refuses it - the
+    // detachment has to be deliberate and complete.
+    await client.query("savepoint s");
+    await assert.rejects(
+      () => client.query("update public.admin_users set business_id = null where email = $1",
+        ["back-to-platform@example.com"]),
+      (error) => {
+        assert.equal(error.code, "23514");
+        assert.equal(error.constraint, "admin_users_scope_check");
+        return true;
+      },
+      "dropping the Seller without dropping the Seller role is a silent promotion",
+    );
+    await client.query("rollback to savepoint s");
+
+    await client.query(
+      "update public.admin_users set role = 'admin', business_id = null where email = $1",
+      ["back-to-platform@example.com"],
+    );
     const { rows } = await client.query(
-      "select business_id from public.admin_users where email = $1", ["back-to-platform@example.com"],
+      "select role, business_id from public.admin_users where email = $1", ["back-to-platform@example.com"],
     );
     assert.equal(rows[0].business_id, null);
+    assert.equal(rows[0].role, "admin");
   });
 });
 
@@ -163,33 +194,54 @@ dbTest("the login and session column list still resolves", async () => {
 
 dbTest("existing admin rows are untouched by the migration", async () => {
   await withDb(async (client) => {
-    // Any row that predates this transaction: business_id must be NULL, and the
-    // migration must not have bumped updated_at on it.
+    // "Existing" means existing WHEN THE MIGRATION RAN, and the only thing that
+    // knows when that was is schema_migrations.applied_at. Asking the whole
+    // table instead makes this fail the moment anything legitimately creates a
+    // scoped admin afterwards - a seed, the smoke suite, a developer - which
+    // says nothing about the migration and is a red for the wrong reason.
+    // Scoped to rows that predate it, the claim is exactly as strong and stops
+    // depending on what else has touched the database since.
     const { rows } = await client.query(
-      `select count(*) filter (where business_id is not null) as scoped,
-              count(*) filter (where updated_at > created_at) as touched,
+      `select count(*) filter (where a.business_id is not null) as scoped,
+              count(*) filter (where a.updated_at > m.applied_at) as touched,
               count(*) as total
-         from public.admin_users`,
+         from public.admin_users a
+         join public.schema_migrations m
+           on m.filename = '0040_add_admin_users_business_id.sql'
+        where a.created_at < m.applied_at`,
     );
-    assert.equal(Number(rows[0].scoped), 0, "no existing admin may have been given a Seller");
-    assert.equal(Number(rows[0].touched), 0, "the migration must not have modified any row");
+    assert.equal(Number(rows[0].scoped), 0, "no admin predating the migration may have been given a Seller");
+    assert.equal(Number(rows[0].touched), 0, "the migration must not have modified any row that predates it");
   });
 });
 
-dbTest("no role gained a Seller: the role check is still the pre-M1 pair", async () => {
+dbTest("the role check admits exactly the four approved roles and no others", async () => {
   await withDb(async (client) => {
-    // M1 deliberately does not relax this. seller_admin cannot exist yet, which
-    // is why the column is capacity rather than capability.
+    // M1 deliberately left this as the platform pair; M1b widened it. What must
+    // not happen either way is a fifth role appearing without a decision, so the
+    // set is asserted exactly rather than by presence.
     const { rows } = await client.query(
       `select pg_get_constraintdef(oid) as def
          from pg_constraint
         where conrelid = 'public.admin_users'::regclass and conname = 'admin_users_role_check'`,
     );
     assert.equal(rows.length, 1);
-    assert.match(rows[0].def, /'admin'/);
-    assert.match(rows[0].def, /'product_manager'/);
-    assert.doesNotMatch(rows[0].def, /seller_admin/, "M1 must not add Seller Admin");
-    assert.doesNotMatch(rows[0].def, /readonly_admin/, "M1 must not add readonly admin");
+
+    const roles = [...rows[0].def.matchAll(/'([a-z_]+)'::text/g)].map((m) => m[1]).sort();
+    assert.deepEqual(roles, ["admin", "product_manager", "readonly_admin", "seller_admin"]);
+  });
+});
+
+dbTest("the scope check exists and is the one M1b defined", async () => {
+  await withDb(async (client) => {
+    const { rows } = await client.query(
+      `select pg_get_constraintdef(oid) as def
+         from pg_constraint
+        where conrelid = 'public.admin_users'::regclass and conname = 'admin_users_scope_check'`,
+    );
+    assert.equal(rows.length, 1, "the scope invariant must live in the database");
+    assert.match(rows[0].def, /business_id IS NULL/i);
+    assert.match(rows[0].def, /business_id IS NOT NULL/i);
   });
 });
 

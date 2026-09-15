@@ -65,9 +65,16 @@ import { hashPassword, verifyPassword } from "./passwords.js";
 import {
   ADMIN_PERMISSIONS,
   ADMIN_ROLES,
+  ADMIN_SCOPES,
   getAdminPermissions,
+  getAdminScope,
   hasAdminPermission,
 } from "./adminPermissions.js";
+import { adminProductView } from "./sellerScope.js";
+import { isSellerEligible } from "./sellerEligibility.js";
+import { commissionForLine, readPlatformCommissionRate } from "./platformCommission.js";
+import { createProductIntakeRoutes } from "./productIntakeRoutes.js";
+import { createPublicCatalog } from "./publicCatalog.js";
 import {
   archiveSocialPost,
   createSocialComment,
@@ -318,22 +325,42 @@ const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
 
 const hashSessionToken = (token) => createHash("sha256").update(String(token)).digest("hex");
 
-const serializeAdmin = (row) => ({
-  id: row.id,
-  email: row.email,
-  display_name: row.display_name || null,
-  role: row.role,
-  permissions: getAdminPermissions(row.role),
-  must_change_password: Boolean(row.must_change_password),
-  created_at: row.created_at || null,
-  last_login_at: row.last_login_at || null,
-});
+// The identity the rest of the request works from.
+//
+// business_id and scope are both derived here, from the row and from the role,
+// and never from anything the caller sent. A request body carrying a
+// business_id is data about what to write, never a claim about who is asking.
+//
+// identity_source distinguishes a logged-in admin from the x-admin-api-key
+// identity, which has no admin_users row at all. That distinction has to
+// survive into request.admin: the two are not interchangeable, and code that
+// cannot tell them apart will eventually scope one of them wrongly.
+const serializeAdmin = (row) => {
+  const scope = getAdminScope(row.role);
+  return {
+    id: row.id,
+    email: row.email,
+    display_name: row.display_name || null,
+    role: row.role,
+    // Null for a platform role, always. A Seller role cannot reach here with a
+    // null business_id - admin_users_scope_check makes that row
+    // unrepresentable - but nothing downstream relies on that being true.
+    business_id: scope === ADMIN_SCOPES.SELLER ? (row.business_id ?? null) : null,
+    scope,
+    permissions: getAdminPermissions(row.role),
+    identity_source: "session",
+    must_change_password: Boolean(row.must_change_password),
+    created_at: row.created_at || null,
+    last_login_at: row.last_login_at || null,
+  };
+};
 
 const adminUserSelect = `
   id,
   email,
   display_name,
   role,
+  business_id,
   is_active,
   must_change_password,
   created_at,
@@ -479,6 +506,7 @@ const getAdminFromSession = async (request) => {
         au.email,
         au.display_name,
         au.role,
+        au.business_id,
         au.is_active,
         au.must_change_password,
         au.created_at,
@@ -504,15 +532,29 @@ const getAdminFromSession = async (request) => {
   return serializeAdmin(result.rows[0]);
 };
 
+// The x-admin-api-key identity.
+//
+// It has no admin_users row, so no CHECK constraint applies to it and no
+// business_id can ever be attached. It is platform-scoped, permanently and by
+// construction (OQ-4), and it is built here in one place so that it cannot
+// acquire a Seller scope by being assembled differently somewhere else.
+const apiKeyAdminIdentity = () => ({
+  id: "api-key",
+  email: "api-key",
+  role: ADMIN_ROLES.ADMIN,
+  business_id: null,
+  scope: ADMIN_SCOPES.PLATFORM,
+  permissions: getAdminPermissions(ADMIN_ROLES.ADMIN),
+  identity_source: "api_key",
+  must_change_password: false,
+});
+
+const matchesAdminApiKey = (request) =>
+  Boolean(adminApiKey) && secretsEqual(request.headers["x-admin-api-key"], adminApiKey);
+
 const requireAdmin = async (request, response) => {
-  if (adminApiKey && secretsEqual(request.headers["x-admin-api-key"], adminApiKey)) {
-    request.admin = {
-      id: "api-key",
-      email: "api-key",
-      role: ADMIN_ROLES.ADMIN,
-      permissions: getAdminPermissions(ADMIN_ROLES.ADMIN),
-      must_change_password: false,
-    };
+  if (matchesAdminApiKey(request)) {
+    request.admin = apiKeyAdminIdentity();
     return true;
   }
 
@@ -526,12 +568,27 @@ const requireAdmin = async (request, response) => {
   return false;
 };
 
-// Answers "is this caller an admin" without rejecting the request when they
-// are not. Public endpoints use it to decide how much of a row to reveal.
-const isAdminRequest = async (request) => {
-  if (adminApiKey && secretsEqual(request.headers["x-admin-api-key"], adminApiKey)) return true;
-  return Boolean(await getAdminFromSession(request));
+/**
+ * Resolves the admin identity behind a PUBLIC request, without rejecting it.
+ *
+ * Returns the identity, or null. It used to return a boolean, and the boolean
+ * was the bug: `asAdmin ? fullRow : publicRow` reveals the whole catalogue row
+ * - cost_price, commission_rate, supplier_id, business_id - to ANY valid admin
+ * session, with no role or scope test. That was not exploitable while every
+ * admin was platform-wide, which is exactly why it went unnoticed; M1b is what
+ * makes it reachable, so it is fixed in the same change that creates the risk.
+ *
+ * Callers must now ask what the identity may see, rather than whether one
+ * exists. See adminProductView below.
+ */
+const resolveAdminIdentity = async (request) => {
+  if (matchesAdminApiKey(request)) return apiKeyAdminIdentity();
+  return await getAdminFromSession(request);
 };
+
+// adminProductView, mayActOnRow and resolveWriteBusinessId live in
+// sellerScope.js so they can be unit-tested: importing this file starts a
+// server.
 
 const requireAdminPermission = async (request, response, permission) => {
   if (!(await requireAdmin(request, response))) return false;
@@ -586,6 +643,20 @@ const recordAdminAudit = async (admin, {
     console.error("Admin audit log write failed:", error.message);
   }
 };
+
+// Built here, after the helpers it needs exist, and injected rather than
+// imported by the module itself - so the intake routes can be exercised in a
+// test without booting this file, which starts a server on import.
+const handleProductIntakeRoute = createProductIntakeRoutes({
+  pool,
+  sendJson,
+  sendError,
+  readBody,
+  requireAdminPermission,
+  recordAdminAudit,
+});
+
+const publicCatalog = createPublicCatalog({ pool });
 
 const bootstrapAdmin = async (body) => {
   const email = normalizeEmail(body.email);
@@ -4010,10 +4081,17 @@ const scrapedProductFields = {
   flagged_at: "flagged_at",
 };
 
+// A rejected product payload is the caller's mistake, not the server's. These
+// throws carried no statusCode, so the top-level handler reported 500 and told
+// an admin the system had broken when in fact their input was refused - and the
+// real reason was replaced by "Internal server error". The rules below are
+// unchanged; only the status they are reported with.
+const invalidProductInput = (message) => Object.assign(new Error(message), { statusCode: 400 });
+
 const normalizeCategoryId = (value) => {
   if (value === null || value === undefined || value === "") return null;
   const id = String(value).trim();
-  if (!uuidPattern.test(id)) throw new Error("A valid category_id is required");
+  if (!uuidPattern.test(id)) throw invalidProductInput("A valid category_id is required");
   return id;
 };
 
@@ -4022,13 +4100,13 @@ const normalizeFieldValue = (field, value, target = "business") => {
 
   if (field === "name") {
     const name = typeof value === "string" ? value.trim() : "";
-    if (!name) throw new Error("Product name is required");
+    if (!name) throw invalidProductInput("Product name is required");
     return name;
   }
 
   if (field === "price") {
     const price = toNumber(value);
-    if (!price || price <= 0) throw new Error("A valid product price is required");
+    if (!price || price <= 0) throw invalidProductInput("A valid product price is required");
     return price;
   }
 
@@ -4072,8 +4150,8 @@ const normalizeProductPayload = (body) => {
   const name = typeof body.name === "string" ? body.name.trim() : "";
   const price = toNumber(body.price);
 
-  if (!name) throw new Error("Product name is required");
-  if (!price || price <= 0) throw new Error("A valid product price is required");
+  if (!name) throw invalidProductInput("Product name is required");
+  if (!price || price <= 0) throw invalidProductInput("A valid product price is required");
 
   return {
     name,
@@ -4619,10 +4697,28 @@ const submitOwnershipDecision = async (productId, body, admin) => {
 };
 
 const createProduct = async (body) => {
-  // First, before anything writes. normalizeProductPayload is pure, but
-  // ensureDefaultBusinessProfile inserts a business_profiles row and
-  // adoptProductImages downloads bytes to disk - a refusal after either would
-  // leave an artifact behind for a product that was never created.
+  // Stage 0's unconditional close is NOT wired up here, and that is a decision
+  // taken on 2026-09-15 rather than an oversight.
+  //
+  // legacyProductCreation.js is written, tested and right about the problem: an
+  // audit proved a product created through this route with no review, no image,
+  // no variant and no chosen seller was listed publicly and purchased end to
+  // end. Closing the route is the correct answer to that.
+  //
+  // What was not yet true when it was written is that a replacement exists.
+  // Product Intake's routes ship in this same deploy, but nothing in the admin
+  // UI speaks to them - the Seller admin screen, the review queue and the intake
+  // wizard are still to build. Calling assertLegacyProductCreationDisabled()
+  // today would close AdminProducts, ProductFormDialog, ProductImportWizard and
+  // ProductBulkActions - every way a product can be added - and leave adding one
+  // to hand-written API calls.
+  //
+  // So the close ships with the UI that replaces it, as one change. Until then
+  // this route behaves exactly as it does in production today, G-1's freeze
+  // included.
+  //
+  // Deliberately still no flag. A switch would let this reopen quietly later;
+  // wiring it up is one line and it belongs in the commit that ships the UI.
   assertLegacyIntakeAllowed(body, "POST /api/products");
 
   const payload = normalizeProductPayload(body);
@@ -5503,9 +5599,31 @@ const normalizeRequestedOrderItems = (items) => {
       throw error;
     }
 
+    // A marketplace line names the OFFER, which identifies the Seller, the
+    // variant and the terms at once. A legacy line names a product and nothing
+    // else, which is ambiguous the moment two Sellers carry the same thing.
+    // Both are accepted: carts already sitting in customers' browsers hold the
+    // legacy shape, and they must keep working unchanged.
+    const offerId = String(item.offer_id || "").trim();
+    if (offerId) {
+      if (!uuidPattern.test(offerId)) {
+        const error = new Error("offer_id must be a uuid");
+        error.statusCode = 400;
+        throw error;
+      }
+      return {
+        offer_id: offerId,
+        product_id: null,
+        requested_source: null,
+        quantity,
+        variant: item.variant ? String(item.variant).trim().slice(0, 120) : null,
+        size: item.size ? String(item.size).trim().slice(0, 120) : null,
+      };
+    }
+
     const productId = String(item.product_id || item.id || "").trim();
     if (!uuidPattern.test(productId)) {
-      const error = new Error("Each order item requires a valid product_id");
+      const error = new Error("Each order item requires a valid product_id or offer_id");
       error.statusCode = 400;
       throw error;
     }
@@ -5519,6 +5637,7 @@ const normalizeRequestedOrderItems = (items) => {
     }
 
     return {
+      offer_id: null,
       product_id: productId,
       requested_source: productSource,
       quantity,
@@ -5528,7 +5647,90 @@ const normalizeRequestedOrderItems = (items) => {
   });
 };
 
+/**
+ * Resolves a marketplace line from its offer.
+ *
+ * Everything binding is read from the server inside this transaction: the
+ * price, the Seller, the availability, the publication state and the Seller's
+ * commercial status. The client sends an offer_id and a quantity; it does not
+ * get to assert anything else.
+ *
+ * `for share` on the offer, so it cannot be archived or repriced between this
+ * read and the order being written.
+ *
+ * Every refusal answers 409 with the same shape, and deliberately does not say
+ * which condition failed beyond "unavailable": a public checkout is not the
+ * place to tell a caller that a product exists but its Seller was suspended.
+ */
+const resolveMarketplaceOrderItem = async (client, requestedItem) => {
+  const { rows } = await client.query(
+    `select o.id as offer_id, o.business_id as seller_business_id, o.sku,
+            o.price, o.sale_price, o.currency,
+            o.status, o.archived_at,
+            v.id as product_variant_id, v.label as variant_label,
+            v.status as variant_status, v.archived_at as variant_archived_at,
+            p.id as catalog_product_id, p.name as product_name,
+            p.publication_state, p.archived_at as product_archived_at,
+            i.availability,
+            b.is_verified, b.commercial_status,
+            (select m.storage_path from public.product_media m
+              where m.catalog_product_id = p.id and m.archived_at is null
+                and m.approved_at is not null
+              order by m.display_order, m.approved_at limit 1) as image_path
+       from public.seller_offers o
+       join public.product_variants v on v.id = o.product_variant_id
+       join public.catalog_products p on p.id = v.catalog_product_id
+       join public.business_profiles b on b.id = o.business_id
+       left join public.inventory i on i.seller_offer_id = o.id
+      where o.id = $1
+      for share of o`,
+    [requestedItem.offer_id],
+  );
+
+  const offer = rows[0];
+  const unavailable = () => {
+    const error = new Error("This item is no longer available");
+    error.statusCode = 409;
+    throw error;
+  };
+
+  if (!offer) unavailable();
+  if (offer.archived_at || offer.variant_archived_at || offer.product_archived_at) unavailable();
+  if (offer.status !== "ACTIVE") unavailable();
+  if (offer.variant_status !== "ACTIVE") unavailable();
+  if (offer.publication_state !== "PUBLISHED") unavailable();
+  // The same predicate provisioning and the publication gate use. A Seller
+  // suspended after publishing stops selling here, immediately.
+  if (!isSellerEligible(offer)) unavailable();
+  if (!["IN_STOCK", "PREORDER"].includes(String(offer.availability || ""))) unavailable();
+
+  const price = toMoney(Number(offer.sale_price) > 0 ? offer.sale_price : offer.price);
+  if (!(price > 0)) unavailable();
+
+  return {
+    offer_id: offer.offer_id,
+    seller_business_id: offer.seller_business_id,
+    product_variant_id: offer.product_variant_id,
+    // product_id carries the catalogue product, so an order line still names
+    // the thing that was bought in the vocabulary the rest of the row uses.
+    product_id: offer.catalog_product_id,
+    product_source: "catalog",
+    product_name: offer.product_name,
+    product_image: offer.image_path || "/placeholder.svg",
+    quantity: requestedItem.quantity,
+    price,
+    currency: offer.currency || "ILS",
+    variant: offer.variant_label || requestedItem.variant,
+    size: requestedItem.size,
+    sku: offer.sku ? String(offer.sku).trim() || null : null,
+    weight: null,
+    weight_unit: null,
+  };
+};
+
 const resolveCatalogOrderItem = async (client, requestedItem) => {
+  if (requestedItem.offer_id) return await resolveMarketplaceOrderItem(client, requestedItem);
+
   const findManual = () => client.query(
     `
       select id, name, image_url, price, sale_price, in_stock, sku, weight, weight_unit
@@ -5876,6 +6078,39 @@ const createOrder = async (body, currentUser = null, eventOrigin = "app") => {
     await client.query("begin");
 
     const orderItems = await resolveCatalogOrderItems(client, body.items);
+
+    // One Seller per order (decided for the MVP). Enforced here rather than in
+    // the cart, because the cart lives in a browser and a browser is not where
+    // a rule like this can be enforced.
+    //
+    // Legacy lines carry no Seller at all, so they are excluded from the check:
+    // a cart of legacy products still checks out exactly as it does today.
+    const sellers = new Set(orderItems.map((item) => item.seller_business_id).filter(Boolean));
+    if (sellers.size > 1) {
+      const error = new Error(
+        "An order can contain items from only one seller. Please check out each seller separately.",
+      );
+      error.statusCode = 409;
+      error.code = "MULTIPLE_SELLERS_IN_ORDER";
+      throw error;
+    }
+    // Mixing a marketplace line with a legacy one would produce an order that
+    // is half-attributed: one line with a Seller, one without, and no honest
+    // answer to "who sold this order".
+    if (sellers.size === 1 && orderItems.some((item) => !item.seller_business_id)) {
+      const error = new Error(
+        "An order cannot mix marketplace items with legacy catalogue items.",
+      );
+      error.statusCode = 409;
+      error.code = "MIXED_CATALOGUE_ORDER";
+      throw error;
+    }
+    const orderSellerBusinessId = sellers.size === 1 ? [...sellers][0] : null;
+
+    // The rate that applies to this order, read once and snapshotted per line.
+    // NULL when none is configured - which is a fact, not a zero.
+    const commissionRate = readPlatformCommissionRate();
+
     const amounts = await calculateOrderAmounts(client, body, orderItems, shippingAddress);
     const expectedTotal = Number(body.expected_total);
     if (!Object.prototype.hasOwnProperty.call(body, "expected_total")
@@ -5931,13 +6166,14 @@ const createOrder = async (body, currentUser = null, eventOrigin = "app") => {
           pet_name,
           special_instructions,
           medical_urgency,
-          access_token_hash
+          access_token_hash,
+          seller_business_id
         )
         values (
           $1, $2, $3, $4, $5, $6,
           'pending', $7, $8, $9,
           $10, $11, $12, $13, $14, $15, $16, $17,
-          $18, $19, $20, $21, $22
+          $18, $19, $20, $21, $22, $23
         )
         returning *
       `,
@@ -5964,6 +6200,7 @@ const createOrder = async (body, currentUser = null, eventOrigin = "app") => {
         safeText(body.special_instructions, 2000) || null,
         medicalUrgency,
         accessToken ? hashOpaqueToken(accessToken) : null,
+        orderSellerBusinessId,
       ],
     );
 
@@ -5983,6 +6220,18 @@ const createOrder = async (body, currentUser = null, eventOrigin = "app") => {
       ["sku", (item) => item.sku ?? null],
       ["weight", (item) => item.weight ?? null],
       ["weight_unit", (item) => item.weight_unit ?? null],
+      // The marketplace snapshot. NULL on a legacy line, which is the honest
+      // answer: it was not sold by a Seller under a commission.
+      ["seller_business_id", (item) => item.seller_business_id ?? null],
+      ["seller_offer_id", (item) => item.offer_id ?? null],
+      ["product_variant_id", (item) => item.product_variant_id ?? null],
+      ["currency", (item) => item.currency ?? null],
+      // Rate and amount both, per line. Recomputing an amount from a rate later
+      // would apply today's rounding to a price that has since changed.
+      ["commission_rate", (item) => (item.seller_business_id ? commissionRate : null)],
+      ["commission_amount", (item) => (item.seller_business_id
+        ? commissionForLine(commissionRate, toMoney(Number(item.price) * item.quantity))
+        : null)],
     ];
     const itemValues = [];
     const placeholders = orderItems.map((item, index) => {
@@ -7731,6 +7980,41 @@ const handleRequest = async (request, response) => {
       return;
     }
 
+    // Product Intake. Kept in its own module because every route in it shares
+    // one shape - authenticate, then read the body, then check ownership inside
+    // a transaction - and that shape is the security property. Scattering these
+    // through the chain below would make it a convention instead of a rule.
+    if (await handleProductIntakeRoute(request, response, url)) return;
+
+    // The public catalogue, read from the new model. Served ALONGSIDE
+    // /api/products, not instead of it: everything a shopper can see today
+    // lives in business_products, none of it has been through intake, and
+    // legacy ownership is deliberately not legitimised retroactively. Switching
+    // the existing route over would empty the shop. The cutover is its own
+    // change, once there is something here to serve.
+    if (request.method === "GET" && url.pathname === "/api/catalog") {
+      sendJson(response, 200, {
+        products: await publicCatalog.listCatalog({
+          categoryId: url.searchParams.get("category_id"),
+          limit: url.searchParams.get("limit"),
+          offset: url.searchParams.get("offset"),
+        }),
+      });
+      return;
+    }
+
+    const catalogProductMatch = url.pathname.match(/^\/api\/catalog\/([0-9a-fA-F-]{36})$/);
+    if (catalogProductMatch && request.method === "GET") {
+      const product = await publicCatalog.getCatalogProduct(catalogProductMatch[1]);
+      if (!product) {
+        // Unpublished, Seller suspended, or never existed - all the same answer.
+        sendError(response, 404, "Product not found");
+        return;
+      }
+      sendJson(response, 200, { product });
+      return;
+    }
+
     if (request.method === "GET" && url.pathname === "/api/health") {
       if (!(await checkDatabaseHealth(pool))) {
         sendJson(response, 503, { ok: false, service: "mipo-api", version: deployVersion, error: "Database unavailable" });
@@ -8822,8 +9106,16 @@ const handleRequest = async (request, response) => {
       // Admin screens edit the full row; everyone else gets the public shape.
       // The allowlist is what keeps the supplier origin off a shop response
       // too: image_source_url and image_adopted_at are simply not in it.
-      const asAdmin = await isAdminRequest(request);
-      sendJson(response, 200, { products: asAdmin ? products : products.map(toPublicProduct) });
+      //
+      // Decided per row, not once for the request. A Seller-scoped admin sees
+      // its own products in full and everybody else's in exactly the shape an
+      // anonymous visitor sees - so one Seller's cost_price, commission_rate
+      // and supplier_id never reach another.
+      const identity = await resolveAdminIdentity(request);
+      sendJson(response, 200, {
+        products: products.map((product) =>
+          (adminProductView(identity, product) === "full" ? product : toPublicProduct(product))),
+      });
       return;
     }
 
@@ -8977,11 +9269,22 @@ const handleRequest = async (request, response) => {
         sendError(response, 404, "Product not found");
         return;
       }
-      const asAdmin = await isAdminRequest(request);
-      sendJson(response, 200, { product: asAdmin ? product : toPublicProduct(product) });
+      const identity = await resolveAdminIdentity(request);
+      sendJson(response, 200, {
+        product: adminProductView(identity, product) === "full" ? product : toPublicProduct(product),
+      });
       return;
     }
 
+    // Stage 0's close is not wired up here yet. See createProduct's comment for
+    // the dated reason: legacyProductCreation.js is written and tested, but the
+    // admin screens it would close are the only way to add a product until the
+    // intake UI exists, so the close ships with that UI as one change.
+    //
+    // Until then this route does what production does today: G-1's freeze
+    // inside createProduct still refuses a scraped-backed payload, which is the
+    // path the Stage 0 audit actually found reaching the public catalogue
+    // unreviewed.
     if (request.method === "POST" && url.pathname === "/api/products") {
       if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_CREATE))) return;
       const product = await createProduct(await readBody(request));

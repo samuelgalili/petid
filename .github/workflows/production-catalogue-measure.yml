@@ -1,0 +1,770 @@
+# C-0 — Legacy catalogue migration readiness, read-only.
+#
+# Manual only. Measures the 375 legacy products in production; changes nothing.
+#
+# This is the measurement the catalogue migration is blocked on, and it exists
+# because the migration's design is a function of the answers. Three decisions
+# cannot be made without it:
+#
+#   * WHICH ATTRIBUTES A CATEGORY DECLARES AS REQUIRED. A product page that
+#     shows "קלוריות לק״ג: לא צוין" on 96% of its products is not consistent,
+#     it is broken. Only a per-category fill rate says which fields are worth
+#     promising.
+#
+#   * WHETHER AN AUTO-APPROVAL RULE IS WORTH HAVING. If most products fail the
+#     strict rule they all land in the manual queue anyway and the rule buys
+#     nothing. C-09 simulates the exact rule against the real rows.
+#
+#   * HOW MUCH IMAGE WORK THERE IS. Images still pointing at a supplier's
+#     server have never been through normalizeProductImage, so they are every
+#     shape and weight. C-05/C-06 count them.
+#
+# It follows production-d18-readonly.yml exactly - same SSH path, same
+# environment, same connection handling, same static guard, same redaction.
+# Nothing here is a new access route: it borrows the one that already exists.
+#
+# The SQL block is 29 SELECT statements wrapped in BEGIN /
+# SET TRANSACTION READ ONLY / ROLLBACK: 32 statements in total.
+#
+# C-24..C-29 answer U-6: 134 products carry needs_price_review and 98 carry
+# needs_image_review, and nothing in the schema records when or why either was
+# set. A flag cannot be dated directly, so it is tested against the thing it is
+# about - a product flagged for price review that now has a price, or flagged
+# for image review whose image has since been normalized, is a flag that has
+# outlived its reason. C-29 is the counterfactual that decides whether chasing
+# this is worth anything: if dropping a flag barely moves the rule's pass count,
+# the flags are not what is holding the manual queue at 188.
+#
+# C-21..C-23 count the effect of migration 0051 BEFORE it is deployed, by
+# resolving category the way it will. C-10 measured the auto-approval rule at
+# 19% with category_id null on 241 products as the dominant blocker; 0051
+# removes that blocker with two alias rows, and C-22 says what the rule would
+# then pass. Measuring a migration's effect before running it is cheaper than
+# deploying to find out.
+#
+# C-01..C-12 are the first pass. C-13..C-20 were added after it ran, to settle
+# four things the first pass could only guess at, because it deliberately read
+# attribute KEY names and not values:
+#
+#   * C-13/C-14 - whether the 'animal' attribute holds the species that
+#     pet_type cannot express. 141 products (38%) sit in pet_type = 'other'.
+#   * C-16/C-17 - whether family_code groups variants of one product, which is
+#     what decides how catalog_products and product_variants are built.
+#   * C-19/C-20 - how much of the category normalisation the 57 EXISTING
+#     aliases already solve. 241 products carry free text and no category_id.
+#
+# Product data is commercial data, not personal data. Even so, nothing below
+# selects a product name, a description, a supplier URL or a barcode value:
+# every statement returns counts, taxonomy labels and attribute key names.
+# C-17 counts DISTINCT names within a family without selecting one, and C-18
+# counts barcodes and their duplicate groups without listing a code.
+
+name: C-0 catalogue measurement (read-only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type the words  READ-ONLY  here (that exact text) to confirm this run only measures production'
+        required: true
+        default: ''
+
+permissions:
+  contents: read
+
+# The deploy's own production group. These statements take ACCESS SHARE for the
+# transaction's duration and a deploy migration takes ACCESS EXCLUSIVE, so
+# overlapping them would let a read-only measurement block a production
+# migration. The literal name, not deploy-aws.yml's branch-dependent expression,
+# which would put a run dispatched from another branch into aws-staging.
+concurrency:
+  group: aws-production
+  cancel-in-progress: false
+
+jobs:
+  measure:
+    name: Measure the legacy catalogue (read-only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # The environment that holds MIPO_AWS_SSH_PRIVATE_KEY.
+    #
+    # Note, because the D-18 run proved the convenient assumption wrong: this
+    # environment has NO required reviewer configured today. Binding here gets
+    # the secret and the deployment log; it does NOT get an approval gate.
+    environment: production
+
+    env:
+      MIPO_AWS_HOST: ${{ vars.MIPO_AWS_HOST || '63.183.241.110' }}
+      MIPO_AWS_USER: ${{ vars.MIPO_AWS_USER || 'ubuntu' }}
+      MIPO_REMOTE_PATH: ${{ vars.MIPO_REMOTE_PATH || '/opt/mipo' }}
+
+    steps:
+      - name: Confirm intent
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          set -euo pipefail
+          if [ "$CONFIRMATION" != "READ-ONLY" ]; then
+            # The instruction comes FIRST and the status code LAST, because the
+            # other way round taught somebody to type the status code into the
+            # box. A message that causes the mistake it is warning about is a
+            # bad message, however correct it is.
+            echo "Nothing was contacted. Production was not touched." >&2
+            echo "" >&2
+            echo "The confirmation box has to contain exactly this text:" >&2
+            echo "" >&2
+            echo "    READ-ONLY" >&2
+            echo "" >&2
+            echo "Nine characters: R E A D hyphen O N L Y, capitals." >&2
+            echo "Re-run the workflow and type it into the 'confirmation' field." >&2
+            echo "" >&2
+            echo "(This job reports the status code BLOCKED-PROD when it stops" >&2
+            echo " early. That code is output, never input - do not type it.)" >&2
+            exit 1
+          fi
+          echo "Confirmed: read-only measurement."
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Checked before anything connects, rather than trusted because it was
+      # reviewed once. Fails the job on any statement that is not a SELECT,
+      # including one added later by somebody who meant well.
+      - name: Verify the embedded SQL is read-only
+        run: |
+          set -euo pipefail
+          workflow=".github/workflows/production-catalogue-measure.yml"
+
+          # Markers matched WHOLE-LINE and anchored, so the extraction command
+          # in this very step cannot match itself and swallow the SSH block.
+          sql="$(sed -n '/^[[:space:]]*-- C0-SQL-BEGIN$/,/^[[:space:]]*-- C0-SQL-END$/p' "$workflow")"
+          if [ -z "$sql" ]; then
+            echo "Could not extract the SQL block - the markers are missing." >&2
+            exit 1
+          fi
+
+          # Statement-initial write verbs, checked at the start of a line so a
+          # word inside a comment or a column alias does not trip it.
+          if printf '%s\n' "$sql" | grep -inE \
+            '^[[:space:]]*(insert|update|delete|alter|drop|create|grant|revoke|truncate|copy|call|do|vacuum|reindex|refresh|comment|lock|analyze|cluster|security)\b'; then
+            echo "A non-SELECT statement is present in the C-0 SQL block. Refusing to run." >&2
+            exit 1
+          fi
+
+          for required in 'BEGIN;' 'SET TRANSACTION READ ONLY;' 'ROLLBACK;'; do
+            if ! printf '%s\n' "$sql" | grep -qF "$required"; then
+              echo "The SQL block is missing: $required" >&2
+              exit 1
+            fi
+          done
+
+          # Counted as STATEMENTS, not as lines: comments and psql
+          # meta-commands are dropped, the rest is split on ';', and each
+          # fragment is classified by its first word.
+          statements="$(printf '%s\n' "$sql" \
+            | grep -vE '^[[:space:]]*--' \
+            | grep -vE '^[[:space:]]*\\' \
+            | tr '\n' ' ' | tr ';' '\n' \
+            | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
+            | grep -v '^$')"
+
+          select_count="$(printf '%s\n' "$statements" | grep -ciE '^select' || true)"
+          total_count="$(printf '%s\n' "$statements" | grep -c '' || true)"
+          other="$(printf '%s\n' "$statements" | grep -ivE '^select' || true)"
+          other_count="$(printf '%s\n' "$other" | grep -c '^.' || true)"
+
+          # Exactly three non-SELECT statements are permitted, and only these.
+          if [ "$other_count" -ne 3 ]; then
+            echo "Expected exactly 3 non-SELECT statements (BEGIN, SET TRANSACTION READ ONLY, ROLLBACK); found ${other_count}:" >&2
+            printf '%s\n' "$other" >&2
+            exit 1
+          fi
+          if ! printf '%s\n' "$other" | grep -qiE '^begin$' \
+            || ! printf '%s\n' "$other" | grep -qiE '^set transaction read only$' \
+            || ! printf '%s\n' "$other" | grep -qiE '^rollback$'; then
+            echo "The three non-SELECT statements are not exactly BEGIN / SET TRANSACTION READ ONLY / ROLLBACK:" >&2
+            printf '%s\n' "$other" >&2
+            exit 1
+          fi
+
+          echo "SQL block verified: ${select_count} SELECT statements plus BEGIN, SET TRANSACTION READ ONLY and ROLLBACK (${total_count} statements in total). No write statements."
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.MIPO_AWS_SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SSH_PRIVATE_KEY:-}" ]; then
+            echo "BLOCKED-PROD: the production environment has no MIPO_AWS_SSH_PRIVATE_KEY." >&2
+            echo "There is no other route to the database, and no fallback will be attempted." >&2
+            exit 1
+          fi
+          if [ -z "${MIPO_AWS_HOST}" ]; then
+            echo "BLOCKED-PROD: MIPO_AWS_HOST is empty for the production environment." >&2
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/mipo_aws_key
+          chmod 600 ~/.ssh/mipo_aws_key
+          ssh-keyscan -T 30 -H "$MIPO_AWS_HOST" >> ~/.ssh/known_hosts || true
+          echo "SSH configured for ${MIPO_AWS_USER}@${MIPO_AWS_HOST}"
+
+      - name: Run C-0 against production
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 \
+            "${MIPO_AWS_USER}@${MIPO_AWS_HOST}" \
+            "MIPO_REMOTE_PATH='${MIPO_REMOTE_PATH}' bash -s" <<'REMOTE'
+          set -euo pipefail
+          # No `set -x` anywhere: tracing would echo the line that expands
+          # DATABASE_URL.
+
+          ENV_FILE="${MIPO_REMOTE_PATH}/.env"
+          PG_IMAGE="${MIPO_PG_IMAGE:-postgres:16-alpine}"
+
+          if [ ! -f "$ENV_FILE" ]; then
+            echo "BLOCKED-PROD: no env file at $ENV_FILE" >&2
+            exit 1
+          fi
+
+          # Read DATABASE_URL without sourcing the file: .env holds every
+          # production secret. The LAST definition wins, matching how docker
+          # compose's env_file resolves duplicates.
+          DATABASE_URL="$(grep -E '^[[:space:]]*(export[[:space:]]+)?DATABASE_URL=' "$ENV_FILE" | tail -1 | cut -d= -f2- || true)"
+          DATABASE_URL="$(printf '%s' "$DATABASE_URL" | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+          DATABASE_URL="${DATABASE_URL%\"}"; DATABASE_URL="${DATABASE_URL#\"}"
+          DATABASE_URL="${DATABASE_URL%\'}"; DATABASE_URL="${DATABASE_URL#\'}"
+
+          if [ -z "$DATABASE_URL" ]; then
+            echo "BLOCKED-PROD: DATABASE_URL is not set in $ENV_FILE" >&2
+            exit 1
+          fi
+
+          # Shape check only. Reports nothing derived from the value - not the
+          # URI, not its length, not the scheme, host, user, port or database.
+          case "$DATABASE_URL" in
+            postgres://*|postgresql://*) ;;
+            *)
+              echo "BLOCKED-PROD: DATABASE_URL in $ENV_FILE does not begin with postgres:// or postgresql://." >&2
+              exit 1
+              ;;
+          esac
+
+          echo "Connection string located in $ENV_FILE. Not printed."
+
+          C0_SQL="$(cat <<'SQL'
+          -- C0-SQL-BEGIN
+          \pset pager off
+          \timing off
+
+          BEGIN;
+          SET TRANSACTION READ ONLY;
+
+          \echo '### C-01 - how many products, and where they sit'
+
+          select count(*) as products_total,
+                 count(distinct business_id) as distinct_businesses,
+                 count(*) filter (where category_id is not null) as with_category_id,
+                 count(*) filter (where category_id is null) as without_category_id,
+                 count(*) filter (where pet_type is not null) as with_pet_type
+            from public.business_products;
+
+          \echo '### C-02 - distribution by category'
+          -- The denominator for every per-category decision below. A category
+          -- holding three products does not earn its own template.
+
+          select coalesce(c.name_he, bp.category, '(uncategorised)') as category,
+                 count(*) as products,
+                 count(*) filter (where bp.category_id is null) as no_category_id
+            from public.business_products bp
+            left join public.product_categories c on c.id = bp.category_id
+           group by 1
+           order by products desc;
+
+          \echo '### C-03 - universal-band fill rates'
+          -- These are the fields the unified product page promises for EVERY
+          -- product regardless of category. A gap here is a gap on every page.
+
+          select count(*) as products,
+                 count(*) filter (where name is not null and btrim(name) <> '') as has_name,
+                 count(*) filter (where description is not null and btrim(description) <> '') as has_description,
+                 count(*) filter (where length(btrim(coalesce(description, ''))) >= 80) as description_80_chars_plus,
+                 count(*) filter (where brand is not null and btrim(brand) <> '') as has_brand,
+                 count(*) filter (where sku is not null and btrim(sku) <> '') as has_sku,
+                 count(*) filter (where price > 0) as has_positive_price
+            from public.business_products;
+
+          \echo '### C-04 - category-band fill rates, per category'
+          -- The statement the attribute schema is built from. A column filled
+          -- for 5% of a category must not become a required attribute there.
+
+          select coalesce(c.name_he, bp.category, '(uncategorised)') as category,
+                 count(*) as products,
+                 count(*) filter (where bp.ingredients is not null and btrim(bp.ingredients) <> '') as ingredients,
+                 count(*) filter (where bp.kcal_per_kg is not null) as kcal_per_kg,
+                 count(*) filter (where bp.life_stage is not null and btrim(bp.life_stage) <> '') as life_stage,
+                 count(*) filter (where bp.dog_size is not null and btrim(bp.dog_size) <> '') as dog_size,
+                 count(*) filter (where bp.special_diet is not null and array_length(bp.special_diet, 1) > 0) as special_diet,
+                 count(*) filter (where bp.flavors is not null and array_length(bp.flavors, 1) > 0) as flavors,
+                 count(*) filter (where bp.weight_unit is not null and btrim(bp.weight_unit) <> '') as weight_unit
+            from public.business_products bp
+            left join public.product_categories c on c.id = bp.category_id
+           group by 1
+           order by products desc;
+
+          \echo '### C-05 - the jsonb content columns'
+          -- jsonb_typeof guards jsonb_array_length, which errors on a non-array.
+          -- A column defaulting to '[]' can still hold an object if anything
+          -- ever wrote one.
+
+          select count(*) filter (where jsonb_typeof(benefits) = 'array' and jsonb_array_length(benefits) > 0) as benefits_nonempty,
+                 count(*) filter (where jsonb_typeof(benefits) not in ('array', 'null')) as benefits_not_an_array,
+                 count(*) filter (where jsonb_typeof(feeding_guide) = 'array' and jsonb_array_length(feeding_guide) > 0) as feeding_guide_nonempty,
+                 count(*) filter (where jsonb_typeof(feeding_guide) not in ('array', 'null')) as feeding_guide_not_an_array,
+                 count(*) filter (where jsonb_typeof(product_attributes) = 'object' and product_attributes <> '{}'::jsonb) as attributes_nonempty
+            from public.business_products;
+
+          \echo '### C-06 - image adoption: how much has never been normalized'
+          -- A row still pointing at http:// has never been through
+          -- normalizeProductImage, so it is an arbitrary size and weight and
+          -- the bytes belong to somebody else.
+
+          select count(*) as products,
+                 count(*) filter (where image_url like '/uploads/%') as adopted_local,
+                 count(*) filter (where image_url like 'http%') as foreign_remote,
+                 count(*) filter (where image_url = '/placeholder.svg') as placeholder_only,
+                 count(*) filter (where images is not null and array_length(images, 1) > 0) as has_gallery,
+                 coalesce(max(array_length(images, 1)), 0) as largest_gallery,
+                 count(*) filter (where needs_image_review) as flagged_for_image_review
+            from public.business_products;
+
+          \echo '### C-07 - gallery entries, counted individually'
+
+          select count(*) as gallery_entries,
+                 count(*) filter (where img like '/uploads/%') as adopted_local,
+                 count(*) filter (where img like 'http%') as foreign_remote
+            from public.business_products bp,
+                 lateral unnest(coalesce(bp.images, '{}')) as img;
+
+          \echo '### C-08 - which product_attributes keys exist, and how often'
+          -- Key names only, never values. These are the candidates for variant
+          -- axes (size, flavour, colour) as opposed to product-level facts.
+
+          select k.key as attribute_key,
+                 count(*) as products
+            from public.business_products bp,
+                 lateral jsonb_object_keys(
+                   case when jsonb_typeof(bp.product_attributes) = 'object'
+                        then bp.product_attributes
+                        else '{}'::jsonb end) as k(key)
+           group by 1
+           order by products desc, attribute_key
+           limit 40;
+
+          \echo '### C-09 - pet_type distribution: the species gap, quantified'
+          -- The enum is ('dog','cat','other','all'). Every rodent, bird and
+          -- rabbit in the catalogue is therefore sitting in 'other' or NULL,
+          -- and a product page cannot vary on a distinction the data does not
+          -- carry. This counts how much is affected.
+
+          select coalesce(pet_type::text, '(null)') as pet_type,
+                 count(*) as products
+            from public.business_products
+           group by 1
+           order by products desc;
+
+          \echo '### C-10 - the auto-approval rule, simulated against real rows'
+          -- The strict rule: named, priced, categorised, carrying a real image,
+          -- and not previously flagged. would_auto_approve is what decides
+          -- whether the rule is worth having at all - if it is small, every
+          -- product lands in the manual queue regardless.
+
+          select count(*) as products,
+                 count(*) filter (where is_flagged) as flagged,
+                 count(*) filter (where needs_image_review) as needs_image_review,
+                 count(*) filter (where needs_price_review) as needs_price_review,
+                 count(*) filter (
+                   where name is not null and btrim(name) <> ''
+                     and price > 0
+                     and category_id is not null
+                     and image_url is not null
+                     and image_url <> '/placeholder.svg'
+                     and not coalesce(is_flagged, false)
+                     and not coalesce(needs_image_review, false)
+                     and not coalesce(needs_price_review, false)
+                 ) as would_auto_approve
+            from public.business_products;
+
+          \echo '### C-11 - data quality problems the migration will have to answer for'
+
+          select count(*) filter (where price <= 0) as price_not_positive,
+                 count(*) filter (where name is null or btrim(name) = '') as name_missing,
+                 count(*) filter (where sale_price is not null and sale_price > price) as sale_above_price,
+                 count(*) filter (where original_price is not null and original_price < price) as original_below_price,
+                 (select count(*)
+                    from (select lower(btrim(name))
+                            from public.business_products
+                           group by 1
+                          having count(*) > 1) dupes) as duplicate_name_groups
+            from public.business_products;
+
+          \echo '### C-12 - what else feeds the catalogue'
+          -- scraped_products is the other import surface. If it is large, the
+          -- migration plan has to account for it too rather than discovering it
+          -- afterwards.
+
+          select (select count(*) from public.scraped_products) as scraped_products,
+                 (select count(*) from public.business_products) as business_products,
+                 (select count(*) from public.product_categories) as categories_defined,
+                 (select count(*) from public.product_category_aliases) as category_aliases;
+
+          \echo '### C-13 - the animal vocabulary actually in use'
+          -- Run C-09 found 141 products (38%) sitting in pet_type = 'other'.
+          -- The import envelope carries its own 'animal' key on 266 products,
+          -- and the guess is that it holds the real species. A guess from a KEY
+          -- NAME is not a measurement, so this reads the values.
+
+          select coalesce(bp.product_attributes ->> 'animal', '(absent)') as animal_value,
+                 count(*) as products
+            from public.business_products bp
+           group by 1
+           order by products desc
+           limit 30;
+
+          \echo '### C-14 - animal x pet_type: does the attribute know more than the column?'
+          -- The decisive cross-tab. If the 'other' rows carry distinct animal
+          -- values, the species data already exists and pet_species is a
+          -- migration rather than a research project. If they are all absent or
+          -- all identical, the data is simply not there.
+
+          select coalesce(bp.pet_type::text, '(null)') as pet_type,
+                 coalesce(bp.product_attributes ->> 'animal', '(absent)') as animal_value,
+                 count(*) as products
+            from public.business_products bp
+           group by 1, 2
+           order by products desc
+           limit 40;
+
+          \echo '### C-15 - the product_type vocabulary, against what is already categorised'
+
+          select coalesce(bp.product_attributes ->> 'product_type', '(absent)') as product_type,
+                 count(*) as products,
+                 count(*) filter (where bp.category_id is not null) as already_categorised
+            from public.business_products bp
+           group by 1
+           order by products desc
+           limit 40;
+
+          \echo '### C-16 - family_code: how many products share one family'
+          -- If families routinely hold 2-6 products, family_code is the variant
+          -- grouping the new model needs - one catalog_product with several
+          -- product_variants. If every family holds exactly one, it is just
+          -- another per-product code and variants must be derived some other
+          -- way.
+
+          select fam.products_in_family,
+                 count(*) as families
+            from (select bp.product_attributes ->> 'family_code' as family_code,
+                         count(*) as products_in_family
+                    from public.business_products bp
+                   where bp.product_attributes ->> 'family_code' is not null
+                   group by 1) fam
+           group by 1
+           order by fam.products_in_family;
+
+          \echo '### C-17 - do products in one family actually differ, and how'
+          -- A family whose members differ by weight is a variant axis. A family
+          -- whose members have identical names and weights is a duplicate, not
+          -- a variant. Counts only: no name is ever selected.
+
+          select count(*) as families_with_multiple_products,
+                 count(*) filter (where f.distinct_weights > 1) as differ_by_weight,
+                 count(*) filter (where f.distinct_sizes > 1) as differ_by_dog_size,
+                 count(*) filter (where f.distinct_names > 1) as differ_by_name,
+                 count(*) filter (where f.distinct_prices > 1) as differ_by_price
+            from (select bp.product_attributes ->> 'family_code' as family_code,
+                         count(*) as n,
+                         count(distinct bp.product_attributes ->> 'משקל') as distinct_weights,
+                         count(distinct bp.dog_size) as distinct_sizes,
+                         count(distinct lower(btrim(bp.name))) as distinct_names,
+                         count(distinct bp.price) as distinct_prices
+                    from public.business_products bp
+                   where bp.product_attributes ->> 'family_code' is not null
+                   group by 1
+                  having count(*) > 1) f;
+
+          \echo '### C-18 - barcode as an identifier: coverage and uniqueness'
+          -- Counted and compared, never listed.
+
+          select count(*) filter (where btrim(coalesce(bp.product_attributes ->> 'barcode', '')) <> '') as with_barcode,
+                 count(distinct bp.product_attributes ->> 'barcode') as distinct_barcodes,
+                 count(*) filter (where btrim(coalesce(bp.sku, '')) <> '') as with_sku,
+                 (select count(*)
+                    from (select bp2.product_attributes ->> 'barcode' as code
+                            from public.business_products bp2
+                           where btrim(coalesce(bp2.product_attributes ->> 'barcode', '')) <> ''
+                           group by 1
+                          having count(*) > 1) dupes) as duplicate_barcode_groups
+            from public.business_products bp;
+
+          \echo '### C-19 - can the existing aliases already categorise the 241?'
+          -- 57 category aliases are defined and were never applied to these
+          -- rows. This says how much of the category normalisation is already
+          -- solved and how much needs a human to invent a mapping.
+
+          select count(*) as uncategorised,
+                 count(*) filter (where a.category_id is not null) as resolvable_by_existing_alias,
+                 count(*) filter (where a.category_id is null) as needs_a_new_alias
+            from public.business_products bp
+            left join public.product_category_aliases a
+              on a.alias = lower(btrim(bp.category))
+           where bp.category_id is null;
+
+          \echo '### C-20 - which free-text category values have no alias yet'
+
+          select lower(btrim(bp.category)) as category_text,
+                 count(*) as products
+            from public.business_products bp
+            left join public.product_category_aliases a
+              on a.alias = lower(btrim(bp.category))
+           where bp.category_id is null
+             and a.category_id is null
+           group by 1
+           order by products desc
+           limit 30;
+
+          \echo '### C-21 - what 0051 would categorise, counted before deploying it'
+          -- Migration 0051 adds two aliases, 'dry-food' and 'wet-food', which
+          -- C-20 showed are the only two unmatched free-text values in the
+          -- catalogue. It is not deployed. This counts its effect in advance,
+          -- by resolving category the way it will: an existing alias, or one of
+          -- the two it adds.
+          --
+          -- The two pending values are named literally rather than read from
+          -- the alias table, because in production that table does not contain
+          -- them yet. That is the point of asking before deploying.
+
+          select count(*) as products,
+                 count(*) filter (where p.category_id is not null) as categorised_today,
+                 count(*) filter (where p.category_id is null
+                                    and a.category_id is not null) as by_an_existing_alias,
+                 count(*) filter (where p.category_id is null
+                                    and a.category_id is null
+                                    and lower(btrim(coalesce(p.category, ''))) in ('dry-food', 'wet-food')) as by_0051,
+                 count(*) filter (where p.category_id is null
+                                    and a.category_id is null
+                                    and lower(btrim(coalesce(p.category, ''))) not in ('dry-food', 'wet-food')) as still_uncategorised
+            from public.business_products p
+            left join public.product_category_aliases a
+              on a.alias = lower(btrim(p.category));
+
+          \echo '### C-22 - the auto-approval rule, re-simulated as if 0051 had run'
+          -- C-10 measured the rule against today's data and it passed 19%, with
+          -- category_id null on 241 products as the dominant blocker. This is
+          -- the same rule with that one blocker removed, and it is the number
+          -- that decides whether the rule is worth building.
+
+          select count(*) as products,
+                 count(*) filter (
+                   where p.name is not null and btrim(p.name) <> ''
+                     and p.price > 0
+                     and (p.category_id is not null
+                          or a.category_id is not null
+                          or lower(btrim(coalesce(p.category, ''))) in ('dry-food', 'wet-food'))
+                     and p.image_url is not null
+                     and p.image_url <> '/placeholder.svg'
+                     and not coalesce(p.is_flagged, false)
+                     and not coalesce(p.needs_image_review, false)
+                     and not coalesce(p.needs_price_review, false)
+                 ) as would_auto_approve_after_0051
+            from public.business_products p
+            left join public.product_category_aliases a
+              on a.alias = lower(btrim(p.category));
+
+          \echo '### C-23 - why the rest still fail, per condition'
+          -- These overlap: one product can be blocked by several conditions at
+          -- once, so the columns do not sum to the remainder. What they say is
+          -- which condition is worth relaxing, and which is real work.
+
+          select count(*) filter (where not (p.price > 0)) as blocked_no_price,
+                 count(*) filter (where p.image_url is null
+                                     or p.image_url = '/placeholder.svg') as blocked_no_image,
+                 count(*) filter (where coalesce(p.needs_price_review, false)) as blocked_price_review,
+                 count(*) filter (where coalesce(p.needs_image_review, false)) as blocked_image_review,
+                 count(*) filter (where p.category_id is null
+                                    and a.category_id is null
+                                    and lower(btrim(coalesce(p.category, ''))) not in ('dry-food', 'wet-food')) as blocked_category
+            from public.business_products p
+            left join public.product_category_aliases a
+              on a.alias = lower(btrim(p.category));
+
+          \echo '### C-24 - is needs_price_review still true of the row it is on?'
+          -- U-6. 134 products carry this flag and nothing in the schema records
+          -- when or why it was set. A flag cannot be dated directly, so it is
+          -- tested against the thing it is about: a product flagged for price
+          -- review that now has a sensible price, or whose suggested price has
+          -- already been applied, is a flag that has outlived its reason.
+
+          select count(*) filter (where needs_price_review) as flagged,
+                 count(*) filter (where needs_price_review and price > 0) as flagged_but_priced,
+                 count(*) filter (where needs_price_review and price <= 0) as flagged_and_unpriced,
+                 count(*) filter (where needs_price_review and suggested_price is not null) as has_a_suggestion,
+                 count(*) filter (where needs_price_review and suggested_price is not null
+                                    and price = suggested_price) as suggestion_already_applied,
+                 count(*) filter (where not needs_price_review and price <= 0) as unpriced_but_not_flagged
+            from public.business_products;
+
+          \echo '### C-25 - is needs_image_review still true of the row it is on?'
+          -- Same test for the other flag. A product flagged for image review
+          -- whose image has since been normalized and is hosted by us has had
+          -- its problem fixed, whether or not anybody cleared the flag.
+
+          select count(*) filter (where needs_image_review) as flagged,
+                 count(*) filter (where needs_image_review and image_url like '/uploads/%') as flagged_but_normalized,
+                 count(*) filter (where needs_image_review and image_url like 'http%') as flagged_and_still_foreign,
+                 count(*) filter (where needs_image_review and image_url = '/placeholder.svg') as flagged_and_imageless,
+                 count(*) filter (where not needs_image_review and image_url = '/placeholder.svg') as imageless_but_not_flagged
+            from public.business_products;
+
+          \echo '### C-26 - the importer kept its own image verdict; do the two agree?'
+          -- 266 products carry an image_review_status key written by the import.
+          -- Where the column and the attribute disagree, one of them is stale,
+          -- and which one is the more trustworthy record is worth knowing
+          -- before 98 products are sent to a human queue on the column's word.
+
+          select coalesce(bp.product_attributes ->> 'image_review_status', '(absent)') as image_review_status,
+                 count(*) as products,
+                 count(*) filter (where bp.needs_image_review) as column_also_flags_it,
+                 count(*) filter (where bp.image_url like '/uploads/%') as image_is_normalized
+            from public.business_products bp
+           group by 1
+           order by products desc
+           limit 20;
+
+          \echo '### C-27 - how long since a flagged row was touched at all'
+          -- Measured NOW, deliberately: migration 0051 bumps updated_at on 241
+          -- rows when it runs, and after that this question can no longer be
+          -- asked of those rows.
+
+          select count(*) filter (where needs_price_review or needs_image_review) as flagged_any,
+                 min(updated_at) filter (where needs_price_review or needs_image_review) as oldest_update,
+                 max(updated_at) filter (where needs_price_review or needs_image_review) as newest_update,
+                 count(*) filter (where (needs_price_review or needs_image_review)
+                                    and updated_at < now() - interval '90 days') as untouched_90d,
+                 count(*) filter (where (needs_price_review or needs_image_review)
+                                    and updated_at < now() - interval '180 days') as untouched_180d,
+                 count(*) filter (where (needs_price_review or needs_image_review)
+                                    and updated_at = created_at) as never_updated_at_all
+            from public.business_products;
+
+          \echo '### C-28 - how the two flags overlap'
+
+          select count(*) as products,
+                 count(*) filter (where needs_price_review and needs_image_review) as both,
+                 count(*) filter (where needs_price_review and not needs_image_review) as price_only,
+                 count(*) filter (where needs_image_review and not needs_price_review) as image_only,
+                 count(*) filter (where not needs_price_review and not needs_image_review) as neither
+            from public.business_products;
+
+          \echo '### C-29 - what the rule would pass if a flag were not consulted'
+          -- The counterfactual that decides whether chasing U-6 is worth it. If
+          -- dropping a flag barely moves the number, the flag is not what is
+          -- holding the queue at 188 and the effort belongs elsewhere.
+          --
+          -- Every column keeps the real conditions - named, priced, categorised
+          -- as 0051 will, carrying an image, not is_flagged - and differs only
+          -- in which review flag it consults.
+
+          select count(*) filter (
+                   where p.name is not null and btrim(p.name) <> '' and p.price > 0
+                     and (p.category_id is not null or a.category_id is not null
+                          or lower(btrim(coalesce(p.category, ''))) in ('dry-food', 'wet-food'))
+                     and p.image_url is not null and p.image_url <> '/placeholder.svg'
+                     and not coalesce(p.is_flagged, false)
+                     and not coalesce(p.needs_image_review, false)
+                     and not coalesce(p.needs_price_review, false)) as both_flags_consulted,
+                 count(*) filter (
+                   where p.name is not null and btrim(p.name) <> '' and p.price > 0
+                     and (p.category_id is not null or a.category_id is not null
+                          or lower(btrim(coalesce(p.category, ''))) in ('dry-food', 'wet-food'))
+                     and p.image_url is not null and p.image_url <> '/placeholder.svg'
+                     and not coalesce(p.is_flagged, false)
+                     and not coalesce(p.needs_image_review, false)) as price_flag_ignored,
+                 count(*) filter (
+                   where p.name is not null and btrim(p.name) <> '' and p.price > 0
+                     and (p.category_id is not null or a.category_id is not null
+                          or lower(btrim(coalesce(p.category, ''))) in ('dry-food', 'wet-food'))
+                     and p.image_url is not null and p.image_url <> '/placeholder.svg'
+                     and not coalesce(p.is_flagged, false)
+                     and not coalesce(p.needs_price_review, false)) as image_flag_ignored,
+                 count(*) filter (
+                   where p.name is not null and btrim(p.name) <> '' and p.price > 0
+                     and (p.category_id is not null or a.category_id is not null
+                          or lower(btrim(coalesce(p.category, ''))) in ('dry-food', 'wet-food'))
+                     and p.image_url is not null and p.image_url <> '/placeholder.svg'
+                     and not coalesce(p.is_flagged, false)) as neither_flag_consulted
+            from public.business_products p
+            left join public.product_category_aliases a
+              on a.alias = lower(btrim(p.category));
+
+          ROLLBACK;
+          -- C0-SQL-END
+          SQL
+          )"
+          export C0_SQL
+          export DATABASE_URL
+
+          # Connection details are redacted from the output; server-side SQL
+          # errors are not, because they are the diagnostic the run produces.
+          redact() {
+            sed -E \
+              -e 's#postgres(ql)?://[^[:space:]"]*#<redacted-connection-string>#g' \
+              -e 's#^psql: error:.*#psql: error: <connection details redacted>#'
+          }
+
+          # Both values passed by NAME, so docker's argv and what docker inspect
+          # records hold the literal text "$DATABASE_URL", never its value. This
+          # is NOT a claim the value is absent from every process list: psql
+          # inside the container receives the URI as an argument, visible on
+          # this host for the seconds the run lasts - bounded by who can already
+          # read /opt/mipo/.env, but real.
+          #
+          # stdin is /dev/null so the container cannot consume the rest of this
+          # script, and no file is written on the host: the SQL travels in an
+          # environment variable.
+          set +e
+          docker run --rm \
+            -e PGCONNECT_TIMEOUT=15 \
+            --env DATABASE_URL \
+            --env C0_SQL \
+            "$PG_IMAGE" \
+            sh -c 'printf "%s\n" "$C0_SQL" | psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -X' </dev/null 2>&1 | redact
+          psql_status="${PIPESTATUS[0]}"
+          set -e
+
+          case "$psql_status" in
+            0)
+              echo "C-0 complete. Nothing on this host was modified."
+              ;;
+            2)
+              echo "BLOCKED-PROD: could not connect to the database (psql exit 2). Details redacted above." >&2
+              exit 2
+              ;;
+            3)
+              echo "C-0 failed: a statement was rejected by the server (psql exit 3). The server error is above, unredacted." >&2
+              exit 3
+              ;;
+            *)
+              echo "C-0 failed: docker/psql exited ${psql_status}." >&2
+              exit "$psql_status"
+              ;;
+          esac
+          REMOTE
+
+      - name: Remove the key
+        if: always()
+        run: |
+          set -euo pipefail
+          rm -f ~/.ssh/mipo_aws_key
+          echo "Key removed from the runner."

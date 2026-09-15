@@ -275,7 +275,7 @@ const ProductDetailAws = () => {
       <div className="min-h-screen bg-background p-4" dir="rtl">
         <div className="mx-auto max-w-5xl space-y-5">
           <Skeleton className="h-10 w-28" />
-          <Skeleton className="aspect-square w-full rounded-2xl md:aspect-[4/3]" />
+          <Skeleton className="aspect-square w-full rounded-2xl" />
           <Skeleton className="h-10 w-2/3" />
           <Skeleton className="h-24 w-full" />
         </div>
@@ -324,7 +324,13 @@ const ProductDetailAws = () => {
         {/* ---------------------------------------------------- gallery */}
         <div className="space-y-3">
           <div className="relative overflow-hidden rounded-2xl border bg-card">
-            <div className="aspect-square bg-muted md:aspect-[4/3]">
+            {/* Square, at every width, because the image pipeline's canvas is
+                square: IMAGE_PRESETS.product is 1200x1200. A 4:3 frame on
+                desktop left a normalized image pillarboxed inside grey bars and
+                rendered smaller than the space it was given. Every other
+                product surface in the app is already aspect-square; this page
+                was the one that disagreed. */}
+            <div className="aspect-square bg-muted">
               <OptimizedImage
                 src={images[activeImage] || "/placeholder.svg"}
                 alt={product.name}
