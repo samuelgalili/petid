@@ -22,6 +22,11 @@ const BOOT_TIMEOUT_MS = 30_000;
 // exercised here. It never leaves this process.
 const SMOKE_ADMIN_KEY = `smoke-${Math.random().toString(36).slice(2)}`;
 
+// A 15-digit microchip number unique to this run. The column is globally
+// unique, so a hardcoded one turns every re-run against the same database into
+// a false red.
+const SMOKE_MICROCHIP = `9${String(Date.now()).slice(-9)}${String(Math.floor(Math.random() * 100000)).padStart(5, "0")}`;
+
 const results = [];
 let failures = 0;
 
@@ -254,7 +259,11 @@ const main = async () => {
     const sent = {
       name: "Parity Dog",
       type: "dog",
-      microchip_number: "900000000000001",
+      // Microchip numbers are globally unique, so a fixed one makes this check
+      // pass exactly once per database and 500 on every re-run afterwards - a
+      // red that says nothing about the code. Per-run, like every other
+      // fixture here. 15 digits, which is what a real chip number is.
+      microchip_number: SMOKE_MICROCHIP,
       vet_clinic_name: "Smoke Clinic",
       vet_clinic_phone: "03-0000000",
       insurance_company: "Smoke Insurance",
@@ -1164,6 +1173,259 @@ const main = async () => {
       }
     });
 
+    // ── M9 · checkout against the marketplace model ──────────────────────
+    //
+    // The published product from the chain above is bought through the real
+    // POST /api/orders, and then every reason the sale should be refused is
+    // applied in turn. The legacy path is checked too: carts already sitting in
+    // customers' browsers carry product_id, not offer_id, and must keep working
+    // exactly as they do today.
+    const expectedOrderTotal = (subtotal, paymentMethod = "cash-on-delivery") => {
+      const shipping = subtotal >= 199 ? 0 : 25;
+      const cashOnDelivery = paymentMethod === "cash-on-delivery" ? 5 : 0;
+      return Math.round((subtotal + shipping + cashOnDelivery) * 100) / 100;
+    };
+
+    // A refusal is only evidence about the guard under test if the order would
+    // otherwise have gone through. Every negative check below therefore sends
+    // the CORRECT total - a wrong one earns its own 409, which would let the
+    // check keep passing with the guard deleted - and asserts that the refusal
+    // is the availability one rather than any other 409 the route can produce.
+    const expectUnavailable = async (response, sold) => {
+      if (response.status === 201) throw new Error(sold);
+      const text = await response.text();
+      if (response.status !== 409) throw new Error(`refused, but not with 409: ${response.status} ${text}`);
+      if (!text.includes("no longer available")) {
+        throw new Error(`refused for the wrong reason: ${text}`);
+      }
+    };
+
+    const orderBody = (items, expectedTotal) => JSON.stringify({
+      items,
+      expected_total: expectedTotal,
+      customer_name: "Smoke Buyer",
+      customer_email: `smoke-buyer-${stamp}@example.com`,
+      customer_phone: "0501234567",
+      shipping_address: {
+        full_name: "Smoke Buyer",
+        email: `smoke-buyer-${stamp}@example.com`,
+        phone: "0501234567",
+        address: "Herzl 1",
+        building: "1",
+        city: "Tel Aviv",
+        zipCode: "6100000",
+        entranceType: "house",
+        leaveAtDoor: true,
+      },
+      payment_method: "cash-on-delivery",
+    });
+
+    await check("checkout · an order names its Seller and snapshots the offer", async () => {
+      // Re-publish and restock: the catalogue checks above left it unpublished.
+      await asSeller(`/api/admin/intake/products/${chain.productId}/publish`, { method: "POST" });
+
+      const quote = await fetch(`${BASE}/api/catalog/${chain.productId}`);
+      const { product } = await quote.json();
+      const offer = product.offers[0];
+
+      const response = await fetch(`${BASE}/api/orders`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: orderBody([{ offer_id: offer.offer_id, quantity: 2 }], expectedOrderTotal(Number(offer.price) * 2)),
+      });
+      if (response.status !== 201) {
+        throw new Error(`order failed: ${response.status} ${await response.text()}`);
+      }
+      const { order } = await response.json();
+      chain.orderId = order.id;
+
+      const { rows } = await isolationPool.query(
+        `select o.seller_business_id as order_seller,
+                i.seller_business_id, i.seller_offer_id, i.product_variant_id,
+                i.price, i.quantity, i.currency, i.commission_rate, i.commission_amount
+           from public.orders o join public.order_items i on i.order_id = o.id
+          where o.id = $1`,
+        [order.id],
+      );
+      const line = rows[0];
+      if (line.order_seller !== fixture.businessA) throw new Error("the order does not name its Seller");
+      if (line.seller_business_id !== fixture.businessA) throw new Error("the line does not name its Seller");
+      if (line.seller_offer_id !== offer.offer_id) throw new Error("the offer was not snapshotted");
+      if (!line.product_variant_id) throw new Error("the variant was not snapshotted");
+      if (Number(line.price) !== Number(offer.price)) {
+        throw new Error(`price came from the client: ${line.price} vs ${offer.price}`);
+      }
+    });
+
+    await check("checkout · the server price wins over whatever the client claims", async () => {
+      const quote = await fetch(`${BASE}/api/catalog/${chain.productId}`);
+      const offer = (await quote.json()).product.offers[0];
+
+      // Claim the item costs 1 agora. The server resolves the real price, the
+      // totals disagree, and the order is refused.
+      const response = await fetch(`${BASE}/api/orders`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: orderBody([{ offer_id: offer.offer_id, quantity: 1, price: 0.01 }], 0.01),
+      });
+      if (response.status === 201) throw new Error("a client-set price was accepted");
+      if (response.status !== 409) {
+        throw new Error(`rejected, but not on the total: ${response.status} ${await response.text()}`);
+      }
+    });
+
+    await check("checkout · an out-of-stock offer cannot be bought", async () => {
+      await asSeller(`/api/admin/intake/offers/${chain.offerId}/inventory`, {
+        method: "PUT", body: JSON.stringify({ availability: "OUT_OF_STOCK" }),
+      });
+      try {
+        const response = await fetch(`${BASE}/api/orders`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: orderBody([{ offer_id: chain.offerId, quantity: 1 }], expectedOrderTotal(49.9)),
+        });
+        await expectUnavailable(response, "an out-of-stock offer was sold");
+      } finally {
+        await asSeller(`/api/admin/intake/offers/${chain.offerId}/inventory`, {
+          method: "PUT", body: JSON.stringify({ availability: "IN_STOCK", quantity: 5 }),
+        });
+      }
+    });
+
+    await check("checkout · a suspended Seller cannot sell, even while PUBLISHED", async () => {
+      await isolationPool.query(
+        "update public.business_profiles set commercial_status = 'suspended' where id = $1",
+        [fixture.businessA],
+      );
+      try {
+        const response = await fetch(`${BASE}/api/orders`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: orderBody([{ offer_id: chain.offerId, quantity: 1 }], expectedOrderTotal(49.9)),
+        });
+        await expectUnavailable(response, "a suspended Seller sold an item");
+      } finally {
+        await isolationPool.query(
+          "update public.business_profiles set commercial_status = 'approved' where id = $1",
+          [fixture.businessA],
+        );
+      }
+    });
+
+    await check("checkout · an unpublished product cannot be bought", async () => {
+      await asSeller(`/api/admin/intake/products/${chain.productId}/unpublish`, {
+        method: "POST", body: JSON.stringify({ reason: "smoke" }),
+      });
+      try {
+        const response = await fetch(`${BASE}/api/orders`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: orderBody([{ offer_id: chain.offerId, quantity: 1 }], expectedOrderTotal(49.9)),
+        });
+        await expectUnavailable(response, "an unpublished product was sold");
+      } finally {
+        await asSeller(`/api/admin/intake/products/${chain.productId}/publish`, { method: "POST" });
+      }
+    });
+
+    await check("checkout · a legacy cart still checks out exactly as before", async () => {
+      // product_id, no offer_id - the shape every browser cart holds today.
+      const legacy = (await isolationPool.query(
+        `insert into public.business_products (business_id, name, price, in_stock)
+         values ($1, $2, 25, true) returning id, price`,
+        [fixture.businessB, `Smoke legacy ${stamp}`],
+      )).rows[0];
+
+      const response = await fetch(`${BASE}/api/orders`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: orderBody([{ product_id: legacy.id, quantity: 1 }], expectedOrderTotal(25)),
+      });
+      if (response.status !== 201) {
+        throw new Error(`the legacy path broke: ${response.status} ${await response.text()}`);
+      }
+      const { order } = await response.json();
+      const { rows } = await isolationPool.query(
+        `select o.seller_business_id as order_seller, i.seller_business_id, i.commission_rate
+           from public.orders o join public.order_items i on i.order_id = o.id where o.id = $1`,
+        [order.id],
+      );
+      // A legacy line has no Seller and no commission, and says so with NULL
+      // rather than pretending to a zero.
+      if (rows[0].order_seller !== null) throw new Error("a legacy order was given a Seller");
+      if (rows[0].seller_business_id !== null) throw new Error("a legacy line was given a Seller");
+      if (rows[0].commission_rate !== null) throw new Error("a legacy line was given a commission rate");
+      chain.legacyProductId = legacy.id;
+    });
+
+    await check("checkout · marketplace and legacy items cannot be mixed in one order", async () => {
+      const response = await fetch(`${BASE}/api/orders`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: orderBody([
+          { offer_id: chain.offerId, quantity: 1 },
+          { product_id: chain.legacyProductId, quantity: 1 },
+        ], expectedOrderTotal(74.9)),
+      });
+      if (response.status !== 409) {
+        throw new Error(`a half-attributed order was accepted: ${response.status}`);
+      }
+      const body = await response.json();
+      if (!JSON.stringify(body).includes("MIXED_CATALOGUE_ORDER")) {
+        throw new Error(`wrong refusal: ${JSON.stringify(body)}`);
+      }
+    });
+
+    await check("checkout · two Sellers in one cart are refused", async () => {
+      // Seller B gets its own published offer, then both are put in one cart.
+      const draftB2 = (await isolationPool.query(
+        `insert into public.product_drafts (business_id, created_by, name, category_id, state)
+         values ($1, $2, 'B product', $3, 'DRAFT') returning id`,
+        [fixture.businessB, fixture.adminA, chain.categoryId],
+      )).rows[0].id;
+      const productB2 = (await isolationPool.query(
+        `insert into public.catalog_products
+           (owning_business_id, origin_draft_id, name, category_id, created_by,
+            publication_state, published_at, published_by)
+         values ($1, $2, 'B product', $3, $4, 'PUBLISHED', now(), $4) returning id`,
+        [fixture.businessB, draftB2, chain.categoryId, fixture.adminA],
+      )).rows[0].id;
+      const variantB2 = (await isolationPool.query(
+        `insert into public.product_variants (catalog_product_id, option_signature, created_by)
+         values ($1, 'b=1', $2) returning id`, [productB2, fixture.adminA],
+      )).rows[0].id;
+      const offerB2 = (await isolationPool.query(
+        `insert into public.seller_offers
+           (business_id, product_variant_id, price, status, created_by)
+         values ($1, $2, 30, 'ACTIVE', $3) returning id`,
+        [fixture.businessB, variantB2, fixture.adminA],
+      )).rows[0].id;
+      await isolationPool.query(
+        "insert into public.inventory (seller_offer_id, availability) values ($1, 'IN_STOCK')",
+        [offerB2],
+      );
+
+      const response = await fetch(`${BASE}/api/orders`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: orderBody([
+          { offer_id: chain.offerId, quantity: 1 },
+          { offer_id: offerB2, quantity: 1 },
+        ], expectedOrderTotal(79.9)),
+      });
+      if (response.status !== 409) {
+        throw new Error(`a two-Seller order was accepted: ${response.status}`);
+      }
+      const body = await response.json();
+      if (!JSON.stringify(body).includes("MULTIPLE_SELLERS_IN_ORDER")) {
+        throw new Error(`wrong refusal: ${JSON.stringify(body)}`);
+      }
+      chain.offerB2 = offerB2;
+      chain.productB2 = productB2;
+      chain.draftB2 = draftB2;
+      chain.variantB2 = variantB2;
+    });
+
     await check("a cross-Seller attempt is audited", async () => {
       const { rows } = await isolationPool.query(
         `select count(*)::int as n from public.admin_audit_log
@@ -1179,9 +1441,16 @@ const main = async () => {
       const cleanup = [
         ["delete from public.admin_sessions where admin_user_id = $1", [fixture.adminA]],
         ["delete from public.admin_audit_log where actor_admin_user_id = $1", [fixture.adminA]],
-        ["delete from public.catalog_products where id = any($1)", [[fixture.catalogB, fixture.catalogA]]],
-        ["delete from public.product_drafts where id = any($1)", [[fixture.draftB, fixture.draftA]]],
-        ["delete from public.business_products where id = $1", [fixture.productB]],
+        ["delete from public.order_items where seller_business_id = any($1)", [[fixture.businessA, fixture.businessB]]],
+        ["delete from public.inventory where seller_offer_id in (select id from public.seller_offers where business_id = any($1))", [[fixture.businessA, fixture.businessB]]],
+        ["delete from public.seller_offers where business_id = any($1)", [[fixture.businessA, fixture.businessB]]],
+        ["delete from public.product_media where catalog_product_id in (select id from public.catalog_products where owning_business_id = any($1))", [[fixture.businessA, fixture.businessB]]],
+        ["delete from public.product_variants where catalog_product_id in (select id from public.catalog_products where owning_business_id = any($1))", [[fixture.businessA, fixture.businessB]]],
+        ["update public.product_drafts set approved_catalog_product_id = null where business_id = any($1)", [[fixture.businessA, fixture.businessB]]],
+        ["delete from public.catalog_products where owning_business_id = any($1)", [[fixture.businessA, fixture.businessB]]],
+        ["delete from public.product_drafts where business_id = any($1)", [[fixture.businessA, fixture.businessB]]],
+        ["delete from public.raw_import_records where business_id = any($1)", [[fixture.businessA, fixture.businessB]]],
+        ["delete from public.business_products where business_id = any($1)", [[fixture.businessA, fixture.businessB]]],
         ["delete from public.admin_users where id = $1", [fixture.adminA]],
         ["delete from public.admin_users where email like $1", [`smoke-pm-%`]],
         ["delete from public.business_profiles where id = any($1)",

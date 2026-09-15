@@ -72,6 +72,8 @@ import {
   hasAdminPermission,
 } from "./adminPermissions.js";
 import { adminProductView } from "./sellerScope.js";
+import { isSellerEligible } from "./sellerEligibility.js";
+import { commissionForLine, readPlatformCommissionRate } from "./platformCommission.js";
 import { createProductIntakeRoutes } from "./productIntakeRoutes.js";
 import { createPublicCatalog } from "./publicCatalog.js";
 import {
@@ -5592,9 +5594,31 @@ const normalizeRequestedOrderItems = (items) => {
       throw error;
     }
 
+    // A marketplace line names the OFFER, which identifies the Seller, the
+    // variant and the terms at once. A legacy line names a product and nothing
+    // else, which is ambiguous the moment two Sellers carry the same thing.
+    // Both are accepted: carts already sitting in customers' browsers hold the
+    // legacy shape, and they must keep working unchanged.
+    const offerId = String(item.offer_id || "").trim();
+    if (offerId) {
+      if (!uuidPattern.test(offerId)) {
+        const error = new Error("offer_id must be a uuid");
+        error.statusCode = 400;
+        throw error;
+      }
+      return {
+        offer_id: offerId,
+        product_id: null,
+        requested_source: null,
+        quantity,
+        variant: item.variant ? String(item.variant).trim().slice(0, 120) : null,
+        size: item.size ? String(item.size).trim().slice(0, 120) : null,
+      };
+    }
+
     const productId = String(item.product_id || item.id || "").trim();
     if (!uuidPattern.test(productId)) {
-      const error = new Error("Each order item requires a valid product_id");
+      const error = new Error("Each order item requires a valid product_id or offer_id");
       error.statusCode = 400;
       throw error;
     }
@@ -5608,6 +5632,7 @@ const normalizeRequestedOrderItems = (items) => {
     }
 
     return {
+      offer_id: null,
       product_id: productId,
       requested_source: productSource,
       quantity,
@@ -5617,7 +5642,90 @@ const normalizeRequestedOrderItems = (items) => {
   });
 };
 
+/**
+ * Resolves a marketplace line from its offer.
+ *
+ * Everything binding is read from the server inside this transaction: the
+ * price, the Seller, the availability, the publication state and the Seller's
+ * commercial status. The client sends an offer_id and a quantity; it does not
+ * get to assert anything else.
+ *
+ * `for share` on the offer, so it cannot be archived or repriced between this
+ * read and the order being written.
+ *
+ * Every refusal answers 409 with the same shape, and deliberately does not say
+ * which condition failed beyond "unavailable": a public checkout is not the
+ * place to tell a caller that a product exists but its Seller was suspended.
+ */
+const resolveMarketplaceOrderItem = async (client, requestedItem) => {
+  const { rows } = await client.query(
+    `select o.id as offer_id, o.business_id as seller_business_id, o.sku,
+            o.price, o.sale_price, o.currency,
+            o.status, o.archived_at,
+            v.id as product_variant_id, v.label as variant_label,
+            v.status as variant_status, v.archived_at as variant_archived_at,
+            p.id as catalog_product_id, p.name as product_name,
+            p.publication_state, p.archived_at as product_archived_at,
+            i.availability,
+            b.is_verified, b.commercial_status,
+            (select m.storage_path from public.product_media m
+              where m.catalog_product_id = p.id and m.archived_at is null
+                and m.approved_at is not null
+              order by m.display_order, m.approved_at limit 1) as image_path
+       from public.seller_offers o
+       join public.product_variants v on v.id = o.product_variant_id
+       join public.catalog_products p on p.id = v.catalog_product_id
+       join public.business_profiles b on b.id = o.business_id
+       left join public.inventory i on i.seller_offer_id = o.id
+      where o.id = $1
+      for share of o`,
+    [requestedItem.offer_id],
+  );
+
+  const offer = rows[0];
+  const unavailable = () => {
+    const error = new Error("This item is no longer available");
+    error.statusCode = 409;
+    throw error;
+  };
+
+  if (!offer) unavailable();
+  if (offer.archived_at || offer.variant_archived_at || offer.product_archived_at) unavailable();
+  if (offer.status !== "ACTIVE") unavailable();
+  if (offer.variant_status !== "ACTIVE") unavailable();
+  if (offer.publication_state !== "PUBLISHED") unavailable();
+  // The same predicate provisioning and the publication gate use. A Seller
+  // suspended after publishing stops selling here, immediately.
+  if (!isSellerEligible(offer)) unavailable();
+  if (!["IN_STOCK", "PREORDER"].includes(String(offer.availability || ""))) unavailable();
+
+  const price = toMoney(Number(offer.sale_price) > 0 ? offer.sale_price : offer.price);
+  if (!(price > 0)) unavailable();
+
+  return {
+    offer_id: offer.offer_id,
+    seller_business_id: offer.seller_business_id,
+    product_variant_id: offer.product_variant_id,
+    // product_id carries the catalogue product, so an order line still names
+    // the thing that was bought in the vocabulary the rest of the row uses.
+    product_id: offer.catalog_product_id,
+    product_source: "catalog",
+    product_name: offer.product_name,
+    product_image: offer.image_path || "/placeholder.svg",
+    quantity: requestedItem.quantity,
+    price,
+    currency: offer.currency || "ILS",
+    variant: offer.variant_label || requestedItem.variant,
+    size: requestedItem.size,
+    sku: offer.sku ? String(offer.sku).trim() || null : null,
+    weight: null,
+    weight_unit: null,
+  };
+};
+
 const resolveCatalogOrderItem = async (client, requestedItem) => {
+  if (requestedItem.offer_id) return await resolveMarketplaceOrderItem(client, requestedItem);
+
   const findManual = () => client.query(
     `
       select id, name, image_url, price, sale_price, in_stock, sku, weight, weight_unit
@@ -5965,6 +6073,39 @@ const createOrder = async (body, currentUser = null, eventOrigin = "app") => {
     await client.query("begin");
 
     const orderItems = await resolveCatalogOrderItems(client, body.items);
+
+    // One Seller per order (decided for the MVP). Enforced here rather than in
+    // the cart, because the cart lives in a browser and a browser is not where
+    // a rule like this can be enforced.
+    //
+    // Legacy lines carry no Seller at all, so they are excluded from the check:
+    // a cart of legacy products still checks out exactly as it does today.
+    const sellers = new Set(orderItems.map((item) => item.seller_business_id).filter(Boolean));
+    if (sellers.size > 1) {
+      const error = new Error(
+        "An order can contain items from only one seller. Please check out each seller separately.",
+      );
+      error.statusCode = 409;
+      error.code = "MULTIPLE_SELLERS_IN_ORDER";
+      throw error;
+    }
+    // Mixing a marketplace line with a legacy one would produce an order that
+    // is half-attributed: one line with a Seller, one without, and no honest
+    // answer to "who sold this order".
+    if (sellers.size === 1 && orderItems.some((item) => !item.seller_business_id)) {
+      const error = new Error(
+        "An order cannot mix marketplace items with legacy catalogue items.",
+      );
+      error.statusCode = 409;
+      error.code = "MIXED_CATALOGUE_ORDER";
+      throw error;
+    }
+    const orderSellerBusinessId = sellers.size === 1 ? [...sellers][0] : null;
+
+    // The rate that applies to this order, read once and snapshotted per line.
+    // NULL when none is configured - which is a fact, not a zero.
+    const commissionRate = readPlatformCommissionRate();
+
     const amounts = await calculateOrderAmounts(client, body, orderItems, shippingAddress);
     const expectedTotal = Number(body.expected_total);
     if (!Object.prototype.hasOwnProperty.call(body, "expected_total")
@@ -6020,13 +6161,14 @@ const createOrder = async (body, currentUser = null, eventOrigin = "app") => {
           pet_name,
           special_instructions,
           medical_urgency,
-          access_token_hash
+          access_token_hash,
+          seller_business_id
         )
         values (
           $1, $2, $3, $4, $5, $6,
           'pending', $7, $8, $9,
           $10, $11, $12, $13, $14, $15, $16, $17,
-          $18, $19, $20, $21, $22
+          $18, $19, $20, $21, $22, $23
         )
         returning *
       `,
@@ -6053,6 +6195,7 @@ const createOrder = async (body, currentUser = null, eventOrigin = "app") => {
         safeText(body.special_instructions, 2000) || null,
         medicalUrgency,
         accessToken ? hashOpaqueToken(accessToken) : null,
+        orderSellerBusinessId,
       ],
     );
 
@@ -6072,6 +6215,18 @@ const createOrder = async (body, currentUser = null, eventOrigin = "app") => {
       ["sku", (item) => item.sku ?? null],
       ["weight", (item) => item.weight ?? null],
       ["weight_unit", (item) => item.weight_unit ?? null],
+      // The marketplace snapshot. NULL on a legacy line, which is the honest
+      // answer: it was not sold by a Seller under a commission.
+      ["seller_business_id", (item) => item.seller_business_id ?? null],
+      ["seller_offer_id", (item) => item.offer_id ?? null],
+      ["product_variant_id", (item) => item.product_variant_id ?? null],
+      ["currency", (item) => item.currency ?? null],
+      // Rate and amount both, per line. Recomputing an amount from a rate later
+      // would apply today's rounding to a price that has since changed.
+      ["commission_rate", (item) => (item.seller_business_id ? commissionRate : null)],
+      ["commission_amount", (item) => (item.seller_business_id
+        ? commissionForLine(commissionRate, toMoney(Number(item.price) * item.quantity))
+        : null)],
     ];
     const itemValues = [];
     const placeholders = orderItems.map((item, index) => {
