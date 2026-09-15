@@ -165,42 +165,56 @@ test("withheld attribute keys are matched regardless of case or padding", () => 
 
 // ─── nothing reaches a customer ──────────────────────────────────────────────
 
-dbTest("every migrated draft is IMPORTED - none is approved or published", async () => {
+// These three are scoped to what the MIGRATION did, not to what the table
+// looks like now. Written as whole-table claims - "every legacy draft is
+// IMPORTED", "no catalog_products exist" - they were true the day phase 5 ran
+// and went red the moment phase 7 legitimately approved 42 of them. A test
+// that fails because a later step worked is a test that will be deleted by
+// whoever is unlucky enough to hit it, taking the real guarantee with it.
+//
+// The durable claim is about the script: it leaves a draft IMPORTED and
+// approves nothing. So the scope is drafts nobody has reviewed.
+
+dbTest("the migration leaves every draft IMPORTED and reviews none of them", async () => {
   await withDb(async (client) => {
     const { rows } = await client.query(
       `select d.state, count(*)::int as n
          from public.product_drafts d
          join public.raw_import_records r on r.id = d.raw_import_record_id
         where r.source_system = 'legacy_business_products'
+          and d.reviewed_by is null
         group by 1`,
     );
     for (const row of rows) {
       assert.equal(row.state, "IMPORTED",
-        "a legacy draft that is not IMPORTED skipped the review the whole phase exists for");
+        "a legacy draft nobody reviewed but which is not IMPORTED was moved by something that should not have moved it");
     }
   });
 });
 
-dbTest("the migration created no catalog_products at all", async () => {
+dbTest("no catalog_product exists for a draft nobody reviewed", async () => {
   // The chain ends at the draft. A catalog_product is what a customer can be
-  // shown, and creating one is an administrator's act, not a script's.
+  // shown, and creating one is a reviewer's act, not a script's - so every one
+  // that exists must name the reviewer who is accountable for it.
   await withDb(async (client) => {
     const { rows } = await client.query(
       `select count(*)::int as n from public.catalog_products p
         join public.product_drafts d on d.id = p.origin_draft_id
         join public.raw_import_records r on r.id = d.raw_import_record_id
-       where r.source_system = 'legacy_business_products'`,
+       where r.source_system = 'legacy_business_products'
+         and d.reviewed_by is null`,
     );
     assert.equal(rows[0].n, 0);
   });
 });
 
-dbTest("no legacy draft carries an approved_catalog_product_id", async () => {
+dbTest("no unreviewed legacy draft carries an approved_catalog_product_id", async () => {
   await withDb(async (client) => {
     const { rows } = await client.query(
       `select count(*)::int as n from public.product_drafts d
          join public.raw_import_records r on r.id = d.raw_import_record_id
         where r.source_system = 'legacy_business_products'
+          and d.reviewed_by is null
           and d.approved_catalog_product_id is not null`,
     );
     assert.equal(rows[0].n, 0);

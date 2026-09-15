@@ -421,6 +421,48 @@ another measurement rather than a judgement call.
 independently blocks anything incomplete, so a product auto-approved in error
 does not reach the shop — it simply fails to publish.
 
+### 7.3 Built — ✅ **BUILT, NOT YET RUN IN PRODUCTION**
+
+`server/src/autoApproval.js` (the rule, as a predicate *and* a SQL fragment,
+the way `sellerEligibility.js` is), `server/scripts/autoApproveLegacyDrafts.mjs`
+(applies it), and tests for both.
+
+**The safety claim above is now checked rather than quoted.** A draft that
+passes the rule is taken through approval against the real gate, and the gate's
+own counters are read back: `active_variants = 0`, `approved_images = 0`,
+`publication_state = UNPUBLISHED`. Trying to falsify it by force — setting
+`publication_state = 'PUBLISHED'` directly — could not even be staged, because
+`catalog_products_published_has_provenance` refuses it at the schema level.
+
+**But the same measurement says what the rule does *not* achieve.** On a
+50-product fixture the rule approved 42 and produced **42 products with zero
+variants, zero priced offers and zero approved images** — none of them
+publishable. Auto-approval clears the *review* queue. It does not put one
+product in the shop. "The queue is clear" must never be reported as "the shop
+is full".
+
+**Who approves.** Not the script. The drafts were submitted by the system
+actor, and `mayApproveDraft()` refuses an approval by the submitter, so
+`--apply` requires `--admin-email=<a real administrator>` who must exist, be
+active, and hold `DRAFT_REVIEW` (`admin` or `product_manager`). Running it as
+two system actors would satisfy the code and defeat the rule, so that is not an
+option the script offers. Every approval writes the same
+`product_draft.approved` audit row the route writes, tagged
+`via: auto_approval_rule`, so a bulk approval is never mistaken for a human
+having read the product.
+
+**U-6 is a parameter, not a blocker.** The review flags are honoured by
+default — the strict reading. `--ignore-review-flags` relaxes exactly those two
+conditions and nothing else, which is tested. So when `C-24`…`C-29` answer
+whether the flags are stale, the answer is a flag on an invocation rather than
+a rewrite.
+
+`autoApprovableSql` is pinned to `C-29` by a test: the number the decision is
+made on and the rule that is enforced must be the same rule. The first version
+of that test passed against a workflow that had been edited, because `C-29` has
+three near-identical clauses and the substring matched a different one — it is
+now anchored to the clause's label as well as its text.
+
 ---
 
 ## 8. Decisions taken
