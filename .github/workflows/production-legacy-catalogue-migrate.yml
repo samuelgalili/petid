@@ -1,0 +1,262 @@
+# Phase 5 · move the legacy catalogue through the intake chain, on production.
+#
+# This workflow WRITES. Everything else that reaches production from here -
+# C-0, D-18 - is a read-only measurement guarded by SET TRANSACTION READ ONLY,
+# and that guard is meaningless for a migration whose entire purpose is to
+# insert rows. So the safety comes from somewhere else:
+#
+#   1. Dry run is the default. Writing needs `mode: apply` AND a typed
+#      confirmation, and the two are checked independently.
+#   2. A database backup is taken before any write, by the same script the
+#      deploy uses.
+#   3. The migration is idempotent by unique index, so a re-run after a partial
+#      failure resumes rather than duplicating.
+#   4. It writes ONLY to raw_import_records and product_drafts. It creates no
+#      catalog_product, approves nothing and publishes nothing, so no customer
+#      sees any change. The drafts land in IMPORTED and wait for a human.
+#
+# WHY THE SCRIPT IS BIND-MOUNTED. server/Dockerfile copies `src` and `sql` and
+# not `scripts`, so migrateLegacyCatalogue.mjs does not exist inside the image -
+# a fact worth stating plainly, because it means no maintenance script in
+# server/scripts/ has ever been runnable in production. The deploy's rsync does
+# put the whole server/ tree on the host, from the same commit the image was
+# built from, so the file is there; it is mounted read-only into a throwaway
+# container that supplies node_modules and DATABASE_URL.
+#
+# That also means these scripts are NOT baked into the serving container, which
+# is the right place for them to not be. The alternative - adding
+# `COPY scripts ./scripts` to the Dockerfile - would work too and would need a
+# deploy.
+#
+# DATABASE_URL is never read, printed or handled by this workflow. The
+# container gets it from compose's env_file, the same way the API does.
+
+name: Legacy catalogue migration (phase 5)
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'dry-run reports what would happen and writes nothing. apply writes.'
+        required: true
+        default: 'dry-run'
+        type: choice
+        options:
+          - dry-run
+          - apply
+      confirmation:
+        description: 'For apply only. Type  MIGRATE-LEGACY  (that exact text). Ignored for a dry run.'
+        required: false
+        default: ''
+      limit:
+        description: 'Optional. Migrate at most this many products - use 1 for the first apply.'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+# The deploy's production group. This workflow inserts into two tables and a
+# deploy migration takes ACCESS EXCLUSIVE; overlapping them would have one
+# waiting on the other with a half-finished migration in between.
+concurrency:
+  group: aws-production
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: Migrate the legacy catalogue into the intake chain
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+
+    env:
+      MIPO_AWS_HOST: ${{ vars.MIPO_AWS_HOST || '63.183.241.110' }}
+      MIPO_AWS_USER: ${{ vars.MIPO_AWS_USER || 'ubuntu' }}
+      MIPO_REMOTE_PATH: ${{ vars.MIPO_REMOTE_PATH || '/opt/mipo' }}
+
+    steps:
+      - name: Confirm intent
+        env:
+          MODE: ${{ inputs.mode }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+          LIMIT: ${{ inputs.limit }}
+        run: |
+          set -euo pipefail
+
+          case "$MODE" in
+            dry-run|apply) ;;
+            *)
+              echo "Nothing was contacted. Production was not touched." >&2
+              echo "mode must be 'dry-run' or 'apply'." >&2
+              exit 1
+              ;;
+          esac
+
+          if [ -n "${LIMIT:-}" ]; then
+            case "$LIMIT" in
+              ''|*[!0-9]*)
+                echo "Nothing was contacted. Production was not touched." >&2
+                echo "limit must be a whole number, or empty for all products." >&2
+                exit 1
+                ;;
+            esac
+          fi
+
+          if [ "$MODE" = "apply" ] && [ "$CONFIRMATION" != "MIGRATE-LEGACY" ]; then
+            # Instruction first, status code last and labelled as output. The
+            # other way round once taught somebody to type the status code into
+            # the box, and a message that causes the mistake it warns about is
+            # a bad message however correct it is.
+            echo "Nothing was contacted. Production was not touched." >&2
+            echo "" >&2
+            echo "To apply, the confirmation box has to contain exactly this text:" >&2
+            echo "" >&2
+            echo "    MIGRATE-LEGACY" >&2
+            echo "" >&2
+            echo "Fifteen characters: M I G R A T E hyphen L E G A C Y, capitals." >&2
+            echo "Leave mode on 'dry-run' to see what would happen without writing." >&2
+            echo "" >&2
+            echo "(This job reports BLOCKED-PROD when it stops early. That code" >&2
+            echo " is output, never input - do not type it.)" >&2
+            exit 1
+          fi
+
+          if [ "$MODE" = "apply" ]; then
+            echo "Confirmed: APPLY. A backup is taken first."
+          else
+            echo "Confirmed: dry run. Nothing will be written."
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # The script is the thing being run, so it is checked here rather than
+      # trusted because it was reviewed once. A --apply that is not explicitly
+      # requested, or a destructive verb that has appeared in it since, stops
+      # the job before anything connects.
+      - name: Verify the migration script writes only what it claims
+        run: |
+          set -euo pipefail
+          script="server/scripts/migrateLegacyCatalogue.mjs"
+          test -f "$script" || { echo "$script is missing"; exit 1; }
+
+          # Every SQL verb the script may use. It inserts into exactly two
+          # tables and reads a third; it must never update, delete or drop.
+          if grep -inE '\b(drop|truncate|alter[[:space:]]+table)\b' "$script"; then
+            echo "BLOCKED-PROD: the script contains a destructive statement." >&2
+            exit 1
+          fi
+          for forbidden in 'delete from' 'update public.business_products'; do
+            if grep -in "$forbidden" "$script"; then
+              echo "BLOCKED-PROD: the script contains '$forbidden'." >&2
+              echo "Phase 5 must not modify the legacy catalogue it reads." >&2
+              exit 1
+            fi
+          done
+
+          # The two tables it is allowed to write.
+          for required in 'insert into public.raw_import_records' 'insert into public.product_drafts'; do
+            grep -qi "$required" "$script" || { echo "BLOCKED-PROD: missing '$required'"; exit 1; }
+          done
+
+          # It must not create a catalog_product: approval is a human's act.
+          if grep -in 'insert into public.catalog_products' "$script"; then
+            echo "BLOCKED-PROD: phase 5 must not create catalog_products." >&2
+            exit 1
+          fi
+
+          echo "Script verified: inserts into raw_import_records and product_drafts only."
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.MIPO_AWS_SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SSH_PRIVATE_KEY:-}" ]; then
+            echo "BLOCKED-PROD: the production environment has no MIPO_AWS_SSH_PRIVATE_KEY." >&2
+            exit 1
+          fi
+          if [ -z "${MIPO_AWS_HOST}" ]; then
+            echo "BLOCKED-PROD: MIPO_AWS_HOST is empty for the production environment." >&2
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/mipo_aws_key
+          chmod 600 ~/.ssh/mipo_aws_key
+          ssh-keyscan -T 30 -H "$MIPO_AWS_HOST" >> ~/.ssh/known_hosts || true
+          echo "SSH configured for ${MIPO_AWS_USER}@${MIPO_AWS_HOST}"
+
+      - name: Run the migration
+        env:
+          MODE: ${{ inputs.mode }}
+          LIMIT: ${{ inputs.limit }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 \
+            "${MIPO_AWS_USER}@${MIPO_AWS_HOST}" \
+            "MIPO_REMOTE_PATH='${MIPO_REMOTE_PATH}' MODE='${MODE}' LIMIT='${LIMIT}' bash -s" <<'REMOTE'
+          set -euo pipefail
+          # No `set -x`: tracing would echo lines that expand the environment.
+
+          compose_file="${MIPO_REMOTE_PATH}/deploy/aws/docker-compose.yml"
+          scripts_dir="${MIPO_REMOTE_PATH}/server/scripts"
+          script_name="migrateLegacyCatalogue.mjs"
+
+          test -f "$compose_file" || { echo "BLOCKED-PROD: no compose file at $compose_file" >&2; exit 1; }
+          if [ ! -f "${scripts_dir}/${script_name}" ]; then
+            echo "BLOCKED-PROD: ${scripts_dir}/${script_name} is not on the host." >&2
+            echo "The deploy's rsync puts server/ here; run a deploy of aws-migration first." >&2
+            exit 1
+          fi
+
+          # The migration needs 0054 - the widened source_system constraint and
+          # the system actor. Checked before writing rather than discovered as a
+          # 23514 on the first insert.
+          echo "Checking the schema is ready..."
+          docker compose -f "$compose_file" run --rm --no-deps -T mipo-api \
+            node -e "
+              const pg = require('pg');
+              const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+              pool.query(\"select filename from public.schema_migrations where filename = '0054_legacy_import_source_system.sql'\")
+                .then(r => {
+                  if (r.rows.length === 0) {
+                    console.error('BLOCKED-PROD: 0054 is not applied. Deploy aws-migration first.');
+                    process.exit(1);
+                  }
+                  console.log('0054 is applied.');
+                  return pool.end();
+                })
+                .catch(e => { console.error(e.message); process.exit(1); });
+            " </dev/null
+
+          if [ "$MODE" = "apply" ]; then
+            echo "Backing up before writing..."
+            bash "${MIPO_REMOTE_PATH}/deploy/aws/backup-before-migrate.sh" \
+              "${MIPO_REMOTE_PATH}" "legacy-catalogue-migration-$(date -u +%Y%m%dT%H%M%SZ)"
+          fi
+
+          args=""
+          [ "$MODE" = "apply" ] && args="--apply"
+          [ -n "${LIMIT:-}" ] && args="${args} --limit=${LIMIT}"
+
+          echo "Running: node scripts/${script_name} ${args}"
+          echo ""
+
+          # --no-deps so this never restarts the API. --rm so the container is
+          # gone afterwards. The scripts directory is mounted read-only because
+          # the script has no business writing to itself.
+          docker compose -f "$compose_file" run --rm --no-deps -T \
+            -v "${scripts_dir}:/app/scripts:ro" \
+            mipo-api node "scripts/${script_name}" ${args} </dev/null
+
+          echo ""
+          echo "Phase 5 complete. Nothing was published; every draft is waiting for a human."
+          REMOTE
+
+      - name: Remove the key
+        if: always()
+        run: |
+          set -euo pipefail
+          rm -f ~/.ssh/mipo_aws_key
+          echo "Key removed from the runner."
