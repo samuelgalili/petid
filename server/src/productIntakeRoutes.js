@@ -667,7 +667,27 @@ export const createProductIntakeRoutes = ({
               and i.availability is not null)::int as offers_with_availability,
            (select count(*) from public.product_media m
              where m.catalog_product_id = p.id and m.archived_at is null
-               and m.approved_at is not null)::int as approved_images
+               and m.approved_at is not null)::int as approved_images,
+           -- 0052. Attributes the product's category insists on, and which of
+           -- them this product is missing. Inherited down the tree by
+           -- category_attributes_effective, so a child category's products must
+           -- satisfy its parent's requirements too.
+           --
+           -- Evaluated HERE rather than in JavaScript for the same reason every
+           -- other condition is: publishProduct runs this exact statement
+           -- inside the transaction that publishes, against rows locked for its
+           -- duration. A check done outside it is a check that can go stale
+           -- between reading and writing.
+           --
+           -- '' counts as absent. An attribute present but empty is not a value
+           -- somebody entered; treating it as one is how a page ends up showing
+           -- a blank next to a label.
+           coalesce((
+             select array_agg(ea.key order by ea.key)
+               from public.category_attributes_effective(p.category_id) ea
+              where ea.is_required
+                and coalesce(btrim(p.attributes ->> ea.key), '') = ''
+           ), '{}') as missing_required_attributes
       from public.catalog_products p
       join public.product_drafts d on d.id = p.origin_draft_id
       join public.business_profiles b on b.id = p.owning_business_id
@@ -689,6 +709,13 @@ export const createProductIntakeRoutes = ({
     if (row.offers_with_availability < 1) unmet.push("no_availability");
     // OD-3, decided: an approved image is mandatory.
     if (row.approved_images < 1) unmet.push("no_approved_image");
+    // 0052: whatever the category declared it insists on. The reason names the
+    // keys rather than saying "incomplete", because an admin looking at a
+    // refusal needs to know which field to go and fill.
+    const missingAttributes = Array.isArray(row.missing_required_attributes)
+      ? row.missing_required_attributes
+      : [];
+    for (const key of missingAttributes) unmet.push(`missing_attribute:${key}`);
 
     return {
       product_id: row.id,

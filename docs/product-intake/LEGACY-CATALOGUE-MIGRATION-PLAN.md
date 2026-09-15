@@ -1,13 +1,20 @@
 # Legacy catalogue migration — measurement, product page, and plan
 
-**Status:** measured, designed, **not built**. No migration has run and no schema
-has changed. Every number below was read from production on 2026-09-15.
+**Status:** measured and designed. **Phase 1 is deployed and verified in
+production** (2026-09-15, `3a6a324a`); phases 2–6 are not built. Every number
+below was read from production.
 
 **Source:** the `C-0 catalogue measurement (read-only)` workflow
 (`.github/workflows/production-catalogue-measure.yml`), runs **#2** (12
-statements), **#4** (20) and **#6** (23), all against the production database
-inside `BEGIN` / `SET TRANSACTION READ ONLY` / `ROLLBACK`. Nothing on the host
-was modified; every run ended `C-0 complete.`
+statements), **#4** (20), **#6** (23) and **#9** (29, post-deploy), all against
+the production database inside `BEGIN` / `SET TRANSACTION READ ONLY` /
+`ROLLBACK`. Nothing on the host was modified; every run ended `C-0 complete.`
+
+> **Reading order note.** Sections 2–7 describe the catalogue **as measured
+> before the deploy**, and are left as they were written: they are what the
+> decisions were made from, and rewriting them would hide the fact that the
+> predictions were made in advance. §9 Phase 1 records what actually happened
+> when it ran. Where a number has since changed, Phase 1 says so.
 
 The catalogue is **375 products, all owned by one business** — the
 `ensureDefaultBusinessProfile()` fallback `cf941cc4…`, which has no owner user.
@@ -414,6 +421,90 @@ another measurement rather than a judgement call.
 independently blocks anything incomplete, so a product auto-approved in error
 does not reach the shop — it simply fails to publish.
 
+### 7.3 Built — ✅ **BUILT, NOT YET RUN IN PRODUCTION**
+
+`server/src/autoApproval.js` (the rule, as a predicate *and* a SQL fragment,
+the way `sellerEligibility.js` is), `server/scripts/autoApproveLegacyDrafts.mjs`
+(applies it), and tests for both.
+
+**The safety claim above is now checked rather than quoted.** A draft that
+passes the rule is taken through approval against the real gate, and the gate's
+own counters are read back: `active_variants = 0`, `approved_images = 0`,
+`publication_state = UNPUBLISHED`. Trying to falsify it by force — setting
+`publication_state = 'PUBLISHED'` directly — could not even be staged, because
+`catalog_products_published_has_provenance` refuses it at the schema level.
+
+**But the same measurement says what the rule does *not* achieve.** On a
+50-product fixture the rule approved 42 and produced **42 products with zero
+variants, zero priced offers and zero approved images** — none of them
+publishable. Auto-approval clears the *review* queue. It does not put one
+product in the shop. "The queue is clear" must never be reported as "the shop
+is full".
+
+**Who approves.** Not the script. The drafts were submitted by the system
+actor, and `mayApproveDraft()` refuses an approval by the submitter, so
+`--apply` requires `--admin-email=<a real administrator>` who must exist, be
+active, and hold `DRAFT_REVIEW` (`admin` or `product_manager`). Running it as
+two system actors would satisfy the code and defeat the rule, so that is not an
+option the script offers. Every approval writes the same
+`product_draft.approved` audit row the route writes, tagged
+`via: auto_approval_rule`, so a bulk approval is never mistaken for a human
+having read the product.
+
+**U-6 is a parameter, not a blocker.** The review flags are honoured by
+default — the strict reading. `--ignore-review-flags` relaxes exactly those two
+conditions and nothing else, which is tested. So when `C-24`…`C-29` answer
+whether the flags are stale, the answer is a flag on an invocation rather than
+a rewrite.
+
+`autoApprovableSql` is pinned to `C-29` by a test: the number the decision is
+made on and the rule that is enforced must be the same rule. The first version
+of that test passed against a workflow that had been edited, because `C-29` has
+three near-identical clauses and the substring matched a different one — it is
+now anchored to the clause's label as well as its text.
+
+### 7.4 U-6 answered — **C-0 run #9, measured against production**
+
+The question was whether the review flags are stale. They are not stale by
+*age*: `C-27` reports `untouched_90d = 0` and `untouched_180d = 0`, oldest
+touch 2026-08-24. But the two flags are not the same kind of thing, and the
+single `honourReviewFlags` switch the rule first shipped with was wrong.
+
+| | `needs_price_review` | `needs_image_review` |
+|---|---|---|
+| Flagged | 134 | 98 |
+| Fails its condition anyway | **73** unpriced | **69** imageless |
+| Flag is the only signal | 61 priced | 27 normalized · 2 foreign |
+| Rows with the problem but *no* flag | **0** | **0** |
+| Independent corroboration | none — `has_a_suggestion = 0` | **91 of 98** carry the importer's own "Needs manual image research" (`C-26`) |
+
+**The price flag carries no information the price column does not.** Every
+unpriced product is already flagged, the 73 that matter fail the price
+condition on their own, and nothing records why the other 61 were flagged.
+
+**The image flag is corroborated.** Two records written at different times by
+different processes agree on the same 91 products. And `C-26` shows 23 of those
+91 **already have a normalized image** — because that verdict is about image
+*rights*, not about which server the file sits on. Adopting an image answers a
+different question, so normalization must never be read as clearing it. This is
+the same unresolved rights question as **D-7**.
+
+So the rule now takes **two** switches, `honourPriceReviewFlag` and
+`honourImageReviewFlag`, both defaulting to honoured. `C-29`'s four counts are
+the four combinations:
+
+| | Auto-approves | Manual queue |
+|---|---|---|
+| Both honoured (today's default) | **187** | 188 |
+| **Price flag ignored** | **245** | **130** |
+| Image flag ignored | 213 | 162 |
+| Neither honoured | 274 | 101 |
+
+**Recommended: ignore the price flag, honour the image flag → 245.** It takes
+58 products out of the manual queue on the strength of a flag that adds
+nothing, and leaves the rights question exactly where D-7 left it. Not yet
+decided.
+
 ---
 
 ## 8. Decisions taken
@@ -487,7 +578,7 @@ preserved, and that nothing quietly hardens into a blocker in the meantime:
 
 ## 9. The plan
 
-### Phase 1 · Two alias rows — **built, not deployed**
+### Phase 1 · Two alias rows — ✅ **DEPLOYED AND VERIFIED**
 
 `server/sql/0051_hyphenated_food_category_aliases.sql`. `dry-food` and
 `wet-food` into `product_category_aliases`, then the same backfill `0034` ran.
@@ -509,6 +600,36 @@ It deliberately does **not** re-file products already sitting under the parent
 because of those stale aliases: a row filed by the old alias and a row an admin
 chose to file under `food` are indistinguishable, and overwriting an admin's
 decision to correct a migration's is the worse of the two errors.
+
+#### What happened when it ran
+
+Deployed 2026-09-15 as part of `3a6a324a`, and then measured rather than
+assumed. `C-0` run **#9**, against production, after the deploy:
+
+| | Predicted before (`C-21`, run #6) | **Measured after** (run #9) |
+|---|---|---|
+| `categorised_today` | 134 | **375** |
+| `by_0051` | 241 | — (already applied) |
+| `still_uncategorised` | **0** | **0** |
+| Free-text values with no alias (`C-20`) | `dry-food` 226, `wet-food` 15 | **0 rows** |
+
+**Every product in the catalogue is now filed. The prediction was exact.**
+
+The live defect is closed: a shopper filtering to אוכל יבש saw 3 products where
+229 existed. They now see all of them.
+
+Two independent traces that the migration is what did it, rather than something
+else having changed:
+
+* `C-27` reports `newest_update` as **2026-09-15 15:42:23**, which is the
+  minute the deploy ran, and `never_updated_at_all` fell from 80 to 33 — the
+  backfill touching rows, visible in the data rather than in a log.
+* `C-28` reports `neither = 187`, the same number `C-22` had **simulated**
+  before the deploy. The auto-approval rule's 19% → 50% is now measured.
+
+Nothing else moved: 375 products, 1 business, the review flags unchanged at
+134 and 98, and `family_code` still 12 families that are still not variants.
+Eleven migrations ran and no business datum shifted except the one intended to.
 
 ### Phase 2 · `pet_species`
 Replace the `pet_type` enum with a lookup table. Source: `animal` where present,
@@ -569,6 +690,54 @@ Columns that must **not** migrate to anything customer-facing: `cost_price`,
 envelope's `price_before_vat`, `supplier_name`, `source_row`,
 `image_research_notes`. `supplier_id` in particular is **not** Seller identity.
 
+#### What building it changed — ✅ **BUILT, NOT YET RUN IN PRODUCTION**
+
+`server/scripts/migrateLegacyCatalogue.mjs` and
+`server/sql/0054_legacy_import_source_system.sql`. Three corrections to the
+plan above, all found by reading the schema and the routes rather than by
+running it:
+
+**1. `source_system = 'legacy_business_products'` was impossible.**
+`raw_import_records_source_system_check` allowed exactly
+`('url','scrape','csv','xlsx','manual','api')`, so all 375 inserts would have
+failed with `23514`. `0054` widens the constraint rather than reusing
+`'manual'`, because *"which products predate the intake model"* must stay
+answerable.
+
+**2. The payload cannot be "the whole legacy row".** This contradicts the
+column list directly above it. `GET /api/admin/intake/drafts/:id` returns
+`r.payload as raw_payload`, and `seller_admin` **holds `INTAKE_READ`** — so a
+Seller's own administrator can read the archive of any draft their business
+owns. Today every legacy product belongs to MIPO, so the leak is latent; it
+becomes real the first time a legacy product's ownership moves to a third
+party, which is the entire purpose of the new model. The withheld list is
+therefore applied to the payload too. Nothing is lost: none of those fields
+maps into a draft, so *"correctable by re-running"* still holds, and
+`business_products` is untouched and remains the complete record.
+
+`source_url` is deliberately **kept** (D-7 — you cannot ask a supplier for
+permission if you no longer know which supplier). `supplier_name` is **not**,
+because it sits in the attribute bag a Seller can read; D-7 requires it to
+survive on `business_products`, which it does.
+
+**3. `raw_import_records.created_by` is `NOT NULL`.** The migration needs an
+actor, and attributing 375 rows to a real administrator would put that
+person's name on an import they did not perform. `0054` creates a system actor
+that cannot authenticate for two independent reasons: `is_active = false`
+(checked *before* the password), and a sentinel `password_hash` that is not of
+the `scrypt$salt$hash` form `verifyPassword` requires.
+
+**It stops at `IMPORTED`.** Per the decision to migrate and wait for an
+administrator to handle the products and update prices, the script writes no
+`catalog_products` and approves nothing. **Nothing it writes is visible to a
+customer.** `price` becomes `proposed_price`, which is the field that says no
+human has agreed to the number yet.
+
+Dry run is the default; `--apply` writes. But the dry run counts what is
+*eligible*, not what will *succeed* — the first `--apply` failed on all 50
+fixture products after a dry run reported 50 successes, because the fault was
+in the insert path a dry run never executes. Run `--apply --limit=1` first.
+
 ### Phase 6 · Cutover
 `/api/products` switches to the new model only when every product has a
 published equivalent or a documented reason not to, verified by count.
@@ -580,7 +749,7 @@ published equivalent or a documented reason not to, verified by count.
 | # | Open question |
 |---|---|
 | ~~U-1~~ | ~~Which of the four food labels is canonical~~ — **closed.** `0034` already decided it: `אוכל יבש` and `אוכל רטוב` are the categories, the rest are aliases (§9 Phase 1) |
-| U-6 | Whether the 134 `needs_price_review` and 98 `needs_image_review` flags are current or stale. Nothing records when or why they were set, and the answer moves the auto-approval rule well above 50% if many have expired (§7.2) |
+| ~~U-6~~ | ~~Whether the 134 `needs_price_review` and 98 `needs_image_review` flags are current or stale~~ — **closed by C-0 run #9**, see §7.4. Neither is stale by age; they are stale in *different degrees* and must be treated separately |
 | U-2 | Whether the 6 duplicate-barcode groups are duplicates or unrecognised variants |
 | U-3 | What the 2 species-less `other` products actually are |
 | U-4 | Whether `product_type` should replace the current category tree or map into it (§5.2) |

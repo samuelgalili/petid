@@ -1036,6 +1036,101 @@ const main = async () => {
       expectStatus(approve, [200], "approve media");
     });
 
+    await check("chain 7b · a required category attribute blocks publication", async () => {
+      // 0052. The gate now asks the category what it insists on. Proving that
+      // needs a category that insists on something, so one is declared here and
+      // withdrawn afterwards - the seeded attributes are all optional on
+      // purpose, because C-0 measured that requiring any of them today would
+      // put "לא צוין" on the majority of pages.
+      const attribute = (await isolationPool.query(
+        `insert into public.product_category_attributes
+           (category_id, key, label_he, value_type, is_required)
+         values ($1, 'smoke_required_key', 'שדה חובה לבדיקה', 'text', true)
+         returning id`,
+        [chain.categoryId],
+      )).rows[0].id;
+
+      try {
+        const blocked = await asSeller(
+          `/api/admin/intake/products/${chain.productId}/publication-readiness`,
+        );
+        expectStatus(blocked, [200], "readiness");
+        const report = await blocked.json();
+        if (report.ready) throw new Error("a product missing a required attribute was reported ready");
+        if (!report.unmet.includes("missing_attribute:smoke_required_key")) {
+          throw new Error(`the refusal did not name the key: ${report.unmet.join(", ")}`);
+        }
+
+        // And the gate inside the transaction refuses too, not only the report.
+        // A readiness endpoint that disagrees with publish is worse than
+        // neither, because it teaches an admin to trust the wrong one.
+        const publish = await asSeller(`/api/admin/intake/products/${chain.productId}/publish`, {
+          method: "POST",
+        });
+        if (publish.status === 200) throw new Error("publish ignored the required attribute");
+
+        // Filling it in clears the refusal - otherwise the check would pass for
+        // a product that simply cannot publish for some other reason.
+        await isolationPool.query(
+          `update public.catalog_products
+              set attributes = attributes || '{"smoke_required_key":"filled"}'::jsonb
+            where id = $1`,
+          [chain.productId],
+        );
+        const afterFilling = await asSeller(
+          `/api/admin/intake/products/${chain.productId}/publication-readiness`,
+        );
+        const filled = await afterFilling.json();
+        if (filled.unmet.some((reason) => reason.startsWith("missing_attribute:"))) {
+          throw new Error(`still blocked after filling it: ${filled.unmet.join(", ")}`);
+        }
+      } finally {
+        await isolationPool.query(
+          "delete from public.product_category_attributes where id = $1", [attribute],
+        );
+        await isolationPool.query(
+          `update public.catalog_products set attributes = attributes - 'smoke_required_key' where id = $1`,
+          [chain.productId],
+        );
+      }
+    });
+
+    await check("chain 7c · an attribute that is present but blank does not count", async () => {
+      // A key whose value is "" or "   " is not a value anybody entered.
+      // Counting it would let a product publish showing a label with nothing
+      // beside it, which is the exact failure the required flag exists to stop.
+      const attribute = (await isolationPool.query(
+        `insert into public.product_category_attributes
+           (category_id, key, label_he, value_type, is_required)
+         values ($1, 'smoke_blank_key', 'שדה ריק לבדיקה', 'text', true)
+         returning id`,
+        [chain.categoryId],
+      )).rows[0].id;
+      try {
+        await isolationPool.query(
+          `update public.catalog_products
+              set attributes = attributes || '{"smoke_blank_key":"   "}'::jsonb
+            where id = $1`,
+          [chain.productId],
+        );
+        const response = await asSeller(
+          `/api/admin/intake/products/${chain.productId}/publication-readiness`,
+        );
+        const report = await response.json();
+        if (!report.unmet.includes("missing_attribute:smoke_blank_key")) {
+          throw new Error(`whitespace was accepted as a value: ${report.unmet.join(", ")}`);
+        }
+      } finally {
+        await isolationPool.query(
+          "delete from public.product_category_attributes where id = $1", [attribute],
+        );
+        await isolationPool.query(
+          `update public.catalog_products set attributes = attributes - 'smoke_blank_key' where id = $1`,
+          [chain.productId],
+        );
+      }
+    });
+
     await check("chain 8/8 · the gate passes and the product publishes", async () => {
       const readiness = await asSeller(
         `/api/admin/intake/products/${chain.productId}/publication-readiness`,
