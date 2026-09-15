@@ -27,7 +27,8 @@
 // cannot be published".
 //
 //   DATABASE_URL=... node server/scripts/autoApproveLegacyDrafts.mjs \
-//     [--apply --admin-email=someone@mipo.pet] [--limit=N] [--ignore-review-flags]
+//     [--apply --admin-email=someone@mipo.pet] [--limit=N]
+//     [--ignore-price-review] [--ignore-image-review]
 //
 // Dry run is the default and reports why each held-back draft was held back.
 
@@ -39,7 +40,15 @@ import { DRAFT_STATES, isDraftTransitionAllowed, mayApproveDraft } from "../src/
 const { Pool } = pg;
 
 const apply = process.argv.includes("--apply");
-const ignoreReviewFlags = process.argv.includes("--ignore-review-flags");
+// Two flags, two switches. C-0 run #9 measured them behaving differently:
+// needs_price_review adds nothing the price column does not already carry,
+// while needs_image_review is corroborated by the importer's independent
+// "Needs manual image research" verdict on 91 of its 98 rows - and that
+// verdict is about rights, which adopting the image does not settle.
+const ignorePriceFlag = process.argv.includes("--ignore-price-review")
+  || process.argv.includes("--ignore-review-flags");
+const ignoreImageFlag = process.argv.includes("--ignore-image-review")
+  || process.argv.includes("--ignore-review-flags");
 const arg = (name) => {
   const found = process.argv.find((value) => value.startsWith(`--${name}=`));
   return found ? found.slice(name.length + 3) : null;
@@ -48,7 +57,10 @@ const limit = arg("limit") ? Math.max(1, Number(arg("limit")) || 0) : null;
 const adminEmail = arg("admin-email");
 
 const SOURCE_SYSTEM = "legacy_business_products";
-const options = { honourReviewFlags: !ignoreReviewFlags };
+const options = {
+  honourPriceReviewFlag: !ignorePriceFlag,
+  honourImageReviewFlag: !ignoreImageFlag,
+};
 
 let pool = null;
 
@@ -213,7 +225,8 @@ const main = async () => {
             state: "APPROVED",
             catalog_product_id: product[0].id,
             via: "auto_approval_rule",
-            honour_review_flags: options.honourReviewFlags,
+            honour_price_review_flag: options.honourPriceReviewFlag,
+            honour_image_review_flag: options.honourImageReviewFlag,
           }),
         ],
       );
@@ -232,8 +245,12 @@ const main = async () => {
   console.log(apply
     ? `APPLIED - approved by ${approver.email}`
     : "DRY RUN - nothing was written (pass --apply --admin-email=... to write)");
-  if (!options.honourReviewFlags) {
-    console.log("  !! needs_price_review / needs_image_review are being IGNORED (U-6)");
+  if (!options.honourPriceReviewFlag) {
+    console.log("  !! needs_price_review is being IGNORED");
+  }
+  if (!options.honourImageReviewFlag) {
+    console.log("  !! needs_image_review is being IGNORED - C-26 corroborates this flag on");
+    console.log("     91 of its 98 rows, and it is about image RIGHTS, not file location");
   }
   console.log(`  drafts considered        ${summary.considered}`);
   console.log(`  ${apply ? "approved" : "would approve"}${apply ? "                 " : "            "}${summary.approved}`);

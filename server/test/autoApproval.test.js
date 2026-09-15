@@ -144,15 +144,60 @@ test("the review flags are honoured by default", () => {
   assert.equal(mayAutoApprove(approvable({ needs_image_review: true })), false);
 });
 
-test("and can be relaxed without rewriting the rule, if U-6 says they are stale", () => {
+test("the two flags relax independently - C-0 run #9 says they are not one setting", () => {
+  // The measurement that forced this apart. needs_price_review adds nothing
+  // the price column does not already carry (73 of 134 are unpriced and fail
+  // anyway; unpriced_but_not_flagged = 0; no suggestion was ever recorded).
+  // needs_image_review is corroborated by a second, independent record: of 98
+  // flagged rows, 91 carry the importer's own "Needs manual image research".
+  const priceRelaxed = { honourPriceReviewFlag: false };
+  assert.equal(mayAutoApprove(approvable({ needs_price_review: true }), priceRelaxed), true);
+  assert.equal(mayAutoApprove(approvable({ needs_image_review: true }), priceRelaxed), false,
+    "relaxing the price flag must not relax the image flag");
+
+  const imageRelaxed = { honourImageReviewFlag: false };
+  assert.equal(mayAutoApprove(approvable({ needs_image_review: true }), imageRelaxed), true);
+  assert.equal(mayAutoApprove(approvable({ needs_price_review: true }), imageRelaxed), false);
+});
+
+test("relaxing a flag relaxes nothing else", () => {
+  // The test that stops "ignore the stale flag" from quietly becoming
+  // "approve everything".
+  for (const relaxed of [
+    { honourPriceReviewFlag: false },
+    { honourImageReviewFlag: false },
+    { honourPriceReviewFlag: false, honourImageReviewFlag: false },
+  ]) {
+    assert.deepEqual(autoApprovalBlockers(approvable({ price: "0" }), relaxed), [B.NON_POSITIVE_PRICE]);
+    assert.deepEqual(autoApprovalBlockers(approvable({ image_url: "" }), relaxed), [B.MISSING_IMAGE]);
+    assert.deepEqual(autoApprovalBlockers(approvable({ is_flagged: true }), relaxed), [B.FLAGGED]);
+    assert.deepEqual(autoApprovalBlockers(approvable({ name: "" }), relaxed), [B.MISSING_NAME]);
+  }
+});
+
+test("an adopted image does not clear the image flag", () => {
+  // C-26: 23 of the 91 products the importer marked "Needs manual image
+  // research" already have a normalized image. That verdict is about whether
+  // we may USE the picture, not about which server it sits on - so copying it
+  // to /uploads/ answers a different question. A rule that treated a
+  // normalized image as clearance would auto-approve exactly the products
+  // whose rights are unresolved.
+  const adopted = approvable({ image_url: "/uploads/adopted.jpg", needs_image_review: true });
+  assert.deepEqual(autoApprovalBlockers(adopted), [B.NEEDS_IMAGE_REVIEW]);
+});
+
+test("the old single-switch spelling still means what it used to", () => {
+  // honourReviewFlags was the original option. Anything still passing it must
+  // not silently start consulting a flag it asked to ignore.
   const relaxed = { honourReviewFlags: false };
   assert.equal(mayAutoApprove(approvable({ needs_price_review: true }), relaxed), true);
   assert.equal(mayAutoApprove(approvable({ needs_image_review: true }), relaxed), true);
-  // Relaxing the flags must not relax anything else. This is the test that
-  // stops "ignore the stale flags" from quietly becoming "approve everything".
-  assert.deepEqual(autoApprovalBlockers(approvable({ price: "0" }), relaxed), [B.NON_POSITIVE_PRICE]);
-  assert.deepEqual(autoApprovalBlockers(approvable({ image_url: "" }), relaxed), [B.MISSING_IMAGE]);
-  assert.deepEqual(autoApprovalBlockers(approvable({ is_flagged: true }), relaxed), [B.FLAGGED]);
+  // And the specific option wins over the general one.
+  assert.equal(
+    mayAutoApprove(approvable({ needs_image_review: true }),
+      { honourReviewFlags: false, honourImageReviewFlag: true }),
+    false,
+  );
 });
 
 // ─── the SQL says the same thing as the predicate ────────────────────────────
@@ -402,6 +447,82 @@ dbTest("autoApprovableSql agrees with C-29, the number the decision is made on",
     assert.equal(rows[0].by_rule, rows[0].by_c29,
       "the enforced rule and the measured rule must pass the same products");
     assert.ok(rows[0].by_rule > 0, "the fixture must contain passing rows for this to mean anything");
+  });
+});
+
+dbTest("each of C-29's four counts is reproduced by the matching option", async () => {
+  // C-0 run #9 measured production:
+  //
+  //     both_flags_consulted 187 · price_flag_ignored 245
+  //     image_flag_ignored   213 · neither_flag_consulted 274
+  //
+  // Four numbers, four option combinations. This rebuilds a fixture whose
+  // flag distribution is known and checks that each option reproduces the
+  // count C-29's corresponding column would give it - so the rule cannot
+  // acquire a fifth behaviour, or silently swap which flag an option relaxes,
+  // without this failing. (The absolute production numbers cannot be asserted
+  // from here; the correspondence can.)
+  await withDb(async (client) => {
+    const { rows: [business] } = await client.query(
+      `insert into public.business_profiles (business_name, business_type)
+       values ('C-29 four counts', 'shop') returning id`,
+    );
+    const { rows: [category] } = await client.query(`select id from public.product_categories limit 1`);
+
+    // 10 clean · 5 price-flagged only · 3 image-flagged only · 2 both.
+    const shape = [
+      [10, false, false], [5, true, false], [3, false, true], [2, true, true],
+    ];
+    for (const [count, priceFlag, imageFlag] of shape) {
+      await client.query(
+        `insert into public.business_products
+           (business_id, name, price, image_url, category_id,
+            is_flagged, needs_price_review, needs_image_review)
+         select $1, 'P' || g, 10.00, '/uploads/a.jpg', $2, false, $3, $4
+           from generate_series(1, $5::int) g`,
+        [business.id, category.id, priceFlag, imageFlag, count],
+      );
+    }
+
+    const expected = {
+      both: 10,                      // only the clean ones
+      priceIgnored: 10 + 5,          // + those flagged for price alone
+      imageIgnored: 10 + 3,          // + those flagged for image alone
+      neither: 10 + 5 + 3 + 2,       // everything
+    };
+    const cases = [
+      [{}, expected.both],
+      [{ honourPriceReviewFlag: false }, expected.priceIgnored],
+      [{ honourImageReviewFlag: false }, expected.imageIgnored],
+      [{ honourPriceReviewFlag: false, honourImageReviewFlag: false }, expected.neither],
+    ];
+
+    for (const [options, want] of cases) {
+      const { rows } = await client.query(
+        `select count(*)::int as n from public.business_products p
+          where p.business_id = $1 and ${autoApprovableSql("p", options)}`,
+        [business.id],
+      );
+      assert.equal(rows[0].n, want, `SQL with ${JSON.stringify(options)}`);
+
+      // And the predicate must agree with the SQL for every one of them.
+      const { rows: all } = await client.query(
+        `select name, price, image_url, category_id, is_flagged,
+                needs_price_review, needs_image_review
+           from public.business_products where business_id = $1`,
+        [business.id],
+      );
+      assert.equal(
+        all.filter((row) => mayAutoApprove(row, options)).length, want,
+        `predicate with ${JSON.stringify(options)}`,
+      );
+    }
+
+    // The ordering C-29 measured: relaxing the price flag admits more than
+    // relaxing the image flag, and relaxing both admits the most.
+    assert.ok(expected.priceIgnored > expected.both);
+    assert.ok(expected.neither > expected.priceIgnored);
+    assert.ok(expected.neither > expected.imageIgnored);
   });
 });
 

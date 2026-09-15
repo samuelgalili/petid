@@ -463,6 +463,48 @@ of that test passed against a workflow that had been edited, because `C-29` has
 three near-identical clauses and the substring matched a different one — it is
 now anchored to the clause's label as well as its text.
 
+### 7.4 U-6 answered — **C-0 run #9, measured against production**
+
+The question was whether the review flags are stale. They are not stale by
+*age*: `C-27` reports `untouched_90d = 0` and `untouched_180d = 0`, oldest
+touch 2026-08-24. But the two flags are not the same kind of thing, and the
+single `honourReviewFlags` switch the rule first shipped with was wrong.
+
+| | `needs_price_review` | `needs_image_review` |
+|---|---|---|
+| Flagged | 134 | 98 |
+| Fails its condition anyway | **73** unpriced | **69** imageless |
+| Flag is the only signal | 61 priced | 27 normalized · 2 foreign |
+| Rows with the problem but *no* flag | **0** | **0** |
+| Independent corroboration | none — `has_a_suggestion = 0` | **91 of 98** carry the importer's own "Needs manual image research" (`C-26`) |
+
+**The price flag carries no information the price column does not.** Every
+unpriced product is already flagged, the 73 that matter fail the price
+condition on their own, and nothing records why the other 61 were flagged.
+
+**The image flag is corroborated.** Two records written at different times by
+different processes agree on the same 91 products. And `C-26` shows 23 of those
+91 **already have a normalized image** — because that verdict is about image
+*rights*, not about which server the file sits on. Adopting an image answers a
+different question, so normalization must never be read as clearing it. This is
+the same unresolved rights question as **D-7**.
+
+So the rule now takes **two** switches, `honourPriceReviewFlag` and
+`honourImageReviewFlag`, both defaulting to honoured. `C-29`'s four counts are
+the four combinations:
+
+| | Auto-approves | Manual queue |
+|---|---|---|
+| Both honoured (today's default) | **187** | 188 |
+| **Price flag ignored** | **245** | **130** |
+| Image flag ignored | 213 | 162 |
+| Neither honoured | 274 | 101 |
+
+**Recommended: ignore the price flag, honour the image flag → 245.** It takes
+58 products out of the manual queue on the strength of a flag that adds
+nothing, and leaves the rights question exactly where D-7 left it. Not yet
+decided.
+
 ---
 
 ## 8. Decisions taken
@@ -707,7 +749,7 @@ published equivalent or a documented reason not to, verified by count.
 | # | Open question |
 |---|---|
 | ~~U-1~~ | ~~Which of the four food labels is canonical~~ — **closed.** `0034` already decided it: `אוכל יבש` and `אוכל רטוב` are the categories, the rest are aliases (§9 Phase 1) |
-| U-6 | Whether the 134 `needs_price_review` and 98 `needs_image_review` flags are current or stale. Nothing records when or why they were set, and the answer moves the auto-approval rule well above 50% if many have expired (§7.2) |
+| ~~U-6~~ | ~~Whether the 134 `needs_price_review` and 98 `needs_image_review` flags are current or stale~~ — **closed by C-0 run #9**, see §7.4. Neither is stale by age; they are stale in *different degrees* and must be treated separately |
 | U-2 | Whether the 6 duplicate-barcode groups are duplicates or unrecognised variants |
 | U-3 | What the 2 species-less `other` products actually are |
 | U-4 | Whether `product_type` should replace the current category tree or map into it (§5.2) |

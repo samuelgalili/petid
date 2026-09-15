@@ -34,9 +34,51 @@
  * "these flags are probably old" is a guess and the flags are the only signal
  * anybody ever recorded that a product needed looking at.
  */
+// MEASURED, C-0 run #9. The two flags are not one setting, and the single
+// honourReviewFlags switch this file shipped with was wrong:
+//
+// needs_price_review (134). 73 of those rows are genuinely unpriced and fail
+// the price condition anyway; only 61 carry a price. No suggested_price was
+// ever recorded (has_a_suggestion = 0), so nothing says WHY they were flagged,
+// and every unpriced product is already flagged (unpriced_but_not_flagged = 0)
+// so the flag adds no information the price column does not already carry.
+//
+// needs_image_review (98). 69 are imageless and fail anyway. But C-26 found a
+// second, independent record: the importer wrote its own image_review_status,
+// and of the 98 flagged rows, 91 carry "Needs manual image research". Two
+// records written at different times by different processes agreeing on the
+// same 91 products is corroboration, not staleness.
+//
+// And that verdict is about RIGHTS, not about where the file is. C-26 shows 23
+// of those 91 already have a normalized image - adopting an image onto our
+// server does not answer whether we may use it. So normalization must never be
+// read as clearing this flag.
+//
+// C-27: no flagged row is untouched for 90 days, let alone 180. Nothing here
+// is stale by age either.
+//
+// Hence the asymmetry below: the price flag may be relaxed, the image flag
+// should not be. Both default to honoured; relaxing is a decision somebody
+// takes deliberately, per flag.
 export const DEFAULT_OPTIONS = Object.freeze({
-  honourReviewFlags: true,
+  honourPriceReviewFlag: true,
+  honourImageReviewFlag: true,
 });
+
+/**
+ * Accepts the old single-switch spelling so nothing that passed
+ * `honourReviewFlags` silently starts ignoring it. Setting it applies to both
+ * flags; the specific options win over it.
+ */
+const resolveOptions = (options = {}) => {
+  const base = options.honourReviewFlags === undefined
+    ? DEFAULT_OPTIONS
+    : { honourPriceReviewFlag: options.honourReviewFlags, honourImageReviewFlag: options.honourReviewFlags };
+  return {
+    honourPriceReviewFlag: options.honourPriceReviewFlag ?? base.honourPriceReviewFlag,
+    honourImageReviewFlag: options.honourImageReviewFlag ?? base.honourImageReviewFlag,
+  };
+};
 
 /** Every reason a draft can be held back, as stable codes. */
 export const AUTO_APPROVAL_BLOCKERS = Object.freeze({
@@ -75,7 +117,7 @@ const isPositivePrice = (value) => {
  * image_url, is_flagged, needs_price_review, needs_image_review.
  */
 export const autoApprovalBlockers = (row, options = {}) => {
-  const { honourReviewFlags } = { ...DEFAULT_OPTIONS, ...options };
+  const { honourPriceReviewFlag, honourImageReviewFlag } = resolveOptions(options);
   const B = AUTO_APPROVAL_BLOCKERS;
   const blockers = [];
 
@@ -103,10 +145,8 @@ export const autoApprovalBlockers = (row, options = {}) => {
   // truthiness - the same three-valued trap sellerEligibility.js documents.
   if (row.is_flagged === true) blockers.push(B.FLAGGED);
 
-  if (honourReviewFlags) {
-    if (row.needs_price_review === true) blockers.push(B.NEEDS_PRICE_REVIEW);
-    if (row.needs_image_review === true) blockers.push(B.NEEDS_IMAGE_REVIEW);
-  }
+  if (honourPriceReviewFlag && row.needs_price_review === true) blockers.push(B.NEEDS_PRICE_REVIEW);
+  if (honourImageReviewFlag && row.needs_image_review === true) blockers.push(B.NEEDS_IMAGE_REVIEW);
 
   return blockers;
 };
@@ -126,7 +166,7 @@ export const mayAutoApprove = (row, options = {}) => autoApprovalBlockers(row, o
  * a migration, not user input.
  */
 export const autoApprovableSql = (alias = "p", options = {}) => {
-  const { honourReviewFlags } = { ...DEFAULT_OPTIONS, ...options };
+  const { honourPriceReviewFlag, honourImageReviewFlag } = resolveOptions(options);
   const conditions = [
     `nullif(btrim(coalesce(${alias}.name, '')), '') is not null`,
     `${alias}.category_id is not null`,
@@ -136,9 +176,7 @@ export const autoApprovableSql = (alias = "p", options = {}) => {
     `${alias}.image_url <> '${PLACEHOLDER_IMAGE}'`,
     `coalesce(${alias}.is_flagged, false) = false`,
   ];
-  if (honourReviewFlags) {
-    conditions.push(`coalesce(${alias}.needs_price_review, false) = false`);
-    conditions.push(`coalesce(${alias}.needs_image_review, false) = false`);
-  }
+  if (honourPriceReviewFlag) conditions.push(`coalesce(${alias}.needs_price_review, false) = false`);
+  if (honourImageReviewFlag) conditions.push(`coalesce(${alias}.needs_image_review, false) = false`);
   return `(${conditions.join("\n     and ")})`;
 };
