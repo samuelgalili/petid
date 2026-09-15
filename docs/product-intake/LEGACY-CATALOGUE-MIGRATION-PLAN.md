@@ -606,6 +606,54 @@ Columns that must **not** migrate to anything customer-facing: `cost_price`,
 envelope's `price_before_vat`, `supplier_name`, `source_row`,
 `image_research_notes`. `supplier_id` in particular is **not** Seller identity.
 
+#### What building it changed — ✅ **BUILT, NOT YET RUN IN PRODUCTION**
+
+`server/scripts/migrateLegacyCatalogue.mjs` and
+`server/sql/0054_legacy_import_source_system.sql`. Three corrections to the
+plan above, all found by reading the schema and the routes rather than by
+running it:
+
+**1. `source_system = 'legacy_business_products'` was impossible.**
+`raw_import_records_source_system_check` allowed exactly
+`('url','scrape','csv','xlsx','manual','api')`, so all 375 inserts would have
+failed with `23514`. `0054` widens the constraint rather than reusing
+`'manual'`, because *"which products predate the intake model"* must stay
+answerable.
+
+**2. The payload cannot be "the whole legacy row".** This contradicts the
+column list directly above it. `GET /api/admin/intake/drafts/:id` returns
+`r.payload as raw_payload`, and `seller_admin` **holds `INTAKE_READ`** — so a
+Seller's own administrator can read the archive of any draft their business
+owns. Today every legacy product belongs to MIPO, so the leak is latent; it
+becomes real the first time a legacy product's ownership moves to a third
+party, which is the entire purpose of the new model. The withheld list is
+therefore applied to the payload too. Nothing is lost: none of those fields
+maps into a draft, so *"correctable by re-running"* still holds, and
+`business_products` is untouched and remains the complete record.
+
+`source_url` is deliberately **kept** (D-7 — you cannot ask a supplier for
+permission if you no longer know which supplier). `supplier_name` is **not**,
+because it sits in the attribute bag a Seller can read; D-7 requires it to
+survive on `business_products`, which it does.
+
+**3. `raw_import_records.created_by` is `NOT NULL`.** The migration needs an
+actor, and attributing 375 rows to a real administrator would put that
+person's name on an import they did not perform. `0054` creates a system actor
+that cannot authenticate for two independent reasons: `is_active = false`
+(checked *before* the password), and a sentinel `password_hash` that is not of
+the `scrypt$salt$hash` form `verifyPassword` requires.
+
+**It stops at `IMPORTED`.** Per the decision to migrate and wait for an
+administrator to handle the products and update prices, the script writes no
+`catalog_products` and approves nothing. **Nothing it writes is visible to a
+customer.** `price` becomes `proposed_price`, which is the field that says no
+human has agreed to the number yet.
+
+Dry run is the default; `--apply` writes. But the dry run counts what is
+*eligible*, not what will *succeed* — the first `--apply` failed on all 50
+fixture products after a dry run reported 50 successes, because the fault was
+in the insert path a dry run never executes. Run `--apply --limit=1` first.
+
 ### Phase 6 · Cutover
 `/api/products` switches to the new model only when every product has a
 published equivalent or a documented reason not to, verified by count.
