@@ -39,6 +39,7 @@ import ScrollToTop from "@/components/ScrollToTop";
 import { LegalDrawer } from "@/components/LegalDrawer";
 import CompleteProfilePrompt from "@/components/CompleteProfilePrompt";
 import { SarahCrashPopup } from "@/components/SarahCrashPopup";
+import AvatarCompanion from "@/components/mipo/AvatarCompanion";
 
 // Route configuration - modular lazy-loaded routes
 import { allRoutes } from "@/routes";
@@ -99,6 +100,7 @@ const AnimatedRoutes = () => {
       </div>
       <LegalDrawer />
       <SarahCrashPopup />
+      <AvatarCompanion />
     </div>
   );
 };
