@@ -23,8 +23,17 @@
 # environment, same connection handling, same static guard, same redaction.
 # Nothing here is a new access route: it borrows the one that already exists.
 #
-# The SQL block is 23 SELECT statements wrapped in BEGIN /
-# SET TRANSACTION READ ONLY / ROLLBACK: 26 statements in total.
+# The SQL block is 29 SELECT statements wrapped in BEGIN /
+# SET TRANSACTION READ ONLY / ROLLBACK: 32 statements in total.
+#
+# C-24..C-29 answer U-6: 134 products carry needs_price_review and 98 carry
+# needs_image_review, and nothing in the schema records when or why either was
+# set. A flag cannot be dated directly, so it is tested against the thing it is
+# about - a product flagged for price review that now has a price, or flagged
+# for image review whose image has since been normalized, is a flag that has
+# outlived its reason. C-29 is the counterfactual that decides whether chasing
+# this is worth anything: if dropping a flag barely moves the rule's pass count,
+# the flags are not what is holding the manual queue at 188.
 #
 # C-21..C-23 count the effect of migration 0051 BEFORE it is deployed, by
 # resolving category the way it will. C-10 measured the auto-approval rule at
@@ -586,6 +595,115 @@ jobs:
                  count(*) filter (where p.category_id is null
                                     and a.category_id is null
                                     and lower(btrim(coalesce(p.category, ''))) not in ('dry-food', 'wet-food')) as blocked_category
+            from public.business_products p
+            left join public.product_category_aliases a
+              on a.alias = lower(btrim(p.category));
+
+          \echo '### C-24 - is needs_price_review still true of the row it is on?'
+          -- U-6. 134 products carry this flag and nothing in the schema records
+          -- when or why it was set. A flag cannot be dated directly, so it is
+          -- tested against the thing it is about: a product flagged for price
+          -- review that now has a sensible price, or whose suggested price has
+          -- already been applied, is a flag that has outlived its reason.
+
+          select count(*) filter (where needs_price_review) as flagged,
+                 count(*) filter (where needs_price_review and price > 0) as flagged_but_priced,
+                 count(*) filter (where needs_price_review and price <= 0) as flagged_and_unpriced,
+                 count(*) filter (where needs_price_review and suggested_price is not null) as has_a_suggestion,
+                 count(*) filter (where needs_price_review and suggested_price is not null
+                                    and price = suggested_price) as suggestion_already_applied,
+                 count(*) filter (where not needs_price_review and price <= 0) as unpriced_but_not_flagged
+            from public.business_products;
+
+          \echo '### C-25 - is needs_image_review still true of the row it is on?'
+          -- Same test for the other flag. A product flagged for image review
+          -- whose image has since been normalized and is hosted by us has had
+          -- its problem fixed, whether or not anybody cleared the flag.
+
+          select count(*) filter (where needs_image_review) as flagged,
+                 count(*) filter (where needs_image_review and image_url like '/uploads/%') as flagged_but_normalized,
+                 count(*) filter (where needs_image_review and image_url like 'http%') as flagged_and_still_foreign,
+                 count(*) filter (where needs_image_review and image_url = '/placeholder.svg') as flagged_and_imageless,
+                 count(*) filter (where not needs_image_review and image_url = '/placeholder.svg') as imageless_but_not_flagged
+            from public.business_products;
+
+          \echo '### C-26 - the importer kept its own image verdict; do the two agree?'
+          -- 266 products carry an image_review_status key written by the import.
+          -- Where the column and the attribute disagree, one of them is stale,
+          -- and which one is the more trustworthy record is worth knowing
+          -- before 98 products are sent to a human queue on the column's word.
+
+          select coalesce(bp.product_attributes ->> 'image_review_status', '(absent)') as image_review_status,
+                 count(*) as products,
+                 count(*) filter (where bp.needs_image_review) as column_also_flags_it,
+                 count(*) filter (where bp.image_url like '/uploads/%') as image_is_normalized
+            from public.business_products bp
+           group by 1
+           order by products desc
+           limit 20;
+
+          \echo '### C-27 - how long since a flagged row was touched at all'
+          -- Measured NOW, deliberately: migration 0051 bumps updated_at on 241
+          -- rows when it runs, and after that this question can no longer be
+          -- asked of those rows.
+
+          select count(*) filter (where needs_price_review or needs_image_review) as flagged_any,
+                 min(updated_at) filter (where needs_price_review or needs_image_review) as oldest_update,
+                 max(updated_at) filter (where needs_price_review or needs_image_review) as newest_update,
+                 count(*) filter (where (needs_price_review or needs_image_review)
+                                    and updated_at < now() - interval '90 days') as untouched_90d,
+                 count(*) filter (where (needs_price_review or needs_image_review)
+                                    and updated_at < now() - interval '180 days') as untouched_180d,
+                 count(*) filter (where (needs_price_review or needs_image_review)
+                                    and updated_at = created_at) as never_updated_at_all
+            from public.business_products;
+
+          \echo '### C-28 - how the two flags overlap'
+
+          select count(*) as products,
+                 count(*) filter (where needs_price_review and needs_image_review) as both,
+                 count(*) filter (where needs_price_review and not needs_image_review) as price_only,
+                 count(*) filter (where needs_image_review and not needs_price_review) as image_only,
+                 count(*) filter (where not needs_price_review and not needs_image_review) as neither
+            from public.business_products;
+
+          \echo '### C-29 - what the rule would pass if a flag were not consulted'
+          -- The counterfactual that decides whether chasing U-6 is worth it. If
+          -- dropping a flag barely moves the number, the flag is not what is
+          -- holding the queue at 188 and the effort belongs elsewhere.
+          --
+          -- Every column keeps the real conditions - named, priced, categorised
+          -- as 0051 will, carrying an image, not is_flagged - and differs only
+          -- in which review flag it consults.
+
+          select count(*) filter (
+                   where p.name is not null and btrim(p.name) <> '' and p.price > 0
+                     and (p.category_id is not null or a.category_id is not null
+                          or lower(btrim(coalesce(p.category, ''))) in ('dry-food', 'wet-food'))
+                     and p.image_url is not null and p.image_url <> '/placeholder.svg'
+                     and not coalesce(p.is_flagged, false)
+                     and not coalesce(p.needs_image_review, false)
+                     and not coalesce(p.needs_price_review, false)) as both_flags_consulted,
+                 count(*) filter (
+                   where p.name is not null and btrim(p.name) <> '' and p.price > 0
+                     and (p.category_id is not null or a.category_id is not null
+                          or lower(btrim(coalesce(p.category, ''))) in ('dry-food', 'wet-food'))
+                     and p.image_url is not null and p.image_url <> '/placeholder.svg'
+                     and not coalesce(p.is_flagged, false)
+                     and not coalesce(p.needs_image_review, false)) as price_flag_ignored,
+                 count(*) filter (
+                   where p.name is not null and btrim(p.name) <> '' and p.price > 0
+                     and (p.category_id is not null or a.category_id is not null
+                          or lower(btrim(coalesce(p.category, ''))) in ('dry-food', 'wet-food'))
+                     and p.image_url is not null and p.image_url <> '/placeholder.svg'
+                     and not coalesce(p.is_flagged, false)
+                     and not coalesce(p.needs_price_review, false)) as image_flag_ignored,
+                 count(*) filter (
+                   where p.name is not null and btrim(p.name) <> '' and p.price > 0
+                     and (p.category_id is not null or a.category_id is not null
+                          or lower(btrim(coalesce(p.category, ''))) in ('dry-food', 'wet-food'))
+                     and p.image_url is not null and p.image_url <> '/placeholder.svg'
+                     and not coalesce(p.is_flagged, false)) as neither_flag_consulted
             from public.business_products p
             left join public.product_category_aliases a
               on a.alias = lower(btrim(p.category));
