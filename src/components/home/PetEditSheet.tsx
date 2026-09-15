@@ -53,6 +53,7 @@ export const PetEditSheet = ({
     setIsUploadingImage(true);
     try {
       const upload = await uploadMyImage(file);
+      // Master only — do not send source_image_url. Updating Master must not overwrite source.
       const updatedPet = await updateMyPet(pet.id, { avatar_url: upload.url });
 
       // Update local state immediately

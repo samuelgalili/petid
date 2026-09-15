@@ -14,6 +14,7 @@ import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { useGuest } from "@/contexts/GuestContext";
 import { useAuth } from "@/hooks/useAuth";
 import { createMyPet, uploadMyImage } from "@/lib/mipoApi";
+import { petCreateImageFields } from "@/lib/petImageSrc";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -348,7 +349,7 @@ const AddPet = () => {
         // null when the owner did not answer, so the column records "unknown"
         // instead of "no". The API keeps a null here rather than coercing it.
         is_neutered: formData.is_neutered === "" ? null : formData.is_neutered === "true",
-        avatar_url: avatarUrl,
+        ...petCreateImageFields(avatarUrl || null),
         personality_tags: personalityTags.length > 0 ? personalityTags : null,
         favorite_activities: activities.length > 0 ? activities : null,
         medical_conditions: medicalConditions.length > 0 ? medicalConditions : null,
