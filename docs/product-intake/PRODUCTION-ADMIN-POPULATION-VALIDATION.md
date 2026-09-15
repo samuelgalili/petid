@@ -1,20 +1,29 @@
 # D-18 — Production Admin & Business Population Validation
 
-# STATUS: `BLOCKED-PROD` — not executed
+# STATUS: `EXECUTED` — all 24 SQL statements run against production
 
-**No query in this document was run against production. No count in this document
-was measured. Nothing was estimated, projected, or carried over from a local
-database.** Every result cell reads `NOT RUN`.
+**Every count below was measured against the production database on
+2026-09-15T12:31:28Z.** Nothing is estimated, projected, or carried over from a
+local database. Where a number was previously predicted from the schema, the
+prediction and the measurement are both shown, so a wrong prediction would be
+visible rather than quietly overwritten.
 
-**No code, schema, migration, permission, role, session, route, branch, deploy or
-merge was changed by this task.**
+**Nothing in production was changed.** The statements ran inside
+`BEGIN` / `SET TRANSACTION READ ONLY` / `ROLLBACK`, so a stray write would have
+been refused by PostgreSQL rather than merely absent by intention. The run
+finished with `D-18 complete. Nothing on this host was modified.`
 
-> **Supersedes the OD-18 revision of this file** (written 2026-09-14 ~17:5xZ, when
-> production was `3815fcf1`). That revision's headline finding — *"M1 is not
-> deployed, so queries 4/5/6 cannot run at all"* — **is now resolved**: M1 shipped
-> in run 54. Those three queries became runnable-in-principle between the two
-> revisions. What did **not** change is the access blocker, and it is now the only
-> one. §4 records the difference honestly rather than quietly rewriting history.
+> **Supersedes the two `BLOCKED-PROD` revisions of this file** (OD-18,
+> 2026-09-14 ~17:5xZ at production `3815fcf1`; and the 2026-09-14T20:34Z
+> revision at `505d0ae9`). Both were blocked on access, not on method. The
+> method was not changed to make this run work: §5's statements are the ones
+> that ran, unedited. What changed is that a route was built — a
+> `workflow_dispatch` job bound to the `production` environment, which the
+> second revision proposed in §4.6 and was forbidden from building.
+>
+> The earlier revisions' reasoning is left standing throughout rather than
+> rewritten. Where a measurement now settles something those revisions could
+> only infer, both are shown. That is the point of having predicted in advance.
 
 ---
 
@@ -22,12 +31,14 @@ merge was changed by this task.**
 
 | | |
 |---|---|
-| Validation attempted | **2026-09-14T20:34:25Z** |
-| Access probes run | 2026-09-14T20:32Z – 2026-09-14T20:36Z |
-| **Checks executed against production** | **0 of 25** (24 SQL statements + 1 shell presence check) |
-| **Rows read from production** | **0** |
-| Written from | `claude/mifo-project-oq44tl` @ `b0935880` |
-| Previous revision (OD-18) | 2026-09-14 ~17:5xZ, also `BLOCKED-PROD` |
+| **Validation executed** | **2026-09-15T12:31:28Z** |
+| **Checks executed against production** | **24 of 25** (all 24 SQL statements) |
+| Not executed | `D18-19` — the `ADMIN_API_KEY` presence check. It is a shell test on the host, deliberately outside the SQL block; see **U-6** |
+| Workflow | `D-18 production read-only`, run **#1**, run id `34969326233` |
+| Dispatched by / from | `samuelgalili` / `main` @ `7ffc1250` |
+| Job duration | 12:31:20Z → 12:31:28Z |
+| Transaction outcome | `BEGIN` → `SET` → … → **`ROLLBACK`** |
+| Previous revisions | 2026-09-14T20:34Z and ~17:5xZ, both `BLOCKED-PROD` |
 
 ## 2. Production commit / deployment reference
 
@@ -58,9 +69,25 @@ branch returns `505d0ae9`, then `3815fcf1`.
 | Migration | `0040_add_admin_users_business_id.sql` |
 | Migration files in the deployed commit | **39** |
 | Expected `schema_migrations` rows after apply | **39** |
-| **Confirmed applied in production?** | **UNVERIFIED — pipeline inference only** |
+| **`schema_migrations` rows measured in production** | **39** |
+| **Last filename measured** | **`0040_add_admin_users_business_id.sql`** |
+| **Confirmed applied in production?** | ✅ **VERIFIED AT THE DATABASE** (`D18-23`) |
 
-### What is known
+### Verified — the belief now rests on the database
+
+`D18-23` returned `applied_migrations = 39`, `last_migration =
+0040_add_admin_users_business_id.sql`. `D18-21` returned the column list, which
+contains `business_id | uuid | YES | (no default)`, and `D18-22` returned the
+foreign key `admin_users_business_id_fkey → business_profiles(id) ON DELETE
+RESTRICT` together with the partial index `idx_admin_users_business_id`.
+
+**39 rows with `0040` as the maximum is the correct count, not one short.** The
+migration filenames are not densely numbered: `0001`–`0040` spans 40 numbers, two
+of which are unused, and `0018` is used twice. That leaves exactly 39 files at or
+below `0040`, which is exactly what the ledger holds. **No migration in the
+deployed range is missing from `schema_migrations`.**
+
+### What was known before the run, and why it was not enough
 
 The deploy job's *"Run migrations and restart the API"* step succeeded
 (20:24:28 → 20:25:06). It runs, in order: `backup-before-migrate.sh` (a full
@@ -84,19 +111,44 @@ on 8 September a deploy applied a destructive migration, failed on a later one, 
 request was failing. Queries `D18-21` and `D18-23` exist precisely to close that
 gap, and they were not run.
 
-**Conclusion: `0040` is believed applied; the belief rests on CI, not on the
-database.**
+**That reasoning turned out to be right — and it was still right to distrust it.**
+`D18-21`/`D18-23` have now confirmed at the database what CI could only attest
+about the pipeline. The 8 September incident, where both health checks reported
+success for four hours while every authenticated request failed, is the reason
+the distinction was kept. Confirming a correct belief costs one query; the
+alternative is discovering a wrong one during a migration.
 
 ---
 
-## 4. Why this is `BLOCKED-PROD`
+## 4. Why the earlier revisions were `BLOCKED-PROD`, and how the block was lifted
 
-### 4.1 One blocker remains, not two
+**This section is history now.** It is kept because the route that was eventually
+built is the one §4.6 argued for, and because the access inventory below is still
+an accurate description of what this development environment can and cannot
+reach — which has not changed.
+
+### 4.1 Both blockers are now resolved
 
 | | Blocker | State now |
 |---|---|---|
-| **B-1** | No access path from this environment to the production database | 🔴 **still blocking** |
-| **B-2** | *(OD-18)* `admin_users.business_id` does not exist in production, so the scope queries would error rather than return zero | 🟢 **resolved by run 54** — the column is deployed, so `D18-05`/`D18-06` are now well-formed against production |
+| **B-1** | No access path from this environment to the production database | 🟢 **resolved — not by opening this environment, but by not using it.** The measurement ran on a GitHub Actions runner in the `production` environment, over the deploy's existing SSH path. Every route in §4.2 is still closed from here; none was reopened, and no new credential, key, IAM policy or database role was created |
+| **B-2** | *(OD-18)* `admin_users.business_id` does not exist in production, so the scope queries would error rather than return zero | 🟢 **resolved by run 54**, and now confirmed at the database (§3) |
+
+### 4.1a One thing the run revealed about the route itself
+
+The workflow binds to the `production` GitHub Environment specifically so that its
+**required reviewer** makes a production measurement an approved, logged event
+rather than something anyone can trigger unseen. That is stated in the workflow's
+own comments as one of two reasons the environment was chosen.
+
+**It did not happen.** Run #1 started executing immediately on dispatch, with no
+approval gate: `Set up job` at 12:31:20Z, `Confirm intent` at 12:31:21Z. The
+`production` environment therefore has **no required reviewer configured**.
+
+This did not compromise this run — it is read-only by construction, twice over,
+and it was dispatched deliberately. But the second layer of defence described in
+the workflow is **not actually present**, and anyone who can dispatch workflows on
+this repository can run this one unreviewed. Recorded as **A-2** in §10.
 
 ### 4.2 Access inventory — every route probed
 
@@ -126,8 +178,10 @@ measurement requires database access, and there is none.**
 
 ### 4.4 Which queries were not run
 
-**All 25.** §5 lists every one. None was executed, partially executed, or
-approximated.
+**As of the 2026-09-14 revision: all 25.** That is no longer true — see §1. All 24
+SQL statements have now run; only `D18-19`, the host-side `ADMIN_API_KEY` presence
+check, remains unexecuted, because it is a shell test rather than a query and was
+deliberately kept out of the read-only SQL block.
 
 ### 4.5 What credential or approval is required
 
@@ -146,10 +200,34 @@ counts and technical UUIDs only: its *output* is safe to paste, its *input* (the
 connection string) is not. O-2 is the right answer if this measurement will be
 repeated.
 
+> **What actually happened: none of the four.** A fifth option — **O-5**, a
+> `workflow_dispatch` job inside the `production` GitHub Environment — needed no
+> new credential at all, because the access already existed there (§4.6). It
+> borrows the deploy's own SSH key rather than issuing anything, so no database
+> role, IAM policy, key or egress rule was created, and this development
+> environment remains exactly as closed as §4.2 describes. It also beats O-1 on
+> the one axis that matters for repeating the measurement: the output never passes
+> through a human, so there is no step at which a connection string could be
+> pasted by accident.
+
 ### 4.6 Can it run through GitHub Actions, or on the server itself?
 
 Both are feasible. **Neither was done, because both require changes this task
 forbids.**
+
+> **Superseded — the Actions option was built and is what ran.** This subsection
+> is left as written because it is the reasoning that produced the workflow, and
+> because one of its claims turned out to be wrong in a way worth keeping visible.
+> Two corrections:
+>
+> 1. **"That environment has a required reviewer" is false.** It is sourced to
+>    `docs/DEPLOY_APPROVAL.md` — a document describing intent, not the setting
+>    itself. Run #1 began executing one second after dispatch with no approval
+>    step. See §4.1a and **A-2**. This is exactly the class of error the rest of
+>    this document guards against: a document was read as evidence of a
+>    configuration.
+> 2. **"Not created" no longer holds.** `.github/workflows/production-d18-readonly.yml`
+>    exists, is registered on `main`, and produced the results in §6 onward.
 
 #### Via GitHub Actions — feasible, and it is the auditable option
 
@@ -467,20 +545,47 @@ select
 
 ## 6. Results — counts *(deliverable 5)*
 
-| # | Measurement | Result |
+### D18-01 · admin population
+
+| admins_total | active | inactive | must_change_password |
+|---|---|---|---|
+| **3** | 3 | 0 | 0 |
+
+### D18-02 · population age
+
+| first_admin_created_at | last_admin_created_at | never_logged_in |
 |---|---|---|
-| D18-01 | admins total / active / inactive / must-change-password | **NOT RUN — `BLOCKED-PROD`** |
-| D18-02 | population age, never-logged-in | **NOT RUN — `BLOCKED-PROD`** |
+| 2026-07-06 08:12:10Z | 2026-08-09 16:15:29Z | **0** |
+
+Three admins, all active, all of whom have logged in at least once. None is
+flagged to change its password.
 
 ## 7. Results — role distribution *(deliverable 6)*
 
-| Role | Count |
-|---|---|
-| `admin` | **NOT RUN** |
-| `product_manager` | **NOT RUN** |
-| `seller_admin` | **NOT RUN** — but see **K-1**: the database would *reject* one |
-| `readonly_admin` | **NOT RUN** — but see **K-2**: the database would *reject* one |
-| any other role | **NOT RUN** |
+### D18-03 · roles present
+
+| Role | Count | Active |
+|---|---|---|
+| `admin` | **2** | 2 |
+| `product_manager` | **1** | 1 |
+
+### D18-04 · the four roles counted explicitly, plus anything else
+
+`D18-04` is written so a zero is reported as a zero — a `GROUP BY` alone cannot
+distinguish *"no such rows"* from *"the query missed it"*.
+
+| `role_admin` | `role_product_manager` | `role_seller_admin` | `role_readonly_admin` | `role_other` |
+|---|---|---|---|---|
+| 2 | 1 | **0** | **0** | **0** |
+
+> **K-1 and K-2 are confirmed, and the reasoning behind them was sound.** Both
+> revisions predicted zero `seller_admin` and zero `readonly_admin` rows *from the
+> constraint*, arguing that "the database would refuse to store one" is stronger
+> than a count. The measurement agrees, and `D18-20` confirms the constraint is
+> still `CHECK (role = ANY (ARRAY['admin','product_manager']))` — so the zero is
+> guaranteed rather than incidental. **`role_other = 0` is the part a constraint
+> could not have promised**, since a constraint added later says nothing about rows
+> that predate it. It was worth asking.
 
 ### The runbook, for whoever has access
 
@@ -519,23 +624,113 @@ statement is refused **by PostgreSQL**, not merely absent by intention.
 
 ## 8. Results — business mappings *(deliverable 7)*
 
-| # | Measurement | Result |
-|---|---|---|
-| D18-05 | `business_id IS NULL` vs `IS NOT NULL` | **NOT RUN** — expected all-NULL; see **K-5** |
-| D18-06 | role × `business_id` | **NOT RUN** |
-| D18-07 | per-admin mapping: business exists, `is_verified`, `business_type` | **NOT RUN** |
-| D18-08 | dangling `business_id` | **NOT RUN** |
-| D18-09 | multiple admins per business | **NOT RUN** |
+### D18-05 · scope population
+
+| admins_total | `business_id` NULL | `business_id` set | distinct businesses |
+|---|---|---|---|
+| 3 | **3** | **0** | **0** |
+
+### D18-06 · role × scope
+
+| Role | platform scope | Seller scope | n |
+|---|---|---|---|
+| `admin` | 2 | 0 | 2 |
+| `product_manager` | 1 | 0 | 1 |
+
+### D18-07 · per-admin mapping
+
+**0 rows.** No admin carries a `business_id`, so there is nothing to map.
+
+### D18-08 · dangling `business_id`
+
+**0.** No admin points at a business that does not exist.
+
+### D18-09 · businesses with more than one admin
+
+**0 rows.**
+
+> **U-2 is settled.** K-3/K-4/K-5 argued from the code that every `business_id`
+> *must* be NULL, since no path writes one and `0040` performs no backfill — while
+> conceding that hand-written SQL would not be visible to that reasoning. The
+> measurement confirms it: **`business_id_set = 0`.** Nobody set one by hand.
 
 ## 9. Results — Seller-like business population *(deliverable 8)*
 
-| # | Measurement | Result |
-|---|---|---|
-| D18-10 | businesses total; `is_verified` true / false / NULL | **NOT RUN** |
-| D18-11 | `business_type` × verification | **NOT RUN** |
-| D18-12 | businesses with catalogue rows (activity) | **NOT RUN** |
-| D18-13 | catalogue concentration | **NOT RUN** |
-| D18-14 / D18-15 | the `DEFAULT_BUSINESS_ID` row and its products | **NOT RUN** |
+### D18-10 · businesses and verification
+
+| businesses_total | verified TRUE | verified FALSE | verified NULL |
+|---|---|---|---|
+| **1** | 1 | 0 | 0 |
+
+### D18-11 · `business_type` × verification
+
+| business_type | n | verified TRUE | verified FALSE | verified NULL |
+|---|---|---|---|---|
+| `shop` | 1 | 1 | 0 | 0 |
+
+`is_verified` is nullable and therefore three-valued (**K-8**), which is why the
+NULL column is reported separately rather than folded into FALSE. In production it
+happens to be empty.
+
+### D18-12 / D18-13 · commercial activity and concentration
+
+| business_type | is_verified | businesses | products |
+|---|---|---|---|
+| `shop` | `t` | 1 | **375** |
+
+| business_id | products |
+|---|---|
+| `cf941cc4-e1d1-4d7c-8122-a5df81a1e53c` | **375** |
+
+### D18-14 / D18-15 · the `DEFAULT_BUSINESS_ID` row
+
+| field | value |
+|---|---|
+| id | `cf941cc4-e1d1-4d7c-8122-a5df81a1e53c` |
+| business_type | `shop` |
+| is_verified | `t` |
+| is_featured | `t` |
+| created_at | 2026-07-06 00:52:49Z |
+| **has_owner_user** | **`f`** |
+| **products_on_default_business** | **375** |
+
+### F-1 · The whole production catalogue sits on the fallback business, which has no owner
+
+This is the substantive finding of the run, and it is not a surprise so much as a
+confirmation with a number attached.
+
+**There is exactly one business in production. It is the
+`ensureDefaultBusinessProfile()` fallback, it has no owner user, and all 375
+products belong to it.** `DEFAULT_BUSINESS_ID` is not overridden in production —
+the row `D18-14` asks for by literal UUID came back.
+
+So legacy product ownership is not merely *unreconstructible in principle*
+(**U-8**); it is unreconstructible for **100% of the live catalogue**, because
+every row names the same placeholder owner and that owner names no person. There
+is no partial case to salvage and no subset that can be attributed.
+
+**This is the measurement that justifies refusing to legitimise legacy ownership
+retroactively.** Any migration that promoted existing `business_products` rows
+into the new model by trusting `business_id` would attribute 375 products to a
+profile nobody owns.
+
+### F-2 · What `0049` will do to this row — predicted, and checkable later
+
+`0049_add_business_commercial_status.sql` adds `commercial_status NOT NULL DEFAULT
+'none'` and backfills nothing. The single production business will therefore read:
+
+```
+is_verified = true, commercial_status = 'none'
+```
+
+and `isSellerEligible()` requires **both** `is_verified IS TRUE` **and**
+`commercial_status = 'approved'`. **The fallback business will not become a Seller
+when `0049` deploys.** That was the design intent; this is the first time it has
+been checked against the actual row rather than asserted about a hypothetical one.
+
+The shop is unaffected either way: `/api/products` continues to read
+`business_products` (375 rows), and `/api/catalog` reads `catalog_products`, which
+is empty in production. There is no cutover in this deploy.
 
 ### What the schema can and cannot support — **not blocked**
 
@@ -572,16 +767,49 @@ The closest available *evidence* is **activity**: owning rows in `business_produ
 > When D-18 is eventually run, add `commercial_status` to `D18-10`/`D18-11`; the
 > expected answer in production today is that every row reads `none`.
 
+## 9a. Results — sessions and operational access
+
+### D18-16 · sessions
+
+| sessions_total | sessions_live | distinct admins live | most_recent_activity |
+|---|---|---|---|
+| 52 | **0** | 0 | 2026-09-10 15:01:29Z |
+
+### D18-17 · live sessions by role
+
+| Role | admins with a live session |
+|---|---|
+| `admin` | 0 |
+| `product_manager` | 0 |
+
+### D18-18 · recency of login
+
+| active_7d | active_30d | active_90d | never |
+|---|---|---|---|
+| 1 | 2 | 3 | **0** |
+
+**No admin session is live.** 52 session rows exist, all expired; the most recent
+activity was five days before the run. All three admins have logged in at some
+point, one within the last week.
+
+> This bears on a stop condition the earlier revision could only reason about:
+> *"sessions that M1b would break"*. M1b constrains **writes** to `admin_users`,
+> while sessions only read and update `last_login_at` — so no session should break.
+> With zero live sessions at the time of measurement, the question is moot for this
+> deploy regardless of the reasoning.
+
 ## 10. Anomalies *(deliverable 9)*
 
 | # | Anomaly class | Result |
 |---|---|---|
-| D18-08 | `business_id` → non-existent business | **NOT RUN** |
-| D18-24 | duplicate emails (case-insensitive) | **NOT RUN** |
-| D18-25a | platform role carrying a `business_id` | **NOT RUN** |
-| D18-25b | unexpected role value | **NOT RUN** |
-| D18-25c | inactive admin still scoped | **NOT RUN** |
-| — | businesses that look like Seller candidates but cannot be proven to be | **Structurally unprovable — §9.** Not a count: no field in the schema can settle it |
+| D18-08 | `business_id` → non-existent business | **0** |
+| D18-24 | duplicate emails (case-insensitive) | **0** |
+| D18-25a | platform role carrying a `business_id` | **0** |
+| D18-25b | unexpected role value | **0** |
+| D18-25c | inactive admin still scoped | **0** |
+| — | businesses that look like Seller candidates but cannot be proven to be | **Moot at this population.** There is one business, it is the fallback, and §9 F-1 settles what it is. The structural point still stands for any future row |
+
+**No anomaly was found in `admin_users`.** Every anomaly class returns zero.
 
 ### A-1 · One anomaly found without production access
 
@@ -597,24 +825,47 @@ and M1 already answered it as **OQ-4: the API-key identity stays platform-scoped
 permanently.** It is recorded here because D-18's job is to enumerate who is
 affected by M1b, and this identity is affected precisely by being exempt.
 
+**Still true after the run.** `D18-01` measured 3 rows in `admin_users`. If
+`ADMIN_API_KEY` is configured in production — `sync-ssm-env.sh` lists it among its
+`REQUIRED_KEYS`, so it almost certainly is — then the true number of
+platform-privileged identities is **4**, and the fourth cannot be counted, scoped
+or audited per-actor. `D18-19` would settle it and did not run (**U-6**).
+
+### A-2 · The `production` environment has no required reviewer
+
+Found by observing the run rather than by querying anything. The workflow was
+bound to the `production` environment partly so that its required reviewer would
+gate every production measurement; the job instead began executing one second
+after dispatch, with no approval step. See §4.1a.
+
+**Severity: low for this workflow, higher as a general fact.** This job is
+read-only under two independent defences. But the same environment holds
+`MIPO_AWS_SSH_PRIVATE_KEY`, and the deploy uses it. A reviewer was assumed to be
+there and is not.
+
 ---
 
 ## 11. Conclusions *(deliverable 10)*
 
-1. **D-18 did not run.** All four routes to production are closed from this session
-   (§4.2). No count in this document is real.
-2. **The blocker is access, not method.** §5 is complete, runnable and read-only;
-   §7 gives the exact host command. It needs a connection, not more design.
-3. **OD-18's second blocker is gone.** M1 is deployed as far as CI can attest (§2)
-   and unverified at the database (§3).
-4. **The measurement, when it runs, still cannot answer "who is a Seller"** (§9).
-   That is a schema gap (OQ-2), not a query gap, and no amount of production access
-   fixes it.
-5. **A platform-privileged identity exists entirely outside `admin_users`** (§10,
-   A-1), so the admin population is not fully described by `admin_users` at all.
-6. **Repeatability has an answer: a `workflow_dispatch` job bound to the
-   `production` environment** (§4.6). Not built — it is a code change, which this
-   task forbids.
+1. **D-18 ran.** All 24 SQL statements executed against production inside a
+   read-only transaction that was rolled back. Nothing was changed.
+2. **M1b is safe to deploy.** Every row in `admin_users` satisfies both constraints
+   M1b adds, measured rather than inferred. §14 states the verdict in full.
+3. **`0040` is confirmed applied at the database**, not merely attested by CI (§3).
+   39 ledger rows, last `0040`, and the column, foreign key and index all present.
+4. **The admin population is small, clean and entirely platform-scoped.** 3 admins,
+   2 `admin` + 1 `product_manager`, zero scoped, zero anomalies of any class.
+5. **One business exists, and it owns the entire catalogue without owning anyone.**
+   375 products on the `DEFAULT_BUSINESS_ID` fallback, which has no owner user
+   (§9 F-1). Legacy ownership is unreconstructible for 100% of live products —
+   which is the measured justification for refusing to backfill it.
+6. **A platform-privileged identity still exists entirely outside `admin_users`**
+   (§10, A-1). The measured count of 3 is 3 *rows*, not 3 privileged identities.
+7. **The `production` environment's required reviewer does not exist** (§10, A-2).
+   Discovered by running the workflow, not by querying.
+8. **Repeatability is solved.** The `workflow_dispatch` job §4.6 proposed is built,
+   registered and has run once. Re-running D-18 after M1b deploys is now one
+   dispatch, which is the cheapest way to verify the migration landed as predicted.
 
 ## 12. Known facts *(deliverable 11)*
 
@@ -644,45 +895,71 @@ from production. Each holds regardless of what the counts turn out to be.
 
 ## 13. Unknowns *(deliverable 12)*
 
-| # | Open question | Why it stays open |
+| # | Open question | State after the run |
 |---|---|---|
-| U-1 | How many admins exist, and in what roles | needs `D18-01`/`D18-03`. `BLOCKED-PROD` |
-| U-2 | Whether any `business_id` was set by hand | K-5 makes it very unlikely, **not impossible**. Only `D18-05` settles it |
-| U-3 | How many businesses exist, and their verification split | needs `D18-10`/`D18-11`. `BLOCKED-PROD` |
-| U-4 | **Which businesses are Sellers** | **unanswerable from the current schema at any level of access** (§9). Blocked by OQ-2, not by credentials |
-| U-5 | How many admins actively use the panel | needs `D18-16`–`D18-18`. `BLOCKED-PROD` |
-| U-6 | Whether `ADMIN_API_KEY` is configured in production | needs the presence check in `D18-19`. Not a database question |
-| U-7 | Whether `0040` is in production's `schema_migrations` | needs `D18-21`/`D18-23`. CI says yes; the database has not been asked (§3) |
-| U-8 | Which Seller a historical order belongs to | K-10: never recorded. **Unreconstructible**, exactly like legacy product ownership |
+| U-1 | How many admins exist, and in what roles | ✅ **CLOSED** — 3: two `admin`, one `product_manager` (§6, §7) |
+| U-2 | Whether any `business_id` was set by hand | ✅ **CLOSED** — none. `business_id_set = 0` (§8) |
+| U-3 | How many businesses exist, and their verification split | ✅ **CLOSED** — one, `shop`, `is_verified = true` (§9) |
+| U-4 | **Which businesses are Sellers** | ✅ **CLOSED as a schema gap** by `0049`; **not yet asked of production**, because `commercial_status` is not deployed. The answer after deploy is predicted in §9 F-2: the single business reads `none` and is not a Seller. Re-run D-18 to confirm |
+| U-5 | How many admins actively use the panel | ✅ **CLOSED** — 1 in 7 days, 2 in 30, 3 in 90; zero live sessions (§9a) |
+| U-6 | Whether `ADMIN_API_KEY` is configured in production | 🔴 **STILL OPEN** — `D18-19` is a host shell check, not a query, and was kept out of the SQL block. Bears on A-1: if set, privileged identities number 4, not 3 |
+| U-7 | Whether `0040` is in production's `schema_migrations` | ✅ **CLOSED** — yes. 39 rows, last `0040` (§3) |
+| U-8 | Which Seller a historical order belongs to | 🔴 **STILL OPEN, and now quantified.** K-10 stands: never recorded. §9 F-1 shows all 375 products belong to an unowned fallback profile, so this is unreconstructible for the entire catalogue, not merely in principle. `0050` fixes it **going forward only** — it backfills nothing, deliberately |
 
 ## 14. M1b readiness and blockers *(deliverables 13, 14)*
 
-### `BLOCKED` — for design **sign-off**. Not blocked for design **drafting**.
+### ✅ `CLEARED FOR DEPLOY` — every row measured, every constraint satisfied
 
-The distinction is the actual answer, so it is stated plainly:
+`D18-25` is the acceptance test for M1b expressed as data, and it returned three
+zeros:
 
-* **M1b's shape does not depend on the missing numbers.** M1b relaxes
-  `admin_users_role_check` to admit `seller_admin`, and adds a CHECK tying role to
-  scope (`seller_admin` ⇒ `business_id IS NOT NULL`; platform roles ⇒
-  `business_id IS NULL`). K-1 … K-5 establish, from the schema, that **no existing
-  row can violate either constraint** — which is stronger than a count. The design
-  work is not waiting on D-18.
-* **M1b's safety at deploy time does depend on them.** Adding a CHECK to a table
-  whose contents nobody has read is exactly the class of change that broke this
-  system on 8 September, and exactly what `dry-run-migrations.sh` exists to catch.
-  If `D18-25` returns a non-zero `platform_role_with_business` or
-  `unexpected_role`, the migration aborts mid-deploy. The cost of finding out
-  afterwards is a failed production migration; the cost of finding out first is
-  five queries.
+| `platform_role_with_business` | `unexpected_role` | `inactive_but_scoped` |
+|---|---|---|
+| **0** | **0** | **0** |
 
-**So: M1b may be drafted. It must not be deployed until §5 has run.**
+M1b adds this CHECK to `admin_users`:
+
+```sql
+check ((role in ('admin','product_manager') and business_id is null)
+    or (role in ('seller_admin','readonly_admin') and business_id is not null))
+```
+
+All three production rows hold `role IN ('admin','product_manager')` **and**
+`business_id IS NULL` (§7, §8), so each satisfies the first branch. **The
+constraint is valid for every existing row. The migration cannot abort mid-deploy
+on it.**
+
+The role-check widening is equally safe: `0041` drops and re-adds
+`admin_users_role_check` with four roles, and the only values present are `admin`
+and `product_manager`, a subset of the new set.
+
+The rest of the stack is safe for reasons that need no measurement, but the
+measurement confirms the assumptions each one rests on:
+
+| Migration | Why it is safe against this population |
+|---|---|
+| `0042`–`0048` | New tables, created empty. No existing row is touched |
+| `0049` | `commercial_status NOT NULL DEFAULT 'none'`; the one existing business takes the default and does **not** become a Seller (§9 F-2) |
+| `0050` | Nullable columns with no foreign keys on `orders` / `order_items`; historical rows keep NULLs, which is the intended record |
+
+**So: M1b — and the intake, catalogue and checkout migrations behind it — may be
+deployed.** The condition the previous revision set has been met.
+
+> **The earlier revision's caution is worth keeping in view rather than deleting.**
+> It refused to clear the deploy on the strength of K-1…K-5, which reasoned from
+> the schema that no row *could* violate the constraints. That reasoning turned out
+> to be correct in every particular. It was still right not to sign off on it: a
+> constraint added in `0016` says nothing about rows written before it, and
+> hand-written SQL is invisible to an argument from code. The zeros are now
+> measured. The cost of finding out first was five queries; the cost of finding out
+> afterwards would have been a failed production migration.
 
 ### Blocking items
 
 | # | Prerequisite | Status | Blocks |
 |---|---|---|---|
-| **P-1** | Run `D18-03`, `D18-05`, `D18-25` in production; confirm zero rows would violate M1b's CHECK | **`BLOCKED-PROD`** | M1b deploy |
-| **P-2** | Confirm `0040` is in production's `schema_migrations` (`D18-21`, `D18-23`) | **`BLOCKED-PROD`** | M1b migration ordering |
+| **P-1** | Run `D18-03`, `D18-05`, `D18-25` in production; confirm zero rows would violate M1b's CHECK | ✅ **RESOLVED** — all three run; all zero (§7, §8, §10) | — |
+| **P-2** | Confirm `0040` is in production's `schema_migrations` (`D18-21`, `D18-23`) | ✅ **RESOLVED** — 39 rows, last `0040` (§3) | — |
 | **P-3** | ~~Decide OQ-2 — what marks a business as an approved Seller~~ | ✅ **RESOLVED** — see below | — |
 | **P-4** | Confirm OQ-4 in production: `x-admin-api-key` stays platform-scoped (`D18-19`) | **decided in M1; presence unverified** | M1b's exemption rule |
 | **P-5** | ~~Decide how the first `seller_admin` is created~~ | ✅ **RESOLVED** — `provisionAdmin.js --business-id`, which writes role and scope in one statement and refuses a business that is not an approved Seller | — |
@@ -717,12 +994,13 @@ nine combinations of `is_verified` × `commercial_status`. It had previously bee
 spelled out separately in four places, which is how one rule quietly becomes
 four.
 
-**What this does not change:** `D18-04`'s question — *which businesses are
-Sellers* — is now answerable, but it still has to be **asked**, and D-18 remains
-`BLOCKED-PROD`. In production every row will read `commercial_status = 'none'`
-until somebody approves one. That is the correct starting state, not a finding.
+**What this does not change:** `commercial_status` is **not deployed** — production
+stops at `0040` (§3). So *which businesses are Sellers* is answerable by design but
+has not yet been asked of production, and cannot be until `0049` ships. §9 F-2
+states the predicted answer for the single existing row: `none`, therefore not a
+Seller. That is the correct starting state, not a finding.
 
-**P-1 and P-2 are now the only prerequisites left, and both are `BLOCKED-PROD`.**
+**P-1 and P-2 are both resolved. No prerequisite blocks the M1b deploy.**
 
 ### What `D18-03` decides — three outcomes, decided in advance
 
@@ -732,49 +1010,83 @@ roles actually present:
 
 | If the role enumeration returns | Then |
 |---|---|
-| **zero unexpected rows** | M1b enters as designed. **No exception, no extra migration** |
+| ✅ **zero unexpected rows** ← **this is what it returned** | M1b enters as designed. **No exception, no extra migration** |
 | **rows with a legacy role** | those rows must be re-roled **before** M1b, as a separate documented data change — and a data change needs its own approval |
 | **rows with `seller_admin` / `readonly_admin` already present** | **stop.** Someone inserted a future role manually, which `admin_users_role_check` should have made impossible. That means the constraint was dropped at some point, and the environment's history is not what is assumed |
 
+**Outcome: the first row.** `D18-04` returned `role_other = 0`,
+`role_seller_admin = 0`, `role_readonly_admin = 0`. The pre-committed decision was
+made before the numbers were known, which is what makes it a decision rather than a
+rationalisation.
+
 **One ordering point regardless of the answer:** M1 must be deployed before M1b
-(it now is — `505d0ae9`, migration `0040`), and **M1b must ship together with the
-`adminPermissions.js` role map and `provisionAdmin.js` `--business-id` support.
-Shipping M1b alone leaves the new roles insertable by the database but
-uncreatable by the only tool that creates admins.**
+(it now is — `505d0ae9`, migration `0040`, confirmed at the database in §3), and
+**M1b must ship together with the `adminPermissions.js` role map and
+`provisionAdmin.js` `--business-id` support. Shipping M1b alone leaves the new
+roles insertable by the database but uncreatable by the only tool that creates
+admins.**
+
+> **That gap is closed on the work branch.** `provisionAdmin.js` now takes
+> `--role seller_admin --business-id <uuid>`, validates the role/scope pair before
+> touching the database via `resolveProvisioningScope()`, refuses a Seller role
+> with no `--business-id` and a platform role that is given one, and writes `role`
+> and `business_id` in the same statement in both the insert and the update path.
+> The three ship together, so the ordering point is satisfied by construction
+> rather than by remembering.
 
 ### Stop conditions
 
 | Condition | Status |
 |---|---|
-| Unknown roles found | **NOT ASSESSED** — query not run |
-| Admin users with an invalid role | **NOT ASSESSED** — query not run |
-| Unexplained `business_id` assignments | **NOT ASSESSED.** No longer *unassessable*: `0040` is deployed, so `D18-05` is now a well-formed question against production. It has simply not been asked |
-| Sessions that M1b would break | **NOT ASSESSED.** Note: M1b constrains *writes*; sessions only read and update `last_login_at`, so no session should break — but that is reasoning, not measurement |
-| **No certainty the check ran against real production** | 🔴 **TRIGGERED — and it is why this report is `BLOCKED-PROD` rather than partial.** No query was run, so no result could be attributed to production even mistakenly |
+| Unknown roles found | ✅ **NOT TRIGGERED** — `role_other = 0` (`D18-04`) |
+| Admin users with an invalid role | ✅ **NOT TRIGGERED** — `unexpected_role = 0` (`D18-25`) |
+| Unexplained `business_id` assignments | ✅ **NOT TRIGGERED** — `business_id_set = 0`, `dangling_business_id = 0` |
+| Sessions that M1b would break | ✅ **NOT TRIGGERED**, and now measured rather than reasoned: `sessions_live = 0` (§9a) |
+| No certainty the check ran against real production | ✅ **NOT TRIGGERED.** The run reached production over the deploy's own SSH path, read `DATABASE_URL` from `/opt/mipo/.env` on the API host, and returned `admin_users_role_check` as the platform pair — which is the deployed constraint and differs from this branch's. A local database would have answered with four roles |
+
+**No stop condition triggered.**
 
 ---
 
 ## 15. Post-report write verification
 
-Verified by `git status --porcelain` and `git diff --stat` after the report was
-written:
-
 | Check | Result |
 |---|---|
-| Production queried | ❌ **No** — never contacted |
-| Data changed | ❌ **No** — no `INSERT`/`UPDATE`/`DELETE` executed anywhere, against any database |
+| Production queried | ✅ **Yes** — 24 `SELECT` statements, read-only transaction, rolled back |
+| **Data changed in production** | ❌ **No.** `SET TRANSACTION READ ONLY` was in force, so a write would have been refused by PostgreSQL; the transaction ended in `ROLLBACK`; the job's last line was `D-18 complete. Nothing on this host was modified.` |
+| Files written on the production host | ❌ **No** — the SQL travelled in an environment variable; nothing was written, not even temporarily |
 | Code changed | ❌ **No** |
 | Schema changed | ❌ **No** |
-| Migration created | ❌ **No** — still 39 files |
+| Migration created | ❌ **No** |
 | Permissions / roles / provisioning changed | ❌ **No** |
 | Sessions / routes changed | ❌ **No** |
-| M1b created | ❌ **No** |
-| Deploy | ❌ **No** |
+| Deploy | ❌ **No** — the workflow never rsyncs, builds, migrates, restarts or publishes |
 | Merge | ❌ **No** |
 | Branches changed | ❌ **No** — `aws-migration` remains `505d0ae9` |
 | Working tree | **only this file** |
+| Runner key material | removed by the `Remove the key` step (`if: always()`) — `Key removed from the runner.` |
 
-**Next step: Samuel or an operator runs §7 with §5's statements, and pastes back
-the output — counts and UUIDs only, no connection string. Until `D18-03`,
-`D18-05` and `D18-25` come back, D-18 is unanswered and M1b must not be
-deployed.**
+### What the log did and did not contain
+
+Checked because the output of a production measurement goes into a GitHub Actions
+log that outlives the run:
+
+| | |
+|---|---|
+| Connection string | **absent** — `Connection string located in /opt/mipo/.env. Not printed.` |
+| Passwords, tokens, session token hashes | **absent** — no query selects them |
+| Admin emails or display names | **absent** — `D18-24` detects duplicate emails via `count(*)` over a grouped subquery without selecting one |
+| IP addresses, user agents | **absent** — `D18-16` selects none |
+| UUIDs | **present, and intended.** Only `DEFAULT_BUSINESS_ID`, which is a literal in `index.js` |
+
+---
+
+**Next step: the decision this document exists to inform is now available.** M1b
+and the migrations behind it are cleared for deploy (§14). Merging the work branch
+into `aws-migration` is that deploy, and it needs Samuel's explicit approval —
+which is a separate decision from this report's finding that it is safe.
+
+**After that deploy, re-run this workflow.** It is one dispatch, and it turns the
+predictions in §3 and §9 F-2 into measurements: that `0041`–`0050` applied, that
+the role check now admits four roles, and that the single business reads
+`commercial_status = 'none'` rather than having been quietly promoted.

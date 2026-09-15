@@ -2,12 +2,25 @@
 
 **File:** `.github/workflows/production-d18-readonly.yml`
 **Written:** 2026-09-14 · **Branch:** `claude/mifo-project-oq44tl`
-**Status: prepared, verified, NOT COMMITTED, NOT RUN.**
+**Status: committed, registered on `main`, and RUN ONCE — 2026-09-15T12:31:28Z,
+run id `34969326233`, conclusion `success`.**
 
 Companion to [`PRODUCTION-ADMIN-POPULATION-VALIDATION.md`](./PRODUCTION-ADMIN-POPULATION-VALIDATION.md),
-which is `BLOCKED-PROD` because no route from a development environment reaches
-the production database. **This workflow is that route.** It does not grant new
-access — it uses the one path that already exists.
+which was `BLOCKED-PROD` because no route from a development environment reaches
+the production database. **This workflow is that route**, and it worked: that
+report now carries measured results. It does not grant new access — it uses the
+one path that already exists.
+
+> **One design claim did not survive contact with the run.** §3 and §10 below
+> treat the `production` environment's **required reviewer** as a second layer of
+> defence. It does not exist: run #1 began executing one second after dispatch,
+> with no approval step. The environment gates nothing today.
+>
+> The read-only guarantees are unaffected — they are the static SQL guard and
+> `SET TRANSACTION READ ONLY`, and both held. But the claim that a production
+> measurement is necessarily *reviewed* was wrong, and it was wrong because
+> `docs/DEPLOY_APPROVAL.md` was read as evidence of a setting. A document
+> describing intent is not a configuration.
 
 ---
 
@@ -312,7 +325,7 @@ read-only but references a column that does not exist would fail *in production,
 after* the reviewer approved it. Running it against the real migrated schema moves
 that discovery to here.
 
-## 9. Not done, deliberately
+## 9. Not done, deliberately *(as written on 2026-09-14)*
 
 * **Not committed.** The files are on disk, uncommitted, on `claude/mifo-project-oq44tl`.
 * **Not pushed, not merged.** `aws-migration` remains `505d0ae9`; `main` remains `d2089964`.
@@ -322,15 +335,22 @@ that discovery to here.
   blocked endpoints from the validation report were not retried.
 * **M1b not created.**
 
-## 10. To use it, later
+> **Superseded for the first three bullets only.** The workflow was committed and
+> merged to `main` (PR #2), and dispatched once on 2026-09-15. The last three still
+> hold and held through the run: **no deploy, no credential or IAM change, no
+> fallback attempted, and `aws-migration` is still `505d0ae9`.** The run rsynced
+> nothing, built nothing, migrated nothing and restarted nothing.
 
-1. Merge the workflow to a branch GitHub will list it from (workflows are
-   dispatchable from the default branch, or from the branch selected in the Run
-   workflow dialog once the file exists there).
+## 10. To use it again
+
+1. ~~Merge the workflow to a branch GitHub will list it from.~~ ✅ Done — it is on
+   `main` and GitHub lists it.
 2. **Actions → D-18 production read-only → Run workflow**, type `READ-ONLY`.
-3. Approve the `production` environment prompt.
-4. Copy the step log into §6–§10 of `PRODUCTION-ADMIN-POPULATION-VALIDATION.md`
-   and change its status from `BLOCKED-PROD` to `PASS`.
+3. ~~Approve the `production` environment prompt.~~ **There is no prompt.** The
+   environment has no required reviewer; the job runs immediately. See the note at
+   the top of this file.
+4. Copy the step log into §6–§10 of `PRODUCTION-ADMIN-POPULATION-VALIDATION.md`.
+   Run #1 is already recorded there.
 5. Read `D18-25` first. A non-zero `platform_role_with_business` or
    `unexpected_role` is a **stop condition for M1b**, not a note — it means M1b's
    CHECK would abort the migration mid-deploy.
