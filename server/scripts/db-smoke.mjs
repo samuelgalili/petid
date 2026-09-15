@@ -548,6 +548,299 @@ const main = async () => {
     }
   });
 
+  // ── M1b · Seller isolation, end to end ───────────────────────────────
+  //
+  // Unit tests cover the scope decisions. These exercise them through the real
+  // HTTP stack with a real logged-in seller_admin, because what is being
+  // guarded is a response SHAPE - and a response shape is only real once it has
+  // been serialised and sent.
+  //
+  // Two Sellers, each with its own product and admin; then Seller A's admin is
+  // pointed at Seller B's objects.
+  const { Pool: IsolationPool } = await import("pg");
+  const { hashPassword } = await import("../src/passwords.js");
+  const isolationPool = new IsolationPool({ connectionString: process.env.DATABASE_URL, ssl: false });
+  const stamp = Math.random().toString(36).slice(2, 8);
+  const sellerPassword = `Smoke-${Math.random().toString(36).slice(2)}A1!`;
+  let fixture = null;
+  let sellerCookie = null;
+
+  try {
+    const db = await isolationPool.connect();
+    try {
+      await db.query("begin");
+      // Real Sellers: verified AND approved. Verification alone is not a
+      // Seller, and these fixtures must not encode the weaker rule.
+      const businessA = (await db.query(
+        `insert into public.business_profiles
+           (business_name, business_type, is_verified, commercial_status)
+         values ($1, 'shop', true, 'approved') returning id`, [`Smoke Seller A ${stamp}`],
+      )).rows[0].id;
+      const businessB = (await db.query(
+        `insert into public.business_profiles
+           (business_name, business_type, is_verified, commercial_status)
+         values ($1, 'shop', true, 'approved') returning id`, [`Smoke Seller B ${stamp}`],
+      )).rows[0].id;
+      // A third Seller, verified but only pending: it may prepare data and must
+      // not be publishable.
+      const businessPending = (await db.query(
+        `insert into public.business_profiles
+           (business_name, business_type, is_verified, commercial_status)
+         values ($1, 'shop', true, 'pending') returning id`, [`Smoke Seller Pending ${stamp}`],
+      )).rows[0].id;
+
+      const adminA = (await db.query(
+        `insert into public.admin_users
+           (email, password_hash, display_name, role, business_id, is_active, must_change_password)
+         values ($1, $2, 'Smoke Seller A', 'seller_admin', $3, true, false) returning id`,
+        [`smoke-seller-a-${stamp}@example.com`, hashPassword(sellerPassword), businessA],
+      )).rows[0].id;
+
+      // A product owned by B, carrying the internal fields A must never see.
+      const productB = (await db.query(
+        `insert into public.business_products
+           (business_id, name, price, cost_price, commission_rate, supplier_id)
+         values ($1, $2, 99, 42, 0.17, gen_random_uuid()) returning id`,
+        [businessB, `Smoke B product ${stamp}`],
+      )).rows[0].id;
+
+      const draftB = (await db.query(
+        `insert into public.product_drafts (business_id, created_by, name)
+         values ($1, $2, 'Smoke B draft') returning id`, [businessB, adminA],
+      )).rows[0].id;
+      const catalogB = (await db.query(
+        `insert into public.catalog_products
+           (owning_business_id, origin_draft_id, name, created_by)
+         values ($1, $2, 'Smoke B catalog product', $3) returning id`,
+        [businessB, draftB, adminA],
+      )).rows[0].id;
+
+      // Seller A's own product, so readiness can be asked about something it
+      // owns - and then the same question asked while A is only pending.
+      const draftA = (await db.query(
+        `insert into public.product_drafts (business_id, created_by, name)
+         values ($1, $2, 'Smoke A draft') returning id`, [businessA, adminA],
+      )).rows[0].id;
+      const catalogA = (await db.query(
+        `insert into public.catalog_products
+           (owning_business_id, origin_draft_id, name, created_by)
+         values ($1, $2, 'Smoke A catalog product', $3) returning id`,
+        [businessA, draftA, adminA],
+      )).rows[0].id;
+
+      await db.query("commit");
+      fixture = {
+        businessA, businessB, businessPending, adminA,
+        productB, draftB, catalogB, draftA, catalogA,
+        email: `smoke-seller-a-${stamp}@example.com`,
+      };
+    } catch (error) {
+      await db.query("rollback").catch(() => {});
+      throw error;
+    } finally {
+      db.release();
+    }
+
+    await check("a seller_admin can log in and the session carries its Seller", async () => {
+      const response = await fetch(`${BASE}/api/admin/login`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: fixture.email, password: sellerPassword }),
+      });
+      expectStatus(response, [200], "seller login");
+      sellerCookie = (response.headers.get("set-cookie") || "").split(";")[0];
+      if (!sellerCookie) throw new Error("no session cookie was issued");
+      const body = await response.json();
+      if (body.admin?.role !== "seller_admin") throw new Error(`role was ${body.admin?.role}`);
+      if (body.admin?.business_id !== fixture.businessA) {
+        throw new Error("the session did not carry the Seller scope");
+      }
+    });
+
+    const asSeller = (path, init = {}) => fetch(`${BASE}${path}`, {
+      ...init,
+      headers: { "content-type": "application/json", cookie: sellerCookie, ...(init.headers || {}) },
+    });
+
+    await check("a seller_admin never receives another Seller's internal fields", async () => {
+      if (!sellerCookie) throw new Error("no seller session");
+      const response = await asSeller("/api/products");
+      expectStatus(response, [200], "seller catalogue read");
+      const { products } = await response.json();
+      const foreign = products.find((product) => product.id === fixture.productB);
+      if (!foreign) throw new Error("the other Seller's product was absent from the catalogue entirely");
+      for (const field of ["cost_price", "commission_rate", "supplier_id", "business_id"]) {
+        if (Object.hasOwn(foreign, field)) {
+          throw new Error(`${field} leaked to another Seller - this is the isAdminRequest defect`);
+        }
+      }
+    });
+
+    await check("a seller_admin reading one foreign product gets the public shape", async () => {
+      if (!sellerCookie) throw new Error("no seller session");
+      const response = await asSeller(`/api/products/${fixture.productB}`);
+      expectStatus(response, [200, 404], "seller single product read");
+      if (response.status === 200) {
+        const { product } = await response.json();
+        for (const field of ["cost_price", "commission_rate", "supplier_id"]) {
+          if (Object.hasOwn(product, field)) throw new Error(`${field} leaked on the detail route`);
+        }
+      }
+    });
+
+    await check("an anonymous caller still gets the public shape - unchanged", async () => {
+      const response = await fetch(`${BASE}/api/products`);
+      expectStatus(response, [200], "anonymous catalogue");
+      const { products } = await response.json();
+      if (products.some((product) => Object.hasOwn(product, "cost_price"))) {
+        throw new Error("cost_price reached an anonymous caller");
+      }
+    });
+
+    await check("the api-key identity still receives the full row", async () => {
+      const response = await admin("/api/products");
+      if (response.status === 401 || response.status === 403) return;
+      expectStatus(response, [200], "api-key catalogue");
+      const { products } = await response.json();
+      const row = products.find((product) => product.id === fixture.productB);
+      if (row && !Object.hasOwn(row, "cost_price")) {
+        throw new Error("the platform identity lost access to internal fields");
+      }
+    });
+
+    await check("cross-Seller intake access answers 404, never 403", async () => {
+      if (!sellerCookie) throw new Error("no seller session");
+      for (const path of [
+        `/api/admin/intake/drafts/${fixture.draftB}`,
+        `/api/admin/intake/products/${fixture.catalogB}/publication-readiness`,
+      ]) {
+        const response = await asSeller(path);
+        if (response.status !== 404) {
+          throw new Error(`${path} answered ${response.status}; a 403 would confirm the row exists`);
+        }
+      }
+    });
+
+    await check("a cross-Seller write is refused and changes nothing", async () => {
+      if (!sellerCookie) throw new Error("no seller session");
+      const response = await asSeller(`/api/admin/intake/drafts/${fixture.draftB}`, {
+        method: "PATCH",
+        body: JSON.stringify({ name: "hijacked" }),
+      });
+      if (response.status !== 404) throw new Error(`expected 404, got ${response.status}`);
+
+      const { rows } = await isolationPool.query(
+        "select name from public.product_drafts where id = $1", [fixture.draftB],
+      );
+      if (rows[0].name === "hijacked") throw new Error("the cross-Seller write landed");
+    });
+
+    await check("a Seller's intake list contains only its own drafts", async () => {
+      if (!sellerCookie) throw new Error("no seller session");
+      const response = await asSeller("/api/admin/intake/drafts");
+      expectStatus(response, [200], "intake list");
+      const { drafts } = await response.json();
+      if (drafts.some((draft) => draft.business_id !== fixture.businessA)) {
+        throw new Error("another Seller's draft appeared in the list");
+      }
+    });
+
+    await check("publication readiness reports the Seller's commercial status", async () => {
+      if (!sellerCookie) throw new Error("no seller session");
+      const response = await asSeller(
+        `/api/admin/intake/products/${fixture.catalogA}/publication-readiness`,
+      );
+      expectStatus(response, [200], "readiness");
+      const body = await response.json();
+      if (body.seller?.commercial_status !== "approved") {
+        throw new Error(`seller status was ${body.seller?.commercial_status}`);
+      }
+      if (body.seller?.eligible !== true) throw new Error("an approved Seller read as ineligible");
+      // Not ready for other reasons - no variant, no offer, no approved image -
+      // but the Seller condition must not be among them.
+      if (body.unmet.some((reason) => String(reason).startsWith("seller_"))) {
+        throw new Error(`an approved Seller was still blocked: ${body.unmet.join(", ")}`);
+      }
+      if (body.ready !== false) throw new Error("a product with no variants must not be ready");
+    });
+
+    await check("a pending Seller cannot publish, and the reason says why", async () => {
+      // Same product, Seller moved to pending. Data preparation stays possible;
+      // publication does not.
+      await isolationPool.query(
+        "update public.business_profiles set commercial_status = 'pending' where id = $1",
+        [fixture.businessA],
+      );
+      try {
+        const response = await asSeller(
+          `/api/admin/intake/products/${fixture.catalogA}/publication-readiness`,
+        );
+        expectStatus(response, [200], "readiness while pending");
+        const body = await response.json();
+        if (body.seller?.eligible !== false) throw new Error("a pending Seller read as eligible");
+        if (!body.unmet.includes("seller_pending")) {
+          throw new Error(`expected seller_pending in unmet, got: ${body.unmet.join(", ")}`);
+        }
+        if (body.ready !== false) throw new Error("a pending Seller must never be ready to publish");
+      } finally {
+        await isolationPool.query(
+          "update public.business_profiles set commercial_status = 'approved' where id = $1",
+          [fixture.businessA],
+        );
+      }
+    });
+
+    await check("a suspended Seller cannot publish", async () => {
+      await isolationPool.query(
+        "update public.business_profiles set commercial_status = 'suspended' where id = $1",
+        [fixture.businessA],
+      );
+      try {
+        const response = await asSeller(
+          `/api/admin/intake/products/${fixture.catalogA}/publication-readiness`,
+        );
+        expectStatus(response, [200], "readiness while suspended");
+        const body = await response.json();
+        if (!body.unmet.includes("seller_suspended")) {
+          throw new Error(`expected seller_suspended, got: ${body.unmet.join(", ")}`);
+        }
+      } finally {
+        await isolationPool.query(
+          "update public.business_profiles set commercial_status = 'approved' where id = $1",
+          [fixture.businessA],
+        );
+      }
+    });
+
+    await check("a cross-Seller attempt is audited", async () => {
+      const { rows } = await isolationPool.query(
+        `select count(*)::int as n from public.admin_audit_log
+          where action_type = 'seller_isolation.cross_seller_denied'
+            and actor_admin_user_id = $1`,
+        [fixture.adminA],
+      );
+      if (rows[0].n < 1) throw new Error("a cross-Seller attempt left no audit trail");
+    });
+  } finally {
+    // Cleanup in dependency order - nothing cascades, by design.
+    if (fixture) {
+      const cleanup = [
+        ["delete from public.admin_sessions where admin_user_id = $1", [fixture.adminA]],
+        ["delete from public.admin_audit_log where actor_admin_user_id = $1", [fixture.adminA]],
+        ["delete from public.catalog_products where id = any($1)", [[fixture.catalogB, fixture.catalogA]]],
+        ["delete from public.product_drafts where id = any($1)", [[fixture.draftB, fixture.draftA]]],
+        ["delete from public.business_products where id = $1", [fixture.productB]],
+        ["delete from public.admin_users where id = $1", [fixture.adminA]],
+        ["delete from public.business_profiles where id = any($1)",
+          [[fixture.businessA, fixture.businessB, fixture.businessPending]]],
+      ];
+      for (const [sql, params] of cleanup) {
+        await isolationPool.query(sql, params).catch(() => {});
+      }
+    }
+    await isolationPool.end().catch(() => {});
+  }
+
   shutdown();
   await sleep(300);
 

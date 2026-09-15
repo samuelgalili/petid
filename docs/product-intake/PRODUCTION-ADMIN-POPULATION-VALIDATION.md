@@ -560,9 +560,17 @@ somebody confirmed the business is real, **not** that it may sell.
 The closest available *evidence* is **activity**: owning rows in `business_products`
 (`D18-12`, `D18-13`). That is a signal, not a status.
 
-**No `commercial_status` field was created, written, proposed as created, or
-implied to exist.** That decision is **OQ-2** and remains open — it is out of scope
-for a read-only validation.
+> **Superseded after this report was written.** `commercial_status` now exists
+> (migration `0049`), so a Seller is a recorded fact rather than an inference —
+> see §14. The paragraphs above describe the schema **as this validation found
+> it**, and are left standing rather than rewritten: `D18-11` and `D18-12` were
+> designed against that schema, and a reader comparing them to a production run
+> needs to know what was true when they were written. What did **not** change is
+> that this validation never ran, and that `business_type` is still not evidence
+> of anything commercial.
+>
+> When D-18 is eventually run, add `commercial_status` to `D18-10`/`D18-11`; the
+> expected answer in production today is that every row reads `none`.
 
 ## 10. Anomalies *(deliverable 9)*
 
@@ -675,14 +683,46 @@ The distinction is the actual answer, so it is stated plainly:
 |---|---|---|---|
 | **P-1** | Run `D18-03`, `D18-05`, `D18-25` in production; confirm zero rows would violate M1b's CHECK | **`BLOCKED-PROD`** | M1b deploy |
 | **P-2** | Confirm `0040` is in production's `schema_migrations` (`D18-21`, `D18-23`) | **`BLOCKED-PROD`** | M1b migration ordering |
-| **P-3** | **Decide OQ-2** — what marks a business as an approved Seller | **open — Samuel's decision** | M1b's *usefulness*: `seller_admin` could be created but would point at a business nobody can prove is a Seller. Also blocks the Publication Gate (Stage 3) |
+| **P-3** | ~~Decide OQ-2 — what marks a business as an approved Seller~~ | ✅ **RESOLVED** — see below | — |
 | **P-4** | Confirm OQ-4 in production: `x-admin-api-key` stays platform-scoped (`D18-19`) | **decided in M1; presence unverified** | M1b's exemption rule |
-| **P-5** | Decide how the first `seller_admin` is created — no route writes `business_id` today (K-3) | **open** | M1b being reachable at all |
-| **P-6** | Samuel's explicit approval to write M1b | **not given** | everything |
+| **P-5** | ~~Decide how the first `seller_admin` is created~~ | ✅ **RESOLVED** — `provisionAdmin.js --business-id`, which writes role and scope in one statement and refuses a business that is not an approved Seller | — |
+| **P-6** | Samuel's explicit approval to write M1b | **given; written and tested, not deployed** | deploy only |
 
-**P-3 matters most, and it is the only prerequisite production access cannot
-resolve.** M1b without OQ-2 produces a role scoped to a business nobody can prove
-is a Seller.
+### P-3 is resolved: `commercial_status` exists
+
+**OQ-2 was decided and implemented.** `business_profiles.commercial_status` is a
+NOT NULL column taking `none` · `pending` · `approved` · `suspended`, added by
+migration `0049_add_business_commercial_status.sql`. A Seller is now a matter of
+record rather than inference:
+
+```sql
+is_verified IS TRUE AND commercial_status = 'approved'
+```
+
+`pending` permits preparing catalogue data and permits neither publication nor
+sale. `suspended` permits neither, and stays distinct from `none` so that
+"never approved" and "approval withdrawn" remain distinguishable afterwards.
+
+**The default is `none`, and nothing was backfilled.** Every business predating
+the column — including the `Mipo Shop` profile that
+`ensureDefaultBusinessProfile()` creates — can sell nothing until somebody
+approves it explicitly. Defaulting to `approved` would have retroactively
+legitimised every row the legacy fallback ever touched, which is the one thing
+that was ruled out. A test asserts the count of non-`none` rows after the
+migration is zero, and it was falsified by flipping the default.
+
+The rule lives in exactly one module — `server/src/sellerEligibility.js` — as
+both a predicate and a SQL fragment, with a test proving the two agree across all
+nine combinations of `is_verified` × `commercial_status`. It had previously been
+spelled out separately in four places, which is how one rule quietly becomes
+four.
+
+**What this does not change:** `D18-04`'s question — *which businesses are
+Sellers* — is now answerable, but it still has to be **asked**, and D-18 remains
+`BLOCKED-PROD`. In production every row will read `commercial_status = 'none'`
+until somebody approves one. That is the correct starting state, not a finding.
+
+**P-1 and P-2 are now the only prerequisites left, and both are `BLOCKED-PROD`.**
 
 ### What `D18-03` decides — three outcomes, decided in advance
 

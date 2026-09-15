@@ -66,9 +66,13 @@ import { hashPassword, verifyPassword } from "./passwords.js";
 import {
   ADMIN_PERMISSIONS,
   ADMIN_ROLES,
+  ADMIN_SCOPES,
   getAdminPermissions,
+  getAdminScope,
   hasAdminPermission,
 } from "./adminPermissions.js";
+import { adminProductView } from "./sellerScope.js";
+import { createProductIntakeRoutes } from "./productIntakeRoutes.js";
 import {
   archiveSocialPost,
   createSocialComment,
@@ -319,22 +323,42 @@ const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
 
 const hashSessionToken = (token) => createHash("sha256").update(String(token)).digest("hex");
 
-const serializeAdmin = (row) => ({
-  id: row.id,
-  email: row.email,
-  display_name: row.display_name || null,
-  role: row.role,
-  permissions: getAdminPermissions(row.role),
-  must_change_password: Boolean(row.must_change_password),
-  created_at: row.created_at || null,
-  last_login_at: row.last_login_at || null,
-});
+// The identity the rest of the request works from.
+//
+// business_id and scope are both derived here, from the row and from the role,
+// and never from anything the caller sent. A request body carrying a
+// business_id is data about what to write, never a claim about who is asking.
+//
+// identity_source distinguishes a logged-in admin from the x-admin-api-key
+// identity, which has no admin_users row at all. That distinction has to
+// survive into request.admin: the two are not interchangeable, and code that
+// cannot tell them apart will eventually scope one of them wrongly.
+const serializeAdmin = (row) => {
+  const scope = getAdminScope(row.role);
+  return {
+    id: row.id,
+    email: row.email,
+    display_name: row.display_name || null,
+    role: row.role,
+    // Null for a platform role, always. A Seller role cannot reach here with a
+    // null business_id - admin_users_scope_check makes that row
+    // unrepresentable - but nothing downstream relies on that being true.
+    business_id: scope === ADMIN_SCOPES.SELLER ? (row.business_id ?? null) : null,
+    scope,
+    permissions: getAdminPermissions(row.role),
+    identity_source: "session",
+    must_change_password: Boolean(row.must_change_password),
+    created_at: row.created_at || null,
+    last_login_at: row.last_login_at || null,
+  };
+};
 
 const adminUserSelect = `
   id,
   email,
   display_name,
   role,
+  business_id,
   is_active,
   must_change_password,
   created_at,
@@ -480,6 +504,7 @@ const getAdminFromSession = async (request) => {
         au.email,
         au.display_name,
         au.role,
+        au.business_id,
         au.is_active,
         au.must_change_password,
         au.created_at,
@@ -505,15 +530,29 @@ const getAdminFromSession = async (request) => {
   return serializeAdmin(result.rows[0]);
 };
 
+// The x-admin-api-key identity.
+//
+// It has no admin_users row, so no CHECK constraint applies to it and no
+// business_id can ever be attached. It is platform-scoped, permanently and by
+// construction (OQ-4), and it is built here in one place so that it cannot
+// acquire a Seller scope by being assembled differently somewhere else.
+const apiKeyAdminIdentity = () => ({
+  id: "api-key",
+  email: "api-key",
+  role: ADMIN_ROLES.ADMIN,
+  business_id: null,
+  scope: ADMIN_SCOPES.PLATFORM,
+  permissions: getAdminPermissions(ADMIN_ROLES.ADMIN),
+  identity_source: "api_key",
+  must_change_password: false,
+});
+
+const matchesAdminApiKey = (request) =>
+  Boolean(adminApiKey) && secretsEqual(request.headers["x-admin-api-key"], adminApiKey);
+
 const requireAdmin = async (request, response) => {
-  if (adminApiKey && secretsEqual(request.headers["x-admin-api-key"], adminApiKey)) {
-    request.admin = {
-      id: "api-key",
-      email: "api-key",
-      role: ADMIN_ROLES.ADMIN,
-      permissions: getAdminPermissions(ADMIN_ROLES.ADMIN),
-      must_change_password: false,
-    };
+  if (matchesAdminApiKey(request)) {
+    request.admin = apiKeyAdminIdentity();
     return true;
   }
 
@@ -527,12 +566,27 @@ const requireAdmin = async (request, response) => {
   return false;
 };
 
-// Answers "is this caller an admin" without rejecting the request when they
-// are not. Public endpoints use it to decide how much of a row to reveal.
-const isAdminRequest = async (request) => {
-  if (adminApiKey && secretsEqual(request.headers["x-admin-api-key"], adminApiKey)) return true;
-  return Boolean(await getAdminFromSession(request));
+/**
+ * Resolves the admin identity behind a PUBLIC request, without rejecting it.
+ *
+ * Returns the identity, or null. It used to return a boolean, and the boolean
+ * was the bug: `asAdmin ? fullRow : publicRow` reveals the whole catalogue row
+ * - cost_price, commission_rate, supplier_id, business_id - to ANY valid admin
+ * session, with no role or scope test. That was not exploitable while every
+ * admin was platform-wide, which is exactly why it went unnoticed; M1b is what
+ * makes it reachable, so it is fixed in the same change that creates the risk.
+ *
+ * Callers must now ask what the identity may see, rather than whether one
+ * exists. See adminProductView below.
+ */
+const resolveAdminIdentity = async (request) => {
+  if (matchesAdminApiKey(request)) return apiKeyAdminIdentity();
+  return await getAdminFromSession(request);
 };
+
+// adminProductView, mayActOnRow and resolveWriteBusinessId live in
+// sellerScope.js so they can be unit-tested: importing this file starts a
+// server.
 
 const requireAdminPermission = async (request, response, permission) => {
   if (!(await requireAdmin(request, response))) return false;
@@ -587,6 +641,18 @@ const recordAdminAudit = async (admin, {
     console.error("Admin audit log write failed:", error.message);
   }
 };
+
+// Built here, after the helpers it needs exist, and injected rather than
+// imported by the module itself - so the intake routes can be exercised in a
+// test without booting this file, which starts a server on import.
+const handleProductIntakeRoute = createProductIntakeRoutes({
+  pool,
+  sendJson,
+  sendError,
+  readBody,
+  requireAdminPermission,
+  recordAdminAudit,
+});
 
 const bootstrapAdmin = async (body) => {
   const email = normalizeEmail(body.email);
@@ -7751,6 +7817,12 @@ const handleRequest = async (request, response) => {
       return;
     }
 
+    // Product Intake. Kept in its own module because every route in it shares
+    // one shape - authenticate, then read the body, then check ownership inside
+    // a transaction - and that shape is the security property. Scattering these
+    // through the chain below would make it a convention instead of a rule.
+    if (await handleProductIntakeRoute(request, response, url)) return;
+
     if (request.method === "GET" && url.pathname === "/api/health") {
       if (!(await checkDatabaseHealth(pool))) {
         sendJson(response, 503, { ok: false, service: "mipo-api", version: deployVersion, error: "Database unavailable" });
@@ -8842,8 +8914,16 @@ const handleRequest = async (request, response) => {
       // Admin screens edit the full row; everyone else gets the public shape.
       // The allowlist is what keeps the supplier origin off a shop response
       // too: image_source_url and image_adopted_at are simply not in it.
-      const asAdmin = await isAdminRequest(request);
-      sendJson(response, 200, { products: asAdmin ? products : products.map(toPublicProduct) });
+      //
+      // Decided per row, not once for the request. A Seller-scoped admin sees
+      // its own products in full and everybody else's in exactly the shape an
+      // anonymous visitor sees - so one Seller's cost_price, commission_rate
+      // and supplier_id never reach another.
+      const identity = await resolveAdminIdentity(request);
+      sendJson(response, 200, {
+        products: products.map((product) =>
+          (adminProductView(identity, product) === "full" ? product : toPublicProduct(product))),
+      });
       return;
     }
 
@@ -8997,8 +9077,10 @@ const handleRequest = async (request, response) => {
         sendError(response, 404, "Product not found");
         return;
       }
-      const asAdmin = await isAdminRequest(request);
-      sendJson(response, 200, { product: asAdmin ? product : toPublicProduct(product) });
+      const identity = await resolveAdminIdentity(request);
+      sendJson(response, 200, {
+        product: adminProductView(identity, product) === "full" ? product : toPublicProduct(product),
+      });
       return;
     }
 
