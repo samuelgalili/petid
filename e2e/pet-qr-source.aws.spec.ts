@@ -68,59 +68,65 @@ async function mockSignedInProfile(page: Page, pet: Record<string, unknown>) {
   });
 }
 
-async function openExpandedProfile(page: Page) {
+async function openInfoTab(page: Page) {
   await page.goto(`/pet-profile/${petId}`);
   await expect(page.getByRole("heading", { name: "לוקה" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "מידע" })).toBeVisible();
-}
-
-async function openPetQr(page: Page) {
-  await openExpandedProfile(page);
   await page.getByRole("button", { name: "מידע" }).click();
-  await page.getByTestId("pet-qr-open").scrollIntoViewIfNeeded();
-  await page.getByTestId("pet-qr-open").click();
-  await expect(page.getByTestId("pet-qr-dialog")).toBeVisible();
+  await page.getByTestId("pet-qr-surface").scrollIntoViewIfNeeded();
 }
 
 test.describe("Q4 Gate2 QR source vs Master", () => {
-  test("source+Master → QR uses source, Hero uses Master, no paywall", async ({ page }) => {
+  test("Q4-1/2/3: source is on the QR surface; code encodes /pet/{id}; Hero is Master", async ({ page }) => {
     await mockSignedInProfile(page, petRow({ avatar_url: MASTER, source_image_url: SOURCE }));
-    await openExpandedProfile(page);
+    await openInfoTab(page);
 
     const hero = page.locator("[data-pet-hero-renderer] img");
     await expect(hero).toHaveAttribute("src", MASTER);
 
-    await page.getByRole("button", { name: "מידע" }).click();
-    await page.getByTestId("pet-qr-open").scrollIntoViewIfNeeded();
+    const surface = page.getByTestId("pet-qr-surface");
+    await expect(surface).toBeVisible();
+    await expect(surface).toHaveAttribute("data-qr-center-kind", "source");
+    await expect(surface).toHaveAttribute("data-qr-center-src", SOURCE);
+    await expect(surface).toHaveAttribute("data-qr-value", new RegExp(`/pet/${petId}$`));
+    await expect(surface.locator("svg")).toBeVisible();
+    await expect(page.getByTestId("pet-qr-surface-image")).toHaveAttribute("src", SOURCE);
+    await expect(page.getByTestId("pet-qr-surface-image")).not.toHaveAttribute("src", MASTER);
+
     await page.getByTestId("pet-qr-open").click();
-    await expect(page.getByTestId("pet-qr-dialog")).toBeVisible();
-    await expect(page.getByTestId("pet-qr-center-image")).toHaveAttribute("src", SOURCE);
-    await expect(page.getByTestId("pet-qr-dialog")).not.toContainText(/שדרוג|paywall|upgrade|Premium/i);
+    const dialog = page.getByTestId("pet-qr-dialog");
+    await expect(dialog).toBeVisible();
+    await expect(page.getByTestId("pet-qr-dialog-surface")).toHaveAttribute("data-qr-value", new RegExp(`/pet/${petId}$`));
+    await expect(page.getByTestId("pet-qr-dialog-surface-image")).toHaveAttribute("src", SOURCE);
+    await expect(dialog).not.toContainText(/שדרוג|paywall|upgrade|Premium/i);
   });
 
-  test("Master only → QR uses the type icon, never avatar_url", async ({ page }) => {
+  test("Master only → QR surface uses the type icon, never avatar_url", async ({ page }) => {
     await mockSignedInProfile(page, petRow({ avatar_url: MASTER, source_image_url: null }));
-    await openPetQr(page);
-    const center = page.getByTestId("pet-qr-center-image");
-    await expect(center).toBeVisible();
-    await expect(center).not.toHaveAttribute("src", MASTER);
-    const src = await center.getAttribute("src");
+    await openInfoTab(page);
+    const surface = page.getByTestId("pet-qr-surface");
+    await expect(surface).toHaveAttribute("data-qr-center-kind", "type-icon");
+    await expect(surface).not.toHaveAttribute("data-qr-center-src", MASTER);
+    await expect(page.getByTestId("pet-qr-surface-image")).not.toHaveAttribute("src", MASTER);
+    const src = await page.getByTestId("pet-qr-surface-image").getAttribute("src");
     expect(src).toBeTruthy();
-    // Vite may serve the official icon as a hashed asset or an inlined data:image/svg+xml.
     expect(src).toMatch(/dog-official|cat-official|\.svg|\.png|data:image\/svg\+xml/i);
+    await expect(surface).toHaveAttribute("data-qr-value", new RegExp(`/pet/${petId}$`));
   });
 
-  test("neither source nor Master → QR uses the type icon", async ({ page }) => {
+  test("neither source nor Master → QR surface uses the type icon", async ({ page }) => {
     await mockSignedInProfile(page, petRow({ avatar_url: null, source_image_url: null }));
-    await openPetQr(page);
-    const src = await page.getByTestId("pet-qr-center-image").getAttribute("src");
+    await openInfoTab(page);
+    await expect(page.getByTestId("pet-qr-surface")).toHaveAttribute("data-qr-center-kind", "type-icon");
+    const src = await page.getByTestId("pet-qr-surface-image").getAttribute("src");
     expect(src).toBeTruthy();
     expect(src).toMatch(/dog-official|cat-official|\.svg|\.png|data:image\/svg\+xml/i);
   });
 
-  test("data:image source is accepted in QR", async ({ page }) => {
+  test("data:image source is on the QR surface", async ({ page }) => {
     await mockSignedInProfile(page, petRow({ avatar_url: MASTER, source_image_url: DATA_SOURCE }));
-    await openPetQr(page);
-    await expect(page.getByTestId("pet-qr-center-image")).toHaveAttribute("src", DATA_SOURCE);
+    await openInfoTab(page);
+    await expect(page.getByTestId("pet-qr-surface")).toHaveAttribute("data-qr-center-kind", "source");
+    await expect(page.getByTestId("pet-qr-surface-image")).toHaveAttribute("src", DATA_SOURCE);
+    await expect(page.locator("[data-pet-hero-renderer] img")).toHaveAttribute("src", MASTER);
   });
 });

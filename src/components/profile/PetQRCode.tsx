@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { QrCode, Share2 } from "lucide-react";
+import { Share2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { QRCodeSVG } from "qrcode.react";
 import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
-import { resolveQrSrc } from "@/lib/petImageSrc";
+import { isUsablePetImageSrc, resolveQrSrc } from "@/lib/petImageSrc";
 
 interface PetQRCodeProps {
   petId: string;
@@ -19,12 +19,16 @@ const typeIconFor = (petType?: string | null): string => (
   petType === "cat" ? catIcon : dogIcon
 );
 
+/**
+ * Q4 AC: the QR *surface* is a real QRCodeSVG (`/pet/{id}`), with the uploaded
+ * source photo in the center. No decorative matrix. Never Master/avatar_url.
+ * Viewing is ungated — no paywall.
+ */
 export const PetQRCode = ({ petId, petName, petType, petSourceImage }: PetQRCodeProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const qrUrl = `${window.location.origin}/pet/${petId}`;
-  // Q4: source_image_url when valid, else type icon. Never avatar_url.
-  // Viewing QR is ungated — no paywall / subscription check here.
+  const usedSource = isUsablePetImageSrc(petSourceImage);
   const qrCenterSrc = resolveQrSrc(petSourceImage, typeIconFor(petType));
 
   const handleShare = async () => {
@@ -49,7 +53,15 @@ export const PetQRCode = ({ petId, petName, petType, petSourceImage }: PetQRCode
         title="QR Code אישי"
         data-testid="pet-qr-open"
       >
-        <QrCode className="w-8 h-8 text-primary" />
+        <QrFace
+          qrUrl={qrUrl}
+          qrCenterSrc={qrCenterSrc}
+          usedSource={usedSource}
+          petName={petName}
+          size={72}
+          imageSize={20}
+          testId="pet-qr-surface"
+        />
         <span className="text-[9px] font-semibold text-foreground">QR Code</span>
       </motion.button>
 
@@ -60,23 +72,15 @@ export const PetQRCode = ({ petId, petName, petType, petSourceImage }: PetQRCode
           </DialogHeader>
           
           <div className="flex flex-col items-center gap-4 py-4">
-            <div className="relative bg-white p-4 rounded-2xl shadow-sm">
-              <QRCodeSVG
-                value={qrUrl}
-                size={200}
-                level="H"
-                marginSize={2}
-                title={`קוד QR לפרופיל של ${petName}`}
-              />
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                <img
-                  src={qrCenterSrc}
-                  alt=""
-                  data-testid="pet-qr-center-image"
-                  className="h-8 w-8 rounded-md border-2 border-white bg-white object-cover"
-                />
-              </div>
-            </div>
+            <QrFace
+              qrUrl={qrUrl}
+              qrCenterSrc={qrCenterSrc}
+              usedSource={usedSource}
+              petName={petName}
+              size={200}
+              imageSize={48}
+              testId="pet-qr-dialog-surface"
+            />
 
             <p className="text-xs text-muted-foreground">
               סרוק את הקוד לצפייה בפרופיל של {petName}
@@ -95,3 +99,52 @@ export const PetQRCode = ({ petId, petName, petType, petSourceImage }: PetQRCode
     </>
   );
 };
+
+const QrFace = ({
+  qrUrl,
+  qrCenterSrc,
+  usedSource,
+  petName,
+  size,
+  imageSize,
+  testId,
+}: {
+  qrUrl: string;
+  qrCenterSrc: string;
+  usedSource: boolean;
+  petName: string;
+  size: number;
+  imageSize: number;
+  testId: string;
+}) => (
+  <div
+    className="relative bg-white p-1 rounded-xl shadow-sm"
+    data-testid={testId}
+    data-qr-value={qrUrl}
+    data-qr-center-src={qrCenterSrc}
+    data-qr-center-kind={usedSource ? "source" : "type-icon"}
+  >
+    <QRCodeSVG
+      value={qrUrl}
+      size={size}
+      level="H"
+      marginSize={1}
+      title={`קוד QR לפרופיל של ${petName}`}
+      imageSettings={{
+        src: qrCenterSrc,
+        height: imageSize,
+        width: imageSize,
+        excavate: true,
+      }}
+    />
+    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+      <img
+        src={qrCenterSrc}
+        alt=""
+        data-testid={`${testId}-image`}
+        className="rounded-md border-2 border-white bg-white object-cover"
+        style={{ width: imageSize, height: imageSize }}
+      />
+    </div>
+  </div>
+);
