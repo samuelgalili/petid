@@ -48,6 +48,14 @@ const markOnboardingComplete = () => {
   }
 };
 
+async function fileFromDataUrl(dataUrl: string): Promise<File | null> {
+  if (!dataUrl.startsWith("data:image/")) return null;
+  const response = await fetch(dataUrl);
+  const blob = await response.blob();
+  const subtype = (blob.type.split("/")[1] || "png").split("+")[0];
+  return new File([blob], `onboarding-avatar.${subtype}`, { type: blob.type || "image/png" });
+}
+
 const Onboarding = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -155,14 +163,16 @@ const Onboarding = () => {
         return false;
       }
 
-      let avatarUrl = draft.avatarUrl || null;
-      const imageFile = fileRefState.current;
+      // Same avatar path as AddPet: upload a File, or reuse an already-hosted http(s) URL.
+      // Remounted drafts keep Master as a data URL in localStorage — turn that back
+      // into a File and upload. Do not write data: URLs or source_image_url onto pets.
+      let avatarUrl: string | null = null;
+      const imageFile = fileRefState.current
+        ?? (draft.avatarUrl ? await fileFromDataUrl(draft.avatarUrl) : null);
       if (imageFile) {
-        try {
-          avatarUrl = (await uploadMyImage(imageFile)).url;
-        } catch (error) {
-          if (!avatarUrl) throw error;
-        }
+        avatarUrl = (await uploadMyImage(imageFile)).url;
+      } else if (/^https?:\/\//i.test(draft.avatarUrl)) {
+        avatarUrl = draft.avatarUrl;
       }
 
       const gender = mapOnboardingGender(draft.gender);

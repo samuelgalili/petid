@@ -26,6 +26,8 @@ const createdPet = {
   archived: false,
 };
 
+const hostedMasterUrl = "https://cdn.mipo.pet/onboarding-master.png";
+
 async function mockSignedIn(page: Page, pets: typeof createdPet[] = []) {
   await page.route("**/api/auth/me", async (route) => {
     await route.fulfill({
@@ -37,6 +39,18 @@ async function mockSignedIn(page: Page, pets: typeof createdPet[] = []) {
   });
   await page.route("**/api/me/profile", async (route) => {
     await route.fulfill({ json: profile });
+  });
+  await page.route("**/api/me/uploads", async (route) => {
+    await route.fulfill({
+      json: {
+        upload: {
+          url: hostedMasterUrl,
+          file_name: "onboarding-avatar.png",
+          content_type: "image/png",
+          size: 70,
+        },
+      },
+    });
   });
   await page.route("**/api/me/pets", async (route) => {
     if (route.request().method() === "GET") {
@@ -85,6 +99,7 @@ test.describe("AWS onboarding persist (AC-ONB-1)", () => {
       pet_type: "dog",
       breed: "גולדן רטריבר",
     });
+    expect(submitted).not.toHaveProperty("source_image_url");
 
     const stored = await page.evaluate(() => ({
       complete: localStorage.getItem("mipo-onboarding-complete"),
@@ -131,8 +146,9 @@ test.describe("AWS onboarding persist (AC-ONB-1)", () => {
       name: "לוקה",
       type: "dog",
       breed: "גולדן רטריבר",
-      avatar_url: masterAvatar,
+      avatar_url: hostedMasterUrl,
     });
+    expect(JSON.stringify(submitted)).not.toContain("source_image_url");
   });
 
   test("stale stored petId is looked up and then inserted", async ({ page }) => {
