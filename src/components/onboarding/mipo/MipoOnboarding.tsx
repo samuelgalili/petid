@@ -719,6 +719,16 @@ export const MipoOnboarding: React.FC<{ onComplete?: () => void }> = ({ onComple
     if (persistedPetId.current) return true;
     if (persistInFlight.current) return false;
 
+    try {
+      const stored = JSON.parse(localStorage.getItem("mipo-pet-draft") || "{}") as { petId?: string };
+      if (stored?.petId) {
+        persistedPetId.current = stored.petId;
+        return true;
+      }
+    } catch {
+      // ignore malformed draft
+    }
+
     const draft = nextDraft ?? draftRef.current;
     if (!draft?.name) {
       const message = "Pet details are missing. Go back and try again.";
@@ -753,7 +763,10 @@ export const MipoOnboarding: React.FC<{ onComplete?: () => void }> = ({ onComple
       try {
         localStorage.setItem("activePetId", petData.id);
         localStorage.setItem("mipo-pet-draft", JSON.stringify({ ...draft, petId: petData.id }));
-      } catch {}
+        localStorage.setItem("mipo-onboarding-complete", "true");
+      } catch {
+        // ignore storage quota / private mode
+      }
       await refreshPets();
       return true;
     } catch (e: unknown) {
