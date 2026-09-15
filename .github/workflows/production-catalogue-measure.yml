@@ -1,0 +1,441 @@
+# C-0 — Legacy catalogue migration readiness, read-only.
+#
+# Manual only. Measures the 375 legacy products in production; changes nothing.
+#
+# This is the measurement the catalogue migration is blocked on, and it exists
+# because the migration's design is a function of the answers. Three decisions
+# cannot be made without it:
+#
+#   * WHICH ATTRIBUTES A CATEGORY DECLARES AS REQUIRED. A product page that
+#     shows "קלוריות לק״ג: לא צוין" on 96% of its products is not consistent,
+#     it is broken. Only a per-category fill rate says which fields are worth
+#     promising.
+#
+#   * WHETHER AN AUTO-APPROVAL RULE IS WORTH HAVING. If most products fail the
+#     strict rule they all land in the manual queue anyway and the rule buys
+#     nothing. C-09 simulates the exact rule against the real rows.
+#
+#   * HOW MUCH IMAGE WORK THERE IS. Images still pointing at a supplier's
+#     server have never been through normalizeProductImage, so they are every
+#     shape and weight. C-05/C-06 count them.
+#
+# It follows production-d18-readonly.yml exactly - same SSH path, same
+# environment, same connection handling, same static guard, same redaction.
+# Nothing here is a new access route: it borrows the one that already exists.
+#
+# The SQL block is 12 SELECT statements wrapped in BEGIN /
+# SET TRANSACTION READ ONLY / ROLLBACK: 15 statements in total.
+#
+# Product data is commercial data, not personal data. Even so, nothing below
+# selects a product name, a description or a supplier URL: every statement
+# returns counts, category labels and attribute KEY names. C-07 returns the key
+# names inside product_attributes because those are what become variant axes,
+# and a key name is a schema fact rather than content.
+
+name: C-0 catalogue measurement (read-only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type READ-ONLY to confirm this run only measures production'
+        required: true
+        default: ''
+
+permissions:
+  contents: read
+
+# The deploy's own production group. These statements take ACCESS SHARE for the
+# transaction's duration and a deploy migration takes ACCESS EXCLUSIVE, so
+# overlapping them would let a read-only measurement block a production
+# migration. The literal name, not deploy-aws.yml's branch-dependent expression,
+# which would put a run dispatched from another branch into aws-staging.
+concurrency:
+  group: aws-production
+  cancel-in-progress: false
+
+jobs:
+  measure:
+    name: Measure the legacy catalogue (read-only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # The environment that holds MIPO_AWS_SSH_PRIVATE_KEY.
+    #
+    # Note, because the D-18 run proved the convenient assumption wrong: this
+    # environment has NO required reviewer configured today. Binding here gets
+    # the secret and the deployment log; it does NOT get an approval gate.
+    environment: production
+
+    env:
+      MIPO_AWS_HOST: ${{ vars.MIPO_AWS_HOST || '63.183.241.110' }}
+      MIPO_AWS_USER: ${{ vars.MIPO_AWS_USER || 'ubuntu' }}
+      MIPO_REMOTE_PATH: ${{ vars.MIPO_REMOTE_PATH || '/opt/mipo' }}
+
+    steps:
+      - name: Confirm intent
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          set -euo pipefail
+          if [ "$CONFIRMATION" != "READ-ONLY" ]; then
+            echo "BLOCKED-PROD: confirmation input must be exactly READ-ONLY." >&2
+            echo "Got something else. Refusing to touch production." >&2
+            exit 1
+          fi
+          echo "Confirmed: read-only measurement."
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Checked before anything connects, rather than trusted because it was
+      # reviewed once. Fails the job on any statement that is not a SELECT,
+      # including one added later by somebody who meant well.
+      - name: Verify the embedded SQL is read-only
+        run: |
+          set -euo pipefail
+          workflow=".github/workflows/production-catalogue-measure.yml"
+
+          # Markers matched WHOLE-LINE and anchored, so the extraction command
+          # in this very step cannot match itself and swallow the SSH block.
+          sql="$(sed -n '/^[[:space:]]*-- C0-SQL-BEGIN$/,/^[[:space:]]*-- C0-SQL-END$/p' "$workflow")"
+          if [ -z "$sql" ]; then
+            echo "Could not extract the SQL block - the markers are missing." >&2
+            exit 1
+          fi
+
+          # Statement-initial write verbs, checked at the start of a line so a
+          # word inside a comment or a column alias does not trip it.
+          if printf '%s\n' "$sql" | grep -inE \
+            '^[[:space:]]*(insert|update|delete|alter|drop|create|grant|revoke|truncate|copy|call|do|vacuum|reindex|refresh|comment|lock|analyze|cluster|security)\b'; then
+            echo "A non-SELECT statement is present in the C-0 SQL block. Refusing to run." >&2
+            exit 1
+          fi
+
+          for required in 'BEGIN;' 'SET TRANSACTION READ ONLY;' 'ROLLBACK;'; do
+            if ! printf '%s\n' "$sql" | grep -qF "$required"; then
+              echo "The SQL block is missing: $required" >&2
+              exit 1
+            fi
+          done
+
+          # Counted as STATEMENTS, not as lines: comments and psql
+          # meta-commands are dropped, the rest is split on ';', and each
+          # fragment is classified by its first word.
+          statements="$(printf '%s\n' "$sql" \
+            | grep -vE '^[[:space:]]*--' \
+            | grep -vE '^[[:space:]]*\\' \
+            | tr '\n' ' ' | tr ';' '\n' \
+            | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
+            | grep -v '^$')"
+
+          select_count="$(printf '%s\n' "$statements" | grep -ciE '^select' || true)"
+          total_count="$(printf '%s\n' "$statements" | grep -c '' || true)"
+          other="$(printf '%s\n' "$statements" | grep -ivE '^select' || true)"
+          other_count="$(printf '%s\n' "$other" | grep -c '^.' || true)"
+
+          # Exactly three non-SELECT statements are permitted, and only these.
+          if [ "$other_count" -ne 3 ]; then
+            echo "Expected exactly 3 non-SELECT statements (BEGIN, SET TRANSACTION READ ONLY, ROLLBACK); found ${other_count}:" >&2
+            printf '%s\n' "$other" >&2
+            exit 1
+          fi
+          if ! printf '%s\n' "$other" | grep -qiE '^begin$' \
+            || ! printf '%s\n' "$other" | grep -qiE '^set transaction read only$' \
+            || ! printf '%s\n' "$other" | grep -qiE '^rollback$'; then
+            echo "The three non-SELECT statements are not exactly BEGIN / SET TRANSACTION READ ONLY / ROLLBACK:" >&2
+            printf '%s\n' "$other" >&2
+            exit 1
+          fi
+
+          echo "SQL block verified: ${select_count} SELECT statements plus BEGIN, SET TRANSACTION READ ONLY and ROLLBACK (${total_count} statements in total). No write statements."
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.MIPO_AWS_SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SSH_PRIVATE_KEY:-}" ]; then
+            echo "BLOCKED-PROD: the production environment has no MIPO_AWS_SSH_PRIVATE_KEY." >&2
+            echo "There is no other route to the database, and no fallback will be attempted." >&2
+            exit 1
+          fi
+          if [ -z "${MIPO_AWS_HOST}" ]; then
+            echo "BLOCKED-PROD: MIPO_AWS_HOST is empty for the production environment." >&2
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/mipo_aws_key
+          chmod 600 ~/.ssh/mipo_aws_key
+          ssh-keyscan -T 30 -H "$MIPO_AWS_HOST" >> ~/.ssh/known_hosts || true
+          echo "SSH configured for ${MIPO_AWS_USER}@${MIPO_AWS_HOST}"
+
+      - name: Run C-0 against production
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 \
+            "${MIPO_AWS_USER}@${MIPO_AWS_HOST}" \
+            "MIPO_REMOTE_PATH='${MIPO_REMOTE_PATH}' bash -s" <<'REMOTE'
+          set -euo pipefail
+          # No `set -x` anywhere: tracing would echo the line that expands
+          # DATABASE_URL.
+
+          ENV_FILE="${MIPO_REMOTE_PATH}/.env"
+          PG_IMAGE="${MIPO_PG_IMAGE:-postgres:16-alpine}"
+
+          if [ ! -f "$ENV_FILE" ]; then
+            echo "BLOCKED-PROD: no env file at $ENV_FILE" >&2
+            exit 1
+          fi
+
+          # Read DATABASE_URL without sourcing the file: .env holds every
+          # production secret. The LAST definition wins, matching how docker
+          # compose's env_file resolves duplicates.
+          DATABASE_URL="$(grep -E '^[[:space:]]*(export[[:space:]]+)?DATABASE_URL=' "$ENV_FILE" | tail -1 | cut -d= -f2- || true)"
+          DATABASE_URL="$(printf '%s' "$DATABASE_URL" | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+          DATABASE_URL="${DATABASE_URL%\"}"; DATABASE_URL="${DATABASE_URL#\"}"
+          DATABASE_URL="${DATABASE_URL%\'}"; DATABASE_URL="${DATABASE_URL#\'}"
+
+          if [ -z "$DATABASE_URL" ]; then
+            echo "BLOCKED-PROD: DATABASE_URL is not set in $ENV_FILE" >&2
+            exit 1
+          fi
+
+          # Shape check only. Reports nothing derived from the value - not the
+          # URI, not its length, not the scheme, host, user, port or database.
+          case "$DATABASE_URL" in
+            postgres://*|postgresql://*) ;;
+            *)
+              echo "BLOCKED-PROD: DATABASE_URL in $ENV_FILE does not begin with postgres:// or postgresql://." >&2
+              exit 1
+              ;;
+          esac
+
+          echo "Connection string located in $ENV_FILE. Not printed."
+
+          C0_SQL="$(cat <<'SQL'
+          -- C0-SQL-BEGIN
+          \pset pager off
+          \timing off
+
+          BEGIN;
+          SET TRANSACTION READ ONLY;
+
+          \echo '### C-01 - how many products, and where they sit'
+
+          select count(*) as products_total,
+                 count(distinct business_id) as distinct_businesses,
+                 count(*) filter (where category_id is not null) as with_category_id,
+                 count(*) filter (where category_id is null) as without_category_id,
+                 count(*) filter (where pet_type is not null) as with_pet_type
+            from public.business_products;
+
+          \echo '### C-02 - distribution by category'
+          -- The denominator for every per-category decision below. A category
+          -- holding three products does not earn its own template.
+
+          select coalesce(c.name_he, bp.category, '(uncategorised)') as category,
+                 count(*) as products,
+                 count(*) filter (where bp.category_id is null) as no_category_id
+            from public.business_products bp
+            left join public.product_categories c on c.id = bp.category_id
+           group by 1
+           order by products desc;
+
+          \echo '### C-03 - universal-band fill rates'
+          -- These are the fields the unified product page promises for EVERY
+          -- product regardless of category. A gap here is a gap on every page.
+
+          select count(*) as products,
+                 count(*) filter (where name is not null and btrim(name) <> '') as has_name,
+                 count(*) filter (where description is not null and btrim(description) <> '') as has_description,
+                 count(*) filter (where length(btrim(coalesce(description, ''))) >= 80) as description_80_chars_plus,
+                 count(*) filter (where brand is not null and btrim(brand) <> '') as has_brand,
+                 count(*) filter (where sku is not null and btrim(sku) <> '') as has_sku,
+                 count(*) filter (where price > 0) as has_positive_price
+            from public.business_products;
+
+          \echo '### C-04 - category-band fill rates, per category'
+          -- The statement the attribute schema is built from. A column filled
+          -- for 5% of a category must not become a required attribute there.
+
+          select coalesce(c.name_he, bp.category, '(uncategorised)') as category,
+                 count(*) as products,
+                 count(*) filter (where bp.ingredients is not null and btrim(bp.ingredients) <> '') as ingredients,
+                 count(*) filter (where bp.kcal_per_kg is not null) as kcal_per_kg,
+                 count(*) filter (where bp.life_stage is not null and btrim(bp.life_stage) <> '') as life_stage,
+                 count(*) filter (where bp.dog_size is not null and btrim(bp.dog_size) <> '') as dog_size,
+                 count(*) filter (where bp.special_diet is not null and array_length(bp.special_diet, 1) > 0) as special_diet,
+                 count(*) filter (where bp.flavors is not null and array_length(bp.flavors, 1) > 0) as flavors,
+                 count(*) filter (where bp.weight_unit is not null and btrim(bp.weight_unit) <> '') as weight_unit
+            from public.business_products bp
+            left join public.product_categories c on c.id = bp.category_id
+           group by 1
+           order by products desc;
+
+          \echo '### C-05 - the jsonb content columns'
+          -- jsonb_typeof guards jsonb_array_length, which errors on a non-array.
+          -- A column defaulting to '[]' can still hold an object if anything
+          -- ever wrote one.
+
+          select count(*) filter (where jsonb_typeof(benefits) = 'array' and jsonb_array_length(benefits) > 0) as benefits_nonempty,
+                 count(*) filter (where jsonb_typeof(benefits) not in ('array', 'null')) as benefits_not_an_array,
+                 count(*) filter (where jsonb_typeof(feeding_guide) = 'array' and jsonb_array_length(feeding_guide) > 0) as feeding_guide_nonempty,
+                 count(*) filter (where jsonb_typeof(feeding_guide) not in ('array', 'null')) as feeding_guide_not_an_array,
+                 count(*) filter (where jsonb_typeof(product_attributes) = 'object' and product_attributes <> '{}'::jsonb) as attributes_nonempty
+            from public.business_products;
+
+          \echo '### C-06 - image adoption: how much has never been normalized'
+          -- A row still pointing at http:// has never been through
+          -- normalizeProductImage, so it is an arbitrary size and weight and
+          -- the bytes belong to somebody else.
+
+          select count(*) as products,
+                 count(*) filter (where image_url like '/uploads/%') as adopted_local,
+                 count(*) filter (where image_url like 'http%') as foreign_remote,
+                 count(*) filter (where image_url = '/placeholder.svg') as placeholder_only,
+                 count(*) filter (where images is not null and array_length(images, 1) > 0) as has_gallery,
+                 coalesce(max(array_length(images, 1)), 0) as largest_gallery,
+                 count(*) filter (where needs_image_review) as flagged_for_image_review
+            from public.business_products;
+
+          \echo '### C-07 - gallery entries, counted individually'
+
+          select count(*) as gallery_entries,
+                 count(*) filter (where img like '/uploads/%') as adopted_local,
+                 count(*) filter (where img like 'http%') as foreign_remote
+            from public.business_products bp,
+                 lateral unnest(coalesce(bp.images, '{}')) as img;
+
+          \echo '### C-08 - which product_attributes keys exist, and how often'
+          -- Key names only, never values. These are the candidates for variant
+          -- axes (size, flavour, colour) as opposed to product-level facts.
+
+          select k.key as attribute_key,
+                 count(*) as products
+            from public.business_products bp,
+                 lateral jsonb_object_keys(
+                   case when jsonb_typeof(bp.product_attributes) = 'object'
+                        then bp.product_attributes
+                        else '{}'::jsonb end) as k(key)
+           group by 1
+           order by products desc, attribute_key
+           limit 40;
+
+          \echo '### C-09 - pet_type distribution: the species gap, quantified'
+          -- The enum is ('dog','cat','other','all'). Every rodent, bird and
+          -- rabbit in the catalogue is therefore sitting in 'other' or NULL,
+          -- and a product page cannot vary on a distinction the data does not
+          -- carry. This counts how much is affected.
+
+          select coalesce(pet_type::text, '(null)') as pet_type,
+                 count(*) as products
+            from public.business_products
+           group by 1
+           order by products desc;
+
+          \echo '### C-10 - the auto-approval rule, simulated against real rows'
+          -- The strict rule: named, priced, categorised, carrying a real image,
+          -- and not previously flagged. would_auto_approve is what decides
+          -- whether the rule is worth having at all - if it is small, every
+          -- product lands in the manual queue regardless.
+
+          select count(*) as products,
+                 count(*) filter (where is_flagged) as flagged,
+                 count(*) filter (where needs_image_review) as needs_image_review,
+                 count(*) filter (where needs_price_review) as needs_price_review,
+                 count(*) filter (
+                   where name is not null and btrim(name) <> ''
+                     and price > 0
+                     and category_id is not null
+                     and image_url is not null
+                     and image_url <> '/placeholder.svg'
+                     and not coalesce(is_flagged, false)
+                     and not coalesce(needs_image_review, false)
+                     and not coalesce(needs_price_review, false)
+                 ) as would_auto_approve
+            from public.business_products;
+
+          \echo '### C-11 - data quality problems the migration will have to answer for'
+
+          select count(*) filter (where price <= 0) as price_not_positive,
+                 count(*) filter (where name is null or btrim(name) = '') as name_missing,
+                 count(*) filter (where sale_price is not null and sale_price > price) as sale_above_price,
+                 count(*) filter (where original_price is not null and original_price < price) as original_below_price,
+                 (select count(*)
+                    from (select lower(btrim(name))
+                            from public.business_products
+                           group by 1
+                          having count(*) > 1) dupes) as duplicate_name_groups
+            from public.business_products;
+
+          \echo '### C-12 - what else feeds the catalogue'
+          -- scraped_products is the other import surface. If it is large, the
+          -- migration plan has to account for it too rather than discovering it
+          -- afterwards.
+
+          select (select count(*) from public.scraped_products) as scraped_products,
+                 (select count(*) from public.business_products) as business_products,
+                 (select count(*) from public.product_categories) as categories_defined,
+                 (select count(*) from public.product_category_aliases) as category_aliases;
+
+          ROLLBACK;
+          -- C0-SQL-END
+          SQL
+          )"
+          export C0_SQL
+          export DATABASE_URL
+
+          # Connection details are redacted from the output; server-side SQL
+          # errors are not, because they are the diagnostic the run produces.
+          redact() {
+            sed -E \
+              -e 's#postgres(ql)?://[^[:space:]"]*#<redacted-connection-string>#g' \
+              -e 's#^psql: error:.*#psql: error: <connection details redacted>#'
+          }
+
+          # Both values passed by NAME, so docker's argv and what docker inspect
+          # records hold the literal text "$DATABASE_URL", never its value. This
+          # is NOT a claim the value is absent from every process list: psql
+          # inside the container receives the URI as an argument, visible on
+          # this host for the seconds the run lasts - bounded by who can already
+          # read /opt/mipo/.env, but real.
+          #
+          # stdin is /dev/null so the container cannot consume the rest of this
+          # script, and no file is written on the host: the SQL travels in an
+          # environment variable.
+          set +e
+          docker run --rm \
+            -e PGCONNECT_TIMEOUT=15 \
+            --env DATABASE_URL \
+            --env C0_SQL \
+            "$PG_IMAGE" \
+            sh -c 'printf "%s\n" "$C0_SQL" | psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -X' </dev/null 2>&1 | redact
+          psql_status="${PIPESTATUS[0]}"
+          set -e
+
+          case "$psql_status" in
+            0)
+              echo "C-0 complete. Nothing on this host was modified."
+              ;;
+            2)
+              echo "BLOCKED-PROD: could not connect to the database (psql exit 2). Details redacted above." >&2
+              exit 2
+              ;;
+            3)
+              echo "C-0 failed: a statement was rejected by the server (psql exit 3). The server error is above, unredacted." >&2
+              exit 3
+              ;;
+            *)
+              echo "C-0 failed: docker/psql exited ${psql_status}." >&2
+              exit "$psql_status"
+              ;;
+          esac
+          REMOTE
+
+      - name: Remove the key
+        if: always()
+        run: |
+          set -euo pipefail
+          rm -f ~/.ssh/mipo_aws_key
+          echo "Key removed from the runner."
