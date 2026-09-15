@@ -23,8 +23,15 @@
 # environment, same connection handling, same static guard, same redaction.
 # Nothing here is a new access route: it borrows the one that already exists.
 #
-# The SQL block is 20 SELECT statements wrapped in BEGIN /
-# SET TRANSACTION READ ONLY / ROLLBACK: 23 statements in total.
+# The SQL block is 23 SELECT statements wrapped in BEGIN /
+# SET TRANSACTION READ ONLY / ROLLBACK: 26 statements in total.
+#
+# C-21..C-23 count the effect of migration 0051 BEFORE it is deployed, by
+# resolving category the way it will. C-10 measured the auto-approval rule at
+# 19% with category_id null on 241 products as the dominant blocker; 0051
+# removes that blocker with two alias rows, and C-22 says what the rule would
+# then pass. Measuring a migration's effect before running it is cheaper than
+# deploying to find out.
 #
 # C-01..C-12 are the first pass. C-13..C-20 were added after it ran, to settle
 # four things the first pass could only guess at, because it deliberately read
@@ -504,6 +511,71 @@ jobs:
            group by 1
            order by products desc
            limit 30;
+
+          \echo '### C-21 - what 0051 would categorise, counted before deploying it'
+          -- Migration 0051 adds two aliases, 'dry-food' and 'wet-food', which
+          -- C-20 showed are the only two unmatched free-text values in the
+          -- catalogue. It is not deployed. This counts its effect in advance,
+          -- by resolving category the way it will: an existing alias, or one of
+          -- the two it adds.
+          --
+          -- The two pending values are named literally rather than read from
+          -- the alias table, because in production that table does not contain
+          -- them yet. That is the point of asking before deploying.
+
+          select count(*) as products,
+                 count(*) filter (where p.category_id is not null) as categorised_today,
+                 count(*) filter (where p.category_id is null
+                                    and a.category_id is not null) as by_an_existing_alias,
+                 count(*) filter (where p.category_id is null
+                                    and a.category_id is null
+                                    and lower(btrim(coalesce(p.category, ''))) in ('dry-food', 'wet-food')) as by_0051,
+                 count(*) filter (where p.category_id is null
+                                    and a.category_id is null
+                                    and lower(btrim(coalesce(p.category, ''))) not in ('dry-food', 'wet-food')) as still_uncategorised
+            from public.business_products p
+            left join public.product_category_aliases a
+              on a.alias = lower(btrim(p.category));
+
+          \echo '### C-22 - the auto-approval rule, re-simulated as if 0051 had run'
+          -- C-10 measured the rule against today's data and it passed 19%, with
+          -- category_id null on 241 products as the dominant blocker. This is
+          -- the same rule with that one blocker removed, and it is the number
+          -- that decides whether the rule is worth building.
+
+          select count(*) as products,
+                 count(*) filter (
+                   where p.name is not null and btrim(p.name) <> ''
+                     and p.price > 0
+                     and (p.category_id is not null
+                          or a.category_id is not null
+                          or lower(btrim(coalesce(p.category, ''))) in ('dry-food', 'wet-food'))
+                     and p.image_url is not null
+                     and p.image_url <> '/placeholder.svg'
+                     and not coalesce(p.is_flagged, false)
+                     and not coalesce(p.needs_image_review, false)
+                     and not coalesce(p.needs_price_review, false)
+                 ) as would_auto_approve_after_0051
+            from public.business_products p
+            left join public.product_category_aliases a
+              on a.alias = lower(btrim(p.category));
+
+          \echo '### C-23 - why the rest still fail, per condition'
+          -- These overlap: one product can be blocked by several conditions at
+          -- once, so the columns do not sum to the remainder. What they say is
+          -- which condition is worth relaxing, and which is real work.
+
+          select count(*) filter (where not (p.price > 0)) as blocked_no_price,
+                 count(*) filter (where p.image_url is null
+                                     or p.image_url = '/placeholder.svg') as blocked_no_image,
+                 count(*) filter (where coalesce(p.needs_price_review, false)) as blocked_price_review,
+                 count(*) filter (where coalesce(p.needs_image_review, false)) as blocked_image_review,
+                 count(*) filter (where p.category_id is null
+                                    and a.category_id is null
+                                    and lower(btrim(coalesce(p.category, ''))) not in ('dry-food', 'wet-food')) as blocked_category
+            from public.business_products p
+            left join public.product_category_aliases a
+              on a.alias = lower(btrim(p.category));
 
           ROLLBACK;
           -- C0-SQL-END
