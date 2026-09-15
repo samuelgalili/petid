@@ -5,9 +5,9 @@ has changed. Every number below was read from production on 2026-09-15.
 
 **Source:** the `C-0 catalogue measurement (read-only)` workflow
 (`.github/workflows/production-catalogue-measure.yml`), runs **#2** (12
-statements) and **#4** (20 statements), both against the production database
+statements), **#4** (20) and **#6** (23), all against the production database
 inside `BEGIN` / `SET TRANSACTION READ ONLY` / `ROLLBACK`. Nothing on the host
-was modified; both runs ended `C-0 complete.`
+was modified; every run ended `C-0 complete.`
 
 The catalogue is **375 products, all owned by one business** — the
 `ensureDefaultBusinessProfile()` fallback `cf941cc4…`, which has no owner user.
@@ -241,6 +241,23 @@ uncategorised remainder.
 This matters beyond tidiness: `category_id is null` was the dominant blocker in
 the auto-approval simulation (§7).
 
+### 5.0 Measured before deploying, and it files everything
+
+`C-21` resolves category the way migration `0051` will, against production, with
+`0051` not deployed:
+
+| Products | Categorised today | By an existing alias | **By 0051** | **Still uncategorised** |
+|---|---|---|---|---|
+| 375 | 134 | 0 | **241** | **0** |
+
+**Two alias rows file 100% of the catalogue.** Nothing is left over — production
+holds no third unmatched value, so no human has to invent a mapping for a
+remainder.
+
+This is better than the local rehearsal predicted, and the difference is
+instructive rather than lucky: the rehearsal seeded a deliberately unrecognised
+value and correctly left it unfiled. Production simply does not contain one.
+
 ### 5.1 The food taxonomy is fragmented four ways
 
 `dry-food` (226, free text) · `אוכל יבש` (3, a real category) · `wet-food` (15,
@@ -351,9 +368,47 @@ image and was never flagged; everything else goes to a human.
 | 375 | 0 | 98 | 134 | **73** |
 
 **19% — the rule as written is not worth having.** But the dominant blocker is
-`category_id is null`, which is 241 products, which is §5's two alias rows. The
-rule should be re-simulated after the aliases exist, and the number will move a
-long way.
+`category_id is null`, which is 241 products, which is §5's two alias rows.
+
+### 7.1 Re-simulated after 0051 — the rule becomes worth building
+
+`C-22` runs the identical rule with category resolved the way `0051` resolves
+it, measured against production before `0051` is deployed:
+
+| | Passes the rule |
+|---|---|
+| Today (`C-10`) | **73** — 19% |
+| **After 0051 (`C-22`)** | **187** — **50%** |
+
+**The manual review queue halves, from 375 products to 188, for two rows of
+SQL.** That settles it: the rule is worth building.
+
+### 7.2 What blocks the remaining 188
+
+`C-23`, per condition. These **overlap** — one product can fail several at once —
+so they do not sum to 188. What they say is which condition is worth relaxing
+and which is real work:
+
+| Condition | Products |
+|---|---|
+| `needs_price_review` | 134 |
+| `needs_image_review` | 98 |
+| Price ≤ 0 | 73 |
+| No image | 69 |
+| **Category** | **0** |
+
+The category blocker is gone entirely. What remains is exactly what **D-2** and
+**D-3** already decided to send to an admin: prices and images. Those are not
+mapping problems that a cleverer migration could solve — they are work somebody
+has to do.
+
+**One question worth asking before building the rule:** 134 products carry
+`needs_price_review` and 98 carry `needs_image_review`. Those are flags somebody
+set at some point in the past, and nothing in the schema records when or why. If
+many have since gone stale, a rule that ignores them would pass considerably more
+than 50% — and if they are current, they are exactly the products a human should
+see. Either way the answer is worth having before the rule is written, and it is
+another measurement rather than a judgement call.
 
 **The rule is a labour saving, not a safety bypass.** The publication gate
 independently blocks anything incomplete, so a product auto-approved in error
@@ -376,10 +431,28 @@ does not reach the shop — it simply fails to publish.
 
 ## 9. The plan
 
-### Phase 1 · Two alias rows
-`dry-food` and `wet-food` into `product_category_aliases`, and a decision on
-which of the four food labels (§5.1) is canonical. **Unblocks 241 products** and
-re-opens the auto-approval question.
+### Phase 1 · Two alias rows — **built, not deployed**
+
+`server/sql/0051_hyphenated_food_category_aliases.sql`. `dry-food` and
+`wet-food` into `product_category_aliases`, then the same backfill `0034` ran.
+**Files 241 products, leaving none** (§5.0), and takes the auto-approval rule
+from 19% to **50%** (§7.1).
+
+The canonical labels were already decided by `0034` and needed no new decision:
+`food-dry` = **אוכל יבש** and `food-wet` = **אוכל רטוב**, both children of
+`food`. The English spellings are import variants and stay aliases.
+
+It also repairs a second defect, found by a test failing rather than by reading:
+`0034` listed eight aliases for those two shelves, and **four were silent
+no-ops** because `0025` had already claimed those keys and `0034` used
+`ON CONFLICT DO NOTHING`. `dry food`, `מזון יבש`, `wet food` and `מזון רטוב`
+were all still pointing at the parent `food`. `0051` re-points them with
+`DO UPDATE`.
+
+It deliberately does **not** re-file products already sitting under the parent
+because of those stale aliases: a row filed by the old alias and a row an admin
+chose to file under `food` are indistinguishable, and overwriting an admin's
+decision to correct a migration's is the worse of the two errors.
 
 ### Phase 2 · `pet_species`
 Replace the `pet_type` enum with a lookup table. Source: `animal` where present,
@@ -436,7 +509,8 @@ published equivalent or a documented reason not to, verified by count.
 
 | # | Open question |
 |---|---|
-| U-1 | Which of the four food labels is canonical (§5.1) |
+| ~~U-1~~ | ~~Which of the four food labels is canonical~~ — **closed.** `0034` already decided it: `אוכל יבש` and `אוכל רטוב` are the categories, the rest are aliases (§9 Phase 1) |
+| U-6 | Whether the 134 `needs_price_review` and 98 `needs_image_review` flags are current or stale. Nothing records when or why they were set, and the answer moves the auto-approval rule well above 50% if many have expired (§7.2) |
 | U-2 | Whether the 6 duplicate-barcode groups are duplicates or unrecognised variants |
 | U-3 | What the 2 species-less `other` products actually are |
 | U-4 | Whether `product_type` should replace the current category tree or map into it (§5.2) |
