@@ -16,6 +16,10 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { usePetButtonAnimation, PetButtonOverlay } from "@/components/ui/PetButtonAnimations";
 import { useOverlayNav } from "@/contexts/OverlayNavContext";
+import { PetHeroVisual } from "@/components/profile/PetHeroVisual";
+import { resolveMasterAvatarSrc } from "@/lib/masterAvatar";
+import dogIcon from "@/assets/dog-official.svg";
+import catIcon from "@/assets/cat-official.png";
 
 const navLabels = {
   he: { feed: "פיד", chat: "שיחה", addPet: "הוסף חיית מחמד" },
@@ -106,6 +110,8 @@ const BottomNav = () => {
 
   const petAccent = activePet?.theme_color || undefined;
   const PetFallbackIcon = activePet?.pet_type === "cat" ? Cat : Dog;
+  const typeFallback = activePet?.pet_type === "cat" ? catIcon : dogIcon;
+  const navAvatar = resolveMasterAvatarSrc(activePet?.avatar_url, typeFallback);
 
   return (
     <>
@@ -222,14 +228,24 @@ const BottomNav = () => {
                   boxShadow: `0 0 0 2.5px ${petAccent || "hsl(209, 79%, 52%)"}, 0 4px 16px ${petAccent || "hsl(209, 79%, 52%)"}25`
                 }}
               >
-                <Avatar className="w-full h-full border-[2px] border-background rounded-full">
-                  {activePet?.avatar_url ? (
-                    <AvatarImage src={activePet.avatar_url} className="object-cover" />
-                  ) : null}
-                  <AvatarFallback className="bg-muted text-muted-foreground">
-                    <PetFallbackIcon className="w-6 h-6" strokeWidth={1.5} />
-                  </AvatarFallback>
-                </Avatar>
+                <div className="w-full h-full border-[2px] border-background rounded-full overflow-hidden bg-muted">
+                  {activePet ? (
+                    <PetHeroVisual
+                      src={navAvatar.src}
+                      fallbackSrc={typeFallback}
+                      kind={navAvatar.kind}
+                      alt={activePet.name}
+                      mood="calm"
+                      celebrateKey={0}
+                      renderer="image"
+                      size="nav"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                      <PetFallbackIcon className="w-6 h-6" strokeWidth={1.5} />
+                    </div>
+                  )}
+                </div>
               </div>
               {pets.length > 1 && (
                 <span

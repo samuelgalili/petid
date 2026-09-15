@@ -66,7 +66,7 @@ import dogIcon from "@/assets/dog-official.svg";
 import catIcon from "@/assets/cat-official.png";
 import { HeroInsight } from "./HeroInsight";
 import { PetHeroVisual, type Mood } from "./PetHeroVisual";
-import { isValidUrl } from "@/lib/inputSanitizer";
+import { resolveMasterAvatarSrc } from "@/lib/masterAvatar";
 import { BaselineStrip } from "./BaselineStrip";
 import { BreedTraitCircles } from "./BreedTraitCircles";
 import { AnimatedCounter } from "./AnimatedCounter";
@@ -534,25 +534,13 @@ const inferMood = ({
   return "attention";
 };
 
-/** Master avatar for Hero: pets.avatar_url when a non-empty valid URL/string, else type icon. Never photoUrl. */
-const resolveHeroSrc = (avatarUrl: string | null | undefined, fallbackSrc: string): string => {
-  if (typeof avatarUrl !== "string") return fallbackSrc;
-  const trimmed = avatarUrl.trim();
-  if (!trimmed) return fallbackSrc;
-  if (isValidUrl(trimmed)) return trimmed;
-  if (trimmed.startsWith("/") && trimmed.length > 1) return trimmed;
-  // upload-avatar persists pets.avatar_url as data:image/{png|jpeg|webp|gif};base64,...
-  if (trimmed.startsWith("data:image/")) return trimmed;
-  return fallbackSrc;
-};
-
 export const PetCenterDashboard = ({
   pet,
   accent = "hsl(var(--primary))",
 }: Props) => {
   const type = (pet.type || pet.pet_type) as "dog" | "cat" | undefined;
   const fallback = type === "cat" ? catIcon : dogIcon;
-  const heroSrc = resolveHeroSrc(pet.avatar_url, fallback);
+  const hero = resolveMasterAvatarSrc(pet.avatar_url, fallback);
   const weight = pet.weight ?? null;
 
   const metrics = usePetMetrics(pet.id);
@@ -990,10 +978,13 @@ export const PetCenterDashboard = ({
             {/* Avatar inside the ring. F1: always show Master / type-icon — no paywall. */}
             <div className="absolute inset-0 flex items-center justify-center">
               <PetHeroVisual
-                src={heroSrc}
+                src={hero.src}
+                fallbackSrc={fallback}
+                kind={hero.kind}
                 alt={pet.name}
                 celebrateKey={celebrateKey}
                 renderer="image"
+                size="hero"
                 mood={inferMood({
                   hasBreed: !!pet.breed,
                   hasWeight: weight != null,
