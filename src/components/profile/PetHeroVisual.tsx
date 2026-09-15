@@ -110,6 +110,8 @@ const MoodAvatar = ({
  * Profile Hero visual wrapper.
  * V1 always renders MoodAvatar (breathing / halo / celebrate).
  * `renderer` is reserved so a future scene3d swap can land without changing call sites.
+ *
+ * F1: displaying the Master avatar is ungated — no paywall / subscription check here.
  */
 export const PetHeroVisual = ({
   src,

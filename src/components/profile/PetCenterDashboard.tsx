@@ -985,7 +985,7 @@ export const PetCenterDashboard = ({
                 transition={{ duration: 0.9, ease: "easeOut" }}
               />
             </svg>
-            {/* Avatar inside the ring */}
+            {/* Avatar inside the ring. F1: always show Master / type-icon — no paywall. */}
             <div className="absolute inset-0 flex items-center justify-center">
               <PetHeroVisual
                 src={heroSrc}
