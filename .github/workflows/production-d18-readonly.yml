@@ -38,7 +38,7 @@ on:
   workflow_dispatch:
     inputs:
       confirmation:
-        description: 'Type READ-ONLY to confirm this run only measures production'
+        description: 'Type the words  READ-ONLY  here (that exact text) to confirm this run only measures production'
         required: true
         default: ''
 
@@ -86,8 +86,21 @@ jobs:
         run: |
           set -euo pipefail
           if [ "$CONFIRMATION" != "READ-ONLY" ]; then
-            echo "BLOCKED-PROD: confirmation input must be exactly READ-ONLY." >&2
-            echo "Got something else. Refusing to touch production." >&2
+            # The instruction comes FIRST and the status code LAST, because the
+            # other way round taught somebody to type the status code into the
+            # box. A message that causes the mistake it is warning about is a
+            # bad message, however correct it is.
+            echo "Nothing was contacted. Production was not touched." >&2
+            echo "" >&2
+            echo "The confirmation box has to contain exactly this text:" >&2
+            echo "" >&2
+            echo "    READ-ONLY" >&2
+            echo "" >&2
+            echo "Nine characters: R E A D hyphen O N L Y, capitals." >&2
+            echo "Re-run the workflow and type it into the 'confirmation' field." >&2
+            echo "" >&2
+            echo "(This job reports the status code BLOCKED-PROD when it stops" >&2
+            echo " early. That code is output, never input - do not type it.)" >&2
             exit 1
           fi
           echo "Confirmed: read-only measurement."
