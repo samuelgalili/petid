@@ -23,8 +23,14 @@
 # environment, same connection handling, same static guard, same redaction.
 # Nothing here is a new access route: it borrows the one that already exists.
 #
-# The SQL block is 29 SELECT statements wrapped in BEGIN /
-# SET TRANSACTION READ ONLY / ROLLBACK: 32 statements in total.
+# The SQL block is 31 SELECT statements wrapped in BEGIN /
+# SET TRANSACTION READ ONLY / ROLLBACK: 34 statements in total.
+#
+# C-30/C-31 close the one thing the 2026-09-15 deploy left unmeasured.
+# business_profiles.commercial_status decides whether the unowned fallback
+# profile that holds all 375 products can sell, and the only evidence it reads
+# 'none' was indirect: the migration applied and its default says so. Indirect
+# evidence of a security-relevant fact is not evidence.
 #
 # C-24..C-29 answer U-6: 134 products carry needs_price_review and 98 carry
 # needs_image_review, and nothing in the schema records when or why either was
@@ -707,6 +713,40 @@ jobs:
             from public.business_products p
             left join public.product_category_aliases a
               on a.alias = lower(btrim(p.category));
+
+          \echo '### C-30 - commercial_status, the one thing the deploy left unmeasured'
+          -- 0049 added this column with DEFAULT 'none' and no backfill, so the
+          -- unowned fallback profile holding all 375 products should NOT have
+          -- become a Seller. That was predicted and the evidence for it was
+          -- indirect - the migration applied, and the default says 'none'.
+          -- Indirect evidence of a security-relevant fact is not evidence.
+          --
+          -- isSellerEligible requires is_verified IS TRUE *and* commercial_status
+          -- = 'approved'. The fallback is is_verified = true, so commercial_status
+          -- is the only thing standing between it and selling. This asks.
+
+          select coalesce(commercial_status, '(null)') as commercial_status,
+                 count(*) as businesses,
+                 count(*) filter (where is_verified is true) as also_verified,
+                 count(*) filter (where is_verified is true
+                                    and commercial_status = 'approved') as SELLER_ELIGIBLE
+            from public.business_profiles
+           group by 1
+           order by businesses desc;
+
+          \echo '### C-31 - did 0049 or 0051 touch a business row that predates them?'
+          -- Same discipline as the M1b migration tests: a claim about what a
+          -- migration did is scoped to the rows it saw, using applied_at, rather
+          -- than asked of the whole table where a legitimate later change would
+          -- read as the migration misbehaving.
+
+          select count(*) as businesses_predating_0049,
+                 count(*) filter (where b.commercial_status <> 'none') as not_none,
+                 count(*) filter (where b.updated_at > m.applied_at) as touched_since
+            from public.business_profiles b
+            join public.schema_migrations m
+              on m.filename = '0049_add_business_commercial_status.sql'
+           where b.created_at < m.applied_at;
 
           ROLLBACK;
           -- C0-SQL-END
