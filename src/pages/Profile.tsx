@@ -26,7 +26,9 @@ import { SmartRecommendationSheet } from "@/components/pet-services/SmartRecomme
 import { HealthScoreBreakdown } from "@/components/profile/HealthScoreBreakdown";
 import { PetDashboardTabs } from "@/components/profile/PetDashboardTabs";
 import { HeartRain } from "@/components/profile/HeartRain";
+import { PetHeroVisual, type Mood } from "@/components/profile/PetHeroVisual";
 import { haptic } from "@/lib/haptics";
+import { isValidUrl } from "@/lib/inputSanitizer";
 import { getCurrentUser, getMyPets, type MipoProfile } from "@/lib/mipoApi";
 import { useGuest } from "@/contexts/GuestContext";
 
@@ -39,7 +41,29 @@ interface Pet {
   age_months?: number;
   size?: string;
   avatar_url?: string;
+  weight?: number | null;
 }
+
+/** Master avatar for Hero: pets.avatar_url when a non-empty valid URL/string, else type icon. */
+const resolveHeroSrc = (avatarUrl: string | null | undefined, fallbackSrc: string): string => {
+  if (typeof avatarUrl !== "string") return fallbackSrc;
+  const trimmed = avatarUrl.trim();
+  if (!trimmed) return fallbackSrc;
+  if (isValidUrl(trimmed)) return trimmed;
+  if (trimmed.startsWith("/") && trimmed.length > 1) return trimmed;
+  // upload-avatar persists pets.avatar_url as data:image/{png|jpeg|webp|gif};base64,...
+  if (trimmed.startsWith("data:image/")) return trimmed;
+  return fallbackSrc;
+};
+
+const inferMood = (pet: Pet): Mood => {
+  const hour = new Date().getHours();
+  const isNight = hour >= 22 || hour < 6;
+  if (!pet.breed && pet.weight == null) return "unknown";
+  if (isNight) return "asleep";
+  if (pet.weight == null) return "attention";
+  return "calm";
+};
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -63,6 +87,7 @@ const Profile = () => {
   const [healthRefreshKey, setHealthRefreshKey] = useState(0);
   const [healthBreakdownOpen, setHealthBreakdownOpen] = useState(false);
   const [heartRainActive, setHeartRainActive] = useState(false);
+  const [celebrateKey, setCelebrateKey] = useState(0);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -74,6 +99,7 @@ const Profile = () => {
   const triggerHeartRain = () => {
     haptic("success");
     setHeartRainActive(true);
+    setCelebrateKey((k) => k + 1);
     setTimeout(() => setHeartRainActive(false), 2500);
   };
 
@@ -351,21 +377,22 @@ const Profile = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.05, duration: 0.35 }}
                   >
-                    {/* Pet Avatar — Large, clean */}
+                    {/* Profile Hero — Master avatar (Slice A / F1, ungated) */}
                     <motion.div
-                      className="relative shrink-0"
-                      whileTap={{ scale: 0.93 }}
+                      className="relative shrink-0 scale-[0.4] origin-right -my-12"
+                      whileTap={{ scale: 0.38 }}
                       onClick={triggerHeartRain}
                     >
-                      <div className="mipo-gradient-ring h-16 w-16">
-                        {selectedPet.avatar_url ? (
-                          <img src={selectedPet.avatar_url} alt={selectedPet.name} className="h-full w-full rounded-full border-[3px] border-white object-cover" />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center rounded-full border-[3px] border-white bg-muted">
-                            <img src={selectedPet.type === 'dog' ? dogIcon : catIcon} alt={selectedPet.type} className="w-7 h-7 opacity-50" />
-                          </div>
+                      <PetHeroVisual
+                        src={resolveHeroSrc(
+                          selectedPet.avatar_url,
+                          selectedPet.type === "cat" ? catIcon : dogIcon,
                         )}
-                      </div>
+                        alt={selectedPet.name}
+                        mood={inferMood(selectedPet)}
+                        celebrateKey={celebrateKey}
+                        renderer="image"
+                      />
                     </motion.div>
 
                     {/* Pet Info */}
