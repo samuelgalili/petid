@@ -36,6 +36,15 @@ name: Legacy catalogue migration (phase 5)
 on:
   workflow_dispatch:
     inputs:
+      step:
+        description: 'migrate = legacy products into drafts. approve = auto-approve the drafts that pass the rule. complete = give approved products a variant, a priced offer and inventory.'
+        required: true
+        default: 'migrate'
+        type: choice
+        options:
+          - migrate
+          - approve
+          - complete
       mode:
         description: 'dry-run reports what would happen and writes nothing. apply writes.'
         required: true
@@ -45,11 +54,15 @@ on:
           - dry-run
           - apply
       confirmation:
-        description: 'For apply only. Type  MIGRATE-LEGACY  (that exact text). Ignored for a dry run.'
+        description: 'For apply only. MIGRATE-LEGACY / APPROVE-LEGACY / COMPLETE-LEGACY, matching the step. Ignored for a dry run.'
+        required: false
+        default: ''
+      admin_email:
+        description: 'For approve/complete + apply. A real, active administrator - approvals and prices must name who is accountable.'
         required: false
         default: ''
       limit:
-        description: 'Optional. Migrate at most this many products - use 1 for the first apply.'
+        description: 'Optional. Process at most this many - use 1 for the first apply of each step.'
         required: false
         default: ''
 
@@ -78,11 +91,22 @@ jobs:
     steps:
       - name: Confirm intent
         env:
+          STEP: ${{ inputs.step }}
           MODE: ${{ inputs.mode }}
           CONFIRMATION: ${{ inputs.confirmation }}
+          ADMIN_EMAIL: ${{ inputs.admin_email }}
           LIMIT: ${{ inputs.limit }}
         run: |
           set -euo pipefail
+
+          case "$STEP" in
+            migrate|approve|complete) ;;
+            *)
+              echo "Nothing was contacted. Production was not touched." >&2
+              echo "step must be 'migrate', 'approve' or 'complete'." >&2
+              exit 1
+              ;;
+          esac
 
           case "$MODE" in
             dry-run|apply) ;;
@@ -92,6 +116,43 @@ jobs:
               exit 1
               ;;
           esac
+
+          # A different word per step, so a confirmation typed for one cannot be
+          # pasted into the other. Approving 187 products into the catalogue is
+          # not the same act as importing drafts nobody can see.
+          case "$STEP" in
+            migrate)  expected="MIGRATE-LEGACY" ;;
+            approve)  expected="APPROVE-LEGACY" ;;
+            complete) expected="COMPLETE-LEGACY" ;;
+          esac
+
+          if [ "$MODE" = "apply" ] && [ "$CONFIRMATION" != "$expected" ]; then
+            echo "Nothing was contacted. Production was not touched." >&2
+            echo "" >&2
+            echo "To apply step '$STEP', the confirmation box has to contain exactly this text:" >&2
+            echo "" >&2
+            echo "    $expected" >&2
+            echo "" >&2
+            echo "Leave mode on 'dry-run' to see what would happen without writing." >&2
+            echo "" >&2
+            echo "(This job reports BLOCKED-PROD when it stops early. That code" >&2
+            echo " is output, never input - do not type it.)" >&2
+            exit 1
+          fi
+
+          # The approval must be attributable to a person. The system actor
+          # submitted these drafts and mayApproveDraft() refuses the submitter:
+          # a reviewer approving their own submission is a review that did not
+          # happen.
+          if [ "$STEP" != "migrate" ] && [ "$MODE" = "apply" ] && [ -z "${ADMIN_EMAIL:-}" ]; then
+            echo "Nothing was contacted. Production was not touched." >&2
+            echo "" >&2
+            echo "step=approve with mode=apply needs admin_email: a real, active" >&2
+            echo "administrator who is accountable for these products entering the" >&2
+            echo "catalogue. The system actor that submitted the drafts may not" >&2
+            echo "approve them." >&2
+            exit 1
+          fi
 
           if [ -n "${LIMIT:-}" ]; then
             case "$LIMIT" in
@@ -103,29 +164,10 @@ jobs:
             esac
           fi
 
-          if [ "$MODE" = "apply" ] && [ "$CONFIRMATION" != "MIGRATE-LEGACY" ]; then
-            # Instruction first, status code last and labelled as output. The
-            # other way round once taught somebody to type the status code into
-            # the box, and a message that causes the mistake it warns about is
-            # a bad message however correct it is.
-            echo "Nothing was contacted. Production was not touched." >&2
-            echo "" >&2
-            echo "To apply, the confirmation box has to contain exactly this text:" >&2
-            echo "" >&2
-            echo "    MIGRATE-LEGACY" >&2
-            echo "" >&2
-            echo "Fifteen characters: M I G R A T E hyphen L E G A C Y, capitals." >&2
-            echo "Leave mode on 'dry-run' to see what would happen without writing." >&2
-            echo "" >&2
-            echo "(This job reports BLOCKED-PROD when it stops early. That code" >&2
-            echo " is output, never input - do not type it.)" >&2
-            exit 1
-          fi
-
           if [ "$MODE" = "apply" ]; then
-            echo "Confirmed: APPLY. A backup is taken first."
+            echo "Confirmed: APPLY, step '$STEP'. A backup is taken first."
           else
-            echo "Confirmed: dry run. Nothing will be written."
+            echo "Confirmed: dry run, step '$STEP'. Nothing will be written."
           fi
 
       - name: Checkout
@@ -135,14 +177,21 @@ jobs:
       # trusted because it was reviewed once. A --apply that is not explicitly
       # requested, or a destructive verb that has appeared in it since, stops
       # the job before anything connects.
-      - name: Verify the migration script writes only what it claims
+      - name: Verify the script writes only what it claims
+        env:
+          STEP: ${{ inputs.step }}
         run: |
           set -euo pipefail
-          script="server/scripts/migrateLegacyCatalogue.mjs"
-          test -f "$script" || { echo "$script is missing"; exit 1; }
 
-          # Every SQL verb the script may use. It inserts into exactly two
-          # tables and reads a third; it must never update, delete or drop.
+          case "$STEP" in
+            migrate)  script="server/scripts/migrateLegacyCatalogue.mjs" ;;
+            approve)  script="server/scripts/autoApproveLegacyDrafts.mjs" ;;
+            complete) script="server/scripts/completeLegacyCatalogueEntries.mjs" ;;
+          esac
+          test -f "$script" || { echo "BLOCKED-PROD: $script is missing"; exit 1; }
+
+          # Neither script may ever destroy anything, or edit the legacy
+          # catalogue it reads.
           if grep -inE '\b(drop|truncate|alter[[:space:]]+table)\b' "$script"; then
             echo "BLOCKED-PROD: the script contains a destructive statement." >&2
             exit 1
@@ -150,23 +199,80 @@ jobs:
           for forbidden in 'delete from' 'update public.business_products'; do
             if grep -in "$forbidden" "$script"; then
               echo "BLOCKED-PROD: the script contains '$forbidden'." >&2
-              echo "Phase 5 must not modify the legacy catalogue it reads." >&2
+              echo "Neither step may modify the legacy catalogue it reads." >&2
               exit 1
             fi
           done
 
-          # The two tables it is allowed to write.
-          for required in 'insert into public.raw_import_records' 'insert into public.product_drafts'; do
-            grep -qi "$required" "$script" || { echo "BLOCKED-PROD: missing '$required'"; exit 1; }
-          done
-
-          # It must not create a catalog_product: approval is a human's act.
-          if grep -in 'insert into public.catalog_products' "$script"; then
-            echo "BLOCKED-PROD: phase 5 must not create catalog_products." >&2
-            exit 1
+          if [ "$STEP" = "migrate" ]; then
+            # The two tables it is allowed to write.
+            for required in 'insert into public.raw_import_records' 'insert into public.product_drafts'; do
+              grep -qi "$required" "$script" || { echo "BLOCKED-PROD: missing '$required'"; exit 1; }
+            done
+            # It must not create a catalog_product: approval is a separate act.
+            if grep -in 'insert into public.catalog_products' "$script"; then
+              echo "BLOCKED-PROD: migrate must not create catalog_products." >&2
+              exit 1
+            fi
+            echo "Verified: inserts into raw_import_records and product_drafts only."
+          else
+            # Approval DOES create a catalog_product - that is its whole job -
+            # but it must never publish one. Publication is a separate
+            # permission, a separate gate and a separate decision, and it needs
+            # a variant, a priced offer, availability and an approved image
+            # that approval does not supply.
+            grep -qi 'insert into public.catalog_products' "$script" \
+              || { echo "BLOCKED-PROD: approve must create catalog_products"; exit 1; }
+            if grep -inE "publication_state[[:space:]]*=[[:space:]]*'?PUBLISHED" "$script"; then
+              echo "BLOCKED-PROD: approval must never publish." >&2
+              exit 1
+            fi
+            # It must walk the state machine rather than jump to APPROVED, and
+            # it must refuse a self-approval.
+            # \b on both ends. Without it, grep -q 'mayApproveDraft' is
+            # satisfied by 'mayApproveDraftX' - so renaming the guard away
+            # would pass a check written to prove the guard is called. Caught
+            # by falsifying this step rather than by reading it.
+            for required in 'isDraftTransitionAllowed' 'mayApproveDraft'; do
+              grep -qE "\\b${required}\\b[[:space:]]*\\(" "$script" \
+                || { echo "BLOCKED-PROD: approve must call ${required}()"; exit 1; }
+            done
+            echo "Verified: creates catalog_products, publishes nothing, walks the state machine."
           fi
 
-          echo "Script verified: inserts into raw_import_records and product_drafts only."
+          if [ "$STEP" = "complete" ]; then
+            # It writes variants, offers and inventory. It must NOT write
+            # product_media: OD-3 makes an approved image mandatory to publish,
+            # and approving one asserts we may use the picture - D-7's open
+            # question, with 69 products carrying no image and 91 flagged
+            # "Needs manual image research". No script makes that claim.
+            # Comment lines are stripped FIRST. The script's header explains at
+            # length why it does not approve images, and a grep for approved_at
+            # over the whole file matched that prose - the guard refused the
+            # very script it was written to permit. Prose about a rule is not
+            # the rule.
+            code="$(grep -vE '^[[:space:]]*(//|\*|/\*)' "$script")"
+            if printf '%s\n' "$code" | grep -in 'insert into public.product_media'; then
+              echo "BLOCKED-PROD: complete must not touch product_media." >&2
+              echo "Approving an image is a rights claim and belongs to a human." >&2
+              exit 1
+            fi
+            if printf '%s\n' "$code" | grep -inE "approved_at|approved_by"; then
+              echo "BLOCKED-PROD: complete must not approve anything." >&2
+              exit 1
+            fi
+            # Anchored with \b and the dot escaped. Unanchored, the check for
+            # 'insert into public.inventory' was satisfied by
+            # 'insert into public.inventory_x' - renaming the table away passed
+            # a check written to prove it is written to. That is the third
+            # substring check in this workflow to be defeated by a rename, so
+            # every required-token check here is anchored.
+            for required in 'product_variants' 'seller_offers' 'inventory'; do
+              grep -qiE "insert into public\.${required}\b" "$script" \
+                || { echo "BLOCKED-PROD: missing 'insert into public.${required}'"; exit 1; }
+            done
+            echo "Verified: writes variants, offers and inventory; touches no media."
+          fi
 
       - name: Configure SSH
         env:
@@ -187,21 +293,27 @@ jobs:
           ssh-keyscan -T 30 -H "$MIPO_AWS_HOST" >> ~/.ssh/known_hosts || true
           echo "SSH configured for ${MIPO_AWS_USER}@${MIPO_AWS_HOST}"
 
-      - name: Run the migration
+      - name: Run the step
         env:
+          STEP: ${{ inputs.step }}
           MODE: ${{ inputs.mode }}
           LIMIT: ${{ inputs.limit }}
+          ADMIN_EMAIL: ${{ inputs.admin_email }}
         run: |
           set -euo pipefail
           ssh -i ~/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 \
             "${MIPO_AWS_USER}@${MIPO_AWS_HOST}" \
-            "MIPO_REMOTE_PATH='${MIPO_REMOTE_PATH}' MODE='${MODE}' LIMIT='${LIMIT}' bash -s" <<'REMOTE'
+            "MIPO_REMOTE_PATH='${MIPO_REMOTE_PATH}' STEP='${STEP}' MODE='${MODE}' LIMIT='${LIMIT}' ADMIN_EMAIL='${ADMIN_EMAIL}' bash -s" <<'REMOTE'
           set -euo pipefail
           # No `set -x`: tracing would echo lines that expand the environment.
 
           compose_file="${MIPO_REMOTE_PATH}/deploy/aws/docker-compose.yml"
           scripts_dir="${MIPO_REMOTE_PATH}/server/scripts"
-          script_name="migrateLegacyCatalogue.mjs"
+          case "$STEP" in
+            migrate)  script_name="migrateLegacyCatalogue.mjs" ;;
+            approve)  script_name="autoApproveLegacyDrafts.mjs" ;;
+            complete) script_name="completeLegacyCatalogueEntries.mjs" ;;
+          esac
 
           test -f "$compose_file" || { echo "BLOCKED-PROD: no compose file at $compose_file" >&2; exit 1; }
           if [ ! -f "${scripts_dir}/${script_name}" ]; then
@@ -233,12 +345,20 @@ jobs:
           if [ "$MODE" = "apply" ]; then
             echo "Backing up before writing..."
             bash "${MIPO_REMOTE_PATH}/deploy/aws/backup-before-migrate.sh" \
-              "${MIPO_REMOTE_PATH}" "legacy-catalogue-migration-$(date -u +%Y%m%dT%H%M%SZ)"
+              "${MIPO_REMOTE_PATH}" "legacy-${STEP}-$(date -u +%Y%m%dT%H%M%SZ)"
           fi
 
           args=""
           [ "$MODE" = "apply" ] && args="--apply"
           [ -n "${LIMIT:-}" ] && args="${args} --limit=${LIMIT}"
+          # The review flags stay honoured: the decision was that flagged
+          # products wait for a human. So --ignore-price-review and
+          # --ignore-image-review are deliberately not passed, and not offered
+          # as workflow inputs - relaxing a flag is a decision to take
+          # explicitly, not a checkbox next to a bulk approval.
+          if [ "$STEP" != "migrate" ] && [ -n "${ADMIN_EMAIL:-}" ]; then
+            args="${args} --admin-email=${ADMIN_EMAIL}"
+          fi
 
           echo "Running: node scripts/${script_name} ${args}"
           echo ""
@@ -251,7 +371,13 @@ jobs:
             mipo-api node "scripts/${script_name}" ${args} </dev/null
 
           echo ""
-          echo "Phase 5 complete. Nothing was published; every draft is waiting for a human."
+          if [ "$STEP" = "migrate" ]; then
+            echo "Migrate complete. Nothing was approved or published; every draft is IMPORTED."
+          else
+            echo "Approve complete. Every approved product is UNPUBLISHED and cannot be"
+            echo "published yet: the gate needs a variant, a priced offer, availability and"
+            echo "an approved image, and approval supplies none of them."
+          fi
           REMOTE
 
       - name: Remove the key
