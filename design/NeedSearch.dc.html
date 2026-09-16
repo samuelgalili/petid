@@ -12,7 +12,6 @@
     body { margin: 0; font-family: 'Assistant', 'Inter', -apple-system, sans-serif; }
     a { color: #A78BFA; } a:hover { color: #7C5CFA; }
     * { box-sizing: border-box; }
-    .blob { position: absolute; border-radius: 999px; filter: blur(32px); pointer-events: none; }
   </style>
 </helmet>
 
@@ -20,15 +19,7 @@
 
   <!-- The field, risen. Same element as the resting state, pinned. -->
   <div style="position: relative; padding: 18px 20px 0; flex-shrink: 0;">
-    <div style="position: absolute; inset: 4px 12px -26px 12px; pointer-events: none; opacity: 0.6;">
-      <div class="blob" style="width: 128px; height: 70px; right: 4px; top: 16px; background: #FDBA74; opacity: 0.5;"></div>
-      <div class="blob" style="width: 112px; height: 66px; right: 74px; top: 30px; background: #FB7185; opacity: 0.42;"></div>
-      <div class="blob" style="width: 118px; height: 68px; left: 82px; top: 12px; background: #A78BFA; opacity: 0.46;"></div>
-      <div class="blob" style="width: 108px; height: 64px; left: 10px; top: 32px; background: #60A5FA; opacity: 0.4;"></div>
-      <div class="blob" style="width: 90px; height: 56px; left: 0; top: 14px; background: #22D3EE; opacity: 0.34;"></div>
-    </div>
-
-    <div style="position: relative; display: flex; align-items: center; gap: 10px; height: 56px; padding: 0 18px; background: rgba(255,255,255,0.88); backdrop-filter: blur(12px); border: 1px solid #E1E1E6; border-radius: 28px; box-shadow: 0 6px 24px rgba(21,21,26,0.06);">
+    <div style="position: relative; display: flex; align-items: center; gap: 10px; height: 56px; padding: 0 18px; background: #FFFFFF; border: 1px solid #E1E1E6; border-radius: 28px;">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B6B76" stroke-width="1.6" stroke-linecap="round" style="flex-shrink: 0;"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
       <div style="flex-grow: 1; font-size: 16px; font-weight: 500; color: #15151A; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">הכלב שלי משיר הרבה שיער</div>
       <div style="flex-shrink: 0; width: 28px; height: 28px; background: #F6F6F3; border-radius: 999px; display: flex; align-items: center; justify-content: center;">

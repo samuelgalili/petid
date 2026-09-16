@@ -12,10 +12,8 @@
     body { margin: 0; font-family: 'Assistant', 'Inter', -apple-system, sans-serif; }
     a { color: #A78BFA; } a:hover { color: #7C5CFA; }
     * { box-sizing: border-box; }
-    .aurora-blob { position: absolute; border-radius: 999px; filter: blur(34px); pointer-events: none; }
-    @keyframes drift-a { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(14px,-10px) scale(1.12); } }
-    @keyframes drift-b { 0%,100% { transform: translate(0,0) scale(1.05); } 50% { transform: translate(-16px,8px) scale(0.95); } }
-    @keyframes drift-c { 0%,100% { transform: translate(0,0) scale(0.98); } 50% { transform: translate(10px,12px) scale(1.1); } }
+    @keyframes breathe { 0%,100% { transform: scale(1); opacity: .42; } 50% { transform: scale(1.06); opacity: .5; } }
+    .pet-aurora { animation: breathe 6s ease-in-out infinite; }
     @keyframes rise-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
     .card-in { animation: rise-in 300ms cubic-bezier(.22,1,.36,1) both; }
     input::placeholder { color: #A9A9B2; font-weight: 400; }
@@ -34,21 +32,30 @@
       <div style="flex-grow: 1;"></div>
     </sc-if>
 
-    <!-- Aurora + field -->
+    <!-- The pet, with the only aurora on the screen. COLOR_SYSTEM.md:
+         "Gradient ring = a pet". The glow belongs to the animal being asked
+         about, not to the control doing the asking. -->
+    <sc-if value="{{ resting }}" hint-placeholder-val="{{ true }}">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; padding-bottom: 26px; flex-shrink: 0;">
+        <div style="position: relative; width: 96px; height: 96px; display: flex; align-items: center; justify-content: center;">
+          <div class="pet-aurora" style="position: absolute; inset: -14px; border-radius: 999px; background: conic-gradient(from 210deg, #FDBA74, #FB7185, #A78BFA, #60A5FA, #22D3EE, #FDBA74); filter: blur(17px); opacity: 0.42;"></div>
+          <div style="position: relative; width: 96px; height: 96px; border-radius: 999px; padding: 1.5px; background: linear-gradient(120deg,#FDBA74,#FB7185,#A78BFA,#60A5FA,#22D3EE);">
+            <div style="width: 100%; height: 100%; border-radius: 999px; background: #F6F6F3; display: flex; align-items: center; justify-content: center;">
+              <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#A9A9B2" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="6.5" cy="9" r="2"></circle><circle cx="17.5" cy="9" r="2"></circle>
+                <circle cx="9.5" cy="5" r="1.8"></circle><circle cx="14.5" cy="5" r="1.8"></circle>
+                <path d="M12 12c-2.8 0-5 2.2-5 4.6 0 1.8 1.5 2.9 3.2 2.4l1.8-.5 1.8.5c1.7.5 3.2-.6 3.2-2.4 0-2.4-2.2-4.6-5-4.6z"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div style="font-size: 15px; font-weight: 600; color: #15151A;">{{ petLabel }}</div>
+      </div>
+    </sc-if>
+
     <div style="position: relative; padding: 0 20px; flex-shrink: 0;">
 
-      <!-- The aurora. Five blobs, one per brand stop, at the 12-16% fill
-           weight the colour system allows for accents. Blurred and slow, so it
-           reads as light behind glass rather than as a gradient border. -->
-      <div style="position: absolute; inset: -46px 0 -46px 0; pointer-events: none; opacity: {{ auroraOpacity }}; transition: opacity 420ms ease;">
-        <div class="aurora-blob" style="width: 150px; height: 84px; right: 6px; top: 6px; background: #FDBA74; opacity: 0.55; animation: drift-a 9s ease-in-out infinite;"></div>
-        <div class="aurora-blob" style="width: 128px; height: 78px; right: 92px; top: 26px; background: #FB7185; opacity: 0.45; animation: drift-b 11s ease-in-out infinite;"></div>
-        <div class="aurora-blob" style="width: 140px; height: 86px; left: 96px; top: 2px; background: #A78BFA; opacity: 0.5; animation: drift-c 10s ease-in-out infinite;"></div>
-        <div class="aurora-blob" style="width: 132px; height: 80px; left: 14px; top: 30px; background: #60A5FA; opacity: 0.45; animation: drift-a 12s ease-in-out infinite;"></div>
-        <div class="aurora-blob" style="width: 108px; height: 70px; left: 0px; top: 4px; background: #22D3EE; opacity: 0.38; animation: drift-b 8s ease-in-out infinite;"></div>
-      </div>
-
-      <div style="position: relative; display: flex; align-items: center; gap: 10px; height: 56px; padding: 0 18px; background: rgba(255,255,255,0.86); backdrop-filter: blur(12px); border: 1px solid #E1E1E6; border-radius: 28px; box-shadow: 0 6px 24px rgba(21,21,26,0.06);">
+      <div style="position: relative; display: flex; align-items: center; gap: 10px; height: 56px; padding: 0 18px; background: #FFFFFF; border: 1px solid #E1E1E6; border-radius: 28px;">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B6B76" stroke-width="1.6" stroke-linecap="round" style="flex-shrink: 0;">
           <circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path>
         </svg>
@@ -120,7 +127,7 @@
 
 <script data-dc-script data-props='{
   "petName": {"editor": "text", "default": "רקסי"},
-  "auroraStrength": {"editor": "range", "default": 0.34, "min": 0, "max": 1, "step": 0.02, "section": "Aurora"},
+  "auroraStrength": {"editor": "range", "default": 0.42, "min": 0, "max": 1, "step": 0.02, "section": "Aurora"},
   "$preview": {"width": 390, "height": 844}
 }'>
 class Component extends DCLogic {
@@ -165,7 +172,6 @@ class Component extends DCLogic {
     // offered, never by default.
     const isQuestion = hasQuery && (words.length > 3 || trimmed.endsWith("?"));
 
-    const strength = this.props.auroraStrength ?? 0.34;
 
     return {
       query,
@@ -173,11 +179,9 @@ class Component extends DCLogic {
       resting: !hasQuery,
       isQuestion,
       results,
+      petLabel: petName,
       placeholder: "מה המשאלה היום של " + petName + "...",
       resultLine: results.length > 0 ? results.length + " מוצרים" : "אין התאמה — אפשר לשאול אחרת",
-      // The aurora brightens when the field is in use, so it reads as the
-      // screen waking up rather than as decoration that is always on.
-      auroraOpacity: hasQuery ? Math.min(1, strength + 0.28) : strength,
       onType: (e) => this.setState({ query: e.target.value }),
       onClear: () => this.setState({ query: "" })
     };

@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Assistant', 'Inter', -apple-system, sans-serif; }
+    a { color: #A78BFA; } a:hover { color: #7C5CFA; }
+    * { box-sizing: border-box; }
+    code { background: #F6F6F3; padding: 1.5px 6px; border-radius: 5px; font-size: 12.5px; }
+    @keyframes breathe { 0%,100% { transform: scale(1); opacity: .42; } 50% { transform: scale(1.06); opacity: .5; } }
+    .pet-aurora { animation: breathe 6s ease-in-out infinite; }
+  </style>
+</helmet>
+
+<div dir="rtl" style="width: 960px; background: #FFFFFF; padding: 40px 44px 48px; color: #15151A;">
+
+  <div style="font-size: 24px; font-weight: 700; letter-spacing: -0.3px;">קו דק, ואורורה אחת</div>
+  <div style="font-size: 14.5px; color: #6B6B76; margin-top: 9px; line-height: 1.6; max-width: 660px;">
+    המערכת היא דיו על לבן וקווי שיער. צבע מופיע בשני מקומות בלבד: טבעת סביב החיה, ונקודת סטטוס.
+    זה בדיוק מה ש‑<code>COLOR_SYSTEM.md</code> כבר קובע — <strong style="color:#15151A;">״Gradient ring = a pet״</strong> —
+    ולכן אין יותר מה לעדכן במסמך.
+  </div>
+
+  <!-- 1 · the pet -->
+  <div style="margin-top: 34px; display: flex; gap: 30px; align-items: center;">
+    <div style="position: relative; width: 104px; height: 104px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+      <div class="pet-aurora" style="position: absolute; inset: -14px; border-radius: 999px; background: conic-gradient(from 210deg,#FDBA74,#FB7185,#A78BFA,#60A5FA,#22D3EE,#FDBA74); filter: blur(18px); opacity: 0.42;"></div>
+      <div style="position: relative; width: 104px; height: 104px; border-radius: 999px; padding: 1.5px; background: linear-gradient(120deg,#FDBA74,#FB7185,#A78BFA,#60A5FA,#22D3EE);">
+        <div style="width: 100%; height: 100%; border-radius: 999px; background: #F6F6F3; display: flex; align-items: center; justify-content: center;">
+          <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#A9A9B2" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="6.5" cy="9" r="2"></circle><circle cx="17.5" cy="9" r="2"></circle>
+            <circle cx="9.5" cy="5" r="1.8"></circle><circle cx="14.5" cy="5" r="1.8"></circle>
+            <path d="M12 12c-2.8 0-5 2.2-5 4.6 0 1.8 1.5 2.9 3.2 2.4l1.8-.5 1.8.5c1.7.5 3.2-.6 3.2-2.4 0-2.4-2.2-4.6-5-4.6z"></path>
+          </svg>
+        </div>
+      </div>
+    </div>
+    <div style="flex-grow: 1;">
+      <div style="font-size: 16px; font-weight: 700;">האורורה היחידה במערכת</div>
+      <div style="font-size: 13.5px; color: #6B6B76; margin-top: 7px; line-height: 1.6;">
+        טבעת ‎1.5px בגרדיאנט, והילה מטושטשת ב‑42% שנושמת לאט מאחוריה. היא שייכת ל<strong style="color:#15151A;">חיה</strong> —
+        לא לשדה, לא לכפתור, לא לרקע. ברגע שהזוהר מופיע במקום שני, הוא מפסיק לומר ״זו החיה שלך״.
+      </div>
+    </div>
+  </div>
+
+  <!-- 2 · buttons -->
+  <div style="margin-top: 40px; border-top: 1px solid #EBEBE8; padding-top: 30px;">
+    <div style="font-size: 16px; font-weight: 700;">כפתורים — קו דק, לעולם לא גוש</div>
+    <div style="font-size: 13.5px; color: #6B6B76; margin-top: 7px; line-height: 1.6; max-width: 650px;">
+      אותה צורה לשלושתם; ההבדל הוא רק מה עובר בקו — גרדיאנט לפעולה הראשית, אפור לשאר.
+      מילוי מלא הוא מה שהופך כפתור לגס, והוא גם מה שמכריח טקסט לבן על צבע.
+    </div>
+
+    <div style="display: flex; gap: 14px; align-items: center; margin-top: 22px; flex-wrap: wrap;">
+      <div style="height: 40px; padding: 1px; border-radius: 999px; background: linear-gradient(120deg,#FDBA74,#FB7185,#A78BFA,#60A5FA,#22D3EE);">
+        <div style="height: 100%; display: flex; align-items: center; padding: 0 20px; border-radius: 999px; background: #FFFFFF; font-size: 14px; font-weight: 600;">אשר ופרסם</div>
+      </div>
+      <div style="height: 40px; display: flex; align-items: center; padding: 0 19px; border-radius: 999px; border: 1px solid #E1E1E6; font-size: 14px; font-weight: 500;">שמור טיוטה</div>
+      <div style="height: 40px; display: flex; align-items: center; padding: 0 19px; border-radius: 999px; font-size: 14px; font-weight: 500; color: #6B6B76;">בטל</div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px; margin-top: 16px;">
+      <div style="font-size: 12.5px; color: #6B6B76; line-height: 1.5;"><strong style="color:#15151A;">ראשי.</strong> קו ‎1px בגרדיאנט. אחד למסך.</div>
+      <div style="font-size: 12.5px; color: #6B6B76; line-height: 1.5;"><strong style="color:#15151A;">משני.</strong> אותו קו, אפור.</div>
+      <div style="font-size: 12.5px; color: #6B6B76; line-height: 1.5;"><strong style="color:#15151A;">שלישוני.</strong> בלי קו כלל.</div>
+    </div>
+
+    <div style="margin-top: 22px; display: flex; gap: 15px; align-items: center; padding: 15px 17px; background: #F6F6F3; border-radius: 14px;">
+      <div style="height: 40px; display: flex; align-items: center; padding: 0 20px; border-radius: 999px; background: linear-gradient(120deg,#FDBA74,#FB7185,#A78BFA,#60A5FA,#22D3EE); font-size: 14px; font-weight: 600; color: #FFFFFF; flex-shrink: 0;">אשר ופרסם</div>
+      <div style="font-size: 13px; color: #6B6B76; line-height: 1.55;">
+        <strong style="color:#15151A;">זה מה שהוחלף.</strong> מילוי מלא וטקסט לבן — כבד יותר, קריא פחות,
+        ושובר את כלל ה‑<code style="background:#FFFFFF;">ink on gradient</code> שהמסמך כבר קובע.
+      </div>
+    </div>
+  </div>
+
+  <!-- 3 · boxes -->
+  <div style="margin-top: 38px; border-top: 1px solid #EBEBE8; padding-top: 30px;">
+    <div style="font-size: 16px; font-weight: 700;">תיבות — קו דק, בלי צל ובלי זוהר</div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px; margin-top: 18px;">
+      <div>
+        <div style="font-size: 12px; color: #6B6B76; margin-bottom: 6px; font-weight: 500;">שדה</div>
+        <div style="height: 44px; display: flex; align-items: center; padding: 0 15px; border: 1px solid #E1E1E6; border-radius: 12px; font-size: 14px;">MIPO Daily Chicken</div>
+      </div>
+      <div>
+        <div style="font-size: 12px; color: #6B6B76; margin-bottom: 6px; font-weight: 500;">שדה במיקוד</div>
+        <div style="height: 44px; display: flex; align-items: center; padding: 0 15px; border: 1px solid #15151A; border-radius: 12px; font-size: 14px;">129</div>
+      </div>
+    </div>
+    <div style="font-size: 12.5px; color: #6B6B76; line-height: 1.55; margin-top: 12px;">
+      מיקוד מכהה את הקו במקום להוסיף טבעת צבע. טבעת זוהרת סביב שדה נקראת כמו החיה — וזו המשמעות היחידה שהזוהר אמור לשאת.
+    </div>
+  </div>
+
+  <div style="margin-top: 34px; display: flex; gap: 9px; align-items: center; flex-wrap: wrap;">
+    <div style="font-size: 12.5px; color: #6B6B76; font-weight: 600; margin-left: 4px;">המקום השני שנושא צבע — סטטוס, כמידע:</div>
+    <div style="display: flex; align-items: center; gap: 6px; padding: 4px 11px 4px 8px; border-radius: 999px; background: rgba(34,211,238,0.16);"><div style="width:6px;height:6px;border-radius:999px;background:#22D3EE;"></div><span style="font-size:12px;font-weight:600;">מוכן</span></div>
+    <div style="display: flex; align-items: center; gap: 6px; padding: 4px 11px 4px 8px; border-radius: 999px; background: rgba(253,186,116,0.16);"><div style="width:6px;height:6px;border-radius:999px;background:#FDBA74;"></div><span style="font-size:12px;font-weight:600;">ממתין למחיר</span></div>
+    <div style="display: flex; align-items: center; gap: 6px; padding: 4px 11px 4px 8px; border-radius: 999px; background: rgba(251,113,133,0.16);"><div style="width:6px;height:6px;border-radius:999px;background:#FB7185;"></div><span style="font-size:12px;font-weight:600;">חסרה תמונה</span></div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
