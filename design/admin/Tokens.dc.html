@@ -1,0 +1,120 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Assistant', 'Inter', -apple-system, sans-serif; }
+    a { color: #A78BFA; } a:hover { color: #7C5CFA; }
+    * { box-sizing: border-box; }
+    code { background: #F6F6F3; padding: 1.5px 6px; border-radius: 5px; font-size: 12.5px; }
+    td { padding: 9px 12px; border-bottom: 1px solid #F3F3F1; font-size: 13px; vertical-align: middle; }
+    th { padding: 9px 12px; border-bottom: 1px solid #E1E1E6; font-size: 12px; color: #6B6B76; text-align: right; font-weight: 600; }
+  </style>
+</helmet>
+
+<div dir="rtl" style="width: 960px; background: #FFFFFF; padding: 40px 44px 46px; color: #15151A;">
+
+  <div style="font-size: 24px; font-weight: 700; letter-spacing: -0.3px;">התאמת הפאנל למערכת הצבעים</div>
+  <div style="font-size: 14.5px; color: #6B6B76; margin-top: 8px; line-height: 1.55; max-width: 640px;">
+    מדדתי את הפאנל: <strong style="color:#15151A;">113</strong> שימושי <code>bg-muted</code>, <strong style="color:#15151A;">80</strong> <code>bg-primary</code>,
+    <strong style="color:#15151A;">37</strong> <code>bg-card</code> — ו<strong style="color:#15151A;">אפס</strong> טוקנים של המותג.
+    <code>COLOR_SYSTEM.md</code> קובע במפורש: ״No <code>mipo-*</code>, <code>ig-*</code>, <code>shop-*</code>, <code>--primary</code> in new code״.
+    הפאנל יושב כולו על הסט הישן.
+  </div>
+
+  <table style="width: 100%; border-collapse: collapse; margin-top: 30px;">
+    <tr>
+      <th style="width: 190px;">היום</th>
+      <th style="width: 210px;">במקום</th>
+      <th></th>
+    </tr>
+    <tr>
+      <td><code>bg-card</code> · <code>bg-background</code></td>
+      <td><code>bg-mipo-surface</code> <span style="display:inline-block;width:13px;height:13px;border-radius:4px;background:#FFFFFF;border:1px solid #E1E1E6;vertical-align:-2px;margin-right:4px;"></span></td>
+      <td style="color: #6B6B76;">משטחי עבודה, שורות, פאנלים</td>
+    </tr>
+    <tr>
+      <td><code>bg-muted</code> <span style="color:#A9A9B2;">(113×)</span></td>
+      <td><code>bg-mipo-soft</code> <span style="display:inline-block;width:13px;height:13px;border-radius:4px;background:#F6F6F3;vertical-align:-2px;margin-right:4px;"></span></td>
+      <td style="color: #6B6B76;">שדות חיפוש, צ׳יפים, בארות</td>
+    </tr>
+    <tr>
+      <td><code>border-border</code></td>
+      <td><code>border-mipo-line</code> <span style="display:inline-block;width:13px;height:13px;border-radius:4px;background:#E1E1E6;vertical-align:-2px;margin-right:4px;"></span></td>
+      <td style="color: #6B6B76;">קווי שיער בלבד, בלי צללים</td>
+    </tr>
+    <tr>
+      <td><code>text-foreground</code></td>
+      <td><code>text-mipo-ink</code> <span style="display:inline-block;width:13px;height:13px;border-radius:4px;background:#15151A;vertical-align:-2px;margin-right:4px;"></span></td>
+      <td style="color: #6B6B76;">טקסט ראשי</td>
+    </tr>
+    <tr>
+      <td><code>text-muted-foreground</code></td>
+      <td><code>text-mipo-muted</code> <span style="display:inline-block;width:13px;height:13px;border-radius:4px;background:#6B6B76;vertical-align:-2px;margin-right:4px;"></span></td>
+      <td style="color: #6B6B76;">משני</td>
+    </tr>
+    <tr>
+      <td><code>bg-primary</code> <span style="color:#A9A9B2;">(80×)</span></td>
+      <td style="font-weight: 600;">שתי תשובות ↓</td>
+      <td style="color: #6B6B76;">כאן ההחלטה האמיתית</td>
+    </tr>
+  </table>
+
+  <div style="margin-top: 34px; padding: 22px 24px; background: #F6F6F3; border-radius: 18px;">
+    <div style="font-size: 15px; font-weight: 700;">‎80 שימושי <code style="background:#FFFFFF;">bg-primary</code> אינם 80 פעולות ראשיות</div>
+    <div style="font-size: 13.5px; color: #6B6B76; margin-top: 9px; line-height: 1.65;">
+      מערכת הצבעים מתירה <strong style="color:#15151A;">מילוי גרדיאנט אחד למסך</strong> — הפעולה הראשית.
+      שמונים שימושים במקום אחד אומרים שרובם אינם פעולה ראשית אלא כפתור, תג או הדגשה שירשו את הצבע.
+      החלוקה שאני מציע:
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px; margin-top: 18px;">
+      <div style="background: #FFFFFF; border-radius: 14px; padding: 16px 17px;">
+        <div style="height: 34px; display: inline-flex; align-items: center; padding: 0 15px; border-radius: 999px; font-size: 13px; font-weight: 600; color: #15151A; background: linear-gradient(120deg,#FDBA74,#FB7185,#A78BFA,#60A5FA,#22D3EE);">אשר ופרסם</div>
+        <div style="font-size: 12.5px; color: #6B6B76; margin-top: 11px; line-height: 1.55;">
+          <strong style="color:#15151A;">אחד למסך.</strong> הפעולה שהמסך קיים בשבילה. טקסט דיו על הגרדיאנט, לעולם לא לבן.
+        </div>
+      </div>
+      <div style="background: #FFFFFF; border-radius: 14px; padding: 16px 17px;">
+        <div style="display: flex; gap: 7px; flex-wrap: wrap;">
+          <div style="height: 34px; display: inline-flex; align-items: center; padding: 0 14px; border-radius: 999px; font-size: 13px; font-weight: 500; border: 1px solid #E1E1E6;">שמור טיוטה</div>
+          <div style="height: 34px; display: inline-flex; align-items: center; padding: 0 14px; border-radius: 999px; font-size: 13px; font-weight: 500; background: #F6F6F3;">דחה</div>
+        </div>
+        <div style="font-size: 12.5px; color: #6B6B76; margin-top: 11px; line-height: 1.55;">
+          <strong style="color:#15151A;">כל השאר.</strong> מתאר או משטח רך. ברגע ששני כפתורים צבעוניים יושבים זה ליד זה, אף אחד מהם כבר לא ראשי.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 30px;">
+    <div style="font-size: 15px; font-weight: 700;">איפה הגוונים כן מופיעים</div>
+    <div style="font-size: 13.5px; color: #6B6B76; margin-top: 8px; line-height: 1.6; max-width: 660px;">
+      רק כ<strong style="color:#15151A;">מידע</strong>, לא כקישוט: מילוי ב־16% עם הצבע המלא רק על הנקודה. כך הסטטוס נסרק בעין אחת בלי שהמסך יהפוך צבעוני.
+    </div>
+    <div style="display: flex; gap: 9px; margin-top: 15px; flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; gap: 6px; padding: 4px 11px 4px 8px; border-radius: 999px; background: rgba(34,211,238,0.16);"><div style="width:6px;height:6px;border-radius:999px;background:#22D3EE;"></div><span style="font-size:12px;font-weight:600;">מוכן</span></div>
+      <div style="display: flex; align-items: center; gap: 6px; padding: 4px 11px 4px 8px; border-radius: 999px; background: rgba(253,186,116,0.16);"><div style="width:6px;height:6px;border-radius:999px;background:#FDBA74;"></div><span style="font-size:12px;font-weight:600;">ממתין למחיר</span></div>
+      <div style="display: flex; align-items: center; gap: 6px; padding: 4px 11px 4px 8px; border-radius: 999px; background: rgba(251,113,133,0.16);"><div style="width:6px;height:6px;border-radius:999px;background:#FB7185;"></div><span style="font-size:12px;font-weight:600;">חסרה תמונה</span></div>
+      <div style="display: flex; align-items: center; gap: 6px; padding: 4px 11px 4px 8px; border-radius: 999px; background: rgba(167,139,250,0.16);"><div style="width:6px;height:6px;border-radius:999px;background:#A78BFA;"></div><span style="font-size:12px;font-weight:600;">זכויות תמונה</span></div>
+      <div style="display: flex; align-items: center; gap: 6px; padding: 4px 11px 4px 8px; border-radius: 999px; background: rgba(96,165,250,0.16);"><div style="width:6px;height:6px;border-radius:999px;background:#60A5FA;"></div><span style="font-size:12px;font-weight:600;">נשלח לספק</span></div>
+    </div>
+  </div>
+
+  <div style="margin-top: 32px; padding: 18px 20px; border: 1px dashed #E1E1E6; border-radius: 16px;">
+    <div style="font-size: 13.5px; font-weight: 700;">היקף — וזה מה שאני צריך ממך</div>
+    <div style="font-size: 13px; color: #6B6B76; margin-top: 8px; line-height: 1.65;">
+      ‎14 עמודי אדמין ו־28 קומפוננטות. החלפת טוקנים היא מכנית ובטוחה; שינוי הפריסה ל־<strong style="color:#15151A;">רשימה + פאנל עבודה</strong> נוגע בכל עמוד בנפרד.
+      אני מציע לעשות <strong style="color:#15151A;">עמוד אחד במלואו</strong> — מוצרים, התור הגדול ביותר — ולהחליט על השאר כשתראה אותו חי.
+      ‎Sheet/Dialog כבר קיימים בחמישה עמודים, כך שהתשתית לפאנל קיימת.
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

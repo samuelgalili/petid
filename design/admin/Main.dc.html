@@ -1,0 +1,199 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Assistant', 'Inter', -apple-system, sans-serif; }
+    a { color: #A78BFA; } a:hover { color: #7C5CFA; }
+    * { box-sizing: border-box; }
+    .row:hover { background: #FAFAF9; }
+    .row-active { background: #F6F6F3; }
+  </style>
+</helmet>
+
+<div dir="rtl" style="width: 1440px; height: 900px; background: #FFFFFF; display: flex; overflow: hidden; color: #15151A;">
+
+  <!-- Sidebar. Text-forward and almost colourless: in an admin panel there is
+       no pet to identify, so the brand gradient - which means pet identity and
+       primary action - has nothing to say here. It appears once, on the one
+       primary action, and nowhere else. -->
+  <div style="width: 232px; flex-shrink: 0; border-left: 1px solid #EBEBE8; display: flex; flex-direction: column; background: #FCFCFB;">
+
+    <div style="height: 56px; display: flex; align-items: center; gap: 9px; padding: 0 18px; border-bottom: 1px solid #EBEBE8;">
+      <div style="width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(120deg,#FDBA74,#FB7185,#A78BFA,#60A5FA,#22D3EE);"></div>
+      <div style="font-size: 14px; font-weight: 700; letter-spacing: -0.2px;">MIPO</div>
+      <div style="font-size: 12px; color: #A9A9B2;">ניהול</div>
+    </div>
+
+    <div style="padding: 12px 10px; display: flex; flex-direction: column; gap: 1px;">
+      <sc-for list="{{ nav }}" as="item" hint-placeholder-count="7">
+        <div style="display: flex; align-items: center; justify-content: space-between; height: 34px; padding: 0 10px; border-radius: 9px; cursor: pointer; background: {{ item.bg }};">
+          <div style="font-size: 13.5px; font-weight: {{ item.weight }}; color: {{ item.fg }};">{{ item.label }}</div>
+          <sc-if value="{{ item.badge }}" hint-placeholder-val="{{ true }}">
+            <div style="font-size: 11px; font-weight: 600; color: #6B6B76; background: #EBEBE8; border-radius: 999px; padding: 1px 7px;">{{ item.badge }}</div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="flex-grow: 1;"></div>
+    <div style="padding: 12px; border-top: 1px solid #EBEBE8;">
+      <div style="display: flex; align-items: center; gap: 9px; padding: 7px 8px; border-radius: 9px;">
+        <div style="width: 26px; height: 26px; border-radius: 999px; background: #EBEBE8; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #6B6B76;">ש</div>
+        <div style="font-size: 12.5px; color: #6B6B76;">שמואל</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- The list. One column of rows, no cards, no shadows: density without
+       noise, the way a work queue should read. -->
+  <div style="width: 452px; flex-shrink: 0; border-left: 1px solid #EBEBE8; display: flex; flex-direction: column;">
+
+    <div style="height: 56px; display: flex; align-items: center; gap: 10px; padding: 0 18px; border-bottom: 1px solid #EBEBE8;">
+      <div style="font-size: 15px; font-weight: 700;">מוצרים</div>
+      <div style="font-size: 12.5px; color: #A9A9B2;">188 ממתינים</div>
+      <div style="flex-grow: 1;"></div>
+      <div style="height: 30px; display: flex; align-items: center; padding: 0 13px; border-radius: 999px; font-size: 12.5px; font-weight: 600; color: #15151A; background: linear-gradient(120deg,#FDBA74,#FB7185,#A78BFA,#60A5FA,#22D3EE); cursor: pointer;">מוצר חדש</div>
+    </div>
+
+    <div style="padding: 10px 12px; border-bottom: 1px solid #EBEBE8;">
+      <div style="display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; background: #F6F6F3; border-radius: 10px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A9A9B2" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+        <div style="font-size: 13px; color: #A9A9B2;">חיפוש מוצר, מותג או ברקוד</div>
+      </div>
+    </div>
+
+    <div style="flex-grow: 1; overflow: hidden;">
+      <sc-for list="{{ rows }}" as="row" hint-placeholder-count="8">
+        <div class="{{ row.cls }}" style="display: flex; align-items: center; gap: 11px; padding: 11px 16px; border-bottom: 1px solid #F3F3F1; cursor: pointer;">
+          <div style="width: 38px; height: 38px; border-radius: 9px; background: #EBEBE8; flex-shrink: 0;"></div>
+          <div style="flex-grow: 1; min-width: 0;">
+            <div style="font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ row.name }}</div>
+            <div style="font-size: 12px; color: #A9A9B2; margin-top: 2px;">{{ row.meta }}</div>
+          </div>
+          <!-- Status uses the brand accents at the 12-16% fill the colour
+               system allows, with the full-strength colour only on the dot.
+               That is the one place an accent earns its place here: it is
+               information, not decoration. -->
+          <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0; padding: 3px 9px 3px 7px; border-radius: 999px; background: {{ row.tintBg }};">
+            <div style="width: 6px; height: 6px; border-radius: 999px; background: {{ row.tint }};"></div>
+            <div style="font-size: 11.5px; font-weight: 600; color: #15151A;">{{ row.status }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- The working panel. It opens beside the list rather than replacing it -
+       the queue stays visible, so you can see what is next and move through it
+       without losing your place. This is the chat pattern applied to work. -->
+  <div style="flex-grow: 1; display: flex; flex-direction: column; background: #FFFFFF; min-width: 0;">
+
+    <div style="height: 56px; display: flex; align-items: center; gap: 12px; padding: 0 22px; border-bottom: 1px solid #EBEBE8;">
+      <div style="font-size: 14.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">MIPO Daily Chicken לכלבים</div>
+      <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0; padding: 3px 9px 3px 7px; border-radius: 999px; background: rgba(253,186,116,0.16);">
+        <div style="width: 6px; height: 6px; border-radius: 999px; background: #FDBA74;"></div>
+        <div style="font-size: 11.5px; font-weight: 600;">ממתין למחיר</div>
+      </div>
+      <div style="flex-grow: 1;"></div>
+      <div style="font-size: 12.5px; color: #6B6B76; cursor: pointer;">הבא ←</div>
+    </div>
+
+    <div style="flex-grow: 1; padding: 22px 22px 0; overflow: hidden;">
+
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px;">
+        <sc-for list="{{ fields }}" as="f" hint-placeholder-count="4">
+          <div>
+            <div style="font-size: 12px; color: #6B6B76; margin-bottom: 5px; font-weight: 500;">{{ f.label }}</div>
+            <div style="height: 38px; display: flex; align-items: center; padding: 0 12px; border: 1px solid #E1E1E6; border-radius: 10px; font-size: 13.5px; color: {{ f.fg }};">{{ f.value }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- What the gate still wants. Read live, never stored - the same rule
+           the publication gate follows (OD-2). -->
+      <div style="margin-top: 22px; border: 1px solid #EBEBE8; border-radius: 14px; overflow: hidden;">
+        <div style="padding: 11px 15px; border-bottom: 1px solid #EBEBE8; font-size: 12.5px; font-weight: 700;">מה חסר כדי לפרסם</div>
+        <sc-for list="{{ gate }}" as="g" hint-placeholder-count="4">
+          <div style="display: flex; align-items: center; gap: 10px; padding: 10px 15px; border-bottom: 1px solid #F3F3F1;">
+            <div style="width: 16px; height: 16px; border-radius: 999px; background: {{ g.dotBg }}; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              <div style="width: 5px; height: 5px; border-radius: 999px; background: {{ g.dot }};"></div>
+            </div>
+            <div style="font-size: 13px; color: #15151A;">{{ g.label }}</div>
+            <div style="flex-grow: 1;"></div>
+            <div style="font-size: 12px; color: {{ g.fg }}; font-weight: 500;">{{ g.state }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="height: 62px; display: flex; align-items: center; gap: 9px; padding: 0 22px; border-top: 1px solid #EBEBE8;">
+      <div style="height: 36px; display: flex; align-items: center; padding: 0 16px; border-radius: 999px; font-size: 13px; font-weight: 600; color: #15151A; background: linear-gradient(120deg,#FDBA74,#FB7185,#A78BFA,#60A5FA,#22D3EE); cursor: pointer;">אשר ופרסם</div>
+      <div style="height: 36px; display: flex; align-items: center; padding: 0 15px; border-radius: 999px; font-size: 13px; font-weight: 500; color: #15151A; border: 1px solid #E1E1E6; cursor: pointer;">שמור טיוטה</div>
+      <div style="flex-grow: 1;"></div>
+      <div style="font-size: 12.5px; color: #A9A9B2;">3 מתוך 188</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview": {"width": 1440, "height": 900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const navItem = (label, badge, active) => ({
+      label, badge,
+      bg: active ? "#EBEBE8" : "transparent",
+      fg: active ? "#15151A" : "#6B6B76",
+      weight: active ? "600" : "500"
+    });
+
+    const row = (name, meta, status, tint, active) => ({
+      name, meta, status, tint,
+      tintBg: tint + "29",
+      cls: active ? "row row-active" : "row"
+    });
+
+    return {
+      nav: [
+        navItem("מוצרים", "188", true),
+        navItem("הזמנות", "12", false),
+        navItem("קטגוריות", null, false),
+        navItem("תמונות", "91", false),
+        navItem("לקוחות", null, false),
+        navItem("ספקים", null, false),
+        navItem("הגדרות", null, false)
+      ],
+      rows: [
+        row("MIPO Daily Chicken לכלבים", "מזון יבש · כלב", "ממתין למחיר", "#FDBA74", true),
+        row("Skin & Coat אומגה 3", "תוספים · כלב", "חסרה תמונה", "#FB7185", false),
+        row("Urinary Balance לחתולים", "מזון · חתול", "מוכן", "#22D3EE", false),
+        row("חטיפי אילוף עוף רכים", "חטיפים · כלב", "מוכן", "#22D3EE", false),
+        row("כדור משחק עמיד", "צעצועים · כלב", "זכויות תמונה", "#A78BFA", false),
+        row("מיטה אורתופדית MIPO Cloud", "אביזרים · כלב", "מוכן", "#22D3EE", false),
+        row("Joint Support חטיפי מפרקים", "תוספים · כלב", "ממתין למחיר", "#FDBA74", false),
+        row("קולר מתכוונן עם תג QR", "אביזרים · כלב", "מוכן", "#22D3EE", false)
+      ],
+      fields: [
+        { label: "שם המוצר", value: "MIPO Daily Chicken לכלבים", fg: "#15151A" },
+        { label: "קטגוריה", value: "אוכל יבש", fg: "#15151A" },
+        { label: "מחיר", value: "לא צוין", fg: "#A9A9B2" },
+        { label: "מין", value: "כלב", fg: "#15151A" }
+      ],
+      gate: [
+        { label: "וריאנט פעיל", state: "יש", dot: "#22D3EE", dotBg: "rgba(34,211,238,0.16)", fg: "#6B6B76" },
+        { label: "הצעה מתומחרת", state: "חסר", dot: "#FDBA74", dotBg: "rgba(253,186,116,0.16)", fg: "#15151A" },
+        { label: "זמינות", state: "יש", dot: "#22D3EE", dotBg: "rgba(34,211,238,0.16)", fg: "#6B6B76" },
+        { label: "תמונה מאושרת", state: "חסר", dot: "#FB7185", dotBg: "rgba(251,113,133,0.16)", fg: "#15151A" }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
