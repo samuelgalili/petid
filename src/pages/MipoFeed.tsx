@@ -126,7 +126,7 @@ const MipoFeed = () => {
         >
           <UserRound className="h-5 w-5" strokeWidth={1.7} />
         </button>
-        <MipoLogo variant="horizontal" size="sm" showAnimals={false} />
+        <MipoLogo variant="mark" size="xs" showAnimals={false} />
         <button
           onClick={() => setComposerOpen(true)}
           className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm"

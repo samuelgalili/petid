@@ -13,6 +13,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { SEO } from "@/components/SEO";
 import { SmartCartLayers } from "@/components/shop/SmartCartLayers";
 import { MipoCoupon, validateCouponCode } from "@/lib/mipoApi";
+import { FREE_SHIPPING_THRESHOLD, SHIPPING_FEE, amountToFreeShipping } from "@/lib/shipping";
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -29,7 +30,12 @@ const Cart = () => {
   
   // Check if coupon is free shipping type
   const isFreeShippingCoupon = appliedCoupon?.discount_type === 'free_shipping';
-  const baseShipping = subtotal >= 200 ? 0 : 25;
+  // The cart is what actually charges, and it had its own numbers: threshold
+  // 200 and a ₪25 fee, while the product page, the shop and the cart nudge all
+  // worked off 199 and the business charges ₪39. So a shopper could be shown
+  // one threshold and billed against another, and every order below it
+  // undercharged by ₪14. One definition now, in src/lib/shipping.ts.
+  const baseShipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
   const shipping = isFreeShippingCoupon ? 0 : baseShipping;
   
   // Calculate discount (only for non-free-shipping coupons)
@@ -334,9 +340,9 @@ const Cart = () => {
                   </span>
                 </div>
 
-                {subtotal < 200 && !isFreeShippingCoupon && (
+                {amountToFreeShipping(subtotal) > 0 && !isFreeShippingCoupon && (
                   <div className="text-xs text-muted-foreground bg-accent/10 p-2 rounded-lg font-jakarta">
-                    הוסף עוד ₪{(200 - subtotal).toFixed(2)} למשלוח חינם!
+                    הוסף עוד ₪{amountToFreeShipping(subtotal).toFixed(2)} למשלוח חינם!
                   </div>
                 )}
 

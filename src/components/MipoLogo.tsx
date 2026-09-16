@@ -7,11 +7,22 @@ import { cn } from "@/lib/utils";
 interface MipoLogoProps {
   showAnimals?: boolean;
   className?: string;
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
   variant?: "stacked" | "horizontal" | "mark";
 }
 
 const sizeMap = {
+  // Chrome size. The mark alone is what every in-app surface shows - headers,
+  // nav, the assistant's replies - and it has to sit at exactly the dimensions
+  // the horizontal lockup's mark used, or switching to it silently enlarges
+  // every header logo: `sm.mark` is w-20 h-14 against horizontalMark's w-11 h-8.
+  xs: {
+    mark: "w-11 h-8",
+    horizontalMark: "w-11 h-8",
+    word: "text-lg",
+    tagline: "text-[10px]",
+    gap: "gap-1.5",
+  },
   sm: {
     mark: "w-20 h-14",
     horizontalMark: "w-11 h-8",

@@ -15,6 +15,7 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
+import { FREE_SHIPPING_THRESHOLD } from "@/lib/shipping";
 
 interface Product {
   id: string;
@@ -190,7 +191,7 @@ export const RecommendedProducts = ({
         <div className="flex items-center gap-3">
           <div className="text-2xl">🎁</div>
           <div className="flex-1">
-            <p className="text-xs font-medium">משלוח חינם להזמנות מעל ₪199</p>
+            <p className="text-xs font-medium">משלוח חינם להזמנות מעל ₪{FREE_SHIPPING_THRESHOLD}</p>
             <p className="text-[10px] text-muted-foreground">+ 10% הנחה לחברי מועדון</p>
           </div>
           <Button 

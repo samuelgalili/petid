@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, ShoppingCart, Truck } from "lucide-react";
 import type { CartItem } from "@/contexts/CartContext";
+import { amountToFreeShipping } from "@/lib/shipping";
 
 interface SmartCartLayersProps {
   items: CartItem[];
@@ -11,7 +12,7 @@ interface SmartCartLayersProps {
 export const SmartCartLayers = ({ items, subtotal }: SmartCartLayersProps) => {
   if (items.length === 0) return null;
 
-  const freeShippingRemaining = Math.max(0, 199 - subtotal);
+  const freeShippingRemaining = amountToFreeShipping(subtotal);
 
   return (
     <div className="space-y-3" dir="rtl">

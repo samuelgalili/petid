@@ -276,7 +276,7 @@ const OwnerProfile = () => {
             <button onClick={() => navigate(-1)} className="p-2 -mr-2" aria-label="חזרה">
               <ChevronRight className="w-5 h-5 text-foreground" />
             </button>
-            <MipoLogo variant="horizontal" size="sm" showAnimals={false} />
+            <MipoLogo variant="mark" size="xs" showAnimals={false} />
             <Button variant="ghost" size="sm" onClick={() => navigate("/edit-profile")} className="text-xs font-semibold text-mipo-ink">
               עריכה
             </Button>

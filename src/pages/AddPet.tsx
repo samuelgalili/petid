@@ -524,7 +524,7 @@ const AddPet = () => {
                 <ArrowRight className="w-5 h-5 text-mipo-ink" />
               </button>
             )}
-            <MipoLogo variant="horizontal" showAnimals={false} size="sm" />
+            <MipoLogo variant="mark" size="xs" showAnimals={false} />
             <div className="w-11" />
           </div>
           

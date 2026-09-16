@@ -23,6 +23,7 @@ import { useAwsAdminAuth } from "@/hooks/useAwsAdminAuth";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { MipoLogo } from "@/components/MipoLogo";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ADMIN_PERMISSIONS, adminHasPermission, type AdminPermission } from "@/lib/adminPermissions";
 
@@ -153,15 +154,18 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
         "flex items-center border-b border-border/20 h-14 shrink-0",
         collapsed ? "justify-center px-2" : "px-4 gap-3"
       )}>
+        {/* The mark, not a Shield glyph, and no wordmark beside it: in-app
+            surfaces show the logo alone. "ניהול מערכת" stays because it names
+            this surface rather than repeating the brand. */}
         <Link to="/admin/products" className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-sm">
-            <Shield className="w-4 h-4 text-primary-foreground" />
-          </div>
+          <MipoLogo
+            variant="mark"
+            size="xs"
+            showAnimals={false}
+            className="shrink-0 group-hover:scale-105 transition-transform"
+          />
           {!collapsed && (
-            <div>
-              <span className="font-bold text-sm text-foreground">MIPO</span>
-              <span className="text-[9px] text-muted-foreground block leading-none mt-0.5">ניהול מערכת</span>
-            </div>
+            <span className="text-[10px] text-muted-foreground leading-none">ניהול מערכת</span>
           )}
         </Link>
       </div>

@@ -286,7 +286,7 @@ const ChatContent = () => {
           </button>
           
           <div className="flex items-center gap-2">
-            <MipoLogo variant="horizontal" size="sm" showAnimals={false} />
+            <MipoLogo variant="mark" size="xs" showAnimals={false} />
             <span className="rounded-full bg-mipo-soft px-2 py-1 text-[10px] font-semibold text-mipo-muted">AI</span>
           </div>
           
@@ -325,20 +325,23 @@ const ChatContent = () => {
                         </span>
                       </div>
                     ) : (
-                      <div className="mipo-gradient-ring p-[2px]">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white">
-                          <Sparkles className="h-3.5 w-3.5 text-mipo-violet" />
-                        </div>
-                      </div>
+                      // The assistant is MIPO, so it signs with the mark and
+                      // nothing else - no Sparkles glyph standing in for it,
+                      // and no gradient ring around it. The ring means a pet
+                      // (COLOR_SYSTEM.md), and the mark already carries the
+                      // gradient itself.
+                      <MipoLogo variant="mark" size="xs" showAnimals={false} className="h-8 w-8" />
                     )}
                   </div>
                   
                   {/* Content */}
                   <div className={`flex-1 min-w-0 ${hasExpandedContent(message) ? 'max-w-full' : ''}`}>
-                    {/* Role label */}
-                    <p className="mb-1 text-[12px] font-semibold text-mipo-muted">
-                      {isUser ? "את/ה" : "Mipo AI"}
-                    </p>
+                    {/* Role label. Only the person gets one: the mark above
+                        already says who is answering, and "Mipo AI" beside it
+                        is the wordmark appearing in-app a second time. */}
+                    {isUser && (
+                      <p className="mb-1 text-[12px] font-semibold text-mipo-muted">את/ה</p>
+                    )}
                     
                     {/* Message text — no bubble, clean prose */}
                     <div className={cn(
@@ -646,7 +649,7 @@ const Chat = () => {
     return (
       <main className="mipo-screen flex min-h-screen items-center justify-center p-5" dir="rtl">
         <section className="mipo-card w-full max-w-md p-7">
-          <MipoLogo variant="horizontal" size="sm" showAnimals={false} />
+          <MipoLogo variant="mark" size="xs" showAnimals={false} />
           <span className="mipo-gradient-ring mt-7 inline-flex p-[2px]"><span className="flex h-12 w-12 items-center justify-center rounded-full bg-white"><Sparkles className="h-5 w-5 text-mipo-violet" /></span></span>
           <h1 className="mt-4 text-2xl font-semibold tracking-[-0.025em] text-mipo-ink">הסכמה לעיבוד באמצעות AI</h1>
           <p className="mt-3 text-sm leading-relaxed text-mipo-muted">

@@ -32,8 +32,9 @@ import {
   type SafetyLevel,
 } from "@/lib/petSafetyScore";
 import { feedingGuidanceSourceLabelHe, readFeedingGuidance } from "@/lib/feedingGuidance";
+import { FREE_SHIPPING_THRESHOLD } from "@/lib/shipping";
 
-const FREE_SHIPPING_THRESHOLD = 199;
+
 const SHIPPING_ESTIMATE_HE = "3-5 ימי עסקים";
 
 const asNumber = (value: number | string | null | undefined) => {

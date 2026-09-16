@@ -17,3 +17,47 @@ export const SHIPPING_ESTIMATE_HE =
 /** "3-5 business days" */
 export const SHIPPING_ESTIMATE_EN =
   `${SHIPPING_ESTIMATE_MIN_DAYS}-${SHIPPING_ESTIMATE_MAX_DAYS} business days`;
+
+/**
+ * What shipping costs, and where it stops costing.
+ *
+ * The threshold was hardcoded in four places - ProductDetailAws, Shop,
+ * SmartCartLayers and RecommendedProducts - all agreeing on 199, while the
+ * assistant was trained to answer 200. A customer who asked the chat got a
+ * different number from the one the cart charged. Two spellings of a price is
+ * how one of them ends up wrong; five is how nobody notices.
+ *
+ * 199 is the decision, and it is also what four of the five already said, so
+ * the assistant is the only thing that moves.
+ */
+export const FREE_SHIPPING_THRESHOLD = 199;
+
+/** What delivery costs below the threshold. */
+export const SHIPPING_FEE = 39;
+
+/** "₪39", or "חינם" once the threshold is reached. */
+export const shippingFeeLabelHe = (subtotal: number) =>
+  subtotal >= FREE_SHIPPING_THRESHOLD ? "חינם" : `₪${SHIPPING_FEE}`;
+
+/** How much more is needed for free delivery. Never negative. */
+export const amountToFreeShipping = (subtotal: number) =>
+  Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
+
+/**
+ * Returns.
+ *
+ * An opened bag of food is the case a generic returns policy cannot answer, so
+ * it is the case this one is written around: up to roughly a fifth used, the
+ * bag comes back for credit and the customer pays the return carriage.
+ *
+ * Expressed as a SHARE rather than a weight, because bags come in 3 kg and
+ * 12 kg and a fixed gram figure would mean something different in each.
+ */
+export const RETURN_MAX_USED_SHARE = 0.2;
+
+/** One line, for a product page. */
+export const RETURNS_SUMMARY_HE = "עד כ־20% מהשק — זיכוי בהחזרה, המשלוח על הלקוח";
+
+/** The full sentence, for the policy page and the assistant. */
+export const RETURNS_DETAIL_HE =
+  "אפשר להחזיר שק שנוצל עד כ־20% ולקבל זיכוי. עלות משלוח ההחזרה חלה על הלקוח.";

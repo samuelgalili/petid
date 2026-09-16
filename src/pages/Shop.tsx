@@ -30,6 +30,7 @@ import { SlideToConfirm } from "@/components/shop/SlideToConfirm";
 import { ProductInfoDrawer } from "@/components/shop/ProductInfoDrawer";
 import { useCarePlan } from "@/hooks/useCarePlan";
 import { createContentReport, getProductCategories, getShopProducts } from "@/lib/mipoApi";
+import { FREE_SHIPPING_THRESHOLD } from "@/lib/shipping";
 
 const asPrice = (value: number | string | null | undefined) => {
   const parsed = typeof value === "string" ? Number.parseFloat(value) : value;
@@ -338,7 +339,7 @@ const Shop = () => {
         images: p.images?.length ? p.images : [p.image_url],
         image: p.image_url || "/placeholder.svg",
         inStock: p.in_stock ?? true,
-        freeShipping: price >= 199,
+        freeShipping: price >= FREE_SHIPPING_THRESHOLD,
         category: p.category_name || p.category,
         categoryId: p.category_id ?? null,
         petType: p.pet_type,
@@ -544,7 +545,7 @@ const Shop = () => {
               
               <div className="flex items-center gap-3">
                 <h1 className="text-lg font-semibold text-mipo-ink">חנות</h1>
-                <MipoLogo variant="horizontal" size="sm" showAnimals={false} />
+                <MipoLogo variant="mark" size="xs" showAnimals={false} />
               </div>
             </div>
             <div className="flex items-center gap-1">

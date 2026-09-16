@@ -98,7 +98,7 @@ const MipoHome = () => {
               <UserRound className="h-5 w-5" strokeWidth={1.7} />
             </button>
           </div>
-          <MipoLogo variant="horizontal" size="sm" showAnimals={false} />
+          <MipoLogo variant="mark" size="xs" showAnimals={false} />
           <div className="flex flex-1 items-center justify-end gap-1">
             {/* Only for someone the app already knows holds an admin session.
                 It points at /admin rather than /admin/login, so a live session
