@@ -1,0 +1,119 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Assistant', 'Inter', -apple-system, sans-serif; }
+    a { color: #A78BFA; } a:hover { color: #7C5CFA; }
+    * { box-sizing: border-box; }
+  </style>
+</helmet>
+
+<div dir="rtl" style="width: 390px; height: 844px; background: #FFFFFF; color: #15151A; display: flex; flex-direction: column; overflow: hidden;">
+
+  <div style="height: 52px; display: flex; align-items: center; gap: 12px; padding: 0 16px; border-bottom: 1px solid #EBEBE8; flex-shrink: 0;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#15151A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg>
+    <div style="font-size: 16px; font-weight: 700;">הסל</div>
+    <div style="font-size: 13px; color: #6B6B76;">3 פריטים</div>
+  </div>
+
+  <div style="flex-grow: 1; overflow: hidden; padding: 14px 16px 0;">
+
+    <!-- ── The rule the cart has to make visible ─────────────────────────────
+         The server refuses two things at checkout: an order may contain items
+         from only ONE seller, and marketplace items may not mix with legacy
+         ones (MIXED_CATALOGUE_ORDER). Today's cart knows neither, so a shopper
+         builds a basket that is rejected at the last step, with no way to see
+         why. Grouping by seller says it before they get there. -->
+
+    <div style="display: flex; align-items: center; gap: 9px; margin-bottom: 10px;">
+      <div style="width: 26px; height: 26px; border-radius: 8px; background: #F6F6F3; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+        <div style="width: 12px; height: 12px; border-radius: 3px; background: linear-gradient(120deg,#FDBA74,#FB7185,#A78BFA,#60A5FA,#22D3EE);"></div>
+      </div>
+      <div style="font-size: 13.5px; font-weight: 700;">MIPO</div>
+      <div style="flex-grow: 1;"></div>
+      <div style="font-size: 12.5px; color: #6B6B76;">₪218</div>
+    </div>
+
+    <div style="border: 1px solid #E1E1E6; border-radius: 16px; overflow: hidden;">
+      <sc-for list="{{ mine }}" as="item" hint-placeholder-count="2">
+        <div style="display: flex; gap: 12px; padding: 13px 14px; border-bottom: 1px solid #F3F3F1; align-items: center;">
+          <div style="width: 54px; height: 54px; border-radius: 11px; background: #F6F6F3; flex-shrink: 0;"></div>
+          <div style="flex-grow: 1; min-width: 0;">
+            <div style="font-size: 13.5px; font-weight: 600; line-height: 1.35;">{{ item.name }}</div>
+            <div style="font-size: 12px; color: #6B6B76; margin-top: 3px;">{{ item.meta }}</div>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 7px; flex-shrink: 0;">
+            <div style="font-size: 14px; font-weight: 700;">{{ item.price }}</div>
+            <div style="height: 28px; display: flex; align-items: center; gap: 10px; padding: 0 9px; border: 1px solid #E1E1E6; border-radius: 999px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#15151A" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"></path></svg>
+              <div style="font-size: 12.5px; font-weight: 600;">{{ item.qty }}</div>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#15151A" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- The second seller. Muted, and explicit about what happens - not an
+         error the shopper caused, a separate order they can place. -->
+    <div style="display: flex; align-items: center; gap: 9px; margin: 18px 0 10px;">
+      <div style="width: 26px; height: 26px; border-radius: 8px; background: #F6F6F3; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 11px; font-weight: 700; color: #6B6B76;">ה</div>
+      <div style="font-size: 13.5px; font-weight: 700; color: #6B6B76;">חנות הכלבים</div>
+      <div style="flex-grow: 1;"></div>
+      <div style="font-size: 12.5px; color: #6B6B76;">₪45</div>
+    </div>
+
+    <div style="border: 1px solid #E1E1E6; border-radius: 16px; overflow: hidden; opacity: 0.62;">
+      <div style="display: flex; gap: 12px; padding: 13px 14px; align-items: center;">
+        <div style="width: 54px; height: 54px; border-radius: 11px; background: #F6F6F3; flex-shrink: 0;"></div>
+        <div style="flex-grow: 1; min-width: 0;">
+          <div style="font-size: 13.5px; font-weight: 600; line-height: 1.35;">מברשת טיפוח לפרווה ארוכה</div>
+          <div style="font-size: 12px; color: #6B6B76; margin-top: 3px;">טיפוח · כלב</div>
+        </div>
+        <div style="font-size: 14px; font-weight: 700; flex-shrink: 0;">₪45</div>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: flex-start; gap: 9px; margin-top: 11px; padding: 12px 14px; background: #F6F6F3; border-radius: 14px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B6B76" stroke-width="1.8" stroke-linecap="round" style="flex-shrink: 0; margin-top: 1px;"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16h.01"></path></svg>
+      <div style="font-size: 12.5px; color: #15151A; line-height: 1.55;">
+        כל חנות נשלחת בהזמנה נפרדת. אפשר להשלים את ההזמנה מ־<strong style="font-weight:700;">MIPO</strong> עכשיו, ואת השנייה אחריה.
+      </div>
+    </div>
+
+    <div style="height: 18px;"></div>
+  </div>
+
+  <div style="flex-shrink: 0; border-top: 1px solid #EBEBE8; padding: 13px 16px 16px; background: #FFFFFF;">
+    <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 11px;">
+      <div style="font-size: 13px; color: #6B6B76;">סה״כ ב־MIPO</div>
+      <div style="font-size: 19px; font-weight: 700;">₪218</div>
+    </div>
+    <div style="height: 46px; padding: 1px; border-radius: 999px; background: linear-gradient(120deg,#FDBA74,#FB7185,#A78BFA,#60A5FA,#22D3EE);">
+      <div style="height: 100%; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #FFFFFF; font-size: 15px; font-weight: 600;">לתשלום — MIPO</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview": {"width": 390, "height": 844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      mine: [
+        { name: "MIPO Daily Chicken לכלבים", meta: "3 ק״ג · מזון יבש", price: "₪129", qty: "1" },
+        { name: "Skin & Coat אומגה 3", meta: "תוספים · כלב", price: "₪89", qty: "1" }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

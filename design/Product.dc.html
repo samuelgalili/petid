@@ -1,0 +1,143 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Assistant', 'Inter', -apple-system, sans-serif; }
+    a { color: #A78BFA; } a:hover { color: #7C5CFA; }
+    * { box-sizing: border-box; }
+  </style>
+</helmet>
+
+<div dir="rtl" style="width: 390px; height: 844px; background: #FFFFFF; color: #15151A; display: flex; flex-direction: column; overflow: hidden;">
+
+  <div style="height: 52px; display: flex; align-items: center; gap: 12px; padding: 0 16px; border-bottom: 1px solid #EBEBE8; flex-shrink: 0;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#15151A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg>
+    <div style="flex-grow: 1;"></div>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#15151A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 5.6a5 5 0 00-7.1 0L12 7.3l-1.7-1.7a5 5 0 10-7.1 7.1L12 21.4l8.8-8.7a5 5 0 000-7.1z"></path></svg>
+  </div>
+
+  <div style="flex-grow: 1; overflow: hidden;">
+
+    <!-- The gallery. A square frame with the image CONTAINED, never cropped:
+         C-0 measured 375 products whose images arrived at every shape and
+         weight, and a fill-crop on a bag of food cuts the brand off the bag. -->
+    <div style="width: 100%; height: 300px; background: #F6F6F3; display: flex; align-items: center; justify-content: center; position: relative;">
+      <svg width="76" height="76" viewBox="0 0 24 24" fill="none" stroke="#C9C9CE" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2.5" y="3.5" width="19" height="17" rx="3"></rect><circle cx="8.5" cy="9" r="1.8"></circle><path d="M3 16l5-5 4 4 3-3 6 6"></path>
+      </svg>
+      <div style="position: absolute; bottom: 12px; right: 0; left: 0; display: flex; justify-content: center; gap: 5px;">
+        <div style="width: 5px; height: 5px; border-radius: 999px; background: #15151A;"></div>
+        <div style="width: 5px; height: 5px; border-radius: 999px; background: #D4D4D8;"></div>
+        <div style="width: 5px; height: 5px; border-radius: 999px; background: #D4D4D8;"></div>
+      </div>
+    </div>
+
+    <div style="padding: 18px 18px 0;">
+
+      <!-- ── Band 1 · the contract every product keeps ────────────────────
+           Brand, name, price, availability. C-0: brand on 83%, price on 81%,
+           name and description on 100%. Nothing here is conditional except
+           brand, which collapses rather than printing a placeholder. -->
+      <div style="font-size: 12.5px; color: #6B6B76; font-weight: 500;">BrandX</div>
+      <div style="font-size: 20px; font-weight: 700; line-height: 1.3; margin-top: 4px;">MIPO Daily Chicken לכלבים</div>
+
+      <div style="display: flex; align-items: center; gap: 9px; margin-top: 12px;">
+        <div style="font-size: 22px; font-weight: 700;">₪129</div>
+        <div style="display: flex; align-items: center; gap: 6px; padding: 3px 10px 3px 8px; border-radius: 999px; background: rgba(34,211,238,0.16);">
+          <div style="width: 6px; height: 6px; border-radius: 999px; background: #22D3EE;"></div>
+          <div style="font-size: 11.5px; font-weight: 600;">במלאי</div>
+        </div>
+      </div>
+
+      <!-- The variant row. One default variant is what the legacy catalogue
+           has - C-16/C-17 refuted the idea that it groups variants - so with a
+           single option this row collapses entirely rather than showing a
+           lonely chip nobody can choose between. -->
+      <div style="display: flex; gap: 8px; margin-top: 16px;">
+        <div style="height: 38px; display: flex; align-items: center; padding: 0 15px; border-radius: 999px; border: 1px solid #15151A; font-size: 13.5px; font-weight: 600;">3 ק״ג</div>
+        <div style="height: 38px; display: flex; align-items: center; padding: 0 15px; border-radius: 999px; border: 1px solid #E1E1E6; font-size: 13.5px; color: #6B6B76;">12 ק״ג</div>
+      </div>
+
+      <div style="font-size: 14px; color: #15151A; line-height: 1.65; margin-top: 18px;">
+        מזון יבש מלא לכלבים בוגרים על בסיס עוף טרי.
+      </div>
+
+      <!-- ── Band 2 · only what this category declared ─────────────────────
+           0052 holds the field definitions per category, inherited down the
+           tree. A row appears only when the category declared the key AND the
+           product has a value - or when the category declared it REQUIRED, in
+           which case "לא צוין" is the honest answer. Nothing is required
+           today: C-0 found kcal_per_kg on 3 products of 375. -->
+      <div style="margin-top: 22px; border-top: 1px solid #EBEBE8; padding-top: 16px;">
+        <div style="font-size: 13.5px; font-weight: 700;">מפרט</div>
+        <div style="margin-top: 10px;">
+          <sc-for list="{{ specs }}" as="row" hint-placeholder-count="4">
+            <div style="display: flex; align-items: baseline; gap: 12px; padding: 8px 0; border-bottom: 1px solid #F3F3F1;">
+              <div style="font-size: 13px; color: #6B6B76; width: 104px; flex-shrink: 0;">{{ row.label }}</div>
+              <div style="font-size: 13px; color: {{ row.fg }};">{{ row.value }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- ── Band 3 · who is selling it ───────────────────────────────────
+           The marketplace's own requirement: an order records who sold, at
+           what price, on what terms. A shopper should know that before the
+           cart, not at checkout. -->
+      <div style="margin-top: 20px; border: 1px solid #E1E1E6; border-radius: 14px; padding: 13px 14px; display: flex; align-items: center; gap: 11px;">
+        <div style="width: 34px; height: 34px; border-radius: 10px; background: #F6F6F3; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <div style="width: 15px; height: 15px; border-radius: 4px; background: linear-gradient(120deg,#FDBA74,#FB7185,#A78BFA,#60A5FA,#22D3EE);"></div>
+        </div>
+        <div style="flex-grow: 1; min-width: 0;">
+          <div style="font-size: 11.5px; color: #6B6B76;">נמכר על ידי</div>
+          <div style="font-size: 13.5px; font-weight: 600; margin-top: 1px;">MIPO</div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A9A9B2" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"></path></svg>
+      </div>
+
+      <div style="height: 22px;"></div>
+    </div>
+  </div>
+
+  <!-- Hairline buttons. The primary carries the brand in a 1px rule, never as
+       a fill - a filled bar at the bottom of a phone screen is the heaviest
+       thing on the page and forces white text onto colour. -->
+  <div style="flex-shrink: 0; border-top: 1px solid #EBEBE8; padding: 12px 16px 16px; display: flex; gap: 10px; align-items: center; background: #FFFFFF;">
+    <div style="height: 44px; display: flex; align-items: center; gap: 14px; padding: 0 14px; border: 1px solid #E1E1E6; border-radius: 999px; flex-shrink: 0;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#15151A" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"></path></svg>
+      <div style="font-size: 14px; font-weight: 600; min-width: 12px; text-align: center;">1</div>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#15151A" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+    </div>
+    <div style="flex-grow: 1; height: 44px; padding: 1px; border-radius: 999px; background: linear-gradient(120deg,#FDBA74,#FB7185,#A78BFA,#60A5FA,#22D3EE);">
+      <div style="height: 100%; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #FFFFFF; font-size: 15px; font-weight: 600;">הוספה לסל</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview": {"width": 390, "height": 844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      // Only keys the category declared, and only those with a value. The
+      // last row shows what a REQUIRED-but-empty field looks like - the one
+      // case "לא צוין" is allowed to appear.
+      specs: [
+        { label: "משקל", value: "3 ק״ג", fg: "#15151A" },
+        { label: "שלב חיים", value: "בוגר", fg: "#15151A" },
+        { label: "מין", value: "כלב", fg: "#15151A" },
+        { label: "מק״ט", value: "MP-4471", fg: "#15151A" }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
