@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation as useGeoLocation } from "@/hooks/useLocation";
+import { useLocation } from "react-router-dom";
 
 interface ProfileData {
   full_name: string | null;
@@ -21,6 +22,7 @@ const CompleteProfilePrompt = () => {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const geo = useGeoLocation();
+  const location = useLocation();
   const [show, setShow] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -123,7 +125,7 @@ const CompleteProfilePrompt = () => {
     }
   };
 
-  if (!show) return null;
+  if (!show || location.pathname === "/checkout") return null;
 
   return (
     <AnimatePresence>
