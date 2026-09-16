@@ -25,11 +25,8 @@
 
   <div style="flex-grow: 1; overflow: hidden;">
 
-    <!-- The gallery. A square frame with the image CONTAINED, never cropped:
-         C-0 measured 375 products whose images arrived at every shape and
-         weight, and a fill-crop on a bag of food cuts the brand off the bag. -->
-    <div style="width: 100%; height: 300px; background: #F6F6F3; display: flex; align-items: center; justify-content: center; position: relative;">
-      <svg width="76" height="76" viewBox="0 0 24 24" fill="none" stroke="#C9C9CE" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+    <div style="width: 100%; height: 272px; background: #F6F6F3; display: flex; align-items: center; justify-content: center; position: relative;">
+      <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#C9C9CE" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
         <rect x="2.5" y="3.5" width="19" height="17" rx="3"></rect><circle cx="8.5" cy="9" r="1.8"></circle><path d="M3 16l5-5 4 4 3-3 6 6"></path>
       </svg>
       <div style="position: absolute; bottom: 12px; right: 0; left: 0; display: flex; justify-content: center; gap: 5px;">
@@ -41,10 +38,6 @@
 
     <div style="padding: 18px 18px 0;">
 
-      <!-- ── Band 1 · the contract every product keeps ────────────────────
-           Brand, name, price, availability. C-0: brand on 83%, price on 81%,
-           name and description on 100%. Nothing here is conditional except
-           brand, which collapses rather than printing a placeholder. -->
       <div style="font-size: 12.5px; color: #6B6B76; font-weight: 500;">BrandX</div>
       <div style="font-size: 20px; font-weight: 700; line-height: 1.3; margin-top: 4px;">MIPO Daily Chicken לכלבים</div>
 
@@ -56,10 +49,34 @@
         </div>
       </div>
 
-      <!-- The variant row. One default variant is what the legacy catalogue
-           has - C-16/C-17 refuted the idea that it groups variants - so with a
-           single option this row collapses entirely rather than showing a
-           lonely chip nobody can choose between. -->
+      <!-- ── THE FIRST THING, because it is the only thing nobody else can say.
+           MIPO knows the animal. A generic shop can list ingredients; only this
+           one can tell you whether the bag suits the dog whose birthday and
+           conditions it holds. It belongs above the fold, not in a tab. -->
+      <div style="margin-top: 16px; border: 1px solid #E1E1E6; border-radius: 16px; overflow: hidden;">
+        <div style="display: flex; align-items: center; gap: 11px; padding: 13px 14px;">
+          <div style="position: relative; width: 38px; height: 38px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+            <div style="position: absolute; inset: -5px; border-radius: 999px; background: conic-gradient(from 210deg,#FDBA74,#FB7185,#A78BFA,#60A5FA,#22D3EE,#FDBA74); filter: blur(7px); opacity: 0.4;"></div>
+            <div style="position: relative; width: 38px; height: 38px; border-radius: 999px; padding: 1.5px; background: linear-gradient(120deg,#FDBA74,#FB7185,#A78BFA,#60A5FA,#22D3EE);">
+              <div style="width: 100%; height: 100%; border-radius: 999px; background: #F6F6F3; display: flex; align-items: center; justify-content: center;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A9A9B2" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="6.5" cy="9" r="2"></circle><circle cx="17.5" cy="9" r="2"></circle><circle cx="9.5" cy="5" r="1.8"></circle><circle cx="14.5" cy="5" r="1.8"></circle><path d="M12 12c-2.8 0-5 2.2-5 4.6 0 1.8 1.5 2.9 3.2 2.4l1.8-.5 1.8.5c1.7.5 3.2-.6 3.2-2.4 0-2.4-2.2-4.6-5-4.6z"></path></svg>
+              </div>
+            </div>
+          </div>
+          <div style="flex-grow: 1; min-width: 0;">
+            <div style="font-size: 13.5px; font-weight: 600;">מתאים לרקסי</div>
+            <div style="font-size: 12px; color: #6B6B76; margin-top: 2px; line-height: 1.45;">כלב בוגר · 18 ק״ג · ללא רגישויות ידועות</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 5px; flex-shrink: 0; padding: 3px 9px 3px 7px; border-radius: 999px; background: rgba(34,211,238,0.16);">
+            <div style="width: 5px; height: 5px; border-radius: 999px; background: #22D3EE;"></div>
+            <div style="font-size: 11px; font-weight: 600;">92</div>
+          </div>
+        </div>
+        <div style="padding: 10px 14px; border-top: 1px solid #F3F3F1; background: #FCFCFB;">
+          <div style="font-size: 12px; color: #6B6B76; line-height: 1.5;">שק של 3 ק״ג מספיק לרקסי לכ־<strong style="color:#15151A; font-weight:600;">24 ימים</strong> — 125 גרם ביום.</div>
+        </div>
+      </div>
+
       <div style="display: flex; gap: 8px; margin-top: 16px;">
         <div style="height: 38px; display: flex; align-items: center; padding: 0 15px; border-radius: 999px; border: 1px solid #15151A; font-size: 13.5px; font-weight: 600;">3 ק״ג</div>
         <div style="height: 38px; display: flex; align-items: center; padding: 0 15px; border-radius: 999px; border: 1px solid #E1E1E6; font-size: 13.5px; color: #6B6B76;">12 ק״ג</div>
@@ -69,28 +86,53 @@
         מזון יבש מלא לכלבים בוגרים על בסיס עוף טרי.
       </div>
 
-      <!-- ── Band 2 · only what this category declared ─────────────────────
-           0052 holds the field definitions per category, inherited down the
-           tree. A row appears only when the category declared the key AND the
-           product has a value - or when the category declared it REQUIRED, in
-           which case "לא צוין" is the honest answer. Nothing is required
-           today: C-0 found kcal_per_kg on 3 products of 375. -->
-      <div style="margin-top: 22px; border-top: 1px solid #EBEBE8; padding-top: 16px;">
+      <!-- ── Shipping and returns, at the decision moment ──────────────────
+           Not in a footer and not in a tab: this is what a shopper wants
+           between "I like it" and "buy". Three lines, each answering one
+           question, each expandable rather than printed in full. -->
+      <div style="margin-top: 20px; border: 1px solid #E1E1E6; border-radius: 16px; overflow: hidden;">
+        <div style="display: flex; align-items: center; gap: 11px; padding: 12px 14px; border-bottom: 1px solid #F3F3F1;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6B6B76" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="1.5" y="6" width="13" height="10" rx="2"></rect><path d="M14.5 9h3.7l3.3 3v4h-7z"></path><circle cx="5.5" cy="18.5" r="1.7"></circle><circle cx="17" cy="18.5" r="1.7"></circle></svg>
+          <div style="flex-grow: 1; min-width: 0;">
+            <div style="font-size: 13px; font-weight: 600;">משלוח</div>
+            <div style="font-size: 12px; color: #6B6B76; margin-top: 2px; line-height: 1.45;">[X‑Y ימי עסקים] · חינם מעל ₪199</div>
+          </div>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A9A9B2" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;"><path d="M15 6l-6 6 6 6"></path></svg>
+        </div>
+        <div style="display: flex; align-items: center; gap: 11px; padding: 12px 14px; border-bottom: 1px solid #F3F3F1;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6B6B76" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M3 12a9 9 0 109-9"></path><path d="M3 4v5h5"></path></svg>
+          <div style="flex-grow: 1; min-width: 0;">
+            <div style="font-size: 13px; font-weight: 600;">החזרות</div>
+            <div style="font-size: 12px; color: #6B6B76; margin-top: 2px; line-height: 1.45;">[N ימים] להחזרה, באריזה המקורית</div>
+          </div>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A9A9B2" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;"><path d="M15 6l-6 6 6 6"></path></svg>
+        </div>
+        <div style="display: flex; align-items: center; gap: 11px; padding: 12px 14px;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6B6B76" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M12 3l7.5 3.2v5c0 4.4-3.1 8.4-7.5 9.6-4.4-1.2-7.5-5.2-7.5-9.6v-5z"></path></svg>
+          <div style="flex-grow: 1; min-width: 0;">
+            <div style="font-size: 13px; font-weight: 600;">תשלום מאובטח</div>
+            <div style="font-size: 12px; color: #6B6B76; margin-top: 2px; line-height: 1.45;">כרטיס אשראי · Cardcom</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── The spec table, without the warehouse ──────────────────────────
+           מק״ט is gone. It is the first row of ALWAYS_SPEC_LABELS today, and
+           it is a code the warehouse uses - a shopper has never needed one to
+           decide anything. What is left is what the category declared and the
+           product actually has. -->
+      <div style="margin-top: 20px; border-top: 1px solid #EBEBE8; padding-top: 16px;">
         <div style="font-size: 13.5px; font-weight: 700;">מפרט</div>
         <div style="margin-top: 10px;">
           <sc-for list="{{ specs }}" as="row" hint-placeholder-count="4">
             <div style="display: flex; align-items: baseline; gap: 12px; padding: 8px 0; border-bottom: 1px solid #F3F3F1;">
               <div style="font-size: 13px; color: #6B6B76; width: 104px; flex-shrink: 0;">{{ row.label }}</div>
-              <div style="font-size: 13px; color: {{ row.fg }};">{{ row.value }}</div>
+              <div style="font-size: 13px;">{{ row.value }}</div>
             </div>
           </sc-for>
         </div>
       </div>
 
-      <!-- ── Band 3 · who is selling it ───────────────────────────────────
-           The marketplace's own requirement: an order records who sold, at
-           what price, on what terms. A shopper should know that before the
-           cart, not at checkout. -->
       <div style="margin-top: 20px; border: 1px solid #E1E1E6; border-radius: 14px; padding: 13px 14px; display: flex; align-items: center; gap: 11px;">
         <div style="width: 34px; height: 34px; border-radius: 10px; background: #F6F6F3; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
           <div style="width: 15px; height: 15px; border-radius: 4px; background: linear-gradient(120deg,#FDBA74,#FB7185,#A78BFA,#60A5FA,#22D3EE);"></div>
@@ -102,21 +144,31 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A9A9B2" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"></path></svg>
       </div>
 
-      <div style="height: 22px;"></div>
+      <div style="margin-top: 14px; display: flex; gap: 14px; font-size: 12px; color: #6B6B76;">
+        <span style="text-decoration: underline; text-underline-offset: 3px;">תקנון</span>
+        <span style="text-decoration: underline; text-underline-offset: 3px;">מדיניות החזרות</span>
+        <span style="text-decoration: underline; text-underline-offset: 3px;">פרטיות</span>
+      </div>
+
+      <div style="height: 24px;"></div>
     </div>
   </div>
 
-  <!-- Hairline buttons. The primary carries the brand in a 1px rule, never as
-       a fill - a filled bar at the bottom of a phone screen is the heaviest
-       thing on the page and forces white text onto colour. -->
-  <div style="flex-shrink: 0; border-top: 1px solid #EBEBE8; padding: 12px 16px 16px; display: flex; gap: 10px; align-items: center; background: #FFFFFF;">
-    <div style="height: 44px; display: flex; align-items: center; gap: 14px; padding: 0 14px; border: 1px solid #E1E1E6; border-radius: 999px; flex-shrink: 0;">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#15151A" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"></path></svg>
-      <div style="font-size: 14px; font-weight: 600; min-width: 12px; text-align: center;">1</div>
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#15151A" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+  <div style="flex-shrink: 0; border-top: 1px solid #EBEBE8; padding: 10px 16px 16px; background: #FFFFFF;">
+    <!-- The nudge sits ON the buy bar, where it changes a decision, not in a
+         banner higher up where it is scenery. -->
+    <div style="font-size: 11.5px; color: #6B6B76; text-align: center; margin-bottom: 9px;">
+      עוד <strong style="color:#15151A; font-weight:700;">₪70</strong> למשלוח חינם
     </div>
-    <div style="flex-grow: 1; height: 44px; padding: 1px; border-radius: 999px; background: linear-gradient(120deg,#FDBA74,#FB7185,#A78BFA,#60A5FA,#22D3EE);">
-      <div style="height: 100%; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #FFFFFF; font-size: 15px; font-weight: 600;">הוספה לסל</div>
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <div style="height: 44px; display: flex; align-items: center; gap: 14px; padding: 0 14px; border: 1px solid #E1E1E6; border-radius: 999px; flex-shrink: 0;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#15151A" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"></path></svg>
+        <div style="font-size: 14px; font-weight: 600; min-width: 12px; text-align: center;">1</div>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#15151A" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+      </div>
+      <div style="flex-grow: 1; height: 44px; padding: 1px; border-radius: 999px; background: linear-gradient(120deg,#FDBA74,#FB7185,#A78BFA,#60A5FA,#22D3EE);">
+        <div style="height: 100%; display: flex; align-items: center; justify-content: center; border-radius: 999px; background: #FFFFFF; font-size: 15px; font-weight: 600;">הוספה לסל</div>
+      </div>
     </div>
   </div>
 </div>
@@ -125,15 +177,19 @@
 <script data-dc-script data-props='{"$preview": {"width": 390, "height": 844}}'>
 class Component extends DCLogic {
   renderVals() {
+    const icon = (path) =>
+      '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6B6B76" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' + path + '</svg>';
     return {
-      // Only keys the category declared, and only those with a value. The
-      // last row shows what a REQUIRED-but-empty field looks like - the one
-      // case "לא צוין" is allowed to appear.
+      // The shipping and returns text is written literally in the markup, not
+      // bound: a hole renders as a TEXT node, so SVG passed through one would
+      // print as escaped characters rather than draw an icon. Every bracketed
+      // number there is a policy MIPO owns and I have not invented.
+      // מק״ט removed. What is left comes from what the category declared.
       specs: [
-        { label: "משקל", value: "3 ק״ג", fg: "#15151A" },
-        { label: "שלב חיים", value: "בוגר", fg: "#15151A" },
-        { label: "מין", value: "כלב", fg: "#15151A" },
-        { label: "מק״ט", value: "MP-4471", fg: "#15151A" }
+        { label: "משקל", value: "3 ק״ג" },
+        { label: "שלב חיים", value: "בוגר" },
+        { label: "מין", value: "כלב" },
+        { label: "רכיב עיקרי", value: "עוף טרי" }
       ]
     };
   }

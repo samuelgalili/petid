@@ -1,0 +1,122 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Assistant', 'Inter', -apple-system, sans-serif; }
+    a { color: #A78BFA; } a:hover { color: #7C5CFA; }
+    * { box-sizing: border-box; }
+    code { background: #F6F6F3; padding: 1.5px 6px; border-radius: 5px; font-size: 12.5px; }
+    td { padding: 10px 12px; border-bottom: 1px solid #F3F3F1; font-size: 13px; vertical-align: top; }
+    th { padding: 9px 12px; border-bottom: 1px solid #E1E1E6; font-size: 12px; color: #6B6B76; text-align: right; font-weight: 600; }
+  </style>
+</helmet>
+
+<div dir="rtl" style="width: 1000px; background: #FFFFFF; padding: 40px 44px 48px; color: #15151A;">
+
+  <div style="font-size: 24px; font-weight: 700; letter-spacing: -0.3px;">דף מוצר — מה נכנס, מה יוצא, ומה חסר לי ממך</div>
+
+  <!-- 1 · defects found, not opinions -->
+  <div style="margin-top: 26px; border: 1px solid #E1E1E6; border-radius: 18px; overflow: hidden;">
+    <div style="padding: 13px 17px; border-bottom: 1px solid #E1E1E6; font-size: 14px; font-weight: 700; background: #FCFCFB;">
+      שני דברים שמצאתי בקוד — לא דעה
+    </div>
+    <div style="padding: 16px 17px; border-bottom: 1px solid #F3F3F1;">
+      <div style="font-size: 13.5px; font-weight: 700;">ה־AI אומר ללקוחות סף משלוח אחר מהחנות</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+        <div style="background: #F6F6F3; border-radius: 10px; padding: 10px 12px;">
+          <div style="font-size: 12px; color: #6B6B76;">החנות, ב־4 מקומות</div>
+          <div style="font-size: 15px; font-weight: 700; margin-top: 3px;">₪199</div>
+          <div style="font-size: 11.5px; color: #6B6B76; margin-top: 5px; line-height: 1.5;"><code>ProductDetailAws:36</code> · <code>SmartCartLayers:14</code> · <code>Shop:341</code> · <code>RecommendedProducts:193</code></div>
+        </div>
+        <div style="background: rgba(251,113,133,0.1); border-radius: 10px; padding: 10px 12px;">
+          <div style="font-size: 12px; color: #6B6B76;">מה שה־AI עונה ללקוח</div>
+          <div style="font-size: 15px; font-weight: 700; margin-top: 3px;">₪200</div>
+          <div style="font-size: 11.5px; color: #6B6B76; margin-top: 5px; line-height: 1.5;"><code>AITraining:46</code> — ״כן! משלוח חינם בהזמנות מעל ₪200.״</div>
+        </div>
+      </div>
+      <div style="font-size: 12.5px; color: #6B6B76; margin-top: 10px; line-height: 1.55;">
+        ובנוסף: 199 מקודד קשיח בארבעה קבצים בלי מקור אחד. השינוי הבא בסף יפספס לפחות אחד מהם.
+        <strong style="color:#15151A;">התיקון: קבוע אחד, וה־AI קורא ממנו.</strong>
+      </div>
+    </div>
+    <div style="padding: 16px 17px;">
+      <div style="font-size: 13.5px; font-weight: 700;">העגלה לא יודעת על הכללים שה־checkout אוכף</div>
+      <div style="font-size: 12.5px; color: #6B6B76; margin-top: 7px; line-height: 1.6;">
+        השרת מסרב ל־<code>MIXED_CATALOGUE_ORDER</code> ול״הזמנה עם שני מוכרים״. ב־<code>Cart.tsx</code> אין אף אזכור
+        ל־seller, business_id, mixed או legacy — הלקוח בונה סל שנדחה בשלב האחרון.
+      </div>
+    </div>
+  </div>
+
+  <!-- 2 · in / out -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 28px;">
+    <div>
+      <div style="font-size: 15px; font-weight: 700; margin-bottom: 10px;">יוצא מהדף</div>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr><th style="width: 92px;">מה</th><th>למה</th></tr>
+        <tr><td><strong>מק״ט</strong></td><td style="color:#6B6B76;">קוד מחסן. היום הוא <strong style="color:#15151A;">השורה הראשונה</strong> בטבלה — ב־<code>ALWAYS_SPEC_LABELS</code>. לקוח מעולם לא הכריע בזכותו.</td></tr>
+        <tr><td><strong>קלוריות לק״ג</strong></td><td style="color:#6B6B76;">קיים על <strong style="color:#15151A;">3 מוצרים מתוך 375</strong>. נשאר בהגדרה, לא נראה בפועל.</td></tr>
+        <tr><td><strong>ציון בטיחות חשוף</strong></td><td style="color:#6B6B76;">מספר בלי הקשר מפחיד. נשאר — אבל בתוך ״מתאים לרקסי״, שם הוא אומר משהו.</td></tr>
+      </table>
+    </div>
+    <div>
+      <div style="font-size: 15px; font-weight: 700; margin-bottom: 10px;">נכנס לדף</div>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr><th style="width: 92px;">מה</th><th>למה</th></tr>
+        <tr><td><strong>מתאים ל־[החיה]</strong></td><td style="color:#6B6B76;">הדבר היחיד שאף חנות אחרת לא יכולה לומר. מעל הקיפול.</td></tr>
+        <tr><td><strong>לכמה זמן מספיק</strong></td><td style="color:#6B6B76;">״3 ק״ג ≈ 24 ימים לרקסי״ — הופך גודל שק להחלטה.</td></tr>
+        <tr><td><strong>משלוח</strong></td><td style="color:#6B6B76;">זמן אספקה ועלות, ליד כפתור הקנייה.</td></tr>
+        <tr><td><strong>החזרות</strong></td><td style="color:#6B6B76;">מה שמוריד חשש לפני קנייה ראשונה.</td></tr>
+        <tr><td><strong>תקנון · פרטיות</strong></td><td style="color:#6B6B76;">קיימים כדפים. לא היו מקושרים מדף מוצר.</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- 3 · what only they can answer -->
+  <div style="margin-top: 30px; padding: 22px 24px; background: #F6F6F3; border-radius: 18px;">
+    <div style="font-size: 15px; font-weight: 700;">ארבעה מספרים שרק אתה יכול לתת</div>
+    <div style="font-size: 13.5px; color: #6B6B76; margin-top: 8px; line-height: 1.6;">
+      השארתי אותם בסוגריים בעיצוב במקום להמציא. אלה התחייבויות מסחריות ומשפטיות, לא החלטות עיצוב —
+      ומדיניות החזרות בישראל כפופה לחוק, אז את הנוסח כדאי שתאשר מי שמלווה אותך משפטית.
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; margin-top: 16px;">
+      <div style="background: #FFFFFF; border-radius: 12px; padding: 13px 15px;">
+        <div style="font-size: 13.5px; font-weight: 700;">1 · זמן אספקה</div>
+        <div style="font-size: 12.5px; color: #6B6B76; margin-top: 4px;">״[X‑Y] ימי עסקים״ — ואם זה משתנה לפי אזור, צריך להחליט אם מציגים טווח או שואלים מיקוד.</div>
+      </div>
+      <div style="background: #FFFFFF; border-radius: 12px; padding: 13px 15px;">
+        <div style="font-size: 13.5px; font-weight: 700;">2 · עלות משלוח</div>
+        <div style="font-size: 12.5px; color: #6B6B76; margin-top: 4px;">כמה עולה מתחת לסף? היום מוצג רק ״חינם מעל ₪199״ — ולא כמה זה עולה אם לא.</div>
+      </div>
+      <div style="background: #FFFFFF; border-radius: 12px; padding: 13px 15px;">
+        <div style="font-size: 13.5px; font-weight: 700;">3 · חלון החזרה</div>
+        <div style="font-size: 12.5px; color: #6B6B76; margin-top: 4px;">כמה ימים, ובאילו תנאים. שק מזון פתוח הוא מקרה שצריך תשובה מפורשת.</div>
+      </div>
+      <div style="background: #FFFFFF; border-radius: 12px; padding: 13px 15px;">
+        <div style="font-size: 13.5px; font-weight: 700;">4 · ₪199 או ₪200</div>
+        <div style="font-size: 12.5px; color: #6B6B76; margin-top: 4px;">איזה מהשניים נכון — ואז הוא נכתב פעם אחת וכולם קוראים ממנו.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4 · the open design question -->
+  <div style="margin-top: 26px; padding: 18px 20px; border: 1px dashed #E1E1E6; border-radius: 16px;">
+    <div style="font-size: 13.5px; font-weight: 700;">ושאלת עיצוב אחת שנשארת פתוחה</div>
+    <div style="font-size: 13px; color: #6B6B76; margin-top: 8px; line-height: 1.65;">
+      ״מתאים לרקסי״ עובד רק כשיש חיה <strong style="color:#15151A;">ויש לה נתונים</strong> — גיל, משקל, רגישויות.
+      לחיה חדשה בלי נתונים אין מה לומר שם. שתי אפשרויות: להעלים את הכרטיס לגמרי,
+      או להפוך אותו להזמנה — ״הוסיפו את המשקל של רקסי ונגיד לכם אם זה מתאים״.
+      השנייה שימושית יותר אבל מבקשת מהלקוח עבודה באמצע קנייה. <strong style="color:#15151A;">שלך.</strong>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
