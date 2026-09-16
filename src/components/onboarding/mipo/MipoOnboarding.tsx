@@ -1,21 +1,26 @@
 /**
  * MIPO Onboarding — 5-step flow matching the master reference 1:1.
  *
- * Splash → Photo → Analyzing (detect breed) → Avatar reveal → Pet details → Setup complete
+ * Splash → Photo → Analyzing (detect breed) → Avatar reveal → Pet details → Auth → Setup complete
  *
- * On completion:
- *   - localStorage: mipo-onboarding-complete = "true"
+ * On completion (after auth):
+ *   - Inserts a real `pets` row (source of truth) with Master `avatar_url`
+ *   - localStorage: mipo-onboarding-complete = "true" (gate still works)
  *   - localStorage: mipo-pet-draft = { name, breed, ageGroup, gender, avatarUrl, petType }
+ *   - OAuth / remount: session + stored draft resume persistPet (reload full draft from localStorage)
+ *   - Existing petId still refresh() + activePetId so PetPreference comes from DB
  *   - Navigates to /feed
  *
  * The generated avatar is also reused everywhere via <AvatarCompanion />.
  */
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Camera, Check, Loader2, Sparkles, ArrowLeft, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import mipoLogo from "@/assets/mipo-logo.svg";
 import { cn } from "@/lib/utils";
 
@@ -70,6 +75,36 @@ interface PetDraft {
   petType: "dog" | "cat";
   avatarUrl: string;      // generated, full-body
   photoUrl: string;       // original user upload (square)
+}
+
+interface StoredPetDraft extends PetDraft {
+  petId?: string;
+}
+
+const MIPO_DRAFT_KEY = "mipo-pet-draft";
+
+function readStoredDraft(): StoredPetDraft | null {
+  try {
+    const raw = localStorage.getItem(MIPO_DRAFT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<StoredPetDraft> | null;
+    if (!parsed?.name) return null;
+    const petType = parsed.petType === "cat" ? "cat" : parsed.petType === "dog" ? "dog" : null;
+    if (!petType) return null;
+    return {
+      name: parsed.name,
+      breed: parsed.breed || "",
+      breedHe: parsed.breedHe,
+      ageGroup: parsed.ageGroup === "Puppy" || parsed.ageGroup === "Senior" ? parsed.ageGroup : "Adult",
+      gender: parsed.gender === "Female" ? "Female" : "Male",
+      petType,
+      avatarUrl: parsed.avatarUrl || "",
+      photoUrl: parsed.photoUrl || "",
+      petId: parsed.petId,
+    };
+  } catch {
+    return null;
+  }
 }
 
 /* ============================================================
@@ -435,7 +470,12 @@ const Segmented: React.FC<{
 /* ============================================================
  * Complete (Screen 05)
  * ============================================================ */
-const CompleteStep: React.FC<{ avatarUrl: string; onGo: () => void }> = ({ avatarUrl, onGo }) => (
+const CompleteStep: React.FC<{
+  avatarUrl: string;
+  onGo: () => void;
+  saving?: boolean;
+  error?: string;
+}> = ({ avatarUrl, onGo, saving, error }) => (
   <Shell>
     <div className="flex-1 flex flex-col items-center justify-center text-center gap-6 pt-10">
       <div className="relative w-[150px] h-[150px] flex items-center justify-center">
@@ -463,7 +503,20 @@ const CompleteStep: React.FC<{ avatarUrl: string; onGo: () => void }> = ({ avata
         <p className="text-slate-400 text-[14px]">Thank you! Your pet is all set up. Let's go!</p>
       </div>
 
-      <MipoButton onClick={onGo} className="mt-2">Let's Go!</MipoButton>
+      {error && <div className="text-[13px] text-rose-500 max-w-xs">{error}</div>}
+
+      <MipoButton onClick={onGo} disabled={saving} className="mt-2">
+        {saving ? (
+          <span className="inline-flex items-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Saving…
+          </span>
+        ) : error ? (
+          "Try again"
+        ) : (
+          "Let's Go!"
+        )}
+      </MipoButton>
     </div>
 
     <div className="flex justify-end pt-6">
@@ -484,12 +537,13 @@ const AuthStep: React.FC<{
   petName: string;
   onAuthed: () => void;
   onBack: () => void;
-}> = ({ avatarUrl, petName, onAuthed, onBack }) => {
+  notice?: string;
+}> = ({ avatarUrl, petName, onAuthed, onBack, notice }) => {
   const [mode, setMode] = useState<"signup" | "signin">("signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string>("");
+  const [err, setErr] = useState<string>(notice || "");
 
   const submit = async () => {
     setErr("");
@@ -500,12 +554,17 @@ const AuthStep: React.FC<{
     setBusy(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: `${window.location.origin}/feed` },
         });
         if (error) throw error;
+        if (!data.session) {
+          setErr("Account created. Confirm your email, then sign in to finish setup.");
+          setMode("signin");
+          return;
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -524,6 +583,7 @@ const AuthStep: React.FC<{
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
+        // Return to the app; MipoOnboarding mount resumes persistPet from the draft.
         options: { redirectTo: `${window.location.origin}/feed` },
       });
       if (error) throw error;
@@ -608,8 +668,17 @@ const AuthStep: React.FC<{
 /* ============================================================
  * Root state machine
  * ============================================================ */
+const mapMipoGender = (gender?: PetDraft["gender"] | string | null): "male" | "female" | null => {
+  if (!gender) return null;
+  const value = gender.toLowerCase();
+  if (value === "male" || value === "female") return value;
+  return null;
+};
+
 export const MipoOnboarding: React.FC<{ onComplete?: () => void }> = ({ onComplete }) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { refresh: refreshPets } = usePetPreference();
   const [step, setStep] = useState<Step>("splash");
   const [photoUrl, setPhotoUrl] = useState<string>("");
   const [analyzing, setAnalyzing] = useState(false);
@@ -618,6 +687,12 @@ export const MipoOnboarding: React.FC<{ onComplete?: () => void }> = ({ onComple
   const [generating, setGenerating] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string>("");
   const [petName, setPetName] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const draftRef = useRef<PetDraft | null>(null);
+  const persistInFlight = useRef(false);
+  const persistedPetId = useRef<string | null>(null);
+  const detailsSaveLock = useRef(false);
 
   /* ── detect breed via edge function ── */
   const detectBreed = useCallback(async (dataUrl: string) => {
@@ -673,26 +748,195 @@ export const MipoOnboarding: React.FC<{ onComplete?: () => void }> = ({ onComple
     generateAvatar();
   };
 
+  const persistPet = useCallback(async (nextDraft?: PetDraft): Promise<boolean> => {
+    if (persistInFlight.current) return false;
+
+    const stored = readStoredDraft();
+    const draft = nextDraft ?? draftRef.current ?? stored;
+    if (draft) draftRef.current = draft;
+
+    persistInFlight.current = true;
+    setSaving(true);
+    setSaveError("");
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setStep("auth");
+        throw new Error("You're not signed in. Please sign in to save your pet.");
+      }
+
+      const existingId = persistedPetId.current || stored?.petId;
+      if (existingId) {
+        const { data: existing, error: lookupError } = await supabase
+          .from("pets")
+          .select("id")
+          .eq("id", existingId)
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (lookupError) throw lookupError;
+        if (existing?.id) {
+          persistedPetId.current = existing.id;
+          try {
+            localStorage.setItem("activePetId", existing.id);
+          } catch {
+            // ignore storage quota / private mode
+          }
+          await refreshPets();
+          return true;
+        }
+        persistedPetId.current = null;
+      }
+
+      if (!draft?.name) {
+        const message = "Pet details are missing. Go back and try again.";
+        setSaveError(message);
+        toast({ title: "Couldn't save pet", description: message, variant: "destructive" });
+        return false;
+      }
+
+      const { data: petData, error: insertError } = await supabase.from("pets").insert({
+        user_id: user.id,
+        name: draft.name,
+        type: draft.petType,
+        breed: draft.breed || null,
+        gender: mapMipoGender(draft.gender),
+        avatar_url: draft.avatarUrl || null,
+      }).select().single();
+
+      if (insertError) throw insertError;
+      if (!petData?.id) throw new Error("Pet was not created.");
+
+      persistedPetId.current = petData.id;
+      try {
+        localStorage.setItem("activePetId", petData.id);
+        localStorage.setItem(MIPO_DRAFT_KEY, JSON.stringify({ ...draft, petId: petData.id }));
+        localStorage.setItem("mipo-onboarding-complete", "true");
+      } catch {
+        // ignore storage quota / private mode
+      }
+      await refreshPets();
+      return true;
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Couldn't save your pet. Please try again.";
+      setSaveError(message);
+      toast({
+        title: "Couldn't save pet",
+        description: message,
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      persistInFlight.current = false;
+      setSaving(false);
+    }
+  }, [refreshPets, toast]);
+
   const handleDetailsSave = (form: {
     name: string;
     breed: string;
     ageGroup: PetDraft["ageGroup"];
     gender: PetDraft["gender"];
   }) => {
+    if (detailsSaveLock.current || persistInFlight.current) return;
+    detailsSaveLock.current = true;
     const draft: PetDraft = {
       ...form,
       petType,
       avatarUrl,
       photoUrl,
     };
+    draftRef.current = draft;
     try {
-      localStorage.setItem("mipo-pet-draft", JSON.stringify(draft));
+      localStorage.setItem(MIPO_DRAFT_KEY, JSON.stringify(draft));
     } catch {}
     setPetName(form.name);
-    setStep("auth");
+
+    void (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setStep("complete");
+        await persistPet(draft);
+        return;
+      }
+      detailsSaveLock.current = false;
+      setStep("auth");
+    })();
   };
 
-  const finish = () => {
+  const handleAuthed = () => {
+    setStep("complete");
+    void persistPet();
+  };
+
+  const hydrateFromDraft = useCallback((stored: StoredPetDraft) => {
+    draftRef.current = stored;
+    setPetName(stored.name);
+    if (stored.avatarUrl) setAvatarUrl(stored.avatarUrl);
+    if (stored.photoUrl) setPhotoUrl(stored.photoUrl);
+    if (stored.breed) setBreed(stored.breed);
+    if (stored.petType) setPetType(stored.petType);
+    if (stored.petId) persistedPetId.current = stored.petId;
+  }, []);
+
+  const resumeStarted = useRef(false);
+  const stepRef = useRef(step);
+  stepRef.current = step;
+
+  useEffect(() => {
+    const stored = readStoredDraft();
+    if (stored) hydrateFromDraft(stored);
+  }, [hydrateFromDraft]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const resumeIfNeeded = async (sessionUserId?: string | null) => {
+      if (cancelled || resumeStarted.current) return;
+      const stored = readStoredDraft();
+      if (!stored?.name) return;
+
+      hydrateFromDraft(stored);
+
+      if (!sessionUserId) {
+        const { data: { session } } = await supabase.auth.getSession();
+        sessionUserId = session?.user?.id ?? null;
+      }
+      if (cancelled || resumeStarted.current) return;
+
+      const current = stepRef.current;
+      if (current !== "splash" && current !== "auth" && current !== "complete") {
+        return;
+      }
+
+      if (!sessionUserId) {
+        setStep((s) => (s === "splash" ? "auth" : s));
+        return;
+      }
+
+      resumeStarted.current = true;
+      detailsSaveLock.current = true;
+      setStep("complete");
+      await persistPet(stored);
+    };
+
+    void resumeIfNeeded();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
+        void resumeIfNeeded(session?.user?.id ?? null);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, [hydrateFromDraft, persistPet]);
+
+  const finish = async () => {
+    if (persistInFlight.current || saving) return;
+    const ok = await persistPet();
+    if (!ok) return;
     try {
       localStorage.setItem("mipo-onboarding-complete", "true");
     } catch {}
@@ -742,12 +986,21 @@ export const MipoOnboarding: React.FC<{ onComplete?: () => void }> = ({ onComple
           <AuthStep
             avatarUrl={avatarUrl}
             petName={petName}
-            onAuthed={() => setStep("complete")}
-            onBack={() => setStep("details")}
+            onAuthed={handleAuthed}
+            onBack={() => {
+              detailsSaveLock.current = false;
+              setStep("details");
+            }}
+            notice={saveError}
           />
         )}
         {step === "complete" && (
-          <CompleteStep avatarUrl={avatarUrl} onGo={finish} />
+          <CompleteStep
+            avatarUrl={avatarUrl}
+            onGo={finish}
+            saving={saving}
+            error={saveError}
+          />
         )}
       </motion.div>
     </AnimatePresence>
