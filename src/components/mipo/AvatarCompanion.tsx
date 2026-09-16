@@ -1,19 +1,32 @@
 /**
- * AvatarCompanion — a tiny floating MIPO avatar that follows the user
- * across the entire app. Pinned above the BottomNav, tap = open AI chat.
+ * AvatarCompanion — the pet, following the user across the app.
  *
- * Sources avatar in priority order:
+ * Pinned above the BottomNav. Tap opens the AI chat, already about this pet.
+ *
+ * It is called the avatar companion and it drew a PLUS SIGN. The pet's name
+ * was read from the context on every render and then never used, the avatar
+ * was never read at all, and the glyph was painted in three hexes belonging to
+ * no palette in this app. So on every screen, the one element whose whole job
+ * is to keep the pet present showed a "+" in colours that were not the brand's.
+ *
+ * Avatar sources, in order:
  *  1. activePet from PetPreferenceContext (DB)
- *  2. localStorage `mipo-pet-draft` (created by MipoOnboarding)
+ *  2. the onboarding draft in localStorage, for the window before the pet row
+ *     exists
  *
- * Auto-hides on auth/onboarding routes.
+ * With no pet at all the "+" is correct - there is nothing to show yet - and
+ * it takes you to add one rather than to the chat, which is what the icon has
+ * always promised and never did.
+ *
+ * Auto-hides on auth/onboarding routes, and on /chat, which shows the pet
+ * itself.
  */
 
 import { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Plus } from "lucide-react";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
+import { readStoredOnboardingDraft } from "@/lib/mipoOnboardingDraft";
 
 const HIDDEN_PREFIXES = [
   "/auth",
@@ -32,9 +45,12 @@ export const AvatarCompanion = () => {
   const navigate = useNavigate();
   const { activePet } = usePetPreference();
 
-  const name = activePet?.name || (() => {
-    try { return JSON.parse(localStorage.getItem("mipo-pet-draft") || "{}")?.name; } catch { return null; }
-  })();
+  // The draft is read through its own reader rather than hand-parsed here: it
+  // validates the shape and swallows the private-mode throw, which the inline
+  // JSON.parse only half did.
+  const draft = readStoredOnboardingDraft();
+  const petName = activePet?.name || draft?.name || null;
+  const petAvatar = activePet?.avatar_url || draft?.avatarUrl || draft?.photoUrl || null;
 
   // aws-migration has no MipoOnboardingGate. Hiding when
   // mipo-onboarding-complete is unset would make Companion never appear on
@@ -54,10 +70,19 @@ export const AvatarCompanion = () => {
 
   if (hidden) return null;
 
+  const hasPet = Boolean(petAvatar);
+
   return (
     <motion.button
-      aria-label="הוסף"
-      onClick={() => navigate("/chat")}
+      // The label said "הוסף" on every screen while the tap opened the chat.
+      aria-label={
+        hasPet
+          ? petName
+            ? `שיחה עם מיפו על ${petName}`
+            : "שיחה עם מיפו"
+          : "הוספת חיה"
+      }
+      onClick={() => navigate(hasPet ? "/chat" : "/add-pet")}
       initial={{ opacity: 0, y: 16, scale: 0.85 }}
       animate={{
         opacity: 1,
@@ -70,18 +95,44 @@ export const AvatarCompanion = () => {
         y: { duration: 3.2, repeat: Infinity, ease: "easeInOut" },
       }}
       whileTap={{ scale: 0.92 }}
-      className="fixed z-[9997] left-4 bottom-[88px] w-14 h-14 rounded-full flex items-center justify-center border-2 border-white/20 bg-white/90 backdrop-blur-sm"
+      className="fixed z-[9997] left-4 bottom-[88px] flex h-14 w-14 items-center justify-center"
     >
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="plusGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#E77B6C" />
-            <stop offset="50%" stopColor="#F3A85C" />
-            <stop offset="100%" stopColor="#5BA8D9" />
-          </linearGradient>
-        </defs>
-        <path d="M12 5v14M5 12h14" stroke="url(#plusGradient)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
+      {/* The avatar is the one surface the brand aurora is allowed on, so the
+          halo and the ring both read --gradient-primary rather than repeating
+          the stops. With no pet there is no avatar, and so no aurora. */}
+      {hasPet && (
+        <span
+          aria-hidden
+          className="absolute -inset-1 rounded-full opacity-40 blur-md"
+          style={{ background: "var(--gradient-primary)" }}
+        />
+      )}
+      <span
+        className={
+          hasPet
+            ? "mipo-gradient-ring relative h-14 w-14 !p-[2px]"
+            : "relative flex h-14 w-14 items-center justify-center rounded-full border border-mipo-line bg-white/90 backdrop-blur-sm"
+        }
+      >
+        {hasPet ? (
+          <img
+            src={petAvatar as string}
+            alt={petName || "החיה שלי"}
+            className="h-full w-full rounded-full bg-mipo-soft object-cover"
+          />
+        ) : (
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path
+              d="M12 5v14M5 12h14"
+              stroke="currentColor"
+              className="text-mipo-ink"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        )}
+      </span>
     </motion.button>
   );
 };
