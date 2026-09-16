@@ -518,7 +518,7 @@ const AdminQuickImport = () => {
                     <input
                       type="text"
                       placeholder="https://store.co.il/product/... או ברקוד"
-                      className="w-full p-4 pr-12 rounded-xl border-2 border-border bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-primary focus:outline-none transition-all text-left text-base font-medium"
+                      className="w-full p-4 pr-12 rounded-xl border border-mipo-line bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-primary focus:outline-none transition-all text-left text-base font-medium"
                       dir="ltr"
                       value={url}
                       onChange={(e) => setUrl(e.target.value)}
@@ -605,7 +605,7 @@ const AdminQuickImport = () => {
                     <div className="flex gap-5">
                       {/* Main Image Preview */}
                       <div className="shrink-0">
-                        <div className="w-32 h-32 rounded-xl overflow-hidden bg-muted border-2 border-border shadow-sm">
+                        <div className="w-32 h-32 rounded-xl overflow-hidden bg-muted border border-mipo-line shadow-sm">
                           <img src={editData.image_url} alt={editData.name} className="w-full h-full object-cover" />
                         </div>
                         {safeSourceUrl && (
@@ -686,7 +686,7 @@ const AdminQuickImport = () => {
                         <select
                           value={editData.pet_type || "all"}
                           onChange={(e) => updateField("pet_type", e.target.value)}
-                          className="w-full h-11 rounded-xl border-2 border-border bg-background text-foreground px-3 text-base font-medium focus:ring-2 focus:ring-ring focus:outline-none"
+                          className="w-full h-11 rounded-xl border border-mipo-line bg-background text-foreground px-3 text-base font-medium focus:ring-2 focus:ring-ring focus:outline-none"
                         >
                           <option value="all">הכל</option>
                           <option value="dog">כלב</option>
@@ -700,7 +700,7 @@ const AdminQuickImport = () => {
                         <select
                           value={editData.life_stage || ""}
                           onChange={(e) => updateField("life_stage", e.target.value)}
-                          className="w-full h-11 rounded-xl border-2 border-border bg-background text-foreground px-3 text-base font-medium focus:ring-2 focus:ring-ring focus:outline-none"
+                          className="w-full h-11 rounded-xl border border-mipo-line bg-background text-foreground px-3 text-base font-medium focus:ring-2 focus:ring-ring focus:outline-none"
                         >
                           <option value="">לא צוין</option>
                           <option value="puppy">גור (Puppy/Kitten)</option>
@@ -715,7 +715,7 @@ const AdminQuickImport = () => {
                         <select
                           value={editData.dog_size || ""}
                           onChange={(e) => updateField("dog_size", e.target.value)}
-                          className="w-full h-11 rounded-xl border-2 border-border bg-background text-foreground px-3 text-base font-medium focus:ring-2 focus:ring-ring focus:outline-none"
+                          className="w-full h-11 rounded-xl border border-mipo-line bg-background text-foreground px-3 text-base font-medium focus:ring-2 focus:ring-ring focus:outline-none"
                         >
                           <option value="">לא צוין</option>
                           <option value="small">קטן (Small)</option>
@@ -730,7 +730,7 @@ const AdminQuickImport = () => {
                         <select
                           value={editData.category || ""}
                           onChange={(e) => updateField("category", e.target.value)}
-                          className="w-full h-11 rounded-xl border-2 border-border bg-background text-foreground px-3 text-base font-medium focus:ring-2 focus:ring-ring focus:outline-none"
+                          className="w-full h-11 rounded-xl border border-mipo-line bg-background text-foreground px-3 text-base font-medium focus:ring-2 focus:ring-ring focus:outline-none"
                         >
                           <option value="">לא צוין</option>
                           <option value="מזון יבש">מזון יבש (Dry Food)</option>
@@ -753,7 +753,7 @@ const AdminQuickImport = () => {
                       <textarea
                         value={editData.description}
                         onChange={(e) => updateField("description", e.target.value)}
-                        className="w-full min-h-[100px] p-4 rounded-xl border-2 border-border bg-background text-foreground text-base resize-y focus:ring-2 focus:ring-ring focus:outline-none font-medium leading-relaxed"
+                        className="w-full min-h-[100px] p-4 rounded-xl border border-mipo-line bg-background text-foreground text-base resize-y focus:ring-2 focus:ring-ring focus:outline-none font-medium leading-relaxed"
                         dir="rtl"
                       />
                     ) : (
@@ -945,7 +945,7 @@ const AdminQuickImport = () => {
                         updateField("ingredients", e.target.value);
                       }
                     }}
-                    className="w-full min-h-[100px] p-4 rounded-xl border-2 border-border bg-background text-foreground text-base resize-y focus:ring-2 focus:ring-ring focus:outline-none font-medium"
+                    className="w-full min-h-[100px] p-4 rounded-xl border border-mipo-line bg-background text-foreground text-base resize-y focus:ring-2 focus:ring-ring focus:outline-none font-medium"
                     dir={showOriginalLang ? "ltr" : "rtl"}
                     placeholder="הדבק כאן את רשימת הרכיבים מהאריזה..."
                   />
@@ -991,12 +991,12 @@ const AdminQuickImport = () => {
               {analysis && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
                   {/* Verdict Banner — Soft Palette */}
-                  <div className={`p-5 rounded-2xl border-2 ${
+                  <div className={`p-5 rounded-2xl border ${
                     analysis.verdict === "safe"
                       ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800"
                       : analysis.verdict === "caution"
-                        ? "bg-[#FFF5EB] dark:bg-orange-950/20 border-[#F5D5B5] dark:border-orange-800"
-                        : "bg-[#FFF0E6] dark:bg-orange-950/30 border-[#F0C5A0] dark:border-orange-700"
+                        ? "bg-amber-50 dark:bg-orange-950/20 border-amber-200 dark:border-orange-800"
+                        : "bg-amber-100 dark:bg-orange-950/30 border-amber-300 dark:border-orange-700"
                   }`}>
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
@@ -1043,9 +1043,9 @@ const AdminQuickImport = () => {
                         {analysis.redFlags.map((flag, i) => (
                           <div key={i} className={`p-4 rounded-xl border ${
                             flag.severity === "critical"
-                              ? "bg-[#FFF0E6] dark:bg-orange-950/20 border-[#F0C5A0] dark:border-orange-800"
+                              ? "bg-amber-100 dark:bg-orange-950/20 border-amber-300 dark:border-orange-800"
                               : flag.severity === "warning"
-                                ? "bg-[#FFF8F0] dark:bg-amber-950/15 border-[#F5DFC5] dark:border-amber-800"
+                                ? "bg-amber-50 dark:bg-amber-950/15 border-amber-200 dark:border-amber-800"
                                 : "bg-muted/30 border-border"
                           }`}>
                             <div className="flex items-start gap-3">
@@ -1060,7 +1060,7 @@ const AdminQuickImport = () => {
                                 <p className="font-bold text-base">{flag.he}</p>
                                 <p className="text-sm text-muted-foreground mt-0.5">{flag.risk}</p>
                                 {/* Why it matters */}
-                                <div className="mt-2 p-2.5 rounded-lg bg-[#FFF8F0] dark:bg-amber-950/20 border border-[#F5DFC5] dark:border-amber-800/50">
+                                <div className="mt-2 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/50">
                                   <p className="text-xs font-semibold text-orange-700 dark:text-orange-300 flex items-center gap-1.5">
                                     <Lightbulb size={12} className="shrink-0" />
                                     למה זה חשוב?
@@ -1105,7 +1105,7 @@ const AdminQuickImport = () => {
                             </PopoverTrigger>
                             <PopoverContent side="top" className="w-72 p-3" dir="rtl">
                               <div className="flex items-start gap-2">
-                                <div className="p-1.5 rounded-lg bg-[#FFF0E6] dark:bg-orange-950/30">
+                                <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-orange-950/30">
                                   <FlaskConical size={14} className="text-orange-500" />
                                 </div>
                                 <div>
@@ -1435,7 +1435,7 @@ const AdminQuickImport = () => {
                         <textarea
                           value={editData.description}
                           onChange={(e) => updateField("description", e.target.value)}
-                          className="w-full min-h-[80px] p-3 rounded-xl border-2 border-border bg-background text-foreground text-base resize-y focus:ring-2 focus:ring-ring focus:outline-none font-medium"
+                          className="w-full min-h-[80px] p-3 rounded-xl border border-mipo-line bg-background text-foreground text-base resize-y focus:ring-2 focus:ring-ring focus:outline-none font-medium"
                           dir="rtl"
                         />
                       </div>
@@ -1448,7 +1448,7 @@ const AdminQuickImport = () => {
                       <Eye size={18} /> תצוגה מקדימה
                     </h3>
                     <div className="max-w-sm mx-auto">
-                      <div className="bg-background rounded-2xl border-2 border-border overflow-hidden shadow-md">
+                      <div className="bg-background rounded-2xl border border-mipo-line overflow-hidden shadow-md">
                         <div className="aspect-square bg-muted relative">
                           <img src={editData.image_url} alt="" className="w-full h-full object-cover" />
                           {analysis && (

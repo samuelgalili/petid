@@ -12,70 +12,19 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 // ADMIN DESIGN SYSTEM - PROFESSIONAL DARK THEME
 // =====================================================
 
-// Enhanced color palette with modern gradients
-export const statCardStyles = {
-  primary: {
-    gradient: "from-primary/15 via-primary/8 to-transparent",
-    border: "border-primary/25 hover:border-primary/40",
-    icon: "bg-primary/15 text-primary",
-    glow: "shadow-primary/10"
-  },
-  success: {
-    gradient: "from-emerald-500/15 via-emerald-500/8 to-transparent",
-    border: "border-emerald-500/25 hover:border-emerald-500/40",
-    icon: "bg-emerald-500/15 text-emerald-500",
-    glow: "shadow-emerald-500/10"
-  },
-  warning: {
-    gradient: "from-amber-500/15 via-amber-500/8 to-transparent",
-    border: "border-amber-500/25 hover:border-amber-500/40",
-    icon: "bg-amber-500/15 text-amber-500",
-    glow: "shadow-amber-500/10"
-  },
-  danger: {
-    gradient: "from-rose-500/15 via-rose-500/8 to-transparent",
-    border: "border-rose-500/25 hover:border-rose-500/40",
-    icon: "bg-rose-500/15 text-rose-500",
-    glow: "shadow-rose-500/10"
-  },
-  info: {
-    gradient: "from-blue-500/15 via-blue-500/8 to-transparent",
-    border: "border-blue-500/25 hover:border-blue-500/40",
-    icon: "bg-blue-500/15 text-blue-500",
-    glow: "shadow-blue-500/10"
-  },
-  purple: {
-    gradient: "from-violet-500/15 via-violet-500/8 to-transparent",
-    border: "border-violet-500/25 hover:border-violet-500/40",
-    icon: "bg-violet-500/15 text-violet-500",
-    glow: "shadow-violet-500/10"
-  },
-  cyan: {
-    gradient: "from-cyan-500/15 via-cyan-500/8 to-transparent",
-    border: "border-cyan-500/25 hover:border-cyan-500/40",
-    icon: "bg-cyan-500/15 text-cyan-500",
-    glow: "shadow-cyan-500/10"
-  },
-  orange: {
-    gradient: "from-orange-500/15 via-orange-500/8 to-transparent",
-    border: "border-orange-500/25 hover:border-orange-500/40",
-    icon: "bg-orange-500/15 text-orange-500",
-    glow: "shadow-orange-500/10"
-  },
-} as const;
-
-// Legacy exports for backward compatibility
-export const statCardGradients = {
-  primary: "from-primary/10 to-primary/5 border-primary/20",
-  success: "from-emerald-500/10 to-emerald-500/5 border-emerald-500/20",
-  warning: "from-amber-500/10 to-amber-500/5 border-amber-500/20",
-  danger: "from-rose-500/10 to-rose-500/5 border-rose-500/20",
-  info: "from-blue-500/10 to-blue-500/5 border-blue-500/20",
-  purple: "from-violet-500/10 to-violet-500/5 border-violet-500/20",
-  cyan: "from-cyan-500/10 to-cyan-500/5 border-cyan-500/20",
-  orange: "from-orange-500/10 to-orange-500/5 border-orange-500/20",
-} as const;
-
+/**
+ * The admin's eight accents, reduced to the icon.
+ *
+ * Each variant used to carry a tinted gradient surface, a coloured border, a
+ * coloured glow AND a blurred orb behind the card - four colour channels for
+ * one fact. Eight of them on a dashboard is eight competing surfaces, and the
+ * number on the card, which is the thing anyone is there to read, sat on top
+ * of whichever one it drew.
+ *
+ * The card is now white with a thin line, the same as every other card, and
+ * the variant tints a small icon. That is enough to tell a revenue tile from
+ * an alerts tile, and it leaves the figure as the loudest thing in the frame.
+ */
 export const iconColors = {
   primary: "text-primary bg-primary/10",
   success: "text-emerald-600 bg-emerald-500/10",
@@ -87,7 +36,19 @@ export const iconColors = {
   orange: "text-orange-600 bg-orange-500/10",
 } as const;
 
-export type ColorVariant = keyof typeof statCardStyles;
+/** The sparkline follows the icon, at a weight that stays behind the number. */
+export const sparklineColors = {
+  primary: "bg-primary/30",
+  success: "bg-emerald-500/30",
+  warning: "bg-amber-500/30",
+  danger: "bg-rose-500/30",
+  info: "bg-blue-500/30",
+  purple: "bg-violet-500/30",
+  cyan: "bg-cyan-500/30",
+  orange: "bg-orange-500/30",
+} as const;
+
+export type ColorVariant = keyof typeof iconColors;
 
 // =====================================================
 // ENHANCED STAT CARD COMPONENT
@@ -116,39 +77,20 @@ export const AdminStatCard = ({
   onClick,
   sparkline,
 }: AdminStatCardProps) => {
-  const styles = statCardStyles[color];
-  
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      whileHover={{ scale: 1.02, y: -2 }}
       className="group"
     >
-      <Card 
+      <Card
         className={cn(
-          "relative overflow-hidden border bg-gradient-to-br transition-all duration-300 cursor-pointer",
-          styles.gradient,
-          styles.border,
-          onClick && "hover:shadow-lg",
-          styles.glow
+          "relative overflow-hidden border border-mipo-line bg-mipo-surface transition-colors duration-200",
+          onClick && "cursor-pointer hover:bg-mipo-soft",
         )}
         onClick={onClick}
       >
-        {/* Decorative gradient orb */}
-        <div className={cn(
-          "absolute -top-12 -left-12 w-32 h-32 rounded-full blur-3xl opacity-20 transition-opacity group-hover:opacity-30",
-          color === "primary" && "bg-primary",
-          color === "success" && "bg-emerald-500",
-          color === "warning" && "bg-amber-500",
-          color === "danger" && "bg-rose-500",
-          color === "info" && "bg-blue-500",
-          color === "purple" && "bg-violet-500",
-          color === "cyan" && "bg-cyan-500",
-          color === "orange" && "bg-orange-500",
-        )} />
-        
         <CardContent className="p-5 relative">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
@@ -170,10 +112,7 @@ export const AdminStatCard = ({
                 <p className="text-xs text-muted-foreground">{subtitle}</p>
               )}
             </div>
-            <div className={cn(
-              "p-3 rounded-xl shrink-0 transition-transform group-hover:scale-110",
-              styles.icon
-            )}>
+            <div className={cn("p-3 rounded-xl shrink-0", iconColors[color])}>
               <Icon className="h-5 w-5" />
             </div>
           </div>
@@ -189,14 +128,7 @@ export const AdminStatCard = ({
                     key={i}
                     className={cn(
                       "flex-1 rounded-sm transition-all",
-                      color === "primary" && "bg-primary/40",
-                      color === "success" && "bg-emerald-500/40",
-                      color === "warning" && "bg-amber-500/40",
-                      color === "danger" && "bg-rose-500/40",
-                      color === "info" && "bg-blue-500/40",
-                      color === "purple" && "bg-violet-500/40",
-                      color === "cyan" && "bg-cyan-500/40",
-                      color === "orange" && "bg-orange-500/40",
+                      sparklineColors[color],
                     )}
                     style={{ height: `${height}%` }}
                   />
@@ -246,11 +178,11 @@ export const AdminPageHeader = ({ title, description, icon: Icon, actions, bread
           ))}
         </nav>
       )}
-      <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-l from-card/80 to-transparent border border-border/50 backdrop-blur-sm">
+      <div className="flex items-center justify-between p-4 rounded-xl bg-mipo-surface border border-mipo-line">
         <div className="flex items-center gap-3">
           {Icon && (
-            <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/25">
-              <Icon className="w-5 h-5 text-primary-foreground" />
+            <div className="p-2.5 rounded-xl border border-mipo-line">
+              <Icon className="w-5 h-5 text-mipo-ink" strokeWidth={1.6} />
             </div>
           )}
           <div>
@@ -311,7 +243,7 @@ export const AdminToolbar = ({
   children,
 }: AdminToolbarProps) => {
   return (
-    <div className="flex flex-col sm:flex-row gap-3 mb-6 p-4 bg-card/50 rounded-xl border border-border/50 backdrop-blur-sm">
+    <div className="flex flex-col sm:flex-row gap-3 mb-6 p-4 bg-mipo-surface rounded-xl border border-mipo-line">
       {onSearchChange !== undefined && (
         <div className="relative flex-1 max-w-md">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -512,7 +444,7 @@ export const AdminSectionCard = ({
 }: AdminSectionCardProps) => {
   return (
     <Card className={cn("overflow-hidden", className)}>
-      <CardHeader className="pb-4 bg-gradient-to-b from-muted/30 to-transparent">
+      <CardHeader className="pb-4 border-b border-mipo-line">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
             {Icon && (
@@ -553,7 +485,7 @@ interface AdminEmptyStateProps {
 export const AdminEmptyState = ({ icon: Icon, title, description, action }: AdminEmptyStateProps) => {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="p-4 rounded-2xl bg-gradient-to-br from-muted to-muted/50 mb-4">
+      <div className="p-4 rounded-2xl border border-mipo-line mb-4">
         <Icon className="h-10 w-10 text-muted-foreground" />
       </div>
       <h3 className="font-semibold text-lg mb-2">{title}</h3>

@@ -20,6 +20,7 @@ import {
   RefreshCw
 } from "lucide-react";
 import { toast } from "sonner";
+import { AdminStatCard } from "@/components/admin/AdminStyles";
 
 interface Backup {
   id: string;
@@ -97,70 +98,22 @@ const AdminBackup = () => {
       <div className="space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-slate-900 to-slate-800">
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-purple-600 opacity-10" />
-            <CardContent className="p-4 relative">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-slate-400 mb-1">גיבויים שמורים</p>
-                  <p className="text-2xl font-bold text-white">{backups.length}</p>
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                  <HardDrive className="w-5 h-5 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-slate-900 to-slate-800">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-green-600 opacity-10" />
-            <CardContent className="p-4 relative">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-slate-400 mb-1">גיבוי אחרון</p>
-                  <p className="text-2xl font-bold text-white">היום</p>
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-slate-900 to-slate-800">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-600 opacity-10" />
-            <CardContent className="p-4 relative">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-slate-400 mb-1">נפח כולל</p>
-                  <p className="text-2xl font-bold text-white">4.5 GB</p>
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center">
-                  <Database className="w-5 h-5 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-slate-900 to-slate-800">
-            <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-600 opacity-10" />
-            <CardContent className="p-4 relative">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-slate-400 mb-1">גיבוי הבא</p>
-                  <p className="text-2xl font-bold text-white">03:00</p>
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Four hand-rolled copies of AdminStatCard, each a dark slate card
+              with its own gradient - a different theme from the panel they sit
+              in. They are the component now, so they follow the design system
+              instead of drifting from it. */}
+          <AdminStatCard title="גיבויים שמורים" value={backups.length} icon={HardDrive} color="purple" />
+          <AdminStatCard title="גיבוי אחרון" value="היום" icon={CheckCircle} color="success" />
+          <AdminStatCard title="נפח כולל" value="4.5 GB" icon={Database} color="info" />
+          <AdminStatCard title="גיבוי הבא" value="03:00" icon={Clock} color="warning" />
         </div>
 
         {/* Backup Actions */}
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Create Backup */}
-          <Card className="border-0 bg-gradient-to-br from-slate-900 to-slate-800">
+          <Card className="border border-mipo-line bg-mipo-surface">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-mipo-ink flex items-center gap-2">
                 <RefreshCw className="w-5 h-5 text-violet-400" />
                 יצירת גיבוי
               </CardTitle>
@@ -169,8 +122,8 @@ const AdminBackup = () => {
               {isBackingUp ? (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-400">מגבה...</span>
-                    <span className="text-white">{backupProgress}%</span>
+                    <span className="text-mipo-muted">מגבה...</span>
+                    <span className="text-mipo-ink">{backupProgress}%</span>
                   </div>
                   <Progress value={backupProgress} className="h-2" />
                 </div>
@@ -178,7 +131,7 @@ const AdminBackup = () => {
                 <div className="grid grid-cols-3 gap-3">
                   <Button
                     onClick={() => startBackup("full")}
-                    className="flex-col h-auto py-4 bg-gradient-to-br from-violet-500 to-purple-600"
+                    className="flex-col h-auto py-4"
                   >
                     <HardDrive className="w-6 h-6 mb-2" />
                     <span>גיבוי מלא</span>
@@ -186,7 +139,7 @@ const AdminBackup = () => {
                   <Button
                     onClick={() => startBackup("database")}
                     variant="outline"
-                    className="flex-col h-auto py-4 border-slate-700 text-slate-300 hover:bg-slate-800"
+                    className="flex-col h-auto py-4 border-mipo-line text-mipo-ink hover:bg-mipo-soft"
                   >
                     <Database className="w-6 h-6 mb-2" />
                     <span>בסיס נתונים</span>
@@ -194,7 +147,7 @@ const AdminBackup = () => {
                   <Button
                     onClick={() => startBackup("files")}
                     variant="outline"
-                    className="flex-col h-auto py-4 border-slate-700 text-slate-300 hover:bg-slate-800"
+                    className="flex-col h-auto py-4 border-mipo-line text-mipo-ink hover:bg-mipo-soft"
                   >
                     <Image className="w-6 h-6 mb-2" />
                     <span>קבצים</span>
@@ -205,9 +158,9 @@ const AdminBackup = () => {
           </Card>
 
           {/* Export Data */}
-          <Card className="border-0 bg-gradient-to-br from-slate-900 to-slate-800">
+          <Card className="border border-mipo-line bg-mipo-surface">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-mipo-ink flex items-center gap-2">
                 <Download className="w-5 h-5 text-emerald-400" />
                 ייצוא נתונים
               </CardTitle>
@@ -220,7 +173,7 @@ const AdminBackup = () => {
                     checked={exportOptions.orders}
                     onCheckedChange={(c) => setExportOptions({...exportOptions, orders: !!c})}
                   />
-                  <Label htmlFor="orders" className="text-slate-300">הזמנות</Label>
+                  <Label htmlFor="orders" className="text-mipo-ink">הזמנות</Label>
                 </div>
                 <div className="flex items-center gap-3">
                   <Checkbox 
@@ -228,7 +181,7 @@ const AdminBackup = () => {
                     checked={exportOptions.customers}
                     onCheckedChange={(c) => setExportOptions({...exportOptions, customers: !!c})}
                   />
-                  <Label htmlFor="customers" className="text-slate-300">לקוחות</Label>
+                  <Label htmlFor="customers" className="text-mipo-ink">לקוחות</Label>
                 </div>
                 <div className="flex items-center gap-3">
                   <Checkbox 
@@ -236,7 +189,7 @@ const AdminBackup = () => {
                     checked={exportOptions.products}
                     onCheckedChange={(c) => setExportOptions({...exportOptions, products: !!c})}
                   />
-                  <Label htmlFor="products" className="text-slate-300">מוצרים</Label>
+                  <Label htmlFor="products" className="text-mipo-ink">מוצרים</Label>
                 </div>
                 <div className="flex items-center gap-3">
                   <Checkbox 
@@ -244,10 +197,10 @@ const AdminBackup = () => {
                     checked={exportOptions.financial}
                     onCheckedChange={(c) => setExportOptions({...exportOptions, financial: !!c})}
                   />
-                  <Label htmlFor="financial" className="text-slate-300">נתונים פיננסיים</Label>
+                  <Label htmlFor="financial" className="text-mipo-ink">נתונים פיננסיים</Label>
                 </div>
               </div>
-              <Button onClick={exportData} className="w-full bg-gradient-to-r from-emerald-500 to-green-600">
+              <Button onClick={exportData} className="mipo-cta-button w-full">
                 <Download className="w-4 h-4 ml-2" />
                 ייצא לקובץ Excel
               </Button>
@@ -256,31 +209,31 @@ const AdminBackup = () => {
         </div>
 
         {/* Backups List */}
-        <Card className="border-0 bg-gradient-to-br from-slate-900 to-slate-800">
-          <CardHeader className="border-b border-slate-700/50">
-            <CardTitle className="text-white flex items-center gap-2">
+        <Card className="border border-mipo-line bg-mipo-surface">
+          <CardHeader className="border-b border-mipo-line/50">
+            <CardTitle className="text-mipo-ink flex items-center gap-2">
               <HardDrive className="w-5 h-5 text-violet-400" />
               היסטוריית גיבויים
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="divide-y divide-slate-700/50">
+            <div className="divide-y divide-mipo-line">
               {backups.map((backup) => (
-                <div key={backup.id} className="p-4 hover:bg-slate-800/50 transition-colors">
+                <div key={backup.id} className="p-4 hover:bg-mipo-soft/50 transition-colors">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-600/20 flex items-center justify-center text-violet-400">
+                      <div className="w-10 h-10 rounded-xl border border-mipo-line flex items-center justify-center text-violet-400">
                         {getTypeIcon(backup.type)}
                       </div>
                       <div>
-                        <h3 className="font-medium text-white">{backup.name}</h3>
-                        <p className="text-sm text-slate-400">{backup.createdAt}</p>
+                        <h3 className="font-medium text-mipo-ink">{backup.name}</h3>
+                        <p className="text-sm text-mipo-muted">{backup.createdAt}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
                       {getTypeBadge(backup.type)}
-                      <span className="text-sm text-slate-400">{backup.size}</span>
-                      <Button size="sm" variant="outline" className="border-slate-700 text-slate-300">
+                      <span className="text-sm text-mipo-muted">{backup.size}</span>
+                      <Button size="sm" variant="outline" className="border-mipo-line text-mipo-ink">
                         <Download className="w-4 h-4" />
                       </Button>
                     </div>
