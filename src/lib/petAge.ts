@@ -16,8 +16,38 @@
  * value) and 54 §P0.2.
  */
 
-/** Mirrors `calculatePetAge` in server/src/index.js. Do not change one without the other. */
-const MONTH_MS = 1000 * 60 * 60 * 24 * 30.4375;
+/**
+ * Age is a CALENDAR question, not an elapsed-duration one.
+ *
+ * This used to divide elapsed milliseconds by an average month of 30.4375
+ * days, and that can never land on an anniversary: twelve average months is
+ * 365.25 days while a non-leap year is 365. A pet born exactly one year ago
+ * measured 11.99 months, floored to 11, and was shown as ZERO years old on its
+ * own first birthday - staying wrong for six hours. The same gap made a pet
+ * born seven calendar months ago read as six.
+ *
+ * "How old is this pet" means "how many times has the birth month-day come
+ * round", so it is counted in months and days rather than milliseconds.
+ *
+ * UTC throughout. birth_date carries no time and no zone, and
+ * `new Date("2025-09-16")` parses as UTC midnight, so the comparison has to
+ * happen in that same calendar - otherwise a pet gains a day in one timezone
+ * and loses it in another.
+ *
+ * Mirrors `calculatePetAge` in server/src/index.js. Do not change one without
+ * the other; "client and server agree on the same birth date" pins them.
+ */
+export const wholeMonthsBetween = (bornMs: number, nowMs: number): number => {
+  const born = new Date(bornMs);
+  const now = new Date(nowMs);
+  let months =
+    (now.getUTCFullYear() - born.getUTCFullYear()) * 12 +
+    (now.getUTCMonth() - born.getUTCMonth());
+  // The month turns over only once the day-of-month is reached: a pet born on
+  // the 20th is not a month older on the 5th.
+  if (now.getUTCDate() < born.getUTCDate()) months -= 1;
+  return months;
+};
 
 export interface PetAge {
   years: number;
@@ -50,7 +80,7 @@ export const petAgeMonthsFromBirthDate = (birthDate?: string | null): number | n
   if (!birthDate) return null;
   const born = new Date(String(birthDate)).getTime();
   if (!Number.isFinite(born)) return null;
-  const months = Math.floor((Date.now() - born) / MONTH_MS);
+  const months = wholeMonthsBetween(born, Date.now());
   return months >= 0 ? months : null;
 };
 

@@ -14,9 +14,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-// --- port of src/lib/petAge.ts (and of calculatePetAge, which it mirrors) ---
-
-const MONTH_MS = 1000 * 60 * 60 * 24 * 30.4375;
+// The REAL implementations, imported. This file used to carry a hand-written
+// port of both - "port of src/lib/petAge.ts" - and a test that exercises a
+// copy keeps passing while the shipped code is broken. That is not a
+// hypothetical: the anniversary bug below lived in production under a green
+// suite, because the copy in this file was correct and the real code was not.
+//
+// The client's petAge.ts cannot be imported here (TypeScript, no loader in the
+// server runner), so its arithmetic is pinned against this module by reading
+// its source at the bottom of this file.
+import { calculatePetAge, wholeMonthsBetween } from "../src/petAge.js";
 
 const fromTotalMonths = (totalMonths) => ({
   years: Math.floor(totalMonths / 12),
@@ -24,11 +31,13 @@ const fromTotalMonths = (totalMonths) => ({
   totalMonths,
 });
 
+// The client's shape, over the server's arithmetic - which is the point: the
+// two must not be able to disagree.
 const petAgeMonthsFromBirthDate = (birthDate) => {
   if (!birthDate) return null;
   const born = new Date(String(birthDate)).getTime();
   if (!Number.isFinite(born)) return null;
-  const months = Math.floor((Date.now() - born) / MONTH_MS);
+  const months = wholeMonthsBetween(born, Date.now());
   return months >= 0 ? months : null;
 };
 
@@ -44,15 +53,6 @@ const petAge = (pet) => {
 };
 
 const petAgeInMonths = (pet) => petAge(pet)?.totalMonths ?? null;
-
-// The server's own implementation, so the two can be compared directly.
-const calculatePetAge = (birthDate) => {
-  if (!birthDate) return { age_years: null, age_months: null };
-  const birth = new Date(String(birthDate));
-  if (Number.isNaN(birth.getTime())) return { age_years: null, age_months: null };
-  const totalMonths = Math.max(0, Math.floor((Date.now() - birth.getTime()) / MONTH_MS));
-  return { age_years: Math.floor(totalMonths / 12), age_months: totalMonths % 12 };
-};
 
 const daysAgo = (days) => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
@@ -158,4 +158,86 @@ test("unknown is null, never zero", () => {
   // representation of "we do not know".
   assert.equal(petAgeInMonths({}), null);
   assert.notEqual(petAgeInMonths({}), 0);
+});
+
+// --- the anniversary, which is where this broke ---
+
+test("a pet is one year old on its first birthday, not zero", () => {
+  // The shipped bug. Twelve average months of 30.4375 days is 365.25, so a
+  // year of 365 days measured 11.99 months and floored to 11 - a puppy's first
+  // birthday displayed as "0 years", for six hours, every non-leap year.
+  const born = Date.UTC(2025, 8, 16);
+  const birthday = Date.UTC(2026, 8, 16);
+  assert.equal(wholeMonthsBetween(born, birthday), 12);
+  assert.equal(wholeMonthsBetween(born, birthday - 1), 11, "the day before is still 11");
+});
+
+test("every exact anniversary lands, for twenty years", () => {
+  // One case would have passed by luck. The old arithmetic drifts further out
+  // with each year, so the whole range is checked.
+  const born = Date.UTC(2006, 2, 7);
+  for (let year = 1; year <= 20; year += 1) {
+    assert.equal(
+      wholeMonthsBetween(born, Date.UTC(2006 + year, 2, 7)), year * 12,
+      `${year} years after the birth date must be ${year * 12} months`,
+    );
+  }
+});
+
+test("a calendar month is a month whatever its length", () => {
+  // February is 28 days and March 31; an average-month divisor gets both wrong
+  // in opposite directions.
+  assert.equal(wholeMonthsBetween(Date.UTC(2026, 1, 15), Date.UTC(2026, 2, 15)), 1, "Feb 15 to Mar 15");
+  assert.equal(wholeMonthsBetween(Date.UTC(2026, 2, 15), Date.UTC(2026, 3, 15)), 1, "Mar 15 to Apr 15");
+  assert.equal(wholeMonthsBetween(Date.UTC(2026, 1, 15), Date.UTC(2026, 8, 16)), 7, "Feb 15 to Sep 16");
+});
+
+test("a leap-day pet has its anniversary in March on common years", () => {
+  const born = Date.UTC(2024, 1, 29);
+  assert.equal(wholeMonthsBetween(born, Date.UTC(2025, 1, 28)), 11, "28 Feb is not yet a year");
+  assert.equal(wholeMonthsBetween(born, Date.UTC(2025, 2, 1)), 12, "1 March is");
+  assert.equal(wholeMonthsBetween(born, Date.UTC(2028, 1, 29)), 48, "and the real date when it exists");
+});
+
+test("the day of the month has to be reached before the month turns", () => {
+  const born = Date.UTC(2026, 0, 20);
+  assert.equal(wholeMonthsBetween(born, Date.UTC(2026, 1, 5)), 0, "born on the 20th, not a month older on the 5th");
+  assert.equal(wholeMonthsBetween(born, Date.UTC(2026, 1, 20)), 1);
+});
+
+// --- the client's copy may not drift from this one ---
+
+test("src/lib/petAge.ts computes months the same way", async () => {
+  // The client is TypeScript and cannot be imported here, so its arithmetic is
+  // pinned by reading it. This is the guard that the deleted hand-written port
+  // pretended to be.
+  const { readFileSync } = await import("node:fs");
+  const path = await import("node:path");
+  const { fileURLToPath } = await import("node:url");
+  const source = readFileSync(
+    path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../src/lib/petAge.ts"),
+    "utf8",
+  );
+  const squash = (text) => text.replace(/\s+/g, " ").trim();
+  for (const required of [
+    "(now.getUTCFullYear() - born.getUTCFullYear()) * 12",
+    "(now.getUTCMonth() - born.getUTCMonth())",
+    "if (now.getUTCDate() < born.getUTCDate()) months -= 1;",
+  ]) {
+    assert.ok(
+      squash(source).includes(squash(required)),
+      `the client must compute months the same way; missing: ${required}`,
+    );
+  }
+  // And must no longer divide by an average month. Comments are stripped
+  // first: this file's own history note explains the 30.4375 constant, and a
+  // bare search matched that prose - the third guard in this codebase to
+  // refuse the very file it describes.
+  const code = source
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .split("\n")
+    .filter((line) => !/^\s*(\/\/|\*)/.test(line))
+    .join("\n");
+  assert.equal(/30\.4375/.test(code), false,
+    "an average-month divisor cannot land on an anniversary");
 });

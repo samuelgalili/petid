@@ -88,6 +88,7 @@ import {
   voteSocialPoll,
 } from "./social.js";
 import { resolveCatalogProducts } from "./catalogRecommendations.js";
+import { calculatePetAge } from "./petAge.js";
 import {
   generateCharacterCandidates,
   generateCharacterExpressions,
@@ -1864,16 +1865,6 @@ const getProfileActivityStatus = async (userId) => {
   };
 };
 
-const calculatePetAge = (birthDate) => {
-  if (!birthDate) return { age_years: null, age_months: null };
-  const birth = new Date(String(birthDate));
-  if (Number.isNaN(birth.getTime())) return { age_years: null, age_months: null };
-  const totalMonths = Math.max(0, Math.floor((Date.now() - birth.getTime()) / (1000 * 60 * 60 * 24 * 30.4375)));
-  return {
-    age_years: Math.floor(totalMonths / 12),
-    age_months: totalMonths % 12,
-  };
-};
 
 const serializePet = (row) => {
   const age = calculatePetAge(row.birth_date);
