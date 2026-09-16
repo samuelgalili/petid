@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronRight, Sparkles, ChevronDown } from "lucide-react";
+import { ChevronRight, Sparkles, ChevronDown, PawPrint } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { SEO } from "@/components/SEO";
@@ -262,7 +262,73 @@ const ChatContent = () => {
     }
   };
 
-  // Empty state is handled by the initial greeting in ChatProvider
+  /**
+   * The resting state: the shop's smart-search screen, applied to a conversation.
+   *
+   * Two conditions, and both are load-bearing.
+   *
+   * No user message: the provider seeds an assistant greeting, so a plain
+   * `messages.length === 0` would never be true and the screen would never
+   * appear. And the moment someone types, the resting screen gives way to the
+   * thread entirely - including that greeting, which is why the list below
+   * renders nothing while resting rather than putting the greeting under the
+   * prompt.
+   *
+   * Nothing beyond the greeting: the provider also pushes PROACTIVE bubbles a
+   * second and a half in - unread medical alerts, restock warnings. Those are
+   * real content, and a resting screen that outlived them would hide a vet
+   * reminder from anyone who had not yet typed. So a second assistant message
+   * ends the rest and opens the thread.
+   */
+  const isResting = messages.length <= 1 && !messages.some((m) => m.role === "user");
+
+  // The pet is named in the question. "מה תרצו לשאול על רקסי?" is the whole
+  // point of opening here rather than on a generic assistant: the person is not
+  // asking a chatbot about dogs, they are asking about THEIR dog. With no pet
+  // selected there is nothing to name, so the question stays general.
+  const restingPetName = selectedPet?.name?.trim() || "";
+
+  /**
+   * The seeded greeting can carry chips that are not conversation openers at
+   * all: with more than one pet, `suggestions` IS the pet picker, and it is the
+   * only way to choose one. Hiding the greeting therefore hides the picker, so
+   * the resting screen has to carry those chips itself, through the same
+   * handler the in-thread chips use - otherwise a two-pet account opens the
+   * chat and cannot say which pet it means.
+   */
+  const restingGreetingChoices = (isResting && messages[0]?.suggestions) || [];
+  const isRestingPetChoice =
+    !selectedPet && restingGreetingChoices.some((s) => userPets.some((p) => p.name === s));
+
+  const restingPrompt = isRestingPetChoice
+    ? "על מי נדבר היום?"
+    : restingPetName
+      ? `מה תרצו לשאול על ${restingPetName}?`
+      : "מה תרצו לשאול?";
+
+  // Suggestions are openings, not commands: tapping one fills the box so it can
+  // be edited before sending, exactly as the shop's search chips behave.
+  //
+  // A greeting that came with its own chips keeps them - the signed-out one
+  // offers "סריקת מסמך" and "חנות", which the canned openers below do not cover
+  // and which would otherwise vanish with the bubble that carried them.
+  const restingSuggestions = restingGreetingChoices.length > 0
+    ? restingGreetingChoices
+    : restingPetName
+    ? [
+        `מה מומלץ להאכיל את ${restingPetName}?`,
+        `${restingPetName} מגרד הרבה, מה לעשות?`,
+        "מתי החיסון הבא?",
+        "המלצה על מוצר",
+      ]
+    : [
+        "מה מומלץ להאכיל?",
+        // Species-neutral on purpose: the platform carries rabbits and parrots
+        // as well as dogs, and a crate-training opener excludes most of them.
+        "איך מרגילים לבית חדש?",
+        "מתי החיסון הבא?",
+        "המלצה על מוצר",
+      ];
 
   // Check if message has expanded content (pickers, cards etc.)
   const hasExpandedContent = (message: Message) => 
@@ -303,8 +369,86 @@ const ChatContent = () => {
           className="flex-1 overflow-y-auto overflow-x-hidden"
         >
           <div className="mx-auto max-w-2xl overflow-x-hidden">
+          {/* Resting state, the shop's search screen applied to a conversation.
+              The chat used to open with an assistant bubble saying hello, which
+              is a turn spent on nothing: the question is what the screen is for,
+              so the screen asks it. Once the person has said anything, this is
+              gone for good - it keys on whether a USER message exists, not on
+              the message count, so the greeting bubble alone still counts as
+              resting. */}
+          {isResting ? (
+            <div className="flex flex-col items-center justify-center px-6 pt-[18vh] pb-10 text-center">
+              {/* The pet, carrying the only aurora on the screen.
+                  Both the halo and the ring read --gradient-primary rather than
+                  repeating the five hexes: a brand change that missed a copy
+                  here would leave one stale aurora in the app, on the one
+                  surface that is allowed to have one. */}
+              <div className="relative mb-5 flex h-[84px] w-[84px] items-center justify-center">
+                <div
+                  aria-hidden
+                  className="absolute -inset-3 rounded-full opacity-40 blur-xl"
+                  style={{ background: "var(--gradient-primary)" }}
+                />
+                <div className="mipo-gradient-ring relative h-[84px] w-[84px] !p-[2px]">
+                  {selectedPet?.avatar_url ? (
+                    <img
+                      src={selectedPet.avatar_url}
+                      alt={selectedPet.name || "החיה שלי"}
+                      className="h-full w-full rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center rounded-full bg-mipo-soft">
+                      <PawPrint className="h-8 w-8 text-mipo-muted" strokeWidth={1.4} />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <h1 className="text-[22px] font-bold leading-tight text-mipo-ink">
+                {restingPrompt}
+              </h1>
+              <p className="mt-2 text-[13px] text-mipo-muted">
+                {isRestingPetChoice
+                  ? "בחרו חיה כדי להתחיל"
+                  : "אפשר לשאול על בריאות, תזונה, התנהגות או מוצרים"}
+              </p>
+
+              {isRestingPetChoice ? (
+                <div className="mt-6 w-full">
+                  <QuickReplySuggestions
+                    suggestions={restingGreetingChoices}
+                    petAvatars={userPets.map((p) => ({
+                      name: p.name,
+                      avatarUrl: p.avatar_url,
+                      type: p.type,
+                    }))}
+                    onSelect={(text) => {
+                      if (userPets.some((p) => p.name === text)) {
+                        handlePetSelect(text);
+                      } else {
+                        sendMessage(text);
+                      }
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="mt-6 flex flex-wrap justify-center gap-2">
+                  {restingSuggestions.map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      type="button"
+                      onClick={() => setInput(suggestion)}
+                      className="min-h-11 rounded-full border border-mipo-line px-4 py-2 text-[13px] text-mipo-ink transition-colors hover:bg-mipo-soft"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : null}
           <AnimatePresence>
-            {messages.map((message, index) => {
+            {(isResting ? [] : messages).map((message, index) => {
               const isUser = message.role === "user";
 
               return (
@@ -589,7 +733,7 @@ const ChatContent = () => {
           onSend={handleSend}
           onKeyPress={handleKeyPress}
           isLoading={isLoading}
-          placeholder="כתיבת הודעה..."
+          placeholder={isResting ? restingPrompt : "כתיבת הודעה..."}
           onAttachment={handleAttachment}
           onQuickAction={(actionId) => {
             if (actionId === "calendar") {
