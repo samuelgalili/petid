@@ -22,12 +22,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
 import {
   AdminStatCard, AdminStatsGrid, AdminToolbar,
   AdminEmptyState, AdminPageHeader,
@@ -223,98 +223,112 @@ const AdminCustomers = () => {
           </Select>
         </AdminToolbar>
 
-        {loading ? (
-          <div className="space-y-2">
-            {[...Array(6)].map((_, index) => <Skeleton key={index} className="h-14 w-full rounded-lg" />)}
-          </div>
-        ) : filtered.length === 0 ? (
-          <AdminEmptyState
-            icon={Users}
-            title="אין לקוחות"
-            description={customers.length === 0 ? "עדיין לא נרשם ולא הזמין אף אחד" : "לא נמצאו לקוחות התואמים לחיפוש"}
-          />
-        ) : (
-          <Card className="border-border/30 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/30 text-muted-foreground">
-                    <th className="py-3 px-3 text-right font-medium">לקוח</th>
-                    <th className="py-3 px-3 text-right font-medium">קשר</th>
-                    <th className="py-3 px-3 text-center font-medium">סוג</th>
-                    <th className="py-3 px-3 text-center font-medium">חיות</th>
-                    <th className="py-3 px-3 text-center font-medium">הזמנות</th>
-                    <th className="py-3 px-3 text-left font-medium">שולם</th>
-                    <th className="py-3 px-3 text-right font-medium">הזמנה אחרונה</th>
-                    <th className="py-3 px-3 w-10"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((customer) => (
-                    <tr
-                      key={customer.identity_id}
-                      className="border-b hover:bg-muted/30 transition-colors cursor-pointer"
-                      onClick={() => setSelectedId(customer.identity_id)}
-                    >
-                      <td className="py-3 px-3">
-                        <p className="font-semibold text-foreground text-xs">
-                          {customer.full_name || "ללא שם"}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">
-                          נרשם {formatDate(customer.created_at)}
-                        </p>
-                      </td>
-                      <td className="py-3 px-3">
-                        <p className="text-xs text-foreground">{customer.email || "—"}</p>
-                        <p className="text-[10px] text-muted-foreground" dir="ltr">
-                          {customer.phone || ""}
-                        </p>
-                      </td>
-                      <td className="py-3 px-3 text-center">
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "text-[10px]",
-                            customer.identity_kind === "account"
-                              ? "text-emerald-600 border-emerald-500/30 bg-emerald-500/10"
-                              : "text-muted-foreground",
-                          )}
-                        >
-                          {customer.identity_kind === "account" ? "חשבון" : "אורח"}
-                        </Badge>
-                      </td>
-                      <td className="py-3 px-3 text-center text-xs">{customer.pets_count}</td>
-                      <td className="py-3 px-3 text-center text-xs">{customer.orders_count}</td>
-                      <td className="py-3 px-3 text-left text-xs font-semibold">
-                        {formatCurrency(customer.total_spent)}
-                      </td>
-                      <td className="py-3 px-3 text-xs text-muted-foreground">
-                        {formatDate(customer.last_order_at)}
-                      </td>
-                      <td className="py-3 px-3">
-                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="p-3 border-t bg-muted/20 text-xs text-muted-foreground">
-              מציג {filtered.length} מתוך {customers.length} לקוחות
-            </div>
-          </Card>
-        )}
-
-        <Sheet open={!!selectedId} onOpenChange={(open) => { if (!open) setSelectedId(null); }}>
-          <SheetContent side="left" className="w-full sm:w-[440px] p-0">
+        {/* The list and the card side by side, so a customer can be read and
+            written about without losing the row they came from. */}
+        <AdminWorkspace
+          open={!!selectedId}
+          onClose={() => setSelectedId(null)}
+          detail={
             <CustomerDetailPanel
               detail={detail}
               loading={detailLoading}
               onNoteAdded={handleNoteAdded}
               onNoteDeleted={handleNoteDeleted}
             />
-          </SheetContent>
-        </Sheet>
+          }
+        >
+          {loading ? (
+            <div className="space-y-2">
+              {[...Array(6)].map((_, index) => <Skeleton key={index} className="h-14 w-full rounded-lg" />)}
+            </div>
+          ) : filtered.length === 0 ? (
+            <AdminEmptyState
+              icon={Users}
+              title="אין לקוחות"
+              description={customers.length === 0 ? "עדיין לא נרשם ולא הזמין אף אחד" : "לא נמצאו לקוחות התואמים לחיפוש"}
+            />
+          ) : (
+            <Card className="border-border/30 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/30 text-muted-foreground">
+                      <th className="py-3 px-3 text-right font-medium">לקוח</th>
+                      <th className="py-3 px-3 text-right font-medium">קשר</th>
+                      <th className="py-3 px-3 text-center font-medium">סוג</th>
+                      <th className="py-3 px-3 text-center font-medium">חיות</th>
+                      <th className="py-3 px-3 text-center font-medium">הזמנות</th>
+                      <th className="py-3 px-3 text-left font-medium">שולם</th>
+                      <th className="py-3 px-3 text-right font-medium">הזמנה אחרונה</th>
+                      <th className="py-3 px-3 w-10"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((customer) => (
+                      <tr
+                        key={customer.identity_id}
+                        // The selected row has to be visible now. Under a
+                        // sheet it did not matter - the sheet covered the
+                        // list - but beside one, an unmarked list leaves the
+                        // two panes with nothing tying them together.
+                        aria-selected={selectedId === customer.identity_id}
+                        className={cn(
+                          "border-b transition-colors cursor-pointer",
+                          selectedId === customer.identity_id
+                            ? "bg-mipo-soft"
+                            : "hover:bg-muted/30",
+                        )}
+                        onClick={() => setSelectedId(customer.identity_id)}
+                      >
+                        <td className="py-3 px-3">
+                          <p className="font-semibold text-foreground text-xs">
+                            {customer.full_name || "ללא שם"}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
+                            נרשם {formatDate(customer.created_at)}
+                          </p>
+                        </td>
+                        <td className="py-3 px-3">
+                          <p className="text-xs text-foreground">{customer.email || "—"}</p>
+                          <p className="text-[10px] text-muted-foreground" dir="ltr">
+                            {customer.phone || ""}
+                          </p>
+                        </td>
+                        <td className="py-3 px-3 text-center">
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-[10px]",
+                              customer.identity_kind === "account"
+                                ? "text-emerald-600 border-emerald-500/30 bg-emerald-500/10"
+                                : "text-muted-foreground",
+                            )}
+                          >
+                            {customer.identity_kind === "account" ? "חשבון" : "אורח"}
+                          </Badge>
+                        </td>
+                        <td className="py-3 px-3 text-center text-xs">{customer.pets_count}</td>
+                        <td className="py-3 px-3 text-center text-xs">{customer.orders_count}</td>
+                        <td className="py-3 px-3 text-left text-xs font-semibold">
+                          {formatCurrency(customer.total_spent)}
+                        </td>
+                        <td className="py-3 px-3 text-xs text-muted-foreground">
+                          {formatDate(customer.last_order_at)}
+                        </td>
+                        <td className="py-3 px-3">
+                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="p-3 border-t bg-muted/20 text-xs text-muted-foreground">
+                מציג {filtered.length} מתוך {customers.length} לקוחות
+              </div>
+            </Card>
+          )}
+        </AdminWorkspace>
       </div>
     </AdminLayout>
   );
@@ -418,9 +432,9 @@ const CustomerDetailPanel = ({
   if (loading || !detail) {
     return (
       <div dir="rtl">
-        <SheetHeader className="p-4 pr-14 border-b text-right">
-          <SheetTitle className="text-base">כרטיס לקוח</SheetTitle>
-        </SheetHeader>
+        <div className="p-4 pr-14 border-b border-mipo-line text-right">
+          <h2 className="text-base font-semibold text-mipo-ink">כרטיס לקוח</h2>
+        </div>
         <div className="p-4 space-y-3">
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-20 w-full" />
@@ -435,13 +449,20 @@ const CustomerDetailPanel = ({
 
   return (
     <div className="flex flex-col h-full" dir="rtl">
-      {/* pr-14 keeps the name clear of the sheet's own close button */}
-      <SheetHeader className="p-4 pr-14 border-b space-y-1 text-right">
-        <SheetTitle className="text-base">{customer.full_name || "ללא שם"}</SheetTitle>
+      {/* Plain markup, not SheetHeader/SheetTitle. This panel now renders in
+          two places - inside the Sheet on a narrow screen, and standalone in
+          the workspace column on a wide one - and SheetTitle is a Radix
+          Dialog.Title, which THROWS when it is rendered outside a Dialog. The
+          side-by-side layout would have crashed the page on first open.
+
+          pr-14 keeps the name clear of the close button, which sits in the
+          same corner in both contexts. */}
+      <div className="p-4 pr-14 border-b border-mipo-line space-y-1 text-right">
+        <h2 className="text-base font-semibold text-mipo-ink">{customer.full_name || "ללא שם"}</h2>
         <p className="text-xs text-muted-foreground">
           {customer.identity_kind === "account" ? "בעל חשבון" : "אורח, הזמין בלי להירשם"}
         </p>
-      </SheetHeader>
+      </div>
 
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-5">
