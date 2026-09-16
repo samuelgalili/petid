@@ -32,10 +32,14 @@ import {
   type SafetyLevel,
 } from "@/lib/petSafetyScore";
 import { feedingGuidanceSourceLabelHe, readFeedingGuidance } from "@/lib/feedingGuidance";
-import { FREE_SHIPPING_THRESHOLD } from "@/lib/shipping";
-
-
-const SHIPPING_ESTIMATE_HE = "3-5 ימי עסקים";
+import {
+  FREE_SHIPPING_THRESHOLD,
+  RETURNS_DETAIL_HE,
+  RETURNS_SUMMARY_HE,
+  SHIPPING_ESTIMATE_HE,
+  SHIPPING_FEE,
+  shippingFeeLabelHe,
+} from "@/lib/shipping";
 
 const asNumber = (value: number | string | null | undefined) => {
   if (value === null || value === undefined || value === "") return 0;
@@ -484,6 +488,7 @@ const ProductDetailAws = () => {
                   {price * quantity >= FREE_SHIPPING_THRESHOLD
                     ? "המשלוח חינם בהזמנה הזו."
                     : `משלוח חינם מעל ₪${FREE_SHIPPING_THRESHOLD}.`}
+                  <span className="mt-1 block">{RETURNS_SUMMARY_HE}</span>
                 </span>
               </div>
             </CardContent>
@@ -572,6 +577,48 @@ const ProductDetailAws = () => {
                 </div>
               ))}
             </dl>
+          </Section>
+
+          {/* What happens after the button.
+              These were answered - 3-5 days, ₪39, free over ₪199, a bag up to
+              a fifth used comes back for credit with the customer paying the
+              return carriage - and then written into src/lib/shipping.ts and
+              shown on no page at all. A shopper deciding whether to buy pet
+              food needs to know what happens if the animal will not eat it,
+              and that answer was reachable only by reading the source. */}
+          <Section title="משלוח והחזרות" icon={Truck}>
+            <dl className="overflow-hidden rounded-xl border">
+              <div className="flex items-baseline justify-between gap-4 bg-muted/30 px-4 py-2.5 text-sm">
+                <dt className="text-muted-foreground">זמן אספקה</dt>
+                <dd className="font-medium">{SHIPPING_ESTIMATE_HE}</dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-4 px-4 py-2.5 text-sm">
+                <dt className="text-muted-foreground">דמי משלוח</dt>
+                <dd className="font-medium tabular-nums">
+                  {shippingFeeLabelHe(price * quantity)}
+                  {price * quantity < FREE_SHIPPING_THRESHOLD && (
+                    <span className="mr-1 font-normal text-muted-foreground">
+                      (₪{SHIPPING_FEE}, חינם מעל ₪{FREE_SHIPPING_THRESHOLD})
+                    </span>
+                  )}
+                </dd>
+              </div>
+              <div className="flex flex-col gap-1 bg-muted/30 px-4 py-2.5 text-sm">
+                <dt className="text-muted-foreground">החזרות</dt>
+                <dd className="font-medium leading-relaxed">{RETURNS_DETAIL_HE}</dd>
+              </div>
+            </dl>
+            <button
+              type="button"
+              onClick={() =>
+                window.dispatchEvent(
+                  new CustomEvent("open-legal-drawer", { detail: { key: "consumer-protection" } }),
+                )
+              }
+              className="text-xs text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
+            >
+              זכויות צרכן ומדיניות ביטול מלאה
+            </button>
           </Section>
         </div>
       </main>

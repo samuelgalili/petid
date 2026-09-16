@@ -14,10 +14,6 @@ export const SHIPPING_ESTIMATE_MAX_DAYS = 5;
 export const SHIPPING_ESTIMATE_HE =
   `${SHIPPING_ESTIMATE_MIN_DAYS}-${SHIPPING_ESTIMATE_MAX_DAYS} ימי עסקים`;
 
-/** "3-5 business days" */
-export const SHIPPING_ESTIMATE_EN =
-  `${SHIPPING_ESTIMATE_MIN_DAYS}-${SHIPPING_ESTIMATE_MAX_DAYS} business days`;
-
 /**
  * What shipping costs, and where it stops costing.
  *
@@ -55,9 +51,21 @@ export const amountToFreeShipping = (subtotal: number) =>
  */
 export const RETURN_MAX_USED_SHARE = 0.2;
 
+/**
+ * The share as it is spoken.
+ *
+ * Both sentences below used to spell "20%" out by hand next to the constant,
+ * so moving the share to a quarter would have left the customer reading the
+ * old figure - the exact drift this module exists to prevent, reproduced
+ * inside it.
+ */
+const RETURN_MAX_USED_PERCENT = Math.round(RETURN_MAX_USED_SHARE * 100);
+
 /** One line, for a product page. */
-export const RETURNS_SUMMARY_HE = "עד כ־20% מהשק — זיכוי בהחזרה, המשלוח על הלקוח";
+export const RETURNS_SUMMARY_HE =
+  `עד כ־${RETURN_MAX_USED_PERCENT}% מהשק — זיכוי בהחזרה, המשלוח על הלקוח`;
 
 /** The full sentence, for the policy page and the assistant. */
 export const RETURNS_DETAIL_HE =
-  "אפשר להחזיר שק שנוצל עד כ־20% ולקבל זיכוי. עלות משלוח ההחזרה חלה על הלקוח.";
+  `אפשר להחזיר שק שנוצל עד כ־${RETURN_MAX_USED_PERCENT}% ולקבל זיכוי. `
+  + "עלות משלוח ההחזרה חלה על הלקוח.";
