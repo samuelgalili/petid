@@ -208,11 +208,7 @@ const SoundtrackFeed = () => {
                   initial={{ scale: 0 }}
                   animate={{ scale: [1, 1.3, 1] }}
                   transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                  className="absolute top-0.5 right-0.5 w-[8px] h-[8px] rounded-full"
-                  style={{
-                    background: "#FF6B9D",
-                    boxShadow: "0 0 8px #FF6B9D",
-                  }}
+                  className="absolute top-0.5 right-0.5 w-[8px] h-[8px] rounded-full bg-destructive"
                 />
               )}
             </motion.button>

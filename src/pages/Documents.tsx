@@ -235,7 +235,7 @@ export default function Documents() {
           <span>"{docToDelete.title}" נמחק</span>
           <button
             onClick={() => handleUndoDelete()}
-            className="px-3 py-1.5 bg-gradient-to-r from-primary via-accent to-primary-light text-white text-sm font-medium rounded-lg hover:opacity-90 transition-opacity"
+            className="px-3 py-1.5 border border-mipo-line text-mipo-ink text-sm font-medium rounded-lg hover:bg-mipo-soft transition-colors"
           >
             ביטול
           </button>
@@ -469,7 +469,7 @@ export default function Documents() {
           >
             <Button
               onClick={() => setIsDialogOpen(true)}
-              className="w-full h-12 rounded-2xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-semibold text-sm shadow-lg shadow-primary/20 transition-all duration-300 gap-2 hover:scale-[1.01] active:scale-[0.99]"
+              className="mipo-cta-button w-full h-12 min-h-12 rounded-2xl text-sm gap-2"
             >
               <Sparkles className="w-4 h-4" strokeWidth={1.5} />
               העלאת מסמך חדש
@@ -480,14 +480,14 @@ export default function Documents() {
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogContent className="max-w-md p-0 overflow-hidden border-0 bg-card rounded-3xl" dir="rtl">
               {/* Header with Gradient */}
-              <div className="bg-gradient-to-r from-primary via-accent to-primary-light p-5">
+              <div className="border-b border-mipo-line p-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-white font-bold text-lg">העלאת מסמך חדש</h2>
-                    <p className="text-white/80 text-sm mt-1">שמור את המסמכים החשובים</p>
+                    <h2 className="text-mipo-ink font-bold text-lg">העלאת מסמך חדש</h2>
+                    <p className="text-mipo-muted text-sm mt-1">שמור את המסמכים החשובים</p>
                   </div>
-                  <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
-                    <Upload className="w-6 h-6 text-white" />
+                  <div className="w-12 h-12 rounded-full border border-mipo-line flex items-center justify-center">
+                    <Upload className="w-6 h-6 text-mipo-ink" strokeWidth={1.6} />
                   </div>
                 </div>
               </div>
@@ -568,7 +568,7 @@ export default function Documents() {
                     htmlFor="upload-file"
                     className={`
                       relative flex flex-col items-center justify-center w-full h-28 
-                      border-2 border-dashed rounded-2xl cursor-pointer transition-all duration-300 group
+                      border border-dashed rounded-2xl cursor-pointer transition-all duration-300 group
                       ${selectedFile 
                         ? 'border-primary bg-primary/5' 
                         : 'border-muted-foreground/30 hover:border-primary hover:bg-muted'

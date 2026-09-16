@@ -354,7 +354,7 @@ const ProductDetailAws = () => {
                   onClick={() => setActiveImage(index)}
                   aria-label={`תמונה ${index + 1}`}
                   aria-current={index === activeImage}
-                  className={`h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 transition ${
+                  className={`h-16 w-16 shrink-0 overflow-hidden rounded-xl border transition ${
                     index === activeImage ? "border-primary" : "border-transparent opacity-70 hover:opacity-100"
                   }`}
                 >

@@ -54,19 +54,19 @@ const Install = () => {
     icon: Heart,
     title: "פיד חברתי",
     description: "שתפו את האהבה עם הקהילה",
-    gradient: "from-pink-500 to-rose-500"
+
   },
   {
     icon: Brain,
     title: "AI Scientist",
     description: "ניטור בריאות בזמן אמת וייעוץ חכם",
-    gradient: "from-primary to-accent"
+
   },
   {
     icon: ShoppingBag,
     title: "חנות חכמה",
     description: "רק המוצרים הטובים והמאומתים לחיית המחמד שלכם",
-    gradient: "from-amber-500 to-orange-500"
+
   }];
 
 
@@ -112,7 +112,7 @@ const Install = () => {
 
             טיפול בחיות מחמד.
             <br />
-            <span className="bg-gradient-to-l from-primary to-accent bg-clip-text text-transparent">
+            <span className="text-white/80">
               מחדש.
             </span>
           </motion.h1>
@@ -205,8 +205,8 @@ const Install = () => {
             <ScrollReveal key={feature.title} delay={index * 0.15}>
                 <div className="group relative bg-card border border-border rounded-3xl p-8 hover:shadow-elevated transition-all duration-500 hover:-translate-y-1">
                   {/* Icon */}
-                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                    <feature.icon className="w-7 h-7 text-white" strokeWidth={1.5} />
+                  <div className="w-14 h-14 rounded-2xl border border-mipo-line flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                    <feature.icon className="w-7 h-7 text-mipo-ink" strokeWidth={1.5} />
                   </div>
 
                   <h3 className="text-xl font-bold text-foreground mb-2">{feature.title}</h3>
@@ -236,10 +236,10 @@ const Install = () => {
                 className="absolute inset-0 rounded-full bg-primary/10" />
 
               {/* Badge core */}
-              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary via-accent to-primary flex items-center justify-center shadow-2xl">
+              <div className="absolute inset-0 rounded-full bg-mipo-ink flex items-center justify-center shadow-2xl">
                 <div className="flex flex-col items-center">
-                  <Shield className="w-10 h-10 text-white mb-1" strokeWidth={1.5} />
-                  <span className="text-white text-xs font-bold tracking-wider">SAFE</span>
+                  <Shield className="w-10 h-10 text-mipo-surface mb-1" strokeWidth={1.5} />
+                  <span className="text-mipo-surface text-xs font-bold tracking-wider">SAFE</span>
                 </div>
               </div>
             </div>
@@ -293,15 +293,15 @@ const Install = () => {
       </section>
 
       {/* ===== PWA INSTALL CTA ===== */}
-      <section className="py-24 px-6 bg-gradient-to-b from-background to-muted/30">
+      <section className="py-24 px-6 bg-mipo-soft">
         <div className="max-w-md mx-auto text-center">
           <ScrollReveal>
             <motion.div
               animate={{ scale: [1, 1.05, 1] }}
               transition={{ repeat: Infinity, duration: 3 }}
-              className="w-24 h-24 rounded-3xl bg-gradient-to-br from-primary to-accent mx-auto mb-8 flex items-center justify-center shadow-2xl">
+              className="w-24 h-24 rounded-3xl border border-mipo-line bg-mipo-surface mx-auto mb-8 flex items-center justify-center">
 
-              <Download className="w-10 h-10 text-white" />
+              <Download className="w-10 h-10 text-mipo-ink" strokeWidth={1.5} />
             </motion.div>
 
             <h2 className="text-3xl font-black text-foreground mb-3">

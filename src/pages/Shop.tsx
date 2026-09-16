@@ -218,12 +218,12 @@ const Shop = () => {
   const sizes = ["S", "M", "L", "XL"];
 
   const quickTags = [
-    { id: "food", label: "מזון", icon: "🍖", color: "#FF6B6B" },
-    { id: "toys", label: "צעצועים", icon: "🎾", color: "#4ECDC4" },
-    { id: "beds", label: "מיטות", icon: "🛏️", color: "#9B59B6" },
-    { id: "grooming", label: "טיפוח", icon: "✨", color: "#F39C12" },
-    { id: "treats", label: "חטיפים", icon: "🦴", color: "#E74C3C" },
-    { id: "accessories", label: "אביזרים", icon: "🎀", color: "#3498DB" },
+    { id: "food", label: "מזון", icon: "🍖" },
+    { id: "toys", label: "צעצועים", icon: "🎾" },
+    { id: "beds", label: "מיטות", icon: "🛏️" },
+    { id: "grooming", label: "טיפוח", icon: "✨" },
+    { id: "treats", label: "חטיפים", icon: "🦴" },
+    { id: "accessories", label: "אביזרים", icon: "🎀" },
   ];
 
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
@@ -865,7 +865,7 @@ const Shop = () => {
                   />
                   {/* Sale badge */}
                   {selectedProduct.originalPrice && selectedProduct.originalPrice > selectedProduct.price && (
-                    <div className="absolute top-2 left-2 bg-gradient-to-r from-red-500 to-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                    <div className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
                       -{Math.round((1 - selectedProduct.price / selectedProduct.originalPrice) * 100)}%
                     </div>
                   )}

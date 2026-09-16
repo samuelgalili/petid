@@ -154,7 +154,7 @@ const PaymentSuccess = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-success/10 to-background flex items-center justify-center p-4" dir="rtl">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
       <Card className="max-w-md w-full text-center border-0 shadow-xl">
         <CardHeader className="pb-4">
           <div className="flex justify-center mb-4">
