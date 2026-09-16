@@ -155,7 +155,7 @@ const MipoHome = () => {
           </>
         ) : (
           <section className="px-5 pt-6">
-            <button onClick={() => navigate("/add-pet")} className="mipo-gradient-button w-full px-5">
+            <button onClick={() => navigate("/add-pet")} className="mipo-cta-button w-full px-5">
               <Plus className="h-5 w-5" />
               הוספת חיית המחמד הראשונה
             </button>

@@ -717,15 +717,38 @@
     box-shadow: var(--shadow-button-hover);
   }
 
-  .mipo-gradient-button {
+  /* The one filled button: the primary action on a screen, and nothing else.
+   *
+   * It replaces .mipo-gradient-button, which filled the CTA with the brand
+   * aurora. The aurora now belongs to the pet avatar alone, so the emphasis
+   * here comes from weight rather than colour — solid ink, the way a clean
+   * black-and-white interface marks its one commitment per screen.
+   *
+   * ink and surface INVERT between the themes (ink 9% light / 95% dark), so
+   * this is black-on-white in light and white-on-black in dark without a .dark
+   * override. Writing `text-white` against bg-mipo-ink instead — which is the
+   * obvious-looking thing — gives white on near-white in dark mode. */
+  .mipo-cta-button {
     @apply inline-flex items-center justify-center gap-2 font-bold transition-all duration-200 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
     min-height: 3.25rem;
     border-radius: 999px;
     border: 0;
-    /* F24: label must stay dark on the light gradient in BOTH themes — intentionally not var() */
-    color: hsl(240 11% 9%);
-    background: var(--gradient-primary);
+    color: hsl(var(--mipo-surface));
+    background: hsl(var(--mipo-ink));
     box-shadow: var(--shadow-button);
+  }
+
+  .mipo-cta-button:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-button-hover);
+  }
+
+  /* Selected state for chips and segmented controls: same inversion, no
+   * aurora. Pairs with a thin-line resting state. */
+  .mipo-chip-selected {
+    color: hsl(var(--mipo-surface));
+    background: hsl(var(--mipo-ink));
+    border-color: transparent;
   }
 
   .mipo-input {

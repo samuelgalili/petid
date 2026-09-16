@@ -294,7 +294,7 @@ const ChatInputBar = ({
                 whileTap={{ scale: 0.9 }}
                 onClick={onSend}
                 disabled={isLoading}
-                className="mipo-gradient-button h-11 min-h-11 w-11 flex-shrink-0 p-0 disabled:opacity-50"
+                className="mipo-cta-button h-11 min-h-11 w-11 flex-shrink-0 p-0 disabled:opacity-50"
                 aria-label="שליחת הודעה"
               >
                 <Send className="w-4 h-4" />

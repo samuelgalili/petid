@@ -33,7 +33,7 @@ const steps: OnboardingStep[] = [
     title: "הפרופיל של החבר שלך",
     subtitle: "כל המידע החשוב במקום אחד",
     icon: <Heart className="w-12 h-12" />,
-    iconBg: "mipo-gradient-button",
+    iconBg: "border border-mipo-line text-mipo-ink",
     features: [
       { emoji: "📸", text: "זיהוי גזע אוטומטי בעזרת AI" },
       { emoji: "📁", text: "שמירת מסמכים וטרינריים" },
@@ -45,7 +45,7 @@ const steps: OnboardingStep[] = [
     title: "דאגה לטווח ארוך",
     subtitle: "לא חנות — מערכת ליווי",
     icon: <Stethoscope className="w-12 h-12" />,
-    iconBg: "mipo-gradient-button",
+    iconBg: "border border-mipo-line text-mipo-ink",
     features: [
       { emoji: "🎯", text: "המלצות מותאמות לגיל ולגזע" },
       { emoji: "⏰", text: "תזכורות להזמנה חוזרת" },
@@ -57,7 +57,7 @@ const steps: OnboardingStep[] = [
     title: "חלק ממשפחה גדולה",
     subtitle: "קהילה שמבינה אותך",
     icon: <Users className="w-12 h-12" />,
-    iconBg: "mipo-gradient-button",
+    iconBg: "border border-mipo-line text-mipo-ink",
     features: [
       { emoji: "🌳", text: "מציאת גינות כלבים קרובות" },
       { emoji: "🏥", text: "המלצות על וטרינרים" },
@@ -254,7 +254,7 @@ export const OnboardingFlow = ({ onComplete }: { onComplete: () => void }) => {
           )}
           <Button
             onClick={handleNext}
-            className="mipo-gradient-button flex-1 h-14 text-base"
+            className="mipo-cta-button flex-1 h-14 text-base"
           >
             {isLastStep ? "בואו נתחיל" : "הבא"}
             <ChevronRight className="w-5 h-5 mr-2" />

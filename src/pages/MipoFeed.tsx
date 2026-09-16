@@ -315,7 +315,7 @@ const CommentsSheet = ({ post, onClose, onCountChange }: { post: MipoSocialPost;
         </div>
         <form onSubmit={submit} className="flex gap-2 border-t border-black/[0.06] p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <input value={body} onChange={(event) => setBody(event.target.value)} maxLength={500} placeholder="כתיבת תגובה…" className="mipo-input min-h-12 min-w-0 flex-1 px-4 outline-none" />
-          <button disabled={!body.trim() || sending} className="mipo-gradient-button h-12 min-h-12 w-12 p-0 disabled:opacity-40" aria-label="שליחת תגובה">
+          <button disabled={!body.trim() || sending} className="mipo-cta-button h-12 min-h-12 w-12 p-0 disabled:opacity-40" aria-label="שליחת תגובה">
             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </button>
         </form>
@@ -342,7 +342,7 @@ const EmptyFeed = ({ onCreate }: { onCreate: () => void }) => (
     </div>
     <h1 className="mt-6 text-2xl font-semibold text-white">הפיד מתחיל ברגע אחד</h1>
     <p className="mt-2 max-w-xs text-sm leading-6 text-white/70">שתפו תמונה או סרטון, תייגו את חיית המחמד והתחילו את הקהילה של Mipo.</p>
-    <button onClick={onCreate} className="mipo-gradient-button mt-6 px-6"><Camera className="h-5 w-5" />יצירת הרגע הראשון</button>
+    <button onClick={onCreate} className="mipo-cta-button mt-6 px-6"><Camera className="h-5 w-5" />יצירת הרגע הראשון</button>
   </div>
 );
 

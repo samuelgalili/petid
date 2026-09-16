@@ -804,7 +804,7 @@ const Chat = () => {
             אפשר לבטל את ההסכמה בכל עת בהגדרות. ללא הסכמה הצ'אט נשאר חסום.
           </p>
           <div className="mt-6 space-y-3">
-            <Button className="mipo-gradient-button w-full" onClick={grantConsent} disabled={savingConsent}>
+            <Button className="mipo-cta-button w-full" onClick={grantConsent} disabled={savingConsent}>
               {savingConsent ? "שומר..." : "אני מסכימ/ה וממשיך/ה לצ'אט"}
             </Button>
             <Button className="mipo-pill-button w-full" variant="outline" onClick={() => navigate("/")}>לא עכשיו</Button>

@@ -250,7 +250,7 @@ const Notifications = () => {
                   onClick={() => { haptic("selection"); setActiveFilter(tab.key); }}
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
                     isActive
-                      ? "bg-mipo-ink text-white"
+                      ? "mipo-chip-selected"
                       : "bg-muted/40 backdrop-blur-md text-muted-foreground hover:bg-muted/60 border border-border/20"
                   }`}
                 >

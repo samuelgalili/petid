@@ -544,7 +544,7 @@ const AddPet = () => {
               <div className="h-1.5 bg-mipo-soft rounded-full overflow-hidden">
                 <motion.div 
                   className="h-full rounded-full"
-                  style={{ background: "var(--gradient-primary)" }}
+                  style={{ background: "hsl(var(--mipo-ink))" }}
                   initial={{ width: 0 }}
                   animate={{ width: `${(displayStep / progressSteps) * 100}%` }}
                   transition={{ duration: 0.4, ease: "easeOut" }}
@@ -568,19 +568,17 @@ const AddPet = () => {
             className="mipo-flow-card p-8 max-w-sm w-full space-y-6"
           >
             <div 
-              className="w-16 h-16 mx-auto rounded-full flex items-center justify-center shadow-shop"
-              style={{ background: 'var(--gradient-primary)' }}
+              className="w-16 h-16 mx-auto rounded-full flex items-center justify-center border border-mipo-line"
             >
-              <Sparkles className="w-8 h-8 text-white" />
+              <Sparkles className="w-8 h-8 text-mipo-ink" strokeWidth={1.6} />
             </div>
             <h3 className="text-2xl font-semibold text-mipo-ink text-center">החלקה לניווט</h3>
             <div className="space-y-4">
               <div className="flex items-center gap-4 p-3 bg-mipo-soft rounded-xl">
                 <div 
-                  className="w-10 h-10 rounded-full flex items-center justify-center"
-                  style={{ background: 'var(--gradient-primary)' }}
+                  className="w-10 h-10 rounded-full flex items-center justify-center border border-mipo-line"
                 >
-                  <ArrowRight className="w-5 h-5 text-white" />
+                  <ArrowRight className="w-5 h-5 text-mipo-ink" strokeWidth={1.6} />
                 </div>
                 <p className="text-mipo-muted text-sm">
                   החלק <span className="font-semibold text-mipo-ink">ימינה</span> לחזור
@@ -588,10 +586,9 @@ const AddPet = () => {
               </div>
               <div className="flex items-center gap-4 p-3 bg-mipo-soft rounded-xl">
                 <div 
-                  className="w-10 h-10 rounded-full flex items-center justify-center"
-                  style={{ background: 'var(--gradient-primary)' }}
+                  className="w-10 h-10 rounded-full flex items-center justify-center border border-mipo-line"
                 >
-                  <ArrowLeft className="w-5 h-5 text-white" />
+                  <ArrowLeft className="w-5 h-5 text-mipo-ink" strokeWidth={1.6} />
                 </div>
                 <p className="text-mipo-muted text-sm">
                   החלק <span className="font-semibold text-mipo-ink">שמאלה</span> להמשיך
@@ -600,7 +597,7 @@ const AddPet = () => {
             </div>
             <Button 
               onClick={dismissTutorial} 
-              className="mipo-gradient-button w-full"
+              className="mipo-cta-button w-full"
             >
               הבנתי!
             </Button>
@@ -649,7 +646,7 @@ const AddPet = () => {
                 <Button 
                   onClick={nextStep} 
                   size="lg" 
-                  className="mipo-gradient-button w-full"
+                  className="mipo-cta-button w-full"
                 >
                   בואו נתחיל
                 </Button>
@@ -758,7 +755,7 @@ const AddPet = () => {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={handleCameraCapture}
-                      className="mipo-gradient-button px-4 py-2.5 text-sm"
+                      className="mipo-cta-button px-4 py-2.5 text-sm"
                     >
                       <Camera className="w-4 h-4" />
                       צלם
@@ -805,11 +802,13 @@ const AddPet = () => {
                       className="space-y-3"
                     >
                       <div
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm shadow-xs"
-                        style={{ background: breedConfidence > 0.8 ? 'var(--gradient-primary)' : 'hsl(var(--mipo-soft))' }}
+                        className={cn(
+                          "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm border border-mipo-line",
+                          breedConfidence > 0.8 ? "mipo-chip-selected" : "bg-mipo-soft",
+                        )}
                       >
-                        <Sparkles className={cn("w-4 h-4", breedConfidence > 0.8 ? "text-white" : "text-warning")} />
-                        <span className={cn("font-medium", breedConfidence > 0.8 ? "text-white" : "text-mipo-ink")}>
+                        <Sparkles className={cn("w-4 h-4", breedConfidence > 0.8 ? "" : "text-warning")} />
+                        <span className={cn("font-medium", breedConfidence > 0.8 ? "" : "text-mipo-ink")}>
                           זוהה: {formData.breed} ({Math.round(breedConfidence * 100)}%)
                         </span>
                       </div>
@@ -1027,7 +1026,7 @@ const AddPet = () => {
                   <Button 
                     onClick={nextStep} 
                     disabled={!formData.name.trim()} 
-                    className="mipo-gradient-button flex-1 h-12"
+                    className="mipo-cta-button flex-1 h-12"
                   >
                     המשך
                   </Button>
@@ -1101,7 +1100,7 @@ const AddPet = () => {
                   <Button onClick={prevStep} variant="outline" className="mipo-pill-button flex-1 h-12">חזור</Button>
                   <Button 
                     onClick={nextStep} 
-                    className="mipo-gradient-button flex-1 h-12"
+                    className="mipo-cta-button flex-1 h-12"
                   >
                     המשך
                   </Button>
@@ -1133,15 +1132,15 @@ const AddPet = () => {
                       className={cn(
                         "p-4 rounded-xl border transition-all text-center",
                         personalityTags.includes(tag.value)
-                          ? "border-transparent shadow-shop"
+                          ? "mipo-chip-selected shadow-shop"
                           : "border-mipo-line hover:border-mipo-cyan/50 bg-white"
                       )}
-                      style={personalityTags.includes(tag.value) ? { background: 'var(--gradient-primary)' } : {}}
+
                     >
                       <div className="text-2xl mb-1">{tag.emoji}</div>
                       <div className={cn(
                         "text-sm font-medium",
-                        personalityTags.includes(tag.value) ? "text-white" : "text-mipo-ink"
+                        personalityTags.includes(tag.value) ? "" : "text-mipo-ink"
                       )}>{tag.label}</div>
                     </motion.button>
                   ))}
@@ -1151,7 +1150,7 @@ const AddPet = () => {
                   <Button onClick={prevStep} variant="outline" className="mipo-pill-button flex-1 h-12">חזור</Button>
                   <Button 
                     onClick={nextStep} 
-                    className="mipo-gradient-button flex-1 h-12"
+                    className="mipo-cta-button flex-1 h-12"
                   >
                     המשך
                   </Button>
@@ -1188,18 +1187,18 @@ const AddPet = () => {
                         className={cn(
                           "w-full p-4 rounded-xl border transition-all flex items-center gap-3",
                           activities.includes(activity.value)
-                            ? "border-transparent shadow-shop"
+                            ? "mipo-chip-selected shadow-shop"
                             : "border-mipo-line hover:border-mipo-cyan/50 bg-white"
                         )}
-                        style={activities.includes(activity.value) ? { background: 'var(--gradient-primary)' } : {}}
+
                       >
                         <div className="text-2xl">{activity.emoji}</div>
                         <div className={cn(
                           "text-base font-medium",
-                          activities.includes(activity.value) ? "text-white" : "text-mipo-ink"
+                          activities.includes(activity.value) ? "" : "text-mipo-ink"
                         )}>{activity.label}</div>
                         {activities.includes(activity.value) && (
-                          <Check className="w-5 h-5 text-white mr-auto" />
+                          <Check className="w-5 h-5 mr-auto" />
                         )}
                       </motion.button>
                     ))}
@@ -1216,18 +1215,18 @@ const AddPet = () => {
                         className={cn(
                           "w-full p-4 rounded-xl border transition-all flex items-center gap-3",
                           activities.includes(activity.value)
-                            ? "border-transparent shadow-shop"
+                            ? "mipo-chip-selected shadow-shop"
                             : "border-mipo-line hover:border-mipo-cyan/50 bg-white"
                         )}
-                        style={activities.includes(activity.value) ? { background: 'var(--gradient-primary)' } : {}}
+
                       >
                         <div className="text-2xl">{activity.emoji}</div>
                         <div className={cn(
                           "text-lg font-medium",
-                          activities.includes(activity.value) ? "text-white" : "text-mipo-ink"
+                          activities.includes(activity.value) ? "" : "text-mipo-ink"
                         )}>{activity.label}</div>
                         {activities.includes(activity.value) && (
-                          <Check className="w-5 h-5 text-white mr-auto" />
+                          <Check className="w-5 h-5 mr-auto" />
                         )}
                       </motion.button>
                     ))}
@@ -1238,7 +1237,7 @@ const AddPet = () => {
                   <Button onClick={prevStep} variant="outline" className="mipo-pill-button flex-1 h-12">חזור</Button>
                   <Button 
                     onClick={nextStep} 
-                    className="mipo-gradient-button flex-1 h-12"
+                    className="mipo-cta-button flex-1 h-12"
                   >
                     המשך
                   </Button>
@@ -1331,7 +1330,7 @@ const AddPet = () => {
                   <Button onClick={prevStep} variant="outline" className="mipo-pill-button flex-1 h-12">חזור</Button>
                   <Button 
                     onClick={nextStep} 
-                    className="mipo-gradient-button flex-1 h-12"
+                    className="mipo-cta-button flex-1 h-12"
                   >
                     המשך
                   </Button>
@@ -1350,8 +1349,7 @@ const AddPet = () => {
                 className="mipo-flow-card p-6 space-y-6 text-center"
               >
                 <div 
-                  className="w-16 h-16 mx-auto rounded-full flex items-center justify-center shadow-shop"
-                  style={{ background: 'var(--gradient-primary)' }}
+                  className="w-16 h-16 mx-auto rounded-full flex items-center justify-center border border-mipo-line"
                 >
                   <span className="text-3xl">🎉</span>
                 </div>
@@ -1366,6 +1364,8 @@ const AddPet = () => {
                     />
                   </div>
                 ) : (
+                  /* The pet itself, so this keeps the aurora - it is the one
+                     surface the brand gradient is allowed on. */
                   <div 
                     className="w-28 h-28 mx-auto rounded-full flex items-center justify-center"
                     style={{ background: 'var(--gradient-primary)' }}
@@ -1402,8 +1402,7 @@ const AddPet = () => {
                           return (
                             <span 
                               key={t}
-                              className="px-3 py-1 rounded-full text-sm text-white"
-                              style={{ background: 'var(--gradient-primary)' }}
+                              className="mipo-chip-selected px-3 py-1 rounded-full text-sm"
                             >
                               {tag?.emoji} {tag?.label}
                             </span>
@@ -1419,12 +1418,11 @@ const AddPet = () => {
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.2 }}
-                    className="rounded-xl p-4 space-y-2 shadow-shop"
-                    style={{ background: 'var(--gradient-primary)' }}
+                    className="rounded-xl border border-mipo-line bg-mipo-soft p-4 space-y-2"
                   >
                     <div className="text-3xl">🎁</div>
-                    <p className="font-semibold text-white">קיבלת 50 נקודות התחלתיות</p>
-                    <p className="text-sm text-white/80">ובאדג׳ "ברוך הבא" 🏆</p>
+                    <p className="font-semibold text-mipo-ink">קיבלת 50 נקודות התחלתיות</p>
+                    <p className="text-sm text-mipo-muted">ובאדג׳ "ברוך הבא" 🏆</p>
                   </motion.div>
                 )}
 
@@ -1433,7 +1431,7 @@ const AddPet = () => {
                   <Button 
                     onClick={handleSubmit} 
                     disabled={loading} 
-                    className="mipo-gradient-button flex-1 h-12"
+                    className="mipo-cta-button flex-1 h-12"
                   >
                     {loading ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : null}
                     {loading ? "שומר..." : "סיום 🐾"}

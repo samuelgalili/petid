@@ -310,7 +310,7 @@ const Onboarding = () => {
               <p className="mt-5 max-w-xs text-base leading-7 text-mipo-muted">
                 Mipo מכיר את חיית המחמד שלך והופך כל פרט קטן לטיפול אישי יותר.
               </p>
-              <button onClick={() => setPhase("photo")} className="mipo-gradient-button mt-10 w-full max-w-sm px-6">
+              <button onClick={() => setPhase("photo")} className="mipo-cta-button mt-10 w-full max-w-sm px-6">
                 מתחילים
                 <ArrowLeft className="h-5 w-5" />
               </button>
@@ -358,7 +358,7 @@ const Onboarding = () => {
                 כבר יש ביניכם חיבור
               </div>
               <h1 className="mt-5 text-3xl font-semibold tracking-[-0.035em] text-mipo-ink">עכשיו רק נשלים כמה פרטים</h1>
-              <button onClick={() => setPhase("details")} className="mipo-gradient-button mt-8 w-full max-w-sm px-6">המשך</button>
+              <button onClick={() => setPhase("details")} className="mipo-cta-button mt-8 w-full max-w-sm px-6">המשך</button>
               {!preview && <button onClick={() => setPhase("photo")} className="mt-3 text-sm text-mipo-muted"><ImagePlus className="ml-1 inline h-4 w-4" />הוספת תמונה</button>}
             </Screen>
           )}
@@ -380,7 +380,7 @@ const Onboarding = () => {
                   <input value={breed} onChange={(event) => setBreed(event.target.value)} maxLength={120} placeholder="למשל גולדן רטריבר" className="mipo-input mt-2 min-h-14 w-full px-4 text-base outline-none" />
                 </label>
               </div>
-              <button disabled={!name.trim() || phase === "creating" || saving} onClick={handleDetailsSave} className="mipo-gradient-button mt-8 w-full px-6">
+              <button disabled={!name.trim() || phase === "creating" || saving} onClick={handleDetailsSave} className="mipo-cta-button mt-8 w-full px-6">
                 {phase === "creating" || saving ? <><Loader2 className="h-5 w-5 animate-spin" />יוצרים את העולם של {name || "החבר שלך"}</> : "יצירת הפרופיל"}
               </button>
             </Screen>
@@ -411,7 +411,7 @@ const Onboarding = () => {
               <button
                 disabled={saving}
                 onClick={() => void finish()}
-                className="mipo-gradient-button mt-9 w-full max-w-sm px-6"
+                className="mipo-cta-button mt-9 w-full max-w-sm px-6"
               >
                 {saving ? <><Loader2 className="h-5 w-5 animate-spin" />שומרים…</> : saveError ? "נסו שוב" : "כניסה לעולם של Mipo"}
               </button>

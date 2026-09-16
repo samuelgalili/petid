@@ -282,7 +282,7 @@ const PetCharacterStudio = ({
               type="button"
               onClick={generate}
               disabled={!available || photos.length === 0 || !consent || submitting || processingPhotos}
-              className="mipo-gradient-button mt-5 w-full disabled:cursor-not-allowed disabled:opacity-45"
+              className="mipo-cta-button mt-5 w-full disabled:cursor-not-allowed disabled:opacity-45"
             >
               {submitting ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <WandSparkles className="h-5 w-5" />}
               יצירת שלושה עיצובים
@@ -333,7 +333,7 @@ const PetCharacterStudio = ({
               type="button"
               onClick={selectCandidate}
               disabled={!selectedKey || submitting}
-              className="mipo-gradient-button mt-5 w-full disabled:opacity-45"
+              className="mipo-cta-button mt-5 w-full disabled:opacity-45"
             >
               {submitting ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
               זה העיצוב שלי — יצירת תגובות
@@ -363,7 +363,7 @@ const PetCharacterStudio = ({
               ))}
             </div>
 
-            <button type="button" onClick={() => onOpenChange(false)} className="mipo-gradient-button mt-5 w-full">
+            <button type="button" onClick={() => onOpenChange(false)} className="mipo-cta-button mt-5 w-full">
               <Check className="h-5 w-5" />
               מעולה, בואו נפגוש אותה
             </button>
