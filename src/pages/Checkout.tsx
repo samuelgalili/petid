@@ -504,7 +504,7 @@ const Checkout = () => {
                         ? "bg-success text-success-foreground"
                         : isActive
                         ? "bg-accent text-accent-foreground"
-                        : "bg-background border-2 border-border text-muted-foreground"
+                        : "bg-background border border-border text-muted-foreground"
                     }`}
                   >
                     {isCompleted ? (
@@ -830,7 +830,7 @@ const Checkout = () => {
                   <div className="space-y-3">
                     {/* Credit Card */}
                     <div
-                      className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                      className={`flex items-center gap-3 p-4 rounded-xl border transition-all cursor-pointer ${
                         paymentMethod === "credit-card"
                           ? "border-accent bg-accent/10"
                           : "border-border hover:border-border-light"
@@ -852,7 +852,7 @@ const Checkout = () => {
 
                     {/* Apple Pay */}
                     <div
-                      className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                      className={`flex items-center gap-3 p-4 rounded-xl border transition-all cursor-pointer ${
                         paymentMethod === "apple-pay"
                           ? "border-accent bg-accent/10"
                           : "border-border hover:border-border-light"
@@ -873,7 +873,7 @@ const Checkout = () => {
 
                     {/* Google Pay */}
                     <div
-                      className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                      className={`flex items-center gap-3 p-4 rounded-xl border transition-all cursor-pointer ${
                         paymentMethod === "google-pay"
                           ? "border-accent bg-accent/10"
                           : "border-border hover:border-border-light"
@@ -897,7 +897,7 @@ const Checkout = () => {
 
                     {/* Bit */}
                     <div
-                      className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                      className={`flex items-center gap-3 p-4 rounded-xl border transition-all cursor-pointer ${
                         paymentMethod === "bit"
                           ? "border-accent bg-accent/10"
                           : "border-border hover:border-border-light"
@@ -919,7 +919,7 @@ const Checkout = () => {
 
                     {/* PayBox */}
                     <div
-                      className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                      className={`flex items-center gap-3 p-4 rounded-xl border transition-all cursor-pointer ${
                         paymentMethod === "paybox"
                           ? "border-accent bg-accent/10"
                           : "border-border hover:border-border-light"
@@ -941,7 +941,7 @@ const Checkout = () => {
 
                     {/* PayPal */}
                     <div
-                      className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                      className={`flex items-center gap-3 p-4 rounded-xl border transition-all cursor-pointer ${
                         paymentMethod === "paypal"
                           ? "border-accent bg-accent/10"
                           : "border-border hover:border-border-light"
@@ -962,7 +962,7 @@ const Checkout = () => {
 
                     {/* Cash on Delivery */}
                     <div
-                      className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                      className={`flex items-center gap-3 p-4 rounded-xl border transition-all cursor-pointer ${
                         paymentMethod === "cash-on-delivery"
                           ? "border-accent bg-accent/10"
                           : "border-border hover:border-border-light"
@@ -1229,7 +1229,7 @@ const Checkout = () => {
             <Button
               variant="outline"
               size="lg"
-              className="flex-1 border-2 border-border text-foreground hover:bg-muted rounded-xl font-bold font-jakarta h-14"
+              className="flex-1 border border-border text-foreground hover:bg-muted rounded-xl font-bold font-jakarta h-14"
               onClick={() => setCurrentStep(currentStep - 1)}
               disabled={isProcessing}
             >

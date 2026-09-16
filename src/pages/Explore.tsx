@@ -609,7 +609,7 @@ const Explore = () => {
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="px-4 py-3 space-y-3 border-t border-border/20 bg-gradient-to-b from-muted/20 to-transparent"
+            className="px-4 py-3 space-y-3 border-t border-mipo-line"
           >
             {/* Pet Type Filter */}
             <div className="flex gap-2">
@@ -785,8 +785,8 @@ const Explore = () => {
                         onClick={() => handleSearchSelect(item.tag)}
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center">
-                            <Hash className="w-5 h-5 text-white" />
+                          <div className="w-10 h-10 rounded-full border border-mipo-line flex items-center justify-center">
+                            <Hash className="w-5 h-5 text-mipo-muted" />
                           </div>
                           <div>
                             <p className="font-medium">#{item.tag}</p>
@@ -904,7 +904,7 @@ const Explore = () => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: i * 0.05 }}
-                  className="aspect-[4/5] bg-gradient-to-br from-muted to-muted/50 rounded-3xl animate-pulse"
+                  className="aspect-[4/5] bg-mipo-soft rounded-3xl animate-pulse"
                 />
               ))}
             </div>
@@ -947,8 +947,8 @@ const Explore = () => {
                         <div className="absolute top-3 right-3">
                           <div className={`w-9 h-9 rounded-2xl flex items-center justify-center backdrop-blur-md ${
                             pet.type === "dog" 
-                              ? "bg-amber-500/80" 
-                              : "bg-purple-500/80"
+                              ? "bg-black/55" 
+                              : "bg-black/40"
                           }`}>
                             {pet.type === "dog" ? (
                               <Dog className="w-5 h-5 text-white" />
@@ -986,7 +986,7 @@ const Explore = () => {
                     animate={{ opacity: 1, scale: 1 }}
                     className="col-span-2 text-center py-16 px-6"
                   >
-                    <div className="w-28 h-28 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
+                    <div className="w-28 h-28 mx-auto mb-6 rounded-3xl border border-mipo-line bg-mipo-soft flex items-center justify-center">
                       <motion.div
                         animate={{ 
                           scale: [1, 1.1, 1],
@@ -1025,11 +1025,11 @@ const Explore = () => {
             /* Parks - Enhanced Card Design */
             <div className="space-y-4">
               {userLocation && (
-                <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 rounded-2xl p-3">
-                  <div className="w-8 h-8 rounded-xl bg-green-500/20 flex items-center justify-center">
-                    <MapPin className="w-4 h-4 text-green-600 dark:text-green-400" />
+                <div className="flex items-center gap-2 rounded-2xl border border-mipo-line bg-mipo-soft p-3">
+                  <div className="w-8 h-8 rounded-xl border border-mipo-line flex items-center justify-center">
+                    <MapPin className="w-4 h-4 text-mipo-muted" />
                   </div>
-                  <span className="text-sm text-green-700 dark:text-green-300">ממויין לפי קרבה אליך</span>
+                  <span className="text-sm text-mipo-muted">ממויין לפי קרבה אליך</span>
                 </div>
               )}
               {!userLocation && locationError && (
@@ -1064,7 +1064,7 @@ const Explore = () => {
                         {park.distance !== undefined && park.distance < 999999 && (
                           <div className="absolute top-3 left-3">
                             <div className="bg-white/90 backdrop-blur-md rounded-xl px-2.5 py-1.5 flex items-center gap-1.5 shadow-sm">
-                              <MapPin className="w-3.5 h-3.5 text-green-600" />
+                              <MapPin className="w-3.5 h-3.5 text-mipo-muted" />
                               <span className="text-xs font-semibold text-foreground">{park.distance.toFixed(1)} ק״מ</span>
                             </div>
                           </div>
@@ -1072,7 +1072,7 @@ const Explore = () => {
                         
                         {/* Park icon */}
                         <div className="absolute top-3 right-3">
-                          <div className="w-9 h-9 rounded-2xl bg-green-500/80 backdrop-blur-md flex items-center justify-center">
+                          <div className="w-9 h-9 rounded-2xl bg-black/45 backdrop-blur-md flex items-center justify-center">
                             <Trees className="w-5 h-5 text-white" />
                           </div>
                         </div>
@@ -1103,8 +1103,8 @@ const Explore = () => {
                     animate={{ opacity: 1, scale: 1 }}
                     className="col-span-2 text-center py-16 px-6"
                   >
-                    <div className="w-28 h-28 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-green-100 to-green-50 dark:from-green-900/30 dark:to-green-800/20 flex items-center justify-center">
-                      <Trees className="w-14 h-14 text-green-500/50" />
+                    <div className="w-28 h-28 mx-auto mb-6 rounded-3xl border border-mipo-line bg-mipo-soft flex items-center justify-center">
+                      <Trees className="w-14 h-14 text-mipo-muted" strokeWidth={1.4} />
                     </div>
                     <h3 className="text-xl font-bold text-foreground mb-2">אין גינות כלבים 🌳</h3>
                     <p className="text-muted-foreground">לא נמצאו גינות כלבים באזורך</p>
@@ -1168,8 +1168,8 @@ const Explore = () => {
                     animate={{ opacity: 1, scale: 1 }}
                     className="col-span-2 text-center py-16 px-6"
                   >
-                    <div className="w-28 h-28 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-orange-100 to-orange-50 dark:from-orange-900/30 dark:to-orange-800/20 flex items-center justify-center">
-                      <Tag className="w-14 h-14 text-orange-500/50" />
+                    <div className="w-28 h-28 mx-auto mb-6 rounded-3xl border border-mipo-line bg-mipo-soft flex items-center justify-center">
+                      <Tag className="w-14 h-14 text-mipo-muted" strokeWidth={1.4} />
                     </div>
                     <h3 className="text-xl font-bold text-foreground mb-2">אין מבצעים כרגע 🏷️</h3>
                     <p className="text-muted-foreground mb-6">חזרו בקרוב לעדכונים על מבצעים חדשים</p>
@@ -1291,8 +1291,8 @@ const Explore = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   className="text-center py-16 px-6"
                 >
-                  <div className="w-28 h-28 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-purple-100 to-purple-50 dark:from-purple-900/30 dark:to-purple-800/20 flex items-center justify-center">
-                    <TrendingUp className="w-14 h-14 text-purple-500/50" />
+                  <div className="w-28 h-28 mx-auto mb-6 rounded-3xl border border-mipo-line bg-mipo-soft flex items-center justify-center">
+                    <TrendingUp className="w-14 h-14 text-mipo-muted" strokeWidth={1.4} />
                   </div>
                   <h3 className="text-xl font-bold text-foreground mb-2">אין פוסטים מובילים 📈</h3>
                   <p className="text-muted-foreground">חזרו בקרוב לראות תוכן טרנדי</p>

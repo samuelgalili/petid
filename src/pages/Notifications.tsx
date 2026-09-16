@@ -58,15 +58,21 @@ const FILTER_TABS: { key: FilterTab; label: string; icon: React.ElementType }[] 
   { key: "shop", label: "חנות", icon: ShoppingBag },
 ];
 
+/**
+ * The icon and its accent colour carry the notification's type. A per-type
+ * background gradient carried the same thing a second time, filled, behind the
+ * text - so the surface is now the same quiet card for every type and only the
+ * icon is coloured.
+ */
 const getCategoryMeta = (category?: string, type?: string) => {
   const t = category || type || "";
-  if (t === "follow" || t === "new_follower") return { icon: UserPlus, gradient: "from-violet-500/20 to-fuchsia-500/20", accent: "text-violet-500" };
-  if (t === "like" || t === "paw") return { icon: Heart, gradient: "from-rose-500/20 to-pink-500/20", accent: "text-rose-500" };
-  if (t === "comment" || t === "message") return { icon: MessageCircle, gradient: "from-sky-500/20 to-blue-500/20", accent: "text-sky-500" };
-  if (t === "medical" || t === "care") return { icon: Syringe, gradient: "from-emerald-500/20 to-teal-500/20", accent: "text-emerald-500" };
-  if (t === "insurance") return { icon: Shield, gradient: "from-blue-500/20 to-indigo-500/20", accent: "text-blue-500" };
-  if (t === "shop" || t === "product" || t === "scientist") return { icon: Sparkles, gradient: "from-amber-500/20 to-orange-500/20", accent: "text-amber-500" };
-  return { icon: Bell, gradient: "from-primary/20 to-primary/10", accent: "text-primary" };
+  if (t === "follow" || t === "new_follower") return { icon: UserPlus, accent: "text-violet-500" };
+  if (t === "like" || t === "paw") return { icon: Heart, accent: "text-rose-500" };
+  if (t === "comment" || t === "message") return { icon: MessageCircle, accent: "text-sky-500" };
+  if (t === "medical" || t === "care") return { icon: Syringe, accent: "text-emerald-500" };
+  if (t === "insurance") return { icon: Shield, accent: "text-blue-500" };
+  if (t === "shop" || t === "product" || t === "scientist") return { icon: Sparkles, accent: "text-amber-500" };
+  return { icon: Bell, accent: "text-primary" };
 };
 
 const filterMatch = (n: NotificationItem, tab: FilterTab) => {
@@ -244,7 +250,7 @@ const Notifications = () => {
                   onClick={() => { haptic("selection"); setActiveFilter(tab.key); }}
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
                     isActive
-                      ? "bg-[var(--gradient-primary)] text-white shadow-lg"
+                      ? "bg-mipo-ink text-white"
                       : "bg-muted/40 backdrop-blur-md text-muted-foreground hover:bg-muted/60 border border-border/20"
                   }`}
                 >
@@ -311,8 +317,8 @@ function NotificationCard({
       whileTap={{ scale: 0.985 }}
       onClick={() => onTap(n)}
       className={`relative flex w-full text-right items-start gap-3 p-3.5 rounded-2xl cursor-pointer transition-all
-        bg-gradient-to-br ${meta.gradient} backdrop-blur-xl
-        border border-white/10 dark:border-white/5
+        bg-mipo-surface
+        border border-mipo-line
         ${!n.is_read ? "shadow-md shadow-primary/10" : "opacity-80"}
       `}
     >
@@ -324,7 +330,7 @@ function NotificationCard({
       {/* Avatar / Icon */}
       {n.data?.user_avatar ? (
         <div className="relative shrink-0">
-          <Avatar className="w-12 h-12 border-2 border-background/50">
+          <Avatar className="w-12 h-12 border border-mipo-line">
             <AvatarImage src={n.data.user_avatar} />
             <AvatarFallback className="bg-muted text-sm font-medium">
               {n.data.user_name?.[0]?.toUpperCase() || "U"}
@@ -398,7 +404,7 @@ function EmptyState() {
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
         className="relative mb-6"
       >
-        <div className="w-28 h-28 rounded-full bg-gradient-to-br from-muted/80 to-muted/40 backdrop-blur-xl flex items-center justify-center border border-border/20">
+        <div className="w-28 h-28 rounded-full bg-mipo-soft flex items-center justify-center border border-mipo-line">
           <span className="text-6xl select-none">🐾</span>
         </div>
         {/* Zzz */}
