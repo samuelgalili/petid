@@ -639,7 +639,9 @@ const AddPet = () => {
                 exit={{ opacity: 0, y: -20 }}
                 className="mipo-flow-card p-8 text-center space-y-7"
               >
-                <MipoLogo size="md" showAnimals className="mx-auto" />
+                {/* The mark alone: the heading underneath already says MIPO,
+                    and the wordmark belongs to the entry screen only. */}
+                <MipoLogo variant="mark" size="md" showAnimals={false} className="mx-auto" />
                 <h1 className="text-2xl font-semibold text-mipo-ink">ברוכים הבאים ל-MIPO</h1>
                 <p className="text-mipo-muted text-base">
                   הבית השקט והחכם של חיית המחמד שלכם

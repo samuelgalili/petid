@@ -96,7 +96,8 @@ const Install = () => {
             transition={{ type: "spring", delay: 0.3, stiffness: 200 }}
             className="mb-8 flex flex-col items-center">
 
-            <MipoLogo showAnimals={false} size="lg" />
+            {/* Reached from inside the app, so the mark alone. */}
+            <MipoLogo variant="mark" showAnimals={false} size="lg" />
             
 
 
