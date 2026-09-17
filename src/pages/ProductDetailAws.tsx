@@ -383,7 +383,7 @@ const ProductDetailAws = () => {
           <Card>
             <CardContent className="space-y-5 p-5">
               <div className="flex flex-wrap items-end gap-3">
-                <span className="text-3xl font-bold text-primary">₪{price.toFixed(2)}</span>
+                <span className="text-3xl font-bold tabular-nums text-mipo-ink">₪{price.toFixed(2)}</span>
                 {hasDiscount && (
                   <span className="pb-1 text-sm text-muted-foreground line-through">₪{listPrice.toFixed(2)}</span>
                 )}
@@ -470,18 +470,18 @@ const ProductDetailAws = () => {
               </div>
 
               <div className="grid gap-2 sm:grid-cols-2">
-                <Button size="lg" onClick={() => handleAddToCart(false)} disabled={outOfStock}>
+                <Button size="lg" className="mipo-cta-button" onClick={() => handleAddToCart(false)} disabled={outOfStock}>
                   <ShoppingCart className="ml-2 h-5 w-5" />
                   הוסף לעגלה
                 </Button>
-                <Button size="lg" variant="outline" onClick={() => handleAddToCart(true)} disabled={outOfStock}>
+                <Button size="lg" variant="outline" className="mipo-pill-button" onClick={() => handleAddToCart(true)} disabled={outOfStock}>
                   לקנייה
                 </Button>
               </div>
 
               {outOfStock && <p className="text-center text-sm text-destructive">המוצר אינו זמין כרגע במלאי.</p>}
 
-              <div className="flex items-start gap-2 rounded-xl bg-muted/40 p-3 text-xs leading-5 text-muted-foreground">
+              <div className="flex items-start gap-2 rounded-xl border border-mipo-line p-3 text-[13px] leading-5 text-mipo-muted">
                 <Truck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                 <span>
                   אספקה תוך {SHIPPING_ESTIMATE_HE}.{" "}

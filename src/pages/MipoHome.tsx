@@ -6,6 +6,7 @@ import defaultPetAvatar from "@/assets/default-pet-avatar.png";
 import { MipoLogo } from "@/components/MipoLogo";
 import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import PetOrbit, { type OrbitSlot } from "@/components/home/PetOrbit";
+import PetMoodRow from "@/components/home/PetMoodRow";
 import MoodSheet from "@/components/home/MoodSheet";
 import PetCharacterStudio from "@/components/home/PetCharacterStudio";
 import { useHomeAttention } from "@/hooks/useHomeAttention";
@@ -135,6 +136,14 @@ const MipoHome = () => {
               mood={companion.mood}
               loading={loading}
               onPetClick={() => setMoodOpen(true)}
+            />
+
+            {/* The expression pack, finally on a screen. Generated once per
+                pet and cached; until now it was rendered nowhere. */}
+            <PetMoodRow
+              className="mt-7 px-6"
+              petName={petName}
+              character={petCharacter.character}
             />
 
             <p className="mt-7 px-6 text-center text-sm leading-6 text-mipo-muted">

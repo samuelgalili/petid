@@ -147,7 +147,7 @@ const Cart = () => {
             </p>
             <Button
               onClick={() => navigate("/shop")}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-8 py-6 rounded-2xl shadow-lg"
+              className="mipo-cta-button rounded-2xl px-8 py-6"
             >
               המשך לקניות
             </Button>
@@ -179,7 +179,7 @@ const Cart = () => {
               transition={{ duration: 0.2 }}
               className="mb-4"
             >
-              <Card className="overflow-hidden border-0 shadow-md bg-card">
+              <Card className="overflow-hidden rounded-3xl border border-mipo-line bg-mipo-surface shadow-none">
                 <div className="flex gap-4 p-4">
                   {/* Product Image */}
                   <div className="w-24 h-24 bg-muted rounded-xl flex-shrink-0 overflow-hidden">
@@ -202,7 +202,7 @@ const Cart = () => {
                     )}
                     
                     {/* Price */}
-                    <div className="text-lg font-bold text-primary mb-3 font-jakarta">
+                    <div className="mb-3 text-lg font-bold tabular-nums text-mipo-ink font-jakarta">
                       ₪{item.price}
                     </div>
 
@@ -212,7 +212,7 @@ const Cart = () => {
                         <motion.button
                           whileTap={{ scale: 0.9 }}
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="w-7 h-7 rounded-full bg-card shadow-sm flex items-center justify-center hover:bg-muted transition-colors"
+                          className="flex h-7 w-7 items-center justify-center rounded-full border border-mipo-line bg-mipo-surface transition-colors hover:bg-mipo-soft"
                         >
                           <Minus className="w-4 h-4 text-foreground" strokeWidth={1.5} />
                         </motion.button>
@@ -222,7 +222,7 @@ const Cart = () => {
                         <motion.button
                           whileTap={{ scale: 0.9 }}
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="w-7 h-7 rounded-full bg-card shadow-sm flex items-center justify-center hover:bg-muted transition-colors"
+                          className="flex h-7 w-7 items-center justify-center rounded-full border border-mipo-line bg-mipo-surface transition-colors hover:bg-mipo-soft"
                         >
                           <Plus className="w-4 h-4 text-foreground" strokeWidth={1.5} />
                         </motion.button>
@@ -251,7 +251,7 @@ const Cart = () => {
           transition={{ delay: 0.1 }}
           className="mt-4"
         >
-          <Card className="p-4 bg-card border-0 rounded-2xl shadow-lg">
+          <Card className="rounded-3xl border border-mipo-line bg-mipo-surface p-4 shadow-none">
             <Label className="font-jakarta text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
               <Tag className="w-4 h-4" />
               קוד קופון
@@ -355,7 +355,7 @@ const Cart = () => {
                     <span className="text-xl font-bold text-foreground font-jakarta">
                       סה״כ לתשלום
                     </span>
-                    <span className="text-2xl font-bold text-primary font-jakarta">
+                    <span className="text-2xl font-bold tabular-nums text-mipo-ink font-jakarta">
                       ₪{total.toFixed(2)}
                     </span>
                   </div>
@@ -369,7 +369,7 @@ const Cart = () => {
               >
                 <Button
                   onClick={handleCheckout}
-                  className="w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground text-lg font-bold rounded-2xl shadow-xl flex items-center justify-center gap-3"
+                  className="mipo-cta-button h-14 w-full gap-3 rounded-2xl text-lg"
                 >
                   המשך לתשלום
                 </Button>
