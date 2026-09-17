@@ -7,6 +7,7 @@
 import pg from "pg";
 const { Pool } = pg;
 import { createAiGateway } from "../src/aiGateway.js";
+import { scriptPoolOptions } from "./scriptPoolSsl.mjs";
 
 // Requires a migrated database. Not part of `npm test` (which is unit-only):
 //   DATABASE_URL=postgres://... node scripts/aiGatewayIntegrationCheck.mjs
@@ -16,7 +17,7 @@ if (!databaseUrl) {
   process.exit(2);
 }
 
-const pool = new Pool({ connectionString: databaseUrl, ssl: process.env.DB_SSL === "false" ? false : undefined });
+const pool = new Pool({ connectionString: databaseUrl, ...scriptPoolOptions() });
 
 const quietLogger = { info: () => {}, warn: () => {}, error: console.error };
 

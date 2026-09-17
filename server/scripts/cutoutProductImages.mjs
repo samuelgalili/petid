@@ -50,6 +50,7 @@ import sharp from "sharp";
 
 import { normalizeWithBackgroundRemoval, ImagePipelineError } from "../src/imagePipeline.js";
 import { createGeminiBackgroundRemover } from "../src/backgroundRemoval.js";
+import { scriptPoolOptions } from "./scriptPoolSsl.mjs";
 
 const { Pool } = pg;
 
@@ -75,8 +76,7 @@ if (!remover) {
 }
 
 const pool = new Pool({
-  connectionString: databaseUrl,
-  ssl: process.env.DB_SSL === "false" ? false : undefined,
+  ...scriptPoolOptions(),
 });
 
 // Only images we already host. A foreign URL belongs to adoptProductImages.mjs

@@ -17,6 +17,7 @@ import { randomUUID } from "node:crypto";
 import pg from "pg";
 
 import { fetchImageBuffer, ImagePipelineError, normalizeProductImage } from "../src/imagePipeline.js";
+import { scriptPoolOptions } from "./scriptPoolSsl.mjs";
 
 const { Pool } = pg;
 
@@ -32,8 +33,7 @@ const limitArg = process.argv.find((arg) => arg.startsWith("--limit="));
 const limit = limitArg ? Math.max(1, Number(limitArg.split("=")[1]) || 0) : null;
 
 const pool = new Pool({
-  connectionString: databaseUrl,
-  ssl: process.env.DB_SSL === "false" ? false : undefined,
+  ...scriptPoolOptions(),
 });
 
 const isForeign = (url) => {

@@ -34,6 +34,7 @@
 // index that already exists, so a re-run resumes and a finished run is a no-op.
 
 import pg from "pg";
+import { scriptPoolOptions } from "./scriptPoolSsl.mjs";
 
 const { Pool } = pg;
 
@@ -111,8 +112,7 @@ const main = async () => {
   }
 
   pool = new Pool({
-    connectionString: databaseUrl,
-    ssl: process.env.DB_SSL === "false" ? false : undefined,
+    ...scriptPoolOptions(),
   });
 
   let actor = null;

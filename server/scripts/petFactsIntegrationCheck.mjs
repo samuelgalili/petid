@@ -15,6 +15,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createPetFactService } from "../src/petFactService.js";
+import { scriptPoolOptions } from "./scriptPoolSsl.mjs";
 
 // Requires a migrated database. Not part of `npm test` (which is unit-only):
 //   DATABASE_URL=postgres://... node scripts/petFactsIntegrationCheck.mjs
@@ -25,8 +26,7 @@ if (!databaseUrl) {
 }
 
 const pool = new Pool({
-  connectionString: databaseUrl,
-  ssl: process.env.DB_SSL === "false" ? false : undefined,
+  ...scriptPoolOptions(),
 });
 
 const sqlDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../sql");

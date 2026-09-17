@@ -36,6 +36,7 @@ import pg from "pg";
 
 import { autoApprovalBlockers, mayAutoApprove } from "../src/autoApproval.js";
 import { DRAFT_STATES, isDraftTransitionAllowed, mayApproveDraft } from "../src/productIntakeState.js";
+import { scriptPoolOptions } from "./scriptPoolSsl.mjs";
 
 const { Pool } = pg;
 
@@ -81,8 +82,7 @@ const main = async () => {
   }
 
   pool = new Pool({
-    connectionString: databaseUrl,
-    ssl: process.env.DB_SSL === "false" ? false : undefined,
+    ...scriptPoolOptions(),
   });
 
   let approver = null;

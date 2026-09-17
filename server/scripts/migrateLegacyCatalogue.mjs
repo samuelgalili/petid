@@ -53,6 +53,7 @@
 import { createHash } from "node:crypto";
 
 import pg from "pg";
+import { scriptPoolOptions } from "./scriptPoolSsl.mjs";
 
 const { Pool } = pg;
 
@@ -161,8 +162,7 @@ const main = async () => {
     process.exit(2);
   }
   pool = new Pool({
-    connectionString: databaseUrl,
-    ssl: process.env.DB_SSL === "false" ? false : undefined,
+    ...scriptPoolOptions(),
   });
 
   const actor = await pool.query(

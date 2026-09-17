@@ -188,7 +188,20 @@ jobs:
             approve)  script="server/scripts/autoApproveLegacyDrafts.mjs" ;;
             complete) script="server/scripts/completeLegacyCatalogueEntries.mjs" ;;
           esac
-          test -f "$script" || { echo "BLOCKED-PROD: $script is missing"; exit 1; }
+          if [ ! -f "$script" ]; then
+            # Naming the branch, because the usual cause is the branch.
+            # server/scripts/ does not exist on main - main and aws-migration
+            # are 5,000+ commits apart - and the Run workflow dropdown defaults
+            # to main, so the first attempt at this workflow fails here and the
+            # bare "is missing" reads as though the tool is broken.
+            echo "BLOCKED-PROD: $script is not in this checkout." >&2
+            echo "" >&2
+            echo "This job ran from branch '${GITHUB_REF_NAME}'." >&2
+            echo "server/scripts/ exists on aws-migration, not on main." >&2
+            echo "" >&2
+            echo "In Run workflow, set 'Use workflow from' to aws-migration." >&2
+            exit 1
+          fi
 
           # Neither script may ever destroy anything, or edit the legacy
           # catalogue it reads.
@@ -329,7 +342,16 @@ jobs:
           docker compose -f "$compose_file" run --rm --no-deps -T mipo-api \
             node -e "
               const pg = require('pg');
-              const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+              // Same SSL shape the API uses. A bare connectionString leaves
+              // ssl undefined, which node-postgres reads as NO TLS, and RDS
+              // refuses that with 'no pg_hba.conf entry ... no encryption' -
+              // which reads like an access-list problem and is not one.
+              const pool = new pg.Pool({
+                connectionString: process.env.DATABASE_URL,
+                ssl: process.env.DB_SSL === 'false'
+                  ? false
+                  : { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' },
+              });
               pool.query(\"select filename from public.schema_migrations where filename = '0054_legacy_import_source_system.sql'\")
                 .then(r => {
                   if (r.rows.length === 0) {

@@ -36,6 +36,7 @@
 // Dry run is the default and reports what the change would unblock.
 
 import pg from "pg";
+import { scriptPoolOptions } from "./scriptPoolSsl.mjs";
 
 const { Pool } = pg;
 
@@ -107,10 +108,7 @@ const main = async () => {
     process.exit(2);
   }
 
-  pool = new Pool({
-    connectionString: databaseUrl,
-    ssl: process.env.DB_SSL === "false" ? false : undefined,
-  });
+  pool = new Pool(scriptPoolOptions());
 
   let actor = null;
   if (apply) {
