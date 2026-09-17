@@ -37,7 +37,7 @@ on:
   workflow_dispatch:
     inputs:
       step:
-        description: 'migrate = legacy products into drafts. approve = auto-approve the drafts that pass the rule. complete = give approved products a variant, a priced offer and inventory.'
+        description: 'migrate = legacy products into drafts. approve = auto-approve the drafts that pass the rule. complete = give approved products a variant, a priced offer and inventory. seller = set one business commercial_status, which the publication gate requires and nothing else can write.'
         required: true
         default: 'migrate'
         type: choice
@@ -45,6 +45,7 @@ on:
           - migrate
           - approve
           - complete
+          - seller
       mode:
         description: 'dry-run reports what would happen and writes nothing. apply writes.'
         required: true
@@ -54,7 +55,7 @@ on:
           - dry-run
           - apply
       confirmation:
-        description: 'For apply only. MIGRATE-LEGACY / APPROVE-LEGACY / COMPLETE-LEGACY, matching the step. Ignored for a dry run.'
+        description: 'For apply only. MIGRATE-LEGACY / APPROVE-LEGACY / COMPLETE-LEGACY / SELLER-STATUS, matching the step. Ignored for a dry run.'
         required: false
         default: ''
       admin_email:
@@ -62,9 +63,23 @@ on:
         required: false
         default: ''
       limit:
-        description: 'Optional. Process at most this many - use 1 for the first apply of each step.'
+        description: 'Optional. Process at most this many - use 1 for the first apply of each step. Ignored by seller.'
         required: false
         default: ''
+      business_id:
+        description: 'For step=seller only. The ONE business uuid to change. There is deliberately no "approve everything" mode.'
+        required: false
+        default: ''
+      business_status:
+        description: 'For step=seller only. none / pending / approved / suspended.'
+        required: false
+        default: 'approved'
+        type: choice
+        options:
+          - approved
+          - pending
+          - suspended
+          - none
 
 permissions:
   contents: read
@@ -94,6 +109,7 @@ jobs:
           STEP: ${{ inputs.step }}
           MODE: ${{ inputs.mode }}
           CONFIRMATION: ${{ inputs.confirmation }}
+          BUSINESS_ID: ${{ inputs.business_id }}
           ADMIN_EMAIL: ${{ inputs.admin_email }}
           LIMIT: ${{ inputs.limit }}
         run: |
@@ -124,6 +140,7 @@ jobs:
             migrate)  expected="MIGRATE-LEGACY" ;;
             approve)  expected="APPROVE-LEGACY" ;;
             complete) expected="COMPLETE-LEGACY" ;;
+            seller)   expected="SELLER-STATUS" ;;
           esac
 
           if [ "$MODE" = "apply" ] && [ "$CONFIRMATION" != "$expected" ]; then
@@ -152,6 +169,20 @@ jobs:
             echo "catalogue. The system actor that submitted the drafts may not" >&2
             echo "approve them." >&2
             exit 1
+          fi
+
+          # seller names exactly one business, and it is checked here so a
+          # missing or malformed id stops before anything is contacted rather
+          # than after a backup has been taken.
+          if [ "$STEP" = "seller" ] && [ "$MODE" = "apply" ]; then
+            if ! printf '%s' "${BUSINESS_ID:-}" | grep -qiE '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'; then
+              echo "Nothing was contacted. Production was not touched." >&2
+              echo "" >&2
+              echo "step=seller needs business_id: one business uuid. There is no" >&2
+              echo "'approve everything' mode, deliberately - the unowned profile that" >&2
+              echo "holds the legacy products must not become a Seller by existing." >&2
+              exit 1
+            fi
           fi
 
           if [ -n "${LIMIT:-}" ]; then
@@ -187,6 +218,7 @@ jobs:
             migrate)  script="server/scripts/migrateLegacyCatalogue.mjs" ;;
             approve)  script="server/scripts/autoApproveLegacyDrafts.mjs" ;;
             complete) script="server/scripts/completeLegacyCatalogueEntries.mjs" ;;
+            seller)   script="server/scripts/setSellerCommercialStatus.mjs" ;;
           esac
           if [ ! -f "$script" ]; then
             # Naming the branch, because the usual cause is the branch.
@@ -217,7 +249,31 @@ jobs:
             fi
           done
 
-          if [ "$STEP" = "migrate" ]; then
+          if [ "$STEP" = "seller" ]; then
+            # It writes ONE column on ONE named business. It must not touch the
+            # catalogue, and it must not be able to approve everything at once -
+            # a blanket backfill is what 0049 deliberately avoided, so that the
+            # unowned profile holding the legacy products could not become a
+            # Seller by existing.
+            code="$(grep -vE '^[[:space:]]*(//|\*|/\*)' "$script")"
+            printf '%s\n' "$code" | grep -qiE "update public\.business_profiles" \
+              || { echo "BLOCKED-PROD: seller must update business_profiles"; exit 1; }
+            for forbidden in 'catalog_products' 'product_drafts' 'product_media' 'seller_offers'; do
+              if printf '%s\n' "$code" | grep -in "$forbidden"; then
+                echo "BLOCKED-PROD: seller must not touch ${forbidden}." >&2
+                exit 1
+              fi
+            done
+            # \b on both ends: the same rename trap that defeated three checks
+            # in this file already.
+            grep -qE "\\bstatusChangeBlockers\\b[[:space:]]*\\(" "$script" \
+              || { echo "BLOCKED-PROD: seller must call statusChangeBlockers()"; exit 1; }
+            if printf '%s\n' "$code" | grep -inE "where[[:space:]]+true|update public\.business_profiles[[:space:]]+set[^;]*;[^w]*$"; then
+              echo "BLOCKED-PROD: seller looks like it can update every row." >&2
+              exit 1
+            fi
+            echo "Verified: one business, one column, no catalogue writes."
+          elif [ "$STEP" = "migrate" ]; then
             # The two tables it is allowed to write.
             for required in 'insert into public.raw_import_records' 'insert into public.product_drafts'; do
               grep -qi "$required" "$script" || { echo "BLOCKED-PROD: missing '$required'"; exit 1; }
@@ -312,11 +368,13 @@ jobs:
           MODE: ${{ inputs.mode }}
           LIMIT: ${{ inputs.limit }}
           ADMIN_EMAIL: ${{ inputs.admin_email }}
+          BUSINESS_ID: ${{ inputs.business_id }}
+          BUSINESS_STATUS: ${{ inputs.business_status }}
         run: |
           set -euo pipefail
           ssh -i ~/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 \
             "${MIPO_AWS_USER}@${MIPO_AWS_HOST}" \
-            "MIPO_REMOTE_PATH='${MIPO_REMOTE_PATH}' STEP='${STEP}' MODE='${MODE}' LIMIT='${LIMIT}' ADMIN_EMAIL='${ADMIN_EMAIL}' bash -s" <<'REMOTE'
+            "MIPO_REMOTE_PATH='${MIPO_REMOTE_PATH}' STEP='${STEP}' MODE='${MODE}' LIMIT='${LIMIT}' ADMIN_EMAIL='${ADMIN_EMAIL}' BUSINESS_ID='${BUSINESS_ID}' BUSINESS_STATUS='${BUSINESS_STATUS}' bash -s" <<'REMOTE'
           set -euo pipefail
           # No `set -x`: tracing would echo lines that expand the environment.
 
@@ -326,6 +384,7 @@ jobs:
             migrate)  script_name="migrateLegacyCatalogue.mjs" ;;
             approve)  script_name="autoApproveLegacyDrafts.mjs" ;;
             complete) script_name="completeLegacyCatalogueEntries.mjs" ;;
+            seller)   script_name="setSellerCommercialStatus.mjs" ;;
           esac
 
           test -f "$compose_file" || { echo "BLOCKED-PROD: no compose file at $compose_file" >&2; exit 1; }
@@ -372,7 +431,12 @@ jobs:
 
           args=""
           [ "$MODE" = "apply" ] && args="--apply"
-          [ -n "${LIMIT:-}" ] && args="${args} --limit=${LIMIT}"
+          # seller takes no limit: it changes exactly one named business, and a
+          # limit on "one" is a number that can only mislead.
+          [ "$STEP" != "seller" ] && [ -n "${LIMIT:-}" ] && args="${args} --limit=${LIMIT}"
+          if [ "$STEP" = "seller" ]; then
+            args="${args} --business-id=${BUSINESS_ID} --status=${BUSINESS_STATUS}"
+          fi
           # The review flags stay honoured: the decision was that flagged
           # products wait for a human. So --ignore-price-review and
           # --ignore-image-review are deliberately not passed, and not offered
@@ -393,7 +457,31 @@ jobs:
             mipo-api node "scripts/${script_name}" ${args} </dev/null
 
           echo ""
-          if [ "$STEP" = "migrate" ]; then
+          if [ "$STEP" = "seller" ]; then
+            # It writes ONE column on ONE named business. It must not touch the
+            # catalogue, and it must not be able to approve everything at once -
+            # a blanket backfill is what 0049 deliberately avoided, so that the
+            # unowned profile holding the legacy products could not become a
+            # Seller by existing.
+            code="$(grep -vE '^[[:space:]]*(//|\*|/\*)' "$script")"
+            printf '%s\n' "$code" | grep -qiE "update public\.business_profiles" \
+              || { echo "BLOCKED-PROD: seller must update business_profiles"; exit 1; }
+            for forbidden in 'catalog_products' 'product_drafts' 'product_media' 'seller_offers'; do
+              if printf '%s\n' "$code" | grep -in "$forbidden"; then
+                echo "BLOCKED-PROD: seller must not touch ${forbidden}." >&2
+                exit 1
+              fi
+            done
+            # \b on both ends: the same rename trap that defeated three checks
+            # in this file already.
+            grep -qE "\\bstatusChangeBlockers\\b[[:space:]]*\\(" "$script" \
+              || { echo "BLOCKED-PROD: seller must call statusChangeBlockers()"; exit 1; }
+            if printf '%s\n' "$code" | grep -inE "where[[:space:]]+true|update public\.business_profiles[[:space:]]+set[^;]*;[^w]*$"; then
+              echo "BLOCKED-PROD: seller looks like it can update every row." >&2
+              exit 1
+            fi
+            echo "Verified: one business, one column, no catalogue writes."
+          elif [ "$STEP" = "migrate" ]; then
             echo "Migrate complete. Nothing was approved or published; every draft is IMPORTED."
           else
             echo "Approve complete. Every approved product is UNPUBLISHED and cannot be"

@@ -28,6 +28,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
+import { formatPetAgeHe } from "@/lib/petAge";
 import {
   AdminStatCard, AdminStatsGrid, AdminToolbar,
   AdminEmptyState, AdminPageHeader,
@@ -545,15 +546,59 @@ const CustomerDetailPanel = ({
             {pets.length === 0 ? (
               <p className="text-xs text-muted-foreground">אין חיות רשומות</p>
             ) : (
-              pets.map((pet) => (
-                <div key={pet.id} className="flex items-center justify-between border rounded-lg px-3 py-2">
-                  <span className="text-xs font-medium">{pet.name}</span>
-                  <span className="text-[10px] text-muted-foreground">
-                    {PET_TYPE_LABELS[pet.type] || pet.type}
-                    {pet.breed ? ` · ${pet.breed}` : ""}
-                  </span>
-                </div>
-              ))
+              /* The card is read while someone is on the phone with this
+                 customer, so it answers the questions that get asked: which
+                 animal, how old, and is there anything wrong with it. The
+                 detail already carried all of this and showed three fields of
+                 it. Age comes from formatPetAgeHe rather than being recomputed
+                 here - it is the one derivation, and a pet was reading as zero
+                 years old on its own first birthday before it existed. */
+              pets.map((pet) => {
+                const age = formatPetAgeHe(pet);
+                const conditions = (pet.medical_conditions || []).filter(Boolean);
+                return (
+                  <div key={pet.id} className="flex items-start gap-3 rounded-xl border border-mipo-line px-3 py-2.5">
+                    {pet.avatar_url ? (
+                      <img
+                        src={pet.avatar_url}
+                        alt=""
+                        className="h-10 w-10 shrink-0 rounded-full bg-mipo-soft object-cover"
+                      />
+                    ) : (
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-mipo-line">
+                        <PawPrint className="h-4 w-4 text-mipo-muted" />
+                      </span>
+                    )}
+                    <div className="min-w-0 flex-1 space-y-0.5">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-sm font-semibold text-mipo-ink">{pet.name}</span>
+                        <span className="text-[11px] text-mipo-muted">
+                          {PET_TYPE_LABELS[pet.type] || pet.type}
+                          {pet.breed ? ` · ${pet.breed}` : ""}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-mipo-muted">
+                        {/* An unknown age says so. It never shows as zero. */}
+                        {age || "גיל לא ידוע"}
+                        {pet.gender === "male" ? " · זכר" : pet.gender === "female" ? " · נקבה" : ""}
+                        {typeof pet.weight === "number" && pet.weight > 0 ? ` · ${pet.weight} ק״ג` : ""}
+                      </p>
+                      {conditions.length > 0 && (
+                        <div className="flex flex-wrap gap-1 pt-1">
+                          {conditions.map((condition) => (
+                            <span
+                              key={condition}
+                              className="rounded-full border border-amber-300 px-1.5 py-0.5 text-[10px] text-amber-700"
+                            >
+                              {condition}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
             )}
           </section>
 
