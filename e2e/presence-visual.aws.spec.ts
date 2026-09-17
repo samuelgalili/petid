@@ -75,7 +75,10 @@ test.describe("Home Presence visual", () => {
     await expect(page.locator("[data-presence-aurora='live']")).toBeVisible();
     await expect(page.locator("[data-presence-idle='live']")).toBeVisible();
     await expect(page.locator(".presence-aurora__ribbon")).toHaveCount(3);
-    await expect(page.locator(".presence-aurora__rim")).toBeVisible();
+    // No rim. The glow is the wash and the ribbons; a masked conic gradient
+    // at the avatar's edge is a coloured line around it, which the brand does
+    // not want. Asserted absent so it cannot come back unnoticed.
+    await expect(page.locator(".presence-aurora__rim")).toHaveCount(0);
     await expect(page.getByRole("img", { name: "לוקה" })).toBeVisible();
 
     const idle = page.locator("[data-presence-idle='live']");

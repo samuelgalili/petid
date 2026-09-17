@@ -38,7 +38,7 @@ const BottomNav = () => {
             aria-label={label}
           >
             {path === "/" && activePet?.avatar_url ? (
-              <span className={cn("rounded-full p-[2px]", active && "mipo-gradient-ring")}>
+              <span className={cn("rounded-full p-[2px]", active && "mipo-avatar-glow")}>
                 <img src={activePet.avatar_url || defaultPetAvatar} alt="" className="h-7 w-7 rounded-full border border-white object-cover" />
               </span>
             ) : (

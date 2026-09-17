@@ -350,7 +350,7 @@ const Onboarding = () => {
           {phase === "reveal" && (
             <Screen key="reveal" className="items-center justify-center text-center">
               <p className="text-sm font-semibold text-mipo-muted">נעים מאוד</p>
-              <div className="mipo-gradient-ring mt-5 h-64 w-64 shadow-[0_24px_70px_rgba(96,165,250,0.25)]">
+              <div className="mipo-avatar-glow mt-5 h-64 w-64 shadow-[0_24px_70px_rgba(96,165,250,0.25)]">
                 <img src={preview || defaultPetAvatar} alt="חיית המחמד" className="h-full w-full rounded-full border-[7px] border-white object-cover" />
               </div>
               <div className="mt-7 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-mipo-ink shadow-lg">
@@ -365,7 +365,7 @@ const Onboarding = () => {
 
           {(phase === "details" || phase === "creating") && (
             <Screen key="details" className="pt-14">
-              <div className="mipo-gradient-ring mx-auto h-28 w-28">
+              <div className="mipo-avatar-glow mx-auto h-28 w-28">
                 <img src={preview || defaultPetAvatar} alt="" className="h-full w-full rounded-full border-4 border-white object-cover" />
               </div>
               <h1 className="mt-7 text-center text-3xl font-semibold tracking-[-0.035em] text-mipo-ink">איך קוראים לך?</h1>
@@ -390,7 +390,7 @@ const Onboarding = () => {
             <Screen key="success" className="items-center justify-center text-center">
               <div className="relative">
                 <div className="absolute inset-0 scale-[1.7] rounded-full bg-[radial-gradient(circle,rgba(34,211,238,0.18),transparent_68%)]" />
-                <div className="mipo-gradient-ring h-44 w-44">
+                <div className="mipo-avatar-glow h-44 w-44">
                   <img src={preview || defaultPetAvatar} alt={name} className="h-full w-full rounded-full border-[6px] border-white object-cover" />
                 </div>
                 <span className="absolute bottom-1 left-1 flex h-12 w-12 items-center justify-center rounded-full bg-[#15151A] text-white shadow-xl"><Check className="h-6 w-6" /></span>

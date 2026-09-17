@@ -370,7 +370,7 @@ const Settings = () => {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <Card className="mipo-card mb-5 p-4">
               <div className="flex items-center gap-4">
-                <div className="mipo-gradient-ring h-14 w-14 shrink-0"><Avatar className="h-full w-full border-2 border-white">
+                <div className="mipo-avatar-glow h-14 w-14 shrink-0"><Avatar className="h-full w-full border-2 border-white">
                   <AvatarImage src={profileAvatar || undefined} />
                   <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">
                     {(profileName || user?.email || "מ")[0].toUpperCase()}

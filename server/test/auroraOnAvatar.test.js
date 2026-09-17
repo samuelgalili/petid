@@ -11,9 +11,15 @@
 // A rule enforced by grepping for one spelling of a thing is enforced for that
 // spelling only.
 //
-// The check: a ring must wrap something that shows a person or an animal - an
-// <img>, an <Avatar>, a MipoLogo mark. A ring whose contents are a lucide
-// glyph is a ring around an icon.
+// The check: the aurora must wrap something that shows a person or an animal -
+// an <img>, an <Avatar>, a MipoLogo mark. An aurora whose contents are a lucide
+// glyph is an aurora around an icon.
+//
+// It watches BOTH class names. The hard ring (.mipo-gradient-ring, a 3px band
+// of the brand gradient) has since been replaced everywhere by the soft glow
+// (.mipo-avatar-glow) - the owner asked for the glow without the line - and a
+// guard still spelling only the old name would have matched nothing at all
+// while reporting green.
 
 import assert from "node:assert/strict";
 import test from "node:test";
@@ -63,7 +69,7 @@ test("the brand aurora only ever rings an avatar", () => {
     const icons = iconNames(code);
     if (icons.size === 0) continue;
 
-    for (const match of code.matchAll(/mipo-gradient-ring/g)) {
+    for (const match of code.matchAll(/mipo-avatar-glow|mipo-gradient-ring/g)) {
       // A SHORT window, deliberately.
       //
       // The first version asked the opposite question - does a face appear
@@ -76,7 +82,13 @@ test("the brand aurora only ever rings an avatar", () => {
       // directly around a glyph. So the window is small, and a ring whose
       // contents are further away than this is left alone - it is wrapping a
       // structure, not an icon.
-      const window = code.slice(match.index, match.index + 300);
+      // The class names are stripped before looking for a face, because
+      // `mipo-avatar-glow` CONTAINS the word "avatar" - so the test matched its
+      // own subject and passed on everything, including an aurora'd icon. A
+      // check that is satisfied by the thing it is checking is not a check.
+      const window = code
+        .slice(match.index, match.index + 300)
+        .replace(/mipo-avatar-glow|mipo-gradient-ring/g, "");
       if (SHOWS_A_FACE.test(window)) continue;
 
       const glyph = [...icons].find((name) => new RegExp(`<${name}\\b`).test(window));

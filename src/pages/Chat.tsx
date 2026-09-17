@@ -384,12 +384,7 @@ const ChatContent = () => {
                   here would leave one stale aurora in the app, on the one
                   surface that is allowed to have one. */}
               <div className="relative mb-5 flex h-[84px] w-[84px] items-center justify-center">
-                <div
-                  aria-hidden
-                  className="absolute -inset-3 rounded-full opacity-40 blur-xl"
-                  style={{ background: "var(--gradient-primary)" }}
-                />
-                <div className="mipo-gradient-ring relative h-[84px] w-[84px] !p-[2px]">
+                <div className="mipo-avatar-glow relative h-[84px] w-[84px]">
                   {selectedPet?.avatar_url ? (
                     <img
                       src={selectedPet.avatar_url}

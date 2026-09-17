@@ -100,17 +100,10 @@ export const AvatarCompanion = () => {
       {/* The avatar is the one surface the brand aurora is allowed on, so the
           halo and the ring both read --gradient-primary rather than repeating
           the stops. With no pet there is no avatar, and so no aurora. */}
-      {hasPet && (
-        <span
-          aria-hidden
-          className="absolute -inset-1 rounded-full opacity-40 blur-md"
-          style={{ background: "var(--gradient-primary)" }}
-        />
-      )}
       <span
         className={
           hasPet
-            ? "mipo-gradient-ring relative h-14 w-14 !p-[2px]"
+            ? "mipo-avatar-glow relative h-14 w-14"
             : "relative flex h-14 w-14 items-center justify-center rounded-full border border-mipo-line bg-white/90 backdrop-blur-sm"
         }
       >

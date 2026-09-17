@@ -286,7 +286,7 @@ const OwnerProfile = () => {
         {/* ═══ 1. Personal Info Card ═══ */}
         <div className="mipo-card mx-4 mb-3 mt-4 p-5">
           <div className="flex items-start gap-4">
-            <div className="mipo-gradient-ring h-20 w-20 shrink-0">
+            <div className="mipo-avatar-glow h-20 w-20 shrink-0">
             <Avatar className="h-full w-full border-[3px] border-white">
               <AvatarImage src={profile?.avatar_url} className="object-cover" />
               <AvatarFallback className="bg-primary/10 text-primary font-bold text-xl">

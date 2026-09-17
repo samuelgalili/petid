@@ -275,7 +275,7 @@ const Profile = () => {
                     whileTap={{ scale: 0.97 }}
                     onClick={() => setIsImageEditorOpen(true)}
                   >
-                    <div className="mipo-gradient-ring h-20 w-20">
+                    <div className="mipo-avatar-glow h-20 w-20">
                       <div className="h-full w-full rounded-full bg-white p-[2px]">
                         <Avatar className="w-full h-full">
                           <AvatarImage src={profile?.avatar_url} className="object-cover" />
@@ -313,7 +313,7 @@ const Profile = () => {
                         whileHover={{ scale: 1.06, y: -3 }}
                         whileTap={{ scale: 0.95 }}
                       >
-                        <div className="mipo-gradient-ring h-[72px] w-[72px] transition-shadow group-hover:shadow-lg">
+                        <div className="mipo-avatar-glow h-[72px] w-[72px] transition-shadow group-hover:shadow-lg">
                           <div className="w-full h-full rounded-full overflow-hidden bg-card p-[1px]">
                             <div className="w-full h-full rounded-full overflow-hidden bg-muted">
                               {pet.avatar_url ? (
