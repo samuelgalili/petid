@@ -243,7 +243,7 @@ const PostComposer = ({ pets, activePetId, onClose, onCreated }: {
           </button>
         ) : (
           <button type="button" onClick={() => fileRef.current?.click()} className="mt-5 flex aspect-[4/3] w-full flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-mipo-muted/30 bg-mipo-soft text-mipo-muted">
-            <span className="mipo-gradient-ring p-[2px]"><span className="flex h-14 w-14 items-center justify-center rounded-full bg-white"><Camera className="h-6 w-6 text-mipo-ink" /></span></span>
+            <span className="flex h-14 w-14 items-center justify-center rounded-full border border-white/40 bg-white/10"><Camera className="h-6 w-6 text-white" strokeWidth={1.6} /></span>
             <span className="font-medium">בחירת תמונה או וידאו</span>
           </button>
         )}
@@ -337,9 +337,7 @@ const FeedLoading = () => (
 
 const EmptyFeed = ({ onCreate }: { onCreate: () => void }) => (
   <div className="flex h-[calc(100dvh-68px-env(safe-area-inset-bottom))] flex-col items-center justify-center px-6 text-center">
-    <div className="mipo-gradient-ring w-fit p-[3px]">
-      <span className="flex h-20 w-20 items-center justify-center rounded-full bg-neutral-900"><Video className="h-8 w-8 text-white" /></span>
-    </div>
+    <div className="flex h-20 w-20 items-center justify-center rounded-full border border-white/30"><Video className="h-8 w-8 text-white" strokeWidth={1.5} /></div>
     <h1 className="mt-6 text-2xl font-semibold text-white">הפיד מתחיל ברגע אחד</h1>
     <p className="mt-2 max-w-xs text-sm leading-6 text-white/70">שתפו תמונה או סרטון, תייגו את חיית המחמד והתחילו את הקהילה של Mipo.</p>
     <button onClick={onCreate} className="mipo-cta-button mt-6 px-6"><Camera className="h-5 w-5" />יצירת הרגע הראשון</button>

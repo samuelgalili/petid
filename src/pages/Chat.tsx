@@ -679,13 +679,8 @@ const ChatContent = () => {
                 className="px-4 py-5"
               >
                 <div className="max-w-2xl mx-auto flex gap-3 items-start">
-                  <div className="mipo-gradient-ring flex-shrink-0 p-[2px]">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white">
-                      <Sparkles className="h-3.5 w-3.5 text-mipo-violet" />
-                    </div>
-                  </div>
+                  <MipoLogo variant="mark" size="xs" showAnimals={false} className="h-8 w-8 flex-shrink-0" />
                   <div className="pt-1">
-                    <p className="mb-2 text-[12px] font-semibold text-mipo-muted">Mipo AI</p>
                     <div className="flex items-center gap-1.5">
                       {[0, 1, 2].map((i) => (
                         <motion.div
@@ -794,7 +789,7 @@ const Chat = () => {
       <main className="mipo-screen flex min-h-screen items-center justify-center p-5" dir="rtl">
         <section className="mipo-card w-full max-w-md p-7">
           <MipoLogo variant="mark" size="xs" showAnimals={false} />
-          <span className="mipo-gradient-ring mt-7 inline-flex p-[2px]"><span className="flex h-12 w-12 items-center justify-center rounded-full bg-white"><Sparkles className="h-5 w-5 text-mipo-violet" /></span></span>
+          <span className="mt-7 inline-flex h-12 w-12 items-center justify-center rounded-full border border-mipo-line"><Sparkles className="h-5 w-5 text-mipo-ink" strokeWidth={1.6} /></span>
           <h1 className="mt-4 text-2xl font-semibold tracking-[-0.025em] text-mipo-ink">הסכמה לעיבוד באמצעות AI</h1>
           <p className="mt-3 text-sm leading-relaxed text-mipo-muted">
             בעת שימוש בצ'אט, MIPO שולחת ל-Google Gemini את תוכן השיחה ואת פרטי חיית המחמד והפרופיל

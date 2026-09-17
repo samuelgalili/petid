@@ -11,9 +11,7 @@ const MipoHome = lazy(() => import("@/pages/MipoHome"));
 
 const LoadingFallback = () => (
   <div className="mipo-screen flex min-h-screen items-center justify-center">
-    <div className="mipo-gradient-ring p-[3px]">
-      <div className="h-12 w-12 animate-pulse rounded-full bg-white" />
-    </div>
+    <div className="h-12 w-12 animate-pulse rounded-full border border-mipo-line bg-mipo-soft" />
   </div>
 );
 
