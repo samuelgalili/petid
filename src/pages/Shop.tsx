@@ -89,8 +89,11 @@ const ShopProductCard = ({
   const safety = checkProductSafety(`${product.name} ${product.description}`, activePet);
 
   return (
-    <div className="relative rounded-lg overflow-hidden bg-card shadow-sm border border-border/30">
-      <div className="relative aspect-square bg-muted">
+    /* 8px radius and a shadow UNDER a border: the card was from a different
+       system than everything around it - MIPO's cards are 1.5rem, and the
+       house rule is a thin line OR a shadow, never both. */
+    <div className="group relative overflow-hidden rounded-3xl border border-mipo-line bg-mipo-surface transition-colors hover:bg-mipo-soft">
+      <div className="relative aspect-square bg-mipo-soft">
         {safety.level !== "safe" && (
           <SafetyBadge level={safety.level} reason={safety.reason} compact />
         )}
@@ -106,7 +109,7 @@ const ShopProductCard = ({
 
         <button
           onClick={(event) => onToggleFavorite(product.id, event)}
-          className="absolute top-1 right-1 flex h-11 w-11 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm shadow-sm"
+          className="absolute top-2 right-2 flex h-11 w-11 items-center justify-center rounded-full bg-white/85 backdrop-blur-sm"
           aria-label={isFavorite ? "הסר ממועדפים" : "הוסף למועדפים"}
         >
           <Heart
@@ -116,18 +119,27 @@ const ShopProductCard = ({
         </button>
 
         {product.originalPrice && product.originalPrice > product.price && (
-          <div className="absolute top-1 left-1 bg-red-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full">
+          <div className="absolute top-2 left-2 rounded-full bg-red-500 px-2 py-0.5 text-[11px] font-bold text-white">
             -{Math.round((1 - product.price / product.originalPrice) * 100)}%
           </div>
         )}
       </div>
 
-      <div className="p-2">
-        <h3 className="mb-0.5 line-clamp-1 text-xs font-medium text-foreground sm:text-sm">
+      {/* The price is the number the decision is made on, so it is the
+          largest thing here and it is ink - a coloured price competes with the
+          name instead of outranking it. Two lines for the name, because one
+          line truncated every product to an unrecognisable stub. */}
+      <div className="space-y-1 p-3">
+        <h3 className="line-clamp-2 min-h-[2.5rem] text-[13px] leading-5 text-mipo-ink">
           {product.name}
         </h3>
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-primary">₪{product.price}</span>
+        <div className="flex items-baseline gap-2">
+          <span className="text-[17px] font-bold tabular-nums text-mipo-ink">₪{product.price}</span>
+          {product.originalPrice && product.originalPrice > product.price && (
+            <span className="text-xs tabular-nums text-mipo-muted line-through">
+              ₪{product.originalPrice}
+            </span>
+          )}
         </div>
       </div>
     </div>
@@ -681,10 +693,10 @@ const Shop = () => {
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
-                className={`min-h-11 px-4 py-2.5 rounded-2xl text-sm font-medium whitespace-nowrap transition-all ${
+                className={`min-h-11 whitespace-nowrap rounded-full border px-4 py-2.5 text-sm font-medium transition-colors ${
                   selectedCategory === category.id
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "bg-card border border-border/30 text-foreground hover:bg-muted/50 hover:border-primary/30"
+                    ? "mipo-chip-selected"
+                    : "border-mipo-line bg-mipo-surface text-mipo-ink hover:bg-mipo-soft"
                 }`}
               >
                 {category.icon ? `${category.icon} ` : ""}
@@ -755,7 +767,7 @@ const Shop = () => {
                 </div>
 
                 {isExpanded ? (
-                  <div className="grid grid-cols-2 gap-3 px-4 sm:grid-cols-3 sm:px-6 lg:grid-cols-4">
+                  <div className="grid grid-cols-2 gap-4 px-4 sm:grid-cols-3 sm:px-6 lg:grid-cols-4">
                     {shown.map((product) => (
                       <div
                         key={product.id}
