@@ -23,7 +23,6 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Sheet, SheetContent, SheetHeader, SheetTitle,
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -34,6 +33,7 @@ import {
   AdminEmptyState, AdminPageHeader,
 } from "@/components/admin/AdminStyles";
 import { cn } from "@/lib/utils";
+import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
 import { OrderLabelGenerator, type LabelFormat } from "@/components/admin/OrderLabelGenerator";
 import { OrderShareMenu } from "@/components/admin/OrderShareMenu";
 import { bulkUpdateAdminOrders, getAdminOrders, updateAdminOrder } from "@/lib/mipoApi";
@@ -362,155 +362,13 @@ const AdminOrders = () => {
         )}
 
         {/* Table */}
-        {loading ? (
-          <div className="space-y-2">
-            {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-lg" />)}
-          </div>
-        ) : filteredOrders.length === 0 ? (
-          <AdminEmptyState icon={Package} title="אין הזמנות" description="לא נמצאו הזמנות התואמות לחיפוש" />
-        ) : (
-          <Card className="border-border/30 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/30 text-muted-foreground">
-                    <th className="py-3 px-3 text-right w-10">
-                      <Checkbox
-                        checked={selectedIds.size === filteredOrders.length && filteredOrders.length > 0}
-                        onCheckedChange={toggleAll}
-                      />
-                    </th>
-                    <th className="py-3 px-3 text-right font-medium">הזמנה</th>
-                    <th className="py-3 px-3 text-right font-medium">לקוח וחיה</th>
-                    <th className="py-3 px-3 text-right font-medium">סוג</th>
-                    <th className="py-3 px-3 text-center font-medium">דחיפות</th>
-                    <th className="py-3 px-3 text-right font-medium">סטטוס</th>
-                    <th className="py-3 px-3 text-right font-medium">תשלום</th>
-                    <th className="py-3 px-3 text-left font-medium">סה״כ</th>
-                    <th className="py-3 px-3 text-center font-medium">שיתוף</th>
-                    <th className="py-3 px-3 w-10"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredOrders.map((order) => {
-                    const statusCfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
-                    const StatusIcon = statusCfg.icon;
-                    const paymentCfg = PAYMENT_CONFIG[order.payment_status] || PAYMENT_CONFIG.pending;
-                    const urgencyCfg = URGENCY_CONFIG[order.medical_urgency || "none"] || URGENCY_CONFIG.none;
-                    const hasOOS = orderHasOOS(order);
-
-                    return (
-                      <tr
-                        key={order.id}
-                        className={cn(
-                          "border-b hover:bg-muted/30 transition-colors cursor-pointer",
-                          selectedIds.has(order.id) && "bg-primary/5",
-                          order.medical_urgency === "high" && "bg-rose-500/5",
-                          hasOOS && "bg-amber-500/5",
-                        )}
-                        onClick={() => setSelectedOrder(order)}
-                      >
-                        <td className="py-3 px-3" onClick={(e) => e.stopPropagation()}>
-                          <Checkbox
-                            checked={selectedIds.has(order.id)}
-                            onCheckedChange={() => toggleSelect(order.id)}
-                          />
-                        </td>
-                        <td className="py-3 px-3">
-                          <p className="font-semibold text-foreground text-xs">{order.order_number}</p>
-                          <p className="text-[10px] text-muted-foreground">
-                            {new Date(order.order_date).toLocaleDateString("he-IL")}
-                          </p>
-                        </td>
-                        <td className="py-3 px-3">
-                          <div className="flex items-center gap-1.5">
-                            <User className="w-3 h-3 text-muted-foreground flex-shrink-0" strokeWidth={1.5} />
-                            <span className="text-xs font-medium truncate max-w-[120px]">
-                              {order.customer_name || "—"}
-                            </span>
-                          </div>
-                          {order.pet_name && (
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <PawPrint className="w-3 h-3 text-primary flex-shrink-0" strokeWidth={1.5} />
-                              <span className="text-[10px] text-primary font-medium">{order.pet_name}</span>
-                            </div>
-                          )}
-                        </td>
-                        <td className="py-3 px-3">
-                          {order.order_type === "auto-restock" ? (
-                            <Badge variant="outline" className="text-[10px] gap-0.5 border-primary/30 text-primary">
-                              <Repeat className="w-2.5 h-2.5" /> מנוי
-                            </Badge>
-                          ) : (
-                            <span className="text-[10px] text-muted-foreground">רגיל</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-3 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <div className={cn("w-2 h-2 rounded-full", urgencyCfg.dot)} />
-                            {order.medical_urgency === "high" && (
-                              <span className="text-[10px] font-bold text-rose-500">דחוף</span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-3 px-3" onClick={(event) => event.stopPropagation()}>
-                          <Select
-                            value={order.status}
-                            onValueChange={(value) => updateSingleStatus(order.id, value as Order["status"])}
-                            disabled={updatingStatus}
-                          >
-                            <SelectTrigger
-                              className={cn("h-8 w-[116px] gap-1 rounded-full px-2 text-[10px] font-medium", statusCfg.color)}
-                              aria-label={`שינוי סטטוס הזמנה ${order.order_number}`}
-                            >
-                              <span className="inline-flex items-center gap-1">
-                                <StatusIcon className="h-3 w-3" />
-                                {statusCfg.label}
-                              </span>
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Object.entries(STATUS_CONFIG).map(([key, config]) => (
-                                <SelectItem key={key} value={key}>{config.label}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </td>
-                        <td className="py-3 px-3">
-                          <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-medium", paymentCfg.color)}>
-                            {paymentCfg.label}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3 text-left">
-                          <div className="flex items-center gap-1">
-                            <span className="font-bold text-foreground">₪{order.total?.toFixed(0)}</span>
-                            {hasOOS && (
-                              <AlertTriangle className="w-3.5 h-3.5 text-amber-500" strokeWidth={2} />
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-3 px-3 text-center" onClick={(event) => event.stopPropagation()}>
-                          <OrderShareMenu order={order} />
-                        </td>
-                        <td className="py-3 px-3">
-                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <div className="p-3 border-t bg-muted/20 text-xs text-muted-foreground">
-              מציג {filteredOrders.length} מתוך {orders.length} הזמנות
-              {autoRestockCount > 0 && ` • ${autoRestockCount} מנויים פעילים`}
-            </div>
-          </Card>
-        )}
-
-        {/* Order Details Sheet */}
-        <Sheet open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
-          <SheetContent side="left" className="w-full sm:w-[420px] p-0">
-            {selectedOrder && (
+        {/* The order beside the list, not over it: a status can be changed
+            while the queue it came from is still on screen. */}
+        <AdminWorkspace
+          open={!!selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+          detail={
+            selectedOrder && (
               <OrderDetailPanel
                 order={selectedOrder}
                 outOfStockItems={outOfStockItems}
@@ -524,9 +382,160 @@ const AdminOrders = () => {
                   setSelectedOrder(null);
                 }}
               />
-            )}
-          </SheetContent>
-        </Sheet>
+            )
+          }
+        >
+          {loading ? (
+            <div className="space-y-2">
+              {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-lg" />)}
+            </div>
+          ) : filteredOrders.length === 0 ? (
+            <AdminEmptyState icon={Package} title="אין הזמנות" description="לא נמצאו הזמנות התואמות לחיפוש" />
+          ) : (
+            <Card className="border-border/30 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/30 text-muted-foreground">
+                      <th className="py-3 px-3 text-right w-10">
+                        <Checkbox
+                          checked={selectedIds.size === filteredOrders.length && filteredOrders.length > 0}
+                          onCheckedChange={toggleAll}
+                        />
+                      </th>
+                      <th className="py-3 px-3 text-right font-medium">הזמנה</th>
+                      <th className="py-3 px-3 text-right font-medium">לקוח וחיה</th>
+                      <th className="py-3 px-3 text-right font-medium">סוג</th>
+                      <th className="py-3 px-3 text-center font-medium">דחיפות</th>
+                      <th className="py-3 px-3 text-right font-medium">סטטוס</th>
+                      <th className="py-3 px-3 text-right font-medium">תשלום</th>
+                      <th className="py-3 px-3 text-left font-medium">סה״כ</th>
+                      <th className="py-3 px-3 text-center font-medium">שיתוף</th>
+                      <th className="py-3 px-3 w-10"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredOrders.map((order) => {
+                      const statusCfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
+                      const StatusIcon = statusCfg.icon;
+                      const paymentCfg = PAYMENT_CONFIG[order.payment_status] || PAYMENT_CONFIG.pending;
+                      const urgencyCfg = URGENCY_CONFIG[order.medical_urgency || "none"] || URGENCY_CONFIG.none;
+                      const hasOOS = orderHasOOS(order);
+
+                      return (
+                        <tr
+                          key={order.id}
+                          aria-selected={selectedOrder?.id === order.id}
+                          className={cn(
+                            "border-b hover:bg-muted/30 transition-colors cursor-pointer",
+                            selectedIds.has(order.id) && "bg-primary/5",
+                            order.medical_urgency === "high" && "bg-rose-500/5",
+                            hasOOS && "bg-amber-500/5",
+                            // Last, so the open row wins over the urgency and
+                            // out-of-stock tints. selectedIds above is the bulk
+                            // checkbox - a different selection from the one the
+                            // pane beside the list is showing.
+                            selectedOrder?.id === order.id && "bg-mipo-soft",
+                          )}
+                          onClick={() => setSelectedOrder(order)}
+                        >
+                          <td className="py-3 px-3" onClick={(e) => e.stopPropagation()}>
+                            <Checkbox
+                              checked={selectedIds.has(order.id)}
+                              onCheckedChange={() => toggleSelect(order.id)}
+                            />
+                          </td>
+                          <td className="py-3 px-3">
+                            <p className="font-semibold text-foreground text-xs">{order.order_number}</p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {new Date(order.order_date).toLocaleDateString("he-IL")}
+                            </p>
+                          </td>
+                          <td className="py-3 px-3">
+                            <div className="flex items-center gap-1.5">
+                              <User className="w-3 h-3 text-muted-foreground flex-shrink-0" strokeWidth={1.5} />
+                              <span className="text-xs font-medium truncate max-w-[120px]">
+                                {order.customer_name || "—"}
+                              </span>
+                            </div>
+                            {order.pet_name && (
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <PawPrint className="w-3 h-3 text-primary flex-shrink-0" strokeWidth={1.5} />
+                                <span className="text-[10px] text-primary font-medium">{order.pet_name}</span>
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-3 px-3">
+                            {order.order_type === "auto-restock" ? (
+                              <Badge variant="outline" className="text-[10px] gap-0.5 border-primary/30 text-primary">
+                                <Repeat className="w-2.5 h-2.5" /> מנוי
+                              </Badge>
+                            ) : (
+                              <span className="text-[10px] text-muted-foreground">רגיל</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <div className={cn("w-2 h-2 rounded-full", urgencyCfg.dot)} />
+                              {order.medical_urgency === "high" && (
+                                <span className="text-[10px] font-bold text-rose-500">דחוף</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3 px-3" onClick={(event) => event.stopPropagation()}>
+                            <Select
+                              value={order.status}
+                              onValueChange={(value) => updateSingleStatus(order.id, value as Order["status"])}
+                              disabled={updatingStatus}
+                            >
+                              <SelectTrigger
+                                className={cn("h-8 w-[116px] gap-1 rounded-full px-2 text-[10px] font-medium", statusCfg.color)}
+                                aria-label={`שינוי סטטוס הזמנה ${order.order_number}`}
+                              >
+                                <span className="inline-flex items-center gap-1">
+                                  <StatusIcon className="h-3 w-3" />
+                                  {statusCfg.label}
+                                </span>
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Object.entries(STATUS_CONFIG).map(([key, config]) => (
+                                  <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </td>
+                          <td className="py-3 px-3">
+                            <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-medium", paymentCfg.color)}>
+                              {paymentCfg.label}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-left">
+                            <div className="flex items-center gap-1">
+                              <span className="font-bold text-foreground">₪{order.total?.toFixed(0)}</span>
+                              {hasOOS && (
+                                <AlertTriangle className="w-3.5 h-3.5 text-amber-500" strokeWidth={2} />
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 text-center" onClick={(event) => event.stopPropagation()}>
+                            <OrderShareMenu order={order} />
+                          </td>
+                          <td className="py-3 px-3">
+                            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div className="p-3 border-t bg-muted/20 text-xs text-muted-foreground">
+                מציג {filteredOrders.length} מתוך {orders.length} הזמנות
+                {autoRestockCount > 0 && ` • ${autoRestockCount} מנויים פעילים`}
+              </div>
+            </Card>
+          )}
+        </AdminWorkspace>
 
         {/* Label Generator */}
         <OrderLabelGenerator
@@ -562,9 +571,12 @@ function OrderDetailPanel({
     <ScrollArea className="h-full" dir="rtl">
       <div className="p-5 space-y-5">
         {/* Header */}
-        <SheetHeader className="space-y-1 p-0">
+        {/* Plain markup, not SheetHeader/SheetTitle: this panel now renders
+            standalone in the workspace column too, and a Radix Dialog.Title
+            throws when there is no Dialog above it. */}
+        <div className="space-y-1 p-0 pl-10">
           <div className="flex items-center justify-between">
-            <SheetTitle className="text-base">{order.order_number}</SheetTitle>
+            <h2 className="text-base font-semibold text-mipo-ink">{order.order_number}</h2>
             <div className="flex items-center gap-1.5">
               <div className={cn("w-2 h-2 rounded-full", urgencyCfg.dot)} />
               <span className="text-[10px] font-medium text-muted-foreground">{urgencyCfg.label}</span>
@@ -575,7 +587,7 @@ function OrderDetailPanel({
               year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit",
             })}
           </p>
-        </SheetHeader>
+        </div>
 
         {/* Customer & Pet */}
         <Card className="border-border/30">

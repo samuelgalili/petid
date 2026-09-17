@@ -11,6 +11,7 @@ import { BulkProductImport, type ParsedProduct } from "@/components/admin/BulkPr
 import { ProductImportWizard } from "@/components/admin/ProductImportWizard";
 import { DataTable, Column, FilterOption } from "@/components/admin/DataTable";
 import { ProductFormDialog } from "@/components/admin/ProductFormDialog";
+import { AdminStatCard } from "@/components/admin/AdminStyles";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -662,50 +663,14 @@ const AdminProducts = () => {
     <AdminLayout title="ניהול מוצרים" icon={Package} breadcrumbs={[{ label: "מוצרים" }]}>
       {/* Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6" dir="rtl">
-        <Card className="border-border/50">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-primary/10">
-              <Package className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{products.length}</p>
-              <p className="text-xs text-muted-foreground">סה״כ מוצרים</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border/50">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-emerald-500/10">
-              <ShoppingCart className="w-5 h-5 text-emerald-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{products.length - outOfStockCount}</p>
-              <p className="text-xs text-muted-foreground">במלאי</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border/50">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-blue-500/10">
-              <Download className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{scrapedCount}</p>
-              <p className="text-xs text-muted-foreground">מיובאים</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border/50">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-amber-500/10">
-              <AlertCircle className="w-5 h-5 text-amber-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{flaggedCount + needsReviewCount}</p>
-              <p className="text-xs text-muted-foreground">דורשים טיפול</p>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Four hand-rolled copies of AdminStatCard, exactly as AdminBackup
+            had. They are the component now, so the panel's design system
+            reaches the page everyone lands on rather than stopping short of
+            it. */}
+        <AdminStatCard title="סה״כ מוצרים" value={products.length} icon={Package} color="primary" />
+        <AdminStatCard title="במלאי" value={products.length - outOfStockCount} icon={ShoppingCart} color="success" />
+        <AdminStatCard title="מיובאים" value={scrapedCount} icon={Download} color="info" />
+        <AdminStatCard title="דורשים טיפול" value={flaggedCount + needsReviewCount} icon={AlertCircle} color="warning" />
       </div>
 
       {/* Action Bar */}
