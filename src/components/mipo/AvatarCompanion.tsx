@@ -117,7 +117,17 @@ export const AvatarCompanion = () => {
         {hasPet ? (
           <img
             src={petAvatar as string}
-            alt={petName || "החיה שלי"}
+            // Decorative: the button around it is already labelled with the
+            // pet's name, so alt="" keeps a screen reader from announcing the
+            // name twice.
+            //
+            // It also stops this image from colliding with the home screen's
+            // own avatar. Both carried alt={petName}, which put two images
+            // with the same accessible name on every screen and made
+            // getByRole("img", { name }) ambiguous - the Playwright smoke test
+            // that guards the home Presence failed on a strict mode violation
+            // and blocked the deploy.
+            alt=""
             className="h-full w-full rounded-full bg-mipo-soft object-cover"
           />
         ) : (

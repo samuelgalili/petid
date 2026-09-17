@@ -50,3 +50,25 @@ test("the companion paints in brand colours only", () => {
       hexes.join(" "),
   );
 });
+
+test("the companion's image does not repeat its button's label", () => {
+  // The companion sits on every screen, including the home screen, which has
+  // the pet's own avatar in the centre. Giving both an alt of the pet's name
+  // put two images with the SAME accessible name on the page: a screen reader
+  // announces it twice, and getByRole("img", { name }) resolves to two
+  // elements. The second is how this was caught - a Playwright smoke test
+  // guarding the home Presence failed on a strict mode violation and stopped
+  // the deploy.
+  //
+  // The button is already labelled with the pet's name, so the image inside it
+  // is decorative.
+  const img = code.match(/<img[\s\S]*?\/>/);
+  assert.ok(img, "AvatarCompanion renders no <img>");
+  assert.match(
+    img[0],
+    /alt=""/,
+    'the companion\'s <img> carries a non-empty alt. Its button already names\n' +
+      "the pet, so this repeats the name to a screen reader and collides with\n" +
+      "the home screen's own avatar:\n" + img[0].replace(/\s+/g, " ").slice(0, 120),
+  );
+});
