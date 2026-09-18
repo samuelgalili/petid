@@ -138,6 +138,46 @@ test("the character casts a shadow and stands on something", () => {
     /standsFree && !loading && \(/,
     "the pedestal is gone, or is no longer conditional on there being a character",
   );
+  assert.match(code, /mipo-pet-pedestal"/, "the lit disc is gone");
+  assert.match(code, /mipo-pet-pedestal-contact"/, "the contact shadow is gone");
+});
+
+test("the pedestal cannot grow into the orbit buttons", () => {
+  // The reference the owner sent has the avatar owning the whole area. Our
+  // home screen has four navigation targets circling it, and the two bottom
+  // ones start 19px below the 166px avatar box. The disc's geometry is fixed
+  // in index.css for that reason, and these are the numbers that keep it
+  // clear of them.
+  const css = read("src/index.css");
+  const disc = css.slice(css.indexOf(".mipo-pet-pedestal {"), css.indexOf(".mipo-pet-pedestal-contact"));
+
+  assert.ok(disc.length > 0, "the pedestal rule is gone from index.css");
+
+  const height = Number(/height:\s*(\d+)px/.exec(disc)?.[1]);
+  const bottom = Number(/bottom:\s*-(\d+)px/.exec(disc)?.[1]);
+  const width = Number(/width:\s*(\d+)px/.exec(disc)?.[1]);
+
+  // How far below the avatar box the disc reaches.
+  //
+  // `bottom: -Npx` puts the element's BOTTOM edge N px below the container;
+  // its height then extends UPWARD from there, back inside the box. So the
+  // downward reach is `bottom` alone. The first version of this test added the
+  // height and reported 32px for a disc that reaches 10px, which is the kind
+  // of arithmetic that gets a correct change reverted.
+  const reach = bottom;
+  assert.ok(
+    reach < 19,
+    `the disc reaches ${reach}px below the avatar box and the bottom orbit\n` +
+      "buttons begin at 19px. Making it reach further means moving navigation.",
+  );
+  assert.ok(height > 12, "the disc is a smudge again rather than a lit platform");
+
+  // Horizontally the buttons sit at x 34-90 and 250-306 inside a 340px box,
+  // and the disc is centred at 170.
+  assert.ok(
+    170 - width / 2 > 90 && 170 + width / 2 < 250,
+    `a ${width}px disc centred at 170 overlaps an orbit button`,
+  );
 });
 
 test("the character art cannot swallow a tap meant for an orbit button", () => {

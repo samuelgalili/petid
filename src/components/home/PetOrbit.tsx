@@ -172,25 +172,28 @@ const PetOrbit = ({
               )}
             </div>
 
-            {/* The pedestal, as small as it can be and still do its job: a soft
-             * ellipse where the feet meet the glow. Without it a cut-out
-             * character floats with nothing beneath it, which reads as a
-             * sticker rather than as something standing there.
+            {/* The pet stands on a lit disc, not on a smudge.
+             *
+             * This was a 9px blurred ellipse at 15% ink - a contact shadow and
+             * nothing more. Against the reference the owner sent, that is the
+             * difference between a cut-out dropped onto a page and a character
+             * standing on a platform: the reference's disc is lit from inside
+             * and has a brighter rim, and the animal is ON it.
              *
              * OFFSET TO THE FEET, NOT TO THE BOX. The art frame is
-             * `-inset-[12px]`, so the character's feet land 12px below the
-             * bottom of this 166px element - a shadow at `bottom-0` sits a
-             * finger's width up the animal's legs, which was visible the first
-             * time this was rendered.
+             * `-inset-[12px]`, so the feet land 12px below this element's
+             * bottom edge. A shadow at `bottom-0` sat a finger's width up the
+             * animal's legs, which was only visible once it was rendered.
              *
-             * -6px puts it at the feet with a little overlap. There are 19px of
-             * clear space before the two bottom orbit buttons, so it still adds
-             * no height and cannot reach them. */}
+             * The geometry lives in index.css and is deliberately fixed there:
+             * it stops 9px short of the two bottom orbit buttons, adds no
+             * height, and cannot be grown to the reference's proportions
+             * without moving navigation - which this change does not do. */}
             {standsFree && !loading && (
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute bottom-[-6px] left-1/2 z-0 h-[9px] w-[84px] -translate-x-1/2 rounded-[50%] bg-mipo-ink/15 blur-[6px] dark:bg-black/45"
-              />
+              <>
+                <span aria-hidden="true" className="mipo-pet-pedestal" />
+                <span aria-hidden="true" className="mipo-pet-pedestal-contact" />
+              </>
             )}
           </div>
         </motion.button>
