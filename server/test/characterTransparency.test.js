@@ -194,6 +194,47 @@ test("every generated image goes through the check, at the one chokepoint", () =
   );
 });
 
+// ─── a failed regeneration must say WHY ──────────────────────────────────────
+
+test("a transparency failure has its own error code, not the generic bucket", () => {
+  // Whether the correction note persuades the model is the one thing about
+  // this mechanism that no test can answer - it depends on the model. The only
+  // way to find out is a real regeneration, and that experiment is worthless
+  // if its failure is recorded as "generation_failed", which is also what a
+  // network error, a parse failure and an empty response look like.
+  const index = readFileSync(path.join(repoRoot, "server/src/index.js"), "utf8");
+  const mapper = index.slice(index.indexOf("const characterErrorCode"), index.indexOf("const markPetCharacterFailed"));
+
+  assert.ok(mapper.length > 0, "characterErrorCode is gone");
+  assert.match(
+    mapper,
+    /GENERATED_IMAGE_NOT_TRANSPARENT"\) return "generation_not_transparent"/,
+    "a transparency refusal falls through to generation_failed, so a\n" +
+      "regeneration cannot tell us whether the retry note worked.",
+  );
+});
+
+test("the owner is told what actually happened, in their own words", () => {
+  // An owner shown "something went wrong, try again" will try again and get
+  // the same answer, because nothing about their photographs is wrong.
+  const studio = readFileSync(path.join(repoRoot, "src/components/home/PetCharacterStudio.tsx"), "utf8");
+  assert.match(
+    studio,
+    /generation_not_transparent: "/,
+    "the new error code has no message, so it renders as no message at all",
+  );
+});
+
+test("the retry says out loud whether it worked", () => {
+  // A silent retry makes a success invisible and a failure look like every
+  // other failure. Both branches log, because the interesting outcome is the
+  // one where the correction DID land.
+  const source = readFileSync(path.join(repoRoot, "server/src/petCharacter.js"), "utf8");
+  assert.match(source, /retrying with a correction/, "the first refusal is silent");
+  assert.match(source, /not transparent on the retry either/, "a second refusal is silent");
+  assert.match(source, /correction worked on the retry/, "a successful retry is silent");
+});
+
 test("the MIME allowlist no longer claims to prevent a baked-in background", () => {
   // The old comment asserted that refusing JPEG meant there was "no way" to end
   // up with a background baked in. That sentence is why nobody looked further.

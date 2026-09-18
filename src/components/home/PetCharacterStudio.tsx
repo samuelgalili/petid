@@ -38,6 +38,12 @@ const errorMessages: Record<string, string> = {
   generation_blocked: "המודל לא הצליח ליצור דמות מהתמונות האלה. נסו תמונות אחרות ללא אנשים ברקע.",
   generation_inconsistent: "חלק מההבעות לא שמרו בדיוק על המראה של הדמות. בחרו שוב בעיצוב כדי שניצור חבילה עקבית יותר.",
   temporarily_unavailable: "הסטודיו עמוס כרגע. הדמות נשמרה ואפשר לנסות שוב מאוחר יותר.",
+  // Its own sentence, not "something went wrong". This failure has a specific
+  // and knowable cause - the model painted a background instead of leaving it
+  // out of the file, twice - and it says so, because an owner told to "try
+  // again" will try again and get the same answer. It also says the fault is
+  // ours, because it is: their photographs were fine.
+  generation_not_transparent: "המודל החזיר דמות עם רקע מצויר במקום רקע שקוף, גם בניסיון השני. זו תקלה אצלנו ולא בתמונות שלכם — אנחנו מטפלים בה.",
   generation_failed: "משהו השתבש ביצירת הדמות. אפשר לנסות שוב עם אותן תמונות או לבחור עיצוב אחר.",
 };
 

@@ -2393,6 +2393,15 @@ const characterErrorCode = (error) => {
   if (error?.code === "INVALID_REFERENCE_PHOTOS") return "invalid_reference_photos";
   if (error?.code === "REFERENCE_PHOTOS_FACE_ONLY") return "reference_photos_face_only";
   if (error?.code === "NO_GENERATED_IMAGE") return "generation_blocked";
+  // Its own code, not the generic bucket.
+  //
+  // The model returned an image and it was refused for a specific, knowable
+  // reason: the background was painted rather than encoded in an alpha
+  // channel, twice - the correction note did not land. Folding that into
+  // "generation_failed" would make it indistinguishable from a network error
+  // or a parse failure, and the one thing we would want to learn from a
+  // regeneration is exactly which of those happened.
+  if (error?.code === "GENERATED_IMAGE_NOT_TRANSPARENT") return "generation_not_transparent";
   if (error?.code === "INCONSISTENT_CHARACTER_PACK") return "generation_inconsistent";
   if (/429|resource exhausted|quota/i.test(String(error?.message || ""))) return "temporarily_unavailable";
   return "generation_failed";

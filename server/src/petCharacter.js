@@ -342,7 +342,7 @@ export const assertUsableReferences = (parsed) => {
  * call the product makes. Failing after two is honest and bounded; the pack is
  * then marked failed rather than filled with squares.
  */
-const generateImage = async ({ client, imageModel, parts, requireTransparency = true }) => {
+const generateImage = async ({ client, imageModel, parts, requireTransparency = true, logger = console }) => {
   const ask = async (withParts) => {
     const response = await client.models.generateContent({
       model: imageModel,
@@ -365,11 +365,33 @@ const generateImage = async ({ client, imageModel, parts, requireTransparency = 
   } catch (error) {
     if (error.code !== "GENERATED_IMAGE_NOT_TRANSPARENT") throw error;
 
+    // SAY IT OUT LOUD, BOTH WAYS.
+    //
+    // Whether the correction note works is the one thing about this mechanism
+    // that tests cannot answer - it depends on the model. A silent retry means
+    // a success is invisible and a failure looks like any other failure, and
+    // then the only way to find out is to regenerate somebody's pet and guess.
+    logger.warn("Pet character image was not transparent; retrying with a correction", {
+      reason: error.details?.reason,
+      corners: error.details?.corners,
+    });
+
     // The correction goes FIRST. The original instruction stays intact after
     // it, so the retry is the same request plus a note about what came back -
     // not a different request that might also change the character.
     const retried = await ask([{ text: TRANSPARENCY_RETRY_NOTE }, ...parts]);
-    await assertRealTransparency(retried);
+
+    try {
+      await assertRealTransparency(retried);
+    } catch (secondError) {
+      logger.error("Pet character image was not transparent on the retry either", {
+        reason: secondError.details?.reason,
+        corners: secondError.details?.corners,
+      });
+      throw secondError;
+    }
+
+    logger.warn("The transparency correction worked on the retry");
     return retried;
   }
 };
