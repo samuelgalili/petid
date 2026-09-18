@@ -221,6 +221,44 @@ test("the orbit's geometry and its four destinations are untouched", () => {
   assert.match(code, /slots\.slice\(0, 4\)/, "the orbit no longer renders exactly four destinations");
 });
 
+test("the idle breathes but does not tilt", () => {
+  // The sway was invisible while the avatar was a circle - a rotated circle is
+  // the same circle - and became a picture leaning over the moment the
+  // character was freed from that crop.
+  //
+  // It is gone rather than reduced because the character will carry its own
+  // animation. A CSS sway underneath a generated animation is two motions
+  // arguing, and the cheap one wins.
+  const css = read("src/index.css");
+  const start = css.indexOf("@keyframes presence-idle-neutral {");
+  const end = css.indexOf("@media (prefers-reduced-motion: reduce) {", start);
+  assert.ok(start > 0 && end > start, "the idle keyframes are gone from index.css");
+
+  const keyframes = css.slice(start, end);
+  assert.doesNotMatch(
+    keyframes,
+    /rotate\(/,
+    "the idle rotates again. On a cut-out character that is a tilt, not a sway.",
+  );
+
+  // Breath must survive the removal. Deleting the whole animation would also
+  // satisfy the rule above, and presence-visual.aws.spec.ts asserts the
+  // transform keeps changing while live - so this states the intent here too,
+  // where the reason is written down.
+  assert.match(keyframes, /scale\(/, "the breath went with the tilt");
+  assert.match(keyframes, /translateY\(/, "the rise went with the tilt");
+});
+
+test("the idle tokens and the stylesheet describe the same motion", () => {
+  // presenceIdle.ts is the documented source for these curves. A token file
+  // that still lists a rotation the stylesheet no longer runs is a lie that
+  // reads like documentation, and the next person implements the lie.
+  const tokens = read("src/components/home/presenceIdle.ts");
+  assert.doesNotMatch(tokens, /rotate/, "the tokens still describe a rotation");
+  assert.match(tokens, /scale: \[/);
+  assert.match(tokens, /y: \[/);
+});
+
 test("the aurora is unchanged and still the only place the brand glow lives", () => {
   const code = orbit();
   assert.match(code, /<PresenceAurora still=\{still\} isCharacter=\{isCharacter\}/);
