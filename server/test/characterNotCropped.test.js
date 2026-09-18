@@ -61,7 +61,7 @@ test("the character is not clipped to a circle", () => {
   // `overflow-hidden rounded-full` on the avatar element is the bug.
   assert.match(
     code,
-    /!isCharacter\s*\n?\s*&&\s*"overflow-hidden rounded-full/,
+    /!standsFree\s*\n?\s*&&\s*"overflow-hidden rounded-full/,
     "the avatar wrapper clips unconditionally. A full-body character in a\n" +
       "circle loses its legs, and the alpha channel the whole pipeline\n" +
       "guarantees is discarded by one `overflow-hidden`.",
@@ -72,11 +72,62 @@ test("the character is drawn with object-contain, not object-cover", () => {
   const code = orbit();
   assert.match(
     code,
-    /isCharacter\s*\n?\s*\?\s*"object-contain/,
+    /standsFree\s*\n?\s*\?\s*"object-contain/,
     "object-cover crops the animal inside its own square - a second crop on\n" +
       "top of the circle, and the one that survives removing the circle.",
   );
   assert.match(code, /:\s*"object-cover"/, "the photograph path lost object-cover");
+});
+
+test("the un-cropped treatment is granted on evidence, not on the flag", () => {
+  const code = orbit();
+  // isCharacter says the PACK is ready. It says nothing about whether the
+  // picture in it is actually cut out, and the generator returned one where
+  // the transparency was DRAWN - a chequerboard, as opaque pixels. That
+  // shipped, because petCharacter.js checks the MIME type and a PNG can be
+  // entirely opaque.
+  //
+  // So the decision must depend on an inspection of the image. Every branch
+  // that removes the circle has to read standsFree; a single one left on
+  // isCharacter puts the chequerboard back on that path only.
+  assert.match(code, /useImageHasAlpha/, "the image is no longer inspected at all");
+  assert.match(
+    code,
+    /const standsFree = isCharacter && alpha === "alpha"/,
+    "standsFree is not derived from the inspection",
+  );
+
+  for (const branch of [
+    /!standsFree\s*\n?\s*&& "overflow-hidden rounded-full/,
+    /standsFree \? "pointer-events-none absolute -inset-\[12px\]"/,
+    /standsFree\s*\n?\s*\? "object-contain/,
+  ]) {
+    assert.match(
+      code,
+      branch,
+      "a branch that removes the circle still reads isCharacter rather than\n" +
+        "standsFree. That path will render an opaque square again.",
+    );
+  }
+});
+
+test("the safe treatment is what renders before the answer arrives", () => {
+  // The verdict starts at "unknown", and standsFree is only true for "alpha".
+  // If it were written as `alpha !== "opaque"` the chequerboard would flash on
+  // screen for as long as the decode takes, which on a cold cache is visible.
+  const hook = read("src/hooks/useImageHasAlpha.ts");
+  assert.match(hook, /"unknown" \| "alpha" \| "opaque"/);
+  assert.match(
+    hook,
+    /return "opaque";[\s\S]{0,400}getImageData/,
+    "a canvas that cannot be read must answer opaque, not alpha",
+  );
+  assert.doesNotMatch(
+    orbit(),
+    /standsFree = isCharacter && alpha !== "opaque"/,
+    "unknown is being treated as transparent, so the square shows while the\n" +
+      "image is still being inspected",
+  );
 });
 
 test("the character casts a shadow and stands on something", () => {
@@ -84,7 +135,7 @@ test("the character casts a shadow and stands on something", () => {
   assert.match(code, /drop-shadow-\[/, "a cut-out with no shadow reads as a sticker");
   assert.match(
     code,
-    /isCharacter && !loading && \(/,
+    /standsFree && !loading && \(/,
     "the pedestal is gone, or is no longer conditional on there being a character",
   );
 });
@@ -96,7 +147,7 @@ test("the character art cannot swallow a tap meant for an orbit button", () => {
   // still hit targets.
   assert.match(
     code,
-    /isCharacter \? "pointer-events-none absolute/,
+    /standsFree \? "pointer-events-none absolute/,
     "the enlarged character layer is not pointer-events-none",
   );
 });

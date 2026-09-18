@@ -4,6 +4,7 @@ import type { CharacterMood } from "@/lib/characterBehavior";
 import { cn } from "@/lib/utils";
 import PresenceAurora from "@/components/home/PresenceAurora";
 import { PRESENCE_IDLE } from "@/components/home/presenceIdle";
+import { useImageHasAlpha } from "@/hooks/useImageHasAlpha";
 
 export type OrbitSlot = {
   /** Stable key, also used for the attention lookup */
@@ -63,6 +64,18 @@ const PetOrbit = ({
   const reduceMotion = useReducedMotion();
   const still = !!reduceMotion;
   const idle = PRESENCE_IDLE[mood];
+
+  // isCharacter says the PACK is ready. It does not say the picture in it is
+  // actually cut out, and the generator has returned images where the
+  // transparency was drawn as a chequerboard rather than written to an alpha
+  // channel. petCharacter.js only checks the MIME type, which proves the
+  // container and nothing about the pixels.
+  //
+  // So the un-cropped treatment is granted on EVIDENCE, not on a flag: the
+  // image is inspected, and until it has answered, the conservative circle is
+  // what renders. An opaque square never reaches the screen, not for a frame.
+  const alpha = useImageHasAlpha(isCharacter && !loading ? avatarUrl : null);
+  const standsFree = isCharacter && alpha === "alpha";
 
   return (
     <div className={cn("relative mx-auto h-[340px] w-[340px] max-w-full", className)}>
@@ -126,7 +139,7 @@ const PetOrbit = ({
             <div
               className={cn(
                 "relative z-[1] h-full w-full",
-                !isCharacter
+                !standsFree
                   && "overflow-hidden rounded-full border-[5px] border-white bg-mipo-soft dark:border-mipo-surface",
               )}
               data-presence-idle={still ? "still" : "live"}
@@ -136,7 +149,7 @@ const PetOrbit = ({
               {loading ? (
                 <div className="h-full w-full animate-pulse rounded-full bg-mipo-soft" />
               ) : (
-                <div className={cn(isCharacter ? "pointer-events-none absolute -inset-[12px]" : "h-full w-full")}>
+                <div className={cn(standsFree ? "pointer-events-none absolute -inset-[12px]" : "h-full w-full")}>
                   <AnimatePresence mode="wait" initial={false}>
                     <motion.img
                       key={avatarUrl}
@@ -145,7 +158,7 @@ const PetOrbit = ({
                       draggable={false}
                       className={cn(
                         "h-full w-full",
-                        isCharacter
+                        standsFree
                           ? "object-contain drop-shadow-[0_10px_18px_rgba(21,21,26,0.18)]"
                           : "object-cover",
                       )}
@@ -173,7 +186,7 @@ const PetOrbit = ({
              * -6px puts it at the feet with a little overlap. There are 19px of
              * clear space before the two bottom orbit buttons, so it still adds
              * no height and cannot reach them. */}
-            {isCharacter && !loading && (
+            {standsFree && !loading && (
               <span
                 aria-hidden="true"
                 className="pointer-events-none absolute bottom-[-6px] left-1/2 z-0 h-[9px] w-[84px] -translate-x-1/2 rounded-[50%] bg-mipo-ink/15 blur-[6px] dark:bg-black/45"
