@@ -1,5 +1,6 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import sharp from "sharp";
+import { KEY_BACKGROUND_INSTRUCTION, chromaKeyToAlpha } from "./chromaKey.js";
 
 /**
  * Two candidates, one per style, so the owner picks a direction rather than
@@ -30,7 +31,11 @@ export const CHARACTER_EXPRESSIONS = [
 // because every check between the model and the screen looked at the container
 // rather than at the contents.
 //
-// assertRealTransparency below is the one that looks at the contents.
+// The prompt no longer asks for transparency at all. It asks for the animal on
+// flat magenta - a drawing instruction, which is a thing a model does well -
+// and chromaKey.js makes the alpha from those pixels arithmetically.
+// inspectTransparency below then holds the result to the same standard the
+// screen holds it to.
 const allowedGeneratedMimeTypes = new Set(["image/png", "image/webp"]);
 
 // The same rule the browser applies in src/hooks/useImageHasAlpha.ts, and
@@ -200,23 +205,6 @@ export const inspectTransparency = async (buffer) => {
   };
 };
 
-/** Throws with a code the retry path can recognise. */
-export const assertRealTransparency = async ({ buffer }) => {
-  const verdict = await inspectTransparency(buffer);
-  if (verdict.transparent) return verdict;
-
-  const error = new Error(
-    verdict.reason === "no_alpha_channel"
-      ? "The generated image has no alpha channel"
-      : verdict.reason === "undecodable"
-        ? "The generated image could not be decoded"
-        : "The generated image has an opaque background",
-  );
-  error.code = "GENERATED_IMAGE_NOT_TRANSPARENT";
-  error.details = verdict;
-  throw error;
-};
-
 /**
  * What to say on the second attempt.
  *
@@ -227,12 +215,13 @@ export const assertRealTransparency = async ({ buffer }) => {
  * interpreted "transparent background" as something to depict.
  */
 export const TRANSPARENCY_RETRY_NOTE = `
-The previous attempt was rejected. It returned an image whose background was OPAQUE: the
-transparency was PAINTED - a grey and white chequerboard pattern drawn as visible pixels.
+The previous attempt was rejected: the background was not the requested colour. It was
+some other backdrop - a pattern, a gradient, a scene, or a chequerboard.
 
-Do not draw a chequerboard. Do not draw any background at all. The background must be
-absent from the file: encode it in the PNG alpha channel so that the corner pixels of the
-image have alpha 0. Every pixel that is not the animal must be fully transparent.
+This is a DRAWING instruction, not a file-format one. Fill every pixel behind the animal
+with one single flat colour: pure magenta, RGB(255, 0, 255). Nothing else. No pattern, no
+texture, no gradient, no shading, no chequerboard, no scene. The magenta must reach all
+four corners of the image and must not appear anywhere on the animal.
 `.trim();
 
 export const buildCandidatePrompt = ({ petName, petType, visualIdentity, style }) => `
@@ -251,10 +240,9 @@ Art direction:
 - Recognisability matters more than charm: this must read as this specific animal, not a nicer one of the same breed.
 - Show the whole animal - head, neck, torso, every visible leg and paw, and the tail. Do not crop them.
 - Square 1:1 composition with generous breathing room around the body.
-- FULLY TRANSPARENT BACKGROUND. Return a PNG with a real alpha channel: every
-  pixel that is not the animal itself must be transparent. No backdrop, no
-  colour fill, no white, no gradient, no ground plane, no cast or contact
-  shadow, no vignette. The animal is cut out and floats alone.
+- ${KEY_BACKGROUND_INSTRUCTION}
+- No ground plane, no cast or contact shadow, no vignette: the animal stands
+  clear of the background and touches nothing.
 - The shading stays ON the animal: light and shade across the body are what give
   it dimensional form, since there is no ground beneath it to catch a shadow.
 - Crisp production-ready finish with clean edges around fur.
@@ -270,7 +258,7 @@ Preserve exactly:
 - face, muzzle, ears, eyes, tail, rendering style, material treatment, lighting, and camera angle
 - identity notes: ${JSON.stringify(visualIdentity)}
 
-Keep the same square composition and the same fully transparent background: a PNG with a real alpha channel, no backdrop, no ground plane and no cast shadow. Show one full-body character only. No text, logo, border, clothing, extra animals, people, or unrelated props. The emotional change must come from pose and expression, not from changing the character design.
+Keep the same square composition, and the same background as the master: ${KEY_BACKGROUND_INSTRUCTION} No ground plane and no cast shadow. Show one full-body character only. No text, logo, border, clothing, extra animals, people, or unrelated props. The emotional change must come from pose and expression, not from changing the character design.
 `.trim();
 
 export const buildPackValidationPrompt = ({ petName, expressionKeys, visualIdentity }) => `
@@ -342,6 +330,21 @@ export const assertUsableReferences = (parsed) => {
  * call the product makes. Failing after two is honest and bounded; the pack is
  * then marked failed rather than filled with squares.
  */
+/**
+ * One image, cut out here rather than asked for cut out.
+ *
+ * The model is asked for the animal on flat magenta - a drawing instruction it
+ * follows reliably - and the alpha is made from those pixels by chromaKey.js.
+ * Asking for "a PNG with a real alpha channel" is what produced a painted
+ * chequerboard: a file-format instruction inside a creative prompt reads as
+ * something to depict.
+ *
+ * The keying step has no judgement in it, so the only thing that can go wrong
+ * is the model ignoring the colour - which is measured, named, and retried
+ * once with a note about the COLOUR rather than about transparency.
+ *
+ * The result is always a PNG, because that is what the key emits.
+ */
 const generateImage = async ({ client, imageModel, parts, requireTransparency = true, logger = console }) => {
   const ask = async (withParts) => {
     const response = await client.models.generateContent({
@@ -356,44 +359,54 @@ const generateImage = async ({ client, imageModel, parts, requireTransparency = 
     return extractGeneratedImage(response);
   };
 
+  /** Key it, then hold the result to the same standard the screen holds it to. */
+  const cutOut = async (generated) => {
+    const keyed = await chromaKeyToAlpha(generated.buffer);
+    if (!keyed.ok) return { ok: false, reason: keyed.reason, keyedBorder: keyed.keyedBorder };
+
+    const verdict = await inspectTransparency(keyed.buffer);
+    if (!verdict.transparent) return { ok: false, reason: `keyed_but_${verdict.reason}` };
+
+    return { ok: true, image: { buffer: keyed.buffer, contentType: "image/png" } };
+  };
+
   const first = await ask(parts);
   if (!requireTransparency) return first;
 
-  try {
-    await assertRealTransparency(first);
-    return first;
-  } catch (error) {
-    if (error.code !== "GENERATED_IMAGE_NOT_TRANSPARENT") throw error;
+  const firstCut = await cutOut(first);
+  if (firstCut.ok) return firstCut.image;
 
-    // SAY IT OUT LOUD, BOTH WAYS.
-    //
-    // Whether the correction note works is the one thing about this mechanism
-    // that tests cannot answer - it depends on the model. A silent retry means
-    // a success is invisible and a failure looks like any other failure, and
-    // then the only way to find out is to regenerate somebody's pet and guess.
-    logger.warn("Pet character image was not transparent; retrying with a correction", {
-      reason: error.details?.reason,
-      corners: error.details?.corners,
+  // SAY IT OUT LOUD, BOTH WAYS. Whether the correction lands depends on the
+  // model, which no test can establish. A silent retry makes a success
+  // invisible and a failure look like every other failure.
+  logger.warn("Pet character background was not keyable; retrying with a correction", {
+    reason: firstCut.reason,
+    keyedBorder: firstCut.keyedBorder,
+  });
+
+  // The correction goes FIRST, with the original instruction intact after it:
+  // the retry is the same request plus a note about what came back, not a
+  // different request that might also change the animal.
+  const retried = await ask([{ text: TRANSPARENCY_RETRY_NOTE }, ...parts]);
+  const retriedCut = await cutOut(retried);
+
+  if (!retriedCut.ok) {
+    logger.error("Pet character background was not keyable on the retry either", {
+      reason: retriedCut.reason,
+      keyedBorder: retriedCut.keyedBorder,
     });
-
-    // The correction goes FIRST. The original instruction stays intact after
-    // it, so the retry is the same request plus a note about what came back -
-    // not a different request that might also change the character.
-    const retried = await ask([{ text: TRANSPARENCY_RETRY_NOTE }, ...parts]);
-
-    try {
-      await assertRealTransparency(retried);
-    } catch (secondError) {
-      logger.error("Pet character image was not transparent on the retry either", {
-        reason: secondError.details?.reason,
-        corners: secondError.details?.corners,
-      });
-      throw secondError;
-    }
-
-    logger.warn("The transparency correction worked on the retry");
-    return retried;
+    const error = new Error(
+      retriedCut.reason === "background_not_keyable"
+        ? "The model did not place the character on the requested background colour"
+        : "The keyed image still has an opaque background",
+    );
+    error.code = "GENERATED_IMAGE_NOT_TRANSPARENT";
+    error.details = retriedCut;
+    throw error;
   }
+
+  logger.warn("The background correction worked on the retry");
+  return retriedCut.image;
 };
 
 const validateExpressionPack = async ({

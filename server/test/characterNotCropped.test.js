@@ -39,12 +39,17 @@ const orbit = () =>
 
 // ─── the generator's promise ─────────────────────────────────────────────────
 
-test("the generator is still asked for a full-body transparent character", () => {
-  // If this prompt ever stops asking for alpha, the whole treatment below is
+test("the generator still produces a full-body cut-out character", () => {
+  // If the pipeline ever stops producing a cut-out, the treatment below is
   // wrong and the circle should come back. The rule and its premise are pinned
   // together so they cannot drift apart silently.
+  //
+  // The premise changed shape once already: the prompt used to ask for a
+  // transparent background and the model painted one. It now asks for flat
+  // magenta and chromaKey.js makes the alpha. What must remain true is the
+  // OUTCOME - a full-body animal on real transparency - not the wording.
   const generator = read("server/src/petCharacter.js");
-  assert.match(generator, /FULLY TRANSPARENT BACKGROUND/);
+  assert.match(generator, /chromaKeyToAlpha/, "the background is no longer cut out");
   assert.match(generator, /full-body character/);
   assert.doesNotMatch(
     generator,

@@ -24,7 +24,6 @@ import { fileURLToPath } from "node:url";
 import {
   CORNERS_REQUIRED_TRANSPARENT,
   CORNER_ALPHA_THRESHOLD,
-  assertRealTransparency,
   inspectTransparency,
 } from "../src/petCharacter.js";
 
@@ -130,24 +129,18 @@ test("just under the threshold passes, exactly on it does not", async () => {
 
 // ─── the error the retry path recognises ─────────────────────────────────────
 
-test("assertRealTransparency throws a code the caller can act on", async () => {
-  const chequerboard = await chequerboardPng();
-  await assert.rejects(
-    () => assertRealTransparency({ buffer: chequerboard }),
-    (error) => {
-      assert.equal(error.code, "GENERATED_IMAGE_NOT_TRANSPARENT");
-      assert.equal(error.details.reason, "opaque_corners");
-      return true;
-    },
-    "the retry in generateImage keys off this code. A generic Error would make\n" +
-      "a chequerboard indistinguishable from a network failure, and retrying a\n" +
-      "network failure with a transparency lecture is not useful.",
+test("the refusal carries the code characterErrorCode maps", () => {
+  // generateImage constructs this error inline now that the keying step owns
+  // the decision. The code is the contract between the generator and the
+  // screen's error message, so it is asserted where it is written.
+  const source = readFileSync(path.join(repoRoot, "server/src/petCharacter.js"), "utf8");
+  assert.match(source, /error\.code = "GENERATED_IMAGE_NOT_TRANSPARENT"/);
+  assert.match(
+    source,
+    /did not place the character on the requested background colour/,
+    "the message no longer distinguishes an unkeyable background from a keyed\n" +
+      "image that came out opaque anyway - two different faults.",
   );
-});
-
-test("a good image passes through assertRealTransparency silently", async () => {
-  const verdict = await assertRealTransparency({ buffer: await squarePng(0) });
-  assert.equal(verdict.transparent, true);
 });
 
 // ─── the two implementations must agree ──────────────────────────────────────
@@ -177,8 +170,13 @@ test("every generated image goes through the check, at the one chokepoint", () =
   // neither, eventually.
   assert.match(
     source,
-    /const generateImage = async[\s\S]{0,1600}assertRealTransparency/,
-    "generateImage no longer verifies transparency",
+    /const generateImage = async[\s\S]{0,2600}chromaKeyToAlpha/,
+    "generateImage no longer cuts the background out",
+  );
+  assert.match(
+    source,
+    /const generateImage = async[\s\S]{0,2600}inspectTransparency/,
+    "generateImage keys the image and then trusts the result without checking it",
   );
   assert.match(
     source,
@@ -231,8 +229,8 @@ test("the retry says out loud whether it worked", () => {
   // one where the correction DID land.
   const source = readFileSync(path.join(repoRoot, "server/src/petCharacter.js"), "utf8");
   assert.match(source, /retrying with a correction/, "the first refusal is silent");
-  assert.match(source, /not transparent on the retry either/, "a second refusal is silent");
-  assert.match(source, /correction worked on the retry/, "a successful retry is silent");
+  assert.match(source, /not keyable on the retry either/, "a second refusal is silent");
+  assert.match(source, /background correction worked on the retry/, "a successful retry is silent");
 });
 
 test("the MIME allowlist no longer claims to prevent a baked-in background", () => {

@@ -138,7 +138,14 @@ test("the shared candidate prompt no longer forces a house style", () => {
 // Both prompts previously asked for a warm-neutral #F7F7F5 background and a
 // grounded shadow, which is exactly what the generated avatars came back with.
 
-test("the candidate prompt demands a real alpha channel and forbids any backdrop", () => {
+test("the candidate prompt asks for a flat key colour, not for an alpha channel", () => {
+  // It used to demand "FULLY TRANSPARENT BACKGROUND ... a real alpha channel",
+  // and the model answered by PAINTING transparency: the grey-and-white
+  // chequerboard, as opaque pixels. A file-format instruction inside a
+  // creative prompt reads as something to depict.
+  //
+  // So the prompt now asks for a thing a model draws reliably - one flat
+  // colour - and chromaKey.js makes the alpha from those pixels.
   const prompt = buildCandidatePrompt({
     petName: "מיצי",
     petType: "cat",
@@ -146,21 +153,31 @@ test("the candidate prompt demands a real alpha channel and forbids any backdrop
     style: "photorealistic rendering",
   });
 
-  assert.match(prompt, /FULLY TRANSPARENT BACKGROUND/);
-  assert.match(prompt, /alpha channel/i);
+  assert.match(prompt, /RGB\(255, 0, 255\)/, "the prompt does not name the key colour");
+  assert.match(prompt, /no chequerboard/i, "the prompt does not rule out the thing that actually happened");
   assert.match(prompt, /no ground plane/i);
+
+  // The old instruction must be gone, not merely supplemented. Asking for both
+  // a transparent background AND a magenta one is a contradiction, and the
+  // model resolves contradictions by picking one.
+  assert.doesNotMatch(prompt, /FULLY TRANSPARENT BACKGROUND/);
+  assert.doesNotMatch(prompt, /alpha channel/i);
   assert.doesNotMatch(prompt, /F7F7F5/);
   assert.doesNotMatch(prompt, /grounded shadow/i);
 });
 
-test("the expression prompt keeps the transparency rather than reintroducing a background", () => {
+test("the expression prompt asks for the same background as the master", () => {
+  // A pack whose expressions sit on a different background than the character
+  // keys inconsistently, and the inconsistency shows as some faces cut out and
+  // some in a box.
   const prompt = buildExpressionPrompt({
     petName: "מיצי",
     expression: "happy",
     visualIdentity: {},
   });
 
-  assert.match(prompt, /transparent background/i);
+  assert.match(prompt, /RGB\(255, 0, 255\)/);
+  assert.doesNotMatch(prompt, /transparent background/i);
   assert.doesNotMatch(prompt, /F7F7F5/);
 });
 
