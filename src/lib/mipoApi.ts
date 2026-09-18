@@ -1843,3 +1843,57 @@ export async function publishIntakeProduct(productId: string): Promise<MipoPubli
     method: "POST",
   });
 }
+
+// ─── Admin OS ────────────────────────────────────────────────────────────────
+
+export type MipoAuditActorType = "admin" | "system" | "workflow" | "ai_agent";
+
+export interface MipoAuditEntry {
+  id: string;
+  action_type: string;
+  entity_type: string;
+  entity_id: string | null;
+  old_values: unknown;
+  new_values: unknown;
+  metadata: unknown;
+  actor_type: MipoAuditActorType;
+  actor_email: string | null;
+  actor_role: string | null;
+  created_at: string;
+}
+
+export interface MipoAuditFilters {
+  actorType?: MipoAuditActorType | null;
+  entityType?: string | null;
+  entityId?: string | null;
+  actionType?: string | null;
+  from?: string | null;
+  to?: string | null;
+  limit?: number;
+  offset?: number;
+}
+
+/**
+ * The audit log, filtered in SQL.
+ *
+ * Every filter goes to the server rather than being applied to a fetched page.
+ * This table is the one that grows without bound - once Phase 6's reactions
+ * write to it on every outbox event, filtering the most recent 50 rows in the
+ * browser answers a different question than the one asked, and answers it with
+ * a confident empty state.
+ */
+export async function listAuditLog(filters: MipoAuditFilters = {}): Promise<MipoAuditEntry[]> {
+  const query = new URLSearchParams();
+  if (filters.actorType) query.set("actor_type", filters.actorType);
+  if (filters.entityType) query.set("entity_type", filters.entityType);
+  if (filters.entityId) query.set("entity_id", filters.entityId);
+  if (filters.actionType) query.set("action_type", filters.actionType);
+  if (filters.from) query.set("from", filters.from);
+  if (filters.to) query.set("to", filters.to);
+  if (filters.limit) query.set("limit", String(filters.limit));
+  if (filters.offset) query.set("offset", String(filters.offset));
+
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  const result = await adminApiFetch<{ entries: MipoAuditEntry[] }>(`/admin/os/audit-log${suffix}`);
+  return result.entries;
+}

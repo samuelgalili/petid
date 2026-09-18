@@ -69,6 +69,16 @@ export const ADMIN_PERMISSIONS = Object.freeze({
 
   PUBLICATION_READ: "publication.read",
   PUBLICATION_PUBLISH: "publication.publish",
+
+  // Admin OS.
+  //
+  // Reading the audit log is platform-wide by nature: it records every actor's
+  // action on every entity, and there is no seller-scoped slice of it that is
+  // still an audit log. So it is deliberately NOT given to readonly_admin,
+  // even though that role holds every other read permission - readonly_admin
+  // is seller-scoped, and a platform-wide history of who did what to whom
+  // would be a scope escalation wearing a read permission's clothes.
+  AUDIT_READ: "audit.read",
 });
 
 const ALL_PERMISSIONS = Object.freeze(Object.values(ADMIN_PERMISSIONS));
@@ -94,6 +104,7 @@ const WRITE_PERMISSIONS = Object.freeze(new Set([
   ADMIN_PERMISSIONS.PUBLICATION_PUBLISH,
 ]));
 
+// Seller-scoped reads. AUDIT_READ is not here: see its comment above.
 const READ_PERMISSIONS = Object.freeze([
   ADMIN_PERMISSIONS.PRODUCTS_READ,
   ADMIN_PERMISSIONS.INTAKE_READ,

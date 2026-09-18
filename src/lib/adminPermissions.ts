@@ -14,6 +14,7 @@ export const ADMIN_PERMISSIONS = {
   // Values must match server/src/adminPermissions.js exactly.
   INTAKE_READ: "intake.read",
   PUBLICATION_PUBLISH: "publication.publish",
+  AUDIT_READ: "audit.read",
 } as const;
 
 export type AdminPermission = typeof ADMIN_PERMISSIONS[keyof typeof ADMIN_PERMISSIONS];

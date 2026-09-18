@@ -74,6 +74,7 @@ import { adminProductView } from "./sellerScope.js";
 import { isSellerEligible } from "./sellerEligibility.js";
 import { commissionForLine, readPlatformCommissionRate } from "./platformCommission.js";
 import { createProductIntakeRoutes } from "./productIntakeRoutes.js";
+import { createAdminOsRoutes } from "./adminOs/routes.js";
 import { createPublicCatalog } from "./publicCatalog.js";
 import {
   archiveSocialPost,
@@ -655,6 +656,18 @@ const handleProductIntakeRoute = createProductIntakeRoutes({
   readBody,
   requireAdminPermission,
   recordAdminAudit,
+});
+
+// Admin OS routes own the /api/admin/os/ prefix and declare their permissions
+// as a table rather than as lines inside handlers, so "which permission does
+// this endpoint require" is a value a test can iterate. Same injection shape as
+// the intake routes above, and for the same reason.
+const handleAdminOsRoute = createAdminOsRoutes({
+  pool,
+  sendJson,
+  sendError,
+  readBody,
+  requireAdminPermission,
 });
 
 const publicCatalog = createPublicCatalog({ pool });
@@ -7975,6 +7988,7 @@ const handleRequest = async (request, response) => {
     // one shape - authenticate, then read the body, then check ownership inside
     // a transaction - and that shape is the security property. Scattering these
     // through the chain below would make it a convention instead of a rule.
+    if (await handleAdminOsRoute(request, response, url)) return;
     if (await handleProductIntakeRoute(request, response, url)) return;
 
     // The public catalogue, read from the new model. Served ALONGSIDE

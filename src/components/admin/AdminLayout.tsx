@@ -1,4 +1,5 @@
 import { ReactNode, useState, useEffect, useRef } from "react";
+import { AdminCommandBar } from "@/components/admin/AdminCommandBar";
 import { AdminNotificationsBell } from "./AdminNotificationsBell";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { LucideIcon,
@@ -69,9 +70,27 @@ const navGroups: NavGroup[] = [
     items: [
       { icon: Settings, label: "הגדרות", href: "/admin/settings", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
       { icon: FolderTree, label: "קטגוריות", href: "/admin/categories", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
+      { icon: History, label: "יומן ביקורת", href: "/admin/audit-log", permission: ADMIN_PERMISSIONS.AUDIT_READ },
     ]
   },
 ];
+
+/**
+ * The sidebar, flattened, for the command bar.
+ *
+ * Derived from navGroups rather than kept as a second list, so a page added to
+ * the sidebar is reachable by ⌘K on the same commit. A hand-maintained copy is
+ * a copy that falls behind, and the way you find out is that somebody says
+ * "the command bar does not know about the new screen".
+ */
+export const commandDestinations = navGroups.flatMap((group) =>
+  group.items.map((item) => ({
+    label: item.label,
+    href: item.href,
+    permission: item.permission,
+    group: group.label,
+    icon: item.icon,
+  })));
 
 const defaultOpenGroups = navGroups.map((group) => group.label);
 const openGroupsStorageKey = "admin_sidebar_open_groups_v3";
@@ -340,6 +359,9 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
 
   return (
     <div className="min-h-screen bg-muted/20" dir="rtl">
+      {/* Mounted once, at the shell, so every admin screen answers the same
+          keystroke. It renders nothing until ⌘K. */}
+      <AdminCommandBar destinations={commandDestinations} />
       {/* Mobile Header */}
       <header
         className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-b border-border/20"

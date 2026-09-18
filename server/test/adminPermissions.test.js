@@ -137,6 +137,13 @@ test("every permission is classified as either read or write", () => {
   const reads = [
     P.PRODUCTS_READ, P.INTAKE_READ, P.VARIANTS_READ,
     P.OFFERS_READ, P.INVENTORY_READ, P.PUBLICATION_READ,
+    // AUDIT_READ is a read, and it is deliberately NOT in the module's
+    // READ_PERMISSIONS bundle. That bundle is what readonly_admin holds, and
+    // readonly_admin is seller-scoped; the audit log is platform-wide by
+    // nature, so granting it there would be a scope escalation dressed as a
+    // read. Two separate questions - "is this a read?" and "does the read-only
+    // role hold it?" - and this list answers only the first.
+    P.AUDIT_READ,
   ];
   for (const permission of ALL_PERMISSIONS) {
     const isWrite = isWriteAdminPermission(permission);
