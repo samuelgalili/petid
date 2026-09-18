@@ -1,0 +1,149 @@
+// The generated character is not cropped. The photograph still is.
+//
+// server/src/petCharacter.js asks the generator for "one full-body character"
+// on "a PNG with a real alpha channel ... no backdrop, no ground plane and no
+// cast shadow", and refuses JPEG in its MIME allowlist precisely so that alpha
+// is guaranteed. The home screen then wrapped that art in
+// `overflow-hidden rounded-full` with a 5px white ring and drew it with
+// `object-cover`.
+//
+// So the pipeline produced a standing, full-body, transparent character and
+// the one screen that shows it cut the legs off and filled the background back
+// in. Nothing failed: the image loaded, the circle rendered, every class was
+// valid. The only symptom was that the pet looked like a cropped photo.
+//
+// Two rules, and they pull in opposite directions on purpose:
+//
+//   1. A CHARACTER is never clipped, never covered, and casts a shadow.
+//   2. A PHOTOGRAPH is still clipped, because a real photo has a real
+//      background and un-cropping it leaves a rectangle over the glow.
+//
+// Asserting only the first would be satisfied by deleting the circle entirely,
+// which breaks every pet that has no character pack yet.
+
+import assert from "node:assert/strict";
+import test from "node:test";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const read = (relative) => readFileSync(path.join(repoRoot, relative), "utf8");
+
+const orbit = () =>
+  read("src/components/home/PetOrbit.tsx")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .split("\n")
+    .filter((line) => !/^\s*(\/\/|\*)/.test(line))
+    .join("\n");
+
+// ─── the generator's promise ─────────────────────────────────────────────────
+
+test("the generator is still asked for a full-body transparent character", () => {
+  // If this prompt ever stops asking for alpha, the whole treatment below is
+  // wrong and the circle should come back. The rule and its premise are pinned
+  // together so they cannot drift apart silently.
+  const generator = read("server/src/petCharacter.js");
+  assert.match(generator, /FULLY TRANSPARENT BACKGROUND/);
+  assert.match(generator, /full-body character/);
+  assert.doesNotMatch(
+    generator,
+    /allowedGeneratedMimeTypes = new Set\(\[[^\]]*jpeg/i,
+    "JPEG has no alpha channel. Accepting one stores a background baked in.",
+  );
+});
+
+// ─── the character is free ───────────────────────────────────────────────────
+
+test("the character is not clipped to a circle", () => {
+  const code = orbit();
+  // The clip must be conditional on NOT being a character. An unconditional
+  // `overflow-hidden rounded-full` on the avatar element is the bug.
+  assert.match(
+    code,
+    /!isCharacter\s*\n?\s*&&\s*"overflow-hidden rounded-full/,
+    "the avatar wrapper clips unconditionally. A full-body character in a\n" +
+      "circle loses its legs, and the alpha channel the whole pipeline\n" +
+      "guarantees is discarded by one `overflow-hidden`.",
+  );
+});
+
+test("the character is drawn with object-contain, not object-cover", () => {
+  const code = orbit();
+  assert.match(
+    code,
+    /isCharacter\s*\n?\s*\?\s*"object-contain/,
+    "object-cover crops the animal inside its own square - a second crop on\n" +
+      "top of the circle, and the one that survives removing the circle.",
+  );
+  assert.match(code, /:\s*"object-cover"/, "the photograph path lost object-cover");
+});
+
+test("the character casts a shadow and stands on something", () => {
+  const code = orbit();
+  assert.match(code, /drop-shadow-\[/, "a cut-out with no shadow reads as a sticker");
+  assert.match(
+    code,
+    /isCharacter && !loading && \(/,
+    "the pedestal is gone, or is no longer conditional on there being a character",
+  );
+});
+
+test("the character art cannot swallow a tap meant for an orbit button", () => {
+  const code = orbit();
+  // It now extends past the circle it used to be confined to, over the
+  // bounding boxes of the corner buttons - with transparent pixels, which are
+  // still hit targets.
+  assert.match(
+    code,
+    /isCharacter \? "pointer-events-none absolute/,
+    "the enlarged character layer is not pointer-events-none",
+  );
+});
+
+// ─── the photograph keeps its circle ─────────────────────────────────────────
+
+test("a pet with no character pack still gets the circle and the ring", () => {
+  const code = orbit();
+  assert.match(
+    code,
+    /overflow-hidden rounded-full border-\[5px\] border-white/,
+    "the circle treatment was deleted rather than made conditional. Every pet\n" +
+      "whose character pack is not ready falls back to avatar_url - a real\n" +
+      "photograph with a real background - and without the circle that is a\n" +
+      "rectangle floating over the aurora.",
+  );
+});
+
+// ─── the scope lock ──────────────────────────────────────────────────────────
+
+test("the orbit's geometry and its four destinations are untouched", () => {
+  const code = orbit();
+  // The brief for this change was explicit: the avatar's presentation only.
+  // The orbit box, the button size and the four fixed corner positions are
+  // navigation, and the pet grew into the space between them rather than by
+  // moving them.
+  assert.match(code, /h-\[340px\] w-\[340px\]/, "the orbit box was resized");
+  assert.match(code, /"top-\[26px\] right-\[34px\]"/, "an orbit position moved");
+  assert.match(code, /"bottom-\[12px\] left-\[34px\]"/, "an orbit position moved");
+  assert.match(code, /h-14 w-14 items-center justify-center rounded-full/, "the orbit buttons changed size");
+  assert.match(code, /slots\.slice\(0, 4\)/, "the orbit no longer renders exactly four destinations");
+});
+
+test("the aurora is unchanged and still the only place the brand glow lives", () => {
+  const code = orbit();
+  assert.match(code, /<PresenceAurora still=\{still\} isCharacter=\{isCharacter\}/);
+  // No second glow was added next to it. The owner asked for the soft aurora
+  // alone, with no coloured line, and that was settled.
+  const aurora = read("src/components/home/PresenceAurora.tsx");
+  assert.doesNotMatch(aurora, /presence-aurora__rim/, "the rim came back");
+});
+
+test("MipoHome still renders everything it rendered before", () => {
+  // The change is inside PetOrbit. If it leaked upward into the home screen,
+  // one of these is the first thing to disappear.
+  const home = read("src/pages/MipoHome.tsx");
+  for (const required of ["<PetOrbit", "<PetMoodRow", "avatarUrl={characterImage}", "isCharacter={characterReady}"]) {
+    assert.ok(home.includes(required), `MipoHome no longer contains ${required}`);
+  }
+});

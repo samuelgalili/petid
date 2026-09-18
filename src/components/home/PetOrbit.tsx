@@ -99,23 +99,56 @@ const PetOrbit = ({
                 />
               </>
             )}
+            {/* A GENERATED CHARACTER IS NOT CROPPED. A PHOTOGRAPH IS.
+             *
+             * petCharacter.js asks the generator for "one full-body character"
+             * on "a PNG with a real alpha channel ... no backdrop, no ground
+             * plane and no cast shadow", and the MIME allowlist refuses JPEG
+             * precisely so that alpha is guaranteed. Then this element wrapped
+             * it in `overflow-hidden rounded-full` with a 5px white ring, which
+             * discarded the alpha and cut the legs and tail off the full body
+             * the generator had been told to draw.
+             *
+             * `absolute -inset-3` was a partial admission of that - it bled the
+             * art out a little so the crop bit less - but it was still a
+             * circular crop of a standing character, and `object-cover` then
+             * cropped it a second time inside its own square.
+             *
+             * So the character now stands free over the aurora on
+             * object-CONTAIN, and the circle treatment applies only to the
+             * photograph case, where it is correct: a real photo has a real
+             * background, and un-cropping it would leave a rectangle floating
+             * over the glow. isCharacter is the seam, and this component
+             * already tracked it.
+             *
+             * pointer-events-none because the art now extends past the circle
+             * and must never swallow a tap meant for an orbit button. */}
             <div
-              className="relative z-[1] h-full w-full overflow-hidden rounded-full border-[5px] border-white bg-mipo-soft dark:border-mipo-surface"
+              className={cn(
+                "relative z-[1] h-full w-full",
+                !isCharacter
+                  && "overflow-hidden rounded-full border-[5px] border-white bg-mipo-soft dark:border-mipo-surface",
+              )}
               data-presence-idle={still ? "still" : "live"}
               data-presence-mood={mood}
               style={still ? undefined : { animationDuration: `${idle.duration}s` }}
             >
               {loading ? (
-                <div className="h-full w-full animate-pulse bg-mipo-soft" />
+                <div className="h-full w-full animate-pulse rounded-full bg-mipo-soft" />
               ) : (
-                <div className={cn(isCharacter ? "absolute -inset-3" : "h-full w-full")}>
+                <div className={cn(isCharacter ? "pointer-events-none absolute -inset-[12px]" : "h-full w-full")}>
                   <AnimatePresence mode="wait" initial={false}>
                     <motion.img
                       key={avatarUrl}
                       src={avatarUrl}
                       alt={petName}
                       draggable={false}
-                      className="h-full w-full object-cover"
+                      className={cn(
+                        "h-full w-full",
+                        isCharacter
+                          ? "object-contain drop-shadow-[0_10px_18px_rgba(21,21,26,0.18)]"
+                          : "object-cover",
+                      )}
                       initial={still ? false : { opacity: 0, scale: 0.96 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={still ? undefined : { opacity: 0, scale: 1.02 }}
@@ -125,6 +158,27 @@ const PetOrbit = ({
                 </div>
               )}
             </div>
+
+            {/* The pedestal, as small as it can be and still do its job: a soft
+             * ellipse where the feet meet the glow. Without it a cut-out
+             * character floats with nothing beneath it, which reads as a
+             * sticker rather than as something standing there.
+             *
+             * OFFSET TO THE FEET, NOT TO THE BOX. The art frame is
+             * `-inset-[12px]`, so the character's feet land 12px below the
+             * bottom of this 166px element - a shadow at `bottom-0` sits a
+             * finger's width up the animal's legs, which was visible the first
+             * time this was rendered.
+             *
+             * -6px puts it at the feet with a little overlap. There are 19px of
+             * clear space before the two bottom orbit buttons, so it still adds
+             * no height and cannot reach them. */}
+            {isCharacter && !loading && (
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute bottom-[-6px] left-1/2 z-0 h-[9px] w-[84px] -translate-x-1/2 rounded-[50%] bg-mipo-ink/15 blur-[6px] dark:bg-black/45"
+              />
+            )}
           </div>
         </motion.button>
       </div>
