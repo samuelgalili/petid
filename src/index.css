@@ -602,6 +602,22 @@
     opacity: 0.7;
   }
 
+  /* Doubled for the same reason as .mipo-cta-button: all three call sites put
+   * this on a shadcn <Button>, whose default variant contributes `bg-primary`
+   * from the utilities layer and wins the tie on source order. Today that is
+   * invisible - both resolve to --primary, so the cyan is the same cyan - but
+   * the rule is not the one deciding, and retuning --primary here would have
+   * changed nothing on screen. Colours only; the @apply'd box model above
+   * stays overridable. */
+  .btn-primary.btn-primary {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+
+  .btn-primary.btn-primary:hover {
+    background: hsl(var(--primary-hover));
+  }
+
   .btn-secondary {
     @apply font-semibold rounded-lg px-4 py-2 text-sm
            transition-colors duration-200 active:opacity-70;
@@ -860,12 +876,49 @@
     box-shadow: var(--shadow-button-hover);
   }
 
+  /* THE COLOURS ARE DOUBLED ON PURPOSE. Do not "simplify" this away.
+   *
+   * @layer components is emitted BEFORE @layer utilities — in the built
+   * stylesheet .mipo-cta-button lands at byte 20,930 and .bg-primary at 75,333.
+   * Both are one class, so they tie on specificity and the later one wins.
+   * shadcn's <Button> puts `bg-primary text-primary-foreground` on every button
+   * that does not name another variant, and cn()/tailwind-merge cannot drop it
+   * because it has never heard of .mipo-cta-button. Result: the source said
+   * ink, the screen showed cyan — on the cart's checkout, on add-to-cart, on
+   * onboarding, on every <Button className="mipo-cta-button"> in the app.
+   *
+   * Doubling the selector makes it (0,2,0) and wins wherever it is emitted.
+   * The :hover rule needs its own, because `hover:bg-primary-hover` compiles to
+   * .hover\:bg-primary-hover:hover — also (0,2,0) — and would take the colour
+   * back on hover alone.
+   *
+   * ONLY the colours are doubled. min-height, border-radius and the box model
+   * stay at one class so the utilities a caller passes (h-14, rounded-2xl,
+   * w-full) still win, which is what every call site already relies on. */
+  .mipo-cta-button.mipo-cta-button,
+  .mipo-cta-button.mipo-cta-button:hover,
+  .mipo-cta-button.mipo-cta-button:focus-visible,
+  .mipo-cta-button.mipo-cta-button:active {
+    border: 0;
+    color: hsl(var(--mipo-surface));
+    background: hsl(var(--mipo-ink));
+  }
+
   /* Selected state for chips and segmented controls: same inversion, no
    * aurora. Pairs with a thin-line resting state. */
   .mipo-chip-selected {
     color: hsl(var(--mipo-surface));
     background: hsl(var(--mipo-ink));
     border-color: transparent;
+  }
+
+  /* Same cascade trap as above: a chip is one class competing with utilities
+   * emitted 50KB later. border-color stays single so a call site can still
+   * draw an edge on a selected chip; the fill and the text cannot be lost. */
+  .mipo-chip-selected.mipo-chip-selected,
+  .mipo-chip-selected.mipo-chip-selected:hover {
+    color: hsl(var(--mipo-surface));
+    background: hsl(var(--mipo-ink));
   }
 
   .mipo-input {
