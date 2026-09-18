@@ -30,6 +30,7 @@ interface Pet {
   // here only invited code to read a field that is always undefined.
   weight?: number;
   avatar_url?: string;
+  source_image_url?: string | null;
   user_id?: string;
   medical_conditions?: string[] | null;
   current_food?: string | null;
@@ -1339,7 +1340,8 @@ export const TopRecommendation = ({ pet, onEnergyOpen, onGroomingOpen, onFeeding
           <PetQRCode 
             petId={pet.id} 
             petName={pet.name} 
-            petAvatar={pet.avatar_url} 
+            petType={pet.type}
+            petSourceImage={pet.source_image_url} 
           />
         </div>
       </motion.div>

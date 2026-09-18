@@ -101,6 +101,7 @@ import {
   startDispatcher,
 } from "./events.js";
 import { createPetFactService } from "./petFactService.js";
+import { applySourceImageOnCreate, applySourceImageOnUpdate } from "./petSourceImage.js";
 
 const port = Number(process.env.PORT || 3000);
 const databaseUrl = process.env.DATABASE_URL;
@@ -1879,6 +1880,7 @@ const serializePet = (row) => {
     is_mixed: row.is_mixed || false,
     breed_confidence: row.breed_confidence,
     avatar_url: row.avatar_url || null,
+    source_image_url: row.source_image_url || null,
     weight: row.weight === null || row.weight === undefined ? null : Number(row.weight),
     birth_date: row.birth_date || null,
     age_years: age.age_years,
@@ -1949,6 +1951,7 @@ const normalizePetPayload = (body, { partial = false } = {}) => {
     "breed",
     "secondary_breed",
     "avatar_url",
+    "source_image_url",
     "gender",
     "color",
     "health_notes",
@@ -2029,7 +2032,7 @@ const normalizePetPayload = (body, { partial = false } = {}) => {
 };
 
 const insertUserPet = async (userId, body) => {
-  const payload = normalizePetPayload(body);
+  const payload = applySourceImageOnCreate(normalizePetPayload(body));
 
   // The columns are derived from the payload rather than written out by hand.
   //
@@ -2208,6 +2211,13 @@ const logPublicPetQrScan = async (petId) => {
 const updateUserPet = async (userId, petId, body) => {
   if (!uuidPattern.test(petId)) return null;
   const payload = normalizePetPayload(body, { partial: true });
+  if (Object.prototype.hasOwnProperty.call(payload, "source_image_url")) {
+    const current = (await pool.query(
+      "select source_image_url from public.pets where id = $1 and user_id = $2",
+      [petId, userId],
+    )).rows[0] || null;
+    applySourceImageOnUpdate(payload, current?.source_image_url || null);
+  }
   const entries = Object.entries(payload);
   if (entries.length === 0) return getUserPet(userId, petId);
 
