@@ -1,4 +1,5 @@
 import { GoogleGenAI, Modality } from "@google/genai";
+import sharp from "sharp";
 
 /**
  * Two candidates, one per style, so the owner picks a direction rather than
@@ -18,11 +19,27 @@ export const CHARACTER_EXPRESSIONS = [
   "attentive",
 ];
 
-// PNG and WebP only. JPEG has no alpha channel, so accepting one would mean
-// storing an avatar with a background baked in and no way to tell afterwards --
-// the failure would be invisible until someone looked at the app. A JPEG here
-// fails as NO_GENERATED_IMAGE instead, which is the honest outcome.
+// PNG and WebP only. JPEG has no alpha channel at all, so accepting one would
+// mean storing an avatar with a background baked in.
+//
+// THIS CHECK IS NECESSARY AND IS NOT SUFFICIENT, and the comment that used to
+// sit here claimed otherwise: it said a JPEG was refused so there would be no
+// "background baked in and no way to tell afterwards". A PNG can be entirely
+// opaque. The generator returned one where the transparency was DRAWN - the
+// grey-and-white chequerboard, as real pixels - and it reached the home screen,
+// because every check between the model and the screen looked at the container
+// rather than at the contents.
+//
+// assertRealTransparency below is the one that looks at the contents.
 const allowedGeneratedMimeTypes = new Set(["image/png", "image/webp"]);
+
+// The same rule the browser applies in src/hooks/useImageHasAlpha.ts, and
+// server/test/characterTransparency.test.js pins the two to the same numbers.
+// A stricter server would refuse images the screen would have shown; a laxer
+// one would store images the screen refuses to un-crop, which is a pack that
+// silently never improves.
+export const CORNER_ALPHA_THRESHOLD = 16;
+export const CORNERS_REQUIRED_TRANSPARENT = 3;
 
 /**
  * Both styles are 3D character renders, and the choice between them is about
@@ -139,6 +156,85 @@ export const extractGeneratedImage = (response) => {
   return { buffer, contentType };
 };
 
+/**
+ * Does this image actually have a transparent background?
+ *
+ * Read at FULL SIZE, at the four corners. The browser samples a 24px downscale
+ * because it has an <img> and a canvas and no decoder; here there is a decoder,
+ * so there is no reason to introduce interpolation between the bytes and the
+ * answer.
+ *
+ * Corners rather than the whole border: the prompt asks for a full-body
+ * character, and a standing animal legitimately touches the bottom edge of its
+ * square. Three of four, so one stray speck does not reject a good image.
+ *
+ * `hasAlpha === false` is conclusive on its own and is used that way. The
+ * unsound direction - hasAlpha true therefore transparent - is exactly the
+ * mistake the MIME check made, and is not relied on here.
+ */
+export const inspectTransparency = async (buffer) => {
+  const image = sharp(buffer, { failOn: "none" });
+
+  let metadata;
+  try {
+    metadata = await image.metadata();
+  } catch {
+    return { transparent: false, reason: "undecodable" };
+  }
+
+  if (!metadata.width || !metadata.height) return { transparent: false, reason: "undecodable" };
+  if (metadata.hasAlpha === false) return { transparent: false, reason: "no_alpha_channel" };
+
+  const { data, info } = await image.ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const alphaAt = (x, y) => data[(y * info.width + x) * info.channels + (info.channels - 1)];
+  const right = info.width - 1;
+  const bottom = info.height - 1;
+  const corners = [alphaAt(0, 0), alphaAt(right, 0), alphaAt(0, bottom), alphaAt(right, bottom)];
+  const transparentCorners = corners.filter((alpha) => alpha < CORNER_ALPHA_THRESHOLD).length;
+
+  return {
+    transparent: transparentCorners >= CORNERS_REQUIRED_TRANSPARENT,
+    reason: transparentCorners >= CORNERS_REQUIRED_TRANSPARENT ? null : "opaque_corners",
+    corners,
+    transparentCorners,
+  };
+};
+
+/** Throws with a code the retry path can recognise. */
+export const assertRealTransparency = async ({ buffer }) => {
+  const verdict = await inspectTransparency(buffer);
+  if (verdict.transparent) return verdict;
+
+  const error = new Error(
+    verdict.reason === "no_alpha_channel"
+      ? "The generated image has no alpha channel"
+      : verdict.reason === "undecodable"
+        ? "The generated image could not be decoded"
+        : "The generated image has an opaque background",
+  );
+  error.code = "GENERATED_IMAGE_NOT_TRANSPARENT";
+  error.details = verdict;
+  throw error;
+};
+
+/**
+ * What to say on the second attempt.
+ *
+ * The prompt already says "FULLY TRANSPARENT BACKGROUND ... a real alpha
+ * channel", in capitals, and the model answered with a painting of a
+ * chequerboard. So the retry does not repeat the instruction louder - it names
+ * the specific thing that came back, because the failure is that the model
+ * interpreted "transparent background" as something to depict.
+ */
+export const TRANSPARENCY_RETRY_NOTE = `
+The previous attempt was rejected. It returned an image whose background was OPAQUE: the
+transparency was PAINTED - a grey and white chequerboard pattern drawn as visible pixels.
+
+Do not draw a chequerboard. Do not draw any background at all. The background must be
+absent from the file: encode it in the PNG alpha channel so that the corner pixels of the
+image have alpha 0. Every pixel that is not the animal must be fully transparent.
+`.trim();
+
 export const buildCandidatePrompt = ({ petName, petType, visualIdentity, style }) => `
 Create a single premium full-body pet avatar based only on the supplied reference photos.
 
@@ -234,17 +330,48 @@ export const assertUsableReferences = (parsed) => {
   return parsed;
 };
 
-const generateImage = async ({ client, imageModel, parts }) => {
-  const response = await client.models.generateContent({
-    model: imageModel,
-    contents: [{ role: "user", parts }],
-    config: {
-      responseModalities: [Modality.TEXT, Modality.IMAGE],
-      candidateCount: 1,
-      imageConfig: { aspectRatio: "1:1" },
-    },
-  });
-  return extractGeneratedImage(response);
+/**
+ * One image, and a second attempt if the first one is not actually cut out.
+ *
+ * This is the single chokepoint every generated image passes through, which is
+ * why the transparency check lives here rather than at each of the two call
+ * sites. A check at one of them is a check at neither, eventually.
+ *
+ * ONE retry, not a loop. If the model paints a chequerboard twice it is not
+ * going to stop on the fifth attempt, and each attempt is the most expensive
+ * call the product makes. Failing after two is honest and bounded; the pack is
+ * then marked failed rather than filled with squares.
+ */
+const generateImage = async ({ client, imageModel, parts, requireTransparency = true }) => {
+  const ask = async (withParts) => {
+    const response = await client.models.generateContent({
+      model: imageModel,
+      contents: [{ role: "user", parts: withParts }],
+      config: {
+        responseModalities: [Modality.TEXT, Modality.IMAGE],
+        candidateCount: 1,
+        imageConfig: { aspectRatio: "1:1" },
+      },
+    });
+    return extractGeneratedImage(response);
+  };
+
+  const first = await ask(parts);
+  if (!requireTransparency) return first;
+
+  try {
+    await assertRealTransparency(first);
+    return first;
+  } catch (error) {
+    if (error.code !== "GENERATED_IMAGE_NOT_TRANSPARENT") throw error;
+
+    // The correction goes FIRST. The original instruction stays intact after
+    // it, so the retry is the same request plus a note about what came back -
+    // not a different request that might also change the character.
+    const retried = await ask([{ text: TRANSPARENCY_RETRY_NOTE }, ...parts]);
+    await assertRealTransparency(retried);
+    return retried;
+  }
 };
 
 const validateExpressionPack = async ({
