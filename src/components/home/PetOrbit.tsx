@@ -199,13 +199,27 @@ const PetOrbit = ({
         </motion.button>
       </div>
 
+      {/* z-[2]: NAVIGATION ABOVE THE ART, ALWAYS.
+       *
+       * The art layer carries z-[1] and these had no z-index at all, so the
+       * character was painted over the four destinations and their labels. It
+       * cost nothing while the art was a circle inside the ring, and the
+       * chequerboard made it visible: "מסמכים" rendered as "סמכים" and
+       * "בריאות" as "בריאו", because the opaque square covered ten pixels of
+       * each label's inner edge.
+       *
+       * The 190px art frame genuinely overlaps that strip - centred at 170 it
+       * spans x 75-265, and the top-end label sits at 255-300 - so with a
+       * transparent character nothing is hidden. That is the problem: it works
+       * because of what the picture CONTAINS. Navigation must not depend on
+       * that, for the same reason the art layer is pointer-events-none. */}
       {slots.slice(0, 4).map((slot, i) => (
         <motion.div
           key={slot.id}
           initial={still ? false : { opacity: 0, scale: 0.92 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={still ? { duration: 0 } : { duration: 0.2, delay: CLOCKWISE_DELAY[i], ease: "easeOut" }}
-          className={cn("absolute flex flex-col items-center gap-1.5", POSITION[i])}
+          className={cn("absolute z-[2] flex flex-col items-center gap-1.5", POSITION[i])}
         >
           <motion.button
             whileTap={{ scale: 0.94 }}

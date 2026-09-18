@@ -221,6 +221,33 @@ test("the orbit's geometry and its four destinations are untouched", () => {
   assert.match(code, /slots\.slice\(0, 4\)/, "the orbit no longer renders exactly four destinations");
 });
 
+test("navigation paints above the art, whatever the art turns out to be", () => {
+  const code = orbit();
+
+  // The art layer is z-[1]. The four destinations had no z-index, so the
+  // character was painted OVER them - invisible while the art was a circle
+  // inside the ring, and plain the moment an opaque square arrived: two
+  // labels lost a character each.
+  //
+  // The overlap is real geometry, not a rendering accident: the 190px art
+  // frame centred at 170 spans x 75-265 and the top-end label sits at
+  // 255-300. With a transparent character nothing is hidden - which is the
+  // problem, because that is a dependency on what the picture contains.
+  assert.match(
+    code,
+    /"absolute z-\[2\] flex flex-col items-center gap-1\.5"/,
+    "the orbit destinations lost their z-index. They sit under the art layer\n" +
+      "again, and whether that shows depends on the image rather than on the\n" +
+      "stacking order.",
+  );
+
+  // Stated as a relationship, so raising the art layer is caught too.
+  const artLayer = Number(/relative z-\[(\d+)\] h-full w-full/.exec(code)?.[1]);
+  const navLayer = Number(/absolute z-\[(\d+)\] flex flex-col/.exec(code)?.[1]);
+  assert.ok(Number.isFinite(artLayer) && Number.isFinite(navLayer), "could not read the layers");
+  assert.ok(navLayer > artLayer, `navigation is at z-${navLayer} and the art at z-${artLayer}`);
+});
+
 test("the idle breathes but does not tilt", () => {
   // The sway was invisible while the avatar was a circle - a rotated circle is
   // the same circle - and became a picture leaning over the moment the
