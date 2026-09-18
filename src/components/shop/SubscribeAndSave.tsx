@@ -69,7 +69,7 @@ export const SubscribeAndSave = ({ productName, productPrice, productWeight, onS
           <RefreshCw className="w-4 h-4 text-primary" strokeWidth={1.5} />
           <span className="text-xs font-semibold text-foreground">הירשם וחסוך 10%</span>
         </div>
-        <span className="text-xs font-bold text-primary">₪{calculation.discountedPrice}/משלוח</span>
+        <span className="text-[15px] font-bold tabular-nums text-mipo-ink">₪{calculation.discountedPrice}/משלוח</span>
       </button>
 
       <AnimatePresence>
@@ -86,7 +86,7 @@ export const SubscribeAndSave = ({ productName, productPrice, productWeight, onS
                 <span className="text-xs font-bold text-foreground">חישוב חכם ל{pet.name}</span>
               </div>
 
-              <div className="space-y-1.5 text-[11px]">
+              <div className="space-y-1.5 text-[12px]">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">מנה יומית מומלצת</span>
                   <span className="font-semibold text-foreground">{calculation.dailyGrams} גרם</span>

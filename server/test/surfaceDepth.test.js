@@ -78,14 +78,16 @@ test("a card does not carry both a border and a drop shadow", () => {
 
   // A RATCHET, not a clean sheet.
   //
-  // There are 64 of these today, across screens nobody has redesigned yet.
+  // There are 61 of these today, across screens nobody has redesigned yet.
+  // Was 64 until the shop's two rails stopped drawing a line and a shadow
+  // around the same card.
   // Asserting zero would fail on the first run and be switched off within a
   // week, which is worse than not having the rule. Asserting "no more than
   // there are" stops the next one arriving and turns the backlog into a number
   // that can only go down.
   //
   // Lower this when you fix some. It is not allowed to rise.
-  const BUDGET = 64;
+  const BUDGET = 61;
 
   assert.ok(
     offenders.length <= BUDGET,

@@ -586,7 +586,7 @@ const Shop = () => {
                 <AnimatePresence>
                   {getTotalItems() > 0 && (
                     <motion.span 
-                      className="absolute -top-1 -end-1 bg-primary text-primary-foreground text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center"
+                      className="mipo-chip-selected absolute -top-1 -end-1 flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold"
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       exit={{ scale: 0 }}
@@ -652,7 +652,7 @@ const Shop = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">{product.name}</p>
-                        <p className="text-xs text-primary font-semibold">₪{product.price}</p>
+                        <p className="text-[15px] font-bold tabular-nums text-mipo-ink">₪{product.price}</p>
                       </div>
                     </button>
                   ))}
@@ -877,7 +877,7 @@ const Shop = () => {
                   />
                   {/* Sale badge */}
                   {selectedProduct.originalPrice && selectedProduct.originalPrice > selectedProduct.price && (
-                    <div className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                    <div className="absolute top-2 left-2 rounded-full bg-red-500 px-2 py-0.5 text-[11px] font-bold text-white">
                       -{Math.round((1 - selectedProduct.price / selectedProduct.originalPrice) * 100)}%
                     </div>
                   )}
@@ -951,8 +951,8 @@ const Shop = () => {
                         onClick={() => setSelectedSize(flavor)}
                         className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                           selectedSize === flavor
-                            ? "bg-primary text-primary-foreground shadow-md"
-                            : "bg-card border border-border/50 text-foreground hover:border-primary/50"
+                            ? "mipo-chip-selected border border-transparent"
+                            : "border border-mipo-line bg-mipo-surface text-mipo-ink hover:bg-mipo-soft"
                         }`}
                       >
                         {flavor}

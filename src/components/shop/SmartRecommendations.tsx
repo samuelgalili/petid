@@ -5,10 +5,10 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Info, Sparkles, ShoppingCart } from "lucide-react";
+import { Info, Sparkles } from "lucide-react";
 import { useActivePet } from "@/hooks/useActivePet";
 import { useCart } from "@/contexts/CartContext";
-import { OptimizedImage } from "@/components/OptimizedImage";
+import { ShopRailCard } from "@/components/shop/ShopRailCard";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { getShopProducts } from "@/lib/mipoApi";
@@ -195,20 +195,25 @@ export const SmartRecommendations = () => {
       animate={{ opacity: 1, y: 0 }}
       className="px-4 py-4"
     >
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
-            <Sparkles className="w-3.5 h-3.5 text-primary" strokeWidth={2} />
+      {/* Header. The icon circle and the "סינון כללי" pill were both --primary
+          on a --primary tint, next to a --primary price on a --primary button:
+          five cyan things in one glance, so none of them meant anything. The
+          section is named in ink and the qualifier is a thin-line chip. */}
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-mipo-line">
+            <Sparkles className="h-4 w-4 text-mipo-ink" strokeWidth={1.75} />
           </div>
-          <div>
-            <h2 className="text-sm font-bold text-foreground">מיון לפי הפרופיל של {pet.name}</h2>
-            <p className="text-[10px] text-muted-foreground">מבוסס על פרטי הפרופיל ותיאורי הקטלוג</p>
+          <div className="min-w-0">
+            <h2 className="truncate text-[15px] font-semibold text-mipo-ink">
+              מיון לפי הפרופיל של {pet.name}
+            </h2>
+            <p className="truncate text-[12px] text-mipo-muted">מבוסס על פרטי הפרופיל ותיאורי הקטלוג</p>
           </div>
         </div>
-        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/5">
-          <Info className="w-3 h-3 text-primary" strokeWidth={2} />
-          <span className="text-[10px] font-semibold text-primary">סינון כללי</span>
+        <div className="flex flex-shrink-0 items-center gap-1 rounded-full border border-mipo-line px-2.5 py-1">
+          <Info className="h-3 w-3 text-mipo-muted" strokeWidth={2} />
+          <span className="text-[12px] font-medium text-mipo-muted">סינון כללי</span>
         </div>
       </div>
 
@@ -220,54 +225,21 @@ export const SmartRecommendations = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.1 }}
-            onClick={() => navigate(`/product/${product.id}`)}
-            className="flex-shrink-0 w-[130px] cursor-pointer"
+            className="flex-shrink-0"
           >
-            <div className="relative rounded-2xl overflow-hidden bg-card border border-border/30 shadow-sm">
-              {/* Image */}
-              <div className="relative aspect-square bg-muted">
-                <OptimizedImage
-                  src={product.image_url}
-                  alt={product.name}
-                  className="w-full h-full"
-                  objectFit="cover"
-                  sizes="130px"
-                />
-                {/* Relevance badge */}
-                <div
-                  className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white"
-                  style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.7))" }}
-                >
-                  {product.relevanceReason}
-                </div>
-              </div>
-
-              {/* Info */}
-              <div className="p-2.5">
-                <h3 className="text-[11px] font-semibold text-foreground line-clamp-2 mb-1.5 leading-tight">
-                  {product.name}
-                </h3>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-black text-primary">₪{product.price}</span>
-                  <motion.button
-                    whileTap={{ scale: 0.85 }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      addToCart({ productId: product.id, name: product.name, price: product.price, image: product.image_url, quantity: 1 });
-                      toast.success("נוסף לעגלה! 🛒");
-                    }}
-                    className="w-7 h-7 rounded-full bg-primary flex items-center justify-center"
-                    aria-label={`הוספת ${product.name} לעגלה`}
-                  >
-                    <ShoppingCart className="w-3.5 h-3.5 text-primary-foreground" strokeWidth={2} />
-                  </motion.button>
-                </div>
-              </div>
-            </div>
+            <ShopRailCard
+              product={product}
+              reason={product.relevanceReason}
+              onOpen={() => navigate(`/product/${product.id}`)}
+              onAdd={() => {
+                addToCart({ productId: product.id, name: product.name, price: product.price, image: product.image_url, quantity: 1 });
+                toast.success("נוסף לעגלה! 🛒");
+              }}
+            />
           </motion.div>
         ))}
       </div>
-      <p className="mt-3 text-[10px] leading-relaxed text-muted-foreground">
+      <p className="mt-3 text-[12px] leading-relaxed text-mipo-muted">
         המיון אינו קובע התאמה רפואית ואינו מחליף בדיקה של תווית המוצר או ייעוץ וטרינרי.
       </p>
     </motion.div>

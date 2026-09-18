@@ -106,7 +106,7 @@ export const SafetyBadge = ({ level, reason, petName, compact = false }: SafetyB
 
   return (
     <div
-      className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-semibold ${
+      className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] font-semibold ${
         level === "unsafe"
           ? "bg-destructive/10 text-destructive border border-destructive/20"
           : level === "unknown"

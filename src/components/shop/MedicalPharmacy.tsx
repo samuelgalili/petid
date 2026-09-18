@@ -4,10 +4,10 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Info, Pill, ShoppingCart } from "lucide-react";
+import { Info, Pill } from "lucide-react";
 import { useActivePet } from "@/hooks/useActivePet";
 import { useCart } from "@/contexts/CartContext";
-import { OptimizedImage } from "@/components/OptimizedImage";
+import { ShopRailCard } from "@/components/shop/ShopRailCard";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { getShopProducts } from "@/lib/mipoApi";
@@ -105,14 +105,15 @@ export const MedicalPharmacy = () => {
       animate={{ opacity: 1, y: 0 }}
       className="px-4 py-4"
     >
-      {/* Header */}
-      <div className="flex items-center gap-2 mb-3">
-        <div className="w-7 h-7 rounded-full bg-blue-500/10 flex items-center justify-center">
-          <Pill className="w-3.5 h-3.5 text-blue-600" strokeWidth={2} />
+      {/* Header. Same shape as the rail above it, so the two read as two
+          sections of one page rather than two components that met by accident. */}
+      <div className="mb-3 flex items-center gap-2">
+        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-mipo-line">
+          <Pill className="h-4 w-4 text-mipo-ink" strokeWidth={1.75} />
         </div>
-        <div>
-          <h2 className="text-sm font-bold text-foreground">מוצרים לפי נושא בריאותי</h2>
-          <p className="text-[10px] text-muted-foreground">קיבוץ לפי מונחים בתיאור המוצר בלבד</p>
+        <div className="min-w-0">
+          <h2 className="truncate text-[15px] font-semibold text-mipo-ink">מוצרים לפי נושא בריאותי</h2>
+          <p className="truncate text-[12px] text-mipo-muted">קיבוץ לפי מונחים בתיאור המוצר בלבד</p>
         </div>
       </div>
 
@@ -125,18 +126,23 @@ export const MedicalPharmacy = () => {
             <button
               key={cat.id}
               onClick={() => setExpandedCategory(isActive ? null : cat.id)}
-              className={`flex min-h-11 items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+              /* The same chip the category bar at the top of the shop uses:
+                 a thin line at rest, ink when selected. A chip that "matches
+                 the profile" keeps a mark - an emerald edge - because that is
+                 a claim about THIS pet and it has to be distinguishable from
+                 the one the finger is currently on. */
+              className={`flex min-h-11 items-center gap-1.5 whitespace-nowrap rounded-full border px-4 py-2.5 text-[13px] font-medium transition-colors ${
                 isActive
-                  ? "bg-primary text-primary-foreground shadow-md"
+                  ? "mipo-chip-selected"
                   : hasMatch
-                    ? "bg-primary/10 text-primary border border-primary/20"
-                    : "bg-card border border-border/30 text-foreground"
+                    ? "border-emerald-300 text-emerald-700 hover:bg-mipo-soft dark:text-emerald-400"
+                    : "border-mipo-line bg-mipo-surface text-mipo-ink hover:bg-mipo-soft"
               }`}
             >
               <span>{cat.icon}</span>
               <span>{cat.nameHe}</span>
               {hasMatch && !isActive && (
-                <Info className="w-3 h-3 text-primary" strokeWidth={2} />
+                <Info className="h-3 w-3" strokeWidth={2} />
               )}
             </button>
           );
@@ -158,53 +164,28 @@ export const MedicalPharmacy = () => {
                 initial={{ opacity: 0, x: 15 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.05 }}
-                onClick={() => navigate(`/product/${product.id}`)}
-                className="flex-shrink-0 w-[120px] cursor-pointer"
+                className="flex-shrink-0"
               >
-                <div className="relative rounded-xl overflow-hidden bg-card border border-border/30 shadow-sm">
-                  <div className="relative aspect-square bg-muted">
-                    <OptimizedImage
-                      src={product.image_url}
-                      alt={product.name}
-                      className="w-full h-full"
-                      objectFit="cover"
-                      sizes="120px"
-                    />
-                    {product.matchesProfileTopic && pet && (
-                      <div
-                        className="absolute bottom-1 left-1 right-1 px-1.5 py-1 rounded-lg text-[8px] font-bold text-white text-center"
-                        style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.9), rgba(22,163,74,0.8))", backdropFilter: "blur(8px)" }}
-                      >
-                        <Info className="w-2.5 h-2.5 inline mr-0.5" />
-                        קשור לנושא בפרופיל של {pet.name}
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-2">
-                    <h3 className="text-[10px] font-medium text-foreground line-clamp-2 mb-1 leading-tight">{product.name}</h3>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-black text-primary">₪{product.price}</span>
-                      <motion.button
-                        whileTap={{ scale: 0.85 }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          addToCart({ productId: product.id, name: product.name, price: product.price, image: product.image_url, quantity: 1 });
-                          toast.success("נוסף לעגלה! 🛒");
-                        }}
-                        className="w-6 h-6 rounded-full bg-primary flex items-center justify-center"
-                        aria-label={`הוספת ${product.name} לעגלה`}
-                      >
-                        <ShoppingCart className="w-3 h-3 text-primary-foreground" strokeWidth={2} />
-                      </motion.button>
-                    </div>
-                  </div>
-                </div>
+                <ShopRailCard
+                  product={product}
+                  /* The claim that this relates to something in the pet's own
+                     profile is the one thing on the card worth a colour, so it
+                     is the only thing that gets one. It used to be an 8px green
+                     gradient laid over the product photo. */
+                  reason={product.matchesProfileTopic && pet ? `קשור לנושא בפרופיל של ${pet.name}` : null}
+                  reasonTone="profile"
+                  onOpen={() => navigate(`/product/${product.id}`)}
+                  onAdd={() => {
+                    addToCart({ productId: product.id, name: product.name, price: product.price, image: product.image_url, quantity: 1 });
+                    toast.success("נוסף לעגלה! 🛒");
+                  }}
+                />
               </motion.div>
             ))}
           </div>
         </motion.div>
       )}
-      <p className="mt-3 text-[10px] leading-relaxed text-muted-foreground">
+      <p className="mt-3 text-[12px] leading-relaxed text-mipo-muted">
         הסינון אינו המלצה רפואית. יש לבדוק את תווית המוצר ולהתייעץ עם וטרינר לפני שינוי תזונתי רפואי.
       </p>
     </motion.div>
