@@ -55,6 +55,7 @@ const navGroups: NavGroup[] = [
     icon: ShoppingCart,
     items: [
       { icon: Package, label: "מוצרים", href: "/admin/products", permission: ADMIN_PERMISSIONS.PRODUCTS_READ },
+      { icon: Store, label: "פרסום לחנות", href: "/admin/publishing", permission: ADMIN_PERMISSIONS.INTAKE_READ },
       { icon: PackageSearch, label: "ייבוא מהיר", href: "/admin/quick-import", permission: ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE },
       { icon: Sparkles, label: "עורך חכם", href: "/admin/smart-editor", permission: ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE },
       { icon: ShoppingCart, label: "הזמנות", href: "/admin/orders", permission: ADMIN_PERMISSIONS.FULL_ACCESS },

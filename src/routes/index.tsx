@@ -207,6 +207,7 @@ const AdminAnalytics = lazy(() => import("@/pages/admin/AdminAnalytics"));
 const AdminOrders = lazy(() => import("@/pages/admin/AdminOrders"));
 const AdminCustomers = lazy(() => import("@/pages/admin/AdminCustomers"));
 const AdminProducts = lazy(() => import("@/pages/admin/AdminProducts"));
+const AdminPublishing = lazy(() => import("@/pages/admin/AdminPublishing"));
 const AdminCoupons = lazy(() => import("@/pages/admin/AdminCoupons"));
 const AdminSettings = lazy(() => import("@/pages/admin/AdminSettings"));
 const AdminCategories = lazy(() => import("@/pages/admin/AdminCategories"));
@@ -324,6 +325,7 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/orders", element: <AdminPage component={AdminOrders} pageName="הזמנות" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
   { path: "/admin/customers", element: <AdminPage component={AdminCustomers} pageName="לקוחות" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
   { path: "/admin/products", element: <AdminPage component={AdminProducts} pageName="מוצרים" permission={ADMIN_PERMISSIONS.PRODUCTS_READ} /> },
+  { path: "/admin/publishing", element: <AdminPage component={AdminPublishing} pageName="פרסום לחנות" permission={ADMIN_PERMISSIONS.INTAKE_READ} /> },
   { path: "/admin/coupons", element: <AdminPage component={AdminCoupons} pageName="קופונים" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
   { path: "/admin/settings", element: <AdminPage component={AdminSettings} pageName="הגדרות" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
   { path: "/admin/categories", element: <AdminPage component={AdminCategories} pageName="קטגוריות" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },

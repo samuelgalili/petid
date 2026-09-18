@@ -1782,3 +1782,64 @@ export async function createContentReport(input: {
     body: JSON.stringify(input),
   });
 }
+
+// ── Product intake ───────────────────────────────────────────────────────────
+//
+// Nineteen endpoints existed under /api/admin/intake and the client called
+// none of them. Every catalogue decision - approving a draft, approving an
+// image, publishing - therefore had to be made by a human dispatching a GitHub
+// workflow, which is maintenance wearing a process's clothes.
+//
+// These four are the publication loop: what is waiting, why it is not ready,
+// and the two acts that make it ready.
+
+export interface MipoIntakeDraft {
+  id: string;
+  business_id: string | null;
+  state: string;
+  name: string | null;
+  brand: string | null;
+  category_id: string | null;
+  proposed_price: number | string | null;
+  raw_import_record_id: string | null;
+  updated_at: string;
+  approved_catalog_product_id: string | null;
+}
+
+/** Every reason a product may not be published, named rather than counted. */
+export interface MipoPublicationReadiness {
+  product_id: string;
+  publication_state: string;
+  ready: boolean;
+  unmet: string[];
+  seller?: { commercial_status?: string | null; is_verified?: boolean | null } | null;
+}
+
+export async function listIntakeDrafts(state?: string): Promise<MipoIntakeDraft[]> {
+  const query = state ? `?state=${encodeURIComponent(state)}` : "";
+  const result = await adminApiFetch<{ drafts: MipoIntakeDraft[] }>(`/admin/intake/drafts${query}`);
+  return result.drafts;
+}
+
+export async function getPublicationReadiness(productId: string): Promise<MipoPublicationReadiness> {
+  return adminApiFetch<MipoPublicationReadiness>(
+    `/admin/intake/products/${encodeURIComponent(productId)}/publication-readiness`,
+  );
+}
+
+/**
+ * Approving an image is a RIGHTS CLAIM, which is why no script may do it and
+ * why this is a button a named administrator presses. 91 products carry
+ * "Needs manual image research" from the importer's own verdict.
+ */
+export async function approveIntakeMedia(mediaId: string): Promise<{ media: { id: string } }> {
+  return adminApiFetch(`/admin/intake/media/${encodeURIComponent(mediaId)}/approve`, {
+    method: "POST",
+  });
+}
+
+export async function publishIntakeProduct(productId: string): Promise<MipoPublicationReadiness> {
+  return adminApiFetch(`/admin/intake/products/${encodeURIComponent(productId)}/publish`, {
+    method: "POST",
+  });
+}

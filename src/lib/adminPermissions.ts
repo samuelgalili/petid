@@ -8,6 +8,12 @@ export const ADMIN_PERMISSIONS = {
   PRODUCTS_DELETE: "products.delete",
   PRODUCT_ASSETS_UPLOAD: "product_assets.upload",
   PRODUCT_TOOLS_USE: "product_tools.use",
+  // The intake permissions existed on the server and not here, which is what
+  // an unbuilt screen looks like from the client's side: the server has been
+  // able to authorise publication all along and nothing asked it to.
+  // Values must match server/src/adminPermissions.js exactly.
+  INTAKE_READ: "intake.read",
+  PUBLICATION_PUBLISH: "publication.publish",
 } as const;
 
 export type AdminPermission = typeof ADMIN_PERMISSIONS[keyof typeof ADMIN_PERMISSIONS];
