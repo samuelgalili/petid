@@ -1,5 +1,6 @@
 import { ADMIN_PERMISSIONS } from "../adminPermissions.js";
 import { createAuditService } from "./auditService.js";
+import { createAdminCustomer } from "./customers.js";
 import { createIdempotency, IdempotencyConflict, idempotencyKeyOf } from "./idempotency.js";
 
 /**
@@ -76,6 +77,19 @@ export const createAdminOsRoutes = ({
     },
   ];
 
+  routes.push({
+    method: "POST",
+    path: "customers",
+    // FULL_ACCESS, which is what all four existing customer endpoints require.
+    // A narrower CUSTOMERS_WRITE would be more correct and changes the
+    // permission matrix for four roles; the owner chose the conservative one
+    // for now.
+    permission: ADMIN_PERMISSIONS.FULL_ACCESS,
+    idempotent: true,
+    handler: async (request, response, url, payload) =>
+      createAdminCustomer({ pool, audit, admin: request.admin }, payload),
+  });
+
   const byKey = new Map(routes.map((route) => [`${route.method} ${route.path}`, route]));
 
   const handle = async (request, response, url) => {
@@ -108,6 +122,8 @@ export const createAdminOsRoutes = ({
           payload,
           actorId: request.admin?.id && request.admin.id !== "api-key" ? request.admin.id : null,
         },
+        // An idempotent handler RETURNS { status, body } rather than writing
+        // the response, because the result has to be stored before it is sent.
         () => route.handler(request, response, url, payload),
       );
 
