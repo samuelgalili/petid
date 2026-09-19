@@ -96,7 +96,7 @@ export const ProductInfoDrawer = ({ product, petName, onClose, onAddToCart, onAd
           {/* Close button */}
           <button
             onClick={() => { haptic("light"); onClose(); }}
-            className="fixed top-4 left-4 z-10 w-10 h-10 rounded-full bg-muted/60 backdrop-blur-md flex items-center justify-center border border-border/30"
+            className="fixed top-4 left-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-mipo-line bg-mipo-surface/70 backdrop-blur-md"
             style={{ top: `calc(env(safe-area-inset-top, 0px) + 1rem)` }}
           >
             <X className="w-5 h-5 text-foreground" />

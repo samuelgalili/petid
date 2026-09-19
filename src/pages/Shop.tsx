@@ -93,6 +93,15 @@ const ShopProductCard = ({
        system than everything around it - MIPO's cards are 1.5rem, and the
        house rule is a thin line OR a shadow, never both. */
     <div className="group relative overflow-hidden rounded-3xl border border-mipo-line bg-mipo-surface transition-colors hover:bg-mipo-soft">
+      {/* NOTHING IS PAINTED ON THE PRODUCT PHOTO BUT THE SAFETY MARK.
+          The design canvas states the system in one line - "צבע מופיע בשני
+          מקומות בלבד: טבעת סביב החיה, ונקודת סטטוס" - and this photo carried
+          two more: a solid red discount pill and a filled white circle holding
+          the favourite. Both are blocks, and a saturated fill with white text
+          on it is the exact treatment the canvas rejects by name.
+
+          Safety stays, because safety IS the second place: status, as
+          information. */}
       <div className="relative aspect-square bg-mipo-soft">
         {safety.level !== "safe" && (
           <SafetyBadge level={safety.level} reason={safety.reason} compact />
@@ -106,40 +115,44 @@ const ShopProductCard = ({
           objectFit="cover"
           sizes="(max-width: 639px) 128px, 160px"
         />
-
-        <button
-          onClick={(event) => onToggleFavorite(product.id, event)}
-          className="absolute top-2 right-2 flex h-11 w-11 items-center justify-center rounded-full bg-white/85 backdrop-blur-sm"
-          aria-label={isFavorite ? "הסר ממועדפים" : "הוסף למועדפים"}
-        >
-          <Heart
-            className={`w-4 h-4 ${isFavorite ? "fill-destructive text-destructive" : "text-muted-foreground"}`}
-            strokeWidth={2}
-          />
-        </button>
-
-        {product.originalPrice && product.originalPrice > product.price && (
-          <div className="absolute top-2 left-2 rounded-full bg-red-500 px-2 py-0.5 text-[11px] font-bold text-white">
-            -{Math.round((1 - product.price / product.originalPrice) * 100)}%
-          </div>
-        )}
       </div>
 
       {/* The price is the number the decision is made on, so it is the
           largest thing here and it is ink - a coloured price competes with the
           name instead of outranking it. Two lines for the name, because one
-          line truncated every product to an unrecognisable stub. */}
+          line truncated every product to an unrecognisable stub.
+
+          The favourite sits here rather than over the photo, as a hairline
+          circle at the same 44px as ShopRailCard's add button - which is what
+          finally makes the two cards on this page one card. The discount
+          percentage went with the red pill: the struck original beside the
+          price already says it, and saying it twice is what put a third
+          colour on a page that allows two. */}
       <div className="space-y-1 p-3">
         <h3 className="line-clamp-2 min-h-[2.5rem] text-[13px] leading-5 text-mipo-ink">
           {product.name}
         </h3>
-        <div className="flex items-baseline gap-2">
-          <span className="text-[17px] font-bold tabular-nums text-mipo-ink">₪{product.price}</span>
-          {product.originalPrice && product.originalPrice > product.price && (
-            <span className="text-xs tabular-nums text-mipo-muted line-through">
-              ₪{product.originalPrice}
-            </span>
-          )}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-baseline gap-2">
+            <span className="text-[17px] font-bold tabular-nums text-mipo-ink">₪{product.price}</span>
+            {product.originalPrice && product.originalPrice > product.price && (
+              <span className="text-xs tabular-nums text-mipo-muted line-through">
+                ₪{product.originalPrice}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={(event) => onToggleFavorite(product.id, event)}
+            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border border-mipo-line transition-colors hover:bg-mipo-soft"
+            aria-label={isFavorite ? "הסר ממועדפים" : "הוסף למועדפים"}
+          >
+            {/* Filled in ink when it is on. A red heart is a third meaning for
+                colour on a page that has room for two. */}
+            <Heart
+              className={`w-4 h-4 ${isFavorite ? "fill-mipo-ink text-mipo-ink" : "text-mipo-muted"}`}
+              strokeWidth={1.75}
+            />
+          </button>
         </div>
       </div>
     </div>
@@ -875,12 +888,11 @@ const Shop = () => {
                     className="w-full h-full"
                     objectFit="cover"
                   />
-                  {/* Sale badge */}
-                  {selectedProduct.originalPrice && selectedProduct.originalPrice > selectedProduct.price && (
-                    <div className="absolute top-2 left-2 rounded-full bg-red-500 px-2 py-0.5 text-[11px] font-bold text-white">
-                      -{Math.round((1 - selectedProduct.price / selectedProduct.originalPrice) * 100)}%
-                    </div>
-                  )}
+                  {/* The sale badge is gone from here too. This drawer is the
+                      shop's FOURTH card surface and it carried the same red
+                      pill as the grid - which is the whole lesson of this
+                      screen: the redesign keeps reaching one copy. The struck
+                      original sits beside the price below. */}
                 </motion.div>
 
                 {/* Product Info */}
@@ -919,22 +931,23 @@ const Shop = () => {
                 <div className="flex flex-col gap-2 pt-1">
                   <button
                     onClick={() => toggleFavorite(selectedProduct.id)}
-                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                      favorites.includes(selectedProduct.id) 
-                        ? "bg-red-50 shadow-sm" 
-                        : "bg-muted/50 hover:bg-muted"
-                    }`}
+                    className="flex h-11 w-11 items-center justify-center rounded-full border border-mipo-line transition-colors hover:bg-mipo-soft"
+                    aria-label={favorites.includes(selectedProduct.id) ? "הסר ממועדפים" : "הוסף למועדפים"}
                   >
-                    <Heart 
-                      className={`w-5 h-5 transition-all ${favorites.includes(selectedProduct.id) ? "fill-destructive text-destructive scale-110" : "text-muted-foreground"}`} 
-                      strokeWidth={1.5} 
+                    {/* Same hairline circle and same ink fill as the grid
+                        card's favourite. It was a red tint with a shadow on a
+                        40px target - a block, a shadow, and a third colour,
+                        under the 44px floor. */}
+                    <Heart
+                      className={`w-5 h-5 transition-all ${favorites.includes(selectedProduct.id) ? "fill-mipo-ink text-mipo-ink" : "text-mipo-muted"}`}
+                      strokeWidth={1.75}
                     />
                   </button>
                   <button
                     onClick={() => {
                       setInfoDrawerProduct(selectedProduct);
                     }}
-                    className="w-10 h-10 rounded-full bg-muted/50 hover:bg-muted flex items-center justify-center transition-colors"
+                    className="flex h-11 w-11 items-center justify-center rounded-full border border-mipo-line transition-colors hover:bg-mipo-soft"
                   >
                     <Info className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
                   </button>

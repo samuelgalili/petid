@@ -167,11 +167,30 @@ test("a tap target on the shop page is at least 44px", () => {
   // The add-to-cart buttons were w-6 h-6 and w-7 h-7 - 24 and 28px - sitting
   // inside a card that also navigated on tap. Missing it did not do nothing;
   // it opened the product page.
-  const SMALL_SQUARE = /\bh-([0-9]|10)\b(?=[^"`]*\bw-\1\b)/g;
+  //
+  // BOTH ORDERS. The first version only looked ahead from h- to w-, so a
+  // button written `w-10 h-10` walked straight past it - and one was: the
+  // quick-view drawer's favourite, at 40px, for as long as this test has
+  // existed. A guard that depends on the order someone typed two classes in
+  // is a guard with a hole in it.
+  const SMALL_SQUARE = /\b([hw])-([0-9]|10)\b(?=[^"`]*\b(?!\1)[hw]-\2\b)/g;
+
+  // AND THE TAG SCAN HAS TO SURVIVE AN ARROW FUNCTION. `[^>]*` between
+  // `<button` and its className stops dead at the `>` in `onClick={(e) =>
+  // ...}`, which is how nearly every button on this page is written - so this
+  // test has been reading almost no buttons at all. The falsification run is
+  // what said so: a button deliberately shrunk to 40px, written both ways,
+  // stayed green.
+  //
+  // `(?:=>|[^<>])*?` spans the opening tag, allows the arrow, and still stops
+  // at the tag's own `>` - so a className on a CHILD element is never mistaken
+  // for the button's own, which is the false positive a looser `[^<]*?` gives.
+  const BUTTON_CLASSES = /<(?:motion\.)?button\b(?:=>|[^<>])*?className=(?:"([^"]*)"|\{`([^`]*)`\})/g;
+
   const offenders = [];
   for (const file of shopSurfaces()) {
     const code = codeOf(file);
-    for (const match of code.matchAll(/<(?:motion\.)?button\b[^>]*className=(?:"([^"]*)"|\{`([^`]*)`\})/g)) {
+    for (const match of code.matchAll(BUTTON_CLASSES)) {
       const attr = match[1] ?? match[2] ?? "";
       for (const hit of attr.match(SMALL_SQUARE) || []) {
         offenders.push(`${path.relative(repoRoot, file)} — a button at ${hit}`);
@@ -185,6 +204,69 @@ test("a tap target on the shop page is at least 44px", () => {
       `${[...new Set(offenders)].sort().join("\n")}\n\n` +
       "h-11 w-11 is the floor. These sit on cards that navigate on tap, so a\n" +
       "near miss does not do nothing - it opens a different screen.",
+  );
+});
+
+/**
+ * The saturated half of Tailwind's palette.
+ *
+ * Deliberately not the neutrals. "דיו על לבן וקווי שיער" is the system, so
+ * slate/zinc/neutral/stone/gray are the system; red-500 and amber-500 are a
+ * third colour on a page the canvas allows two.
+ */
+const SATURATED_FILL = /\bbg-(red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}\b/g;
+
+test("no block of colour with white text on it", () => {
+  // The design canvas rejects this treatment by name. Its buttons page shows a
+  // full gradient fill with white text and labels it "זה מה שהוחלף": "מילוי
+  // מלא הוא מה שהופך כפתור לגס, והוא גם מה שמכריח טקסט לבן על צבע."
+  //
+  // The shop had two of them on every card - a red discount pill and the
+  // safety mark - both painted over the product photo, which is also where
+  // the previous cyan gradient badge was. The colour changes each time; the
+  // habit is what this test is about.
+  const offenders = [];
+  for (const file of shopSurfaces()) {
+    const code = codeOf(file);
+    for (const attr of classAttributes(code)) {
+      if (!SATURATED_FILL.test(attr)) continue;
+      SATURATED_FILL.lastIndex = 0;
+      if (!/\btext-white\b/.test(attr)) continue;
+      offenders.push(`${path.relative(repoRoot, file)} — ${attr.replace(/\s+/g, " ").slice(0, 80)}`);
+    }
+  }
+  assert.deepEqual(
+    [...new Set(offenders)].sort(),
+    [],
+    "A saturated fill carrying white text on the shop page:\n\n" +
+      `${[...new Set(offenders)].sort().join("\n")}\n\n` +
+      "The canvas allows colour in two places: a ring around the pet, and a\n" +
+      "status, as information. A status is a tint with a hairline and the glyph\n" +
+      "in the status colour - not a solid disc with a white icon on it.",
+  );
+});
+
+test("colour on the shop page comes from a token, not from the palette", () => {
+  // bg-red-500 and bg-amber-500 are not decisions, they are defaults. A token
+  // inverts with the theme, is named after what it means, and is the same
+  // orange the canvas drew: --mipo-peach is hsl(30 96% 72%), which is #FDBA74.
+  // A raw palette class is a colour nobody chose, which is how the shop ended
+  // up with cyan, then red, then amber, all meaning "look here".
+  const offenders = [];
+  for (const file of shopSurfaces()) {
+    const code = codeOf(file);
+    for (const hit of code.match(SATURATED_FILL) || []) {
+      offenders.push(`${path.relative(repoRoot, file)} — ${hit}`);
+    }
+  }
+  assert.deepEqual(
+    [...new Set(offenders)].sort(),
+    [],
+    "Raw Tailwind palette fills on the shop page:\n\n" +
+      `${[...new Set(offenders)].sort().join("\n")}\n\n` +
+      "Use a mipo-* token. mipo-peach is the canvas's caution colour and\n" +
+      "destructive is the app's danger colour; both invert with the theme,\n" +
+      "which a -500 never does.",
   );
 });
 
