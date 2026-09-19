@@ -75,6 +75,7 @@ import { isSellerEligible } from "./sellerEligibility.js";
 import { commissionForLine, readPlatformCommissionRate } from "./platformCommission.js";
 import { createProductIntakeRoutes } from "./productIntakeRoutes.js";
 import { createAdminOsRoutes } from "./adminOs/routes.js";
+import { createCustomerEntity360 } from "./adminOs/entity360.js";
 import { createPublicCatalog } from "./publicCatalog.js";
 import {
   archiveSocialPost,
@@ -6573,155 +6574,22 @@ const listAdminAnalytics = async (daysInput) => {
   };
 };
 
-// An order belongs to the account that placed it, or — for a guest checkout —
-// to the account that has since claimed the commerce row, or to the guest row
-// itself. Same precedence customer_identities uses for identity_id, so the two
-// always agree on who a person is.
-const ORDER_IDENTITY_EXPRESSION = "coalesce(o.user_id, sc.user_id, o.customer_id)";
-
-const customerIdentityQuery = (where, tail) => `
-  with attributed_orders as (
-    select
-      ${ORDER_IDENTITY_EXPRESSION} as identity_id,
-      o.payment_status,
-      o.total,
-      coalesce(o.order_date, o.created_at) as placed_at
-    from public.orders o
-    left join public.shop_customers sc on sc.id = o.customer_id
-  ),
-  order_stats as (
-    select
-      identity_id,
-      count(*) as orders_count,
-      count(*) filter (where payment_status = 'paid') as paid_orders_count,
-      coalesce(sum(total) filter (where payment_status = 'paid'), 0) as total_spent,
-      max(placed_at) as last_order_at,
-      min(placed_at) as first_order_at
-    from attributed_orders
-    where identity_id is not null
-    group by identity_id
-  ),
-  pet_stats as (
-    select user_id, count(*) as pets_count
-    from public.pets
-    where not archived
-    group by user_id
-  )
-  select * from (
-    -- distinct on guards the one case the view cannot: two shop_customers rows
-    -- claimed by the same account would otherwise list that person twice.
-    select distinct on (ci.identity_id)
-      ci.identity_id,
-      ci.identity_kind,
-      ci.user_id,
-      ci.shop_customer_id,
-      ci.email,
-      ci.full_name,
-      ci.phone,
-      au.is_active,
-      au.last_login_at,
-      coalesce(au.created_at, sc.created_at) as created_at,
-      coalesce(os.last_order_at, ci.last_order_at) as last_order_at,
-      os.first_order_at,
-      coalesce(os.orders_count, 0) as orders_count,
-      coalesce(os.paid_orders_count, 0) as paid_orders_count,
-      coalesce(os.total_spent, 0) as total_spent,
-      coalesce(ps.pets_count, 0) as pets_count,
-      greatest(
-        coalesce(os.last_order_at, ci.last_order_at),
-        coalesce(au.created_at, sc.created_at)
-      ) as last_activity_at
-    from public.customer_identities ci
-    left join public.app_users au on au.id = ci.user_id
-    left join public.shop_customers sc on sc.id = ci.shop_customer_id
-    left join order_stats os on os.identity_id = ci.identity_id
-    left join pet_stats ps on ps.user_id = ci.user_id
-    ${where}
-    order by ci.identity_id, sc.created_at asc nulls last
-  ) customers
-  ${tail}
-`;
-
-const mapCustomerIdentity = (row) => ({
-  identity_id: row.identity_id,
-  identity_kind: row.identity_kind,
-  user_id: row.user_id,
-  shop_customer_id: row.shop_customer_id,
-  email: row.email,
-  full_name: row.full_name,
-  phone: row.phone,
-  is_active: row.is_active === null || row.is_active === undefined ? null : Boolean(row.is_active),
-  created_at: row.created_at,
-  last_login_at: row.last_login_at,
-  first_order_at: row.first_order_at,
-  last_order_at: row.last_order_at,
-  last_activity_at: row.last_activity_at,
-  orders_count: Number(row.orders_count || 0),
-  paid_orders_count: Number(row.paid_orders_count || 0),
-  total_spent: toMoney(row.total_spent),
-  pets_count: Number(row.pets_count || 0),
+// Customer 360 now lives in adminOs/entity360.js, which takes its loaders
+// rather than importing them: they are still this file's, and a half-move that
+// copies them is how two versions of "what are this person's orders" start
+// disagreeing. The arrows are here because those consts are declared further
+// down - they are called at request time, long after this line runs.
+const {
+  listAdminCustomers,
+  getAdminCustomer,
+  customerNoteSubjects,
+} = createCustomerEntity360({
+  pool,
+  toMoney,
+  attachOrderItems: (orders) => attachOrderItems(orders),
+  listUserPets: (userId, archived) => listUserPets(userId, archived),
+  listCustomerNotes: (subjects) => listCustomerNotes(subjects),
 });
-
-const listAdminCustomers = async ({ limit = 200, search = null, kind = null } = {}) => {
-  const values = [];
-  const where = [];
-
-  const term = String(search || "").trim();
-  if (term) {
-    values.push(`%${term.replace(/[%_\\]/g, (character) => `\\${character}`)}%`);
-    where.push(
-      `(ci.email ilike $${values.length} or ci.full_name ilike $${values.length} or ci.phone ilike $${values.length})`,
-    );
-  }
-
-  if (kind === "account" || kind === "guest") {
-    values.push(kind);
-    where.push(`ci.identity_kind = $${values.length}`);
-  }
-
-  values.push(Math.min(1000, Math.max(1, Number(limit) || 200)));
-
-  const result = await pool.query(
-    customerIdentityQuery(
-      where.length > 0 ? `where ${where.join(" and ")}` : "",
-      `order by last_activity_at desc nulls last, created_at desc nulls last limit $${values.length}`,
-    ),
-    values,
-  );
-
-  return result.rows.map(mapCustomerIdentity);
-};
-
-const getAdminCustomer = async (identityId) => {
-  if (!uuidPattern.test(String(identityId || ""))) return null;
-
-  const result = await pool.query(customerIdentityQuery("where ci.identity_id = $1", "limit 1"), [identityId]);
-  if (result.rowCount === 0) return null;
-
-  const customer = mapCustomerIdentity(result.rows[0]);
-
-  const orderRows = await pool.query(
-    `
-      select o.*
-      from public.orders o
-      left join public.shop_customers sc on sc.id = o.customer_id
-      where ${ORDER_IDENTITY_EXPRESSION} = $1
-      order by coalesce(o.order_date, o.created_at) desc
-      limit 100
-    `,
-    [customer.identity_id],
-  );
-
-  const subjects = await customerNoteSubjects(customer);
-
-  const [orders, pets, notes] = await Promise.all([
-    attachOrderItems(orderRows.rows),
-    customer.user_id ? listUserPets(customer.user_id, "all") : Promise.resolve([]),
-    listCustomerNotes(subjects),
-  ]);
-
-  return { customer, orders, pets, notes };
-};
 
 const CUSTOMER_NOTE_KINDS = ["note", "call", "whatsapp", "email", "meeting"];
 const MAX_CUSTOMER_NOTE_LENGTH = 5000;
@@ -6737,21 +6605,6 @@ const mapCustomerNote = (row) => ({
   created_at: row.created_at,
   updated_at: row.updated_at,
 });
-
-// Every row a note could have been filed against. An account may own several
-// shop_customers rows -- one per checkout email it has claimed -- and notes
-// written while those were still guests have to keep showing on the card.
-const customerNoteSubjects = async (customer) => {
-  if (!customer.user_id) {
-    return {
-      userId: null,
-      shopCustomerIds: customer.shop_customer_id ? [customer.shop_customer_id] : [],
-    };
-  }
-
-  const result = await pool.query("select id from public.shop_customers where user_id = $1", [customer.user_id]);
-  return { userId: customer.user_id, shopCustomerIds: result.rows.map((row) => row.id) };
-};
 
 const listCustomerNotes = async (subjects, limit = 200) => {
   if (!subjects.userId && subjects.shopCustomerIds.length === 0) return [];
