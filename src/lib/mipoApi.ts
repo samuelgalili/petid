@@ -1454,6 +1454,59 @@ export async function deleteAdminCustomerNote(identityId: string, noteId: string
   return result.deleted;
 }
 
+/**
+ * A raw shop_customers row, which is NOT a MipoCustomer.
+ *
+ * MipoCustomer is the folded identity - auth plus commerce, with counts. This
+ * is the commerce row on its own, because that is what has just been created
+ * or matched, and it has no orders and no identity_id yet.
+ */
+export interface MipoShopCustomerRow {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  phone: string | null;
+  user_id: string | null;
+  last_order_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * The three things opening a customer by hand can mean.
+ *
+ * They are three cases rather than one because an email and a phone are not
+ * the same kind of evidence: one mailbox is one person, one phone number is a
+ * household. So an email match IS the customer, and a phone match is a
+ * question for the person at the keyboard.
+ */
+export type MipoNewCustomerResult =
+  | { created: true; customer: MipoShopCustomerRow; account_match: { user_id: string; email: string } | null }
+  | { created: false; matched_by: "email"; customer: MipoShopCustomerRow }
+  | { created: false; matched_by: "phone"; candidates: MipoShopCustomerRow[]; message: string };
+
+/**
+ * `idempotencyKey` is the CALLER'S, deliberately.
+ *
+ * Generating one here would make every call a new request, which is the same
+ * as having no idempotency at all: a double-click, or a retry after a timeout
+ * whose write actually landed, would open a second customer. The caller holds
+ * one key for one submission and sends it again when it retries THAT
+ * submission - and must mint a new one when the form changes, because the
+ * server answers a reused key carrying a different body with 409 rather than
+ * silently replaying the old answer.
+ */
+export async function createAdminCustomer(
+  input: { full_name: string; email?: string; phone?: string; accept_duplicate_phone?: boolean },
+  idempotencyKey: string,
+): Promise<MipoNewCustomerResult> {
+  return adminApiFetch<MipoNewCustomerResult>("/admin/os/customers", {
+    method: "POST",
+    headers: { "Idempotency-Key": idempotencyKey },
+    body: JSON.stringify(input),
+  });
+}
+
 export async function bulkUpdateAdminOrders(ids: string[], updates: Partial<Pick<MipoOrder, "status">>) {
   return adminApiFetch<{ updated: number }>("/admin/orders/bulk", {
     method: "PATCH",

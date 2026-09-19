@@ -9,7 +9,7 @@
  * they spent, how many pets, when they were last seen.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Users, UserCheck, UserPlus, ShoppingBag, DollarSign, PawPrint,
   Mail, Phone, Calendar, ChevronRight, Package, MessageCircle,
@@ -18,6 +18,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -35,9 +40,11 @@ import {
 } from "@/components/admin/AdminStyles";
 import { cn } from "@/lib/utils";
 import { customerGreeting, openWhatsApp, whatsAppLink } from "@/lib/customerContact";
+import { createClientId } from "@/lib/randomId";
 import {
-  createAdminCustomerNote, deleteAdminCustomerNote, getAdminCustomer, getAdminCustomers,
+  createAdminCustomer, createAdminCustomerNote, deleteAdminCustomerNote, getAdminCustomer, getAdminCustomers,
   type MipoCustomer, type MipoCustomerDetail, type MipoCustomerNote, type MipoCustomerNoteKind,
+  type MipoNewCustomerResult, type MipoShopCustomerRow,
 } from "@/lib/mipoApi";
 
 const ORDER_STATUS_LABELS: Record<string, string> = {
@@ -94,6 +101,7 @@ const AdminCustomers = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<MipoCustomerDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [newCustomerOpen, setNewCustomerOpen] = useState(false);
 
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
@@ -190,6 +198,24 @@ const AdminCustomers = () => {
           icon={Users}
           onRefresh={fetchCustomers}
           isRefreshing={loading}
+          actions={
+            <Button size="sm" className="gap-1.5" onClick={() => setNewCustomerOpen(true)}>
+              <UserPlus className="w-3.5 h-3.5" />
+              לקוח חדש
+            </Button>
+          }
+        />
+
+        <NewCustomerDialog
+          open={newCustomerOpen}
+          onOpenChange={setNewCustomerOpen}
+          onCreated={fetchCustomers}
+          // A match is not a dead end: the agent came here to reach a person,
+          // so the search is pointed at the row that already exists.
+          onFindExisting={(term) => {
+            setKindFilter("all");
+            setSearchQuery(term);
+          }}
         />
 
         <AdminStatsGrid>
@@ -334,6 +360,228 @@ const AdminCustomers = () => {
     </AdminLayout>
   );
 };
+
+/**
+ * Opening a customer by hand.
+ *
+ * Until now a row here could only be born at the checkout, so somebody who
+ * rang up about a rabbit and left a mobile number could not be represented at
+ * all. The hard part is not the form - it is that a second way to create rows
+ * is a second way to create duplicates, and this table already has them.
+ *
+ * So the dialog has three outcomes rather than one, and the two matches are
+ * shown differently because they MEAN different things:
+ *
+ *   an email match  -> that is the customer. Nothing was created, and the
+ *                      agent is pointed at the row that already exists.
+ *   a phone match   -> that might be them, or their partner at the same
+ *                      number. The candidates are shown and the agent decides.
+ */
+const NewCustomerDialog = ({
+  open,
+  onOpenChange,
+  onCreated,
+  onFindExisting,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCreated: () => void;
+  onFindExisting: (term: string) => void;
+}) => {
+  const { toast } = useToast();
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [matched, setMatched] = useState<MipoNewCustomerResult | null>(null);
+
+  // ONE KEY PER SUBMISSION, minted when the form changes.
+  //
+  // A key generated per click is not idempotency: a double-click or a retry
+  // after a timeout whose write landed would open a second customer. A key
+  // that never changes is worse - the server answers a reused key carrying a
+  // different body with 409, so editing a typo and submitting again would
+  // fail. Keeping it alive exactly as long as the form's content does is what
+  // makes a retry a retry and an edit a new request.
+  const idempotencyKey = useRef(createClientId("customer"));
+  const resetKey = useCallback(() => {
+    idempotencyKey.current = createClientId("customer");
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    setFullName("");
+    setEmail("");
+    setPhone("");
+    setMatched(null);
+    resetKey();
+  }, [open, resetKey]);
+
+  const submit = useCallback(async (acceptDuplicatePhone: boolean) => {
+    const name = fullName.trim();
+    if (!name) return;
+
+    setSaving(true);
+    try {
+      const result = await createAdminCustomer(
+        {
+          full_name: name,
+          email: email.trim() || undefined,
+          phone: phone.trim() || undefined,
+          accept_duplicate_phone: acceptDuplicatePhone || undefined,
+        },
+        idempotencyKey.current,
+      );
+
+      if (result.created) {
+        toast({
+          title: "הלקוח נפתח",
+          description: result.account_match
+            ? "שים לב: קיים משתמש רשום עם אותו אימייל. הקישור בין השניים לא בוצע אוטומטית."
+            : undefined,
+        });
+        onCreated();
+        onOpenChange(false);
+        return;
+      }
+
+      setMatched(result);
+    } catch (error) {
+      toast({
+        title: "פתיחת הלקוח נכשלה",
+        description: error instanceof Error ? error.message : "נסה שוב",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  }, [email, fullName, onCreated, onOpenChange, phone, toast]);
+
+  // A different body needs a different key, or the server refuses the replay.
+  const createAnyway = useCallback(() => {
+    resetKey();
+    setMatched(null);
+    void submit(true);
+  }, [resetKey, submit]);
+
+  const onFieldChange = (setter: (value: string) => void) => (value: string) => {
+    setter(value);
+    setMatched(null);
+    resetKey();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent dir="rtl" className="sm:max-w-md">
+        <DialogHeader className="text-right">
+          <DialogTitle>לקוח חדש</DialogTitle>
+          <DialogDescription>
+            שם, ולפחות אחד מהשניים: אימייל או טלפון. בלעדיהם אי אפשר יהיה לזהות אותו שוב.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="new-customer-name" className="text-xs">שם מלא</Label>
+            <Input
+              id="new-customer-name"
+              value={fullName}
+              onChange={(event) => onFieldChange(setFullName)(event.target.value)}
+              placeholder="דנה כהן"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="new-customer-email" className="text-xs">אימייל</Label>
+            <Input
+              id="new-customer-email"
+              type="email"
+              dir="ltr"
+              value={email}
+              onChange={(event) => onFieldChange(setEmail)(event.target.value)}
+              placeholder="dana@example.com"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="new-customer-phone" className="text-xs">טלפון</Label>
+            <Input
+              id="new-customer-phone"
+              type="tel"
+              dir="ltr"
+              value={phone}
+              onChange={(event) => onFieldChange(setPhone)(event.target.value)}
+              placeholder="050-123-4567"
+            />
+          </div>
+        </div>
+
+        {matched?.created === false && matched.matched_by === "email" && (
+          <div className="rounded-xl border border-mipo-line bg-mipo-soft p-3 space-y-2 text-xs">
+            <p className="font-semibold">הלקוח הזה כבר קיים</p>
+            <CustomerCandidate customer={matched.customer} />
+            <p className="text-muted-foreground">
+              לא נפתח לקוח חדש. אימייל הוא זהות — אותה כתובת היא אותו אדם.
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                onFindExisting(matched.customer.email || matched.customer.full_name || "");
+                onOpenChange(false);
+              }}
+            >
+              הצג אותו ברשימה
+            </Button>
+          </div>
+        )}
+
+        {matched?.created === false && matched.matched_by === "phone" && (
+          <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 space-y-2 text-xs dark:bg-amber-950/30">
+            <p className="font-semibold">{matched.message}</p>
+            {matched.candidates.map((candidate) => (
+              <CustomerCandidate key={candidate.id} customer={candidate} />
+            ))}
+            <div className="flex gap-2 pt-1">
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  onFindExisting(matched.candidates[0]?.phone || "");
+                  onOpenChange(false);
+                }}
+              >
+                זה אותו אדם
+              </Button>
+              <Button size="sm" className="flex-1" disabled={saving} onClick={createAnyway}>
+                זה אדם אחר, פתח בכל זאת
+              </Button>
+            </div>
+          </div>
+        )}
+
+        <DialogFooter className="gap-2 sm:justify-start">
+          <Button disabled={saving || !fullName.trim()} onClick={() => submit(false)}>
+            {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            פתיחת לקוח
+          </Button>
+          <Button variant="ghost" disabled={saving} onClick={() => onOpenChange(false)}>
+            ביטול
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const CustomerCandidate = ({ customer }: { customer: MipoShopCustomerRow }) => (
+  <div className="rounded-lg border border-mipo-line bg-mipo-surface px-2.5 py-2">
+    <p className="font-semibold text-mipo-ink">{customer.full_name || "ללא שם"}</p>
+    <p className="text-muted-foreground" dir="ltr">{customer.email || "—"}</p>
+    <p className="text-muted-foreground" dir="ltr">{customer.phone || "—"}</p>
+    <p className="text-[10px] text-muted-foreground">נפתח {formatDate(customer.created_at)}</p>
+  </div>
+);
 
 const CustomerDetailPanel = ({
   detail,
