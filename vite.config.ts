@@ -33,6 +33,12 @@ export default defineConfig(({ mode }) => {
       mode === "development" && componentTagger(),
       VitePWA({
         strategies: "injectManifest",
+        // The app registers the worker itself, in src/lib/registerServiceWorker.ts,
+        // because the generated registerSW.js only called register() - with
+        // injectManifest the plugin does not inject update handling, so
+        // "autoUpdate" below had no code behind it and a new build never
+        // replaced the running one.
+        injectRegister: false,
         srcDir: "src",
         filename: "sw.ts",
         registerType: "autoUpdate",
