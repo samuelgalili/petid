@@ -92,11 +92,52 @@ authoritative — not a mutable column.
 
 ---
 
-## D-4 — Connectors are blocked on a secret-storage decision. **STOP.**
+## D-4 — Secret storage. **RESOLVED.**
 
-**Decision.** No connector, credential or OAuth work starts until secret
-storage is chosen by the owner. This is raised as a §65 STOP, not decided
-unilaterally.
+**Decision (owner, 2026-09-21): unblock it.** Envelope encryption with the key
+supplied by the environment, implemented in `server/src/secretStore.js`. KMS
+remains the destination and is now a configuration change rather than a
+rewrite — see *The upgrade path* below.
+
+**Why not KMS on day one.** The recommendation below is still right and was not
+overruled on its merits. It was overruled by what the application actually is:
+it talks to nothing in AWS except RDS. There is no SDK, no instance role and no
+signed request anywhere in `server/src/`, so KMS is not a library away — it is
+an IAM role, a key policy and a console session, none of which can be done from
+the codebase. Holding 2FA, the insurance ID column and every connector behind
+that was the cost of waiting.
+
+**What was built.**
+
+- AES-256-GCM, a fresh IV per record, the auth tag verified on every read. A
+  tampered row raises; it never decodes to something that looks like a
+  credential.
+- **With no key configured, storing a secret throws.** No plaintext fallback, no
+  weaker cipher, no "store it anyway and warn". A feature that needs secret
+  storage is off until storage exists.
+- Every record carries its `provider`, so records written now stay readable
+  after a move to KMS and can be re-wrapped one at a time.
+- `describeSecret()` is the only thing a client may be told: `stored` and
+  `provider`. Never the secret, and never a prefix of it.
+
+**The key never appears in this repository, in a commit, or in a message.** The
+owner generates and places it:
+
+```bash
+openssl rand -base64 32       # then put it in SSM as SECRET_ENCRYPTION_KEY
+```
+
+Until that exists, `isSecretStoreConfigured()` is false and anything needing a
+secret stays off rather than degrading.
+
+**The upgrade path to KMS.** Add a `kms` provider that sources the data key
+from `GenerateDataKey`/`Decrypt` instead of from the environment. The record
+shape does not change; `provider` becomes `"kms"` for new rows; old `"local"`
+rows keep working and are re-wrapped on next write. Nothing above this module
+changes.
+
+**The original analysis, kept because it is still the argument for finishing
+the job:**
 
 **Why.** There is no secret storage in this repository.
 `SECRET_ENCRYPTION_KEY` appears in five documents under `docs/` and in **zero**
