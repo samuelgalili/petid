@@ -1,0 +1,446 @@
+# S-0 — What words the catalogue is actually written in. Read-only.
+#
+# Manual only. Measures production; changes nothing.
+#
+# WHY THIS EXISTS. The shop's search understands a sentence rather than a key,
+# and the part of it that does the understanding is a table of vocabulary in
+# server/src/catalogSearch.js: groups of words that mean the same thing, so
+# that "אוכל" finds what the catalogue filed under "מזון".
+#
+# That table was written against ten smoke-test rows and the ten category
+# names, because the real catalogue is not reachable from a development
+# machine. So every entry in it is a guess about how this shop's own products
+# are worded, and a guess in a synonym table fails silently: a shopper types a
+# word, gets nothing, and concludes the shop does not stock it. Nobody reports
+# that. It looks like an empty shelf, not a bug.
+#
+# The fix for a guess is a measurement. This reads the words - not the
+# products - and answers two questions the table cannot answer about itself:
+#
+#   * WHICH WORDS DOES THE CATALOGUE USE that the search has never heard of.
+#     S-02 and S-03 are the vocabulary of every product name and description,
+#     as a frequency list. Anything common there and absent from CONCEPTS is a
+#     word a shopper can type today and get nothing for.
+#
+#   * WHICH WORDS IN THE TABLE ARE DEAD. A synonym group for litter boxes is
+#     worthless in a shop that sells no litter, and worse than worthless if it
+#     makes an unrelated product match. The same frequency list says which
+#     groups earn their place.
+#
+# S-04 is the one that answers the gap I know about and could not close:
+# Israeli shoppers type "רויאל קנין" and the brand column holds "Royal Canin".
+# A transliteration map cannot be written without the list of brands to
+# transliterate.
+#
+# WHAT IT EMITS, AND WHAT IT DOES NOT. Words, with counts. Not products.
+#
+# production-catalogue-measure.yml deliberately selects no product name, and
+# that discipline is kept here in the only sense that matters: no statement
+# below returns a row, a product, or a name. A name is split into its words and
+# the words are counted across the catalogue, so the output is a dictionary,
+# not an inventory - "כלבים: 214" says nothing about any product and cannot be
+# reassembled into one.
+#
+# S-04 and S-05 are the exception and they are deliberate: a brand and a
+# category are taxonomy labels, the previous workflow emits categories already,
+# and both are printed on the shop's own public pages.
+#
+# It follows production-catalogue-measure.yml exactly - same SSH path, same
+# environment, same connection handling, same static guard, same redaction.
+# Nothing here is a new access route: it borrows the one that already exists.
+
+name: S-0 search vocabulary measurement (read-only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type the words  READ-ONLY  here (that exact text) to confirm this run only measures production'
+        required: true
+        default: ''
+
+permissions:
+  contents: read
+
+# The deploy's own production group. These statements take ACCESS SHARE for the
+# transaction's duration and a deploy migration takes ACCESS EXCLUSIVE, so
+# overlapping them would let a read-only measurement block a production
+# migration.
+concurrency:
+  group: aws-production
+  cancel-in-progress: false
+
+jobs:
+  measure:
+    name: Measure the catalogue's vocabulary (read-only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # The environment that holds MIPO_AWS_SSH_PRIVATE_KEY. Note, as the D-18
+    # run proved: this environment has NO required reviewer configured today.
+    # Binding here gets the secret and the deployment log; it does NOT get an
+    # approval gate.
+    environment: production
+
+    env:
+      MIPO_AWS_HOST: ${{ vars.MIPO_AWS_HOST || '63.183.241.110' }}
+      MIPO_AWS_USER: ${{ vars.MIPO_AWS_USER || 'ubuntu' }}
+      MIPO_REMOTE_PATH: ${{ vars.MIPO_REMOTE_PATH || '/opt/mipo' }}
+
+    steps:
+      - name: Confirm intent
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          set -euo pipefail
+          if [ "$CONFIRMATION" != "READ-ONLY" ]; then
+            # The instruction comes FIRST and the status code LAST, because the
+            # other way round taught somebody to type the status code into the
+            # box.
+            echo "Nothing was contacted. Production was not touched." >&2
+            echo "" >&2
+            echo "The confirmation box has to contain exactly this text:" >&2
+            echo "" >&2
+            echo "    READ-ONLY" >&2
+            echo "" >&2
+            echo "Nine characters: R E A D hyphen O N L Y, capitals." >&2
+            echo "Re-run the workflow and type it into the 'confirmation' field." >&2
+            echo "" >&2
+            echo "(This job reports the status code BLOCKED-PROD when it stops" >&2
+            echo " early. That code is output, never input - do not type it.)" >&2
+            exit 1
+          fi
+          echo "Confirmed: read-only measurement."
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Checked before anything connects, rather than trusted because it was
+      # reviewed once. Fails the job on any statement that is not a SELECT,
+      # including one added later by somebody who meant well.
+      - name: Verify the embedded SQL is read-only
+        run: |
+          set -euo pipefail
+          workflow=".github/workflows/production-search-vocabulary.yml"
+
+          # Markers matched WHOLE-LINE and anchored, so the extraction command
+          # in this very step cannot match itself and swallow the SSH block.
+          sql="$(sed -n '/^[[:space:]]*-- S0-SQL-BEGIN$/,/^[[:space:]]*-- S0-SQL-END$/p' "$workflow")"
+          if [ -z "$sql" ]; then
+            echo "Could not extract the SQL block - the markers are missing." >&2
+            exit 1
+          fi
+
+          # Statement-initial write verbs, checked at the start of a line so a
+          # word inside a comment or a column alias does not trip it.
+          if printf '%s\n' "$sql" | grep -inE \
+            '^[[:space:]]*(insert|update|delete|alter|drop|create|grant|revoke|truncate|copy|call|do|vacuum|reindex|refresh|comment|lock|analyze|cluster|security)\b'; then
+            echo "A non-SELECT statement is present in the S-0 SQL block. Refusing to run." >&2
+            exit 1
+          fi
+
+          for required in 'BEGIN;' 'SET TRANSACTION READ ONLY;' 'ROLLBACK;'; do
+            if ! printf '%s\n' "$sql" | grep -qF "$required"; then
+              echo "The SQL block is missing: $required" >&2
+              exit 1
+            fi
+          done
+
+          # Counted as STATEMENTS, not as lines: comments and psql
+          # meta-commands are dropped, the rest is split on ';', and each
+          # fragment is classified by its first word.
+          statements="$(printf '%s\n' "$sql" \
+            | grep -vE '^[[:space:]]*--' \
+            | grep -vE '^[[:space:]]*\\' \
+            | tr '\n' ' ' | tr ';' '\n' \
+            | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
+            | grep -v '^$')"
+
+          select_count="$(printf '%s\n' "$statements" | grep -ciE '^select' || true)"
+          total_count="$(printf '%s\n' "$statements" | grep -c '' || true)"
+          other="$(printf '%s\n' "$statements" | grep -ivE '^select' || true)"
+          other_count="$(printf '%s\n' "$other" | grep -c '^.' || true)"
+
+          # Exactly three non-SELECT statements are permitted, and only these.
+          if [ "$other_count" -ne 3 ]; then
+            echo "Expected exactly 3 non-SELECT statements (BEGIN, SET TRANSACTION READ ONLY, ROLLBACK); found ${other_count}:" >&2
+            printf '%s\n' "$other" >&2
+            exit 1
+          fi
+          if ! printf '%s\n' "$other" | grep -qiE '^begin$' \
+            || ! printf '%s\n' "$other" | grep -qiE '^set transaction read only$' \
+            || ! printf '%s\n' "$other" | grep -qiE '^rollback$'; then
+            echo "The three non-SELECT statements are not exactly BEGIN / SET TRANSACTION READ ONLY / ROLLBACK:" >&2
+            printf '%s\n' "$other" >&2
+            exit 1
+          fi
+
+          echo "SQL block verified: ${select_count} SELECT statements plus BEGIN, SET TRANSACTION READ ONLY and ROLLBACK (${total_count} statements in total). No write statements."
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.MIPO_AWS_SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SSH_PRIVATE_KEY:-}" ]; then
+            echo "BLOCKED-PROD: the production environment has no MIPO_AWS_SSH_PRIVATE_KEY." >&2
+            echo "There is no other route to the database, and no fallback will be attempted." >&2
+            exit 1
+          fi
+          if [ -z "${MIPO_AWS_HOST}" ]; then
+            echo "BLOCKED-PROD: MIPO_AWS_HOST is empty for the production environment." >&2
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/mipo_aws_key
+          chmod 600 ~/.ssh/mipo_aws_key
+          ssh-keyscan -T 30 -H "$MIPO_AWS_HOST" >> ~/.ssh/known_hosts || true
+          echo "SSH configured for ${MIPO_AWS_USER}@${MIPO_AWS_HOST}"
+
+      - name: Run S-0 against production
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 \
+            "${MIPO_AWS_USER}@${MIPO_AWS_HOST}" \
+            "MIPO_REMOTE_PATH='${MIPO_REMOTE_PATH}' bash -s" <<'REMOTE'
+          set -euo pipefail
+          # No `set -x` anywhere: tracing would echo the line that expands
+          # DATABASE_URL.
+
+          ENV_FILE="${MIPO_REMOTE_PATH}/.env"
+          PG_IMAGE="${MIPO_PG_IMAGE:-postgres:16-alpine}"
+
+          if [ ! -f "$ENV_FILE" ]; then
+            echo "BLOCKED-PROD: no env file at $ENV_FILE" >&2
+            exit 1
+          fi
+
+          # Read DATABASE_URL without sourcing the file: .env holds every
+          # production secret. The LAST definition wins, matching how docker
+          # compose's env_file resolves duplicates.
+          DATABASE_URL="$(grep -E '^[[:space:]]*(export[[:space:]]+)?DATABASE_URL=' "$ENV_FILE" | tail -1 | cut -d= -f2- || true)"
+          DATABASE_URL="$(printf '%s' "$DATABASE_URL" | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+          DATABASE_URL="${DATABASE_URL%\"}"; DATABASE_URL="${DATABASE_URL#\"}"
+          DATABASE_URL="${DATABASE_URL%\'}"; DATABASE_URL="${DATABASE_URL#\'}"
+
+          if [ -z "$DATABASE_URL" ]; then
+            echo "BLOCKED-PROD: DATABASE_URL is not set in $ENV_FILE" >&2
+            exit 1
+          fi
+
+          # Shape check only. Reports nothing derived from the value.
+          case "$DATABASE_URL" in
+            postgres://*|postgresql://*) ;;
+            *)
+              echo "BLOCKED-PROD: DATABASE_URL in $ENV_FILE does not begin with postgres:// or postgresql://." >&2
+              exit 1
+              ;;
+          esac
+
+          echo "Connection string located in $ENV_FILE. Not printed."
+
+          S0_SQL="$(cat <<'SQL'
+          -- S0-SQL-BEGIN
+          \pset pager off
+          \timing off
+
+          BEGIN;
+          SET TRANSACTION READ ONLY;
+
+          \echo '### S-01 - how much searchable text there is at all'
+          -- The search reads a name, a brand, a category, a description and a
+          -- handful of tag columns. A column filled on 3% of the catalogue is
+          -- not worth a vocabulary group, however good the words in it are.
+
+          select (select count(*) from public.business_products) as business_products,
+                 (select count(*) from public.scraped_products) as scraped_products,
+                 (select count(*) from public.business_products
+                   where description is not null and btrim(description) <> '') as bp_with_description,
+                 (select count(*) from public.business_products
+                   where brand is not null and btrim(brand) <> '') as bp_with_brand,
+                 (select count(*) from public.business_products
+                   where life_stage is not null) as bp_with_life_stage,
+                 (select count(*) from public.business_products
+                   where special_diet is not null and array_length(special_diet, 1) > 0) as bp_with_special_diet,
+                 (select count(*) from public.business_products
+                   where medical_tags is not null and array_length(medical_tags, 1) > 0) as bp_with_medical_tags,
+                 (select count(*) from public.business_products
+                   where breed_tags is not null and array_length(breed_tags, 1) > 0) as bp_with_breed_tags;
+
+          \echo '### S-02 - the vocabulary of product NAMES, most common first'
+          -- WORDS, NOT PRODUCTS. Each name is split on anything that is not a
+          -- letter or a digit and the pieces are counted across the whole
+          -- catalogue, so this is a dictionary and cannot be reassembled into
+          -- an inventory.
+          --
+          -- This is the list the synonym table should have been written from.
+          -- A word high on it and absent from CONCEPTS in catalogSearch.js is a
+          -- word a shopper can type today and be told the shop has nothing.
+
+          select word, count(distinct id) as products
+            from (
+              select p.id, lower(w) as word
+                from public.business_products p,
+                     lateral regexp_split_to_table(coalesce(p.name, ''), '[^[:alnum:]]+') as w
+              union all
+              select s.id, lower(w) as word
+                from public.scraped_products s,
+                     lateral regexp_split_to_table(coalesce(s.product_name, ''), '[^[:alnum:]]+') as w
+            ) t
+           where length(word) > 1
+           group by 1
+           order by products desc, word
+           limit 250;
+
+          \echo '### S-03 - the vocabulary of DESCRIPTIONS, most common first'
+          -- "יבש" appears in zero product names and only in descriptions, which
+          -- is half of why the owner's first query found nothing. This is where
+          -- the words a person would say out loud actually live.
+
+          select word, count(distinct id) as products
+            from (
+              select p.id, lower(w) as word
+                from public.business_products p,
+                     lateral regexp_split_to_table(coalesce(p.description, ''), '[^[:alnum:]]+') as w
+              union all
+              select s.id, lower(w) as word
+                from public.scraped_products s,
+                     lateral regexp_split_to_table(
+                       coalesce(s.short_description, '') || ' ' || coalesce(s.long_description, ''),
+                       '[^[:alnum:]]+') as w
+            ) t
+           where length(word) > 2
+           group by 1
+           order by products desc, word
+           limit 250;
+
+          \echo '### S-04 - the brands, in the spelling the database holds'
+          -- THE GAP I KNOW ABOUT AND CANNOT CLOSE WITHOUT THIS. Israeli
+          -- shoppers type "רויאל קנין"; the column holds "Royal Canin". Every
+          -- brand stored in Latin script is a brand that cannot be found by
+          -- the name a customer says out loud, and a transliteration map
+          -- cannot be written without the list to transliterate.
+          --
+          -- A brand is a taxonomy label printed on the shop's own public pages,
+          -- not a product row.
+
+          select brand,
+                 count(*) as products,
+                 brand ~ '[[:alpha:]]' and brand !~ '[א-ת]' as latin_only
+            from (
+              select btrim(brand) as brand from public.business_products
+               where brand is not null and btrim(brand) <> ''
+              union all
+              select btrim(brand) from public.scraped_products
+               where brand is not null and btrim(brand) <> ''
+            ) b
+           group by 1
+           order by products desc, brand
+           limit 120;
+
+          \echo '### S-05 - the category labels a shopper is really choosing between'
+          -- The categories table holds BOTH "מזון" and "אוכל יבש". The
+          -- catalogue disagrees with itself about what food is called, which is
+          -- why a synonym group for it is not a nicety.
+
+          select coalesce(c.name_he, '(free text)') as category_name,
+                 lower(btrim(coalesce(p.category, ''))) as category_free_text,
+                 count(*) as products
+            from public.business_products p
+            left join public.product_categories c on c.id = p.category_id
+           group by 1, 2
+           order by products desc
+           limit 60;
+
+          \echo '### S-06 - the tag vocabularies, which are searched verbatim'
+          -- life_stage, special_diet, medical_tags and breed_tags are matched
+          -- word for word against what a shopper types. If they hold codes
+          -- rather than words - "puppy" rather than "גור" - then they are
+          -- unsearchable in Hebrew and need their own vocabulary group.
+
+          select 'life_stage' as tag, lower(btrim(life_stage)) as value, count(*) as products
+            from public.business_products where life_stage is not null group by 1, 2
+          union all
+          select 'dog_size', lower(btrim(dog_size)), count(*)
+            from public.business_products where dog_size is not null group by 1, 2
+          union all
+          select 'special_diet', lower(btrim(v)), count(*)
+            from public.business_products p, lateral unnest(coalesce(p.special_diet, '{}')) as v group by 1, 2
+          union all
+          select 'medical_tags', lower(btrim(v)), count(*)
+            from public.business_products p, lateral unnest(coalesce(p.medical_tags, '{}')) as v group by 1, 2
+          union all
+          select 'breed_tags', lower(btrim(v)), count(*)
+            from public.business_products p, lateral unnest(coalesce(p.breed_tags, '{}')) as v group by 1, 2
+          union all
+          select 'flavors', lower(btrim(v)), count(*)
+            from public.business_products p, lateral unnest(coalesce(p.flavors, '{}')) as v group by 1, 2
+           order by 1, 3 desc, 2
+           limit 200;
+
+          \echo '### S-07 - how many products the species column can actually name'
+          -- pet_type is an enum of dog/cat/other/all. Everything in 'other' and
+          -- everything NULL can only be found by the animal in its own words,
+          -- and that is a measurement rather than a guess about how big the
+          -- parrot-and-rabbit problem is.
+
+          select coalesce(pet_type::text, '(null)') as pet_type,
+                 count(*) as products
+            from public.business_products
+           group by 1
+           order by products desc;
+
+          ROLLBACK;
+          -- S0-SQL-END
+          SQL
+          )"
+          export S0_SQL
+          export DATABASE_URL
+
+          # Connection details are redacted from the output; server-side SQL
+          # errors are not, because they are the diagnostic the run produces.
+          redact() {
+            sed -E \
+              -e 's#postgres(ql)?://[^[:space:]"]*#<redacted-connection-string>#g' \
+              -e 's#^psql: error:.*#psql: error: <connection details redacted>#'
+          }
+
+          # Both values passed by NAME, so docker's argv and what docker inspect
+          # records hold the literal text "$DATABASE_URL", never its value.
+          # stdin is /dev/null so the container cannot consume the rest of this
+          # script, and no file is written on the host.
+          set +e
+          docker run --rm \
+            -e PGCONNECT_TIMEOUT=15 \
+            --env DATABASE_URL \
+            --env S0_SQL \
+            "$PG_IMAGE" \
+            sh -c 'printf "%s\n" "$S0_SQL" | psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -X' </dev/null 2>&1 | redact
+          psql_status="${PIPESTATUS[0]}"
+          set -e
+
+          case "$psql_status" in
+            0)
+              echo "S-0 complete. Nothing on this host was modified."
+              ;;
+            2)
+              echo "BLOCKED-PROD: could not connect to the database (psql exit 2). Details redacted above." >&2
+              exit 2
+              ;;
+            3)
+              echo "S-0 failed: a statement was rejected by the server (psql exit 3). The server error is above, unredacted." >&2
+              exit 3
+              ;;
+            *)
+              echo "S-0 failed: docker/psql exited ${psql_status}." >&2
+              exit "$psql_status"
+              ;;
+          esac
+          REMOTE
+
+      - name: Remove the key
+        if: always()
+        run: |
+          set -euo pipefail
+          rm -f ~/.ssh/mipo_aws_key
+          echo "Key removed from the runner."

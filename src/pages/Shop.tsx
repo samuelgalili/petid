@@ -419,6 +419,14 @@ const Shop = () => {
    * a search that answered and a search that changed the subject.
    */
   const resultLine = (() => {
+    // A negation that could not be honoured is its own message, and it comes
+    // first. "אין לנו מזון ללא דגנים" is a different fact from "we found
+    // nothing", and the shopper it matters to is the one whose animal is
+    // allergic to the thing they just typed.
+    if (search.unmet.length > 0) {
+      return `אין לנו מוצר ללא ${search.unmet.join(" ")} — אפשר לשאול אחרת`;
+    }
+
     if (filteredAndSortedProducts.length === 0) {
       return search.dropped.length > 0
         ? `אין לנו ${search.dropped.join(" ")} — אפשר לנסות אחרת`

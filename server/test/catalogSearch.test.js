@@ -462,6 +462,126 @@ test("'other' does not claim an animal it cannot know", () => {
   assert.equal(productMatchesQuery(rabbitHutch, "כלב"), false);
 });
 
+// ─── a word that cancels the word beside it ──────────────────────────────────
+
+const grainFood = {
+  name: "קוואטרו אדולט עוף",
+  brand: "QUATTRO",
+  category: "אוכל יבש",
+  description: "מזון יבש עם דגנים ועוף",
+  pet_type: "dog",
+};
+
+const grainFree = {
+  name: "אקאנה גרנפרי",
+  brand: "ACANA",
+  category: "אוכל יבש",
+  description: "מזון יבש לכלבים",
+  pet_type: "dog",
+  special_diet: ["grain free"],
+};
+
+const shelf = [grainFood, grainFree];
+
+test('"ללא דגנים" does not answer with the grain food', () => {
+  // THE WORST ANSWER THE SEARCH EVER GAVE, and it was not a blank screen: the
+  // relaxation gave up "ללא" AND "דגנים" as words it could not use, and
+  // returned the grain food. Not a weaker answer - THE OPPOSITE ANSWER, to the
+  // one shopper who cannot afford it, whose dog is allergic to the thing they
+  // typed.
+  assert.deepEqual(names(searchCatalog(shelf, "מזון ללא דגנים")), [grainFree.name]);
+  assert.deepEqual(names(searchCatalog(shelf, "בלי דגנים")), [grainFree.name]);
+});
+
+test("a catalogue states it the other way round, and that counts too", () => {
+  // special_diet holds "grain free". English puts the marker behind the word
+  // and Hebrew in front, so the two directions are separate - and getting that
+  // wrong is not a near miss: marking both neighbours negated "מזון" in "מזון
+  // ללא דגנים", and the query became a request for food that is not food.
+  assert.equal(productMatchesQuery(grainFree, "ללא דגנים"), true);
+  assert.equal(productMatchesQuery(grainFree, "מזון ללא דגנים"), true);
+  assert.equal(productMatchesQuery(grainFood, "ללא דגנים"), false);
+});
+
+test("asking WITH something still works", () => {
+  assert.deepEqual(names(searchCatalog(shelf, "מזון עם דגנים")), [grainFood.name]);
+});
+
+test("narrowing never narrows by throwing the negation away", () => {
+  // THE DANGEROUS PATH, and the one a blanket "give up a word" rule walks
+  // straight into. The shop has grain-free food for DOGS and grain food for
+  // CATS, and somebody asks for grain-free food for a cat. Every word matches
+  // something; no product matches all of them; the ladder must give one up.
+  //
+  // Giving up "לחתול" is a smaller answer. Giving up "דגנים" hands back the
+  // grain cat food - which is the one product in the shop the query was
+  // written to avoid.
+  const mixed = [
+    { name: "מזון יבש לחתולים", category: "אוכל יבש", description: "עם דגנים", pet_type: "cat" },
+    { name: "אקאנה גרנפרי", category: "אוכל יבש", description: "לכלבים", pet_type: "dog", special_diet: ["grain free"] },
+  ];
+
+  const outcome = searchCatalogDetailed(mixed, "מזון ללא דגנים לחתול");
+  assert.ok(
+    !names(outcome.results).includes("מזון יבש לחתולים"),
+    "the grain cat food was returned to a query that excluded grain",
+  );
+  assert.ok(!outcome.dropped.includes("דגנים"), "the negated word was given up to find an answer");
+});
+
+test("a negation that cannot be met is said out loud, never given up", () => {
+  // No product here declares itself chicken-free. The relaxation ladder gives
+  // up any word it must to find an answer - EXCEPT this one. Returning chicken
+  // food to somebody who typed "ללא עוף" is the failure this rule exists for,
+  // so the answer is nothing, plus the word that could not be honoured.
+  const outcome = searchCatalogDetailed(shelf, "מזון ללא עוף");
+  assert.deepEqual(outcome.results, []);
+  assert.deepEqual(outcome.unmet, ["עוף"]);
+  assert.deepEqual(outcome.dropped, [], "a negation was treated as a droppable word");
+});
+
+// ─── the values the columns really hold ──────────────────────────────────────
+
+test("a Hebrew word reaches the English code the column stores", () => {
+  // MEASURED, not imagined. The tag columns the search matches verbatim hold
+  // English codes - life_stage 'adult'/'senior', dog_size 'medium',
+  // special_diet 'digestive'/'joint'/'urinary'/'skin'/'low fat' - while
+  // medical_tags holds Hebrew. Nobody types 'urinary' into a Hebrew shop.
+  //
+  // Every value below was read off the database rather than invented, and each
+  // is paired with the word a person would actually say. A code that stops
+  // being reachable is a column that may as well not be searched.
+  const reachable = [
+    ["adult", "בוגר"],
+    ["senior", "מבוגר"],
+    ["puppy", "גור"],
+    ["medium", "בינוני"],
+    ["small", "קטן"],
+    ["large", "גדול"],
+    ["digestive", "עיכול"],
+    ["joint", "מפרקים"],
+    ["urinary", "שתן"],
+    ["skin", "עור"],
+  ];
+
+  for (const [code, said] of reachable) {
+    const product = { name: "מוצר", category: "בריאות", life_stage: code, special_diet: [code], dog_size: code };
+    assert.equal(
+      productMatchesQuery(product, said),
+      true,
+      `the column holds "${code}" and a shopper says "${said}" - and the two do not meet`,
+    );
+  }
+});
+
+test("two sizes are not the same size", () => {
+  // The group that would have been one group. Small and large as synonyms
+  // means "מזון לכלב קטן" answers with food for a great dane.
+  const smallBreed = { name: "מזון לגזע קטן", dog_size: "small" };
+  assert.equal(productMatchesQuery(smallBreed, "קטן"), true);
+  assert.equal(productMatchesQuery(smallBreed, "גדול"), false);
+});
+
 // ─── what is deliberately not searched ───────────────────────────────────────
 
 test("internal fields are not searchable", () => {
