@@ -7,6 +7,7 @@
  * a commitment, so it gets one definition and every screen reads it.
  */
 
+/** Both confirmed by the owner: "3-5 ימי עסקים משלוח". */
 export const SHIPPING_ESTIMATE_MIN_DAYS = 3;
 export const SHIPPING_ESTIMATE_MAX_DAYS = 5;
 
@@ -25,10 +26,24 @@ export const SHIPPING_ESTIMATE_HE =
  *
  * 199 is the decision, and it is also what four of the five already said, so
  * the assistant is the only thing that moves.
+ *
+ * CONFIRMED BY THE OWNER, and that is worth recording because the numbers got
+ * here by consolidation rather than by anyone deciding them: five call sites
+ * were compared and the majority won. A majority is not an authority on what a
+ * business charges. The owner has since stated all three in his own words -
+ * delivery in 3-5 business days, ₪39 when the order is under the threshold,
+ * and the threshold itself at ₪199 - so they are now commitments rather than
+ * inherited constants.
+ *
+ * WHAT ₪199 IS: the point at which delivery stops costing, not a floor on the
+ * order. An order below it is accepted and pays SHIPPING_FEE. The owner called
+ * it "מינימום הזמנה", and his own sentence settles the reading - he described
+ * what someone below the threshold PAYS, which only exists if they are allowed
+ * to order at all.
  */
 export const FREE_SHIPPING_THRESHOLD = 199;
 
-/** What delivery costs below the threshold. */
+/** What delivery costs below the threshold. Confirmed by the owner. */
 export const SHIPPING_FEE = 39;
 
 /** "₪39", or "חינם" once the threshold is reached. */
@@ -48,6 +63,14 @@ export const amountToFreeShipping = (subtotal: number) =>
  *
  * Expressed as a SHARE rather than a weight, because bags come in 3 kg and
  * 12 kg and a fixed gram figure would mean something different in each.
+ */
+/**
+ * STILL NOT CONFIRMED, AND IT IS THE ONE THAT IS LEGAL.
+ *
+ * The share below and the sentences built from it describe the CONDITION for a
+ * return. They say nothing about the WINDOW - how many days a customer has -
+ * and Israeli consumer law sets one. Nothing in this file may claim a window
+ * until the owner and whoever advises him legally state it.
  */
 export const RETURN_MAX_USED_SHARE = 0.2;
 
