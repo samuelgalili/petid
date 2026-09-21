@@ -1,6 +1,7 @@
 import { ADMIN_PERMISSIONS } from "../adminPermissions.js";
 import { createAuditService } from "./auditService.js";
 import { createAdminCustomer } from "./customers.js";
+import { createManualOrder } from "./manualOrders.js";
 import { disconnectConnector, listConnectors, saveConnector, verifyConnector } from "./connectors.js";
 import { createIdempotency, IdempotencyConflict, idempotencyKeyOf } from "./idempotency.js";
 
@@ -35,6 +36,10 @@ export const createAdminOsRoutes = ({
   sendError,
   readBody,
   requireAdminPermission,
+  // Injected rather than imported, because it lives in index.js and this
+  // module is mounted before it is defined. Passing it also keeps the one
+  // function that knows what an order is as the ONLY function that makes one.
+  createOrder,
   logger = console,
 }) => {
   const audit = createAuditService({ pool, logger });
@@ -89,6 +94,21 @@ export const createAdminOsRoutes = ({
     idempotent: true,
     handler: async (request, response, url, payload) =>
       createAdminCustomer({ pool, audit, admin: request.admin }, payload),
+  });
+
+  routes.push({
+    method: "POST",
+    path: "orders",
+    // FULL_ACCESS, matching manual customer creation. Placing an order for
+    // somebody else, and being able to declare it paid, is at least as strong
+    // a capability as opening their record.
+    permission: ADMIN_PERMISSIONS.FULL_ACCESS,
+    // A phone order taken twice is a customer charged twice and a warehouse
+    // picking twice, so this needs the same replay protection the customer
+    // endpoint has.
+    idempotent: true,
+    handler: async (request, response, url, payload) =>
+      createManualOrder({ createOrder, audit, admin: request.admin }, payload),
   });
 
   // ─── connectors (Phase 7) ──────────────────────────────────────────────

@@ -669,6 +669,10 @@ const handleAdminOsRoute = createAdminOsRoutes({
   sendError,
   readBody,
   requireAdminPermission,
+  // Wrapped rather than passed directly: createOrder is a const declared some
+  // five thousand lines below this, so naming it here would read it before it
+  // exists. The wrapper defers that to call time.
+  createOrder: (...args) => createOrder(...args),
 });
 
 const publicCatalog = createPublicCatalog({ pool });
@@ -6047,15 +6051,47 @@ const attachOrderItems = async (orders) => {
   return orders.map((order) => mapOrder(order, itemsByOrder.get(order.id) || []));
 };
 
-const createOrder = async (body, currentUser = null, eventOrigin = "app") => {
+/**
+ * @param options.placedByAdmin The admin placing this order on a customer's
+ *   behalf - a phone order, or one taken in person. Absent for every order a
+ *   customer places themselves, which is what keeps the two paths honest about
+ *   which one they are.
+ */
+const createOrder = async (body, currentUser = null, eventOrigin = "app", options = {}) => {
+  const placedByAdmin = options.placedByAdmin || null;
   const shippingAddress = normalizeShippingAddress(body.shipping_address || body.shippingData);
   const paymentMethod = String(body.payment_method || "credit-card");
-  if (!["credit-card", "apple-pay", "google-pay", "bit", "paybox", "paypal", "cash-on-delivery"].includes(paymentMethod)) {
+  const allowedPaymentMethods = [
+    "credit-card", "apple-pay", "google-pay", "bit", "paybox", "paypal", "cash-on-delivery",
+  ];
+  // ADMIN-ATTESTED IS NOT OFFERED TO CUSTOMERS, and the check is here rather
+  // than at the route because this is the function that decides what an order
+  // means. A shopper who could send payment_method=admin-attested could mark
+  // their own order paid and have it picked from the warehouse.
+  if (placedByAdmin) allowedPaymentMethods.push("admin-attested");
+  if (!allowedPaymentMethods.includes(paymentMethod)) {
     const error = new Error("Unsupported payment method");
     error.statusCode = 400;
     throw error;
   }
-  const paymentStatus = paymentMethod === "cash-on-delivery" ? "awaiting_cod" : "pending";
+
+  // How the money arrived, in the admin's own words. REQUIRED, because the
+  // whole of this payment method is one person's word that money changed
+  // hands, and "paid somehow" is not a record of anything. Bit, a transfer,
+  // cash - whatever it was, it has to be written down.
+  const attestationNote = String(body.payment_attestation_note || "").trim();
+  if (paymentMethod === "admin-attested" && !attestationNote) {
+    const error = new Error("An attested payment must say how the money arrived");
+    error.statusCode = 400;
+    error.code = "ATTESTATION_NOTE_REQUIRED";
+    throw error;
+  }
+
+  const paymentStatus = paymentMethod === "cash-on-delivery"
+    ? "awaiting_cod"
+    // Paid on an admin's word. This is what releases the order to the
+    // warehouse, which is exactly why the three attestation columns exist.
+    : paymentMethod === "admin-attested" ? "paid" : "pending";
   const paymentInstallments = toPositiveInteger(body.installments || body.payment_installments);
   if (paymentInstallments > 12) {
     const error = new Error("Payment installments cannot exceed 12");
@@ -6078,7 +6114,14 @@ const createOrder = async (body, currentUser = null, eventOrigin = "app") => {
   // account's address, so this is the point where the address has to be
   // proven. Guest checkout is untouched: it has no account to protect, and
   // its address is entered per order rather than inherited from one.
-  if (currentUser && !currentUser.email_verified_at) {
+  //
+  // An admin placing the order is the exception, and not a loophole: the point
+  // of the gate is that a stranger must not be able to point order mail at an
+  // address they have not proven. An admin taking an order over the phone has
+  // no way to make the customer click a verification link mid-call, and the
+  // person entering the address is a known, audited account rather than an
+  // anonymous one.
+  if (currentUser && !currentUser.email_verified_at && !placedByAdmin) {
     const error = new Error("Verify your email address before placing an order");
     error.statusCode = 403;
     error.code = "email_verification_required";
@@ -6181,13 +6224,19 @@ const createOrder = async (body, currentUser = null, eventOrigin = "app") => {
           special_instructions,
           medical_urgency,
           access_token_hash,
-          seller_business_id
+          seller_business_id,
+          payment_attested_by,
+          payment_attested_at,
+          payment_attestation_note
         )
         values (
           $1, $2, $3, $4, $5, $6,
           'pending', $7, $8, $9,
           $10, $11, $12, $13, $14, $15, $16, $17,
-          $18, $19, $20, $21, $22, $23
+          $18, $19, $20, $21, $22, $23,
+          -- All three together or none: an attestation with no author, or an
+          -- author with no note, is a record of nothing.
+          $24, case when $24::uuid is null then null else now() end, $25
         )
         returning *
       `,
@@ -6215,6 +6264,8 @@ const createOrder = async (body, currentUser = null, eventOrigin = "app") => {
         medicalUrgency,
         accessToken ? hashOpaqueToken(accessToken) : null,
         orderSellerBusinessId,
+        paymentMethod === "admin-attested" ? placedByAdmin.id : null,
+        paymentMethod === "admin-attested" ? attestationNote : null,
       ],
     );
 
