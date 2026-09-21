@@ -85,21 +85,36 @@ export const SafetyBadge = ({ level, reason, petName, compact = false }: SafetyB
   if (level === "safe") return null;
 
   if (compact) {
+    /**
+     * The only mark allowed on a product photo, and the only reason it is
+     * allowed: the design canvas says colour lives in exactly two places, a
+     * ring around the pet and a STATUS, as information. A safety warning is
+     * that status.
+     *
+     * It used to be a solid disc - destructive at 90%, or amber-500 at 90% -
+     * with a white glyph and a shadow beneath it. That is a block, it is
+     * white-on-colour, and it is a shadow: three of the things the canvas
+     * rejects by name, spent on the one mark that had a right to be there.
+     *
+     * It is now the canvas's own status shape - a 15% tint, a hairline, and
+     * the glyph in the status colour instead of white - and slightly larger,
+     * so the warning did not get quieter for going on-system. mipo-peach is
+     * hsl(30 96% 72%), which is #FDBA74: the canvas's own caution colour,
+     * not a second orange invented here.
+     */
+    const treatment = level === "unsafe"
+      ? "bg-destructive/15 border-destructive/30 text-destructive"
+      : level === "unknown"
+        ? "bg-mipo-soft/90 border-mipo-line text-mipo-muted"
+        : "bg-mipo-peach/15 border-mipo-peach/40 text-mipo-peach";
+
+    const Glyph = level === "unsafe" ? ShieldX : level === "unknown" ? HelpCircle : ShieldAlert;
+
     return (
-      <div className="absolute top-1 left-1 z-10">
-        {level === "unsafe" ? (
-          <div className="w-5 h-5 rounded-full bg-destructive/90 flex items-center justify-center shadow-sm">
-            <ShieldX className="w-3 h-3 text-white" strokeWidth={2} />
-          </div>
-        ) : level === "unknown" ? (
-          <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center shadow-sm">
-            <HelpCircle className="w-3 h-3 text-muted-foreground" strokeWidth={2} />
-          </div>
-        ) : (
-          <div className="w-5 h-5 rounded-full bg-amber-500/90 flex items-center justify-center shadow-sm">
-            <ShieldAlert className="w-3 h-3 text-white" strokeWidth={2} />
-          </div>
-        )}
+      <div className="absolute top-1.5 left-1.5 z-10">
+        <div className={`flex h-6 w-6 items-center justify-center rounded-full border backdrop-blur-sm ${treatment}`}>
+          <Glyph className="h-3.5 w-3.5" strokeWidth={1.9} />
+        </div>
       </div>
     );
   }
@@ -111,7 +126,9 @@ export const SafetyBadge = ({ level, reason, petName, compact = false }: SafetyB
           ? "bg-destructive/10 text-destructive border border-destructive/20"
           : level === "unknown"
             ? "bg-muted text-muted-foreground border border-border"
-            : "bg-amber-500/10 text-amber-700 border border-amber-500/20"
+            // mipo-peach, not amber-500: the same token the compact mark uses,
+            // and it inverts with the theme, which amber-700 ink never did.
+            : "bg-mipo-peach/15 text-mipo-peach border border-mipo-peach/30"
       }`}
     >
       {level === "unsafe" ? (

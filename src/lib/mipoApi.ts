@@ -267,6 +267,22 @@ export interface MipoCustomerDetail {
   orders: MipoOrder[];
   pets: MipoPet[];
   notes: MipoCustomerNote[];
+  /**
+   * True when `customer.orders_count` exceeds the orders actually returned.
+   *
+   * The card loads the most recent hundred. Without this the header counts
+   * every order a person ever placed while the timeline beneath it shows a
+   * hundred, so somebody looking for an order that is real but not loaded
+   * concludes it does not exist — on a screen read while the customer is on
+   * the phone.
+   */
+  orders_truncated: boolean;
+  orders_shown: number;
+  /**
+   * How many of `pets` are archived. `customer.pets_count` counts the rest, so
+   * the number above the list always describes the list.
+   */
+  archived_pets_count: number;
 }
 
 export interface CreateMipoOrderInput {

@@ -790,6 +790,11 @@ const CustomerDetailPanel = ({
           <section className="space-y-2">
             <h4 className="text-xs font-semibold flex items-center gap-1.5">
               <PawPrint className="w-3.5 h-3.5" /> חיות מחמד
+              {detail.archived_pets_count > 0 && (
+                <span className="font-normal text-[10px] text-muted-foreground">
+                  · {detail.archived_pets_count} בארכיון
+                </span>
+              )}
             </h4>
             {pets.length === 0 ? (
               <p className="text-xs text-muted-foreground">אין חיות רשומות</p>
@@ -805,7 +810,18 @@ const CustomerDetailPanel = ({
                 const age = formatPetAgeHe(pet);
                 const conditions = (pet.medical_conditions || []).filter(Boolean);
                 return (
-                  <div key={pet.id} className="flex items-start gap-3 rounded-xl border border-mipo-line px-3 py-2.5">
+                  <div
+                    key={pet.id}
+                    // An archived animal has died or been rehomed. It stays on
+                    // the card - the history is real and the owner may bring
+                    // it up - but it is dimmed and labelled, because asking
+                    // after a dead pet by name is the worst thing this screen
+                    // can cause.
+                    className={cn(
+                      "flex items-start gap-3 rounded-xl border border-mipo-line px-3 py-2.5",
+                      pet.archived && "opacity-60 bg-muted/20",
+                    )}
+                  >
                     {pet.avatar_url ? (
                       <img
                         src={pet.avatar_url}
@@ -820,6 +836,11 @@ const CustomerDetailPanel = ({
                     <div className="min-w-0 flex-1 space-y-0.5">
                       <div className="flex items-baseline gap-2">
                         <span className="text-sm font-semibold text-mipo-ink">{pet.name}</span>
+                        {pet.archived && (
+                          <Badge variant="outline" className="text-[9px] px-1.5 py-0 text-muted-foreground">
+                            בארכיון
+                          </Badge>
+                        )}
                         <span className="text-[11px] text-mipo-muted">
                           {PET_TYPE_LABELS[pet.type] || pet.type}
                           {pet.breed ? ` · ${pet.breed}` : ""}
@@ -854,6 +875,19 @@ const CustomerDetailPanel = ({
             <h4 className="text-xs font-semibold flex items-center gap-1.5">
               <StickyNote className="w-3.5 h-3.5" /> פעילות
             </h4>
+
+            {/* The header above counts every order this person ever placed;
+                the timeline below holds the most recent hundred. Without this
+                line an agent searching for an order that is real but not
+                loaded concludes it does not exist, and tells the customer so.
+                It is placed ABOVE the stream, not at its end, because the
+                point is to be read before the searching starts. */}
+            {detail.orders_truncated && (
+              <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+                מוצגות {detail.orders_shown} ההזמנות האחרונות מתוך {customer.orders_count}.
+                הזמנה ישנה יותר לא תופיע כאן גם אם היא קיימת.
+              </p>
+            )}
 
             <Card className="border-border/40">
               <CardContent className="p-3 space-y-2">

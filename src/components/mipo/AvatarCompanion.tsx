@@ -18,8 +18,8 @@
  * it takes you to add one rather than to the chat, which is what the icon has
  * always promised and never did.
  *
- * Auto-hides on auth/onboarding routes, and on /chat, which shows the pet
- * itself.
+ * Auto-hides on auth/onboarding routes, and on /chat and /shop, which show
+ * the pet themselves.
  */
 
 import { useMemo } from "react";
@@ -60,11 +60,19 @@ export const AvatarCompanion = () => {
     catch { return false; }
   })();
 
+  // AND /shop, WHICH NOW SHOWS THE PET ITSELF.
+  //
+  // Same reason as /chat, and the design canvas states it as the system's
+  // first rule: "האורורה היחידה במערכת... ברגע שהזוהר מופיע במקום שני, הוא
+  // מפסיק לומר ״זו החיה שלך״." The shop's resting state is the pet under its
+  // own aurora with the search field beneath it; this companion parked a
+  // second aurora in the corner of that screen, over the results grid at that.
   const hidden = useMemo(
     () =>
       onboardingActive ||
       HIDDEN_PREFIXES.some((p) => location.pathname.startsWith(p)) ||
-      location.pathname === "/chat",
+      location.pathname === "/chat" ||
+      location.pathname === "/shop",
     [location.pathname, onboardingActive],
   );
 
