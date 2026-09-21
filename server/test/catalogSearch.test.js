@@ -582,6 +582,107 @@ test("two sizes are not the same size", () => {
   assert.equal(productMatchesQuery(smallBreed, "גדול"), false);
 });
 
+// ─── measured against the real catalogue ─────────────────────────────────────
+
+test("the animal the column cannot say is still searchable", () => {
+  // 141 of 373 products - 38% - sit in pet_type = 'other', because the enum is
+  // dog/cat/other/all and every rabbit, parrot and hamster in a multi-pet shop
+  // lands in the one value that names nothing. They were findable by no animal
+  // word at all, which is the real reason the parrot chip had nothing to find.
+  const parrotToy = {
+    name: "נדנדה לכלוב",
+    category: "צעצועים",
+    pet_type: "other",
+    product_attributes: { animal: "תוכי" },
+  };
+
+  assert.equal(productMatchesQuery(parrotToy, "תוכי"), true);
+  assert.equal(productMatchesQuery(parrotToy, "צעצוע לתוכי"), true);
+  assert.equal(productMatchesQuery(parrotToy, "כלב"), false, "'other' claimed an animal it was not told");
+});
+
+test("the diets the catalogue really records are reachable in Hebrew", () => {
+  // Every value here was read off production's special_diet column, not
+  // imagined: "ללא דגנים" on 25 products, "ללא גלוטן" on 14, "ללא חיטה" on 2,
+  // "תומך במערכת החיסון" on 3. "חיטה" and "חיסון" reached nothing before.
+  const cases = [
+    ["תומך במערכת החיסון", "חיסון"],
+    ["לתמיכה במפרקים", "מפרקים"],
+    ["לבעלי רגישויות", "רגיש"],
+    ["מפחית סימני הזדקנות", "מבוגר"],
+    ["לבריאות הפרווה", "פרווה"],
+    ["איזון מערכת העיכול והמעיים", "עיכול"],
+    ["לשמירה על משקל", "דיאטה"],
+  ];
+
+  for (const [stored, said] of cases) {
+    const product = { name: "מזון", category: "אוכל יבש", special_diet: [stored] };
+    assert.equal(productMatchesQuery(product, said), true, `"${stored}" is not reachable by "${said}"`);
+  }
+});
+
+test("the catalogue's own negations are negations", () => {
+  // THE MEASUREMENT VALIDATING THE FIX, on the exact strings production
+  // stores: "ללא דגנים" on 25 products, "ללא גלוטן" on 14, "ללא חיטה" on 2.
+  //
+  // Each is reachable by the phrase a shopper types AND unreachable by the
+  // bare word, which is the whole point: somebody typing "דגנים" wants grain
+  // in the food, and a product labelled "ללא דגנים" is not an answer to that
+  // any more than it is an answer to nothing.
+  //
+  // The three are also kept APART from each other on purpose - see below.
+  for (const [stored, avoided] of [["ללא דגנים", "דגנים"], ["ללא גלוטן", "גלוטן"], ["ללא חיטה", "חיטה"]]) {
+    const product = { name: "מזון", category: "אוכל יבש", special_diet: [stored] };
+    assert.equal(productMatchesQuery(product, stored), true, `"${stored}" is not reachable by itself`);
+    assert.equal(
+      productMatchesQuery(product, avoided),
+      false,
+      `a product labelled "${stored}" answered a request FOR ${avoided}`,
+    );
+  }
+
+  // A GRAIN CLAIM IS NOT A WHEAT CLAIM. Grouping the cereals as synonyms of
+  // "דגנים" would have made this pass by promising something the label does
+  // not say: a wheat-free food may still contain corn.
+  const wheatFree = { name: "מזון", category: "אוכל יבש", special_diet: ["ללא חיטה"] };
+  assert.equal(
+    productMatchesQuery(wheatFree, "ללא דגנים"),
+    false,
+    "a food promising only 'ללא חיטה' was offered as grain-free",
+  );
+
+  // And the one that matters most, end to end on the real label.
+  const grainFreeReal = { name: "קוואטרו", category: "אוכל יבש", special_diet: ["ללא דגנים"] };
+  const plainFood = { name: "מזון יבש", category: "אוכל יבש", description: "מכיל דגנים מלאים" };
+  assert.deepEqual(names(searchCatalog([plainFood, grainFreeReal], "מזון ללא דגנים")), [grainFreeReal.name]);
+});
+
+test("a brand filed under two spellings answers to both", () => {
+  // Measured: "קוואטרו" on 53 products and "Quattro" on 2. Whichever spelling
+  // a shopper types, the other half of the brand was invisible.
+  const hebrew = { name: "אדולט עוף", brand: "קוואטרו", category: "אוכל יבש" };
+  const latin = { name: "Adult Chicken", brand: "Quattro", category: "אוכל יבש" };
+
+  for (const query of ["קוואטרו", "quattro"]) {
+    assert.equal(productMatchesQuery(hebrew, query), true, `${query} missed the Hebrew spelling`);
+    assert.equal(productMatchesQuery(latin, query), true, `${query} missed the Latin spelling`);
+  }
+});
+
+test("a size list is a list of sizes", () => {
+  // dog_size is free text holding a COMMA-SEPARATED LIST in Hebrew, with an
+  // en-dash inside one of its values: "מיני – גזע קטן, קטן, בינוני, גדול, ענק"
+  // on 19 products. Splitting on whitespace alone would make that one token
+  // matching nothing.
+  const everySize = { name: "מזון", category: "אוכל יבש", dog_size: "מיני – גזע קטן, קטן, בינוני, גדול, ענק" };
+  const smallOnly = { name: "מזון מיני", category: "אוכל יבש", dog_size: "מיני – גזע קטן" };
+
+  assert.equal(productMatchesQuery(everySize, "גדול"), true);
+  assert.equal(productMatchesQuery(everySize, "בינוני"), true);
+  assert.equal(productMatchesQuery(smallOnly, "קטן"), true);
+  assert.equal(productMatchesQuery(smallOnly, "גדול"), false);
+});
+
 // ─── what is deliberately not searched ───────────────────────────────────────
 
 test("internal fields are not searchable", () => {

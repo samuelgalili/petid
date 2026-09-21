@@ -43,7 +43,13 @@ const pets = [{
   archived: false,
 }];
 
-const product = (id: string, name: string, price: number) => ({
+// brand is a parameter because it MATTERS to what the search returns. Every
+// product here used to be branded QUATTRO, including the grooming brush, and
+// the test below only passed because the Hebrew spelling of that brand was
+// unsearchable. Now that "קוואטרו" finds the brand, a brush filed under it is
+// a correct result for a brand query - so the fixture has to stop claiming a
+// brush that a pet-food brand never made.
+const product = (id: string, name: string, price: number, brand = "QUATTRO") => ({
   id,
   name,
   description: "מזון יבש איכותי",
@@ -60,7 +66,7 @@ const product = (id: string, name: string, price: number) => ({
   is_featured: false,
   business_id: null,
   sku: null,
-  brand: "QUATTRO",
+  brand,
   created_at: "2026-01-01T00:00:00.000Z",
   source: "manual",
 });
@@ -68,7 +74,7 @@ const product = (id: string, name: string, price: number) => ({
 const products = [
   product("1", "קוואטרו חתולים אדולט עוף 7 קילו", 249),
   product("2", "קוואטרו חתולים סטרלייזד 2 קילו", 119),
-  product("3", "מברשת טיפוח לפרווה ארוכה", 45),
+  product("3", "מברשת טיפוח לפרווה ארוכה", 45, "MIPO"),
 ];
 
 async function openShop(page: Page) {
@@ -121,6 +127,8 @@ test.describe("The shop is one question", () => {
     // No Enter, no button. The first characters are the whole interaction.
     await page.getByLabel("חיפוש בחנות").fill("קוואטרו");
 
+    // Two of the three carry this brand; the brush does not. Typing the brand
+    // in Hebrew has to reach a column that spells it in Latin.
     await expect(page.getByText("2 מוצרים")).toBeVisible();
     await expect(page.getByText("קוואטרו חתולים אדולט עוף 7 קילו")).toBeVisible();
     await expect(page.getByText("מברשת טיפוח לפרווה ארוכה")).toHaveCount(0);

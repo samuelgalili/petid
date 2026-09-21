@@ -309,6 +309,11 @@ const Shop = () => {
         special_diet: p.special_diet,
         medical_tags: p.medical_tags,
         breed_tags: p.breed_tags,
+        // 141 of 373 products sit in pet_type = 'other' - the enum is
+        // dog/cat/other/all and every rabbit, parrot and hamster lands in the
+        // one value that names nothing. The importer kept the real species in
+        // here, and without it those 141 are findable by no animal word.
+        product_attributes: p.product_attributes,
         isFlagged: p.is_flagged || false,
         flaggedReason: p.flagged_reason,
         flavors: p.flavors || [],
