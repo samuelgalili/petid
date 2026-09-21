@@ -14,6 +14,8 @@
 import { spawn } from "node:child_process";
 import { setTimeout as sleep } from "node:timers/promises";
 
+import { shippingFor } from "../src/shipping.js";
+
 const PORT = Number(process.env.SMOKE_PORT || 3111);
 const BASE = `http://127.0.0.1:${PORT}`;
 const BOOT_TIMEOUT_MS = 30_000;
@@ -1303,7 +1305,12 @@ const main = async () => {
     // customers' browsers carry product_id, not offer_id, and must keep working
     // exactly as they do today.
     const expectedOrderTotal = (subtotal, paymentMethod = "cash-on-delivery") => {
-      const shipping = subtotal >= 199 ? 0 : 25;
+      // Read from the shipping module rather than typed in again. This line
+      // held 25 while the owner's stated fee was 39, so the smoke test agreed
+      // with the bug it existed to catch: it computed the same wrong total the
+      // checkout did, the expected_total guard saw two matching numbers, and
+      // everything passed.
+      const shipping = shippingFor(subtotal);
       const cashOnDelivery = paymentMethod === "cash-on-delivery" ? 5 : 0;
       return Math.round((subtotal + shipping + cashOnDelivery) * 100) / 100;
     };

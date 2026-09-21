@@ -174,10 +174,21 @@ const CONCEPTS = [
   // medical_tags holds "לב". Nothing else reached it.
   ["לב", "heart", "cardiac", "לבבי"],
   ["אלרגיה", "אלרגי", "allergy", "רגיש", "רגישות", "sensitive", "היפואלרגני"],
-  ["דגנים", "דגן", "grain", "גלוטן"],
+  // SYNONYMS OF "GRAIN" ONLY, and the specific cereals are deliberately NOT
+  // here. special_diet really holds "ללא דגנים" (25 products), "ללא גלוטן"
+  // (14) and "ללא חיטה" (2), and they are three different claims: a wheat-free
+  // food may contain corn, and rice is a grain that carries no gluten. Tying
+  // them into one group would let "ללא דגנים" be answered by a product that
+  // only promises "ללא חיטה" - an allergy claim the label does not make.
+  //
+  // Each is found by its own word, which is what the shopper types anyway.
+  ["דגנים", "דגן", "grain"],
   ["גור", "גורים", "puppy", "kitten", "כלבלב", "חתלתול", "צעיר"],
   // "בינוני" is a SIZE, not a life stage, and belongs to neither.
   ["בוגר", "adult"],
+  // Not "הזדקנות", though special_diet holds "מפחית סימני הזדקנות": it and
+  // "מזדקן" both reduce to the same stem, so the stemmer already joins them
+  // and the entry was a line with no test behind it doing no work.
   ["מבוגר", "סניור", "senior", "קשיש", "מזדקן", "וותיק"],
   ["עוף", "chicken", "הודו", "turkey"],
   ["בקר", "beef", "טלה", "lamb", "כבש"],
@@ -185,6 +196,29 @@ const CONCEPTS = [
   ["ויטמין", "vitamin", "תוסף", "supplement", "אומגה", "omega", "שמן", "oil"],
   ["מים", "water", "קערה", "bowl", "שתייה"],
   ["הובלה", "תיק", "crate", "כלוב", "carrier", "טיסה"],
+
+  // ─── one brand, two spellings ───────────────────────────────────────────
+  //
+  // Measured, and not the problem I expected. I had said the big gap was
+  // Israelis typing "רויאל קנין" at a column holding "Royal Canin". The
+  // catalogue says otherwise: its brands are mostly HEBREW - גארד, קוואטרו,
+  // רפאל תערובות, סילנד, פלוטוס - and "רויאל קנין" finds nothing for the
+  // ordinary reason that the shop does not stock Royal Canin.
+  //
+  // What the measurement DID find is the same brand filed under two spellings,
+  // so half its products are invisible to whichever spelling you type:
+  // "קוואטרו" on 53 products and "Quattro" on 2, "נובילוס Nobilus" on 12 and
+  // "Novilos" on 1. Kong/KONG and Charlie's/Charlies already unify through
+  // lowercasing and quote-stripping; these two do not.
+  //
+  // This is a stopgap and worth saying so: the real fix is one spelling per
+  // brand in the catalogue, and these lines stop being needed the day that
+  // happens.
+  ["קוואטרו", "quattro"],
+  ["נובילוס", "nobilus", "novilos"],
+  ["דיימונדס", "diamonds"],
+  ["בונזו", "bonzo"],
+  ["קונג", "kong"],
 ];
 
 /**
@@ -353,6 +387,13 @@ const FIELD_WEIGHTS = { name: 100, brand: 60, category: 45, tags: 30, descriptio
  * to have fixed - and catalogSearch.test.js now derives the field list from
  * Shop.tsx so the next rename is caught on its own commit.
  */
+/** The species the importer recorded, as words. A string or a list. */
+const animalAttribute = (product) => {
+  const value = product?.product_attributes?.animal;
+  if (Array.isArray(value)) return value.filter((entry) => typeof entry === "string");
+  return typeof value === "string" ? [value] : [];
+};
+
 const productFields = (product) => ({
   name: [product?.name],
   brand: [product?.brand],
@@ -368,6 +409,16 @@ const productFields = (product) => ({
     ...(Array.isArray(product?.medical_tags) ? product.medical_tags : []),
     ...(Array.isArray(product?.breed_tags) ? product.breed_tags : []),
     ...(SPECIES_WORDS[String(product?.pet_type ?? product?.petType ?? "").toLowerCase()] || []),
+    // THE ANIMAL THE COLUMN CANNOT SAY, measured: 141 of the 373 products in
+    // the catalogue - 38% - sit in pet_type = 'other', because the enum is
+    // dog/cat/other/all and everything else in a multi-pet shop lands in the
+    // one bucket that names nothing. Those 141 were findable by no animal word
+    // at all, which is the real reason "צעצוע לתוכי" had nothing to return.
+    //
+    // The importer kept the species it was given under its own key. Whatever
+    // it says - "תוכי", "ארנב", "rabbit" - goes through the same vocabulary as
+    // every other word, so nothing here has to guess what is in it.
+    ...animalAttribute(product),
   ],
 });
 
