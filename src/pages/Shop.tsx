@@ -26,7 +26,7 @@ import { useActivePet } from "@/hooks/useActivePet";
 import { SlideToConfirm } from "@/components/shop/SlideToConfirm";
 import { ProductInfoDrawer } from "@/components/shop/ProductInfoDrawer";
 import { useCarePlan } from "@/hooks/useCarePlan";
-import { createContentReport, getProductCategories, getShopProducts } from "@/lib/mipoApi";
+import { createContentReport, getShopProducts } from "@/lib/mipoApi";
 import { FREE_SHIPPING_THRESHOLD } from "@/lib/shipping";
 
 const asPrice = (value: number | string | null | undefined) => {

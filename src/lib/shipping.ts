@@ -7,6 +7,7 @@
  * a commitment, so it gets one definition and every screen reads it.
  */
 
+/** Both confirmed by the owner: "3-5 ימי עסקים משלוח". */
 export const SHIPPING_ESTIMATE_MIN_DAYS = 3;
 export const SHIPPING_ESTIMATE_MAX_DAYS = 5;
 
@@ -25,10 +26,25 @@ export const SHIPPING_ESTIMATE_HE =
  *
  * 199 is the decision, and it is also what four of the five already said, so
  * the assistant is the only thing that moves.
+ *
+ * CONFIRMED BY THE OWNER, and that is worth recording because the numbers got
+ * here by consolidation rather than by anyone deciding them: five call sites
+ * were compared and the majority won. A majority is not an authority on what a
+ * business charges. The owner has since stated all three in his own words -
+ * delivery in 3-5 business days, ₪39 when the order is under the threshold,
+ * and the threshold itself at ₪199 - so they are now commitments rather than
+ * inherited constants.
+ *
+ * THE OWNER'S WORDS: "משלוח עולה 39 שח מי שלא מגיע למינימום הזמנה של 199 שח".
+ * So ₪199 is the minimum order for free delivery, and an order below it is
+ * accepted and charged SHIPPING_FEE - it is not a floor that refuses the
+ * order. That is what `shippingFeeLabelHe` and `amountToFreeShipping` below
+ * implement, and there is no code path anywhere that rejects a basket for
+ * being under ₪199.
  */
 export const FREE_SHIPPING_THRESHOLD = 199;
 
-/** What delivery costs below the threshold. */
+/** What delivery costs below the threshold. Confirmed by the owner. */
 export const SHIPPING_FEE = 39;
 
 /** "₪39", or "חינם" once the threshold is reached. */
@@ -48,6 +64,14 @@ export const amountToFreeShipping = (subtotal: number) =>
  *
  * Expressed as a SHARE rather than a weight, because bags come in 3 kg and
  * 12 kg and a fixed gram figure would mean something different in each.
+ */
+/**
+ * STILL NOT CONFIRMED, AND IT IS THE ONE THAT IS LEGAL.
+ *
+ * The share below and the sentences built from it describe the CONDITION for a
+ * return. They say nothing about the WINDOW - how many days a customer has -
+ * and Israeli consumer law sets one. Nothing in this file may claim a window
+ * until the owner and whoever advises him legally state it.
  */
 export const RETURN_MAX_USED_SHARE = 0.2;
 

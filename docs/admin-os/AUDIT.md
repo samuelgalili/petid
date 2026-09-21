@@ -352,7 +352,7 @@ words (`server/test/shopOneLanguage.test.js`).
 | # | Risk | Evidence | Consequence |
 |---|---|---|---|
 | **R1** | `index.js` is 9,426 lines with a linear if-chain router | measured | Every Admin OS endpoint makes dispatch slower and the file less reviewable. Needs an additive router boundary before Phase 2. |
-| **R2** | **No secret storage exists at all** | `SECRET_ENCRYPTION_KEY` in 0 server files | Phase 7 (connectors) cannot start. Architectural decision required — a §65 STOP. |
+| **R2** | ~~No secret storage exists at all~~ **RESOLVED 2026-09-21** | `server/src/secretStore.js`, 13 tests | Was: Phase 7 cannot start. Now: envelope encryption exists and refuses to store anything without a key. D-4 has the decision and the KMS upgrade path. |
 | **R3** | One rate limiter for the whole API | 1 `new FixedWindowRateLimiter` | Admin OS adds expensive endpoints with no per-route budget. |
 | **R4** | No idempotency anywhere | no match for `idempotenc` in `server/src` | §52 unimplementable as written. A retried payment double-charges; a retried message double-sends. |
 | **R5** | The shop bypasses the publication gate | `listProducts()` at `index.js:4326` has no `where` | Intake governs a catalogue no shopper sees. |

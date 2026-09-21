@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { SEO } from "@/components/SEO";
 import { SmartCartLayers } from "@/components/shop/SmartCartLayers";
 import { MipoCoupon, validateCouponCode } from "@/lib/mipoApi";
 import { FREE_SHIPPING_THRESHOLD, SHIPPING_FEE, amountToFreeShipping } from "@/lib/shipping";
+import { groupCartBySeller } from "@/lib/cartGrouping";
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -27,6 +28,11 @@ const Cart = () => {
   
 
   const subtotal = getSubtotal();
+
+  // What this basket has to become. One group today, always - a marketplace
+  // line needs an offer_id the client does not carry - and the screen shows
+  // nothing extra while that is true.
+  const sellerGroups = useMemo(() => groupCartBySeller(items), [items]);
   
   // Check if coupon is free shipping type
   const isFreeShippingCoupon = appliedCoupon?.discount_type === 'free_shipping';
@@ -168,8 +174,32 @@ const Cart = () => {
       
       {/* Cart Items */}
       <div className="px-4 py-4">
+        {/* GROUPED BY SHOP, because the checkout refuses a basket that mixes
+            them - index.js:6102 and :6114 - and until now the cart did not
+            know that. The canvas's audit named the consequence exactly:
+            "הלקוח בונה סל שנדחה בשלב האחרון."
+
+            With today's catalogue this always renders ONE group: a
+            marketplace line needs an offer_id the client does not carry. The
+            header and the note appear only when there is something to explain,
+            so a single-shop basket looks exactly as it did. */}
+        {sellerGroups.length > 1 && (
+          <p className="mb-4 rounded-2xl border border-mipo-line px-4 py-3 text-[13px] leading-5 text-mipo-muted">
+            כל חנות נשלחת בהזמנה נפרדת. אפשר להשלים את ההזמנה מ
+            <span className="font-medium text-mipo-ink">{sellerGroups[0].sellerName || "מיפו"}</span>
+            {" "}עכשיו, ואת השנייה אחריה.
+          </p>
+        )}
+
         <AnimatePresence mode="popLayout">
-          {items.map((item) => (
+          {sellerGroups.flatMap((group) => [
+            sellerGroups.length > 1 ? (
+              <div key={`head-${group.key}`} className="mb-2 flex items-baseline justify-between gap-3 px-1">
+                <span className="text-sm font-semibold text-mipo-ink">{group.sellerName || "מיפו"}</span>
+                <span className="text-sm tabular-nums text-mipo-muted">₪{group.subtotal.toFixed(2)}</span>
+              </div>
+            ) : null,
+            ...group.items.map((item) => (
             <motion.div
               key={item.id}
               layout
@@ -241,7 +271,8 @@ const Cart = () => {
                 </div>
               </Card>
             </motion.div>
-          ))}
+            )),
+          ])}
         </AnimatePresence>
 
         {/* Coupon Input */}
@@ -352,8 +383,14 @@ const Cart = () => {
 
                 <div className="border-t-2 border-dashed border-border pt-4">
                   <div className="flex justify-between items-center">
+                    {/* NAMED, when there is more than one. The canvas writes
+                        it as "סה״כ ב־MIPO" and "לתשלום — MIPO" for the same
+                        reason: with two shops in the basket, an unqualified
+                        total is a number for an order that cannot be placed. */}
                     <span className="text-xl font-bold text-foreground font-jakarta">
-                      סה״כ לתשלום
+                      {sellerGroups.length > 1
+                        ? `סה״כ ב${sellerGroups[0].sellerName || "מיפו"}`
+                        : "סה״כ לתשלום"}
                     </span>
                     <span className="text-2xl font-bold tabular-nums text-mipo-ink font-jakarta">
                       ₪{total.toFixed(2)}
@@ -371,7 +408,9 @@ const Cart = () => {
                   onClick={handleCheckout}
                   className="mipo-cta-button h-14 w-full gap-3 rounded-2xl text-lg"
                 >
-                  המשך לתשלום
+                  {sellerGroups.length > 1
+                    ? `לתשלום — ${sellerGroups[0].sellerName || "מיפו"}`
+                    : "המשך לתשלום"}
                 </Button>
               </motion.div>
             </div>

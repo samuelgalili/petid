@@ -28,10 +28,10 @@ import {
   computePetAdjustedScore,
   explainAdjustment,
   safetyLevelFor,
-  SAFETY_LABEL_HE,
   type SafetyLevel,
 } from "@/lib/petSafetyScore";
 import { feedingGuidanceSourceLabelHe, readFeedingGuidance } from "@/lib/feedingGuidance";
+import { PetFitCard } from "@/components/shop/PetFitCard";
 import {
   FREE_SHIPPING_THRESHOLD,
   RETURNS_DETAIL_HE,
@@ -123,26 +123,27 @@ const readSpecAttributes = (attributes: unknown): Array<{ label: string; value: 
 // filled product ran to 2066px with six sections and a plain one to 1091px
 // with none, and the second reads as a broken page rather than a simple one.
 const ALWAYS_SPEC_LABELS: Array<{ key: keyof MipoProduct; label: string }> = [
-  { key: "sku", label: "מק״ט" },
+  // מק״ט IS GONE, and it was the first row. The canvas: "קוד מחסן. היום הוא
+  // השורה הראשונה בטבלה. לקוח מעולם לא הכריע בזכותו." A warehouse code at the
+  // top of what a shopper reads is the catalogue talking to itself. It is
+  // still on the product and still in the admin; it is not a fact about
+  // whether to buy.
   { key: "brand", label: "מותג" },
 ];
 
 // Genuinely specific to some products. A chew toy with "קלוריות לק״ג: לא צוין"
 // is not more consistent, only more absurd, so these appear only when there is
 // something to say.
+// קלוריות לק״ג came off this list: the canvas counted it on 3 products out of
+// 375. A row that is defined and never populated is a promise the catalogue
+// does not keep.
 const OPTIONAL_SPEC_LABELS: Array<{ key: keyof MipoProduct; label: string }> = [
   { key: "life_stage", label: "שלב חיים" },
   { key: "dog_size", label: "גודל מומלץ" },
-  { key: "kcal_per_kg", label: "קלוריות לק״ג" },
 ];
 
 const NOT_SPECIFIED = "לא צוין";
 
-const SAFETY_STYLES: Record<SafetyLevel, { wrap: string; text: string; Icon: typeof ShieldCheck }> = {
-  safe: { wrap: "bg-emerald-500/10 border-emerald-500/25", text: "text-emerald-600 dark:text-emerald-400", Icon: ShieldCheck },
-  caution: { wrap: "bg-amber-500/10 border-amber-500/25", text: "text-amber-600 dark:text-amber-400", Icon: ShieldAlert },
-  unsafe: { wrap: "bg-destructive/10 border-destructive/25", text: "text-destructive", Icon: ShieldAlert },
-};
 
 const Section = ({ title, icon: Icon, children }: { title: string; icon?: typeof Package; children: React.ReactNode }) => (
   <section className="space-y-2">
@@ -394,20 +395,17 @@ const ProductDetailAws = () => {
                 )}
               </div>
 
-              {/* Scored for this pet, not for a generic one. */}
-              {safetyScore !== null && safetyLevel && (
-                <div className={`rounded-xl border p-3 ${SAFETY_STYLES[safetyLevel].wrap}`}>
-                  <div className={`flex items-center gap-2 text-sm font-bold ${SAFETY_STYLES[safetyLevel].text}`}>
-                    {(() => { const { Icon } = SAFETY_STYLES[safetyLevel]; return <Icon className="h-4 w-4" />; })()}
-                    <span>
-                      {SAFETY_LABEL_HE[safetyLevel]}
-                      {pet?.name ? ` ל${pet.name}` : ""}
-                    </span>
-                    <span className="ms-auto tabular-nums">{safetyScore.toFixed(1)}/10</span>
-                  </div>
-                  {safetyNote && <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{safetyNote}</p>}
-                </div>
-              )}
+              {/* "מתאים ל[החיה]", above the fold, with the score inside it
+                  rather than beside it. The canvas is blunt about the old
+                  treatment: "ציון בטיחות חשוף — מספר בלי הקשר מפחיד. נשאר —
+                  אבל בתוך ״מתאים לרקסי״, שם הוא אומר משהו." */}
+              <PetFitCard
+                pet={pet}
+                level={safetyLevel}
+                score={safetyScore}
+                note={safetyNote}
+                productWeight={product.weight ? `${product.weight} ${product.weight_unit || ""}`.trim() : null}
+              />
 
               {variantGroups.map((group) => (
                 <div key={group.key} className="space-y-2">

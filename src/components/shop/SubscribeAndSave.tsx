@@ -7,6 +7,7 @@ import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RefreshCw, Check, Calculator } from "lucide-react";
 import { useActivePet } from "@/hooks/useActivePet";
+import { estimateBagDuration } from "@/lib/bagDuration";
 
 interface SubscribeAndSaveProps {
   productName: string;
@@ -15,42 +16,27 @@ interface SubscribeAndSaveProps {
   onSubscribe: (intervalDays: number) => void;
 }
 
-function parseBagWeightKg(w: string | null): number {
-  if (!w) return 0;
-  const match = w.match(/(\d+\.?\d*)/);
-  if (!match) return 0;
-  const val = parseFloat(match[1]);
-  // If text includes 'גרם' or 'g', convert to kg
-  if (w.includes("גרם") || w.match(/\bg\b/i)) return val / 1000;
-  return val;
-}
-
-function estimateDailyIntake(petWeightKg: number): number {
-  // ~2.5% of body weight for dogs, ~3% for small breeds
-  if (petWeightKg <= 5) return petWeightKg * 0.03;
-  if (petWeightKg <= 15) return petWeightKg * 0.025;
-  return petWeightKg * 0.02;
-}
-
 export const SubscribeAndSave = ({ productName, productPrice, productWeight, onSubscribe }: SubscribeAndSaveProps) => {
   const { pet } = useActivePet();
   const [showDetails, setShowDetails] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
 
+  // THE ARITHMETIC MOVED OUT, and it was wrong where it was. This component
+  // owned its own parseBagWeightKg, whose grams test was /\bg\b/i - and "85g"
+  // has no word boundary between "5" and "g", so an 85 gram pouch was read as
+  // 85 KILOS and this panel offered to resupply it every eleven years. The
+  // shared module is tested; the copy here never could be.
   const calculation = useMemo(() => {
-    if (!pet?.weight || !productWeight) return null;
-    const bagKg = parseBagWeightKg(productWeight);
-    if (bagKg <= 0) return null;
+    const duration = estimateBagDuration({ bagWeightText: productWeight, petWeightKg: pet?.weight });
+    if (!duration) return null;
 
-    const dailyKg = estimateDailyIntake(pet.weight);
-    if (dailyKg <= 0) return null;
-
-    const days = Math.round(bagKg / dailyKg);
-    const pricePerDay = (productPrice / days).toFixed(1);
-    const discountedPrice = (productPrice * 0.9).toFixed(0); // 10% subscription discount
-
-    return { days, pricePerDay, discountedPrice, dailyGrams: Math.round(dailyKg * 1000) };
-  }, [pet, productWeight, productPrice]);
+    return {
+      days: duration.days,
+      dailyGrams: duration.dailyGrams,
+      pricePerDay: (productPrice / duration.days).toFixed(1),
+      discountedPrice: (productPrice * 0.9).toFixed(0), // 10% subscription discount
+    };
+  }, [pet?.weight, productWeight, productPrice]);
 
   if (!calculation || !pet) return null;
 

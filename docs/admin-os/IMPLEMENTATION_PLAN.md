@@ -135,10 +135,12 @@ reactions become its first rows rather than throwaway work.
 
 ---
 
-## Phase 7 — Connectors **[BLOCKED — D-4, §65 STOP]**
+## Phase 7 — Connectors **[UNBLOCKED — D-4 resolved 2026-09-21]**
 
 Cannot start. There is no secret storage in this repository —
-`SECRET_ENCRYPTION_KEY` appears in five docs and zero server files.
+`SECRET_ENCRYPTION_KEY` now has an implementation: server/src/secretStore.js.
+It refuses to store anything without a key, so a missing key turns connectors
+off rather than storing credentials in the clear.
 
 **Needed to unblock:** the owner chooses between AWS KMS envelope encryption
 (recommended — the only option where an RDS dump is not a credential breach),
@@ -154,7 +156,7 @@ health, never a secret.
 
 ## Phase 8 — Marketing · Phase 9 — AI agents
 
-Both **depend on Phase 7** and are therefore also blocked. Marketing consumes
+Both **depend on Phase 7**, which is no longer blocked. Marketing consumes
 connectors rather than authenticating separately (§36). Agent capability grants
 (§25) and human-in-the-loop (§60) are designed against the approval queue built
 in Phase 5.
@@ -207,7 +209,7 @@ Phase 3  Money                  ← needs 1 (idempotency) + 2 (Customer 360)
 Phase 4  Reminders / reorder    ← needs 2, 3
 Phase 5  Work / approvals       ← needs 1
 Phase 6  Reactions              ← needs 5
-Phase 7  Connectors             ← BLOCKED on D-4 (owner decision)
+Phase 7  Connectors             ← unblocked; secretStore.js exists
 Phase 8  Marketing              ← needs 7
 Phase 9  AI agents              ← needs 5, 7
 Phase 10 AI policy              ← needs 5; measurement already exists
