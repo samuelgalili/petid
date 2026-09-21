@@ -75,6 +75,7 @@ import { isSellerEligible } from "./sellerEligibility.js";
 import { commissionForLine, readPlatformCommissionRate } from "./platformCommission.js";
 import { createProductIntakeRoutes } from "./productIntakeRoutes.js";
 import { createAdminOsRoutes } from "./adminOs/routes.js";
+import { shippingFor } from "./shipping.js";
 import { createCustomerEntity360 } from "./adminOs/entity360.js";
 import { createPublicCatalog } from "./publicCatalog.js";
 import {
@@ -5967,7 +5968,7 @@ const calculateOrderAmounts = async (client, body, orderItems, shippingAddress) 
       : Math.min(subtotal, couponValue)
     : 0;
 
-  const baseShipping = subtotal >= 199 ? 0 : 25;
+  const baseShipping = shippingFor(subtotal);
   const shipping = couponType === "free_shipping" ? 0 : baseShipping;
   const cashOnDeliveryFee = body.payment_method === "cash-on-delivery" ? 5 : 0;
   const tax = 0;

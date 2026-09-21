@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { SHIPPING_FEE } from "../src/lib/shipping";
 
 const catalog = [
   {
@@ -233,11 +234,15 @@ test.describe("AWS application smoke tests", () => {
             customer_email: "buyer@example.com",
             customer_phone: "0501234567",
             subtotal: 79,
-            shipping: 25,
+            // Derived, not typed in. These fixtures held 25 while the owner's
+            // stated fee was 39, which is the same mistake the checkout itself
+            // had - a price written down a second time is a price that can
+            // disagree with itself.
+            shipping: SHIPPING_FEE,
             tax: 0,
             discount_amount: 0,
             cash_on_delivery_fee: 0,
-            total: 104,
+            total: 79 + SHIPPING_FEE,
             order_date: "2026-07-10T08:00:00.000Z",
           },
         },
@@ -282,11 +287,11 @@ test.describe("AWS application smoke tests", () => {
             shipping_address: shippingAddress,
             payment_method: "cash-on-delivery",
             subtotal: 79,
-            shipping: 25,
+            shipping: SHIPPING_FEE,
             tax: 0,
             discount_amount: 0,
             cash_on_delivery_fee: 5,
-            total: 109,
+            total: 79 + SHIPPING_FEE + 5,
             order_date: "2026-07-10T08:00:00.000Z",
           },
           access_token: "guest-order-access-token",
@@ -336,7 +341,11 @@ test.describe("AWS application smoke tests", () => {
     expect(rememberedTokens["MIPO-E2E-1001"]).toBe("guest-order-access-token");
     expect(submittedOrder).toMatchObject({
       payment_method: "cash-on-delivery",
-      expected_total: 109,
+      // ₪79 of goods, delivery, and the ₪5 cash-on-delivery fee. Derived from
+      // the shipping rule rather than typed in: this assertion said 109 while
+      // the fee the owner set was 39, and a test that hardcodes the wrong
+      // total is a test that defends the bug.
+      expected_total: 79 + SHIPPING_FEE + 5,
       items: [{ product_id: catalog[0].id, name: cartItem.name, quantity: 1 }],
       // The house number and the acknowledgement travel with the order: the
       // warehouse label is printed from these, and a street without a number

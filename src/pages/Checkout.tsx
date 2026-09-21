@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
+import { shippingFor } from "@/lib/shipping";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
@@ -172,7 +173,7 @@ const Checkout = () => {
   }, [ageCheckLoading, isProcessing, isUnder18, items.length, navigate]);
 
   const subtotal = getSubtotal();
-  const baseShipping = subtotal >= 199 ? 0 : 25;
+  const baseShipping = shippingFor(subtotal);
   
   // Check if coupon is free shipping type
   const isFreeShippingCoupon = appliedCoupon?.discount_type === 'free_shipping';

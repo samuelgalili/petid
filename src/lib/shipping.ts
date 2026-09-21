@@ -51,6 +51,22 @@ export const SHIPPING_FEE = 39;
 export const shippingFeeLabelHe = (subtotal: number) =>
   subtotal >= FREE_SHIPPING_THRESHOLD ? "חינם" : `₪${SHIPPING_FEE}`;
 
+/**
+ * The delivery charge for a basket.
+ *
+ * Takes the subtotal AFTER any discount, because that is what the customer is
+ * actually spending: a coupon that brings an order under the threshold brings
+ * the delivery charge back with it.
+ *
+ * MIRRORED IN server/src/shipping.js, which is the copy that charges. Until
+ * this existed, Checkout.tsx and index.js each had the fee typed into them as
+ * a literal - and both said 25 while this file said 39. They agreed with each
+ * other and disagreed with the owner, so nothing ever failed and every order
+ * under the threshold was fourteen shekels short.
+ */
+export const shippingFor = (subtotal: number) =>
+  subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
+
 /** How much more is needed for free delivery. Never negative. */
 export const amountToFreeShipping = (subtotal: number) =>
   Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
