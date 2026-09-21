@@ -462,6 +462,48 @@ test("'other' does not claim an animal it cannot know", () => {
   assert.equal(productMatchesQuery(rabbitHutch, "כלב"), false);
 });
 
+// ─── the values the columns really hold ──────────────────────────────────────
+
+test("a Hebrew word reaches the English code the column stores", () => {
+  // MEASURED, not imagined. The tag columns the search matches verbatim hold
+  // English codes - life_stage 'adult'/'senior', dog_size 'medium',
+  // special_diet 'digestive'/'joint'/'urinary'/'skin'/'low fat' - while
+  // medical_tags holds Hebrew. Nobody types 'urinary' into a Hebrew shop.
+  //
+  // Every value below was read off the database rather than invented, and each
+  // is paired with the word a person would actually say. A code that stops
+  // being reachable is a column that may as well not be searched.
+  const reachable = [
+    ["adult", "בוגר"],
+    ["senior", "מבוגר"],
+    ["puppy", "גור"],
+    ["medium", "בינוני"],
+    ["small", "קטן"],
+    ["large", "גדול"],
+    ["digestive", "עיכול"],
+    ["joint", "מפרקים"],
+    ["urinary", "שתן"],
+    ["skin", "עור"],
+  ];
+
+  for (const [code, said] of reachable) {
+    const product = { name: "מוצר", category: "בריאות", life_stage: code, special_diet: [code], dog_size: code };
+    assert.equal(
+      productMatchesQuery(product, said),
+      true,
+      `the column holds "${code}" and a shopper says "${said}" - and the two do not meet`,
+    );
+  }
+});
+
+test("two sizes are not the same size", () => {
+  // The group that would have been one group. Small and large as synonyms
+  // means "מזון לכלב קטן" answers with food for a great dane.
+  const smallBreed = { name: "מזון לגזע קטן", dog_size: "small" };
+  assert.equal(productMatchesQuery(smallBreed, "קטן"), true);
+  assert.equal(productMatchesQuery(smallBreed, "גדול"), false);
+});
+
 // ─── what is deliberately not searched ───────────────────────────────────────
 
 test("internal fields are not searchable", () => {

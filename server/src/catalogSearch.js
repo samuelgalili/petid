@@ -152,7 +152,27 @@ const CONCEPTS = [
   ["שתן", "urinary", "כליות", "kidney", "שלפוחית", "אבנים"],
   ["שיניים", "שן", "dental", "אבנית", "נשימה", "ריח"],
   ["פרעושים", "פרעוש", "קרציות", "קרצייה", "flea", "tick", "תולעים", "הדברה", "אמפולה"],
-  ["רזה", "דיאטה", "diet", "הרזיה", "משקל", "שומן", "light"],
+  ["רזה", "דיאטה", "diet", "הרזיה", "משקל", "שומן", "light", "fat"],
+  // ─── measured, not imagined ──────────────────────────────────────────────
+  //
+  // The tag columns the search matches verbatim turn out to hold ENGLISH
+  // CODES: life_stage is 'adult' and 'senior', dog_size is 'medium', and
+  // special_diet is 'digestive', 'joint', 'urinary', 'skin', 'low fat'.
+  // medical_tags is the one that holds Hebrew. So every Hebrew word a shopper
+  // would use for a size or a life stage reaches those columns only through a
+  // group here, and a missing group is a column that may as well not be
+  // searched.
+  //
+  // SIZE IS THREE GROUPS AND NOT ONE. Putting small and large together would
+  // make them synonyms, and "מזון לכלב קטן" would answer with food for a great
+  // dane. "toy" is deliberately absent from the small group for the same
+  // reason in reverse: it is a dog size AND a plaything, and it already means
+  // the plaything above.
+  ["קטן", "קטנה", "קטנים", "small", "mini"],
+  ["בינוני", "בינונית", "medium"],
+  ["גדול", "גדולה", "גדולים", "large", "maxi", "ענק", "giant"],
+  // medical_tags holds "לב". Nothing else reached it.
+  ["לב", "heart", "cardiac", "לבבי"],
   ["אלרגיה", "אלרגי", "allergy", "רגיש", "רגישות", "sensitive", "היפואלרגני"],
   ["ללא", "בלי", "free", "נטול"],
   ["דגנים", "דגן", "grain", "גלוטן"],
