@@ -35,11 +35,12 @@ export const SHIPPING_ESTIMATE_HE =
  * and the threshold itself at ₪199 - so they are now commitments rather than
  * inherited constants.
  *
- * WHAT ₪199 IS: the point at which delivery stops costing, not a floor on the
- * order. An order below it is accepted and pays SHIPPING_FEE. The owner called
- * it "מינימום הזמנה", and his own sentence settles the reading - he described
- * what someone below the threshold PAYS, which only exists if they are allowed
- * to order at all.
+ * THE OWNER'S WORDS: "משלוח עולה 39 שח מי שלא מגיע למינימום הזמנה של 199 שח".
+ * So ₪199 is the minimum order for free delivery, and an order below it is
+ * accepted and charged SHIPPING_FEE - it is not a floor that refuses the
+ * order. That is what `shippingFeeLabelHe` and `amountToFreeShipping` below
+ * implement, and there is no code path anywhere that rejects a basket for
+ * being under ₪199.
  */
 export const FREE_SHIPPING_THRESHOLD = 199;
 

@@ -176,7 +176,12 @@ test.describe("AWS application smoke tests", () => {
     await expect(page.getByText("reset@example.com", { exact: true })).toBeVisible();
   });
 
-  test("renders and searches the mocked AWS catalog", async ({ page }) => {
+  test("finds and opens a product through the shop's one question", async ({ page }) => {
+    // REWRITTEN WITH THE SHOP. This asserted that products are on screen the
+    // moment you arrive and that a category button filters them; the shop is
+    // now a single live search field with nothing on it until you type, so
+    // both were assertions about a screen that no longer exists. What it is
+    // still for is unchanged: a shopper can find a product and open it.
     await mockCatalog(page);
     const catalogResponse = page.waitForResponse((response) => (
       response.url().endsWith("/api/products") && response.status() === 200
@@ -186,10 +191,16 @@ test.describe("AWS application smoke tests", () => {
     await catalogResponse;
 
     await expect(page.getByRole("heading", { name: "חנות", exact: true })).toBeVisible();
+
+    // Nothing is priced before a question is asked.
+    await expect(page.getByText("₪79", { exact: true })).toHaveCount(0);
+
+    await page.getByLabel("חיפוש בחנות").fill(catalog[0].name);
+
     const foodProduct = page.getByRole("heading", { name: catalog[0].name });
-    const toyProduct = page.getByRole("heading", { name: catalog[1].name });
     await expect(foodProduct).toBeVisible();
-    await expect(toyProduct).toBeVisible();
+    // And the query is a filter, not a page of everything.
+    await expect(page.getByRole("heading", { name: catalog[1].name })).toHaveCount(0);
     await expect(page.getByText("₪79", { exact: true }).first()).toBeVisible();
 
     await foodProduct.click();
@@ -198,17 +209,6 @@ test.describe("AWS application smoke tests", () => {
     await expect(productDialog.getByText("₪100", { exact: true })).toBeVisible();
     await productDialog.getByRole("button", { name: "סגירה" }).click();
     await expect(productDialog).toBeHidden();
-
-    await page.getByRole("button", { name: "מזון", exact: true }).click();
-    await expect(foodProduct).toBeVisible();
-    await expect(toyProduct).toHaveCount(0);
-
-    await page.getByRole("button", { name: "הכל", exact: true }).click();
-    await expect(toyProduct).toBeVisible();
-
-    await page.getByPlaceholder("חפש מוצרים...").fill("מזון בדיקה");
-    await expect(foodProduct).toBeVisible();
-    await expect(toyProduct).toHaveCount(0);
   });
 
   test("does not claim success for unpaid or failed order verification", async ({ page }) => {
