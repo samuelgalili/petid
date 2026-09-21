@@ -1,5 +1,7 @@
 import { emitPetCompanionEvent } from "@/lib/petCompanionReactions";
 
+export { petCreateImageFields } from "@/lib/petImageSrc";
+
 export interface MipoProduct {
   id: string;
   name: string;
@@ -368,6 +370,8 @@ export interface MipoPet {
   is_mixed?: boolean | null;
   breed_confidence?: number | null;
   avatar_url?: string | null;
+  /** Uploaded source photo for QR. Independent of Master (avatar_url). Null for legacy pets. */
+  source_image_url?: string | null;
   weight?: number | null;
   birth_date?: string | null;
   age_years?: number | null;
