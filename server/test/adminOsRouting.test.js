@@ -52,15 +52,43 @@ test("every route names a permission the permission module defines", () => {
   }
 });
 
-test("every mutating route takes an Idempotency-Key", () => {
+test("every mutating route takes an Idempotency-Key, or says in writing why not", () => {
+  // The rule is unchanged: a retried Admin OS write must not cause a second
+  // one. What changed is the ONE shape it could not express.
+  //
+  // `POST connectors/verify` re-asks a provider whether a key is still good.
+  // Replaying a stored answer is not safety, it is the opposite: the owner
+  // fixes a key, presses check, and is shown the verdict from before the fix.
+  // Its write is a status column set to what the provider just said, so
+  // repeating it converges rather than accumulating - there is nothing to
+  // double.
+  //
+  // So a route may opt out by declaring `replayIsThePoint` with a reason. The
+  // reason is a string this test reads, which makes the exception visible in
+  // the route table instead of being a silently missing flag - the shape the
+  // original rule was written to prevent.
   for (const route of buildRoutes().routes) {
     if (!MUTATING.has(route.method)) continue;
-    assert.equal(
-      route.idempotent,
-      true,
+    if (route.idempotent === true) continue;
+
+    assert.ok(
+      typeof route.replayIsThePoint === "string" && route.replayIsThePoint.length > 30,
       `${route.method} ${ADMIN_OS_PREFIX}${route.path} mutates and is not idempotent.\n` +
         "Admin OS endpoints that change state have external or financial effects.\n" +
-        "A retried request must not cause a second one.",
+        "A retried request must not cause a second one. If repetition really is\n" +
+        "the feature, say so in `replayIsThePoint` and the exception becomes\n" +
+        "readable in the route table.",
+    );
+  }
+});
+
+test("an idempotent route does not also claim replay is the point", () => {
+  // Both flags together is a route whose author disagreed with themselves,
+  // and the router would honour the first one silently.
+  for (const route of buildRoutes().routes) {
+    assert.ok(
+      !(route.idempotent === true && route.replayIsThePoint),
+      `${route.method} ${route.path} is marked idempotent AND claims replay is the point`,
     );
   }
 });

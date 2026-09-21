@@ -4,8 +4,14 @@ import App from "./App.tsx";
 import "./index.css";
 import { initGlobalErrorReporter } from "./lib/errorReporter";
 import { migrateRenamedStorage } from "./lib/storageRename";
+import { registerServiceWorker } from "./lib/registerServiceWorker";
 
 initGlobalErrorReporter();
+
+// The worker is registered HERE rather than by the plugin's generated
+// registerSW.js, which registered it and did nothing else - so a new build
+// never replaced the running one. See registerServiceWorker.ts.
+registerServiceWorker();
 
 // Before anything reads storage: the petid -> mipo rename moved these keys, and
 // what sits behind them is the user's cart, favourites and settings.

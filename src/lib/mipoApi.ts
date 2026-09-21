@@ -1523,6 +1523,72 @@ export async function createAdminCustomer(
   });
 }
 
+/**
+ * A connector as the admin screen may see it.
+ *
+ * There is no field for the key and there never will be. D-4: the client
+ * receives status and health "and never a secret, not even masked from the
+ * server side. `••••••••` is rendered from nothing, not from a truncated real
+ * value." `stored` is that nothing — a boolean, from which the dots are drawn.
+ */
+export interface MipoConnector {
+  id: string;
+  provider: string;
+  label: string | null;
+  settings: { baseUrl?: string; apiVersion?: string };
+  status: "connected" | "error" | "unverified" | string;
+  last_error: string | null;
+  last_verified_at: string | null;
+  created_at: string;
+  updated_at: string;
+  stored: boolean;
+  known_provider: boolean;
+}
+
+export async function getAdminConnectors(): Promise<MipoConnector[]> {
+  const result = await adminApiFetch<{ connectors: MipoConnector[] }>("/admin/os/connectors");
+  return result.connectors;
+}
+
+/**
+ * Store or update a connector.
+ *
+ * `api_key` is omitted, not blanked, when only the settings changed — the
+ * server keeps what it has. Sending "" would read as "clear it".
+ */
+export async function saveAdminConnector(
+  input: { provider: string; api_key?: string; label?: string; settings?: { baseUrl: string; apiVersion: string } },
+  idempotencyKey: string,
+): Promise<MipoConnector> {
+  const result = await adminApiFetch<{ connector: MipoConnector }>("/admin/os/connectors", {
+    method: "POST",
+    headers: { "Idempotency-Key": idempotencyKey },
+    body: JSON.stringify(input),
+  });
+  return result.connector;
+}
+
+/** Deliberately carries no Idempotency-Key: re-checking is the whole point. */
+export async function verifyAdminConnector(provider: string): Promise<MipoConnector> {
+  const result = await adminApiFetch<{ connector: MipoConnector }>("/admin/os/connectors/verify", {
+    method: "POST",
+    body: JSON.stringify({ provider }),
+  });
+  return result.connector;
+}
+
+export async function disconnectAdminConnector(
+  provider: string,
+  idempotencyKey: string,
+): Promise<MipoConnector> {
+  const result = await adminApiFetch<{ connector: MipoConnector }>("/admin/os/connectors/disconnect", {
+    method: "POST",
+    headers: { "Idempotency-Key": idempotencyKey },
+    body: JSON.stringify({ provider }),
+  });
+  return result.connector;
+}
+
 export async function bulkUpdateAdminOrders(ids: string[], updates: Partial<Pick<MipoOrder, "status">>) {
   return adminApiFetch<{ updated: number }>("/admin/orders/bulk", {
     method: "PATCH",
