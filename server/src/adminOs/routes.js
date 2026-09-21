@@ -1,6 +1,7 @@
 import { ADMIN_PERMISSIONS } from "../adminPermissions.js";
 import { createAuditService } from "./auditService.js";
 import { createAdminCustomer } from "./customers.js";
+import { disconnectConnector, listConnectors, saveConnector, verifyConnector } from "./connectors.js";
 import { createIdempotency, IdempotencyConflict, idempotencyKeyOf } from "./idempotency.js";
 
 /**
@@ -88,6 +89,70 @@ export const createAdminOsRoutes = ({
     idempotent: true,
     handler: async (request, response, url, payload) =>
       createAdminCustomer({ pool, audit, admin: request.admin }, payload),
+  });
+
+  // ─── connectors (Phase 7) ──────────────────────────────────────────────
+  //
+  // FULL_ACCESS on all four, including the read: the list carries which
+  // providers are connected and what a failed verification said, which is
+  // operational detail about the platform's own integrations.
+  routes.push({
+    method: "GET",
+    path: "connectors",
+    permission: ADMIN_PERMISSIONS.FULL_ACCESS,
+    idempotent: false,
+    handler: async (request, response) => {
+      sendJson(response, 200, { connectors: await listConnectors({ pool }) });
+    },
+  });
+
+  routes.push({
+    method: "POST",
+    path: "connectors",
+    permission: ADMIN_PERMISSIONS.FULL_ACCESS,
+    idempotent: true,
+    handler: async (request, response, url, payload) => {
+      const connector = await saveConnector(
+        { pool, audit, admin: request.admin },
+        String(payload?.provider || ""),
+        payload,
+      );
+      return { status: 200, body: { connector } };
+    },
+  });
+
+  routes.push({
+    method: "POST",
+    path: "connectors/verify",
+    permission: ADMIN_PERMISSIONS.FULL_ACCESS,
+    idempotent: false,
+    replayIsThePoint:
+      "Re-asks the provider whether the key is still good. Replaying a stored "
+      + "answer would show a verdict from before the owner fixed the key. The "
+      + "write is a status column set to what the provider just said, so "
+      + "repeating it converges rather than accumulating.",
+    handler: async (request, response) => {
+      const payload = await readBody(request);
+      const connector = await verifyConnector(
+        { pool, audit, admin: request.admin },
+        String(payload?.provider || ""),
+      );
+      sendJson(response, 200, { connector });
+    },
+  });
+
+  routes.push({
+    method: "POST",
+    path: "connectors/disconnect",
+    permission: ADMIN_PERMISSIONS.FULL_ACCESS,
+    idempotent: true,
+    handler: async (request, response, url, payload) => {
+      const connector = await disconnectConnector(
+        { pool, audit, admin: request.admin },
+        String(payload?.provider || ""),
+      );
+      return { status: 200, body: { connector } };
+    },
   });
 
   const byKey = new Map(routes.map((route) => [`${route.method} ${route.path}`, route]));

@@ -70,6 +70,7 @@ const navGroups: NavGroup[] = [
     items: [
       { icon: Settings, label: "הגדרות", href: "/admin/settings", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
       { icon: FolderTree, label: "קטגוריות", href: "/admin/categories", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
+      { icon: Plug, label: "חיבורים", href: "/admin/connectors", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
       { icon: History, label: "יומן ביקורת", href: "/admin/audit-log", permission: ADMIN_PERMISSIONS.AUDIT_READ },
     ]
   },
