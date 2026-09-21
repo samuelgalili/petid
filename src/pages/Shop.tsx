@@ -28,6 +28,7 @@ import { ProductInfoDrawer } from "@/components/shop/ProductInfoDrawer";
 import { useCarePlan } from "@/hooks/useCarePlan";
 import { createContentReport, getShopProducts } from "@/lib/mipoApi";
 import { FREE_SHIPPING_THRESHOLD } from "@/lib/shipping";
+import { searchCatalogDetailed } from "@/lib/catalogSearch";
 
 const asPrice = (value: number | string | null | undefined) => {
   const parsed = typeof value === "string" ? Number.parseFloat(value) : value;
@@ -290,6 +291,24 @@ const Shop = () => {
         category: p.category_name || p.category,
         categoryId: p.category_id ?? null,
         petType: p.pet_type,
+        // ─── carried for the search, not for the card ────────────────────────
+        //
+        // None of these six are rendered anywhere. They are here because the
+        // search runs on THIS object rather than on the API's row, so a field
+        // the transform drops is a field no shopper can find a product by.
+        // lifeStage was missing exactly that way - a query saying "גור" matched
+        // nothing - which is why a test now derives the searchable field list
+        // from this block instead of trusting it to be complete.
+        //
+        // The three tag arrays keep the API's own spelling because nothing here
+        // transforms them. Renaming a pass-through only creates a second name
+        // for one thing, and a second name is what cost lifeStage.
+        lifeStage: p.life_stage,
+        dogSize: p.dog_size,
+        benefits: p.benefits,
+        special_diet: p.special_diet,
+        medical_tags: p.medical_tags,
+        breed_tags: p.breed_tags,
         isFlagged: p.is_flagged || false,
         flaggedReason: p.flagged_reason,
         flavors: p.flavors || [],
@@ -312,15 +331,22 @@ const Shop = () => {
    * catalogue answers it, so the only thing between the query and the cards is
    * the query.
    *
-   * The name matches on the product NAME, which is what the field claims to
-   * search. Widening it to descriptions would make "עוף" match every food whose
-   * label mentions chicken anywhere - an answer the shopper cannot account for.
+   * THE MATCHING LIVES IN catalogSearch.ts, with the owner's own failing
+   * queries as its tests. Two rounds of them: the ones he found in his first
+   * minute ("מזון יבש לכלב" -> nothing), and the ones measuring the fix found
+   * afterwards - all three of the chips below returned nothing at all.
+   *
+   * The DETAILED form is used rather than the plain one because the answer is
+   * not only a list. A query can be answered by giving up a word the shop has
+   * no product for, and when that happens the screen has to say so. A search
+   * that quietly ignores a word somebody typed is telling them it was
+   * understood.
    */
-  const filteredAndSortedProducts = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) return [];
-    return products.filter((product) => product.name.toLowerCase().includes(query));
-  }, [products, searchQuery]);
+  const search = useMemo(
+    () => searchCatalogDetailed(products, searchQuery),
+    [products, searchQuery],
+  );
+  const filteredAndSortedProducts = search.results;
 
   const clearSearch = useCallback(() => {
     setSearchQuery("");
@@ -383,9 +409,27 @@ const Shop = () => {
     ? `מה המשאלה היום של ${activePet.name}...`
     : "מה מחפשים היום...";
 
-  const resultLine = filteredAndSortedProducts.length > 0
-    ? `${Math.min(filteredAndSortedProducts.length, RESULT_LIMIT)} מוצרים`
-    : "אין התאמה — אפשר לשאול אחרת";
+  /**
+   * The line above the results, and what it owes the person who typed.
+   *
+   * "12 מוצרים" is true and useless when the answer is to a NARROWER question
+   * than the one asked. If somebody types "צעצוע לתוכי" and this shop has no
+   * parrot anything, showing toys under a plain count tells them the parrot
+   * was understood. Naming the word that went unused is the difference between
+   * a search that answered and a search that changed the subject.
+   */
+  const resultLine = (() => {
+    if (filteredAndSortedProducts.length === 0) {
+      return search.dropped.length > 0
+        ? `אין לנו ${search.dropped.join(" ")} — אפשר לנסות אחרת`
+        : "אין התאמה — אפשר לשאול אחרת";
+    }
+
+    const count = `${Math.min(filteredAndSortedProducts.length, RESULT_LIMIT)} מוצרים`;
+    if (search.dropped.length > 0) return `${count} — בלי ${search.dropped.join(" ")}, שאין לנו`;
+    if (search.corrected.length > 0) return `${count} — חיפשנו גם איות קרוב`;
+    return count;
+  })();
 
   return (
     <div className="mipo-shell min-h-screen bg-white pb-[calc(80px+env(safe-area-inset-bottom))]" dir="rtl">

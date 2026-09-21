@@ -130,10 +130,31 @@ test.describe("The shop is one question", () => {
     await expect(page.getByText("אפשר לשאול כל דבר")).toHaveCount(0);
   });
 
+  test("the suggestion it offers is a suggestion it can answer", async ({ page }) => {
+    // ALL THREE of these chips returned nothing, measured against the real
+    // catalogue. They are the first thing a visitor taps and they were dead.
+    //
+    // "הכלב שלי משיר הרבה" is the one that exercises the whole path: "שלי" and
+    // "הרבה" are how a person talks and must not be required words, "משיר" is
+    // not a word any product contains and has to be understood as the idea the
+    // brush answers, and "הכלב" is a dog in a catalogue of cats - so it is
+    // given up, and the screen says which word it stopped using.
+    await openShop(page);
+    await page.getByRole("button", { name: "הכלב שלי משיר הרבה" }).click();
+
+    await expect(page.getByText("מברשת טיפוח לפרווה ארוכה")).toBeVisible();
+    await expect(page.getByText("אין התאמה — אפשר לשאול אחרת")).toHaveCount(0);
+    await expect(page.getByText(/בלי הכלב, שאין לנו/)).toBeVisible();
+  });
+
   test("no match says so instead of showing the catalogue", async ({ page }) => {
     await openShop(page);
     await page.getByLabel("חיפוש בחנות").fill("אוכף לסוס");
-    await expect(page.getByText("אין התאמה — אפשר לשאול אחרת")).toBeVisible();
+    // It NAMES the words it has nothing for, rather than saying "no match" and
+    // leaving the shopper to guess which of the two words was the problem. As
+    // typed, final letters and all - matching folds ף to פ internally and
+    // reporting that folded form put a non-word on the screen.
+    await expect(page.getByText("אין לנו אוכף לסוס — אפשר לנסות אחרת")).toBeVisible();
     await expect(page.getByText("₪249")).toHaveCount(0);
   });
 
