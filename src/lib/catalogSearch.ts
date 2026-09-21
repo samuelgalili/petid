@@ -59,6 +59,13 @@ export interface SearchOutcome<T> {
   dropped: string[];
   /** The words matched only after allowing a typo. */
   corrected: string[];
+  /**
+   * Negations the catalogue could not honour - "ללא דגנים" in a shop with no
+   * grain-free food. Never merged into `dropped`: a dropped word is one the
+   * answer ignored, and ignoring a negation returns the opposite of what was
+   * asked for to the shopper who can least afford it.
+   */
+  unmet: string[];
   /** Whether the answer is to a narrower question than the one asked. */
   relaxed: boolean;
 }
@@ -167,7 +174,6 @@ const CONCEPTS = [
   // medical_tags holds "לב". Nothing else reached it.
   ["לב", "heart", "cardiac", "לבבי"],
   ["אלרגיה", "אלרגי", "allergy", "רגיש", "רגישות", "sensitive", "היפואלרגני"],
-  ["ללא", "בלי", "free", "נטול"],
   ["דגנים", "דגן", "grain", "גלוטן"],
   ["גור", "גורים", "puppy", "kitten", "כלבלב", "חתלתול", "צעיר"],
   // "בינוני" is a SIZE, not a life stage, and belongs to neither.
@@ -180,6 +186,28 @@ const CONCEPTS = [
   ["מים", "water", "קערה", "bowl", "שתייה"],
   ["הובלה", "תיק", "crate", "כלוב", "carrier", "טיסה"],
 ];
+
+/**
+ * The words that turn a request into the opposite request.
+ *
+ * "מזון ללא דגנים" used to drop both words and answer with the grain food it
+ * was asked to avoid. Not a worse answer - THE OPPOSITE ANSWER, to a shopper
+ * whose dog may be allergic to exactly the thing they typed.
+ *
+ * Negation is a property OF A WORD, carried on both sides, because a catalogue
+ * states it too: special_diet holds "grain free" and a description says
+ * "ללא דגנים".
+ */
+// Hebrew puts the marker IN FRONT of what it cancels - "ללא דגנים".
+const NEGATES_WHAT_FOLLOWS = new Set(["ללא", "בלי", "לא", "נטול", "נטולת", "נטולי", "without", "no"].map(foldFinals));
+
+// English puts it BEHIND - "grain free". This is the whole reason the two
+// directions are separate sets rather than "either neighbour": marking both
+// sides negated "מזון" in "מזון ללא דגנים", and the query for grain-free food
+// then asked for food that is not food.
+const NEGATES_WHAT_PRECEDES = new Set(["free"]);
+
+const NEGATION_WORDS = new Set([...NEGATES_WHAT_FOLLOWS, ...NEGATES_WHAT_PRECEDES]);
 
 /**
  * What a shopper calls the animal, against what the column stores.
@@ -227,6 +255,17 @@ const splitWords = (value) => String(value ?? "").toLowerCase()
   .filter(Boolean);
 
 const toWords = (value) => splitWords(foldFinals(String(value ?? "")));
+
+/**
+ * Each word, told whether something next to it cancels it.
+ *
+ * Checked on BOTH sides: "ללא דגנים" marks the word after the marker and
+ * "grain free" marks the word before it.
+ */
+const markNegations = (words) => words.map((word, index) => ({
+  word,
+  negated: NEGATES_WHAT_FOLLOWS.has(words[index - 1]) || NEGATES_WHAT_PRECEDES.has(words[index + 1]),
+}));
 
 /**
  * A word and every shorter form of it that is still the same word.
@@ -352,10 +391,12 @@ const productWords = (product) => {
   const built = Object.entries(fields).map(([field, values]) => ({
     field,
     weight: FIELD_WEIGHTS[field],
-    words: toWords(values.filter(Boolean).join(" ")).map((word) => {
-      const stems = stemsOf(word);
-      return { word, stems, concepts: conceptsOf(stems) };
-    }),
+    words: markNegations(toWords(values.filter(Boolean).join(" ")))
+      .filter((entry) => !NEGATION_WORDS.has(entry.word))
+      .map(({ word, negated }) => {
+        const stems = stemsOf(word);
+        return { word, negated, stems, concepts: conceptsOf(stems) };
+      }),
   }));
 
   if (product && typeof product === "object") wordCache.set(product, built);
@@ -429,15 +470,18 @@ const tokensOf = (query) => {
   const folded = toWords(query);
   const typed = splitWords(query);
 
-  const all = folded
-    .map((word, index) => ({ word, raw: typed[index] ?? word }))
+  const all = markNegations(folded)
+    .map((entry, index) => ({ ...entry, raw: typed[index] ?? entry.word }))
+    // The marker itself is not a word to search for - it is a fact about the
+    // word beside it, which markNegations has already attached.
+    .filter((entry) => !NEGATION_WORDS.has(entry.word))
     .filter((entry) => entry.word.length > 1 || /\p{N}/u.test(entry.word));
   const meaningful = all.filter((entry) => !STOP_WORDS.has(entry.word));
   const words = meaningful.length > 0 ? meaningful : all;
 
-  return words.map(({ word, raw }) => {
+  return words.map(({ word, raw, negated }) => {
     const stems = stemsOf(word);
-    return { word, raw, stems, concepts: conceptsOf(stems) };
+    return { word, raw, negated, stems, concepts: conceptsOf(stems) };
   });
 };
 
@@ -451,6 +495,18 @@ const scoreToken = (token, fields, { fuzzy = false } = {}) => {
   let best = 0;
   for (const field of fields) {
     for (const entry of field.words) {
+      // A negated word is answered ONLY by a negated word, and this one line
+      // is the whole of it. Nothing but an explicit "ללא דגנים" or "grain
+      // free" is evidence that a product is free of something, so a product
+      // that merely mentions grain can never answer a query that excludes it.
+      //
+      // An earlier version also DISQUALIFIED any product mentioning the word
+      // un-negated anywhere. That was removed: it caught nothing this line
+      // does not already catch, and it wrongly threw out the genuinely
+      // grain-free food whose description explains what it uses INSTEAD of
+      // grain. A rule that only ever removes correct answers is not a safety
+      // rule.
+      if (Boolean(token.negated) !== Boolean(entry.negated)) continue;
       let hit = 0;
       if (intersects(token.stems, entry.stems)) hit = field.weight;
       else if (token.concepts.size > 0 && intersects(token.concepts, entry.concepts)) hit = field.weight * 0.8;
@@ -492,7 +548,7 @@ const scoreToken = (token, fields, { fuzzy = false } = {}) => {
 const searchDetailed = (products = [], query) => {
   const tokens = queryTokens(query);
   const list = Array.isArray(products) ? products : [];
-  const empty = { results: [], used: [], dropped: [], corrected: [], relaxed: false };
+  const empty = { results: [], used: [], dropped: [], corrected: [], unmet: [], relaxed: false };
   if (tokens.length === 0 || list.length === 0) return { ...empty, results: [] };
 
   const prepared = list.map((product) => ({ product, fields: productWords(product) }));
@@ -516,6 +572,7 @@ const searchDetailed = (products = [], query) => {
 
   let used = [];
   const dropped = [];
+  const unmet = [];
   const corrected = [];
   const scores = new Map();
 
@@ -541,11 +598,16 @@ const searchDetailed = (products = [], query) => {
       continue;
     }
 
-    dropped.push(token.raw);
+    // A NEGATION IS NEVER DROPPED. Giving up "ללא" and answering with the
+    // grain food is not a relaxed search, it is the opposite answer - and the
+    // shopper asking is the one who can least afford it.
+    if (token.negated) unmet.push(token.raw);
+    else dropped.push(token.raw);
   }
 
   // Every word was a word this catalogue has no product for. Answering with
   // the whole catalogue would be worse than answering with nothing.
+  if (unmet.length > 0) return { ...empty, dropped, unmet };
   if (used.length === 0) return { ...empty, dropped };
 
   const answer = (chosen) => prepared
@@ -585,30 +647,41 @@ const searchDetailed = (products = [], query) => {
   // keeps the brush; "אוכל יבש לגור" gives up the puppy because giving up
   // anything else answers nothing.
   let results = answer(used);
-  while (results.length === 0 && used.length > 1) {
-    const options = used
-      .map((token, index) => ({ token, index, found: answer(used.filter((_, at) => at !== index)) }))
+  while (results.length === 0) {
+    // WHAT MAY BE GIVEN UP, decided once, in one place.
+    //
+    // A negation never may. Giving up "ללא" to find an answer returns the
+    // shopper the one product they wrote the query to avoid, and the person
+    // who types it is the person whose animal is allergic to it. Deciding
+    // this here rather than at each rung below is deliberate: the first
+    // version made the choice twice, one of the two copies had no test behind
+    // it, and a safety rule with an untested second copy is a safety rule with
+    // a hole in it.
+    const droppable = used.filter((token) => !token.negated);
+    if (droppable.length === 0 || used.length <= 1) break;
+
+    const countFor = (token) => scores.get(token).filter((value) => value > 0).length;
+
+    // Every single removal is TRIED, and only the ones that actually produce
+    // an answer are considered - then among those, the word given up is the
+    // one describing the most of the shop, the least informative thing the
+    // person typed. Guessing instead of trying gets it wrong half the time:
+    // give up the rarest word and "מברשת לחתול" answers a brush query with cat
+    // food; give up the commonest and "אוכל יבש לגור" throws away the words it
+    // can actually serve.
+    const options = droppable
+      .map((token) => ({ token, found: answer(used.filter((other) => other !== token)) }))
       .filter((option) => option.found.length > 0);
 
-    if (options.length === 0) {
-      // No single removal helps. Give up the commonest word and try again -
-      // two words may have to go before anything is left that the shop has.
-      const counts = used.map((token) => scores.get(token).filter((value) => value > 0).length);
-      const commonest = counts.indexOf(Math.max(...counts));
-      dropped.push(used[commonest].raw);
-      used = used.filter((_, index) => index !== commonest);
-      results = answer(used);
-      continue;
-    }
-
-    const give = options.reduce((worst, option) => {
-      const count = (entry) => scores.get(entry.token).filter((value) => value > 0).length;
-      return count(option) > count(worst) ? option : worst;
-    });
+    // No single removal helps, so give up the commonest droppable word and go
+    // round again - two words may have to go before anything is left.
+    const give = options.length > 0
+      ? options.reduce((worst, option) => (countFor(option.token) > countFor(worst.token) ? option : worst))
+      : { token: droppable.reduce((most, token) => (countFor(token) > countFor(most) ? token : most)), found: null };
 
     dropped.push(give.token.raw);
-    used = used.filter((_, index) => index !== give.index);
-    results = give.found;
+    used = used.filter((token) => token !== give.token);
+    results = give.found ?? answer(used);
   }
 
   return {
@@ -616,6 +689,7 @@ const searchDetailed = (products = [], query) => {
     used: used.map((token) => token.raw),
     dropped,
     corrected,
+    unmet,
     relaxed: dropped.length > 0 || corrected.length > 0,
   };
 };
