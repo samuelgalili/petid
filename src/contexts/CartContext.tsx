@@ -12,6 +12,16 @@ export interface CartItem {
   quantity: number;
   variant?: string;
   size?: string;
+  /**
+   * Which shop sells this line, when it is a marketplace offer.
+   *
+   * Absent means the legacy catalogue, which the checkout treats as its own
+   * group rather than as "no opinion" - see src/lib/cartGrouping.ts. Nothing
+   * in the app populates these yet: a marketplace line needs an offer_id the
+   * client does not carry, so every basket today is one group.
+   */
+  sellerId?: string | null;
+  sellerName?: string | null;
 }
 
 interface CartContextType {
