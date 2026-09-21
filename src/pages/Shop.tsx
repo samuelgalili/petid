@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ShoppingCart, ShoppingBag, Plus, Minus, SlidersHorizontal, TrendingUp, Tag, Heart, Grid3X3, Bookmark, X, Search, Clock, Share2, Truck, Shield, Star, ChevronLeft, ChevronRight, Dog, Cat, Info, Loader2, Flag, AlertTriangle, Sparkles, RefreshCw } from "lucide-react";
+import { ShoppingBag, Plus, Minus, Heart, X, Search, Truck, Shield, Star, ChevronLeft, ChevronRight, Info, Loader2, Flag, PawPrint, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { useFlyingCart } from "@/components/FlyingCartAnimation";
@@ -19,13 +19,10 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { SEO } from "@/components/SEO";
 import { MipoLogo } from "@/components/MipoLogo";
-import { SmartRecommendations } from "@/components/shop/SmartRecommendations";
-import { MedicalPharmacy } from "@/components/shop/MedicalPharmacy";
 
 import { SubscribeAndSave } from "@/components/shop/SubscribeAndSave";
 import { checkProductSafety, SafetyBadge } from "@/components/shop/ShopSafetyFilter";
 import { useActivePet } from "@/hooks/useActivePet";
-import { FleetSafetyAlert } from "@/components/fleet/FleetSafetyAlert";
 import { SlideToConfirm } from "@/components/shop/SlideToConfirm";
 import { ProductInfoDrawer } from "@/components/shop/ProductInfoDrawer";
 import { useCarePlan } from "@/hooks/useCarePlan";
@@ -48,19 +45,28 @@ const readStoredStrings = (key: string): string[] => {
 
 // Used only when the categories endpoint is unavailable (an older API, or a
 // network error). The live bar comes from the database - see categoryTabs.
-const FALLBACK_SUB_CATEGORIES = [
-  { id: "food", label: "מזון" },
-  { id: "treats", label: "חטיפים" },
-  { id: "toys", label: "צעצועים" },
-  { id: "beds", label: "מיטות" },
-  { id: "grooming", label: "טיפוח" },
-  { id: "accessories", label: "אביזרים" },
-];
+/**
+ * The three things offered at rest.
+ *
+ * They are questions rather than categories, and that is the point of the
+ * screen: "צעצוע לתוכי" is a request a person makes; "צעצועים" is a shelf
+ * they have to browse. Taken from the Main artboard verbatim.
+ */
+const RESTING_PROMPTS = ["הכלב שלי משיר הרבה", "אוכל יבש לגור", "צעצוע לתוכי"];
 
-const ALL_CATEGORIES_TAB = { id: "all", label: "הכל", categoryId: null as string | null, icon: null as string | null };
+/** How many results one answer shows before it stops being an answer. */
+const RESULT_LIMIT = 12;
 
-// How many of a category's products a row previews before "הכל" is offered.
-const CATEGORY_PREVIEW_COUNT = 10;
+/**
+ * A query reads as a QUESTION rather than a lookup when it runs past three
+ * words or ends in a question mark. That is the only moment the assistant is
+ * offered - offering it on every keystroke makes it wallpaper.
+ */
+const readsAsQuestion = (query: string) => {
+  const trimmed = query.trim();
+  if (!trimmed) return false;
+  return trimmed.split(/\s+/).filter(Boolean).length > 3 || trimmed.endsWith("?");
+};
 
 type ShopCardProduct = {
   id: string;
@@ -169,21 +175,13 @@ const Shop = () => {
   const { addToCarePlan } = useCarePlan(activePet?.id);
   const cartIconRef = useRef<HTMLButtonElement>(null);
   const productImageRef = useRef<HTMLDivElement>(null);
-  const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [selectedPetType, setSelectedPetType] = useState<"all" | "dog" | "cat">("all");
   const [quantity, setQuantity] = useState(1);
-  const [showFilters, setShowFilters] = useState(false);
-  const [sortBy, setSortBy] = useState<"none" | "price-low" | "price-high" | "popularity">("none");
-  const [showDealsOnly, setShowDealsOnly] = useState(false);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"grid" | "saved">("grid");
   const [searchQuery, setSearchQuery] = useState("");
-  const [showSearchResults, setShowSearchResults] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [infoDrawerProduct, setInfoDrawerProduct] = useState<any>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const [searchHistory, setSearchHistory] = useState<string[]>(() => readStoredStrings("mipo-search-history"));
   const [favorites, setFavorites] = useState<string[]>(() => readStoredStrings("mipo-favorites"));
 
   // Report dialog state
@@ -240,17 +238,8 @@ const Shop = () => {
     });
   }, [favorites, toast]);
 
-  const sizes = ["S", "M", "L", "XL"];
-
-  const quickTags = [
-    { id: "food", label: "מזון", icon: "🍖" },
-    { id: "toys", label: "צעצועים", icon: "🎾" },
-    { id: "beds", label: "מיטות", icon: "🛏️" },
-    { id: "grooming", label: "טיפוח", icon: "✨" },
-    { id: "treats", label: "חטיפים", icon: "🦴" },
-    { id: "accessories", label: "אביזרים", icon: "🎀" },
-  ];
-
+  // The product sheet's image carousel. It survived the rebuild because the
+  // sheet did: only the browse-and-filter screen ABOVE it was replaced.
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -273,73 +262,6 @@ const Shop = () => {
     gcTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  // The filter bar is the category tree, not a list baked into this file.
-  const { data: dbCategories = [], isError: isCategoriesError } = useQuery({
-    queryKey: ["shop-categories"],
-    queryFn: getProductCategories,
-    staleTime: 1000 * 60 * 10,
-    gcTime: 1000 * 60 * 30,
-  });
-
-  const categoryTabs = useMemo(() => {
-    if (isCategoriesError || dbCategories.length === 0) {
-      return [ALL_CATEGORIES_TAB, ...FALLBACK_SUB_CATEGORIES.map((entry) => ({ ...entry, categoryId: null, icon: null }))];
-    }
-    // Only top-level categories go in the bar; children are reachable through
-    // their parent until the shop grows a second level of navigation.
-    return [
-      ALL_CATEGORIES_TAB,
-      ...dbCategories
-        .filter((category) => !category.parent_id)
-        .map((category) => ({
-          id: category.slug,
-          label: category.name_he,
-          categoryId: category.id,
-          icon: category.icon,
-        })),
-    ];
-  }, [dbCategories, isCategoriesError]);
-
-  // A parent tab also shows everything filed under its children. Alongside the
-  // ids we collect the text values that mean the same category, so a product
-  // that has not been assigned to the tree yet still lands under its tab
-  // instead of silently disappearing from every filter.
-  const categoryMatchersBySlug = useMemo(() => {
-    const byId = new Map(dbCategories.map((category) => [category.id, category]));
-    const childrenByParent = new Map<string, string[]>();
-    for (const category of dbCategories) {
-      if (!category.parent_id) continue;
-      const siblings = childrenByParent.get(category.parent_id) ?? [];
-      siblings.push(category.id);
-      childrenByParent.set(category.parent_id, siblings);
-    }
-
-    const map = new Map<string, { ids: Set<string>; texts: Set<string> }>();
-    for (const category of dbCategories) {
-      const ids = new Set<string>([category.id]);
-      const queue = [category.id];
-      while (queue.length > 0) {
-        for (const childId of childrenByParent.get(queue.pop()!) ?? []) {
-          if (ids.has(childId)) continue;
-          ids.add(childId);
-          queue.push(childId);
-        }
-      }
-
-      const texts = new Set<string>();
-      for (const id of ids) {
-        const node = byId.get(id);
-        if (!node) continue;
-        texts.add(node.slug);
-        texts.add(node.name_he.toLowerCase());
-        if (node.name_en) texts.add(node.name_en.toLowerCase());
-        for (const alias of node.aliases || []) texts.add(alias);
-      }
-
-      map.set(category.slug, { ids, texts });
-    }
-    return map;
-  }, [dbCategories]);
 
   // Transform database products to the format expected by the UI
   const products = useMemo(() => {
@@ -380,122 +302,28 @@ const Shop = () => {
   }, [dbProducts]);
 
   // Search suggestions based on query
-  const searchSuggestions = useMemo(() => {
-    if (!searchQuery.trim()) return [];
-    const query = searchQuery.toLowerCase();
-    return products.filter(p => 
-      p.name.toLowerCase().includes(query)
-    ).slice(0, 5);
-  }, [searchQuery, products]);
 
-  // Which category row the shopper opened in full. Null means the carousels.
-  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
-
+  /**
+   * The results, and nothing else decides them.
+   *
+   * This used to fold in a category filter, a deals toggle, a saved-items tab
+   * and three sort orders, because the screen above it had a control for each.
+   * None of those controls exist now: the shop asks one question and the
+   * catalogue answers it, so the only thing between the query and the cards is
+   * the query.
+   *
+   * The name matches on the product NAME, which is what the field claims to
+   * search. Widening it to descriptions would make "עוף" match every food whose
+   * label mentions chicken anywhere - an answer the shopper cannot account for.
+   */
   const filteredAndSortedProducts = useMemo(() => {
-    console.log("Filtering products, total:", products.length);
-    let result = [...products];
-
-    // Filter by search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(p => p.name.toLowerCase().includes(query));
-    }
-
-    if (selectedCategory !== "all") {
-      const selected = categoryTabs.find((category) => category.id === selectedCategory);
-      const matchers = categoryMatchersBySlug.get(selectedCategory);
-
-      if (selected?.categoryId && matchers) {
-        result = result.filter((product) =>
-          product.categoryId
-            ? matchers.ids.has(product.categoryId)
-            : matchers.texts.has((product.category || "").trim().toLowerCase()),
-        );
-      } else {
-        // Fallback path: no category tree available, match the free-text column.
-        const categoryTerms = [selectedCategory, selected?.label || ""]
-          .map((term) => term.toLowerCase())
-          .filter(Boolean);
-        result = result.filter((product) => {
-          const category = product.category?.toLowerCase() || "";
-          return categoryTerms.some((term) => category === term || category.includes(term));
-        });
-      }
-    }
-
-    if (showDealsOnly) {
-      result = result.filter(p => p.originalPrice);
-    }
-
-    if (activeTab === "saved") {
-      result = result.filter(p => favorites.includes(p.id));
-    }
-
-    switch (sortBy) {
-      case "price-low":
-        result.sort((a, b) => a.price - b.price);
-        break;
-      case "price-high":
-        result.sort((a, b) => b.price - a.price);
-        break;
-      case "popularity":
-        break;
-    }
-
-    console.log("Filtered products:", result.length);
-    return result;
-  }, [products, sortBy, showDealsOnly, activeTab, favorites, searchQuery, selectedCategory, categoryTabs, categoryMatchersBySlug]);
-
-  useEffect(() => {
-    setExpandedCategory(null);
-  }, [selectedCategory, searchQuery, activeTab, showDealsOnly]);
-
-  const addToSearchHistory = useCallback((query: string) => {
-    if (!query.trim()) return;
-    setSearchHistory(prev => {
-      const filtered = prev.filter(item => item !== query);
-      const newHistory = [query, ...filtered].slice(0, 5); // Keep last 5 searches
-      localStorage.setItem("mipo-search-history", JSON.stringify(newHistory));
-      return newHistory;
-    });
-  }, []);
-
-  const removeFromHistory = useCallback((query: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSearchHistory(prev => {
-      const newHistory = prev.filter(item => item !== query);
-      localStorage.setItem("mipo-search-history", JSON.stringify(newHistory));
-      return newHistory;
-    });
-  }, []);
-
-  const clearSearchHistory = useCallback(() => {
-    setSearchHistory([]);
-    localStorage.removeItem("mipo-search-history");
-  }, []);
-
-  const handleSearchSelect = useCallback((product: any) => {
-    addToSearchHistory(product.name);
-    setSearchQuery(product.name);
-    setShowSearchResults(false);
-    handleProductClick(product);
-  }, [addToSearchHistory]);
-
-  const handleHistorySelect = useCallback((query: string) => {
-    setSearchQuery(query);
-    setShowSearchResults(true);
-  }, []);
-
-  const handleTagClick = useCallback((tag: typeof quickTags[0]) => {
-    setSearchQuery(tag.label);
-    addToSearchHistory(tag.label);
-    setShowSearchResults(false);
-    searchInputRef.current?.blur();
-  }, [addToSearchHistory]);
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return [];
+    return products.filter((product) => product.name.toLowerCase().includes(query));
+  }, [products, searchQuery]);
 
   const clearSearch = useCallback(() => {
     setSearchQuery("");
-    setShowSearchResults(false);
     searchInputRef.current?.blur();
   }, []);
 
@@ -541,6 +369,24 @@ const Shop = () => {
   const increaseQuantity = useCallback(() => setQuantity(prev => prev + 1), []);
   const decreaseQuantity = useCallback(() => setQuantity(prev => Math.max(1, prev - 1)), []);
 
+  // ─── what the one field is doing right now ─────────────────────────────────
+  //
+  // resting and hasQuery are the same fact stated twice on purpose: the pet
+  // and the prompts appear while resting, the results appear once there is a
+  // query, and reading both off one value is what keeps them from ever being
+  // on screen together.
+  const hasQuery = searchQuery.trim().length > 0;
+  const resting = !hasQuery;
+  const isQuestion = readsAsQuestion(searchQuery);
+
+  const searchPlaceholder = activePet?.name
+    ? `מה המשאלה היום של ${activePet.name}...`
+    : "מה מחפשים היום...";
+
+  const resultLine = filteredAndSortedProducts.length > 0
+    ? `${Math.min(filteredAndSortedProducts.length, RESULT_LIMIT)} מוצרים`
+    : "אין התאמה — אפשר לשאול אחרת";
+
   return (
     <div className="mipo-shell min-h-screen bg-white pb-[calc(80px+env(safe-area-inset-bottom))]" dir="rtl">
       <SEO 
@@ -549,303 +395,227 @@ const Shop = () => {
         url="/shop"
       />
       <div>
-      {/* Instagram-style Header */}
-      <motion.div 
-        className="sticky top-0 z-sticky border-b border-black/[0.05] bg-white/90 backdrop-blur-xl"
+      {/* App chrome, not the canvas's screen.
+          The Main artboard is a 390x844 content frame with no header and no
+          bottom nav; the real app has both. Dropping the cart would be a
+          regression rather than a design, so the chrome stays and it stays
+          minimal. */}
+      <motion.div
+        className="sticky top-0 z-sticky border-b border-mipo-line bg-mipo-surface/90 backdrop-blur-xl"
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
       >
-        <div className="mx-auto max-w-6xl px-4 py-3 sm:px-6">
-          {/* Top Row: Back + Logo + Cart */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={() => navigate("/feed")}
-                className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-muted/50 transition-colors"
-                aria-label="חזרה לפיד"
-              >
-                <ChevronRight className="w-5 h-5 text-foreground" />
-              </motion.button>
-              
-              <div className="flex items-center gap-3">
-                <h1 className="text-lg font-semibold text-mipo-ink">חנות</h1>
-                <MipoLogo variant="mark" size="xs" showAnimals={false} />
-              </div>
-            </div>
-            <div className="flex items-center gap-1">
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={() => navigate('/chat')}
-                className="flex h-11 w-11 items-center justify-center rounded-xl hover:bg-muted/80 transition-colors"
-                aria-label="MIPO AI"
-              >
-                <Sparkles className="w-5 h-5 text-foreground" strokeWidth={1.5} />
-              </motion.button>
-              <motion.button 
-                ref={cartIconRef}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => navigate('/cart')}
-                className={`relative flex h-11 w-11 items-center justify-center rounded-xl bg-muted hover:bg-muted/80 transition-colors ${cartShake ? 'animate-[wiggle_0.3s_ease-in-out]' : ''}`}
-                aria-label="עגלת קניות"
-                onAnimationComplete={() => {
-                  if (cartIconRef.current) {
-                    const rect = cartIconRef.current.getBoundingClientRect();
-                    setCartIconPosition(rect.left + rect.width / 2, rect.top + rect.height / 2);
-                  }
-                }}
-              >
-                <ShoppingBag className="w-5 h-5 text-foreground" strokeWidth={1.5} />
-                <AnimatePresence>
-                  {getTotalItems() > 0 && (
-                    <motion.span 
-                      className="mipo-chip-selected absolute -top-1 -end-1 flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      exit={{ scale: 0 }}
-                      transition={{ type: "spring", stiffness: 500 }}
-                    >
-                      {getTotalItems()}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </motion.button>
+        <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-2">
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => navigate("/feed")}
+              className="flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-mipo-soft"
+              aria-label="חזרה לפיד"
+            >
+              <ChevronRight className="h-5 w-5 text-mipo-ink" strokeWidth={1.6} />
+            </motion.button>
+            <div className="flex items-center gap-3">
+              <h1 className="text-lg font-semibold text-mipo-ink">חנות</h1>
+              <MipoLogo variant="mark" size="xs" showAnimals={false} />
             </div>
           </div>
-          
-          {/* Search Bar */}
-          <div className="relative">
-            <div className={`mipo-input flex min-h-12 items-center gap-3 px-4 py-2 transition-all ${
-              isSearchFocused ? 'ring-2 ring-mipo-cyan/20' : ''
-            }`}>
-              <Search className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setShowSearchResults(true);
-                }}
-                onFocus={() => {
-                  setIsSearchFocused(true);
-                  if (searchQuery) setShowSearchResults(true);
-                }}
-                onBlur={() => {
-                  setIsSearchFocused(false);
-                  setTimeout(() => setShowSearchResults(false), 200);
-                }}
-                placeholder="חפש מוצרים..."
-                className="h-11 flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
-              />
-              {searchQuery && (
-                <button onClick={clearSearch} className="flex h-11 w-11 items-center justify-center rounded-full hover:bg-background transition-colors" aria-label="נקה חיפוש">
-                  <X className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
-                </button>
-              )}
-            </div>
-            
-            {/* Search Suggestions */}
-            <AnimatePresence>
-              {showSearchResults && searchQuery.trim() && searchSuggestions.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  className="absolute top-full left-0 right-0 mt-2 bg-card rounded-xl border border-border shadow-lg overflow-hidden z-50"
-                >
-                  {searchSuggestions.map((product) => (
-                    <button
-                      key={product.id}
-                      onClick={() => handleSearchSelect(product)}
-                      className="w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors text-right"
-                    >
-                      <div className="w-10 h-10 bg-muted rounded-lg overflow-hidden">
-                        <OptimizedImage src={product.image} alt={product.name} className="w-full h-full" objectFit="cover" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{product.name}</p>
-                        <p className="text-[15px] font-bold tabular-nums text-mipo-ink">₪{product.price}</p>
-                      </div>
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+          <div className="flex items-center gap-1">
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => navigate("/chat")}
+              className="flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-mipo-soft"
+              aria-label="MIPO AI"
+            >
+              <Sparkles className="h-5 w-5 text-mipo-ink" strokeWidth={1.5} />
+            </motion.button>
+            <motion.button
+              ref={cartIconRef}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => navigate("/cart")}
+              className={`relative flex h-11 w-11 items-center justify-center rounded-full border border-mipo-line transition-colors hover:bg-mipo-soft ${cartShake ? "animate-[wiggle_0.3s_ease-in-out]" : ""}`}
+              aria-label="עגלת קניות"
+              onAnimationComplete={() => {
+                if (cartIconRef.current) {
+                  const rect = cartIconRef.current.getBoundingClientRect();
+                  setCartIconPosition(rect.left + rect.width / 2, rect.top + rect.height / 2);
+                }
+              }}
+            >
+              <ShoppingBag className="h-5 w-5 text-mipo-ink" strokeWidth={1.5} />
+              <AnimatePresence>
+                {getTotalItems() > 0 && (
+                  <motion.span
+                    className="mipo-chip-selected absolute -top-1 -end-1 flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    transition={{ type: "spring", stiffness: 500 }}
+                  >
+                    {getTotalItems()}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.button>
           </div>
         </div>
       </motion.div>
 
-      {/* Tabs - Instagram style */}
-      <div className="sticky top-[104px] z-40 bg-background border-b border-border">
-        <div className="mx-auto flex max-w-6xl px-4 sm:px-6">
-          {[
-            { id: "grid", label: "חנות" },
-            { id: "saved", label: "מועדפים" },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as "grid" | "saved")}
-              className={`flex-1 py-3 text-sm font-medium transition-all border-b-2 ${
-                activeTab === tab.id
-                  ? "text-foreground border-foreground"
-                  : "text-muted-foreground border-transparent"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* THE SHOP IS ONE QUESTION.
+          =====================================================================
+          What stood here was a browse-and-filter catalogue: two tabs, a
+          category bar, a cross-pet medical banner, two algorithmic rails and
+          then rows of products. The owner said three times that the shop was
+          not what had been designed, and he was right in a way that restyling
+          a card could never reach - the design is a DIFFERENT SCREEN.
 
-      {/* Categories - Clean pill style */}
-      <div className="bg-background">
-        <div className="mx-auto max-w-6xl">
-          <div className="flex gap-2 overflow-x-auto px-4 py-3 scrollbar-hide sm:px-6">
-            {categoryTabs.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
-                className={`min-h-11 whitespace-nowrap rounded-full border px-4 py-2.5 text-sm font-medium transition-colors ${
-                  selectedCategory === category.id
-                    ? "mipo-chip-selected"
-                    : "border-mipo-line bg-mipo-surface text-mipo-ink hover:bg-mipo-soft"
-                }`}
-              >
-                {category.icon ? `${category.icon} ` : ""}
-                {category.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+          The Main artboard is a single live search field with the pet above
+          it. At rest there are no products at all: a line, three things you
+          might ask, and nothing else. Results arrive as the characters land -
+          no submit, no spinner between the query and the first card.
 
-      {/* Fleet Safety Alert — Cross-Pet Medical Banner */}
-      <FleetSafetyAlert />
+          The three blocks that went are the three that decided FOR the
+          shopper - what is recommended, what is medically relevant, what
+          another pet in the house needs. NeedSearch says what replaces them,
+          and says it as a limit rather than as a feature: "לא ממציא מוצר,
+          מחיר או המלצה רפואית. המודל מציע מילות חיפוש, הקטלוג עונה, וכל שדה
+          שמוצג מועתק מהשורה שחזרה." The intelligence did not go; it moved
+          from guessing to being asked.
 
-      {/* Instagram-style Category Carousels */}
-      <div className="mx-auto max-w-6xl pb-28">
-        {/* Smart Recommendations — Top Priority */}
-        {activeTab === "grid" && <SmartRecommendations />}
+          One element, two positions - not two designs. The field is centred
+          while the screen is resting and pinned to the top once there is a
+          query, and it is the same element either way. */}
+      <div className="mx-auto flex min-h-[calc(100dvh-13rem)] max-w-2xl flex-col px-5 pb-8">
+        {resting && <div className="flex-grow" />}
 
-        {/* Medical Pharmacy Section */}
-        {activeTab === "grid" && <MedicalPharmacy />}
-
-        {/* Products, grouped by category. A row is a preview; "הכל" opens the
-            whole category, which is the only way to reach a product past the
-            tenth in it. */}
-        {filteredAndSortedProducts.length > 0 && (() => {
-          const productsByCategory = filteredAndSortedProducts.reduce((acc, product) => {
-            const category = product.category || "אחר";
-            if (!acc[category]) acc[category] = [];
-            acc[category].push(product);
-            return acc;
-          }, {} as Record<string, typeof filteredAndSortedProducts>);
-
-          const entries = expandedCategory && productsByCategory[expandedCategory]
-            ? [[expandedCategory, productsByCategory[expandedCategory]] as const]
-            : Object.entries(productsByCategory);
-
-          return entries.map(([category, categoryProducts]) => {
-            const isExpanded = expandedCategory === category;
-            const shown = isExpanded ? categoryProducts : categoryProducts.slice(0, CATEGORY_PREVIEW_COUNT);
-            const hasMore = categoryProducts.length > CATEGORY_PREVIEW_COUNT;
-
-            return (
-              <div key={category} className="mb-6">
-                <div className="flex items-center justify-between px-4 py-3 sm:px-6">
-                  <h2 className="text-base font-bold text-foreground">
-                    {category}
-                    <span className="mr-2 text-xs font-normal text-muted-foreground">
-                      {isExpanded ? `${categoryProducts.length} מוצרים` : `${shown.length} מתוך ${categoryProducts.length}`}
-                    </span>
-                  </h2>
-                  {isExpanded ? (
-                    <button
-                      type="button"
-                      onClick={() => setExpandedCategory(null)}
-                      className="min-h-11 px-3 text-sm font-medium text-primary"
-                    >
-                      → חזרה
-                    </button>
-                  ) : hasMore ? (
-                    <button
-                      type="button"
-                      onClick={() => setExpandedCategory(category)}
-                      className="min-h-11 px-3 text-sm font-medium text-primary"
-                    >
-                      הכל ({categoryProducts.length}) ←
-                    </button>
-                  ) : null}
+        {/* The pet, and the only aurora on the screen. The rules page is
+            explicit that the glow belongs to the animal being asked about and
+            not to the control doing the asking - "ברגע שהזוהר מופיע במקום
+            שני, הוא מפסיק לומר ״זו החיה שלך״." mipo-avatar-glow and
+            mipo-gradient-ring are the same pair every other pet avatar in the
+            app uses, so this is the app's aurora rather than a second one
+            drawn here. */}
+        {resting && (
+          <div className="flex shrink-0 flex-col items-center gap-3 pb-7">
+            <div className="mipo-avatar-glow h-24 w-24">
+              <div className="mipo-gradient-ring h-24 w-24">
+                <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-mipo-soft">
+                  {activePet?.avatar_url ? (
+                    <OptimizedImage
+                      src={activePet.avatar_url}
+                      alt=""
+                      className="h-full w-full"
+                      objectFit="cover"
+                    />
+                  ) : (
+                    <PawPrint className="h-10 w-10 text-mipo-muted" strokeWidth={1.3} />
+                  )}
                 </div>
-
-                {isExpanded ? (
-                  <div className="grid grid-cols-2 gap-4 px-4 sm:grid-cols-3 sm:px-6 lg:grid-cols-4">
-                    {shown.map((product) => (
-                      <div
-                        key={product.id}
-                        onClick={() => handleProductClick(product)}
-                        className="cursor-pointer"
-                      >
-                        <ShopProductCard
-                          product={product}
-                          activePet={activePet}
-                          isFavorite={favorites.includes(product.id)}
-                          onToggleFavorite={toggleFavorite}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide snap-x snap-mandatory sm:px-6">
-                    {shown.map((product) => (
-                      <div
-                        key={product.id}
-                        onClick={() => handleProductClick(product)}
-                        className="w-32 flex-shrink-0 cursor-pointer snap-start sm:w-40"
-                      >
-                        <ShopProductCard
-                          product={product}
-                          activePet={activePet}
-                          isFavorite={favorites.includes(product.id)}
-                          onToggleFavorite={toggleFavorite}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
-            );
-          });
-        })()}
-
-        {/* Loading State */}
-        {(isLoadingProducts || isFetching) && filteredAndSortedProducts.length === 0 && (
-          <div className="py-20 text-center">
-            <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" strokeWidth={1.5} />
-            <p className="text-sm font-medium text-foreground mb-1">טוען מוצרים...</p>
-          </div>
-        )}
-
-        {/* Error State */}
-        {isProductsError && !isLoadingProducts && (
-          <div className="py-20 text-center px-6">
-            <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <ShoppingBag className="w-8 h-8 text-destructive" strokeWidth={1.5} />
             </div>
-            <p className="text-sm font-medium text-foreground mb-1">משהו השתבש</p>
-            <p className="text-xs text-muted-foreground mb-4">לא הצלחנו לטעון את המוצרים. נסו שוב מאוחר יותר.</p>
+            {activePet?.name && (
+              <span className="text-[15px] font-semibold text-mipo-ink">{activePet.name}</span>
+            )}
           </div>
         )}
 
-        {/* Empty State */}
-        {!isLoadingProducts && !isFetching && !isProductsError && filteredAndSortedProducts.length === 0 && (
-          <div className="py-20 text-center">
-            <ShoppingBag className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" strokeWidth={1} />
-            <p className="text-sm font-medium text-foreground mb-1">אין מוצרים עדיין</p>
-            <p className="text-xs text-muted-foreground">בקרוב יעלו מוצרים חדשים</p>
+        <div className="relative shrink-0">
+          <div className="flex h-14 items-center gap-2.5 rounded-full border border-mipo-line bg-mipo-surface px-[18px] transition-colors focus-within:border-mipo-ink">
+            <Search className="h-5 w-5 shrink-0 text-mipo-muted" strokeWidth={1.6} />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setIsSearchFocused(false)}
+              placeholder={searchPlaceholder}
+              dir="rtl"
+              className="min-w-0 flex-1 border-none bg-transparent text-base font-medium text-mipo-ink outline-none placeholder:font-normal placeholder:text-mipo-muted"
+              aria-label="חיפוש בחנות"
+            />
+            {hasQuery && (
+              <button
+                onClick={clearSearch}
+                aria-label="נקה"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-mipo-muted transition-colors hover:bg-mipo-soft"
+              >
+                <X className="h-4 w-4" strokeWidth={2} />
+              </button>
+            )}
           </div>
-        )}
+        </div>
+
+        <div className="flex-grow pt-4">
+          {!hasQuery ? (
+            /* At rest the screen offers three things you might ask, and shows
+               no products. A shelf of products here is what turns the question
+               back into a catalogue. */
+            <div className="space-y-2.5">
+              <p className="text-[13px] font-medium text-mipo-muted">אפשר לשאול כל דבר</p>
+              <div className="flex flex-wrap gap-2">
+                {RESTING_PROMPTS.map((prompt) => (
+                  <button
+                    key={prompt}
+                    onClick={() => setSearchQuery(prompt)}
+                    className="min-h-11 rounded-full bg-mipo-soft px-4 text-[13px] text-mipo-muted transition-colors hover:bg-mipo-soft-deep"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : isLoadingProducts ? (
+            <SkeletonProductGrid />
+          ) : isProductsError ? (
+            <div className="py-16 text-center">
+              <p className="text-sm font-medium text-mipo-ink">משהו השתבש</p>
+              <p className="mt-1 text-xs text-mipo-muted">לא הצלחנו לטעון את המוצרים. נסו שוב מאוחר יותר.</p>
+            </div>
+          ) : (
+            <>
+              <p className="mb-3 text-[13px] font-medium text-mipo-muted">{resultLine}</p>
+
+              {filteredAndSortedProducts.length > 0 && (
+                <div className="grid grid-cols-2 gap-3">
+                  {filteredAndSortedProducts.slice(0, RESULT_LIMIT).map((product) => (
+                    <button
+                      key={product.id}
+                      type="button"
+                      onClick={() => handleProductClick(product)}
+                      className="text-right"
+                    >
+                      <ShopProductCard
+                        product={product}
+                        activePet={activePet}
+                        isFavorite={favorites.includes(product.id)}
+                        onToggleFavorite={toggleFavorite}
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* A query with more than three words, or one ending in a
+                  question mark, reads as a question rather than a lookup -
+                  which is when the assistant is offered, and never by
+                  default. */}
+              {isQuestion && (
+                <button
+                  type="button"
+                  onClick={() => navigate("/chat")}
+                  className="mt-3.5 flex min-h-11 w-full items-center gap-2.5 rounded-3xl bg-mipo-soft px-4 py-3 text-right transition-colors hover:bg-mipo-soft-deep"
+                >
+                  <Sparkles className="h-4 w-4 shrink-0 text-mipo-violet" strokeWidth={1.7} />
+                  <span className="flex-1 text-[13px] font-medium text-mipo-ink">
+                    להמשיך עם מיפו על זה
+                  </span>
+                  <ChevronLeft className="h-4 w-4 shrink-0 text-mipo-muted" strokeWidth={2} />
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Product Details Sheet - Instagram style */}

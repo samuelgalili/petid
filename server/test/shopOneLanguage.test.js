@@ -63,8 +63,11 @@ const shopSurfaces = () => {
     if (existsSync(file)) files.push(file);
   }
 
-  // Cards the rails delegate to are part of the page even though Shop.tsx
-  // never names them.
+  // ShopRailCard is kept in scope although the shop no longer renders it. The
+  // rails it served - SmartRecommendations and MedicalPharmacy - came off the
+  // page when the shop became a single question, and the components were left
+  // in the tree rather than deleted. Holding the card to the page's rules
+  // means whatever brings them back comes back on-system.
   const rail = path.join(srcRoot, "components", "shop", "ShopRailCard.tsx");
   if (existsSync(rail)) files.push(rail);
 
