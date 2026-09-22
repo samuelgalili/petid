@@ -1523,6 +1523,51 @@ export async function createAdminCustomer(
   });
 }
 
+/** How an admin says this order was paid for. */
+export type MipoAdminPaymentMethod = "credit-card" | "admin-attested" | "cash-on-delivery";
+
+export interface MipoManualOrderLine {
+  product_id: string;
+  product_source?: string | null;
+  quantity: number;
+}
+
+export interface MipoManualOrderInput {
+  /** The person the order is FOR. Absent for a walk-in with no account. */
+  customer_user_id?: string | null;
+  items: MipoManualOrderLine[];
+  payment_method: MipoAdminPaymentMethod;
+  /**
+   * How the money arrived, required when payment_method is "admin-attested".
+   * The server refuses the order without it: the whole of that payment method
+   * is one person's word that money changed hands, and "paid somehow" is not a
+   * record of anything.
+   */
+  payment_attestation_note?: string;
+  /** What the screen believes the total is. The server recomputes and refuses a mismatch. */
+  expected_total: number;
+  shipping_address: Record<string, unknown>;
+  special_instructions?: string;
+}
+
+/**
+ * Place an order for a customer who is not at a keyboard.
+ *
+ * Idempotency-Key works exactly as it does for createAdminCustomer: one key per
+ * submission, minted again when the form changes. A phone order sent twice is a
+ * customer charged twice and a warehouse picking twice.
+ */
+export async function createManualOrder(
+  input: MipoManualOrderInput,
+  idempotencyKey: string,
+): Promise<{ order: MipoOrder }> {
+  return adminApiFetch<{ order: MipoOrder }>("/admin/os/orders", {
+    method: "POST",
+    headers: { "Idempotency-Key": idempotencyKey },
+    body: JSON.stringify(input),
+  });
+}
+
 /**
  * A connector as the admin screen may see it.
  *

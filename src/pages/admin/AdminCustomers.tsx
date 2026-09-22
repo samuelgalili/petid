@@ -33,6 +33,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
+import { NewOrderDialog } from "@/components/admin/NewOrderDialog";
 import { formatPetAgeHe } from "@/lib/petAge";
 import {
   AdminStatCard, AdminStatsGrid, AdminToolbar,
@@ -122,6 +123,21 @@ const AdminCustomers = () => {
     void fetchCustomers();
   }, [fetchCustomers]);
 
+  /**
+   * Bumped to reload the open card.
+   *
+   * A note updates the panel in place, because it changes nothing in the list
+   * row. AN ORDER IS NOT LIKE THAT: it moves orders_count, total_spent and
+   * last_order_at, which are all columns of the row behind the panel. So this
+   * reloads both, and an admin who places an order sees it appear rather than
+   * wondering whether it went through and placing it again.
+   */
+  const [detailVersion, setDetailVersion] = useState(0);
+  const handleOrderCreated = useCallback(() => {
+    setDetailVersion((version) => version + 1);
+    void fetchCustomers();
+  }, [fetchCustomers]);
+
   useEffect(() => {
     if (!selectedId) {
       setDetail(null);
@@ -152,7 +168,7 @@ const AdminCustomers = () => {
     return () => {
       cancelled = true;
     };
-  }, [selectedId, toast]);
+  }, [selectedId, detailVersion, toast]);
 
   // Notes change nothing in the list row, so the panel updates in place rather
   // than refetching the whole card on every entry.
@@ -261,6 +277,7 @@ const AdminCustomers = () => {
               loading={detailLoading}
               onNoteAdded={handleNoteAdded}
               onNoteDeleted={handleNoteDeleted}
+              onOrderCreated={handleOrderCreated}
             />
           }
         >
@@ -588,17 +605,21 @@ const CustomerDetailPanel = ({
   loading,
   onNoteAdded,
   onNoteDeleted,
+  onOrderCreated,
 }: {
   detail: MipoCustomerDetail | null;
   loading: boolean;
   onNoteAdded: (note: MipoCustomerNote) => void;
   onNoteDeleted: (noteId: string) => void;
+  /** Reload the card, so an order just placed appears in the history below. */
+  onOrderCreated: () => void;
 }) => {
   const { toast } = useToast();
   const [noteKind, setNoteKind] = useState<MipoCustomerNoteKind>("call");
   const [noteBody, setNoteBody] = useState("");
   const [saving, setSaving] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<MipoCustomerNote | null>(null);
+  const [newOrderOpen, setNewOrderOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const identityId = detail?.customer.identity_id;
@@ -713,6 +734,15 @@ const CustomerDetailPanel = ({
         </p>
       </div>
 
+      <NewOrderDialog
+        open={newOrderOpen}
+        onOpenChange={setNewOrderOpen}
+        customer={customer}
+        // The card reloads so the new order shows in the history beneath it -
+        // an order that does not appear is an order the admin places twice.
+        onCreated={onOrderCreated}
+      />
+
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-5">
           <Card className="border-border/40">
@@ -735,6 +765,19 @@ const CustomerDetailPanel = ({
                   <span>התחבר לאחרונה {formatDate(customer.last_login_at)}</span>
                 </div>
               )}
+
+              {/* An order taken while the customer is on the phone. It sits
+                  with the contact actions rather than under the order history,
+                  because that is the moment it is needed: the admin is talking
+                  to them now. */}
+              <Button
+                size="sm"
+                className="gap-1.5 w-full mt-1"
+                onClick={() => setNewOrderOpen(true)}
+              >
+                <ShoppingBag className="w-3.5 h-3.5" />
+                הזמנה חדשה
+              </Button>
 
               <div className="flex items-center gap-2 pt-1">
                 <Button
