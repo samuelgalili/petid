@@ -143,6 +143,40 @@ export default {
   			'30': '7.5rem'
   		},
 		colors: {
+			/*
+			 * THE ADMIN'S SEMANTIC LAYER. One name per job.
+			 *
+			 * Defined in src/styles/admin.css on top of the brand tokens, and
+			 * declared here so `bg-admin-surface` and `text-admin-ink` actually
+			 * generate CSS - which is the exact failure the mipo block below
+			 * documents, where five names had 258 usages and emitted nothing.
+			 *
+			 * The alpha-value form is what makes bg-admin-accent/10 work; a
+			 * plain hsl(var(--x)) silently drops the opacity modifier.
+			 */
+			admin: {
+				canvas: 'hsl(var(--admin-canvas) / <alpha-value>)',
+				surface: 'hsl(var(--admin-surface) / <alpha-value>)',
+				sunk: 'hsl(var(--admin-sunk) / <alpha-value>)',
+				raised: 'hsl(var(--admin-raised) / <alpha-value>)',
+				line: 'hsl(var(--admin-line) / <alpha-value>)',
+				'line-strong': 'hsl(var(--admin-line-strong) / <alpha-value>)',
+				ink: 'hsl(var(--admin-ink) / <alpha-value>)',
+				'ink-muted': 'hsl(var(--admin-ink-muted) / <alpha-value>)',
+				'ink-subtle': 'hsl(var(--admin-ink-subtle) / <alpha-value>)',
+				accent: 'hsl(var(--admin-accent) / <alpha-value>)',
+				'accent-hover': 'hsl(var(--admin-accent-hover) / <alpha-value>)',
+				'accent-ink': 'hsl(var(--admin-accent-ink) / <alpha-value>)',
+				'accent-soft': 'hsl(var(--admin-accent-soft) / <alpha-value>)',
+				danger: 'hsl(var(--admin-danger) / <alpha-value>)',
+				'danger-soft': 'hsl(var(--admin-danger-soft) / <alpha-value>)',
+				warning: 'hsl(var(--admin-warning) / <alpha-value>)',
+				'warning-soft': 'hsl(var(--admin-warning-soft) / <alpha-value>)',
+				success: 'hsl(var(--admin-success) / <alpha-value>)',
+				'success-soft': 'hsl(var(--admin-success-soft) / <alpha-value>)',
+				info: 'hsl(var(--admin-info) / <alpha-value>)',
+				'info-soft': 'hsl(var(--admin-info-soft) / <alpha-value>)',
+			},
 			border: 'hsl(var(--border))',
 			input: 'hsl(var(--input))',
 			ring: 'hsl(var(--ring))',
@@ -319,6 +353,11 @@ export default {
   			'organic': '1.375rem'
   		},
 		boxShadow: {
+			/* Three for the admin, and the third is for overlays only: a card
+			   that needs a heavy shadow to be seen is on the wrong surface. */
+			'admin-sm': 'var(--admin-shadow-sm)',
+			admin: 'var(--admin-shadow)',
+			'admin-lg': 'var(--admin-shadow-lg)',
 			sm: 'var(--shadow-sm)',
 			DEFAULT: 'var(--shadow-md)',
 			md: 'var(--shadow-md)',

@@ -1,3 +1,8 @@
+/* The admin's semantic token layer, built on the brand tokens defined below.
+   First line because @import must precede every other rule; Tailwind still
+   sorts its @layer blocks into the right layers when it processes the file. */
+@import "./styles/admin.css";
+
 /* Assistant Font - Hebrew Primary */
 @font-face {
   font-family: 'Assistant';

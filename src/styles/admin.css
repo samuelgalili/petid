@@ -1,0 +1,185 @@
+/* =============================================================================
+ * MIPO ADMIN — THE DESIGN SYSTEM
+ *
+ * WHY A SECOND LAYER AND NOT A SECOND PALETTE.
+ *
+ * index.css already holds the brand: --mipo-ink, --mipo-surface, --mipo-soft,
+ * --mipo-line, --mipo-blue and the rest, with dark values beside them. The
+ * owner's instruction was to keep those colours, so nothing here invents a
+ * hue. What it adds is the layer that was missing: SEMANTIC names.
+ *
+ * The difference matters. `--mipo-line` says what a colour IS; `--admin-line`
+ * says what it is FOR. When every screen reaches for the brand token directly,
+ * each one decides for itself what a card looks like, what a well looks like,
+ * what a border between rows looks like - and that is the state the admin was
+ * in: eleven screens, each subtly its own.
+ *
+ * So: one name per job, defined once, dark mode included. A screen that wants
+ * a card writes bg-admin-surface, and every card changes together.
+ *
+ * ONE HAZARD, LEFT ALONE DELIBERATELY. The brand block defines --mipo-blue,
+ * --mipo-cyan, --mipo-pink and --mipo-coral TWICE each, and the later
+ * definition silently wins - so --mipo-blue is in fact the brand cyan, not the
+ * blue defined thirty lines above it. That is worth fixing, and not from here:
+ * those names have 258 usages across the customer app, and correcting them is
+ * a change to what the customer sees. The admin tokens below reference the
+ * winning values by writing them, so this layer is not sitting on that trap.
+ * ========================================================================== */
+
+@layer base {
+  :root {
+    /* ── surfaces ───────────────────────────────────────────────────────── */
+    /* canvas < surface < raised: the page, the card, the thing on the card. */
+    --admin-canvas: 60 11% 96%;        /* the page behind everything */
+    --admin-surface: 0 0% 100%;        /* cards, panels, bars */
+    --admin-sunk: 240 9% 97%;          /* wells: table headers, code, inputs at rest */
+    --admin-raised: 0 0% 100%;         /* a card on a card - separated by shadow */
+
+    /* ── lines ──────────────────────────────────────────────────────────── */
+    --admin-line: 240 8% 91%;          /* the default border: nearly invisible */
+    --admin-line-strong: 240 8% 84%;   /* when a border has to be seen */
+
+    /* ── ink ────────────────────────────────────────────────────────────── */
+    --admin-ink: 240 11% 9%;           /* body and headings */
+    --admin-ink-muted: 240 5% 44%;     /* labels, secondary lines */
+    --admin-ink-subtle: 240 5% 62%;    /* metadata, timestamps, placeholders */
+
+    /* ── the brand, as an accent ────────────────────────────────────────── */
+    /* Mipo cyan. Used for the current thing and the primary action, and for
+       almost nothing else: in an operations screen, colour is a signal, and a
+       signal spent on decoration cannot be spent on a problem. */
+    --admin-accent: 188 77% 50%;
+    --admin-accent-hover: 188 77% 44%;
+    --admin-accent-ink: 0 0% 100%;     /* text ON the accent */
+    --admin-accent-soft: 188 77% 95%;  /* the accent as a background */
+
+    /* ── status ─────────────────────────────────────────────────────────── */
+    /* Four, each with a soft background. Not a palette to decorate with:
+       every one of these means something specific and nothing else. */
+    --admin-danger: 0 72% 51%;         /* an exception; money at risk */
+    --admin-danger-soft: 0 86% 97%;
+    --admin-warning: 38 92% 45%;       /* waiting for a person */
+    --admin-warning-soft: 48 96% 94%;
+    --admin-success: 152 60% 36%;      /* done, healthy, paid */
+    --admin-success-soft: 150 60% 96%;
+    --admin-info: 217 80% 52%;         /* in progress; neutral state */
+    --admin-info-soft: 214 95% 96%;
+
+    /* ── elevation ──────────────────────────────────────────────────────── */
+    /* Three, and the third is for overlays only. A card that needs a heavy
+       shadow to be seen is a card on the wrong surface. */
+    --admin-shadow-sm: 0 1px 2px 0 hsl(240 8% 20% / 0.04);
+    --admin-shadow: 0 1px 3px 0 hsl(240 8% 20% / 0.06), 0 1px 2px -1px hsl(240 8% 20% / 0.04);
+    --admin-shadow-lg: 0 10px 24px -6px hsl(240 8% 20% / 0.12), 0 2px 8px -2px hsl(240 8% 20% / 0.06);
+  }
+
+  .dark {
+    --admin-canvas: 240 8% 8%;
+    --admin-surface: 240 7% 11%;
+    --admin-sunk: 240 7% 14%;
+    --admin-raised: 240 6% 15%;
+
+    --admin-line: 240 5% 20%;
+    --admin-line-strong: 240 5% 28%;
+
+    --admin-ink: 0 0% 95%;
+    --admin-ink-muted: 240 5% 64%;
+    --admin-ink-subtle: 240 4% 50%;
+
+    --admin-accent: 204 100% 55%;
+    --admin-accent-hover: 204 100% 62%;
+    --admin-accent-ink: 240 10% 6%;
+    --admin-accent-soft: 204 70% 18%;
+
+    /* Lightened, because a saturated status colour on a dark surface reads as
+       a glow rather than as a state. The soft backgrounds go the other way. */
+    --admin-danger: 0 84% 67%;
+    --admin-danger-soft: 0 40% 18%;
+    --admin-warning: 38 95% 60%;
+    --admin-warning-soft: 38 40% 17%;
+    --admin-success: 152 55% 52%;
+    --admin-success-soft: 152 35% 15%;
+    --admin-info: 217 90% 66%;
+    --admin-info-soft: 217 40% 19%;
+
+    --admin-shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
+    --admin-shadow: 0 1px 3px 0 hsl(0 0% 0% / 0.4), 0 1px 2px -1px hsl(0 0% 0% / 0.3);
+    --admin-shadow-lg: 0 10px 24px -6px hsl(0 0% 0% / 0.5), 0 2px 8px -2px hsl(0 0% 0% / 0.4);
+  }
+}
+
+@layer components {
+  /* ── typography ────────────────────────────────────────────────────────
+   *
+   * HEBREW-FIRST, WHICH IS NOT THE SAME AS "THE SAME SIZES, RTL".
+   *
+   * Hebrew has no ascenders or descenders and no capitals, so a line of it
+   * carries less vertical signal than the same size in Latin: it reads
+   * smaller and runs together sooner. Every step below is set a little larger
+   * and a little looser than the English-first scale it replaces, which is
+   * most of why the old admin's 11px labels were unreadable rather than
+   * merely small.
+   *
+   * Five steps. A sixth is a sign that a screen has too many levels.
+   */
+  .admin-title {                    /* the one thing this screen is */
+    @apply text-[22px] leading-7 font-bold tracking-tight text-admin-ink;
+  }
+  .admin-section {                  /* a group within it */
+    @apply text-[15px] leading-6 font-semibold text-admin-ink;
+  }
+  .admin-body {                     /* the content itself */
+    @apply text-sm leading-6 text-admin-ink;
+  }
+  .admin-label {                    /* what a value is called */
+    @apply text-xs leading-5 font-medium text-admin-ink-muted;
+  }
+  .admin-meta {                     /* when, by whom, how many */
+    @apply text-[11px] leading-4 text-admin-ink-subtle;
+  }
+
+  /* A NUMBER IS NOT BODY TEXT. Tabular figures so a column of prices lines up
+     on the decimal, and an explicit direction: a Hebrew paragraph containing
+     ₪1,240 must not reorder the digits around the sign. */
+  .admin-figure {
+    @apply text-xl leading-7 font-bold tabular-nums text-admin-ink;
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+  .admin-figure-lg {
+    @apply text-[28px] leading-9 font-bold tabular-nums text-admin-ink;
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+
+  /* ── surfaces ──────────────────────────────────────────────────────────
+   * A card is a border and a radius, not a shadow. Shadow is for things that
+   * float above the page; a card does not float, it sits on it.
+   */
+  .admin-card {
+    @apply rounded-2xl border border-admin-line bg-admin-surface;
+  }
+  .admin-card-hover {
+    @apply transition-colors hover:bg-admin-sunk;
+  }
+  .admin-well {
+    @apply rounded-xl bg-admin-sunk;
+  }
+
+  /* ── focus ─────────────────────────────────────────────────────────────
+   * One ring, everywhere, and it is never removed. Keyboard navigation of an
+   * operations tool is not an accessibility extra - it is how somebody who
+   * uses the thing all day actually uses it.
+   */
+  .admin-focus {
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-admin-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-admin-canvas;
+  }
+
+  /* ── tap targets ───────────────────────────────────────────────────────
+   * 40px on a pointer, 44 on touch. The old admin had 28px buttons, which on
+   * a phone is a target you aim at rather than press.
+   */
+  .admin-tap {
+    @apply min-h-10 [@media(pointer:coarse)]:min-h-11;
+  }
+}
