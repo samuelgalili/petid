@@ -181,8 +181,15 @@ export function DataTable<T>({
               setCurrentPage(1);
             }}
           >
-            <SelectTrigger className="w-full sm:w-40">
-              <SelectValue placeholder={filter.label} />
+            {/* THE LABEL IS RENDERED, NOT PASSED AS A PLACEHOLDER. A value is
+                always set - it defaults to "all" - so the placeholder never
+                showed, and three filters side by side all read "הכל" with
+                nothing to say which was category, which stock and which
+                source. On a phone they stack, so it was three identical
+                full-width dropdowns one above the other. */}
+            <SelectTrigger className="w-full sm:w-44">
+              <span className="text-muted-foreground text-xs shrink-0 ml-1">{filter.label}:</span>
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">הכל</SelectItem>

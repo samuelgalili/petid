@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { CheckCircle2, PackageCheck, RefreshCw, Store } from "lucide-react";
 
 import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
-import { AdminEmptyState, AdminPageHeader, AdminStatCard, AdminStatsGrid } from "@/components/admin/AdminStyles";
+import { AdminEmptyState, AdminNumberTile } from "@/components/admin/AdminStyles";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -151,26 +151,32 @@ export const PublishingPanel = () => {
 
   return (
     <div className="space-y-5" dir="rtl">
-      <AdminPageHeader
-        title="פרסום לחנות"
-        description="מה ממתין, ומה עוצר כל אחד"
-        icon={Store}
-        onRefresh={load}
-        isRefreshing={loading}
-      />
+      {/* No page header. It is a section now, and the chip above it and the
+          breadcrumb already both say "ממתינים לפרסום" - a third title saying
+          it again is the sort of thing that makes a screen feel heavy. */}
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="text-sm text-muted-foreground">מה ממתין, ומה עוצר כל אחד</p>
+        <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={load}>
+          <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
+          רענון
+        </Button>
+      </div>
 
-      <AdminStatsGrid>
-        <AdminStatCard title="מאושרים" value={drafts.length} icon={PackageCheck} color="primary" />
-        <AdminStatCard title="מוכנים לפרסום" value={ready} icon={CheckCircle2} color="success" />
-        <AdminStatCard title="פורסמו" value={published} icon={Store} color="info" />
-        <AdminStatCard
-          title="חסומים ע״י העסק"
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+        <AdminNumberTile label="מאושרים" value={drafts.length} sub="עברו ביקורת" icon={PackageCheck}
+          tone="text-sky-600 bg-sky-500/10" />
+        <AdminNumberTile label="מוכנים לפרסום" value={ready} sub="כל התנאים מתקיימים" icon={CheckCircle2}
+          tone="text-emerald-600 bg-emerald-500/10" />
+        <AdminNumberTile label="פורסמו" value={published} sub="בחנות" icon={Store}
+          tone="text-violet-600 bg-violet-500/10" />
+        <AdminNumberTile
+          label="חסומים ע״י העסק"
           value={sellerBlocked.length}
-          subtitle={sellerBlocked.length > 0 ? "תיקון אחד משחרר את כולם" : undefined}
+          sub={sellerBlocked.length > 0 ? "תיקון אחד משחרר את כולם" : "אין חסימות"}
           icon={RefreshCw}
-          color="warning"
+          tone={sellerBlocked.length > 0 ? "text-amber-600 bg-amber-500/10" : "text-muted-foreground bg-muted"}
         />
-      </AdminStatsGrid>
+      </div>
 
       {sellerBlocked.length > 0 && (
         /* Said once, at the top. Repeating it on every row would read as many

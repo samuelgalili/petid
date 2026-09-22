@@ -29,6 +29,13 @@ import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { readStoredOnboardingDraft } from "@/lib/mipoOnboardingDraft";
 
 const HIDDEN_PREFIXES = [
+  // AND THE ADMIN, WHERE IT HAS NO BUSINESS AT ALL.
+  //
+  // This is the CUSTOMER's companion: it offers to add a pet, or to chat with
+  // Mipo about one. In the admin it floated over the dashboard's fourth number
+  // and over the last row of every table, inviting the person running the shop
+  // to adopt an animal. It had been there the whole time.
+  "/admin",
   "/auth",
   "/signup",
   "/forgot-password",

@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 
 import { AdminLayout } from "@/components/admin/AdminLayout";
-import { AdminEmptyState, AdminStatCard, AdminStatsGrid } from "@/components/admin/AdminStyles";
+import { AdminEmptyState, AdminNumberTile } from "@/components/admin/AdminStyles";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -118,50 +118,46 @@ export const AdminHome = () => {
     <AdminLayout title="בית" icon={LayoutDashboard}>
       <div className="space-y-5">
         {loading && !home ? (
-          <AdminStatsGrid columns={4}>
-            {[0, 1, 2, 3].map((index) => <Skeleton key={index} className="h-28 rounded-xl" />)}
-          </AdminStatsGrid>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+            {[0, 1, 2, 3].map((index) => <Skeleton key={index} className="h-[66px] rounded-xl" />)}
+          </div>
         ) : (
-          <AdminStatsGrid columns={4}>
-            {/* Every card navigates. A number you cannot press is a number you
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+            {/* Every tile navigates. A number you cannot press is a number you
                 read and then go and find, which is the trip this replaces. */}
-            <AdminStatCard
-              title="הזמנות ממתינות"
+            <AdminNumberTile
+              label="הזמנות ממתינות"
               value={numbers?.pending_orders ?? 0}
-              subtitle="מחכות לטיפול"
+              sub="מחכות לטיפול"
               icon={ShoppingCart}
-              color={numbers?.pending_orders ? "warning" : "primary"}
+              tone={numbers?.pending_orders ? "text-amber-600 bg-amber-500/10" : "text-muted-foreground bg-muted"}
               onClick={() => navigate("/admin/orders?status=pending")}
             />
-            <AdminStatCard
-              title="הכנסות היום"
+            <AdminNumberTile
+              label="הכנסות היום"
               value={shekels(numbers?.revenue_today ?? 0)}
-              subtitle={compareToYesterday(numbers?.revenue_today ?? 0, numbers?.revenue_yesterday ?? 0)}
+              sub={compareToYesterday(numbers?.revenue_today ?? 0, numbers?.revenue_yesterday ?? 0)}
               icon={Wallet}
-              color="success"
-              trend={numbers && numbers.revenue_yesterday > 0 ? {
-                value: shekels(Math.abs(numbers.revenue_today - numbers.revenue_yesterday)),
-                isPositive: numbers.revenue_today >= numbers.revenue_yesterday,
-              } : undefined}
+              tone="text-emerald-600 bg-emerald-500/10"
               onClick={() => navigate("/admin/analytics")}
             />
-            <AdminStatCard
-              title="לא פורסמו לחנות"
+            <AdminNumberTile
+              label="לא פורסמו לחנות"
               value={numbers?.unpublished_products ?? 0}
-              subtitle="אושרו ומחכים לפרסום"
+              sub="אושרו ומחכים לפרסום"
               icon={Package}
-              color={numbers?.unpublished_products ? "warning" : "primary"}
+              tone={numbers?.unpublished_products ? "text-sky-600 bg-sky-500/10" : "text-muted-foreground bg-muted"}
               onClick={() => navigate("/admin/products?section=publishing")}
             />
-            <AdminStatCard
-              title="לקוחות חדשים"
+            <AdminNumberTile
+              label="לקוחות חדשים"
               value={numbers?.new_customers_this_week ?? 0}
-              subtitle="בשבוע האחרון"
+              sub="בשבוע האחרון"
               icon={UserPlus}
-              color="primary"
+              tone="text-violet-600 bg-violet-500/10"
               onClick={() => navigate("/admin/customers")}
             />
-          </AdminStatsGrid>
+          </div>
         )}
 
         <section className="space-y-2">

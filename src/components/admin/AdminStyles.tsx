@@ -502,6 +502,49 @@ export const AdminEmptyState = ({ icon: Icon, title, description, action }: Admi
   );
 };
 
+/**
+ * One number in the strip.
+ *
+ * NOT AdminStatCard, WHICH IS A CARD. That component is grid-cols-1 on a
+ * phone, so four of them stacked ran to about nine hundred pixels and pushed
+ * the queue - the half of this screen that is actually work - clean off the
+ * bottom. The owner asked for a row of numbers with the tasks above the fold,
+ * and a tall card per row is the opposite of that.
+ *
+ * Two across on a phone, four on a desktop, and short enough that the first
+ * task is visible without scrolling.
+ */
+export const AdminNumberTile = ({ label, value, sub, icon: Icon, tone, onClick }: {
+  label: string;
+  value: string | number;
+  sub: string;
+  icon: LucideIcon;
+  tone: string;
+  /** Optional: a tile that only reports does not pretend to be pressable. */
+  onClick?: () => void;
+}) => {
+  const Comp = onClick ? "button" : "div";
+  return (
+  <Comp
+    {...(onClick ? { type: "button" as const, onClick } : {})}
+    className={cn(
+      "flex items-center gap-2.5 rounded-xl border border-mipo-line bg-mipo-surface p-3 text-right",
+      onClick && "transition-colors hover:bg-mipo-soft",
+    )}
+  >
+    <span className={cn("shrink-0 w-9 h-9 rounded-lg flex items-center justify-center", tone)}>
+      <Icon className="w-[18px] h-[18px]" strokeWidth={1.75} />
+    </span>
+    <span className="min-w-0 flex-1">
+      <span className="block text-[11px] leading-4 text-muted-foreground truncate">{label}</span>
+      <span className="block text-xl font-bold leading-6 tabular-nums truncate">{value}</span>
+      <span className="block text-[10px] leading-3 text-muted-foreground truncate">{sub}</span>
+    </span>
+  </Comp>
+  );
+};
+
+
 // =====================================================
 // STATS GRID COMPONENT
 // =====================================================

@@ -38,7 +38,7 @@ import { BulkProductImport, type ParsedProduct } from "@/components/admin/BulkPr
 import { ProductImportWizard } from "@/components/admin/ProductImportWizard";
 import { DataTable, Column, FilterOption } from "@/components/admin/DataTable";
 import { ProductFormDialog } from "@/components/admin/ProductFormDialog";
-import { AdminStatCard } from "@/components/admin/AdminStyles";
+import { AdminNumberTile } from "@/components/admin/AdminStyles";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -775,15 +775,22 @@ const AdminProducts = () => {
       ) : section === "publishing" ? <PublishingPanel /> : (
         <>
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6" dir="rtl">
-        {/* Four hand-rolled copies of AdminStatCard, exactly as AdminBackup
-            had. They are the component now, so the panel's design system
-            reaches the page everyone lands on rather than stopping short of
-            it. */}
-        <AdminStatCard title="סה״כ מוצרים" value={products.length} icon={Package} color="primary" />
-        <AdminStatCard title="במלאי" value={products.length - outOfStockCount} icon={ShoppingCart} color="success" />
-        <AdminStatCard title="מיובאים" value={scrapedCount} icon={Download} color="info" />
-        <AdminStatCard title="דורשים טיפול" value={flaggedCount + needsReviewCount} icon={AlertCircle} color="warning" />
+      {/* The compact tile, not AdminStatCard. Four cards at card height filled
+          a phone screen before the list started, which on the screen whose
+          whole job is the list is the wrong thing to spend it on. */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-4" dir="rtl">
+        <AdminNumberTile label="סה״כ מוצרים" value={products.length} sub="בקטלוג" icon={Package}
+          tone="text-sky-600 bg-sky-500/10" />
+        <AdminNumberTile label="במלאי" value={products.length - outOfStockCount} sub={`${outOfStockCount} אזלו`}
+          icon={ShoppingCart} tone="text-emerald-600 bg-emerald-500/10" />
+        <AdminNumberTile label="מיובאים" value={scrapedCount} sub={`${manualCount} ידניים`} icon={Download}
+          tone="text-violet-600 bg-violet-500/10" />
+        <AdminNumberTile label="דורשים טיפול" value={flaggedCount + needsReviewCount} sub="מדווחים או לבדיקה"
+          icon={AlertCircle}
+          tone={flaggedCount + needsReviewCount ? "text-amber-600 bg-amber-500/10" : "text-muted-foreground bg-muted"}
+          onClick={flaggedCount + needsReviewCount ? () => {
+            setShowNeedsReview(true); setShowFlagged(false); setShowScrapedOnly(false); setShowManualOnly(false);
+          } : undefined} />
       </div>
 
       {/* Action Bar */}
