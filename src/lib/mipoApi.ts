@@ -1544,6 +1544,19 @@ export interface MipoManualOrderInput {
    * record of anything.
    */
   payment_attestation_note?: string;
+  /** A coupon code to apply. The server validates it; an invalid one refuses the order. */
+  coupon_code?: string;
+  /**
+   * A signed discretionary change to the total - negative takes money off.
+   *
+   * The total is NOT editable: the server still computes it from the catalogue
+   * and the coupon, and this is applied on top and recorded separately, with
+   * its reason and the admin's name. That is what keeps "₪200 of goods sold at
+   * a ₪50 discount" distinguishable from "₪150 of goods".
+   */
+  admin_adjustment?: number;
+  /** Why the price was changed. The server refuses a non-zero adjustment without one. */
+  admin_adjustment_reason?: string;
   /** What the screen believes the total is. The server recomputes and refuses a mismatch. */
   expected_total: number;
   shipping_address: Record<string, unknown>;

@@ -34,6 +34,7 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
 import { NewOrderDialog } from "@/components/admin/NewOrderDialog";
+import { ShippingLabel, type LabelAddress, type LabelLine } from "@/components/admin/ShippingLabel";
 import { formatPetAgeHe } from "@/lib/petAge";
 import {
   AdminStatCard, AdminStatsGrid, AdminToolbar,
@@ -45,6 +46,7 @@ import { createClientId } from "@/lib/randomId";
 import {
   createAdminCustomer, createAdminCustomerNote, deleteAdminCustomerNote, getAdminCustomer, getAdminCustomers,
   type MipoCustomer, type MipoCustomerDetail, type MipoCustomerNote, type MipoCustomerNoteKind,
+  type MipoOrder,
   type MipoNewCustomerResult, type MipoShopCustomerRow,
 } from "@/lib/mipoApi";
 
@@ -620,6 +622,16 @@ const CustomerDetailPanel = ({
   const [saving, setSaving] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<MipoCustomerNote | null>(null);
   const [newOrderOpen, setNewOrderOpen] = useState(false);
+  /**
+   * The label for the order just placed.
+   *
+   * Held here rather than inside the order dialog because the dialog closes on
+   * success, and a label that disappears with the form it came from is a label
+   * nobody prints.
+   */
+  const [placedLabel, setPlacedLabel] = useState<
+    { order: MipoOrder; address: LabelAddress; lines: LabelLine[]; amountDue: number } | null
+  >(null);
   const [deleting, setDeleting] = useState(false);
 
   const identityId = detail?.customer.identity_id;
@@ -738,10 +750,31 @@ const CustomerDetailPanel = ({
         open={newOrderOpen}
         onOpenChange={setNewOrderOpen}
         customer={customer}
+        orders={detail.orders}
         // The card reloads so the new order shows in the history beneath it -
         // an order that does not appear is an order the admin places twice.
         onCreated={onOrderCreated}
+        onPlaced={(order, address, lines) => setPlacedLabel({
+          order,
+          address,
+          lines: lines.map((line) => ({ name: line.product.name, quantity: line.quantity })),
+          // What the courier still has to collect. An order paid by any other
+          // route - attested, or settled later - is nothing to collect at the
+          // door, and saying otherwise costs a customer being asked twice.
+          amountDue: order.payment_status === "awaiting_cod" ? Number(order.total) || 0 : 0,
+        })}
       />
+
+      {placedLabel && (
+        <ShippingLabel
+          open
+          onOpenChange={(next) => { if (!next) setPlacedLabel(null); }}
+          order={placedLabel.order}
+          address={placedLabel.address}
+          lines={placedLabel.lines}
+          amountDue={placedLabel.amountDue}
+        />
+      )}
 
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-5">

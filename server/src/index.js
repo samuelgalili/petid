@@ -5948,7 +5948,7 @@ const saveShippingProfile = async (userId, input) => {
   return serializeShippingProfile(result.rows[0]);
 };
 
-const calculateOrderAmounts = async (client, body, orderItems, shippingAddress) => {
+const calculateOrderAmounts = async (client, body, orderItems, shippingAddress, adminAdjustment = 0) => {
   const subtotal = toMoney(orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0));
   const requestedCouponCode = body.coupon_code || body.coupon?.code;
   const coupon = requestedCouponCode
@@ -5972,7 +5972,12 @@ const calculateOrderAmounts = async (client, body, orderItems, shippingAddress) 
   const shipping = couponType === "free_shipping" ? 0 : baseShipping;
   const cashOnDeliveryFee = body.payment_method === "cash-on-delivery" ? 5 : 0;
   const tax = 0;
-  const total = toMoney(Math.max(0, subtotal - discountAmount) + shipping + cashOnDeliveryFee + tax);
+  const computedTotal = Math.max(0, subtotal - discountAmount) + shipping + cashOnDeliveryFee + tax;
+  // The admin's discretionary change, applied LAST and on top of everything
+  // else, so the coupon and the delivery fee are still computed from the
+  // catalogue rather than being folded into one typed number. Floored at zero:
+  // an order cannot pay the customer.
+  const total = toMoney(Math.max(0, computedTotal + adminAdjustment));
 
   return {
     subtotal,
@@ -5981,6 +5986,7 @@ const calculateOrderAmounts = async (client, body, orderItems, shippingAddress) 
     discountAmount,
     cashOnDeliveryFee,
     total,
+    adminAdjustment,
     coupon,
     customerEmail: shippingAddress.email,
   };
@@ -6088,6 +6094,35 @@ const createOrder = async (body, currentUser = null, eventOrigin = "app", option
     throw error;
   }
 
+  // A DISCRETIONARY CHANGE TO WHAT SOMEBODY PAYS, and like the attestation it
+  // is a capability rather than a field: only an admin may send it, and never
+  // without saying why. A shopper who could send admin_adjustment could set
+  // their own price.
+  const rawAdjustment = body.admin_adjustment;
+  const hasAdjustment = rawAdjustment !== undefined && rawAdjustment !== null && Number(rawAdjustment) !== 0;
+  const adminAdjustment = hasAdjustment ? Number(rawAdjustment) : 0;
+  const adjustmentReason = String(body.admin_adjustment_reason || "").trim();
+
+  if (hasAdjustment) {
+    if (!placedByAdmin) {
+      const error = new Error("Only an admin may adjust an order's price");
+      error.statusCode = 403;
+      error.code = "ADJUSTMENT_NOT_PERMITTED";
+      throw error;
+    }
+    if (!Number.isFinite(adminAdjustment)) {
+      const error = new Error("The price adjustment must be a number");
+      error.statusCode = 400;
+      throw error;
+    }
+    if (!adjustmentReason) {
+      const error = new Error("A price adjustment must say why");
+      error.statusCode = 400;
+      error.code = "ADJUSTMENT_REASON_REQUIRED";
+      throw error;
+    }
+  }
+
   const paymentStatus = paymentMethod === "cash-on-delivery"
     ? "awaiting_cod"
     // Paid on an admin's word. This is what releases the order to the
@@ -6169,7 +6204,7 @@ const createOrder = async (body, currentUser = null, eventOrigin = "app", option
     // NULL when none is configured - which is a fact, not a zero.
     const commissionRate = readPlatformCommissionRate();
 
-    const amounts = await calculateOrderAmounts(client, body, orderItems, shippingAddress);
+    const amounts = await calculateOrderAmounts(client, body, orderItems, shippingAddress, adminAdjustment);
     const expectedTotal = Number(body.expected_total);
     if (!Object.prototype.hasOwnProperty.call(body, "expected_total")
       || !Number.isFinite(expectedTotal)
@@ -6228,7 +6263,10 @@ const createOrder = async (body, currentUser = null, eventOrigin = "app", option
           seller_business_id,
           payment_attested_by,
           payment_attested_at,
-          payment_attestation_note
+          payment_attestation_note,
+          admin_adjustment,
+          admin_adjustment_reason,
+          admin_adjusted_by
         )
         values (
           $1, $2, $3, $4, $5, $6,
@@ -6237,7 +6275,11 @@ const createOrder = async (body, currentUser = null, eventOrigin = "app", option
           $18, $19, $20, $21, $22, $23,
           -- All three together or none: an attestation with no author, or an
           -- author with no note, is a record of nothing.
-          $24, case when $24::uuid is null then null else now() end, $25
+          $24, case when $24::uuid is null then null else now() end, $25,
+          -- Same rule for the adjustment: an amount, a reason and a name, or
+          -- nothing at all. NULL means no admin touched the price, which is
+          -- not the same as an adjustment of zero.
+          $26, $27, $28
         )
         returning *
       `,
@@ -6267,6 +6309,9 @@ const createOrder = async (body, currentUser = null, eventOrigin = "app", option
         orderSellerBusinessId,
         paymentMethod === "admin-attested" ? placedByAdmin.id : null,
         paymentMethod === "admin-attested" ? attestationNote : null,
+        hasAdjustment ? adminAdjustment : null,
+        hasAdjustment ? adjustmentReason : null,
+        hasAdjustment ? placedByAdmin.id : null,
       ],
     );
 

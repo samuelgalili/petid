@@ -100,6 +100,11 @@ async function openCard(page: Page) {
   await page.route("**/api/admin/customers*", (route) => route.fulfill({
     status: 200, contentType: "application/json", body: JSON.stringify({ customers: [customer] }),
   }));
+  await page.route("**/api/coupons/validate", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ coupon: { id: "c-1", code: "MIPO10", discount_type: "percentage", discount_value: 10 } }),
+  }));
 
   await page.route("**/api/admin/os/orders", async (route) => {
     const request = route.request();
@@ -110,7 +115,14 @@ async function openCard(page: Page) {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ order: { id: "o-1", order_number: "MIPO-1" } }),
+      body: JSON.stringify({
+        order: {
+          id: "o-1", order_number: "MIPO-1",
+          payment_status: JSON.parse(request.postData() || "{}").payment_method === "cash-on-delivery"
+            ? "awaiting_cod" : "paid",
+          total: 118,
+        },
+      }),
     });
   });
 
@@ -127,6 +139,23 @@ const addOneProduct = async (page: Page) => {
   await page.getByRole("button", { name: /קוואטרו אדולט/ }).click();
 };
 
+/**
+ * Fill what the server demands before it will write an order.
+ *
+ * Name, email and phone arrive prefilled from the customer record; street,
+ * house number, city and postcode do not, because nothing in the system knows
+ * them until somebody has had a parcel sent. The order CANNOT be placed
+ * without them - normalizeShippingAddress throws 400 - which is exactly what
+ * the first version of this screen got wrong.
+ */
+const fillAddress = async (page: Page) => {
+  await page.getByLabel("רחוב").fill("הרצל");
+  await page.getByLabel("מספר בית").fill("12");
+  await page.getByLabel("עיר").fill("תל אביב");
+  await page.getByLabel("מיקוד").fill("6100000");
+  await page.getByRole("checkbox").check();
+};
+
 test.describe("An order taken by hand", () => {
   test.describe.configure({ mode: "serial" });
 
@@ -138,6 +167,7 @@ test.describe("An order taken by hand", () => {
     // is under the threshold. The same number on the screen and in the body.
     await expect(page.getByText(`₪${79 + SHIPPING_FEE}`)).toBeVisible();
 
+    await fillAddress(page);
     await page.getByLabel("איך הכסף הגיע?").fill("ביט ליוסי");
     await page.getByRole("button", { name: "פתיחת הזמנה" }).click();
 
@@ -159,6 +189,7 @@ test.describe("An order taken by hand", () => {
     const sent = await openCard(page);
     await addOneProduct(page);
 
+    await fillAddress(page);
     await expect(page.getByRole("button", { name: "פתיחת הזמנה" })).toBeDisabled();
     await page.getByLabel("איך הכסף הגיע?").fill("מזומן בחנות");
     await expect(page.getByRole("button", { name: "פתיחת הזמנה" })).toBeEnabled();
@@ -177,6 +208,134 @@ test.describe("An order taken by hand", () => {
 
     await expect(page.getByRole("button", { name: "פתיחת הזמנה" })).toBeDisabled();
     expect(sent).toHaveLength(0);
+  });
+
+  test("a coupon is applied to the total and sent by code", async ({ page }) => {
+    const sent = await openCard(page);
+    await addOneProduct(page);
+
+    await page.getByLabel("קופון").fill("MIPO10");
+    await page.getByRole("button", { name: "החל" }).click();
+    await expect(page.getByText("הקופון MIPO10 הוחל")).toBeVisible();
+
+    // 10% of ₪79 is ₪7.90, and delivery is still charged because the basket is
+    // still under the threshold.
+    await expect(page.getByText("−₪7.9")).toBeVisible();
+
+    await fillAddress(page);
+    await page.getByLabel("איך הכסף הגיע?").fill("ביט");
+    await page.getByRole("button", { name: "פתיחת הזמנה" }).click();
+
+    await expect.poll(() => sent.length).toBe(1);
+    expect(sent[0].body).toMatchObject({
+      coupon_code: "MIPO10",
+      expected_total: Math.round((79 - 7.9 + SHIPPING_FEE) * 100) / 100,
+    });
+  });
+
+  test("a hand-typed final price travels as a difference, not as the total", async ({ page }) => {
+    // THE POINT OF THE WHOLE DESIGN. The server computes the total from the
+    // catalogue and refuses an order that disagrees, so what the screen sends
+    // is the DIFFERENCE - which keeps "₪118 of goods with ₪18 off" on the
+    // order rather than flattening it into "₪100 of goods".
+    const sent = await openCard(page);
+    await addOneProduct(page);
+
+    const computed = 79 + SHIPPING_FEE;
+    await page.getByLabel("מחיר סופי ללקוח").fill("100");
+    await expect(page.getByText("הנחה ידנית")).toBeVisible();
+
+    await page.getByLabel(/למה ההנחה/).fill("לקוח ותיק");
+    await fillAddress(page);
+    await page.getByLabel("איך הכסף הגיע?").fill("ביט");
+    await page.getByRole("button", { name: "פתיחת הזמנה" }).click();
+
+    await expect.poll(() => sent.length).toBe(1);
+    expect(sent[0].body).toMatchObject({
+      admin_adjustment: Math.round((100 - computed) * 100) / 100,
+      admin_adjustment_reason: "לקוח ותיק",
+      expected_total: 100,
+    });
+    // Never the total itself. That field does not exist in the payload.
+    expect(sent[0].body).not.toHaveProperty("total");
+  });
+
+  test("a price change cannot be sent without a reason", async ({ page }) => {
+    const sent = await openCard(page);
+    await addOneProduct(page);
+    await fillAddress(page);
+    await page.getByLabel("איך הכסף הגיע?").fill("ביט");
+    await expect(page.getByRole("button", { name: "פתיחת הזמנה" })).toBeEnabled();
+
+    await page.getByLabel("מחיר סופי ללקוח").fill("50");
+    await expect(page.getByRole("button", { name: "פתיחת הזמנה" })).toBeDisabled();
+
+    await page.getByLabel(/למה ההנחה/).fill("תיאום טלפוני");
+    await expect(page.getByRole("button", { name: "פתיחת הזמנה" })).toBeEnabled();
+    expect(sent).toHaveLength(0);
+  });
+
+  test("an empty price box charges what it comes to", async ({ page }) => {
+    // Clearing the box must return the order to the computed price, not adjust
+    // it to zero - which is why the typed value is kept as text rather than as
+    // a number that an empty string would turn into 0.
+    const sent = await openCard(page);
+    await addOneProduct(page);
+    await page.getByLabel("מחיר סופי ללקוח").fill("100");
+    await page.getByLabel("מחיר סופי ללקוח").fill("");
+
+    await expect(page.getByText("הנחה ידנית")).toHaveCount(0);
+    await fillAddress(page);
+    await page.getByLabel("איך הכסף הגיע?").fill("ביט");
+    await page.getByRole("button", { name: "פתיחת הזמנה" }).click();
+
+    await expect.poll(() => sent.length).toBe(1);
+    expect(sent[0].body.admin_adjustment).toBeUndefined();
+    expect(sent[0].body.expected_total).toBe(79 + SHIPPING_FEE);
+  });
+
+  test("placing the order produces a label the warehouse can ship from", async ({ page }) => {
+    await openCard(page);
+    await addOneProduct(page);
+    await fillAddress(page);
+    await page.getByLabel("הערה למשלוח").fill("להשאיר אצל השכן בדירה 4");
+    await page.getByLabel("איך הכסף הגיע?").fill("ביט");
+    await page.getByRole("button", { name: "פתיחת הזמנה" }).click();
+
+    await expect(page.getByText("תווית משלוח · MIPO-1")).toBeVisible();
+
+    // SCOPED TO THE LABEL, not to the page. The customer's name is on the list
+    // row and on the card behind it too, so an unscoped assertion passes when
+    // the label is empty - and matches three elements, which is how this was
+    // caught.
+    const label = page.locator("#mipo-shipping-label");
+    await expect(label).toBeVisible();
+
+    // Everything a courier reads, and everything a picker packs.
+    await expect(label.getByText("דנה כהן")).toBeVisible();
+    await expect(label.getByText(/הרצל 12/)).toBeVisible();
+    await expect(label.getByText(/תל אביב/)).toBeVisible();
+    await expect(label.getByText("0501234567")).toBeVisible();
+    await expect(label.getByText("להשאיר אצל השכן בדירה 4")).toBeVisible();
+    await expect(label.getByText(/קוואטרו אדולט/)).toBeVisible();
+
+    // THE LINE THAT COSTS MONEY IF IT IS WRONG. This order was paid up front,
+    // so nobody must ask the customer for money at their door.
+    await expect(label.getByText("שולם — לא לגבות")).toBeVisible();
+    await expect(label.getByText("לגבות מהלקוח")).toHaveCount(0);
+  });
+
+  test("a cash-on-delivery label says what to collect", async ({ page }) => {
+    await openCard(page);
+    await addOneProduct(page);
+    await fillAddress(page);
+    await page.getByRole("radio", { name: /מזומן בעת המסירה/ }).click();
+    await page.getByRole("button", { name: "פתיחת הזמנה" }).click();
+
+    const label = page.locator("#mipo-shipping-label");
+    await expect(label.getByText("לגבות מהלקוח")).toBeVisible();
+    await expect(label.getByText("₪118")).toBeVisible();
+    await expect(label.getByText("שולם — לא לגבות")).toHaveCount(0);
   });
 
   test("the key belongs to the order, not to the click", async ({ page }) => {
@@ -208,6 +367,7 @@ test.describe("An order taken by hand", () => {
     });
 
     await addOneProduct(page);
+    await fillAddress(page);
     await page.getByLabel("איך הכסף הגיע?").fill("ביט");
 
     await page.getByRole("button", { name: "פתיחת הזמנה" }).click();

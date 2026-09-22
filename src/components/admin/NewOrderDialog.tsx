@@ -31,8 +31,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { searchCatalog } from "@/lib/catalogSearch";
 import {
-  createManualOrder, getShopProducts,
-  type MipoAdminPaymentMethod, type MipoCustomer, type MipoProduct,
+  createManualOrder, getShopProducts, validateCouponCode,
+  type MipoAdminPaymentMethod, type MipoCoupon, type MipoCustomer, type MipoOrder,
+  type MipoProduct,
 } from "@/lib/mipoApi";
 import { createClientId } from "@/lib/randomId";
 import { SHIPPING_FEE, shippingFor } from "@/lib/shipping";
@@ -72,16 +73,125 @@ const PAYMENT_CHOICES: Array<{
 
 type Line = { product: MipoProduct; quantity: number };
 
+/** One labelled input. Enough of them here that repeating the markup obscures the form. */
+const Field = ({ id, label, value, onChange, dir }: {
+  id: string; label: string; value: string; onChange: (value: string) => void; dir?: "ltr" | "rtl";
+}) => (
+  <div className="space-y-1">
+    <Label htmlFor={id} className="text-[11px]">{label}</Label>
+    <Input id={id} value={value} dir={dir}
+      onChange={(event) => onChange(event.target.value)} className="h-9 text-xs" />
+  </div>
+);
+
+/**
+ * The delivery details, and why every one of them is here.
+ *
+ * THE ORDER CANNOT BE PLACED WITHOUT THEM. normalizeShippingAddress refuses a
+ * payload whose street, city or postcode is missing, whose phone is not 9-15
+ * DIGITS, or whose email is not an address - and it throws 400 before the
+ * order code is reached. The first version of this screen sent a name, an
+ * email and a phone, so not one order it submitted could have been accepted.
+ * The e2e mocked the endpoint, so nothing caught it.
+ */
+type Address = {
+  fullName: string;
+  email: string;
+  phone: string;
+  address: string;
+  building: string;
+  entranceType: "house" | "building";
+  floor: string;
+  apartment: string;
+  lobbyCode: string;
+  city: string;
+  zipCode: string;
+  notes: string;
+  leaveAtDoor: boolean;
+};
+
+const EMPTY_ADDRESS: Address = {
+  fullName: "", email: "", phone: "", address: "", building: "",
+  entranceType: "house", floor: "", apartment: "", lobbyCode: "",
+  city: "", zipCode: "", notes: "", leaveAtDoor: false,
+};
+
+/** Digits only: the server's phone rule is /^[0-9]{9,15}$/, so "050-123-4567" fails it. */
+const digitsOnly = (value: string) => value.replace(/[^0-9]/g, "");
+
+/**
+ * The customer's details as far as we know them, from their most recent order.
+ *
+ * "עם כל פרטי הלקוח במידה וחסרים פרטים נוסיף ידנית" - so the form opens
+ * already holding what the last delivery used, and the admin fills the gaps
+ * rather than retyping a street they already have.
+ */
+const addressFromHistory = (customer: MipoCustomer, orders: MipoOrder[]): Address => {
+  const previous = orders.find((order) => (
+    order.shipping_address && typeof order.shipping_address === "object"
+      && String((order.shipping_address as Record<string, unknown>).address || "").trim() !== ""
+  ))?.shipping_address as Record<string, unknown> | undefined;
+
+  const text = (key: string) => String(previous?.[key] ?? "").trim();
+
+  return {
+    ...EMPTY_ADDRESS,
+    fullName: customer.full_name || text("fullName"),
+    email: customer.email || text("email"),
+    phone: digitsOnly(customer.phone || text("phone")),
+    address: text("address"),
+    building: text("building"),
+    entranceType: text("entranceType") === "building" ? "building" : "house",
+    floor: text("floor"),
+    apartment: text("apartment"),
+    lobbyCode: text("lobbyCode"),
+    city: text("city"),
+    zipCode: text("zipCode"),
+  };
+};
+
+/**
+ * The same rules the server applies, so the button is only enabled when the
+ * order can actually be placed.
+ *
+ * Mirrored deliberately rather than shared: server/src/shippingAddress.js is
+ * the authority and refuses anything this misses. What this buys is that the
+ * admin sees WHICH field is wrong while the customer is still on the phone,
+ * instead of one 400 after pressing the button.
+ */
+const addressProblems = (value: Address): string[] => {
+  const problems: string[] = [];
+  if (value.fullName.trim().length < 2) problems.push("שם מלא");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.email.trim())) problems.push("אימייל תקין");
+  if (!/^[0-9]{9,15}$/.test(digitsOnly(value.phone))) problems.push("טלפון (9-15 ספרות)");
+  if (value.address.trim().length < 2) problems.push("רחוב");
+  if (value.building.trim().length < 1) problems.push("מספר בית");
+  if (value.city.trim().length < 2) problems.push("עיר");
+  if (!/^[0-9]{5,7}$/.test(value.zipCode.trim())) problems.push("מיקוד (5-7 ספרות)");
+  if (value.entranceType === "building" && value.apartment.trim() === "") problems.push("דירה");
+  // A courier who cannot get through the lobby door cannot deliver, so for a
+  // building the code carries as much weight as the street name.
+  if (value.entranceType === "building" && value.lobbyCode.trim() === "") problems.push("קוד כניסה");
+  if (!value.leaveAtDoor) problems.push("אישור הלקוח להשארה ליד הדלת");
+  return problems;
+};
+
 export const NewOrderDialog = ({
   open,
   onOpenChange,
   customer,
+  orders,
   onCreated,
+  onPlaced,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   customer: MipoCustomer;
+  /** Their past orders, read for the address the last delivery used. */
+  orders: MipoOrder[];
   onCreated: () => void;
+  /** The placed order, so the warehouse label can be printed from it. */
+  onPlaced: (order: MipoOrder, address: Address, lines: Line[]) => void;
 }) => {
   const { toast } = useToast();
   const [query, setQuery] = useState("");
@@ -89,6 +199,20 @@ export const NewOrderDialog = ({
   const [payment, setPayment] = useState<MipoAdminPaymentMethod>("admin-attested");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [coupon, setCoupon] = useState<MipoCoupon | null>(null);
+  const [couponError, setCouponError] = useState("");
+  const [checkingCoupon, setCheckingCoupon] = useState(false);
+  /**
+   * The final price as the admin typed it, or "" while they have not.
+   *
+   * Kept as TEXT rather than a number so a half-typed "1" on the way to "150"
+   * is not read as a ₪149 discount, and so clearing the box returns the order
+   * to the computed price instead of adjusting it to zero.
+   */
+  const [finalPrice, setFinalPrice] = useState("");
+  const [finalPriceReason, setFinalPriceReason] = useState("");
+  const [address, setAddress] = useState<Address>(EMPTY_ADDRESS);
 
   // ONE KEY PER SUBMISSION, minted again when the order changes - the same
   // rule as the new-customer dialog. A key per click is not idempotency: a
@@ -102,8 +226,21 @@ export const NewOrderDialog = ({
     setLines([]);
     setPayment("admin-attested");
     setNote("");
+    setCouponCode("");
+    setCoupon(null);
+    setCouponError("");
+    setFinalPrice("");
+    setFinalPriceReason("");
+    setAddress(addressFromHistory(customer, orders));
     resetKey();
-  }, [open, resetKey]);
+  }, [open, customer, orders, resetKey]);
+
+  const setField = useCallback(<K extends keyof Address>(key: K, value: Address[K]) => {
+    setAddress((current) => ({ ...current, [key]: value }));
+    resetKey();
+  }, [resetKey]);
+
+  const problems = useMemo(() => addressProblems(address), [address]);
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["admin-manual-order-products"],
@@ -148,19 +285,53 @@ export const NewOrderDialog = ({
     () => lines.reduce((sum, line) => sum + priceOf(line.product) * line.quantity, 0),
     [lines],
   );
-  const shipping = shippingFor(subtotal);
+  // The coupon's effect, computed the same way the server computes it so the
+  // screen and the books agree before anything is sent.
+  const couponDiscount = useMemo(() => {
+    if (!coupon || coupon.discount_type === "free_shipping") return 0;
+    const value = Number(coupon.discount_value) || 0;
+    return coupon.discount_type === "percentage"
+      ? Math.min(subtotal, Math.round(((subtotal * value) / 100) * 100) / 100)
+      : Math.min(subtotal, value);
+  }, [coupon, subtotal]);
+
+  const shipping = coupon?.discount_type === "free_shipping" ? 0 : shippingFor(subtotal);
   // The ₪5 cash-on-delivery fee, matching what the customer's own checkout adds.
   const codFee = payment === "cash-on-delivery" ? 5 : 0;
-  const total = Math.round((subtotal + shipping + codFee) * 100) / 100;
+  const computedTotal = Math.round(
+    (Math.max(0, subtotal - couponDiscount) + shipping + codFee) * 100,
+  ) / 100;
+
+  /**
+   * What the admin typed, and the adjustment it implies.
+   *
+   * THE FINAL PRICE IS NOT SENT AS THE TOTAL. The server computes the total
+   * from the catalogue and the coupon and refuses an order that disagrees, so
+   * what travels is the DIFFERENCE - recorded on the order with its reason and
+   * the admin's name. An order of ₪200 sold for ₪150 stays visibly that,
+   * rather than becoming an order of ₪150.
+   */
+  const typedPrice = finalPrice.trim() === "" ? null : Number(finalPrice);
+  const priceIsValid = typedPrice === null || (Number.isFinite(typedPrice) && typedPrice >= 0);
+  const adjustment = typedPrice !== null && priceIsValid
+    ? Math.round((typedPrice - computedTotal) * 100) / 100
+    : 0;
+  const total = adjustment !== 0 ? Math.round((computedTotal + adjustment) * 100) / 100 : computedTotal;
 
   const attestationMissing = payment === "admin-attested" && !note.trim();
-  const canSubmit = lines.length > 0 && !attestationMissing && !saving;
+  const adjustmentReasonMissing = adjustment !== 0 && !finalPriceReason.trim();
+  const canSubmit = lines.length > 0
+    && problems.length === 0
+    && !attestationMissing
+    && !adjustmentReasonMissing
+    && priceIsValid
+    && !saving;
 
   const submit = useCallback(async () => {
     if (!canSubmit) return;
     setSaving(true);
     try {
-      await createManualOrder({
+      const result = await createManualOrder({
         customer_user_id: customer.user_id,
         items: lines.map((line) => ({
           product_id: line.product.id,
@@ -169,18 +340,25 @@ export const NewOrderDialog = ({
         })),
         payment_method: payment,
         payment_attestation_note: note.trim() || undefined,
+        coupon_code: coupon?.code || undefined,
+        // The DIFFERENCE, never the total. See the comment on `adjustment`.
+        admin_adjustment: adjustment !== 0 ? adjustment : undefined,
+        admin_adjustment_reason: adjustment !== 0 ? finalPriceReason.trim() : undefined,
         expected_total: total,
-        // Taken from the customer's record rather than retyped. An admin
-        // inventing an address on a phone call is how a parcel goes missing.
         shipping_address: {
-          fullName: customer.full_name || "",
-          email: customer.email || "",
-          phone: customer.phone || "",
+          ...address,
+          phone: digitsOnly(address.phone),
+          fullName: address.fullName.trim(),
+          email: address.email.trim(),
+          // The delivery note rides with the address rather than in
+          // special_instructions, because this is where the warehouse and the
+          // courier read it - and the field already exists, bounded to 500.
+          notes: address.notes.trim(),
         },
-        special_instructions: "הזמנה שנפתחה ידנית על ידי צוות מיפו",
       }, idempotencyKey.current);
 
       toast({ title: "ההזמנה נפתחה" });
+      onPlaced(result.order, address, lines);
       onCreated();
       onOpenChange(false);
     } catch (error) {
@@ -192,7 +370,28 @@ export const NewOrderDialog = ({
     } finally {
       setSaving(false);
     }
-  }, [canSubmit, customer, lines, note, onCreated, onOpenChange, payment, toast, total]);
+  }, [address, adjustment, canSubmit, coupon, customer, finalPriceReason, lines, note,
+      onCreated, onOpenChange, onPlaced, payment, toast, total]);
+
+  const applyCoupon = useCallback(async () => {
+    const code = couponCode.trim();
+    if (!code) return;
+    setCheckingCoupon(true);
+    setCouponError("");
+    try {
+      // Validated against THIS subtotal, because a coupon can carry a minimum
+      // the basket has not reached. Checking it here means the admin finds out
+      // while the customer is still on the phone.
+      const found = await validateCouponCode(code, subtotal);
+      setCoupon(found);
+      resetKey();
+    } catch (error) {
+      setCoupon(null);
+      setCouponError(error instanceof Error ? error.message : "הקופון לא תקף");
+    } finally {
+      setCheckingCoupon(false);
+    }
+  }, [couponCode, resetKey, subtotal]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -286,6 +485,12 @@ export const NewOrderDialog = ({
                 <div className="flex justify-between text-muted-foreground">
                   <span>ביניים</span><span className="tabular-nums">₪{subtotal}</span>
                 </div>
+                {couponDiscount > 0 && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>קופון {coupon?.code}</span>
+                    <span className="tabular-nums">−₪{couponDiscount}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-muted-foreground">
                   <span>משלוח</span>
                   <span className="tabular-nums">{shipping === 0 ? "חינם" : `₪${SHIPPING_FEE}`}</span>
@@ -295,10 +500,175 @@ export const NewOrderDialog = ({
                     <span>עמלת מזומן</span><span className="tabular-nums">₪{codFee}</span>
                   </div>
                 )}
+                {/* SHOWN SEPARATELY, always. The whole reason the total is not
+                    simply overwritten is so this line exists - "₪200 of goods
+                    with ₪50 off" and "₪150 of goods" are different facts. */}
+                {adjustment !== 0 && (
+                  <div className="flex justify-between text-mipo-ink">
+                    <span>{adjustment < 0 ? "הנחה ידנית" : "תוספת ידנית"}</span>
+                    <span className="tabular-nums">
+                      {adjustment < 0 ? "−" : "+"}₪{Math.abs(adjustment)}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between font-semibold text-mipo-ink">
                   <span>סה״כ</span><span className="tabular-nums">₪{total}</span>
                 </div>
               </div>
+            </div>
+          )}
+
+          {lines.length > 0 && (
+            <div className="space-y-3 rounded-md border border-mipo-line p-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="manual-order-coupon">קופון</Label>
+                <div className="flex gap-1.5">
+                  <Input
+                    id="manual-order-coupon"
+                    value={couponCode}
+                    onChange={(event) => {
+                      setCouponCode(event.target.value);
+                      setCoupon(null);
+                      setCouponError("");
+                      resetKey();
+                    }}
+                    placeholder="קוד קופון"
+                    className="h-9 text-xs"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-9 shrink-0"
+                    onClick={applyCoupon}
+                    disabled={!couponCode.trim() || checkingCoupon}
+                  >
+                    {checkingCoupon ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "החל"}
+                  </Button>
+                </div>
+                {couponError && <p className="text-[11px] text-destructive">{couponError}</p>}
+                {coupon && !couponError && (
+                  <p className="text-[11px] text-emerald-600">הקופון {coupon.code} הוחל</p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="manual-order-final">מחיר סופי ללקוח</Label>
+                <Input
+                  id="manual-order-final"
+                  inputMode="decimal"
+                  value={finalPrice}
+                  onChange={(event) => { setFinalPrice(event.target.value); resetKey(); }}
+                  placeholder={`₪${computedTotal}`}
+                  className="h-9 text-xs"
+                />
+                {/* The placeholder IS the computed price, so leaving the box
+                    empty visibly means "charge what it comes to". */}
+                {!priceIsValid && (
+                  <p className="text-[11px] text-destructive">מחיר חייב להיות מספר, ולא שלילי</p>
+                )}
+                {adjustment !== 0 && priceIsValid && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="manual-order-reason" className="text-[11px]">
+                      למה {adjustment < 0 ? "ההנחה" : "התוספת"}?
+                    </Label>
+                    <Input
+                      id="manual-order-reason"
+                      value={finalPriceReason}
+                      onChange={(event) => { setFinalPriceReason(event.target.value); resetKey(); }}
+                      placeholder="לקוח ותיק / פיצוי על איחור / תיאום טלפוני"
+                      className="h-9 text-xs"
+                    />
+                    <p className="text-[11px] leading-4 text-muted-foreground">
+                      חובה. ההפרש נשמר על ההזמנה בנפרד, על שמך — כך שרואים גם את מחיר
+                      הקטלוג וגם מה ויתרת עליו.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {lines.length > 0 && (
+            <div className="space-y-2 rounded-md border border-mipo-line p-2">
+              <Label className="text-xs font-semibold">כתובת למשלוח</Label>
+              {/* Prefilled from the last delivery, because the admin should be
+                  filling gaps rather than retyping a street we already have. */}
+
+              <div className="grid grid-cols-2 gap-1.5">
+                <Field id="addr-name" label="שם מלא" value={address.fullName}
+                  onChange={(value) => setField("fullName", value)} />
+                <Field id="addr-phone" label="טלפון" value={address.phone} dir="ltr"
+                  onChange={(value) => setField("phone", value)} />
+                <Field id="addr-email" label="אימייל" value={address.email} dir="ltr"
+                  onChange={(value) => setField("email", value)} />
+                <Field id="addr-city" label="עיר" value={address.city}
+                  onChange={(value) => setField("city", value)} />
+                <Field id="addr-street" label="רחוב" value={address.address}
+                  onChange={(value) => setField("address", value)} />
+                <Field id="addr-building" label="מספר בית" value={address.building}
+                  onChange={(value) => setField("building", value)} />
+                <Field id="addr-zip" label="מיקוד" value={address.zipCode} dir="ltr"
+                  onChange={(value) => setField("zipCode", value)} />
+                <div className="space-y-1">
+                  <Label htmlFor="addr-entrance" className="text-[11px]">סוג כניסה</Label>
+                  <select
+                    id="addr-entrance"
+                    value={address.entranceType}
+                    onChange={(event) => setField("entranceType", event.target.value as "house" | "building")}
+                    className="h-9 w-full rounded-md border border-mipo-line bg-background px-2 text-xs"
+                  >
+                    <option value="house">בית פרטי</option>
+                    <option value="building">בניין</option>
+                  </select>
+                </div>
+              </div>
+
+              {address.entranceType === "building" && (
+                <div className="grid grid-cols-3 gap-1.5">
+                  <Field id="addr-floor" label="קומה" value={address.floor}
+                    onChange={(value) => setField("floor", value)} />
+                  <Field id="addr-apartment" label="דירה" value={address.apartment}
+                    onChange={(value) => setField("apartment", value)} />
+                  <Field id="addr-lobby" label="קוד כניסה" value={address.lobbyCode}
+                    onChange={(value) => setField("lobbyCode", value)} />
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <Label htmlFor="addr-notes" className="text-[11px]">הערה למשלוח</Label>
+                <Textarea
+                  id="addr-notes"
+                  value={address.notes}
+                  onChange={(event) => setField("notes", event.target.value.slice(0, 500))}
+                  placeholder="לתאם טלפונית לפני הגעה / להשאיר אצל השכן בדירה 4"
+                  rows={2}
+                  className="text-xs"
+                />
+              </div>
+
+              {/* REQUIRED BY THE SERVER whenever the extended address fields
+                  are sent, and it is a commitment by the CUSTOMER rather than
+                  by us - so it is worded as the admin relaying what they were
+                  told, the same shape as the payment attestation. */}
+              <label className="flex cursor-pointer items-start gap-2 pt-0.5">
+                <input
+                  type="checkbox"
+                  checked={address.leaveAtDoor}
+                  onChange={(event) => setField("leaveAtDoor", event.target.checked)}
+                  className="mt-0.5"
+                />
+                <span className="text-[11px] leading-4 text-muted-foreground">
+                  הלקוח אישר: אם אין מענה בכתובת, המשלוח יושאר ליד הדלת ומרגע ההשארה
+                  האחריות על החבילה היא של הלקוח בלבד.
+                </span>
+              </label>
+
+              {problems.length > 0 && (
+                <p className="text-[11px] leading-4 text-destructive">
+                  חסר כדי לשלוח: {problems.join(" · ")}
+                </p>
+              )}
             </div>
           )}
 
