@@ -71,12 +71,15 @@ export const ShopRailCard = ({
         className="block w-full"
         aria-label={`פתיחת ${product.name}`}
       >
-        <div className="aspect-square bg-mipo-soft">
+        {/* contain and white, matching ShopProductCard. These two cards sit on
+            the same screen, so a product cropped in one and framed in the
+            other is the inconsistency a shopper actually sees. */}
+        <div className="aspect-square bg-white p-3">
           <OptimizedImage
             src={product.image_url || ""}
             alt={product.name}
             className="h-full w-full"
-            objectFit="cover"
+            objectFit="contain"
             sizes="150px"
           />
         </div>

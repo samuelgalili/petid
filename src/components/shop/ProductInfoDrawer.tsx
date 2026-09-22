@@ -103,12 +103,15 @@ export const ProductInfoDrawer = ({ product, petName, onClose, onAddToCart, onAd
           </button>
 
           {/* Hero Image */}
-          <div className="relative w-full aspect-square bg-muted/30">
+          {/* The same framing as the card it was opened from. Cropping here
+              after showing the whole product on the card is a different
+              product as far as a shopper's eye is concerned. */}
+          <div className="relative w-full aspect-square bg-white p-4">
             <OptimizedImage
               src={product.image}
               alt={product.name}
               className="w-full h-full"
-              objectFit="cover"
+              objectFit="contain"
             />
             {/* Gradient overlay */}
             <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-background to-transparent" />

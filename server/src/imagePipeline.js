@@ -189,7 +189,24 @@ export const fetchImageBuffer = async (imageUrl, {
 export const normalizeProductImage = async (input, {
   preset = "product",
   transparent = false,
-  withoutEnlargement = true,
+  // FALSE, so the product fills the frame it is given.
+  //
+  // With this true, `fit: contain` pads a source smaller than the preset into
+  // the full canvas - so how large a product looked on a card depended on the
+  // RESOLUTION of the file a supplier happened to send. A 600px photo and a
+  // 1200px photo of the same bag came out at half the size of each other, in
+  // identical cards, and nothing in the code was wrong.
+  //
+  // Trimming above removes the margin the photographer left; this removes the
+  // difference their camera made. Together they mean a card frames a product
+  // the same way whatever file it came from.
+  //
+  // The cost is upscaling a small source, which is real but bounded: these are
+  // shown at 160px on a phone card and the frame is 1200px, so a product would
+  // have to be under about an eighth of the canvas before an eye could tell.
+  //
+  // NOT FOR A CUTOUT. See the guard below.
+  withoutEnlargement = transparent,
 } = {}) => {
   const { width, height, quality } = IMAGE_PRESETS[preset] || IMAGE_PRESETS.product;
 
@@ -211,9 +228,38 @@ export const normalizeProductImage = async (input, {
     throw new ImagePipelineError(`Unsupported image format: ${metadata.format || "unknown"}`, "unsupported_format");
   }
 
-  const pipeline = sharp(input, { failOn: "error", animated: false })
+  // TRIMMED FIRST, unless this is a cutout.
+  //
+  // Product photos arrive shot on white, and how much white surrounds the
+  // product is whatever the photographer happened to leave. The resize below
+  // fits the WHOLE PICTURE - margin included - into the square, so a
+  // generously padded photo renders its product small and a tightly cropped
+  // one renders it large. Two products, two sizes, in identical cards: the
+  // shop looks untidy and nothing in the code is wrong.
+  //
+  // The threshold is deliberately low. Trim removes a border that is close to
+  // uniform, and a high threshold eats into a pale product - a white bag of
+  // cat litter, a cream-coloured bowl.
+  //
+  // NEITHER IS APPLIED TO A CUTOUT, and that is a safety rule rather than a
+  // matter of taste.
+  //
+  // A cutout is judged afterwards by how much of the frame is opaque, which is
+  // what catches a background remover that deleted the PRODUCT instead of the
+  // background. Trimming the transparent border AND scaling up what is left
+  // turns a remover that kept a five-pixel speck into a full-frame speck -
+  // which passes that check and ships a picture of nothing.
+  //
+  // To be exact, because the exclusion should not claim more than it does:
+  // neither on its own defeats the check. Trim alone shrinks the canvas and
+  // the padding puts it back; enlarging alone scales speck and frame together.
+  // It is the PAIR that is dangerous, which is precisely why they are excluded
+  // together rather than left for somebody tidying this up to combine.
+  const rotated = sharp(input, { failOn: "error", animated: false })
     // Phone photos carry orientation in EXIF; without this they arrive rotated.
-    .rotate()
+    .rotate();
+
+  const pipeline = (transparent ? rotated : rotated.trim({ threshold: 5 }))
     .resize(width, height, {
       fit: "contain",
       withoutEnlargement,
