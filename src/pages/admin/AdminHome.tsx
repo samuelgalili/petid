@@ -151,7 +151,7 @@ export const AdminHome = () => {
               subtitle="אושרו ומחכים לפרסום"
               icon={Package}
               color={numbers?.unpublished_products ? "warning" : "primary"}
-              onClick={() => navigate("/admin/publishing")}
+              onClick={() => navigate("/admin/products?section=publishing")}
             />
             <AdminStatCard
               title="לקוחות חדשים"

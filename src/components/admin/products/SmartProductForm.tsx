@@ -1,14 +1,23 @@
 /**
- * AdminSmartProductEditor — Full-page product editor with:
- * 1. Core fields (name, brand, category, price, stock, image drag & drop)
- * 2. Smart Intelligence (medical tags, breed tags, AI analysis)
- * 3. Subscription logic (auto-restock toggle, interval days)
- * 4. Live Preview card (right panel)
+ * Adding a product with the machine's help.
+ *
+ * Core fields, medical and breed tags, an AI pass over the name and
+ * description, subscription logic, and a live preview of the card the shop
+ * will show.
+ *
+ * IT WAS CALLED "THE SMART EDITOR" AND IT COULD NOT OPEN A PRODUCT. It lived
+ * at /admin/smart-editor, took no id, read nothing, and only ever called
+ * createAdminProduct - so it was a third way to ADD a product, next to the
+ * manual dialog and the import wizard, wearing the name of an editor. That is
+ * most of why the admin had four product screens: three of them were ways to
+ * create the same row.
+ *
+ * It is a panel of the products screen now, opened from "מוצר חדש", and it
+ * hands the finished product back rather than navigating away - so the row it
+ * just made is the one highlighted in the list behind it.
  */
 
 import { useState, useRef, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import AdminLayout from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -107,9 +116,12 @@ const defaultForm: ProductForm = {
   is_featured: false,
 };
 
-const AdminSmartProductEditor = () => {
+export const SmartProductForm = ({ onSaved, onCancel }: {
+  /** Called with nothing to do but refresh: the product exists by then. */
+  onSaved: () => void;
+  onCancel: () => void;
+}) => {
   const { toast } = useToast();
-  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<ProductForm>(defaultForm);
   const [isSaving, setIsSaving] = useState(false);
@@ -252,7 +264,7 @@ const AdminSmartProductEditor = () => {
         special_diet: form.medical_tags, // sync with special_diet
       });
       toast({ title: "המוצר נשמר בהצלחה!" });
-      navigate("/admin/products");
+      onSaved();
     } catch (err: any) {
       toast({ title: "שגיאה בשמירה", description: err.message, variant: "destructive" });
     } finally {
@@ -266,8 +278,7 @@ const AdminSmartProductEditor = () => {
   }, [form.category]);
 
   return (
-    <AdminLayout title="עורך מוצר חכם" icon={Package}>
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 min-h-[calc(100vh-140px)]" dir="rtl">
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6" dir="rtl">
         {/* LEFT — Form */}
         <ScrollArea className="h-[calc(100vh-140px)]">
           <div className="space-y-6 pr-2 pb-6">
@@ -696,10 +707,9 @@ const AdminSmartProductEditor = () => {
               </CardContent>
             </Card>
           </div>
-        </div>
       </div>
-    </AdminLayout>
+    </div>
   );
 };
 
-export default AdminSmartProductEditor;
+export default SmartProductForm;

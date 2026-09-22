@@ -12,7 +12,7 @@ export const getAdminNotificationLink = (category?: string | null) => {
       return "/admin/coupons";
     case "import":
     case "scraper":
-      return "/admin/quick-import";
+      return "/admin/products?section=import";
     case "settings":
       return "/admin/settings";
     case "analytics":

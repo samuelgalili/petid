@@ -41,36 +41,43 @@ interface NavGroup {
   items: { icon: LucideIcon; label: string; href: string; badge?: number; permission: AdminPermission }[];
 }
 
+/**
+ * Grouped by how often you touch it, not by which department owns it.
+ *
+ * The first group used to be called "ראשי" and held analytics, notifications
+ * and AI cost - three screens an owner opens occasionally - while orders and
+ * customers, which are the day, sat below them under "חנות ומכירות". The
+ * owner's word for the result was that it is not comfortable to operate.
+ *
+ * Fourteen items became twelve when the four product screens became one.
+ */
 const navGroups: NavGroup[] = [
   {
-    label: "ראשי",
+    label: "יומיום",
     icon: LayoutDashboard,
     items: [
       { icon: LayoutDashboard, label: "בית", href: "/admin", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
+      { icon: ShoppingCart, label: "הזמנות", href: "/admin/orders", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
+      { icon: Users, label: "לקוחות", href: "/admin/customers", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
+    ]
+  },
+  {
+    label: "החנות",
+    icon: Store,
+    items: [
+      { icon: Package, label: "מוצרים", href: "/admin/products", permission: ADMIN_PERMISSIONS.PRODUCTS_READ },
+      { icon: Ticket, label: "קופונים", href: "/admin/coupons", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
+      { icon: FolderTree, label: "קטגוריות", href: "/admin/categories", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
+    ]
+  },
+  {
+    label: "מעקב והגדרות",
+    icon: Settings,
+    items: [
       { icon: BarChart3, label: "אנליטיקות", href: "/admin/analytics", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
       { icon: Bell, label: "התראות", href: "/admin/notifications", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
       { icon: DollarSign, label: "כלכלת AI", href: "/admin/ai-economics", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
-    ]
-  },
-  {
-    label: "חנות ומכירות",
-    icon: ShoppingCart,
-    items: [
-      { icon: Package, label: "מוצרים", href: "/admin/products", permission: ADMIN_PERMISSIONS.PRODUCTS_READ },
-      { icon: Store, label: "פרסום לחנות", href: "/admin/publishing", permission: ADMIN_PERMISSIONS.INTAKE_READ },
-      { icon: PackageSearch, label: "ייבוא מהיר", href: "/admin/quick-import", permission: ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE },
-      { icon: Sparkles, label: "עורך חכם", href: "/admin/smart-editor", permission: ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE },
-      { icon: ShoppingCart, label: "הזמנות", href: "/admin/orders", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
-      { icon: Users, label: "לקוחות", href: "/admin/customers", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
-      { icon: Ticket, label: "קופונים", href: "/admin/coupons", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
-    ]
-  },
-  {
-    label: "הגדרות מערכת",
-    icon: Settings,
-    items: [
       { icon: Settings, label: "הגדרות", href: "/admin/settings", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
-      { icon: FolderTree, label: "קטגוריות", href: "/admin/categories", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
       { icon: Plug, label: "חיבורים", href: "/admin/connectors", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
       { icon: History, label: "יומן ביקורת", href: "/admin/audit-log", permission: ADMIN_PERMISSIONS.AUDIT_READ },
     ]
@@ -95,7 +102,7 @@ export const commandDestinations = navGroups.flatMap((group) =>
   })));
 
 const defaultOpenGroups = navGroups.map((group) => group.label);
-const openGroupsStorageKey = "admin_sidebar_open_groups_v3";
+const openGroupsStorageKey = "admin_sidebar_open_groups_v4";
 
 /**
  * The bottom bar on a phone.
@@ -118,9 +125,12 @@ const bottomTabs: { icon: LucideIcon; label: string; href: string; permission: A
 
 // Quick actions for the dashboard header
 const quickActions = [
-  { icon: Plus, label: "מוצר חדש", href: "/admin/products?new=true", color: "bg-primary text-primary-foreground", permission: ADMIN_PERMISSIONS.PRODUCTS_CREATE },
+  // "הוספת מוצר" and not "מוצר חדש": the products screen's own primary
+  // button is "מוצר חדש", and two buttons with one name on one page is a
+  // thing a person has to stop and read twice.
+  { icon: Plus, label: "הוספת מוצר", href: "/admin/products?new=true", color: "bg-primary text-primary-foreground", permission: ADMIN_PERMISSIONS.PRODUCTS_CREATE },
   { icon: Eye, label: "הזמנות", href: "/admin/orders", color: "bg-muted text-foreground", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
-  { icon: PackageSearch, label: "ייבוא מהיר", href: "/admin/quick-import", color: "bg-muted text-foreground", permission: ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE },
+  { icon: PackageSearch, label: "ייבוא מקישור", href: "/admin/products?section=import", color: "bg-muted text-foreground", permission: ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE },
 ];
 
 export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: AdminLayoutProps) => {

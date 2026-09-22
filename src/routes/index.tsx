@@ -41,7 +41,7 @@ const Protected = ({ children }: { children: React.ReactNode }) => (
   <ProtectedRoute>{children}</ProtectedRoute>
 );
 
-const Admin = ({ children, permission }: { children: React.ReactNode; permission?: AdminPermission }) => (
+const Admin = ({ children, permission }: { children: React.ReactNode; permission?: AdminPermission | AdminPermission[] }) => (
   <AdminRoute permission={permission}>{children}</AdminRoute>
 );
 
@@ -171,7 +171,7 @@ export const businessRoutes: RouteObject[] = [
   { path: "/smart-notifications", element: <Navigate to="/notifications" replace /> },
   { path: "/business-settings", element: <Navigate to="/settings" replace /> },
   { path: "/business-crm", element: <Navigate to="/shop" replace /> },
-  { path: "/product-sourcing", element: <Navigate to="/admin/quick-import" replace /> },
+  { path: "/product-sourcing", element: <Navigate to="/admin/products?section=import" replace /> },
   { path: "/ad-campaigns", element: <Navigate to="/shop" replace /> },
   { path: "/parks", element: <Navigate to="/chat" replace /> },
   { path: "/experiences", element: <Navigate to="/chat" replace /> },
@@ -208,15 +208,12 @@ const AdminAnalytics = lazy(() => import("@/pages/admin/AdminAnalytics"));
 const AdminOrders = lazy(() => import("@/pages/admin/AdminOrders"));
 const AdminCustomers = lazy(() => import("@/pages/admin/AdminCustomers"));
 const AdminProducts = lazy(() => import("@/pages/admin/AdminProducts"));
-const AdminPublishing = lazy(() => import("@/pages/admin/AdminPublishing"));
 const AdminAuditLog = lazy(() => import("@/pages/admin/AdminAuditLog"));
 const AdminConnectors = lazy(() => import("@/pages/admin/AdminConnectors"));
 const AdminCoupons = lazy(() => import("@/pages/admin/AdminCoupons"));
 const AdminSettings = lazy(() => import("@/pages/admin/AdminSettings"));
 const AdminCategories = lazy(() => import("@/pages/admin/AdminCategories"));
 const AdminEconomics = lazy(() => import("@/pages/admin/AdminEconomics"));
-const AdminQuickImport = lazy(() => import("@/pages/admin/AdminQuickImport"));
-const AdminSmartProductEditor = lazy(() => import("@/pages/admin/AdminSmartProductEditor"));
 const AdminNotifications = lazy(() => import("@/pages/admin/AdminNotifications"));
 
 const AdminPage = ({
@@ -226,7 +223,7 @@ const AdminPage = ({
 }: {
   component: ComponentType;
   pageName: string;
-  permission: AdminPermission;
+  permission: AdminPermission | AdminPermission[];
 }) => (
   <Admin permission={permission}>
     <LazyPage component={Component} pageName={pageName} />
@@ -308,7 +305,7 @@ const legacyAdminRedirects = legacyAdminPaths.map((path) => {
   }
 
   if (path === "/admin/data-import") {
-    return { path, element: <Navigate to="/admin/quick-import" replace /> };
+    return { path, element: <Navigate to="/admin/products?section=import" replace /> };
   }
 
   // The two old paths that were about people now have a real screen to land on.
@@ -329,18 +326,25 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/ai-economics", element: <AdminPage component={AdminEconomics} pageName="כלכלת AI" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
   { path: "/admin/orders", element: <AdminPage component={AdminOrders} pageName="הזמנות" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
   { path: "/admin/customers", element: <AdminPage component={AdminCustomers} pageName="לקוחות" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
-  { path: "/admin/products", element: <AdminPage component={AdminProducts} pageName="מוצרים" permission={ADMIN_PERMISSIONS.PRODUCTS_READ} /> },
-  { path: "/admin/publishing", element: <AdminPage component={AdminPublishing} pageName="פרסום לחנות" permission={ADMIN_PERMISSIONS.INTAKE_READ} /> },
+  // Either permission gets you in, and the screen shows the half you hold.
+  // SELLER_ADMIN has intake.read and NOT products.read, so a single
+  // products.read here would have quietly taken the publication queue away
+  // from that role when its screen was folded into this one.
+  { path: "/admin/products", element: <AdminPage component={AdminProducts} pageName="מוצרים" permission={[ADMIN_PERMISSIONS.PRODUCTS_READ, ADMIN_PERMISSIONS.INTAKE_READ]} /> },
+  // Publishing and the "smart editor" are sections of the products screen
+  // now. Redirected rather than removed: these links are in people's
+  // history and in this repository's own audit entries.
+  { path: "/admin/publishing", element: <Navigate to="/admin/products?section=publishing" replace /> },
   { path: "/admin/coupons", element: <AdminPage component={AdminCoupons} pageName="קופונים" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
   { path: "/admin/settings", element: <AdminPage component={AdminSettings} pageName="הגדרות" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
   { path: "/admin/categories", element: <AdminPage component={AdminCategories} pageName="קטגוריות" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
   { path: "/admin/audit-log", element: <AdminPage component={AdminAuditLog} pageName="יומן ביקורת" permission={ADMIN_PERMISSIONS.AUDIT_READ} /> },
   { path: "/admin/connectors", element: <AdminPage component={AdminConnectors} pageName="חיבורים" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
   { path: "/admin/notifications", element: <AdminPage component={AdminNotifications} pageName="התראות" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
-  { path: "/admin/quick-import", element: <AdminPage component={AdminQuickImport} pageName="ייבוא מהיר" permission={ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE} /> },
-  { path: "/admin/smart-editor", element: <AdminPage component={AdminSmartProductEditor} pageName="עורך מוצר חכם" permission={ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE} /> },
+  { path: "/admin/quick-import", element: <Navigate to="/admin/products?section=import" replace /> },
+  { path: "/admin/smart-editor", element: <Navigate to="/admin/products" replace /> },
   { path: "/admin/review-queue", element: <Navigate to="/admin/products?filter=needs_review" replace /> },
-  { path: "/admin/scraper", element: <Navigate to="/admin/quick-import" replace /> },
+  { path: "/admin/scraper", element: <Navigate to="/admin/products?section=import" replace /> },
   ...legacyAdminRedirects,
 ];
 

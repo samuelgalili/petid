@@ -5,7 +5,17 @@ import { adminHasPermission, type AdminPermission } from "@/lib/adminPermissions
 
 interface AdminRouteProps {
   children: ReactNode;
-  permission?: AdminPermission;
+  /**
+   * One permission, or several of which ANY is enough.
+   *
+   * The list exists because merging screens merges their gates. The products
+   * screen now holds the publication queue, and SELLER_ADMIN has INTAKE_READ
+   * without PRODUCTS_READ - so a single `products.read` on the route would
+   * have taken the publication queue away from a whole role, silently, as a
+   * side effect of a layout change. The page shows each half to whoever holds
+   * that half's permission.
+   */
+  permission?: AdminPermission | AdminPermission[];
 }
 
 export const AdminRoute = ({ children, permission }: AdminRouteProps) => {
@@ -28,7 +38,8 @@ export const AdminRoute = ({ children, permission }: AdminRouteProps) => {
     return <Navigate to="/admin/change-password" replace />;
   }
 
-  if (permission && !adminHasPermission(admin, permission)) {
+  const required = permission === undefined ? [] : [permission].flat();
+  if (required.length > 0 && !required.some((one) => adminHasPermission(admin, one))) {
     return <Navigate to="/admin/products" replace />;
   }
 

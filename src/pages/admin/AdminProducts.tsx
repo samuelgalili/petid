@@ -1,12 +1,39 @@
+/**
+ * THE products screen. Singular, which it was not.
+ *
+ * There were four - מוצרים, פרסום לחנות, ייבוא מהיר, עורך חכם - and a
+ * product's life was spread across them. Worse, three of the four were ways to
+ * CREATE a product: the manual dialog here, the import wizard here, and
+ * /admin/smart-editor, which despite its name took no id, read nothing, and
+ * only ever called createAdminProduct. The owner's complaint that the admin is
+ * uncomfortable to operate was, in the catalogue, mostly this.
+ *
+ * So: one list, with the actions on it.
+ *
+ *   ADDING      one "מוצר חדש" menu with the four ways in - by hand, with the
+ *               machine's help, from a link or barcode, from a file - instead
+ *               of four buttons of which one navigated to another screen.
+ *   PUBLISHING  a section of this screen rather than /admin/publishing, so
+ *               "what is not in the shop yet" is asked where "what is" is.
+ *   EDITING     the row, as before.
+ *
+ * The old routes redirect here rather than 404, because links to them are in
+ * people's history and in this repository's own audit entries.
+ */
+
 import { useCallback, useState, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Package, Plus, Edit, Trash2, MoreHorizontal,
   Upload, Download, AlertCircle, Flag, CheckCircle,
-  ShoppingCart, Eye, Star, Sparkles, FileSpreadsheet
+  ShoppingCart, Eye, Star, Sparkles, FileSpreadsheet, Store, ChevronDown
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { ImportFromLinkPanel } from "@/components/admin/products/ImportFromLinkPanel";
+import { PublishingPanel } from "@/components/admin/products/PublishingPanel";
+import { SmartProductForm } from "@/components/admin/products/SmartProductForm";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { BulkProductImport, type ParsedProduct } from "@/components/admin/BulkProductImport";
 import { ProductImportWizard } from "@/components/admin/ProductImportWizard";
 import { DataTable, Column, FilterOption } from "@/components/admin/DataTable";
@@ -104,9 +131,12 @@ const categories = [
   { value: "מותגים", label: "מותגים" },
 ];
 
+/** Which half of the screen is showing: the catalogue, or what is waiting. */
+type ProductsSection = "catalogue" | "publishing" | "import";
+
 const AdminProducts = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const { admin } = useAwsAdminAuth();
   const { logAction } = useAuditLog();
@@ -126,7 +156,46 @@ const AdminProducts = () => {
   // The row to return to after a save, so an edit does not vanish into the list.
   const [lastSavedId, setLastSavedId] = useState<string | null>(null);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
+  const [smartFormOpen, setSmartFormOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  /*
+   * EACH HALF KEEPS ITS OWN GATE.
+   *
+   * Two screens became two sections, and their permissions are not the same
+   * one: SELLER_ADMIN holds intake.read and NOT products.read, so somebody can
+   * legitimately be here for the publication queue and have no business seeing
+   * the catalogue. Folding screens together must not hand anybody a screen
+   * they could not open yesterday.
+   */
+  const canSeeCatalogue = adminHasPermission(admin, ADMIN_PERMISSIONS.PRODUCTS_READ);
+  const canSeePublishing = adminHasPermission(admin, ADMIN_PERMISSIONS.INTAKE_READ);
+  const canUseProductTools = adminHasPermission(admin, ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE);
+
+  // In the URL, so the publication queue is still a thing you can link to and
+  // come back to - which it was when it had a route of its own.
+  const requested = searchParams.get("section");
+  const asked: ProductsSection = requested === "publishing" ? "publishing"
+    : requested === "import" ? "import"
+    : "catalogue";
+  const allowedSection: Record<ProductsSection, boolean> = {
+    catalogue: canSeeCatalogue,
+    publishing: canSeePublishing,
+    // Importing writes to the legacy catalogue, so it needs the same
+    // permission the tool required when it was /admin/quick-import.
+    import: adminHasPermission(admin, ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE),
+  };
+  const section: ProductsSection = allowedSection[asked]
+    ? asked
+    : (canSeeCatalogue ? "catalogue" : "publishing");
+  const showSection = useCallback((next: ProductsSection) => {
+    setSearchParams((params) => {
+      const updated = new URLSearchParams(params);
+      if (next === "catalogue") updated.delete("section");
+      else updated.set("section", next);
+      return updated;
+    }, { replace: true });
+  }, [setSearchParams]);
 
   const openManualProductDialog = useCallback(() => {
     setEditingProduct({ ...emptyProduct });
@@ -660,7 +729,51 @@ const AdminProducts = () => {
   const needsReviewCount = products.filter(p => p.needs_image_review || p.needs_price_review).length;
 
   return (
-    <AdminLayout title="ניהול מוצרים" icon={Package} breadcrumbs={[{ label: "מוצרים" }]}>
+    <AdminLayout
+      title="מוצרים"
+      icon={Package}
+      breadcrumbs={section === "catalogue"
+        ? [{ label: "מוצרים" }]
+        : [{ label: "מוצרים", href: "/admin/products" },
+           { label: section === "publishing" ? "ממתינים לפרסום" : "ייבוא מקישור" }]}
+    >
+      {/* The two halves of a product's life, on one screen. "Waiting to be
+          published" was /admin/publishing, which meant the answer to "is it in
+          the shop" lived somewhere other than the shop's own list. The import
+          panel has no chip: it is entered from "מוצר חדש" and leaves when it
+          is finished, rather than being a place you sit. */}
+      <div
+        className="inline-flex items-center gap-1 rounded-xl border border-border/40 bg-muted/30 p-1 mb-4 empty:hidden"
+        dir="rtl"
+      >
+        {([
+          { key: "catalogue" as const, label: "בחנות", icon: Package, allowed: canSeeCatalogue },
+          { key: "publishing" as const, label: "ממתינים לפרסום", icon: Store, allowed: canSeePublishing },
+        ]).filter((tab) => tab.allowed).map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => showSection(tab.key)}
+            aria-current={section === tab.key ? "page" : undefined}
+            className={
+              section === tab.key
+                ? "flex items-center gap-1.5 rounded-lg bg-background px-3 py-1.5 text-sm font-medium shadow-sm"
+                : "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground"
+            }
+          >
+            <tab.icon className="w-4 h-4" strokeWidth={1.5} />
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {section === "import" ? (
+        <ImportFromLinkPanel
+          onImported={() => queryClient.invalidateQueries({ queryKey: ["admin-products-unified"] })}
+          onClose={() => showSection("catalogue")}
+        />
+      ) : section === "publishing" ? <PublishingPanel /> : (
+        <>
       {/* Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6" dir="rtl">
         {/* Four hand-rolled copies of AdminStatCard, exactly as AdminBackup
@@ -676,23 +789,47 @@ const AdminProducts = () => {
       {/* Action Bar */}
       <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
         <div className="flex gap-2 flex-wrap">
-          <Button onClick={openManualProductDialog}>
-            <Plus className="w-4 h-4 ml-2" />
-            מוצר ידני חדש
-          </Button>
-          <Button variant="outline" onClick={() => setBulkImportOpen(true)}>
-            <FileSpreadsheet className="w-4 h-4 ml-2" />
-            ייבוא מקובץ
-          </Button>
-          <Button variant="outline" onClick={() => setWizardOpen(true)}>
-            <Upload className="w-4 h-4 ml-2" />
-            ייבוא מקישור
-          </Button>
-          <Button variant="outline" onClick={() => navigate('/admin/smart-editor')}>
-            <Sparkles className="w-4 h-4 ml-2" />
-            עורך חכם
-          </Button>
-          <Button 
+          {/* ONE WAY IN, four ways to fill it. These were four buttons, one of
+              which left the screen entirely - so "how do I add a product" had
+              four answers and the admin had to know which. */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button>
+                <Plus className="w-4 h-4 ml-2" />
+                מוצר חדש
+                <ChevronDown className="w-3.5 h-3.5 mr-2 opacity-70" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={openManualProductDialog}>
+                <Edit className="w-4 h-4 ml-2" />
+                למלא ידנית
+              </DropdownMenuItem>
+              {/* product_tools.use, which is what /admin/smart-editor
+                  required. A screen folded into a menu keeps its gate. */}
+              {canUseProductTools && (
+                <DropdownMenuItem onClick={() => setSmartFormOpen(true)}>
+                  <Sparkles className="w-4 h-4 ml-2" />
+                  בעזרת המכונה
+                </DropdownMenuItem>
+              )}
+              {canUseProductTools && (
+                <DropdownMenuItem onClick={() => showSection("import")}>
+                  <Download className="w-4 h-4 ml-2" />
+                  מקישור לחנות אחרת
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={() => setWizardOpen(true)}>
+                <Upload className="w-4 h-4 ml-2" />
+                משם או מברקוד
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setBulkImportOpen(true)}>
+                <FileSpreadsheet className="w-4 h-4 ml-2" />
+                מקובץ מוצרים
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button
             variant="outline"
             onClick={() => {
               const csvContent = [
@@ -842,6 +979,8 @@ const AdminProducts = () => {
           />
         }
       />
+        </>
+      )}
 
       {/* Edit/Create Dialog */}
       <ProductFormDialog
@@ -906,6 +1045,27 @@ const AdminProducts = () => {
         }}
         onUploadComplete={() => queryClient.invalidateQueries({ queryKey: ["admin-products-unified"] })}
       />
+
+      {/* Was /admin/smart-editor, a screen of its own that could only create.
+          It hands the product back now instead of navigating, so the list
+          behind it refreshes and stays where the admin left it. */}
+      <Dialog open={smartFormOpen} onOpenChange={setSmartFormOpen}>
+        <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto" dir="rtl">
+          <DialogHeader className="text-right">
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              מוצר חדש בעזרת המכונה
+            </DialogTitle>
+          </DialogHeader>
+          <SmartProductForm
+            onSaved={() => {
+              setSmartFormOpen(false);
+              queryClient.invalidateQueries({ queryKey: ["admin-products-unified"] });
+            }}
+            onCancel={() => setSmartFormOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };

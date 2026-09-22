@@ -42,8 +42,8 @@ const quickActions: QuickAction[] = [
   { id: 'settings', label: 'הגדרות', icon: Settings, href: '/admin/settings', category: 'manage' },
   
   // Tools
-  { id: 'import', label: 'ייבוא מהיר', icon: Upload, href: '/admin/quick-import', category: 'tools' },
-  { id: 'smart-editor', label: 'עורך חכם', icon: Sparkles, href: '/admin/smart-editor', category: 'tools' },
+  { id: 'import', label: 'ייבוא מקישור', icon: Upload, href: '/admin/products?section=import', category: 'tools' },
+  { id: 'smart-editor', label: 'מוצר חדש חכם', icon: Sparkles, href: '/admin/products', category: 'tools' },
 ];
 
 const categoryLabels: Record<string, string> = {

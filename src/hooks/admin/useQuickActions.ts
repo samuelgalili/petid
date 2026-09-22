@@ -37,8 +37,8 @@ export const useQuickActions = (navigate: (path: string) => void) => {
     { id: 'manage-settings', label: 'הגדרות', icon: 'Settings', action: () => navigate('/admin/settings'), category: 'manage' },
     
     // Tools
-    { id: 'import-data', label: 'ייבוא מהיר', icon: 'Upload', action: () => navigate('/admin/quick-import'), category: 'tools' },
-    { id: 'smart-editor', label: 'עורך חכם', icon: 'Sparkles', action: () => navigate('/admin/smart-editor'), category: 'tools' },
+    { id: 'import-data', label: 'ייבוא מקישור', icon: 'Upload', action: () => navigate('/admin/products?section=import'), category: 'tools' },
+    { id: 'smart-editor', label: 'מוצר חדש חכם', icon: 'Sparkles', action: () => navigate('/admin/products'), category: 'tools' },
   ], [navigate]);
 
   const getActionsByCategory = useCallback((category: QuickAction['category']) => {

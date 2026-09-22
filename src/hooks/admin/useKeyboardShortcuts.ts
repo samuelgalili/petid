@@ -18,8 +18,8 @@ export const useKeyboardShortcuts = () => {
     { key: 'o', ctrl: true, action: () => navigate('/admin/orders'), description: 'הזמנות' },
     { key: 'p', ctrl: true, action: () => navigate('/admin/products'), description: 'מוצרים' },
     { key: 'c', ctrl: true, action: () => navigate('/admin/coupons'), description: 'קופונים' },
-    { key: 'i', ctrl: true, action: () => navigate('/admin/quick-import'), description: 'ייבוא מהיר' },
-    { key: 'e', ctrl: true, action: () => navigate('/admin/smart-editor'), description: 'עורך חכם' },
+    { key: 'i', ctrl: true, action: () => navigate('/admin/products?section=import'), description: 'ייבוא מקישור' },
+    { key: 'e', ctrl: true, action: () => navigate('/admin/products'), description: 'מוצרים' },
     { key: 'a', ctrl: true, action: () => navigate('/admin/analytics'), description: 'אנליטיקות' },
     { key: 's', ctrl: true, shift: true, action: () => navigate('/admin/settings'), description: 'הגדרות' },
   ], [navigate]);

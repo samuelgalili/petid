@@ -178,7 +178,7 @@ export const adminHome = async ({ pool }) => {
       subtitle: "אושר ולא פורסם לחנות",
       amount: null,
       at: row.created_at,
-      href: "/admin/publishing",
+      href: "/admin/products?section=publishing",
     })),
   ];
 

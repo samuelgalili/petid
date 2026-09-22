@@ -31,9 +31,14 @@ const read = (rel) => readFileSync(path.join(repoRoot, rel), "utf8");
 
 const serverPerms = read("server/src/adminPermissions.js");
 const clientPerms = read("src/lib/adminPermissions.ts");
-const screen = read("src/pages/admin/AdminPublishing.tsx");
+// The publishing screen is a SECTION of the products screen now - the admin
+// had four product screens and a product's life was spread across them - so
+// the file moved. The claims below did not: the gate's words still have to be
+// translated, and a person still has to be able to get there.
+const screen = read("src/components/admin/products/PublishingPanel.tsx");
 const routes = read("src/routes/index.tsx");
 const nav = read("src/components/admin/AdminLayout.tsx");
+const productsScreen = read("src/pages/admin/AdminProducts.tsx");
 
 /** name -> "value", from either file. */
 const constants = (source) =>
@@ -60,8 +65,25 @@ test("the intake permissions mean the same thing on both sides", () => {
 });
 
 test("the publishing screen is reachable", () => {
-  assert.match(routes, /admin\/publishing/, "no route points at the publishing screen");
-  assert.match(nav, /admin\/publishing/, "the publishing screen is in no menu, so nobody finds it");
+  // It is no longer a destination of its own, so "is it in the menu" is the
+  // wrong question. The three that matter now:
+  //
+  //   - the old URL still lands somewhere, because it is in people's history;
+  //   - the products screen actually renders the panel;
+  //   - the products screen is in the menu, which is how anybody arrives.
+  assert.match(
+    routes, /admin\/publishing/,
+    "nothing answers /admin/publishing any more, so every saved link to it 404s",
+  );
+  assert.match(
+    productsScreen, /<PublishingPanel\s*\/>/,
+    "the products screen does not render the publication queue, so folding the\n"
+    + "screen in removed it rather than moving it",
+  );
+  assert.match(
+    nav, /href: "\/admin\/products"/,
+    "the products screen is in no menu, so nobody finds the queue inside it",
+  );
 });
 
 test("every refusal the gate can give has words", () => {

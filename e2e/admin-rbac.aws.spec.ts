@@ -62,8 +62,14 @@ test.describe("Admin role permissions", () => {
 
     await expect(page.getByText("סה״כ מוצרים")).toBeVisible();
     await expect(page.locator('a[href="/admin/products"]')).not.toHaveCount(0);
-    await expect(page.locator('a[href="/admin/quick-import"]')).not.toHaveCount(0);
-    await expect(page.locator('a[href="/admin/smart-editor"]')).not.toHaveCount(0);
+    // The tools are not sidebar destinations any more - quick-import and the
+    // smart editor became a section and a menu item of THIS screen - so what
+    // has to hold is that a product manager can still REACH them, not that two
+    // particular links exist.
+    await page.getByRole("button", { name: "מוצר חדש" }).click();
+    await expect(page.getByRole("menuitem", { name: "מקישור לחנות אחרת" })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: "בעזרת המכונה" })).toBeVisible();
+    await page.keyboard.press("Escape");
 
     for (const href of [
       "/admin/analytics",
