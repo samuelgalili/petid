@@ -72,7 +72,9 @@ test.describe("Admin panel", () => {
       test.skip(!testInfo.project.name.toLowerCase().includes("mobile"), "Mobile navigation check");
 
       await page.goto("/admin/products");
-      await page.locator("header.lg\\:hidden button").first().click();
+      // The drawer is the bottom bar's last tab now, not a hamburger in the
+      // header: the header's buttons are the bell and "to the app".
+      await page.getByRole("navigation", { name: "ניווט ראשי" }).getByText("עוד").click();
       const mobileMenu = page.getByRole("dialog");
       await expect(mobileMenu).toBeVisible();
 

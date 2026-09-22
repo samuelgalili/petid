@@ -96,6 +96,24 @@ export const commandDestinations = navGroups.flatMap((group) =>
 const defaultOpenGroups = navGroups.map((group) => group.label);
 const openGroupsStorageKey = "admin_sidebar_open_groups_v3";
 
+/**
+ * The bottom bar on a phone.
+ *
+ * WHY A BAR AND NOT JUST THE DRAWER. Every move on a phone used to cost three
+ * taps - open the drawer, find the group, maybe expand it, tap the item - and
+ * the four destinations below are where nearly all of the time goes. A bar
+ * makes those one tap and leaves the drawer for the other ten screens, which
+ * is what the last slot is.
+ *
+ * Four plus "more" is the ceiling: a fifth destination makes each target
+ * narrower than a thumb on a 390px screen, which is how a bar stops helping.
+ */
+const bottomTabs: { icon: LucideIcon; label: string; href: string; permission: AdminPermission }[] = [
+  { icon: ShoppingCart, label: "הזמנות", href: "/admin/orders", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
+  { icon: Package, label: "מוצרים", href: "/admin/products", permission: ADMIN_PERMISSIONS.PRODUCTS_READ },
+  { icon: Users, label: "לקוחות", href: "/admin/customers", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
+];
+
 // Quick actions for the dashboard header
 const quickActions = [
   { icon: Plus, label: "מוצר חדש", href: "/admin/products?new=true", color: "bg-primary text-primary-foreground", permission: ADMIN_PERMISSIONS.PRODUCTS_CREATE },
@@ -186,7 +204,7 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
             className="shrink-0 group-hover:scale-105 transition-transform"
           />
           {!collapsed && (
-            <span className="text-[10px] text-muted-foreground leading-none">ניהול מערכת</span>
+            <span className="text-[11px] text-muted-foreground leading-none">ניהול מערכת</span>
           )}
         </Link>
       </div>
@@ -195,12 +213,12 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
       {!collapsed && (
         <div className="px-3 py-2.5">
           <div className="relative">
-            <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
             <Input
               placeholder="חיפוש מהיר..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pr-8 h-8 bg-muted/30 border-border/20 text-xs placeholder:text-muted-foreground/40 focus-visible:ring-1 focus-visible:ring-primary/20 rounded-lg"
+              className="pr-9 h-10 bg-muted/30 border-border/20 text-sm placeholder:text-muted-foreground/40 focus-visible:ring-1 focus-visible:ring-primary/20 rounded-lg"
             />
           </div>
         </div>
@@ -227,7 +245,7 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
                             <Link
                               to={item.href}
                               className={cn(
-                                "flex items-center justify-center w-9 h-9 rounded-lg transition-all relative mx-auto",
+                                "flex items-center justify-center w-10 h-10 rounded-lg transition-all relative mx-auto",
                                 isActive
                                   ? "bg-primary text-primary-foreground shadow-sm"
                                   : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
@@ -254,7 +272,7 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
                 onOpenChange={() => toggleGroup(group.label)}
               >
                 <CollapsibleTrigger className={cn(
-                  "flex flex-row-reverse items-center justify-between w-full px-2 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-md transition-colors",
+                  "flex flex-row-reverse items-center justify-between w-full px-2 py-2.5 text-xs font-semibold uppercase tracking-wider rounded-md transition-colors",
                   hasActiveItem 
                     ? "text-primary" 
                     : "text-muted-foreground/60 hover:text-muted-foreground"
@@ -280,14 +298,14 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
                         to={item.href}
                         onClick={() => setIsOpen(false)}
                         className={cn(
-                          "flex items-center gap-2 px-2.5 py-[6px] rounded-lg text-[12.5px] transition-all relative group",
+                          "flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all relative group",
                           isActive
                             ? "bg-primary/10 text-primary font-medium"
                             : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                         )}
                       >
                         <ItemIcon className={cn(
-                          "w-3.5 h-3.5 shrink-0",
+                          "w-4 h-4 shrink-0",
                           isActive ? "text-primary" : "text-muted-foreground/60 group-hover:text-foreground"
                         )} strokeWidth={1.5} />
                         <span className="truncate">{item.label}</span>
@@ -323,33 +341,33 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
         ) : (
           <div className="space-y-2">
             <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/30">
-              <Avatar className="w-7 h-7">
-                <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-bold">
+              <Avatar className="w-9 h-9">
+                <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
                   {admin?.email?.charAt(0).toUpperCase() || 'מ'}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-medium truncate text-foreground">{admin?.display_name || "מנהל מערכת"}</p>
-                <p className="text-[9px] text-muted-foreground truncate">{admin?.email}</p>
+                <p className="text-sm font-medium truncate text-foreground">{admin?.display_name || "מנהל מערכת"}</p>
+                <p className="text-[11px] text-muted-foreground truncate">{admin?.email}</p>
               </div>
             </div>
             <div className="flex gap-1">
               <Button
                 variant="ghost"
                 size="sm"
-                className="flex-1 justify-start gap-1.5 h-7 text-[11px] text-muted-foreground hover:text-foreground"
+                className="flex-1 justify-start gap-1.5 h-9 text-xs text-muted-foreground hover:text-foreground"
                 onClick={() => navigate("/")}
               >
-                <Home className="w-3 h-3" />
+                <Home className="w-3.5 h-3.5" />
                 לאפליקציה
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                className="h-9 w-9 text-muted-foreground hover:text-destructive"
                 onClick={handleSignOut}
               >
-                <LogOut className="w-3 h-3" />
+                <LogOut className="w-4 h-4" />
               </Button>
             </div>
           </div>
@@ -368,26 +386,18 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
         className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-b border-border/20"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
-        <div className="flex items-center justify-between px-4 h-[52px]">
-          <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="shrink-0 w-9 h-9">
-                <Menu className="w-5 h-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="p-0 w-64 border-l border-border/20">
-              <SheetTitle className="sr-only">תפריט ניהול</SheetTitle>
-              <NavContent />
-            </SheetContent>
-          </Sheet>
-          <h1 className="font-semibold text-sm flex items-center gap-1.5 truncate flex-1 mx-3">
-            {Icon && <Icon className="w-4 h-4 shrink-0 text-primary" strokeWidth={1.5} />}
+        {/* No hamburger. The drawer moved to the bottom bar's last tab, where a
+            thumb already is, and the space it freed went to the title - which
+            used to truncate on any screen with a name in it. */}
+        <div className="flex items-center justify-between gap-2 px-4 h-14">
+          <h1 className="font-semibold text-base flex items-center gap-2 truncate flex-1 min-w-0">
+            {Icon && <Icon className="w-[18px] h-[18px] shrink-0 text-primary" strokeWidth={1.75} />}
             <span className="truncate">{title}</span>
           </h1>
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-0.5 shrink-0">
             {adminHasPermission(admin, ADMIN_PERMISSIONS.FULL_ACCESS) && <AdminNotificationsBell />}
-            <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="w-9 h-9">
-              <Home className="w-4 h-4" />
+            <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="w-10 h-10">
+              <Home className="w-[18px] h-[18px]" />
             </Button>
           </div>
         </div>
@@ -419,15 +429,24 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
         <main className={cn(
           "flex-1 min-h-screen transition-all duration-300 w-full overflow-x-hidden",
           isCollapsed ? "lg:mr-14" : "lg:mr-56",
-        )} style={{ paddingTop: 'calc(52px + env(safe-area-inset-top, 0px))' }}>
-          {/* Remove mobile padding on desktop */}
-          <div className="lg:!pt-0">
+        )}>
+          {/*
+           * Spacers, not padding on <main>.
+           *
+           * The padding used to be an inline style, which no `lg:` class can
+           * undo - so a 56px blank strip sat above the DESKTOP header too, and
+           * the sticky header stuck to the viewport rather than below it. A
+           * spacer that is `lg:hidden` clears the fixed mobile header where it
+           * exists and takes up nothing where it does not.
+           */}
+          <div className="lg:hidden" aria-hidden style={{ height: 'calc(56px + env(safe-area-inset-top, 0px))' }} />
+          <div>
             {/* Desktop Header */}
-            <header className="hidden lg:flex items-center justify-between px-5 h-12 border-b border-border/20 bg-card/60 backdrop-blur-sm sticky top-0 z-40">
+            <header className="hidden lg:flex items-center justify-between px-5 h-14 border-b border-border/20 bg-card/60 backdrop-blur-sm sticky top-0 z-40">
               <div className="flex items-center gap-2 min-w-0">
                 {Icon && (
-                  <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                    <Icon className="w-3.5 h-3.5 text-primary" strokeWidth={1.5} />
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Icon className="w-4 h-4 text-primary" strokeWidth={1.5} />
                   </div>
                 )}
                 <div className="min-w-0">
@@ -450,7 +469,7 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
                       ))}
                     </nav>
                   ) : (
-                    <h1 className="font-semibold text-sm truncate">{title}</h1>
+                    <h1 className="font-semibold text-base truncate">{title}</h1>
                   )}
                 </div>
               </div>
@@ -461,27 +480,84 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
                     key={action.href + action.label}
                     variant="ghost"
                     size="sm"
-                    className="h-7 text-[11px] gap-1 text-muted-foreground hover:text-foreground"
+                    className="h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
                     onClick={() => navigate(action.href)}
                   >
-                    <action.icon className="w-3 h-3" />
+                    <action.icon className="w-3.5 h-3.5" />
                     {action.label}
                   </Button>
                 ))}
                 <div className="w-px h-5 bg-border/30 mx-1" />
                 {adminHasPermission(admin, ADMIN_PERMISSIONS.FULL_ACCESS) && <AdminNotificationsBell />}
-                <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => navigate("/")}>
-                  <Home className="w-3.5 h-3.5" />
+                <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => navigate("/")}>
+                  <Home className="w-4 h-4" />
                 </Button>
               </div>
             </header>
 
             <div className="p-4 lg:p-5">
               {children}
+              {/* Clears the bottom bar. Without it the bar covers the last row
+                  of every table, which on a list of orders is the newest one. */}
+              <div
+                data-bottom-bar-spacer
+                className="lg:hidden"
+                aria-hidden
+                style={{ height: 'calc(64px + env(safe-area-inset-bottom, 0px))' }}
+              />
             </div>
           </div>
         </main>
       </div>
+
+      {/* Bottom bar - phones only. The drawer lives in its last tab. */}
+      <nav
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border/20"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        aria-label="ניווט ראשי"
+      >
+        <div className="flex items-stretch">
+          {bottomTabs
+            .filter((tab) => adminHasPermission(admin, tab.permission))
+            .map((tab) => {
+              const isActive = location.pathname === tab.href;
+              const TabIcon = tab.icon;
+              return (
+                <Link
+                  key={tab.href}
+                  to={tab.href}
+                  className={cn(
+                    // h-14 and flex-1: a target a thumb hits without aiming.
+                    "flex-1 flex flex-col items-center justify-center gap-0.5 h-14 transition-colors",
+                    isActive ? "text-primary" : "text-muted-foreground",
+                  )}
+                  aria-current={isActive ? "page" : undefined}
+                >
+                  <TabIcon className="w-5 h-5" strokeWidth={isActive ? 2 : 1.5} />
+                  <span className={cn("text-[11px] leading-none", isActive && "font-semibold")}>
+                    {tab.label}
+                  </span>
+                </Link>
+              );
+            })}
+
+          <Sheet open={isOpen} onOpenChange={setIsOpen}>
+            <SheetTrigger asChild>
+              <button
+                type="button"
+                className="flex-1 flex flex-col items-center justify-center gap-0.5 h-14 text-muted-foreground transition-colors"
+              >
+                <Menu className="w-5 h-5" strokeWidth={1.5} />
+                <span className="text-[11px] leading-none">עוד</span>
+              </button>
+            </SheetTrigger>
+            <SheetContent side="right" className="p-0 w-72 border-l border-border/20">
+              <SheetTitle className="sr-only">תפריט ניהול</SheetTitle>
+              <NavContent />
+            </SheetContent>
+          </Sheet>
+        </div>
+      </nav>
     </div>
   );
 };

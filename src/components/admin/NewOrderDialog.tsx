@@ -415,17 +415,11 @@ export const NewOrderDialog = ({
           note field. On a 390px phone that runs past the bottom of the screen,
           and an admin taking an order on their phone could not reach the
           button - the element was there and simply could not be tapped. */}
-      {/* z-[10002] IS NOT DECORATION. On a phone the customer card is itself a
-          Sheet, whose overlay is z-[10000] and whose panel is z-[10001], while
-          every Dialog in the app sits at z-50. A dialog opened from inside the
-          card therefore renders UNDERNEATH the sheet's backdrop: the buttons
-          are present, findable and completely untappable. Nothing looks
-          broken, which is why it took a mobile test run to see it.
-
-          Raised here rather than in ui/dialog.tsx, which would move every
-          dialog in the application. The general mismatch is still there and is
-          worth fixing at the source. */}
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto z-[10002]" dir="rtl">
+      {/* No z-index of its own any more. This screen used to carry z-[10002]
+          alone, because a Dialog sat at z-50 under the card's Sheet and was
+          untappable; ui/dialog.tsx now puts every dialog on the Sheet's layer,
+          so the one opened last paints on top - here and everywhere else. */}
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader className="text-right">
           <DialogTitle>הזמנה חדשה</DialogTitle>
           <DialogDescription>

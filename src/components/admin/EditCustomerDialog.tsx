@@ -93,8 +93,7 @@ export const EditCustomerDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {/* z above the card's Sheet, like the other dialogs opened from here. */}
-      <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto z-[10002]" dir="rtl">
+      <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader className="text-right">
           <DialogTitle>עריכת פרטי לקוח</DialogTitle>
         </DialogHeader>

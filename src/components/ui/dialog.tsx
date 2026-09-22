@@ -20,7 +20,8 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-black/60 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 duration-300",
+      // z-[10000], the Sheet's layer - see the note on DialogContent below.
+      "fixed inset-0 z-[10000] bg-black/60 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 duration-300",
       className,
     )}
     {...props}
@@ -46,10 +47,25 @@ const DialogContent = React.forwardRef<
   return (
     <DialogPortal>
       <DialogOverlay />
+      {/*
+       * z-[10001] IS THE SHEET'S OWN LAYER, AND THAT IS THE POINT.
+       *
+       * A dialog used to sit at z-50 while the Sheet sits at z-[10000]/[10001],
+       * so any dialog opened from inside a sheet rendered UNDERNEATH it: the
+       * customer card on a phone opened a form nobody could reach. Three
+       * screens had been patched one at a time with z-[10002], which fixes
+       * those three and leaves every other dialog opened from a sheet broken.
+       *
+       * Raising the dialog above the sheet for good would only invert the bug
+       * the day a sheet is opened from a dialog. Equal z is what is actually
+       * wanted: Radix appends each portal to the body when it OPENS, so with
+       * the same z-index the one opened last paints on top - which is the
+       * thing itself, in either nesting order.
+       */}
       <DialogPrimitive.Content
         ref={ref}
         className={cn(
-          "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-2xl sm:rounded-2xl duration-300",
+          "fixed left-[50%] top-[50%] z-[10001] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-2xl sm:rounded-2xl duration-300",
           animationClasses[animation],
           className,
         )}

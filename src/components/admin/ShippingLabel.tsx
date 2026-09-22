@@ -75,10 +75,7 @@ export const ShippingLabel = ({
   amountDue: number;
 }) => (
   <Dialog open={open} onOpenChange={onOpenChange}>
-    {/* Above the customer card's Sheet, for the same reason the order dialog
-        is: a Sheet overlay is z-[10000] and a Dialog is z-50, so anything
-        opened from inside the card is otherwise untappable on a phone. */}
-    <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto z-[10002]" dir="rtl">
+    <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto" dir="rtl">
       <DialogHeader className="text-right print:hidden">
         <DialogTitle>תווית משלוח · {order.order_number}</DialogTitle>
       </DialogHeader>
