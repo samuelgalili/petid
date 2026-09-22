@@ -53,7 +53,9 @@ test("AUDIT_READ is mirrored on the client", () => {
 
 test("the audit log screen is routed AND in the sidebar", () => {
   const routes = read("src/routes/index.tsx");
-  const layout = read("src/components/admin/AdminLayout.tsx");
+  // The navigation is a table in its own file now - seven surfaces needed the
+  // same list, so it stopped living inside the layout component.
+  const layout = read("src/components/admin/adminNavigation.ts");
 
   assert.match(routes, /path: "\/admin\/audit-log"/, "the screen is not routed");
   assert.match(
@@ -105,13 +107,20 @@ test("the command bar is bound to Cmd/Ctrl+K and mounted in the shell", () => {
 });
 
 test("the command bar's destinations are derived from the sidebar, not copied", () => {
-  const layout = read("src/components/admin/AdminLayout.tsx");
+  const navigation = read("src/components/admin/adminNavigation.ts");
   assert.match(
-    layout,
-    /commandDestinations = navGroups\.flatMap/,
+    navigation,
+    /commandDestinations = ADMIN_SCREENS\.map/,
     "the destination list is hand-maintained. A second copy of the navigation\n" +
       "falls behind the first, and the way you find out is somebody saying the\n" +
       "command bar does not know about the new screen.",
+  );
+  // And the sidebar reads the same table, so "derived" means derived from the
+  // thing the sidebar renders rather than from a second list beside it.
+  assert.match(
+    read("src/components/admin/AdminLayout.tsx"),
+    /from "\.\/adminNavigation"/,
+    "the layout no longer reads the navigation table, so the two can drift",
   );
 });
 

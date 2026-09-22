@@ -12,6 +12,7 @@ import { AdminRoute } from "@/components/AdminRoute";
 import { PageTransition } from "@/components/PageTransition";
 import { PageErrorBoundary } from "@/components/PageErrorBoundary";
 import { ADMIN_PERMISSIONS, type AdminPermission } from "@/lib/adminPermissions";
+import { PLANNED_SCREENS } from "@/components/admin/adminNavigation";
 
 const LoadingSpinner = ({ dark = false }: { dark?: boolean }) => (
   <div className={`min-h-screen flex items-center justify-center ${dark ? "bg-black" : "bg-background"}`}>
@@ -204,6 +205,7 @@ export const staticRoutes: RouteObject[] = [
 const AdminLogin = lazy(() => import("@/pages/admin/AdminLogin"));
 const AdminChangePassword = lazy(() => import("@/pages/admin/AdminChangePassword"));
 const AdminHome = lazy(() => import("@/pages/admin/AdminHome"));
+const AdminPlannedScreen = lazy(() => import("@/pages/admin/AdminPlannedScreen"));
 const AdminAnalytics = lazy(() => import("@/pages/admin/AdminAnalytics"));
 const AdminOrders = lazy(() => import("@/pages/admin/AdminOrders"));
 const AdminCustomers = lazy(() => import("@/pages/admin/AdminCustomers"));
@@ -230,6 +232,14 @@ const AdminPage = ({
   </Admin>
 );
 
+/*
+ * Paths from an older admin that no longer exist.
+ *
+ * Six were removed from this list when the navigation grew planned screens of
+ * their own - leads, inventory, returns, suppliers, purchase-orders, tasks -
+ * because two routes claiming one path means the reader has to know which
+ * declaration wins. They are real destinations now, not redirects.
+ */
 const legacyAdminPaths = [
   "/admin/growo",
   "/admin/parks",
@@ -240,17 +250,11 @@ const legacyAdminPaths = [
   "/admin/business",
   "/admin/audit",
   "/admin/financial",
-  "/admin/tasks",
-  "/admin/suppliers",
-  "/admin/leads",
   "/admin/debts",
-  "/admin/inventory",
-  "/admin/purchase-orders",
   "/admin/invoices",
   "/admin/marketing",
   "/admin/segments",
   "/admin/shipping",
-  "/admin/returns",
   "/admin/integrations",
   "/admin/backup",
   "/admin/crm",
@@ -345,6 +349,21 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/smart-editor", element: <Navigate to="/admin/products" replace /> },
   { path: "/admin/review-queue", element: <Navigate to="/admin/products?filter=needs_review" replace /> },
   { path: "/admin/scraper", element: <Navigate to="/admin/products?section=import" replace /> },
+  /*
+   * The screens with no table behind them yet.
+   *
+   * Generated from the navigation rather than listed again here, so a planned
+   * screen added to the sidebar has a route on the same commit - and, more to
+   * the point, so one that GRADUATES cannot be forgotten: giving it a real
+   * route above removes it from this list, because the list is everything the
+   * navigation still marks as planned.
+   */
+  ...PLANNED_SCREENS.map((screen) => ({
+    path: screen.href,
+    element: (
+      <AdminPage component={AdminPlannedScreen} pageName={screen.hebrew} permission={screen.permission} />
+    ),
+  })),
   ...legacyAdminRedirects,
 ];
 

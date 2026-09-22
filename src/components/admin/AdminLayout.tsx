@@ -1,32 +1,62 @@
-import { ReactNode, useState, useEffect, useRef } from "react";
-import { AdminCommandBar } from "@/components/admin/AdminCommandBar";
-import { AdminNotificationsBell } from "./AdminNotificationsBell";
+/**
+ * The admin shell.
+ *
+ * ─── TWO LEVELS OF NAVIGATION, WHICH THE OWNER CHOSE ────────────────────────
+ *
+ * The top bar switches DOMAIN - Command Center, CRM, Commerce, Finance,
+ * Procurement, Operations, People, Platform - and the sidebar shows that
+ * domain's screens. One flat list of twenty-four items would be a wall; one
+ * level of eight would hide everything behind a second click. This is the
+ * shape of the design that was handed over, and of Stripe's.
+ *
+ * ─── THE CHROME IS ENGLISH AND SITS ON THE LEFT ─────────────────────────────
+ *
+ * Also the owner's decision, from the design. The page stays dir="rtl" - the
+ * content is Hebrew and must read right to left - while the sidebar and the
+ * top bar are dir="ltr" and physically on the left. That is a deliberate
+ * inversion of the usual RTL rule, and it is why every offset here is written
+ * PHYSICALLY (left-0, ml-*) rather than logically (start-0, ms-*): a logical
+ * property flips with direction, and under dir="rtl" it would put the sidebar
+ * back on the right, which is precisely what was not asked for.
+ *
+ * Everything a person reads as content - page title, breadcrumb, the mobile
+ * drawer, ⌘K results - uses the Hebrew name. Only the desktop chrome is
+ * English.
+ *
+ * ─── AND IT STILL WORKS ON A PHONE ──────────────────────────────────────────
+ *
+ * The brief says desktop-first and not to turn the admin into a mobile app.
+ * The owner says he uses both, and takes orders on a phone in front of a
+ * customer. Those are not in conflict: the desktop gets two levels of
+ * navigation, and the phone gets a bottom bar of the four screens that are
+ * the day, with everything else behind its last tab. Neither is a shrunken
+ * version of the other.
+ */
+
+import { type ReactNode, useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { LucideIcon,
+import {
+  ChevronLeft, Home, LogOut, type LucideIcon, Menu, PanelLeft, PanelLeftClose,
+  Search,
 } from "lucide-react";
-import { 
-  LayoutDashboard, Users, ShoppingCart, Package, Flag, Heart, Store, ShieldAlert, 
-  FileText, Settings, Bell, Shield, History, ChevronRight, ChevronDown,
-  Menu, LogOut, MapPin, Ticket, Bot, Wallet, ListTodo, Truck, UserPlus,
-  CreditCard, Boxes, Receipt, Megaphone, Users2, RotateCcw, BarChart3,
-  Plug, HardDrive, Contact, FolderTree, CalendarDays, Headphones,
-  Building2, DollarSign, Webhook, PlaySquare, Trophy, Zap, Clock,
-  Search, PanelLeftClose, PanelLeft, Home, Upload, Crown, Brain,
-  Plus, Eye, PackageSearch, ArrowUpRight, Sparkles, Tv, FileCheck
-} from "lucide-react";
-import { Database as DatabaseIcon } from "lucide-react";
+
+import { AdminCommandBar, COMMAND_BAR_EVENT } from "@/components/admin/AdminCommandBar";
+import { AdminNotificationsBell } from "./AdminNotificationsBell";
+import {
+  ADMIN_DOMAINS, commandDestinations, domainForPath, screenForPath,
+  type AdminDomain,
+} from "./adminNavigation";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
-import { useAwsAdminAuth } from "@/hooks/useAwsAdminAuth";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { MipoLogo } from "@/components/MipoLogo";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { ADMIN_PERMISSIONS, adminHasPermission, type AdminPermission } from "@/lib/adminPermissions";
+import { cn } from "@/lib/utils";
+import { useAwsAdminAuth } from "@/hooks/useAwsAdminAuth";
+import { ADMIN_PERMISSIONS, adminHasPermission } from "@/lib/adminPermissions";
+
+export { commandDestinations };
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -35,537 +65,399 @@ interface AdminLayoutProps {
   breadcrumbs?: { label: string; href?: string }[];
 }
 
-interface NavGroup {
-  label: string;
-  icon: LucideIcon;
-  items: { icon: LucideIcon; label: string; href: string; badge?: number; permission: AdminPermission }[];
-}
-
 /**
- * Grouped by how often you touch it, not by which department owns it.
+ * The four screens that are the working day, for the bottom bar on a phone.
  *
- * The first group used to be called "ראשי" and held analytics, notifications
- * and AI cost - three screens an owner opens occasionally - while orders and
- * customers, which are the day, sat below them under "חנות ומכירות". The
- * owner's word for the result was that it is not comfortable to operate.
- *
- * Fourteen items became twelve when the four product screens became one.
+ * Four plus "more" is the ceiling: a fifth target is narrower than a thumb at
+ * 390px, which is the width at which a bar stops helping.
  */
-const navGroups: NavGroup[] = [
-  {
-    label: "יומיום",
-    icon: LayoutDashboard,
-    items: [
-      { icon: LayoutDashboard, label: "בית", href: "/admin", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
-      { icon: ShoppingCart, label: "הזמנות", href: "/admin/orders", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
-      { icon: Users, label: "לקוחות", href: "/admin/customers", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
-    ]
-  },
-  {
-    label: "החנות",
-    icon: Store,
-    items: [
-      { icon: Package, label: "מוצרים", href: "/admin/products", permission: ADMIN_PERMISSIONS.PRODUCTS_READ },
-      { icon: Ticket, label: "קופונים", href: "/admin/coupons", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
-      { icon: FolderTree, label: "קטגוריות", href: "/admin/categories", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
-    ]
-  },
-  {
-    label: "מעקב והגדרות",
-    icon: Settings,
-    items: [
-      { icon: BarChart3, label: "אנליטיקות", href: "/admin/analytics", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
-      { icon: Bell, label: "התראות", href: "/admin/notifications", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
-      { icon: DollarSign, label: "כלכלת AI", href: "/admin/ai-economics", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
-      { icon: Settings, label: "הגדרות", href: "/admin/settings", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
-      { icon: Plug, label: "חיבורים", href: "/admin/connectors", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
-      { icon: History, label: "יומן ביקורת", href: "/admin/audit-log", permission: ADMIN_PERMISSIONS.AUDIT_READ },
-    ]
-  },
-];
+const PHONE_TABS = ["/admin", "/admin/orders", "/admin/customers", "/admin/products"];
 
-/**
- * The sidebar, flattened, for the command bar.
- *
- * Derived from navGroups rather than kept as a second list, so a page added to
- * the sidebar is reachable by ⌘K on the same commit. A hand-maintained copy is
- * a copy that falls behind, and the way you find out is that somebody says
- * "the command bar does not know about the new screen".
- */
-export const commandDestinations = navGroups.flatMap((group) =>
-  group.items.map((item) => ({
-    label: item.label,
-    href: item.href,
-    permission: item.permission,
-    group: group.label,
-    icon: item.icon,
-  })));
-
-const defaultOpenGroups = navGroups.map((group) => group.label);
-const openGroupsStorageKey = "admin_sidebar_open_groups_v4";
-
-/**
- * The bottom bar on a phone.
- *
- * WHY A BAR AND NOT JUST THE DRAWER. Every move on a phone used to cost three
- * taps - open the drawer, find the group, maybe expand it, tap the item - and
- * the four destinations below are where nearly all of the time goes. A bar
- * makes those one tap and leaves the drawer for the other ten screens, which
- * is what the last slot is.
- *
- * Four plus "more" is the ceiling: a fifth destination makes each target
- * narrower than a thumb on a 390px screen, which is how a bar stops helping.
- */
-const bottomTabs: { icon: LucideIcon; label: string; href: string; permission: AdminPermission }[] = [
-  { icon: LayoutDashboard, label: "בית", href: "/admin", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
-  { icon: ShoppingCart, label: "הזמנות", href: "/admin/orders", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
-  { icon: Package, label: "מוצרים", href: "/admin/products", permission: ADMIN_PERMISSIONS.PRODUCTS_READ },
-  { icon: Users, label: "לקוחות", href: "/admin/customers", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
-];
-
-// Quick actions for the dashboard header
-const quickActions = [
-  // "הוספת מוצר" and not "מוצר חדש": the products screen's own primary
-  // button is "מוצר חדש", and two buttons with one name on one page is a
-  // thing a person has to stop and read twice.
-  { icon: Plus, label: "הוספת מוצר", href: "/admin/products?new=true", color: "bg-primary text-primary-foreground", permission: ADMIN_PERMISSIONS.PRODUCTS_CREATE },
-  { icon: Eye, label: "הזמנות", href: "/admin/orders", color: "bg-muted text-foreground", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
-  { icon: PackageSearch, label: "ייבוא מקישור", href: "/admin/products?section=import", color: "bg-muted text-foreground", permission: ADMIN_PERMISSIONS.PRODUCT_TOOLS_USE },
-];
+const collapsedKey = "admin_sidebar_collapsed";
 
 export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: AdminLayoutProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { admin, logout } = useAwsAdminAuth();
-  const isMobile = useIsMobile();
-  const [isOpen, setIsOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(() => {
-    try { return localStorage.getItem('admin_sidebar_collapsed') === 'true'; } catch { return false; }
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem(collapsedKey) === "true"; } catch { return false; }
   });
-  const [searchQuery, setSearchQuery] = useState("");
-  const [openGroups, setOpenGroups] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem(openGroupsStorageKey);
-      return saved ? JSON.parse(saved) : defaultOpenGroups;
-    } catch { return defaultOpenGroups; }
-  });
-  const activeItemRef = useRef<HTMLAnchorElement>(null);
+  const activeRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
-    localStorage.setItem('admin_sidebar_collapsed', String(isCollapsed));
-  }, [isCollapsed]);
+    try { localStorage.setItem(collapsedKey, String(collapsed)); } catch { /* private mode */ }
+  }, [collapsed]);
 
-  useEffect(() => {
-    localStorage.setItem(openGroupsStorageKey, JSON.stringify(openGroups));
-  }, [openGroups]);
+  useEffect(() => { setDrawerOpen(false); }, [location.pathname]);
 
-  useEffect(() => {
-    const currentGroup = navGroups.find(group => 
-      group.items.some(item => location.pathname === item.href)
-    );
-    if (currentGroup) {
-      setOpenGroups(prev => (
-        prev.includes(currentGroup.label) ? prev : [...prev, currentGroup.label]
-      ));
-    }
-  }, [location.pathname]);
+  const allowed = (domain: AdminDomain) =>
+    domain.screens.filter((screen) => adminHasPermission(admin, screen.permission));
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      activeItemRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [location.pathname]);
+  // A domain with nothing in it for this admin is not shown at all. Hiding a
+  // link is not authorisation - the routes check again - but offering a person
+  // a domain whose every screen then bounces them is just a worse screen.
+  const domains = ADMIN_DOMAINS.filter((domain) => allowed(domain).length > 0);
+  const currentDomain = domainForPath(location.pathname);
+  const currentScreen = screenForPath(location.pathname);
+  const screens = allowed(currentDomain);
 
-  const handleSignOut = async () => {
+  const phoneTabs = PHONE_TABS
+    .map((href) => ADMIN_DOMAINS.flatMap((d) => d.screens).find((s) => s.href === href))
+    .filter((screen): screen is NonNullable<typeof screen> =>
+      Boolean(screen) && adminHasPermission(admin, screen!.permission));
+
+  const signOut = async () => {
     await logout();
     navigate("/admin/login");
   };
 
-  const toggleGroup = (label: string) => {
-    setOpenGroups(prev => 
-      prev.includes(label) 
-        ? prev.filter(l => l !== label)
-        : [...prev, label]
-    );
-  };
+  /** The sidebar's contents, shared by the fixed rail and the phone drawer. */
+  const ScreenList = ({ compact = false }: { compact?: boolean }) => (
+    // The label is on the <nav>, not on the <aside> around it: an aside is
+    // role="complementary" and carries no accessible name for a navigation
+    // landmark, so a screen reader announced "complementary" and nothing else.
+    <nav className="space-y-0.5 px-2 py-2" dir="ltr" aria-label={currentDomain.label}>
+      {screens.map((screen) => {
+        const active = currentScreen?.href === screen.href;
+        const ScreenIcon = screen.icon;
 
-  const filteredGroups = navGroups.map(group => ({
-    ...group,
-    items: group.items.filter(item =>
-      adminHasPermission(admin, item.permission) &&
-      item.label.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  })).filter(group => group.items.length > 0);
+        const item = (
+          <Link
+            key={screen.href}
+            to={screen.href}
+            ref={active ? activeRef : undefined}
+            aria-current={active ? "page" : undefined}
+            className={cn(
+              "admin-focus admin-tap flex items-center gap-2.5 rounded-lg px-2.5 text-sm transition-colors",
+              compact ? "justify-center px-0" : "",
+              active
+                ? "bg-admin-accent-soft font-semibold text-admin-accent"
+                : "text-admin-ink-muted hover:bg-admin-sunk hover:text-admin-ink",
+            )}
+          >
+            <ScreenIcon className="h-[18px] w-[18px] shrink-0" strokeWidth={active ? 2 : 1.6} />
+            {!compact && <span className="truncate">{screen.label}</span>}
+            {/* A screen with no table behind it says so here, rather than
+                looking identical until you press it. */}
+            {!compact && screen.status === "planned" && (
+              <span className="admin-meta mr-auto shrink-0 rounded border border-admin-line px-1 py-px">
+                soon
+              </span>
+            )}
+          </Link>
+        );
 
-  const NavContent = ({ collapsed = false }: { collapsed?: boolean }) => (
-    <div className="flex flex-col h-full bg-card">
-      {/* Logo */}
-      <div className={cn(
-        "flex items-center border-b border-border/20 h-14 shrink-0",
-        collapsed ? "justify-center px-2" : "px-4 gap-3"
-      )}>
-        {/* The mark, not a Shield glyph, and no wordmark beside it: in-app
-            surfaces show the logo alone. "ניהול מערכת" stays because it names
-            this surface rather than repeating the brand. */}
-        <Link to="/admin" className="flex items-center gap-2.5 group">
-          <MipoLogo
-            variant="mark"
-            size="xs"
-            showAnimals={false}
-            className="shrink-0 group-hover:scale-105 transition-transform"
-          />
-          {!collapsed && (
-            <span className="text-[11px] text-muted-foreground leading-none">ניהול מערכת</span>
-          )}
-        </Link>
-      </div>
-
-      {/* Search */}
-      {!collapsed && (
-        <div className="px-3 py-2.5">
-          <div className="relative">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
-            <Input
-              placeholder="חיפוש מהיר..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pr-9 h-10 bg-muted/30 border-border/20 text-sm placeholder:text-muted-foreground/40 focus-visible:ring-1 focus-visible:ring-primary/20 rounded-lg"
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Nav */}
-      <ScrollArea className="flex-1 py-1">
-        <nav className={cn("space-y-1", collapsed ? "px-1.5" : "px-2")}>
-          {filteredGroups.map((group) => {
-            const isGroupOpen = openGroups.includes(group.label);
-            const GroupIcon = group.icon;
-            const hasActiveItem = group.items.some(item => location.pathname === item.href);
-            
-            if (collapsed) {
-              return (
-                <div key={group.label} className="space-y-0.5 py-1 border-b border-border/10 last:border-0">
-                  {group.items.map((item) => {
-                    const isActive = location.pathname === item.href;
-                    const ItemIcon = item.icon;
-                    return (
-                      <TooltipProvider key={item.href} delayDuration={0}>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Link
-                              to={item.href}
-                              className={cn(
-                                "flex items-center justify-center w-10 h-10 rounded-lg transition-all relative mx-auto",
-                                isActive
-                                  ? "bg-primary text-primary-foreground shadow-sm"
-                                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-                              )}
-                            >
-                              <ItemIcon className="w-4 h-4" strokeWidth={1.5} />
-                            </Link>
-                          </TooltipTrigger>
-                          <TooltipContent side="left" className="text-xs font-medium">
-                            {item.label}
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    );
-                  })}
-                </div>
-              );
-            }
-
-            return (
-              <Collapsible
-                key={group.label}
-                open={isGroupOpen}
-                onOpenChange={() => toggleGroup(group.label)}
-              >
-                <CollapsibleTrigger className={cn(
-                  "flex flex-row-reverse items-center justify-between w-full px-2 py-2.5 text-xs font-semibold uppercase tracking-wider rounded-md transition-colors",
-                  hasActiveItem 
-                    ? "text-primary" 
-                    : "text-muted-foreground/60 hover:text-muted-foreground"
-                )}>
-                  <div className="flex items-center gap-1.5">
-                    <GroupIcon className="w-3.5 h-3.5" strokeWidth={1.5} />
-                    <span>{group.label}</span>
-                  </div>
-                  <ChevronDown className={cn(
-                    "w-3 h-3 transition-transform duration-200",
-                    isGroupOpen && "rotate-180"
-                  )} />
-                </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-px mt-0.5 mb-2">
-                  {group.items.map((item) => {
-                    const isActive = location.pathname === item.href;
-                    const ItemIcon = item.icon;
-
-                    return (
-                      <Link
-                        key={item.href}
-                        ref={isActive ? activeItemRef : undefined}
-                        to={item.href}
-                        onClick={() => setIsOpen(false)}
-                        className={cn(
-                          "flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all relative group",
-                          isActive
-                            ? "bg-primary/10 text-primary font-medium"
-                            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                        )}
-                      >
-                        <ItemIcon className={cn(
-                          "w-4 h-4 shrink-0",
-                          isActive ? "text-primary" : "text-muted-foreground/60 group-hover:text-foreground"
-                        )} strokeWidth={1.5} />
-                        <span className="truncate">{item.label}</span>
-                        {isActive && (
-                          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[2.5px] h-4 bg-primary rounded-full" />
-                        )}
-                      </Link>
-                    );
-                  })}
-                </CollapsibleContent>
-              </Collapsible>
-            );
-          })}
-        </nav>
-      </ScrollArea>
-
-      {/* User */}
-      <div className={cn(
-        "border-t border-border/20 shrink-0",
-        collapsed ? "p-1.5" : "p-2.5"
-      )}>
-        {collapsed ? (
-          <TooltipProvider delayDuration={0}>
+        if (!compact) return item;
+        return (
+          <TooltipProvider key={screen.href} delayDuration={0}>
             <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="w-9 h-9 mx-auto rounded-lg" onClick={handleSignOut}>
-                  <LogOut className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="left">התנתק</TooltipContent>
+              <TooltipTrigger asChild>{item}</TooltipTrigger>
+              <TooltipContent side="right" className="text-xs">{screen.label}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
-        ) : (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/30">
-              <Avatar className="w-9 h-9">
-                <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
-                  {admin?.email?.charAt(0).toUpperCase() || 'מ'}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate text-foreground">{admin?.display_name || "מנהל מערכת"}</p>
-                <p className="text-[11px] text-muted-foreground truncate">{admin?.email}</p>
-              </div>
-            </div>
-            <div className="flex gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-1 justify-start gap-1.5 h-9 text-xs text-muted-foreground hover:text-foreground"
-                onClick={() => navigate("/")}
-              >
-                <Home className="w-3.5 h-3.5" />
-                לאפליקציה
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9 text-muted-foreground hover:text-destructive"
-                onClick={handleSignOut}
-              >
-                <LogOut className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+        );
+      })}
+    </nav>
   );
 
   return (
-    <div className="min-h-screen bg-muted/20" dir="rtl">
-      {/* Mounted once, at the shell, so every admin screen answers the same
-          keystroke. It renders nothing until ⌘K. */}
+    <div className="min-h-screen bg-admin-canvas text-admin-ink" dir="rtl">
       <AdminCommandBar destinations={commandDestinations} />
-      {/* Mobile Header */}
+
+      {/* ── top bar ──────────────────────────────────────────────────────── */}
       <header
-        className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-b border-border/20"
-        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+        className="fixed inset-x-0 top-0 z-40 border-b border-admin-line bg-admin-surface/95 backdrop-blur"
+        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+        dir="ltr"
       >
-        {/* No hamburger. The drawer moved to the bottom bar's last tab, where a
-            thumb already is, and the space it freed went to the title - which
-            used to truncate on any screen with a name in it. */}
-        <div className="flex items-center justify-between gap-2 px-4 h-14">
-          <h1 className="font-semibold text-base flex items-center gap-2 truncate flex-1 min-w-0">
-            {Icon && <Icon className="w-[18px] h-[18px] shrink-0 text-primary" strokeWidth={1.75} />}
-            <span className="truncate">{title}</span>
-          </h1>
-          <div className="flex items-center gap-0.5 shrink-0">
-            {adminHasPermission(admin, ADMIN_PERMISSIONS.FULL_ACCESS) && <AdminNotificationsBell />}
-            <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="w-10 h-10">
-              <Home className="w-[18px] h-[18px]" />
-            </Button>
-          </div>
-        </div>
-      </header>
+        {/* flex-nowrap and a shrink-0 on both ends. The first version let the
+            domain row have flex-1 and the user block have ml-auto, and at
+            1280px they laid on top of each other: "Platform" printed through
+            the owner's own name. */}
+        <div className="flex h-14 flex-nowrap items-center gap-2 px-3 lg:gap-3 lg:px-4">
+          <Link to="/admin" className="admin-focus flex shrink-0 items-center gap-2 rounded-lg">
+            <MipoLogo variant="mark" size="xs" showAnimals={false} className="shrink-0" />
+            <span className="hidden text-sm font-semibold sm:block">Mipo Admin</span>
+          </Link>
 
-      <div className="flex min-h-screen">
-        {/* Desktop Sidebar */}
-        <aside className={cn(
-          "hidden lg:flex flex-col fixed top-0 right-0 h-screen border-l border-border/20 bg-card z-50 transition-all duration-300 shadow-sm",
-          isCollapsed ? "w-14" : "w-56"
-        )}>
-          <NavContent collapsed={isCollapsed} />
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute left-0 top-[72px] -translate-x-1/2 w-6 h-6 rounded-full bg-card border border-border/30 shadow-sm hover:bg-muted transition-all z-10"
-            onClick={() => setIsCollapsed(!isCollapsed)}
+          {/* The search is a BUTTON, not an input: the thing it opens is ⌘K,
+              and two search fields on one screen is two places to type. */}
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event(COMMAND_BAR_EVENT))}
+            className="admin-focus hidden h-9 w-56 shrink-0 items-center gap-2 rounded-xl border border-admin-line bg-admin-sunk px-3 text-admin-ink-subtle transition-colors hover:border-admin-line-strong lg:flex"
           >
-            {isCollapsed ? (
-              <PanelLeft className="w-3 h-3" />
-            ) : (
-              <PanelLeftClose className="w-3 h-3" />
-            )}
-          </Button>
-        </aside>
+            <Search className="h-4 w-4 shrink-0" />
+            <span className="truncate text-sm">חיפוש בכל המערכת…</span>
+            <kbd className="admin-meta mr-auto shrink-0 rounded border border-admin-line bg-admin-surface px-1.5 py-0.5">
+              ⌘K
+            </kbd>
+          </button>
 
-        {/* Main */}
-        <main className={cn(
-          "flex-1 min-h-screen transition-all duration-300 w-full overflow-x-hidden",
-          isCollapsed ? "lg:mr-14" : "lg:mr-56",
-        )}>
-          {/*
-           * Spacers, not padding on <main>.
-           *
-           * The padding used to be an inline style, which no `lg:` class can
-           * undo - so a 56px blank strip sat above the DESKTOP header too, and
-           * the sticky header stuck to the viewport rather than below it. A
-           * spacer that is `lg:hidden` clears the fixed mobile header where it
-           * exists and takes up nothing where it does not.
-           */}
-          <div className="lg:hidden" aria-hidden style={{ height: 'calc(56px + env(safe-area-inset-top, 0px))' }} />
-          <div>
-            {/* Desktop Header */}
-            <header className="hidden lg:flex items-center justify-between px-5 h-14 border-b border-border/20 bg-card/60 backdrop-blur-sm sticky top-0 z-40">
-              <div className="flex items-center gap-2 min-w-0">
-                {Icon && (
-                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <Icon className="w-4 h-4 text-primary" strokeWidth={1.5} />
-                  </div>
-                )}
-                <div className="min-w-0">
-                  {breadcrumbs.length > 0 ? (
-                    <nav className="flex items-center gap-1 text-xs">
-                      <Link to="/admin" className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
-                        ניהול
-                      </Link>
-                      {breadcrumbs.map((crumb, i) => (
-                        <div key={i} className="flex items-center gap-1">
-                          <ChevronRight className="w-3 h-3 text-muted-foreground rotate-180 shrink-0" />
-                          {crumb.href ? (
-                            <Link to={crumb.href} className="text-muted-foreground hover:text-foreground transition-colors truncate">
-                              {crumb.label}
-                            </Link>
-                          ) : (
-                            <span className="text-foreground font-medium truncate">{crumb.label}</span>
-                          )}
-                        </div>
-                      ))}
-                    </nav>
-                  ) : (
-                    <h1 className="font-semibold text-base truncate">{title}</h1>
-                  )}
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-1 shrink-0">
-                {quickActions.filter((action) => adminHasPermission(admin, action.permission)).map((action) => (
-                  <Button
-                    key={action.href + action.label}
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
-                    onClick={() => navigate(action.href)}
-                  >
-                    <action.icon className="w-3.5 h-3.5" />
-                    {action.label}
-                  </Button>
-                ))}
-                <div className="w-px h-5 bg-border/30 mx-1" />
-                {adminHasPermission(admin, ADMIN_PERMISSIONS.FULL_ACCESS) && <AdminNotificationsBell />}
-                <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => navigate("/")}>
-                  <Home className="w-4 h-4" />
-                </Button>
-              </div>
-            </header>
-
-            <div className="p-4 lg:p-5">
-              {children}
-              {/* Clears the bottom bar. Without it the bar covers the last row
-                  of every table, which on a list of orders is the newest one. */}
-              <div
-                data-bottom-bar-spacer
-                className="lg:hidden"
-                aria-hidden
-                style={{ height: 'calc(64px + env(safe-area-inset-bottom, 0px))' }}
-              />
-            </div>
-          </div>
-        </main>
-      </div>
-
-      {/* Bottom bar - phones only. The drawer lives in its last tab. */}
-      <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border/20"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
-        aria-label="ניווט ראשי"
-      >
-        <div className="flex items-stretch">
-          {bottomTabs
-            .filter((tab) => adminHasPermission(admin, tab.permission))
-            .map((tab) => {
-              const isActive = location.pathname === tab.href;
-              const TabIcon = tab.icon;
+          {/* Domains. The one level of navigation that is always visible. */}
+          {/* Scrolls rather than wraps or overlaps. Eight domains, a search
+              box and a user block do not fit on a 1280px laptop, and of the
+              three ways to lose that fight - wrap, overlap, scroll - only one
+              leaves every domain reachable. */}
+          <nav
+            className="hidden min-w-0 flex-1 items-center gap-0.5 overflow-x-auto xl:flex [&::-webkit-scrollbar]:h-0"
+            aria-label="Domains"
+          >
+            {domains.map((domain) => {
+              const active = domain.key === currentDomain.key;
+              const first = allowed(domain)[0];
+              const DomainIcon = domain.icon;
               return (
                 <Link
-                  key={tab.href}
-                  to={tab.href}
+                  key={domain.key}
+                  to={first.href}
+                  aria-current={active ? "page" : undefined}
                   className={cn(
-                    // h-14 and flex-1: a target a thumb hits without aiming.
-                    "flex-1 flex flex-col items-center justify-center gap-0.5 h-14 transition-colors",
-                    isActive ? "text-primary" : "text-muted-foreground",
+                    "admin-focus flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-[13px] transition-colors",
+                    active
+                      ? "bg-admin-accent-soft font-semibold text-admin-accent"
+                      : "text-admin-ink-muted hover:bg-admin-sunk hover:text-admin-ink",
                   )}
-                  aria-current={isActive ? "page" : undefined}
                 >
-                  <TabIcon className="w-5 h-5" strokeWidth={isActive ? 2 : 1.5} />
-                  <span className={cn("text-[11px] leading-none", isActive && "font-semibold")}>
-                    {tab.label}
-                  </span>
+                  {/* The icon costs about 22px per domain and eight of them
+                      is the difference between every domain being visible at
+                      1280 and the last two scrolling out of sight with no
+                      affordance saying they are there. It comes back at 2xl,
+                      where the room exists. */}
+                  <DomainIcon className="hidden h-4 w-4 shrink-0 2xl:block" strokeWidth={active ? 2 : 1.6} />
+                  {domain.label}
                 </Link>
               );
             })}
+          </nav>
 
-          <Sheet open={isOpen} onOpenChange={setIsOpen}>
+          <div className="ml-auto flex shrink-0 items-center gap-1">
+            {adminHasPermission(admin, ADMIN_PERMISSIONS.FULL_ACCESS) && <AdminNotificationsBell />}
+            <Button variant="ghost" size="icon" className="admin-focus h-9 w-9" onClick={() => navigate("/")}>
+              <Home className="h-[18px] w-[18px]" />
+              <span className="sr-only">לאפליקציה</span>
+            </Button>
+
+            <div className="hidden items-center gap-2 pl-1 sm:flex" dir="rtl">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-admin-accent-soft text-xs font-bold text-admin-accent">
+                  {admin?.email?.charAt(0).toUpperCase() || "מ"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="hidden min-w-0 leading-tight md:block">
+                <p className="truncate text-[13px] font-medium">{admin?.display_name || "מנהל מערכת"}</p>
+                <p className="admin-meta truncate">{admin?.email}</p>
+              </div>
+              <Button
+                variant="ghost" size="icon"
+                className="admin-focus h-8 w-8 text-admin-ink-subtle hover:text-admin-danger"
+                onClick={signOut}
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="sr-only">התנתקות</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Below xl there is no room for the domain row in the bar, so it
+            becomes its own scrolling strip rather than disappearing. */}
+        <div className="flex items-center gap-1 overflow-x-auto border-t border-admin-line px-3 py-1.5 xl:hidden" dir="ltr">
+          {domains.map((domain) => {
+            const active = domain.key === currentDomain.key;
+            return (
+              <Link
+                key={domain.key}
+                to={allowed(domain)[0].href}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "admin-focus shrink-0 rounded-lg px-2.5 py-1 text-[13px] transition-colors",
+                  active
+                    ? "bg-admin-accent-soft font-semibold text-admin-accent"
+                    : "text-admin-ink-muted hover:bg-admin-sunk",
+                )}
+              >
+                {domain.label}
+              </Link>
+            );
+          })}
+        </div>
+      </header>
+
+      {/* ── sidebar, physically left ─────────────────────────────────────── */}
+      <aside
+        className={cn(
+          "fixed bottom-0 left-0 top-0 z-30 hidden flex-col border-r border-admin-line bg-admin-surface pt-[calc(56px+env(safe-area-inset-top,0px))] transition-[width] duration-200 lg:flex",
+          collapsed ? "w-14" : "w-56",
+        )}
+        dir="ltr"
+      >
+        {!collapsed && (
+          <p className="admin-label px-4 pb-1 pt-3 uppercase tracking-wider">{currentDomain.label}</p>
+        )}
+        <ScrollArea className="flex-1">
+          <ScreenList compact={collapsed} />
+        </ScrollArea>
+
+        <div className="border-t border-admin-line p-2">
+          <Button
+            variant="ghost" size="sm"
+            className="admin-focus w-full justify-start gap-2 text-admin-ink-subtle"
+            onClick={() => setCollapsed((value) => !value)}
+          >
+            {collapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+            {!collapsed && <span className="text-xs">Collapse</span>}
+          </Button>
+        </div>
+      </aside>
+
+      {/* ── the page ─────────────────────────────────────────────────────── */}
+      <main
+        className={cn("min-h-screen transition-[margin] duration-200", collapsed ? "lg:ml-14" : "lg:ml-56")}
+      >
+        {/* Spacers rather than padding on <main>: an inline padding is one no
+            `lg:` class can undo, which once left a 56px blank strip above the
+            desktop header. Two rows of chrome below xl, one above it. */}
+        <div
+          className="xl:hidden"
+          aria-hidden
+          style={{ height: "calc(56px + 37px + env(safe-area-inset-top, 0px))" }}
+        />
+        <div
+          className="hidden xl:block"
+          aria-hidden
+          style={{ height: "calc(56px + env(safe-area-inset-top, 0px))" }}
+        />
+
+        <div className="px-4 py-4 lg:px-6 lg:py-5">
+          <header className="mb-4 flex min-w-0 items-center gap-2">
+            {Icon && (
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-admin-accent-soft text-admin-accent">
+                <Icon className="h-[18px] w-[18px]" strokeWidth={1.75} />
+              </span>
+            )}
+            <div className="min-w-0">
+              <h1 className="admin-title truncate">{title}</h1>
+              {breadcrumbs.length > 0 && (
+                <nav className="flex items-center gap-1 pt-0.5" aria-label="נתיב">
+                  <Link to="/admin" className="admin-meta admin-focus rounded hover:text-admin-ink">ניהול</Link>
+                  {breadcrumbs.map((crumb, index) => (
+                    <span key={index} className="flex min-w-0 items-center gap-1">
+                      <ChevronLeft className="h-3 w-3 shrink-0 text-admin-ink-subtle" />
+                      {crumb.href
+                        ? <Link to={crumb.href} className="admin-meta admin-focus truncate rounded hover:text-admin-ink">{crumb.label}</Link>
+                        : <span className="admin-meta truncate text-admin-ink">{crumb.label}</span>}
+                    </span>
+                  ))}
+                </nav>
+              )}
+            </div>
+          </header>
+
+          {children}
+
+          {/* Clears the phone bar. Without it the bar covers the last row of
+              every table, which on a list of orders is the newest one. */}
+          <div
+            data-bottom-bar-spacer
+            className="lg:hidden"
+            aria-hidden
+            style={{ height: "calc(64px + env(safe-area-inset-bottom, 0px))" }}
+          />
+        </div>
+      </main>
+
+      {/* ── the phone's bar ──────────────────────────────────────────────── */}
+      <nav
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-admin-line bg-admin-surface/95 backdrop-blur lg:hidden"
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+        aria-label="ניווט ראשי"
+      >
+        <div className="flex items-stretch">
+          {phoneTabs.map((screen) => {
+            const active = location.pathname === screen.href;
+            const TabIcon = screen.icon;
+            return (
+              <Link
+                key={screen.href}
+                to={screen.href}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "admin-focus flex h-14 flex-1 flex-col items-center justify-center gap-0.5 transition-colors",
+                  active ? "text-admin-accent" : "text-admin-ink-muted",
+                )}
+              >
+                <TabIcon className="h-5 w-5" strokeWidth={active ? 2 : 1.6} />
+                {/* The Hebrew name, because this is content a person reads
+                    rather than chrome they navigate by. */}
+                <span className={cn("text-[11px] leading-none", active && "font-semibold")}>
+                  {screen.hebrew}
+                </span>
+              </Link>
+            );
+          })}
+
+          <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
             <SheetTrigger asChild>
               <button
                 type="button"
-                className="flex-1 flex flex-col items-center justify-center gap-0.5 h-14 text-muted-foreground transition-colors"
+                className="admin-focus flex h-14 flex-1 flex-col items-center justify-center gap-0.5 text-admin-ink-muted"
               >
-                <Menu className="w-5 h-5" strokeWidth={1.5} />
+                <Menu className="h-5 w-5" strokeWidth={1.6} />
                 <span className="text-[11px] leading-none">עוד</span>
               </button>
             </SheetTrigger>
-            <SheetContent side="right" className="p-0 w-72 border-l border-border/20">
+            <SheetContent side="right" className="w-80 border-l border-admin-line bg-admin-surface p-0">
               <SheetTitle className="sr-only">תפריט ניהול</SheetTitle>
-              <NavContent />
+              <ScrollArea className="h-full">
+                <div className="space-y-4 p-4 pt-8">
+                  {domains.map((domain) => (
+                    <div key={domain.key}>
+                      {/* Hebrew in the drawer. The desktop chrome is English
+                          by choice; a list you read on a phone is not chrome. */}
+                      <p className="admin-label pb-1 pr-1">{domain.hebrew}</p>
+                      <div className="space-y-0.5">
+                        {allowed(domain).map((screen) => {
+                          const active = location.pathname === screen.href;
+                          const ScreenIcon = screen.icon;
+                          return (
+                            <Link
+                              key={screen.href}
+                              to={screen.href}
+                              className={cn(
+                                "admin-focus admin-tap flex items-center gap-2.5 rounded-lg px-2.5 text-sm",
+                                active
+                                  ? "bg-admin-accent-soft font-semibold text-admin-accent"
+                                  : "text-admin-ink hover:bg-admin-sunk",
+                              )}
+                            >
+                              <ScreenIcon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.6} />
+                              <span className="truncate">{screen.hebrew}</span>
+                              {screen.status === "planned" && (
+                                <span className="admin-meta mr-auto shrink-0 rounded border border-admin-line px-1 py-px">
+                                  בקרוב
+                                </span>
+                              )}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+
+                  <div className="border-t border-admin-line pt-3">
+                    <Button
+                      variant="ghost"
+                      className="admin-focus w-full justify-start gap-2 text-admin-ink-muted"
+                      onClick={signOut}
+                    >
+                      <LogOut className="h-4 w-4" />
+                      התנתקות
+                    </Button>
+                  </div>
+                </div>
+              </ScrollArea>
             </SheetContent>
           </Sheet>
         </div>

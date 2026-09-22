@@ -35,7 +35,25 @@ export interface CommandDestination {
   permission: AdminPermission;
   group: string;
   icon: typeof User;
+  /**
+   * The other name for the same screen.
+   *
+   * The sidebar labels are English now - "Customers", "Orders" - and the
+   * people using this type Hebrew. Matching one list against one name means
+   * ⌘K finds nothing for "לקוחות", which is the word on every other surface
+   * in the product and the only word some of them will think of.
+   */
+  aka?: string;
 }
+
+/**
+ * How anything other than the keyboard opens this.
+ *
+ * The top bar has a search-shaped button, and what it opens is this. It could
+ * synthesise a ⌘K keydown, but a fake keyboard event is a lie that breaks the
+ * day somebody changes the shortcut; a named event says what it means.
+ */
+export const COMMAND_BAR_EVENT = "mipo:admin-command-bar";
 
 export interface AdminCommandBarProps {
   /** Every page the sidebar knows about, flattened. */
@@ -69,8 +87,13 @@ export const AdminCommandBar = ({ destinations }: AdminCommandBarProps) => {
         setOpen((current) => !current);
       }
     };
+    const onAsked = () => setOpen((current) => !current);
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener(COMMAND_BAR_EVENT, onAsked);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener(COMMAND_BAR_EVENT, onAsked);
+    };
   }, []);
 
   useEffect(() => {
@@ -86,11 +109,16 @@ export const AdminCommandBar = ({ destinations }: AdminCommandBarProps) => {
   );
 
   const results = useMemo(() => {
-    const pages = (query ? allowed.filter((item) => matches(item.label, query)) : allowed).map((item) => ({
+    const pages = (query
+      ? allowed.filter((item) => matches(item.label, query) || matches(item.aka || "", query))
+      : allowed
+    ).map((item) => ({
       kind: "page" as const,
       key: item.href,
-      label: item.label,
-      sublabel: item.group,
+      // The Hebrew name leads in the results, because the results are read in
+      // Hebrew; the English one is what it is called in the sidebar.
+      label: item.aka || item.label,
+      sublabel: item.aka ? `${item.group} · ${item.label}` : item.group,
       icon: item.icon,
       href: item.href,
     }));

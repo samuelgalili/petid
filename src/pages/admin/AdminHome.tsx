@@ -115,7 +115,7 @@ export const AdminHome = () => {
   const actions = home?.actions ?? [];
 
   return (
-    <AdminLayout title="בית" icon={LayoutDashboard}>
+    <AdminLayout title="מרכז הבקרה" icon={LayoutDashboard}>
       <div className="space-y-5">
         {loading && !home ? (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">

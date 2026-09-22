@@ -37,7 +37,8 @@ const clientPerms = read("src/lib/adminPermissions.ts");
 // translated, and a person still has to be able to get there.
 const screen = read("src/components/admin/products/PublishingPanel.tsx");
 const routes = read("src/routes/index.tsx");
-const nav = read("src/components/admin/AdminLayout.tsx");
+// The navigation is its own table now, not a constant inside the layout.
+const nav = read("src/components/admin/adminNavigation.ts");
 const productsScreen = read("src/pages/admin/AdminProducts.tsx");
 
 /** name -> "value", from either file. */
