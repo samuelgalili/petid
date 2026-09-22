@@ -46,7 +46,9 @@ const AdminLogin = () => {
 
   const redirectTo = useMemo(() => {
     const from = (location.state as AdminLoginLocationState | null)?.from;
-    return from && !NOT_A_DESTINATION.includes(from) ? from : "/admin/products";
+    // Signing in lands on the home screen now. It used to land on the product
+    // list, which was the admin's front door only because nothing else was.
+    return from && !NOT_A_DESTINATION.includes(from) ? from : "/admin";
   }, [location.state]);
 
   useEffect(() => {

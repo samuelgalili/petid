@@ -203,6 +203,7 @@ export const staticRoutes: RouteObject[] = [
 
 const AdminLogin = lazy(() => import("@/pages/admin/AdminLogin"));
 const AdminChangePassword = lazy(() => import("@/pages/admin/AdminChangePassword"));
+const AdminHome = lazy(() => import("@/pages/admin/AdminHome"));
 const AdminAnalytics = lazy(() => import("@/pages/admin/AdminAnalytics"));
 const AdminOrders = lazy(() => import("@/pages/admin/AdminOrders"));
 const AdminCustomers = lazy(() => import("@/pages/admin/AdminCustomers"));
@@ -321,7 +322,9 @@ const legacyAdminRedirects = legacyAdminPaths.map((path) => {
 export const adminRoutes: RouteObject[] = [
   { path: "/admin/login", element: <LazyPage component={AdminLogin} pageName="כניסת מנהל" /> },
   { path: "/admin/change-password", element: <Admin><LazyPage component={AdminChangePassword} pageName="בחירת סיסמה" /></Admin> },
-  { path: "/admin", element: <Navigate to="/admin/products" replace /> },
+  // /admin used to redirect to the product list, which is why an owner
+  // opening the admin landed in a catalogue rather than on the day.
+  { path: "/admin", element: <AdminPage component={AdminHome} pageName="בית" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
   { path: "/admin/analytics", element: <AdminPage component={AdminAnalytics} pageName="אנליטיקס" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
   { path: "/admin/ai-economics", element: <AdminPage component={AdminEconomics} pageName="כלכלת AI" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
   { path: "/admin/orders", element: <AdminPage component={AdminOrders} pageName="הזמנות" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },

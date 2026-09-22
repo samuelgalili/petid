@@ -46,6 +46,7 @@ const navGroups: NavGroup[] = [
     label: "ראשי",
     icon: LayoutDashboard,
     items: [
+      { icon: LayoutDashboard, label: "בית", href: "/admin", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
       { icon: BarChart3, label: "אנליטיקות", href: "/admin/analytics", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
       { icon: Bell, label: "התראות", href: "/admin/notifications", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
       { icon: DollarSign, label: "כלכלת AI", href: "/admin/ai-economics", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
@@ -109,6 +110,7 @@ const openGroupsStorageKey = "admin_sidebar_open_groups_v3";
  * narrower than a thumb on a 390px screen, which is how a bar stops helping.
  */
 const bottomTabs: { icon: LucideIcon; label: string; href: string; permission: AdminPermission }[] = [
+  { icon: LayoutDashboard, label: "בית", href: "/admin", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
   { icon: ShoppingCart, label: "הזמנות", href: "/admin/orders", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
   { icon: Package, label: "מוצרים", href: "/admin/products", permission: ADMIN_PERMISSIONS.PRODUCTS_READ },
   { icon: Users, label: "לקוחות", href: "/admin/customers", permission: ADMIN_PERMISSIONS.FULL_ACCESS },
@@ -196,7 +198,7 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
         {/* The mark, not a Shield glyph, and no wordmark beside it: in-app
             surfaces show the logo alone. "ניהול מערכת" stays because it names
             this surface rather than repeating the brand. */}
-        <Link to="/admin/products" className="flex items-center gap-2.5 group">
+        <Link to="/admin" className="flex items-center gap-2.5 group">
           <MipoLogo
             variant="mark"
             size="xs"
@@ -452,7 +454,7 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
                 <div className="min-w-0">
                   {breadcrumbs.length > 0 ? (
                     <nav className="flex items-center gap-1 text-xs">
-                      <Link to="/admin/products" className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
+                      <Link to="/admin" className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
                         ניהול
                       </Link>
                       {breadcrumbs.map((crumb, i) => (

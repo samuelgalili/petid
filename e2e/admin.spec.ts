@@ -12,7 +12,8 @@ async function loginAsAdmin(page: Page) {
   await page.getByLabel("אימייל").fill(adminEmail);
   await page.getByLabel("סיסמה").fill(adminPassword);
   await page.getByRole("button", { name: "התחברות" }).click();
-  await expect(page).toHaveURL(/\/admin\/products/, { timeout: 15_000 });
+  // Signing in lands on the home screen, not the product list.
+  await expect(page).toHaveURL(/\/admin$/, { timeout: 15_000 });
 }
 
 test.describe("Admin panel", () => {
@@ -31,6 +32,7 @@ test.describe("Admin panel", () => {
 
     test("opens current admin pages without legacy redirects", async ({ page }) => {
       const routes = [
+        { path: "/admin", text: "דורש טיפול" },
         { path: "/admin/products", text: "סה״כ מוצרים" },
         { path: "/admin/orders", text: "ניהול הזמנות" },
         { path: "/admin/customers", text: "סה״כ לקוחות" },
@@ -79,6 +81,7 @@ test.describe("Admin panel", () => {
       await expect(mobileMenu).toBeVisible();
 
       for (const href of [
+        "/admin",
         "/admin/analytics",
         "/admin/notifications",
         "/admin/products",

@@ -1543,6 +1543,40 @@ export async function updateAdminCustomer(
   });
 }
 
+/**
+ * The admin's first screen, in one round trip.
+ *
+ * Four numbers and the queue under them. One call rather than four list
+ * fetches: the screen this is read on is usually a phone on a mobile
+ * connection, and pulling four full listings to show four totals is the
+ * difference between a screen that is up before you have put the kettle on
+ * and one that is not.
+ */
+export interface MipoAdminHomeAction {
+  kind: "order_waiting" | "product_flagged" | "product_unpublished";
+  id: string;
+  title: string;
+  subtitle: string;
+  amount: number | null;
+  at: string | null;
+  href: string;
+}
+
+export interface MipoAdminHome {
+  numbers: {
+    pending_orders: number;
+    revenue_today: number;
+    revenue_yesterday: number;
+    unpublished_products: number;
+    new_customers_this_week: number;
+  };
+  actions: MipoAdminHomeAction[];
+}
+
+export async function getAdminHome(): Promise<MipoAdminHome> {
+  return adminApiFetch<MipoAdminHome>("/admin/os/home");
+}
+
 /** How an admin says this order was paid for. */
 export type MipoAdminPaymentMethod = "credit-card" | "admin-attested" | "cash-on-delivery";
 

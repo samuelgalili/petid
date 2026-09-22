@@ -1,6 +1,7 @@
 import { ADMIN_PERMISSIONS } from "../adminPermissions.js";
 import { createAuditService } from "./auditService.js";
 import { createAdminCustomer } from "./customers.js";
+import { adminHome } from "./home.js";
 import { createManualOrder } from "./manualOrders.js";
 import { updateAdminCustomer } from "./customerEdit.js";
 import { disconnectConnector, listConnectors, saveConnector, verifyConnector } from "./connectors.js";
@@ -83,6 +84,19 @@ export const createAdminOsRoutes = ({
       },
     },
   ];
+
+  routes.push({
+    method: "GET",
+    path: "home",
+    // FULL_ACCESS: the strip carries revenue and the queue names customers, so
+    // it is not a lighter capability than the screens it summarises.
+    permission: ADMIN_PERMISSIONS.FULL_ACCESS,
+    idempotent: false,
+    handler: async (request, response) => {
+      const result = await adminHome({ pool });
+      sendJson(response, result.status, result.body);
+    },
+  });
 
   routes.push({
     method: "POST",

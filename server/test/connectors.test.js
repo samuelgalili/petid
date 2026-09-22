@@ -88,9 +88,31 @@ dbTest("the audit trail records the act without recording the key", async () => 
 
     const serialised = JSON.stringify(entries);
     assert.ok(!serialised.includes(API_KEY), "the audit log contains the key");
-    // Not the length either: it narrows a search and identifies the provider's
-    // key format.
-    assert.ok(!serialised.includes(String(API_KEY.length)), "the audit log records the key's length");
+
+    /*
+     * Not the length either: it narrows a search and identifies the provider's
+     * key format.
+     *
+     * CHECKED AS A VALUE, NOT AS A SUBSTRING. This read
+     * `!serialised.includes(String(API_KEY.length))`, and the key is 35
+     * characters, so the test failed whenever "35" appeared ANYWHERE in the
+     * serialised entry - in the seconds of a timestamp, in a millisecond, in a
+     * uuid. That is roughly a quarter of all runs: it failed twice in eight
+     * here, at random, with nothing about connectors changed. A test that
+     * reddens on the clock teaches people to re-run rather than to look.
+     */
+    const values = [];
+    const walk = (node) => {
+      if (node === null || node === undefined) return;
+      if (Array.isArray(node)) { node.forEach(walk); return; }
+      if (typeof node === "object") { Object.values(node).forEach(walk); return; }
+      values.push(node);
+    };
+    walk(entries);
+    assert.ok(
+      !values.some((value) => value === API_KEY.length || value === String(API_KEY.length)),
+      "the audit log records the key's length",
+    );
   });
 });
 
