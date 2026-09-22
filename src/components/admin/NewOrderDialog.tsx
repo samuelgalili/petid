@@ -32,7 +32,8 @@ import { useToast } from "@/hooks/use-toast";
 import { searchCatalog } from "@/lib/catalogSearch";
 import {
   createManualOrder, getShopProducts, validateCouponCode,
-  type MipoAdminPaymentMethod, type MipoCoupon, type MipoCustomer, type MipoProduct,
+  type MipoAdminPaymentMethod, type MipoCoupon, type MipoCustomer, type MipoOrder,
+  type MipoProduct,
 } from "@/lib/mipoApi";
 import { createClientId } from "@/lib/randomId";
 import { SHIPPING_FEE, shippingFor } from "@/lib/shipping";
@@ -72,16 +73,125 @@ const PAYMENT_CHOICES: Array<{
 
 type Line = { product: MipoProduct; quantity: number };
 
+/** One labelled input. Enough of them here that repeating the markup obscures the form. */
+const Field = ({ id, label, value, onChange, dir }: {
+  id: string; label: string; value: string; onChange: (value: string) => void; dir?: "ltr" | "rtl";
+}) => (
+  <div className="space-y-1">
+    <Label htmlFor={id} className="text-[11px]">{label}</Label>
+    <Input id={id} value={value} dir={dir}
+      onChange={(event) => onChange(event.target.value)} className="h-9 text-xs" />
+  </div>
+);
+
+/**
+ * The delivery details, and why every one of them is here.
+ *
+ * THE ORDER CANNOT BE PLACED WITHOUT THEM. normalizeShippingAddress refuses a
+ * payload whose street, city or postcode is missing, whose phone is not 9-15
+ * DIGITS, or whose email is not an address - and it throws 400 before the
+ * order code is reached. The first version of this screen sent a name, an
+ * email and a phone, so not one order it submitted could have been accepted.
+ * The e2e mocked the endpoint, so nothing caught it.
+ */
+type Address = {
+  fullName: string;
+  email: string;
+  phone: string;
+  address: string;
+  building: string;
+  entranceType: "house" | "building";
+  floor: string;
+  apartment: string;
+  lobbyCode: string;
+  city: string;
+  zipCode: string;
+  notes: string;
+  leaveAtDoor: boolean;
+};
+
+const EMPTY_ADDRESS: Address = {
+  fullName: "", email: "", phone: "", address: "", building: "",
+  entranceType: "house", floor: "", apartment: "", lobbyCode: "",
+  city: "", zipCode: "", notes: "", leaveAtDoor: false,
+};
+
+/** Digits only: the server's phone rule is /^[0-9]{9,15}$/, so "050-123-4567" fails it. */
+const digitsOnly = (value: string) => value.replace(/[^0-9]/g, "");
+
+/**
+ * The customer's details as far as we know them, from their most recent order.
+ *
+ * "עם כל פרטי הלקוח במידה וחסרים פרטים נוסיף ידנית" - so the form opens
+ * already holding what the last delivery used, and the admin fills the gaps
+ * rather than retyping a street they already have.
+ */
+const addressFromHistory = (customer: MipoCustomer, orders: MipoOrder[]): Address => {
+  const previous = orders.find((order) => (
+    order.shipping_address && typeof order.shipping_address === "object"
+      && String((order.shipping_address as Record<string, unknown>).address || "").trim() !== ""
+  ))?.shipping_address as Record<string, unknown> | undefined;
+
+  const text = (key: string) => String(previous?.[key] ?? "").trim();
+
+  return {
+    ...EMPTY_ADDRESS,
+    fullName: customer.full_name || text("fullName"),
+    email: customer.email || text("email"),
+    phone: digitsOnly(customer.phone || text("phone")),
+    address: text("address"),
+    building: text("building"),
+    entranceType: text("entranceType") === "building" ? "building" : "house",
+    floor: text("floor"),
+    apartment: text("apartment"),
+    lobbyCode: text("lobbyCode"),
+    city: text("city"),
+    zipCode: text("zipCode"),
+  };
+};
+
+/**
+ * The same rules the server applies, so the button is only enabled when the
+ * order can actually be placed.
+ *
+ * Mirrored deliberately rather than shared: server/src/shippingAddress.js is
+ * the authority and refuses anything this misses. What this buys is that the
+ * admin sees WHICH field is wrong while the customer is still on the phone,
+ * instead of one 400 after pressing the button.
+ */
+const addressProblems = (value: Address): string[] => {
+  const problems: string[] = [];
+  if (value.fullName.trim().length < 2) problems.push("שם מלא");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.email.trim())) problems.push("אימייל תקין");
+  if (!/^[0-9]{9,15}$/.test(digitsOnly(value.phone))) problems.push("טלפון (9-15 ספרות)");
+  if (value.address.trim().length < 2) problems.push("רחוב");
+  if (value.building.trim().length < 1) problems.push("מספר בית");
+  if (value.city.trim().length < 2) problems.push("עיר");
+  if (!/^[0-9]{5,7}$/.test(value.zipCode.trim())) problems.push("מיקוד (5-7 ספרות)");
+  if (value.entranceType === "building" && value.apartment.trim() === "") problems.push("דירה");
+  // A courier who cannot get through the lobby door cannot deliver, so for a
+  // building the code carries as much weight as the street name.
+  if (value.entranceType === "building" && value.lobbyCode.trim() === "") problems.push("קוד כניסה");
+  if (!value.leaveAtDoor) problems.push("אישור הלקוח להשארה ליד הדלת");
+  return problems;
+};
+
 export const NewOrderDialog = ({
   open,
   onOpenChange,
   customer,
+  orders,
   onCreated,
+  onPlaced,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   customer: MipoCustomer;
+  /** Their past orders, read for the address the last delivery used. */
+  orders: MipoOrder[];
   onCreated: () => void;
+  /** The placed order, so the warehouse label can be printed from it. */
+  onPlaced: (order: MipoOrder, address: Address, lines: Line[]) => void;
 }) => {
   const { toast } = useToast();
   const [query, setQuery] = useState("");
@@ -102,6 +212,7 @@ export const NewOrderDialog = ({
    */
   const [finalPrice, setFinalPrice] = useState("");
   const [finalPriceReason, setFinalPriceReason] = useState("");
+  const [address, setAddress] = useState<Address>(EMPTY_ADDRESS);
 
   // ONE KEY PER SUBMISSION, minted again when the order changes - the same
   // rule as the new-customer dialog. A key per click is not idempotency: a
@@ -120,8 +231,16 @@ export const NewOrderDialog = ({
     setCouponError("");
     setFinalPrice("");
     setFinalPriceReason("");
+    setAddress(addressFromHistory(customer, orders));
     resetKey();
-  }, [open, resetKey]);
+  }, [open, customer, orders, resetKey]);
+
+  const setField = useCallback(<K extends keyof Address>(key: K, value: Address[K]) => {
+    setAddress((current) => ({ ...current, [key]: value }));
+    resetKey();
+  }, [resetKey]);
+
+  const problems = useMemo(() => addressProblems(address), [address]);
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["admin-manual-order-products"],
@@ -202,6 +321,7 @@ export const NewOrderDialog = ({
   const attestationMissing = payment === "admin-attested" && !note.trim();
   const adjustmentReasonMissing = adjustment !== 0 && !finalPriceReason.trim();
   const canSubmit = lines.length > 0
+    && problems.length === 0
     && !attestationMissing
     && !adjustmentReasonMissing
     && priceIsValid
@@ -211,7 +331,7 @@ export const NewOrderDialog = ({
     if (!canSubmit) return;
     setSaving(true);
     try {
-      await createManualOrder({
+      const result = await createManualOrder({
         customer_user_id: customer.user_id,
         items: lines.map((line) => ({
           product_id: line.product.id,
@@ -225,17 +345,20 @@ export const NewOrderDialog = ({
         admin_adjustment: adjustment !== 0 ? adjustment : undefined,
         admin_adjustment_reason: adjustment !== 0 ? finalPriceReason.trim() : undefined,
         expected_total: total,
-        // Taken from the customer's record rather than retyped. An admin
-        // inventing an address on a phone call is how a parcel goes missing.
         shipping_address: {
-          fullName: customer.full_name || "",
-          email: customer.email || "",
-          phone: customer.phone || "",
+          ...address,
+          phone: digitsOnly(address.phone),
+          fullName: address.fullName.trim(),
+          email: address.email.trim(),
+          // The delivery note rides with the address rather than in
+          // special_instructions, because this is where the warehouse and the
+          // courier read it - and the field already exists, bounded to 500.
+          notes: address.notes.trim(),
         },
-        special_instructions: "הזמנה שנפתחה ידנית על ידי צוות מיפו",
       }, idempotencyKey.current);
 
       toast({ title: "ההזמנה נפתחה" });
+      onPlaced(result.order, address, lines);
       onCreated();
       onOpenChange(false);
     } catch (error) {
@@ -247,8 +370,8 @@ export const NewOrderDialog = ({
     } finally {
       setSaving(false);
     }
-  }, [adjustment, canSubmit, coupon, customer, finalPriceReason, lines, note,
-      onCreated, onOpenChange, payment, toast, total]);
+  }, [address, adjustment, canSubmit, coupon, customer, finalPriceReason, lines, note,
+      onCreated, onOpenChange, onPlaced, payment, toast, total]);
 
   const applyCoupon = useCallback(async () => {
     const code = couponCode.trim();
@@ -463,6 +586,89 @@ export const NewOrderDialog = ({
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {lines.length > 0 && (
+            <div className="space-y-2 rounded-md border border-mipo-line p-2">
+              <Label className="text-xs font-semibold">כתובת למשלוח</Label>
+              {/* Prefilled from the last delivery, because the admin should be
+                  filling gaps rather than retyping a street we already have. */}
+
+              <div className="grid grid-cols-2 gap-1.5">
+                <Field id="addr-name" label="שם מלא" value={address.fullName}
+                  onChange={(value) => setField("fullName", value)} />
+                <Field id="addr-phone" label="טלפון" value={address.phone} dir="ltr"
+                  onChange={(value) => setField("phone", value)} />
+                <Field id="addr-email" label="אימייל" value={address.email} dir="ltr"
+                  onChange={(value) => setField("email", value)} />
+                <Field id="addr-city" label="עיר" value={address.city}
+                  onChange={(value) => setField("city", value)} />
+                <Field id="addr-street" label="רחוב" value={address.address}
+                  onChange={(value) => setField("address", value)} />
+                <Field id="addr-building" label="מספר בית" value={address.building}
+                  onChange={(value) => setField("building", value)} />
+                <Field id="addr-zip" label="מיקוד" value={address.zipCode} dir="ltr"
+                  onChange={(value) => setField("zipCode", value)} />
+                <div className="space-y-1">
+                  <Label htmlFor="addr-entrance" className="text-[11px]">סוג כניסה</Label>
+                  <select
+                    id="addr-entrance"
+                    value={address.entranceType}
+                    onChange={(event) => setField("entranceType", event.target.value as "house" | "building")}
+                    className="h-9 w-full rounded-md border border-mipo-line bg-background px-2 text-xs"
+                  >
+                    <option value="house">בית פרטי</option>
+                    <option value="building">בניין</option>
+                  </select>
+                </div>
+              </div>
+
+              {address.entranceType === "building" && (
+                <div className="grid grid-cols-3 gap-1.5">
+                  <Field id="addr-floor" label="קומה" value={address.floor}
+                    onChange={(value) => setField("floor", value)} />
+                  <Field id="addr-apartment" label="דירה" value={address.apartment}
+                    onChange={(value) => setField("apartment", value)} />
+                  <Field id="addr-lobby" label="קוד כניסה" value={address.lobbyCode}
+                    onChange={(value) => setField("lobbyCode", value)} />
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <Label htmlFor="addr-notes" className="text-[11px]">הערה למשלוח</Label>
+                <Textarea
+                  id="addr-notes"
+                  value={address.notes}
+                  onChange={(event) => setField("notes", event.target.value.slice(0, 500))}
+                  placeholder="לתאם טלפונית לפני הגעה / להשאיר אצל השכן בדירה 4"
+                  rows={2}
+                  className="text-xs"
+                />
+              </div>
+
+              {/* REQUIRED BY THE SERVER whenever the extended address fields
+                  are sent, and it is a commitment by the CUSTOMER rather than
+                  by us - so it is worded as the admin relaying what they were
+                  told, the same shape as the payment attestation. */}
+              <label className="flex cursor-pointer items-start gap-2 pt-0.5">
+                <input
+                  type="checkbox"
+                  checked={address.leaveAtDoor}
+                  onChange={(event) => setField("leaveAtDoor", event.target.checked)}
+                  className="mt-0.5"
+                />
+                <span className="text-[11px] leading-4 text-muted-foreground">
+                  הלקוח אישר: אם אין מענה בכתובת, המשלוח יושאר ליד הדלת ומרגע ההשארה
+                  האחריות על החבילה היא של הלקוח בלבד.
+                </span>
+              </label>
+
+              {problems.length > 0 && (
+                <p className="text-[11px] leading-4 text-destructive">
+                  חסר כדי לשלוח: {problems.join(" · ")}
+                </p>
+              )}
             </div>
           )}
 
