@@ -161,3 +161,114 @@ test("opaqueCoverage separates a real cutout from an empty one", async () => {
   assert.ok(real > 0.3, `expected a real cutout to cover the frame, got ${real}`);
   assert.ok(empty < 0.02, `expected an empty cutout to be near zero, got ${empty}`);
 });
+
+// ─── the margin the photographer left ────────────────────────────────────────
+//
+// THE SHOP LOOKED UNTIDY AND NOTHING IN THE CODE WAS WRONG. Product photos
+// arrive shot on white, and how much white surrounds the product is whatever
+// the photographer happened to leave. The resize fits the WHOLE PICTURE into
+// the square, margin included, so a generously padded photo rendered its
+// product small and a tightly cropped one rendered it large - side by side, in
+// identical cards.
+//
+// Trimming before the resize makes the frame hold the PRODUCT rather than the
+// photographer's framing, so the padding added afterwards is the same for
+// every image.
+
+/** A product of `inner` pixels centred on a white canvas of `outer`. */
+const withWhiteMargin = async (outer, inner) => {
+  const product = await sharp({
+    create: { width: inner, height: inner, channels: 3, background: { r: 200, g: 160, b: 106 } },
+  }).png().toBuffer();
+
+  return sharp({ create: { width: outer, height: outer, channels: 3, background: { r: 255, g: 255, b: 255 } } })
+    .composite([{ input: product, gravity: "centre" }])
+    .png()
+    .toBuffer();
+};
+
+/** How much of a square image is not white, as a fraction of its area. */
+const inkCoverage = async (buffer) => {
+  const { data, info } = await sharp(buffer)
+    .removeAlpha()
+    .resize(64, 64, { fit: "fill" })
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  let ink = 0;
+  for (let index = 0; index < data.length; index += info.channels) {
+    if (data[index] < 240 || data[index + 1] < 240 || data[index + 2] < 240) ink += 1;
+  }
+  return ink / (info.width * info.height);
+};
+
+test("two photos with different margins end up the same size in the frame", async () => {
+  // THE ACTUAL COMPLAINT, as a measurement. The same product, photographed
+  // twice with very different amounts of white around it. After normalising,
+  // it must occupy the same share of the frame both times - otherwise the two
+  // cards show it at two sizes.
+  const tight = await normalizeProductImage(await withWhiteMargin(600, 540));
+  const generous = await normalizeProductImage(await withWhiteMargin(600, 200));
+
+  const tightInk = await inkCoverage(tight.buffer);
+  const generousInk = await inkCoverage(generous.buffer);
+
+  assert.ok(
+    Math.abs(tightInk - generousInk) < 0.06,
+    `the same product fills ${(tightInk * 100).toFixed(0)}% of one frame and `
+      + `${(generousInk * 100).toFixed(0)}% of the other`,
+  );
+});
+
+test("a padded photo is not left padded", async () => {
+  // Stated on its own so the failure names the cause rather than the symptom.
+  const generous = await normalizeProductImage(await withWhiteMargin(600, 150));
+  assert.ok(
+    await inkCoverage(generous.buffer) > 0.35,
+    "the product still occupies a small part of its frame - the margin was not trimmed",
+  );
+});
+
+test("an image with nothing to trim survives", async () => {
+  // A blank or single-colour image has no border to remove. It must come out
+  // the other side rather than throwing or collapsing to nothing.
+  const blank = await sharp({
+    create: { width: 400, height: 400, channels: 3, background: { r: 255, g: 255, b: 255 } },
+  }).png().toBuffer();
+
+  const normalized = await normalizeProductImage(blank);
+  assert.ok(normalized.buffer.length > 0);
+  assert.equal(normalized.content_type, "image/webp");
+});
+
+test("a cutout is trimmed and enlarged by neither", async () => {
+  // THE PAIR IS THE HAZARD. A cutout is judged by how much of the frame it
+  // keeps, and trimming the transparent border AND scaling up what survives
+  // turns a five-pixel speck into a full-frame speck that passes.
+  //
+  // Neither alone defeats the check - trim shrinks the canvas and the padding
+  // puts it back; enlarging scales speck and frame together - so no single
+  // mutation of this code makes the behavioural test above fail. That is what
+  // makes this worth asserting on the source: the danger is somebody later
+  // noticing the transparent branch "does nothing special" and removing it.
+  const { readFileSync } = await import("node:fs");
+  const source = readFileSync(new URL("../src/imagePipeline.js", import.meta.url), "utf8");
+
+  assert.ok(
+    source.includes("(transparent ? rotated : rotated.trim("),
+    "the trim is no longer skipped for a cutout",
+  );
+  assert.ok(
+    source.includes("withoutEnlargement = transparent"),
+    "a cutout is no longer protected from being scaled up",
+  );
+
+  // And the behaviour those two lines exist to preserve.
+  const warnings = [];
+  const result = await normalizeWithBackgroundRemoval(await makeImage({ width: 1000, height: 1000 }), {
+    remover: async () => makeCutout(800, 0.08),
+    onWarning: (warning) => warnings.push(warning),
+  });
+  assert.equal(result.background_removed, false);
+  assert.equal(result.background_removal_skipped, "empty_result");
+});

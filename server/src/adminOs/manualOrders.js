@@ -132,5 +132,21 @@ export const createManualOrder = async ({ createOrder, audit, admin }, payload) 
     },
   });
 
-  return result;
+  // { status, body }, NOT the order.
+  //
+  // An idempotent route in this module hands its result back to the dispatcher
+  // to be STORED before it is sent, so the handler returns a response rather
+  // than writing one. Returning createOrder's own { order, accessToken }
+  // instead meant sendJson was called with an undefined status and an
+  // undefined body: the endpoint answered with nothing, and the screen failed
+  // on "Cannot read properties of null (reading 'order')" after the admin had
+  // filled in the whole form.
+  //
+  // accessToken is deliberately not passed on. It is the capability that lets
+  // somebody without an account open an order, and handing it to the admin
+  // screen would put it in a browser and a log for no use this screen has.
+  return {
+    status: 201,
+    body: { order: result?.order ?? null },
+  };
 };

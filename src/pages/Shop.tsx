@@ -109,7 +109,18 @@ const ShopProductCard = ({
 
           Safety stays, because safety IS the second place: status, as
           information. */}
-      <div className="relative aspect-square bg-mipo-soft">
+      {/* CONTAIN, NOT COVER, and white rather than the soft grey.
+          `cover` fills the square by CROPPING, so what a card showed depended
+          on the shape of the photo somebody happened to upload: a tall bag
+          lost its sides and sat edge to edge, while a photo that already had
+          white margins baked in looked correctly framed. Two products, two
+          different-looking cards, from the same code.
+          `contain` fits the whole product and pads what is left over, so every
+          card frames its product the same way whatever shape the file is. The
+          padding makes that space deliberate instead of accidental, and the
+          white background is what product photography is shot on - on grey,
+          every image with a white backdrop shows its own edges. */}
+      <div className="relative aspect-square bg-white p-3">
         {safety.level !== "safe" && (
           <SafetyBadge level={safety.level} reason={safety.reason} compact />
         )}
@@ -119,7 +130,7 @@ const ShopProductCard = ({
           className={`w-full h-full ${product.isFlagged ? "opacity-50" : ""} ${
             safety.level === "unsafe" ? "opacity-40 grayscale" : ""
           }`}
-          objectFit="cover"
+          objectFit="contain"
           sizes="(max-width: 639px) 128px, 160px"
         />
       </div>

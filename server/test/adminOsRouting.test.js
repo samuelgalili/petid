@@ -155,3 +155,89 @@ test("the audit log route requires AUDIT_READ specifically", () => {
   assert.ok(route, "the audit-log route is gone");
   assert.equal(route.permission, ADMIN_PERMISSIONS.AUDIT_READ);
 });
+
+// ─── what an idempotent handler has to hand back ─────────────────────────────
+//
+// THE CONTRACT THAT WAS BROKEN IN PRODUCTION. An idempotent route's result is
+// STORED before it is sent, so its handler returns { status, body } instead of
+// writing the response itself. The manual order handler returned createOrder's
+// own { order, accessToken }, so the dispatcher called sendJson with an
+// undefined status and an undefined body: the endpoint answered with nothing,
+// and the screen failed on "Cannot read properties of null (reading 'order')"
+// after an admin had filled in the entire form.
+//
+// Nothing caught it. The unit tests called the handler's inner function
+// directly and the e2e mocked the route, so neither ever met the dispatcher.
+// The shape is a property of the table, so it is asserted over the table.
+
+const idempotentRoutes = () => buildRoutes().routes.filter((route) => route.idempotent);
+
+test("there is at least one idempotent route to check", () => {
+  assert.ok(idempotentRoutes().length > 0, "no idempotent routes are declared");
+});
+
+test("an idempotent handler returns a response rather than writing one", async () => {
+  // Called with a payload each handler can actually complete. A handler that
+  // REFUSES the payload throws, which is its own correct behaviour and not
+  // what this is about - so a throw is accepted and only a resolved value is
+  // held to the shape.
+  const routes = createAdminOsRoutes({
+    pool: { query: async () => ({ rows: [{ id: "1" }], rowCount: 1 }) },
+    sendJson: () => {},
+    sendError: () => {},
+    readBody: async () => ({}),
+    requireAdminPermission: async () => true,
+    logger: { error: () => {} },
+    createOrder: async () => ({ order: { id: "o-1", order_number: "MP-1" }, accessToken: "t" }),
+  }).routes.filter((route) => route.idempotent);
+
+  const request = { admin: { id: "admin-1", email: "ops@mipo.pet" }, headers: {} };
+  const payload = {
+    full_name: "בדיקה",
+    items: [{ product_id: "p-1", quantity: 1 }],
+    provider: "runway",
+  };
+
+  for (const route of routes) {
+    const where = `${route.method} ${ADMIN_OS_PREFIX}${route.path}`;
+    let result;
+    try {
+      result = await route.handler(request, {}, new URL("https://x/api"), payload);
+    } catch {
+      continue;
+    }
+
+    assert.ok(result && typeof result === "object", `${where} resolved to ${result}`);
+    assert.equal(typeof result.status, "number", `${where} returned no numeric status`);
+    assert.ok("body" in result, `${where} returned no body`);
+  }
+});
+
+test("the manual order handler answers with the order it created", async () => {
+  // The specific failure, stated specifically: the body has to carry the order,
+  // because that is what the screen reads to print the warehouse label.
+  const route = createAdminOsRoutes({
+    pool: { query: async () => ({ rows: [], rowCount: 0 }) },
+    sendJson: () => {},
+    sendError: () => {},
+    readBody: async () => ({}),
+    requireAdminPermission: async () => true,
+    logger: { error: () => {} },
+    createOrder: async () => ({ order: { id: "o-1", order_number: "MP-1" }, accessToken: "secret" }),
+  }).routes.find((entry) => entry.method === "POST" && entry.path === "orders");
+
+  assert.ok(route, "the manual order route is gone");
+
+  const result = await route.handler(
+    { admin: { id: "admin-1", email: "ops@mipo.pet" }, headers: {} },
+    {},
+    new URL("https://x/api"),
+    { items: [{ product_id: "p-1", quantity: 1 }] },
+  );
+
+  assert.equal(result.status, 201);
+  assert.equal(result.body.order.order_number, "MP-1");
+  // The guest access token is a capability. It has no use on this screen and
+  // does not belong in a browser or a log.
+  assert.equal(JSON.stringify(result.body).includes("secret"), false, "the access token was handed to the admin screen");
+});
