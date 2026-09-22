@@ -2,6 +2,7 @@ import { ADMIN_PERMISSIONS } from "../adminPermissions.js";
 import { createAuditService } from "./auditService.js";
 import { createAdminCustomer } from "./customers.js";
 import { createManualOrder } from "./manualOrders.js";
+import { updateAdminCustomer } from "./customerEdit.js";
 import { disconnectConnector, listConnectors, saveConnector, verifyConnector } from "./connectors.js";
 import { createIdempotency, IdempotencyConflict, idempotencyKeyOf } from "./idempotency.js";
 
@@ -94,6 +95,18 @@ export const createAdminOsRoutes = ({
     idempotent: true,
     handler: async (request, response, url, payload) =>
       createAdminCustomer({ pool, audit, admin: request.admin }, payload),
+  });
+
+  routes.push({
+    method: "PATCH",
+    path: "customers",
+    // FULL_ACCESS, matching the rest of the customer endpoints. Correcting
+    // somebody's contact details is not a smaller capability than reading
+    // them: a delivery goes where the address says.
+    permission: ADMIN_PERMISSIONS.FULL_ACCESS,
+    idempotent: true,
+    handler: async (request, response, url, payload) =>
+      updateAdminCustomer({ pool, audit, admin: request.admin }, payload),
   });
 
   routes.push({

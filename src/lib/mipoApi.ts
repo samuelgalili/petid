@@ -1523,6 +1523,26 @@ export async function createAdminCustomer(
   });
 }
 
+/**
+ * Correct a customer's details.
+ *
+ * Only the keys sent are changed, so a form submitting one field does not
+ * blank the rest. The server refuses an email that belongs to somebody else,
+ * and refuses to change the email of a customer who SIGNS IN with it - that
+ * address is a credential, and an admin who could repoint it could then use
+ * password recovery.
+ */
+export async function updateAdminCustomer(
+  input: { identity_id: string; full_name?: string; email?: string; phone?: string | null },
+  idempotencyKey: string,
+): Promise<{ customer: MipoCustomer }> {
+  return adminApiFetch<{ customer: MipoCustomer }>("/admin/os/customers", {
+    method: "PATCH",
+    headers: { "Idempotency-Key": idempotencyKey },
+    body: JSON.stringify(input),
+  });
+}
+
 /** How an admin says this order was paid for. */
 export type MipoAdminPaymentMethod = "credit-card" | "admin-attested" | "cash-on-delivery";
 

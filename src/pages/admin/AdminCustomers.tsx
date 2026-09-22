@@ -13,7 +13,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Users, UserCheck, UserPlus, ShoppingBag, DollarSign, PawPrint,
   Mail, Phone, Calendar, ChevronRight, Package, MessageCircle,
-  PhoneCall, StickyNote, CalendarClock, Trash2, Loader2, type LucideIcon,
+  PhoneCall, StickyNote, CalendarClock, Trash2, Loader2, Pencil, type LucideIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,7 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
 import { NewOrderDialog } from "@/components/admin/NewOrderDialog";
+import { EditCustomerDialog } from "@/components/admin/EditCustomerDialog";
 import { ShippingLabel, type LabelAddress, type LabelLine } from "@/components/admin/ShippingLabel";
 import { formatPetAgeHe } from "@/lib/petAge";
 import {
@@ -622,6 +623,7 @@ const CustomerDetailPanel = ({
   const [saving, setSaving] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<MipoCustomerNote | null>(null);
   const [newOrderOpen, setNewOrderOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   /**
    * The label for the order just placed.
    *
@@ -740,11 +742,31 @@ const CustomerDetailPanel = ({
           pr-14 keeps the name clear of the close button, which sits in the
           same corner in both contexts. */}
       <div className="p-4 pr-14 border-b border-mipo-line space-y-1 text-right">
-        <h2 className="text-base font-semibold text-mipo-ink">{customer.full_name || "ללא שם"}</h2>
-        <p className="text-xs text-muted-foreground">
-          {customer.identity_kind === "account" ? "בעל חשבון" : "אורח, הזמין בלי להירשם"}
-        </p>
+        <div className="flex items-start justify-between gap-2">
+          <div className="space-y-1">
+            <h2 className="text-base font-semibold text-mipo-ink">{customer.full_name || "ללא שם"}</h2>
+            <p className="text-xs text-muted-foreground">
+              {customer.identity_kind === "account" ? "בעל חשבון" : "אורח, הזמין בלי להירשם"}
+            </p>
+          </div>
+          {/* Beside the name, because that is the thing being corrected. */}
+          <Button size="sm" variant="outline" className="gap-1.5 shrink-0"
+            onClick={() => setEditOpen(true)}>
+            <Pencil className="w-3.5 h-3.5" />
+            עריכה
+          </Button>
+        </div>
       </div>
+
+      <EditCustomerDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        customer={customer}
+        // The list row carries the name, the email and the phone too, so both
+        // have to reload - an edit that shows on the card and not in the list
+        // behind it reads as not having saved.
+        onSaved={onOrderCreated}
+      />
 
       <NewOrderDialog
         open={newOrderOpen}
