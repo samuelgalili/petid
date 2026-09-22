@@ -320,12 +320,27 @@ export const NewOrderDialog = ({
 
   const attestationMissing = payment === "admin-attested" && !note.trim();
   const adjustmentReasonMissing = adjustment !== 0 && !finalPriceReason.trim();
-  const canSubmit = lines.length > 0
-    && problems.length === 0
-    && !attestationMissing
-    && !adjustmentReasonMissing
-    && priceIsValid
-    && !saving;
+
+  /**
+   * EVERYTHING standing between this form and an order, in one list.
+   *
+   * It is rendered beside the button rather than beside the field, and that is
+   * the whole point of collecting it here. The address problems used to be
+   * shown inside the address box - which is most of a screen above the button
+   * on a form this long. Somebody filled in everything they could see, pressed
+   * a dead button, and had no way of knowing that the missing thing was an
+   * email address scrolled off the top. A disabled control that does not say
+   * why is a broken control.
+   */
+  const blockers = [
+    ...(lines.length === 0 ? ["מוצר אחד לפחות"] : []),
+    ...problems,
+    ...(attestationMissing ? ["איך הכסף הגיע"] : []),
+    ...(adjustmentReasonMissing ? [`למה ${adjustment < 0 ? "ההנחה" : "התוספת"}`] : []),
+    ...(priceIsValid ? [] : ["מחיר סופי תקין"]),
+  ];
+
+  const canSubmit = blockers.length === 0 && !saving;
 
   const submit = useCallback(async () => {
     if (!canSubmit) return;
@@ -713,6 +728,12 @@ export const NewOrderDialog = ({
             </div>
           )}
         </div>
+
+        {blockers.length > 0 && lines.length > 0 && (
+          <p className="text-[11px] leading-4 text-destructive">
+            כדי לפתוח את ההזמנה חסר: {blockers.join(" · ")}
+          </p>
+        )}
 
         <DialogFooter className="gap-2 sm:justify-start">
           <Button onClick={submit} disabled={!canSubmit} className="gap-1.5">

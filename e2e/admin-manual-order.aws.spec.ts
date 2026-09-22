@@ -338,6 +338,40 @@ test.describe("An order taken by hand", () => {
     await expect(label.getByText("שולם — לא לגבות")).toHaveCount(0);
   });
 
+  test("a disabled button says what is missing, beside the button", async ({ page }) => {
+    // THE REPORT: everything filled in, and the button still dead. The reason
+    // was real - a required field - but it was rendered inside the address
+    // box, most of a screen above the button on a form this long, so there was
+    // no way to know what it was.
+    //
+    // An email is the field that does it in practice: the server demands a
+    // valid one and a customer who has only ever ordered by phone has none, so
+    // it arrives empty and scrolls off the top.
+    await openCard(page);
+    await addOneProduct(page);
+    await fillAddress(page);
+    await page.getByLabel("איך הכסף הגיע?").fill("ביט");
+    await expect(page.getByRole("button", { name: "פתיחת הזמנה" })).toBeEnabled();
+
+    await page.getByLabel("אימייל").fill("");
+
+    await expect(page.getByRole("button", { name: "פתיחת הזמנה" })).toBeDisabled();
+    // Named, and next to the button rather than next to the field.
+    await expect(page.getByText(/כדי לפתוח את ההזמנה חסר:.*אימייל/)).toBeVisible();
+  });
+
+  test("the missing reason names the payment note too, not only the address", async ({ page }) => {
+    // The blockers come from the whole form. Listing only the address ones
+    // would reproduce the same dead end one section lower down.
+    await openCard(page);
+    await addOneProduct(page);
+    await fillAddress(page);
+
+    await expect(page.getByText(/כדי לפתוח את ההזמנה חסר:.*איך הכסף הגיע/)).toBeVisible();
+    await page.getByLabel("איך הכסף הגיע?").fill("ביט");
+    await expect(page.getByText(/כדי לפתוח את ההזמנה חסר/)).toHaveCount(0);
+  });
+
   test("the key belongs to the order, not to the click", async ({ page }) => {
     // Same rule as the new-customer dialog, and the same invisible failure: a
     // key minted per click looks identical on screen and removes the whole
