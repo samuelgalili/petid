@@ -140,18 +140,21 @@ dbTest("a cancelled order is not revenue even when it was paid", async () => {
 
 // ─── the queue ───────────────────────────────────────────────────────────────
 
-dbTest("a waiting order reaches the queue with somewhere to go", async () => {
+dbTest("a waiting order reaches the board with somewhere to go", async () => {
+  // The flat queue this used to read became the four-column board. The claim
+  // did not change: a pending order has to be findable, and the row has to
+  // lead to the order it is about - a row without a destination is a
+  // notification, not a task.
   await withDb(async ({ pool, tag }) => {
     const id = await makeOrder(pool, tag, {
       total: 120, status: "pending", paymentStatus: "pending",
     });
 
     const { body } = await adminHome({ pool });
-    const row = body.actions.find((action) => action.id === id);
+    const row = body.board.approval.items.find((item) => item.id === id);
 
-    assert.ok(row, "the pending order is not in the queue");
-    assert.equal(row.kind, "order_waiting");
-    // A row without a destination is a notification, not a task.
+    assert.ok(row, "the pending order is not in the approval column");
+    assert.equal(row.kind, "order_pending");
     assert.ok(row.href.includes(id), "the row does not link to the order it is about");
     assert.equal(row.amount, 120);
   });

@@ -1546,20 +1546,46 @@ export async function updateAdminCustomer(
 /**
  * The admin's first screen, in one round trip.
  *
- * Four numbers and the queue under them. One call rather than four list
- * fetches: the screen this is read on is usually a phone on a mobile
- * connection, and pulling four full listings to show four totals is the
- * difference between a screen that is up before you have put the kettle on
- * and one that is not.
+ * Four numbers, a board, what people did, and whether the platform is
+ * working. One call rather than five: the screen is read on a phone as often
+ * as on a desk, and five listings to fill one page is the difference between
+ * a screen that is up before the kettle boils and one that is not.
  */
-export interface MipoAdminHomeAction {
-  kind: "order_waiting" | "product_flagged" | "product_unpublished";
+export interface MipoBoardItem {
+  kind: string;
   id: string;
   title: string;
   subtitle: string;
+  /** A second line of context - a customer's name, a brand. */
+  detail: string | null;
   amount: number | null;
   at: string | null;
   href: string;
+}
+
+export interface MipoBoardColumn {
+  /** Everything in this column, which is not the same as what is listed. */
+  total: number;
+  items: MipoBoardItem[];
+}
+
+export type MipoBoardKey = "exception" | "approval" | "in_progress" | "completed";
+
+export interface MipoActivityEntry {
+  id: string;
+  action: string;
+  entity_type: string | null;
+  entity_id: string | null;
+  actor: string;
+  actor_role: string | null;
+  at: string;
+}
+
+export interface MipoHealthCheck {
+  key: string;
+  label: string;
+  state: "ok" | "degraded" | "down" | "unknown";
+  detail: string;
 }
 
 export interface MipoAdminHome {
@@ -1570,7 +1596,9 @@ export interface MipoAdminHome {
     unpublished_products: number;
     new_customers_this_week: number;
   };
-  actions: MipoAdminHomeAction[];
+  board: Record<MipoBoardKey, MipoBoardColumn>;
+  activity: MipoActivityEntry[];
+  health: MipoHealthCheck[];
 }
 
 export async function getAdminHome(): Promise<MipoAdminHome> {

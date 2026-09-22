@@ -1,5 +1,11 @@
+import { readCommandCenter } from "./commandCenter.js";
+
 /**
  * The admin's first screen.
+ *
+ * The four numbers live here; the board under them, the activity feed and the
+ * system's own state live in commandCenter.js. One round trip returns all of
+ * it, because the screen is usually read on a phone.
  *
  * There was not one. `/admin` redirected to the product list, so the question
  * an owner opens the admin to ask - what needs me this morning - was answered
@@ -93,94 +99,29 @@ const NEW_CUSTOMERS = `
             at time zone 'Asia/Jerusalem')
 `;
 
-/**
- * The queue underneath the numbers: one row per thing to do, newest first.
- *
- * Capped per kind. A morning with two hundred waiting orders is a morning for
- * the orders screen, and a list that long on a phone is a list nobody reads to
- * the end; the number above says how many there really are.
- */
-const PER_KIND = 8;
-
-const WAITING_ORDERS = `
-  select id::text, order_number, customer_name, total::float, created_at
-  from public.orders
-  where status = 'pending'
-  order by created_at desc
-  limit ${PER_KIND}
-`;
-
-const WAITING_PRODUCTS = `
-  select id::text, name, created_at
-  from public.catalog_products
-  where publication_state = 'UNPUBLISHED'
-  order by created_at desc
-  limit ${PER_KIND}
-`;
-
-/**
- * Products already in the shop that a person marked as wrong.
- *
- * These are live - somebody can buy one right now at a price flagged as
- * suspect or next to an image flagged as wrong - which is why they belong in
- * a queue rather than on a report.
- */
-const FLAGGED_PRODUCTS = `
-  select id::text, name, needs_image_review, needs_price_review, price::float
-  from public.business_products
-  where needs_image_review or needs_price_review
-  order by updated_at desc
-  limit ${PER_KIND}
-`;
-
 const one = async (pool, sql) => {
   const result = await pool.query(sql);
   return result.rows[0] ?? {};
 };
 
+/**
+ * The first screen, in one round trip.
+ *
+ * THE FLAT QUEUE THAT USED TO BE HERE IS GONE. It listed waiting orders,
+ * flagged products and unpublished products in one undifferentiated pile,
+ * which answered "what needs me" and not "where is it stuck". The board in
+ * commandCenter.js answers both, over the same rows and three more kinds
+ * besides, so keeping the queue as well would be two representations of one
+ * thing - and the way two representations end is disagreeing.
+ */
 export const adminHome = async ({ pool }) => {
-  const [pending, revenue, unpublished, customers, orders, products, flagged] = await Promise.all([
+  const [pending, revenue, unpublished, customers, centre] = await Promise.all([
     one(pool, PENDING_ORDERS),
     one(pool, REVENUE),
     one(pool, UNPUBLISHED_PRODUCTS),
     one(pool, NEW_CUSTOMERS),
-    pool.query(WAITING_ORDERS),
-    pool.query(WAITING_PRODUCTS),
-    pool.query(FLAGGED_PRODUCTS),
+    readCommandCenter({ pool }),
   ]);
-
-  const actions = [
-    ...orders.rows.map((row) => ({
-      kind: "order_waiting",
-      id: row.id,
-      title: `הזמנה ${row.order_number}`,
-      subtitle: row.customer_name || "ללא שם",
-      amount: row.total,
-      at: row.created_at,
-      href: `/admin/orders?order=${row.id}`,
-    })),
-    ...flagged.rows.map((row) => ({
-      kind: "product_flagged",
-      id: row.id,
-      title: row.name,
-      // Both can be true, and which it is changes what the admin does next.
-      subtitle: row.needs_image_review && row.needs_price_review
-        ? "התמונה והמחיר סומנו לבדיקה"
-        : row.needs_image_review ? "התמונה סומנה לבדיקה" : "המחיר סומן לבדיקה",
-      amount: row.needs_price_review ? row.price : null,
-      at: null,
-      href: `/admin/products?product=${row.id}`,
-    })),
-    ...products.rows.map((row) => ({
-      kind: "product_unpublished",
-      id: row.id,
-      title: row.name,
-      subtitle: "אושר ולא פורסם לחנות",
-      amount: null,
-      at: row.created_at,
-      href: "/admin/products?section=publishing",
-    })),
-  ];
 
   return {
     status: 200,
@@ -192,7 +133,7 @@ export const adminHome = async ({ pool }) => {
         unpublished_products: unpublished.value ?? 0,
         new_customers_this_week: customers.value ?? 0,
       },
-      actions,
+      ...centre,
     },
   };
 };

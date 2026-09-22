@@ -48,7 +48,12 @@ async function signedIn(page: Page, admin: unknown) {
       pending_orders: 0, revenue_today: 0, revenue_yesterday: 0,
       unpublished_products: 0, new_customers_this_week: 0,
     },
-    actions: [],
+    board: {
+      exception: { total: 0, items: [] }, approval: { total: 0, items: [] },
+      in_progress: { total: 0, items: [] }, completed: { total: 0, items: [] },
+    },
+    activity: [],
+    health: [],
   })));
 }
 
