@@ -184,6 +184,59 @@ test("admin-attested is not a payment method a customer can name", () => {
     "admin-attested is in the list every caller may use");
 });
 
+test("only an admin may change what a customer pays", () => {
+  // THE SAME SHAPE AS THE ATTESTATION, and the same reason. A shopper who
+  // could send admin_adjustment could set their own price - which is a worse
+  // version of the bug the expected_total guard exists to prevent, because it
+  // would pass that guard.
+  const source = orderSource();
+  const start = source.indexOf("const rawAdjustment");
+  assert.ok(start > 0, "the price adjustment is no longer validated at all");
+  const block = source.slice(start, source.indexOf("const paymentStatus", start));
+
+  assert.ok(block.includes("if (!placedByAdmin) {"), "the adjustment is no longer gated on an admin");
+  assert.ok(block.includes("ADJUSTMENT_NOT_PERMITTED"));
+});
+
+test("a price change must say why", () => {
+  const source = orderSource();
+  const start = source.indexOf("const rawAdjustment");
+  const block = source.slice(start, source.indexOf("const paymentStatus", start));
+
+  assert.ok(block.includes("if (!adjustmentReason) {"), "the reason is no longer required");
+  assert.ok(block.includes("ADJUSTMENT_REASON_REQUIRED"));
+});
+
+test("the total is computed and then adjusted, never replaced", () => {
+  // THE INVARIANT THE WHOLE DESIGN PROTECTS. If the screen could send a total,
+  // expected_total would compare a number to itself and the server would have
+  // no opinion about what anything costs. Instead the catalogue price, the
+  // coupon and the admin's decision stay three separate numbers, and only the
+  // last of them comes from the screen.
+  const source = orderSource();
+  const start = source.indexOf("const computedTotal = Math.max(0, subtotal - discountAmount)");
+  assert.ok(start > 0, "the computed total is gone");
+  const block = source.slice(start, source.indexOf("return {", start));
+
+  assert.ok(
+    block.includes("Math.max(0, computedTotal + adminAdjustment)"),
+    "the adjustment is no longer applied on top of the computed total",
+  );
+  // Floored at zero. An order cannot pay the customer.
+  assert.ok(block.includes("Math.max(0,"), "the total can go negative");
+});
+
+test("an adjustment is stored with its reason and its author, or not at all", () => {
+  const source = orderSource();
+  const start = source.indexOf("admin_adjustment,");
+  assert.ok(start > 0, "the adjustment columns are not written by any insert");
+  const insert = source.slice(start, source.indexOf("returning *", start));
+
+  for (const column of ["admin_adjustment_reason", "admin_adjusted_by"]) {
+    assert.ok(insert.includes(column), `${column} is no longer written`);
+  }
+});
+
 test("an attested payment without a note is refused", () => {
   const source = orderSource();
   // Bounded FORWARD from the start marker. "const paymentStatus" and

@@ -100,6 +100,11 @@ async function openCard(page: Page) {
   await page.route("**/api/admin/customers*", (route) => route.fulfill({
     status: 200, contentType: "application/json", body: JSON.stringify({ customers: [customer] }),
   }));
+  await page.route("**/api/coupons/validate", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ coupon: { id: "c-1", code: "MIPO10", discount_type: "percentage", discount_value: 10 } }),
+  }));
 
   await page.route("**/api/admin/os/orders", async (route) => {
     const request = route.request();
@@ -177,6 +182,86 @@ test.describe("An order taken by hand", () => {
 
     await expect(page.getByRole("button", { name: "פתיחת הזמנה" })).toBeDisabled();
     expect(sent).toHaveLength(0);
+  });
+
+  test("a coupon is applied to the total and sent by code", async ({ page }) => {
+    const sent = await openCard(page);
+    await addOneProduct(page);
+
+    await page.getByLabel("קופון").fill("MIPO10");
+    await page.getByRole("button", { name: "החל" }).click();
+    await expect(page.getByText("הקופון MIPO10 הוחל")).toBeVisible();
+
+    // 10% of ₪79 is ₪7.90, and delivery is still charged because the basket is
+    // still under the threshold.
+    await expect(page.getByText("−₪7.9")).toBeVisible();
+
+    await page.getByLabel("איך הכסף הגיע?").fill("ביט");
+    await page.getByRole("button", { name: "פתיחת הזמנה" }).click();
+
+    await expect.poll(() => sent.length).toBe(1);
+    expect(sent[0].body).toMatchObject({
+      coupon_code: "MIPO10",
+      expected_total: Math.round((79 - 7.9 + SHIPPING_FEE) * 100) / 100,
+    });
+  });
+
+  test("a hand-typed final price travels as a difference, not as the total", async ({ page }) => {
+    // THE POINT OF THE WHOLE DESIGN. The server computes the total from the
+    // catalogue and refuses an order that disagrees, so what the screen sends
+    // is the DIFFERENCE - which keeps "₪118 of goods with ₪18 off" on the
+    // order rather than flattening it into "₪100 of goods".
+    const sent = await openCard(page);
+    await addOneProduct(page);
+
+    const computed = 79 + SHIPPING_FEE;
+    await page.getByLabel("מחיר סופי ללקוח").fill("100");
+    await expect(page.getByText("הנחה ידנית")).toBeVisible();
+
+    await page.getByLabel(/למה ההנחה/).fill("לקוח ותיק");
+    await page.getByLabel("איך הכסף הגיע?").fill("ביט");
+    await page.getByRole("button", { name: "פתיחת הזמנה" }).click();
+
+    await expect.poll(() => sent.length).toBe(1);
+    expect(sent[0].body).toMatchObject({
+      admin_adjustment: Math.round((100 - computed) * 100) / 100,
+      admin_adjustment_reason: "לקוח ותיק",
+      expected_total: 100,
+    });
+    // Never the total itself. That field does not exist in the payload.
+    expect(sent[0].body).not.toHaveProperty("total");
+  });
+
+  test("a price change cannot be sent without a reason", async ({ page }) => {
+    const sent = await openCard(page);
+    await addOneProduct(page);
+    await page.getByLabel("איך הכסף הגיע?").fill("ביט");
+    await expect(page.getByRole("button", { name: "פתיחת הזמנה" })).toBeEnabled();
+
+    await page.getByLabel("מחיר סופי ללקוח").fill("50");
+    await expect(page.getByRole("button", { name: "פתיחת הזמנה" })).toBeDisabled();
+
+    await page.getByLabel(/למה ההנחה/).fill("תיאום טלפוני");
+    await expect(page.getByRole("button", { name: "פתיחת הזמנה" })).toBeEnabled();
+    expect(sent).toHaveLength(0);
+  });
+
+  test("an empty price box charges what it comes to", async ({ page }) => {
+    // Clearing the box must return the order to the computed price, not adjust
+    // it to zero - which is why the typed value is kept as text rather than as
+    // a number that an empty string would turn into 0.
+    const sent = await openCard(page);
+    await addOneProduct(page);
+    await page.getByLabel("מחיר סופי ללקוח").fill("100");
+    await page.getByLabel("מחיר סופי ללקוח").fill("");
+
+    await expect(page.getByText("הנחה ידנית")).toHaveCount(0);
+    await page.getByLabel("איך הכסף הגיע?").fill("ביט");
+    await page.getByRole("button", { name: "פתיחת הזמנה" }).click();
+
+    await expect.poll(() => sent.length).toBe(1);
+    expect(sent[0].body.admin_adjustment).toBeUndefined();
+    expect(sent[0].body.expected_total).toBe(79 + SHIPPING_FEE);
   });
 
   test("the key belongs to the order, not to the click", async ({ page }) => {
