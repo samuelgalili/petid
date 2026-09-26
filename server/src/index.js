@@ -125,7 +125,22 @@ const passwordResetOtpMinutes = Number(process.env.PASSWORD_RESET_OTP_MINUTES ||
 const passwordResetOtpTtlMs = Math.max(1, passwordResetOtpMinutes) * 60 * 1000;
 const passwordResetDebug = process.env.PASSWORD_RESET_DEBUG === "true";
 const resendApiKey = process.env.RESEND_API_KEY;
-const passwordResetFromEmail = process.env.PASSWORD_RESET_FROM_EMAIL || "MIPO <onboarding@resend.dev>";
+/**
+ * Who the mail comes from.
+ *
+ * THE DEFAULT IS A TESTING ADDRESS AND IT REACHES EXACTLY ONE PERSON.
+ * Resend allows onboarding@resend.dev only to the address the Resend account
+ * itself is registered to; a send to anybody else is refused with 403. So a
+ * deployment that sets RESEND_API_KEY and forgets this one passes every
+ * start-up check, logs nothing a person reads, and silently fails to verify
+ * every customer who is not the owner - which is what "no verification email"
+ * looks like from outside.
+ *
+ * It stays the default for local work, where the alternative is no mail at
+ * all. Production refuses it below.
+ */
+const RESEND_TESTING_SENDER = "onboarding@resend.dev";
+const passwordResetFromEmail = process.env.PASSWORD_RESET_FROM_EMAIL || `MIPO <${RESEND_TESTING_SENDER}>`;
 // A verification link is followed at leisure, often on another device, so it
 // lives far longer than a password reset code.
 const emailVerificationHours = Math.max(1, Number(process.env.EMAIL_VERIFICATION_HOURS || 24));
@@ -195,6 +210,29 @@ if (isProduction) {
   }
   if (passwordResetDebug) {
     throw new Error("PASSWORD_RESET_DEBUG must be disabled in production");
+  }
+  /*
+   * A KEY WITHOUT A SENDER IS A MAIL SYSTEM THAT WORKS FOR ONE PERSON.
+   *
+   * RESEND_API_KEY was already required here, so an unconfigured deployment
+   * could not start - and that check passing is exactly what made this hard
+   * to see. Resend permits onboarding@resend.dev only to the address its own
+   * account is registered to, and refuses every other recipient with a 403
+   * that is logged and swallowed. Signup still succeeds, the screen still
+   * says to check your mail, and nothing arrives.
+   *
+   * Refused at boot rather than at send time: a deployment that cannot mail
+   * its customers is not in a state worth serving, and finding out on
+   * somebody's first registration is finding out from them.
+   */
+  if (passwordResetFromEmail.includes(RESEND_TESTING_SENDER)) {
+    throw new Error(
+      "PASSWORD_RESET_FROM_EMAIL is required in production: the default "
+      + `${RESEND_TESTING_SENDER} is Resend's testing sender and can only `
+      + "deliver to the Resend account's own address, so every other "
+      + "customer's verification email is refused. Set it to an address on a "
+      + "domain verified in Resend.",
+    );
   }
   if (cardcomPartiallyConfigured) {
     throw new Error("CardCom configuration must include terminal, username, API password, and webhook secret");
@@ -1391,7 +1429,24 @@ const sendEmailVerification = async (request, email, otp, fullName) => {
   if (!response.ok) {
     const details = await response.text().catch(() => "");
     console.error("Verification email failed:", response.status, details.slice(0, 300));
-    return { sent: false, reason: "send_failed" };
+    /*
+     * The status is carried out, not just logged.
+     *
+     * Every refusal read "send_failed", which is the same word for "the
+     * provider is down for ten seconds" and "this sender can never reach this
+     * person". The second is a configuration mistake somebody has to go and
+     * fix, and it stayed invisible for as long as nobody read the logs.
+     *
+     * The provider's own text does NOT go out: it is written by somebody
+     * else's service and would be shown to a customer. Only the shape of the
+     * failure crosses the boundary.
+     */
+    return {
+      sent: false,
+      reason: response.status === 403 || response.status === 422
+        ? "sender_rejected"
+        : "send_failed",
+    };
   }
 
   return { sent: true, reason: "sent" };

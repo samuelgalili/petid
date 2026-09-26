@@ -75,7 +75,7 @@ export const SignupForm = () => {
 
     setLoading(true);
     try {
-      const { error } = await signUp({
+      const { error, emailVerification } = await signUp({
         full_name: formData.fullName.trim(),
         email: formData.email.trim(),
         password: formData.password,
@@ -93,7 +93,29 @@ export const SignupForm = () => {
       }
 
       localStorage.removeItem("onboardingCompleted");
-      toast({ title: "החשבון נוצר!", description: "ברוכים הבאים ל-MIPO!" });
+
+      /*
+       * THE ACCOUNT EXISTS EITHER WAY, AND THE TOAST SAYS WHICH HAPPENED.
+       *
+       * The server never fails a registration over an email provider having a
+       * bad minute, which is right. But it returned whether the mail went out
+       * and nothing read it, so somebody whose verification mail was refused
+       * was told "welcome" and left waiting for a message that would never
+       * arrive - with no reason to suspect anything and nothing to press.
+       *
+       * Failing to send is not failing to register, so this is not an error
+       * state: it is a different sentence and a way to try again.
+       */
+      if (emailVerification && !emailVerification.sent) {
+        toast({
+          title: "החשבון נוצר, אבל מייל האימות לא נשלח",
+          description: "אפשר לבקש אותו שוב מההגדרות. החשבון פעיל בינתיים.",
+          variant: "destructive",
+        });
+      } else {
+        toast({ title: "החשבון נוצר!", description: "שלחנו מייל לאימות הכתובת." });
+      }
+
       navigate("/onboarding");
     } catch {
       setGeneralError("אירעה שגיאה לא צפויה");

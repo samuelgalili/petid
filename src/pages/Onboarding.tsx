@@ -342,7 +342,28 @@ const Onboarding = () => {
                   <span className="mt-4 text-sm font-medium">פתיחת מצלמה או גלריה</span>
                 </button>
               </div>
-              <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={choosePhoto} className="hidden" />
+              {/*
+               * NO `capture`, WHICH IS THE WHOLE BUG.
+               *
+               * The button above says "פתיחת מצלמה או גלריה". With
+               * capture="environment" the browser offers no choice at all:
+               * iOS and Android open the camera straight away, so the gallery
+               * the label promises is unreachable and somebody registering
+               * has to photograph their pet on the spot or skip the step.
+               * Most people already have the photo.
+               *
+               * accept="image/*" on its own is what produces the picker with
+               * both options on it. `capture` belongs on a control that SAYS
+               * it is the camera - AddPet has one of those, and keeps it.
+               */}
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                onChange={choosePhoto}
+                className="hidden"
+                aria-label="בחירת תמונה מהמצלמה או מהגלריה"
+              />
               <button onClick={() => setPhase("reveal")} className="mt-5 text-sm font-medium text-mipo-muted">המשך בלי תמונה</button>
             </Screen>
           )}

@@ -430,7 +430,21 @@ export interface MipoAuthResult {
   profile: MipoProfile | null;
   /** Whether this same browser also holds a valid admin session. */
   is_admin?: boolean;
-  email_verification?: { sent: boolean; reason: string };
+  /**
+   * Whether the verification mail actually went out, and why not.
+   *
+   * The server has always returned this and nothing read it, so a signup that
+   * could not send told the person to check an inbox nothing would arrive in.
+   *
+   * `sender_rejected` is the one that matters: the provider refused the FROM
+   * address, which is a configuration mistake somebody has to go and fix
+   * rather than something a resend will cure.
+   */
+  email_verification?: {
+    sent: boolean;
+    reason: "sent" | "not_configured" | "sender_rejected" | "send_failed"
+      | "no_user" | "already_verified" | string;
+  };
 }
 
 export interface MipoNotification {

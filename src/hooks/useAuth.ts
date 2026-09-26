@@ -94,10 +94,19 @@ export const useAuth = () => {
       const nextSession = toSession(auth);
       applyAuth(auth);
       window.dispatchEvent(new Event(authChangedEvent));
-      return { data: { user: auth.user, session: nextSession }, error: null };
+      return {
+        data: { user: auth.user, session: nextSession },
+        // Carried out rather than dropped. The account exists either way -
+        // that is deliberate, an email provider having a bad minute must not
+        // undo a registration - but whether the mail went is something the
+        // person who just registered is entitled to know.
+        emailVerification: auth.email_verification ?? null,
+        error: null,
+      };
     } catch (error: unknown) {
       return {
         data: { user: null, session: null },
+        emailVerification: null,
         error: { message: errorMessage(error, "Signup failed"), status: 400 },
       };
     }
