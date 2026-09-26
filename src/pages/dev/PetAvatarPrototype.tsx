@@ -147,8 +147,8 @@ const PetAvatarPrototype = () => {
                 aria-pressed={species === item.id}
                 onClick={() => setSpecies(item.id)}
                 className={cn(
-                  "min-h-11 rounded-full border border-mipo-ink/10 px-4 text-sm font-semibold",
-                  species === item.id ? "bg-mipo-ink text-white" : "text-mipo-ink",
+                  "min-h-11 rounded-full border border-mipo-ink/10 px-4 text-sm font-semibold text-mipo-ink",
+                  species === item.id && "mipo-chip-selected",
                 )}
               >
                 {item.label}
@@ -163,8 +163,8 @@ const PetAvatarPrototype = () => {
                 aria-pressed={mood === item.id}
                 onClick={() => setMood(item.id)}
                 className={cn(
-                  "min-h-11 rounded-full border border-mipo-ink/10 px-3 text-sm font-semibold",
-                  mood === item.id ? "bg-mipo-ink text-white" : "text-mipo-ink",
+                  "min-h-11 rounded-full border border-mipo-ink/10 px-3 text-sm font-semibold text-mipo-ink",
+                  mood === item.id && "mipo-chip-selected",
                 )}
               >
                 {item.label}
