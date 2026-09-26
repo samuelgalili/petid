@@ -364,13 +364,25 @@ export const AdminHome = () => {
             ) : (
               <ul className="divide-y divide-admin-line">
                 {(home?.health ?? []).map((check) => (
-                  <li key={check.key} className="flex items-center gap-2.5 py-2">
+                  /*
+                   * TWO LINES ON A PHONE, ONE ON A DESK.
+                   *
+                   * In one row the label had flex-1 and the detail shrink-0,
+                   * so a long detail took the width and "מיילים יוצאים"
+                   * truncated to "מיילי…" - the one check that was reporting
+                   * a problem became the one you could not read. The name of
+                   * the thing and its verdict stay together; the measurement
+                   * drops below them when there is no room.
+                   */
+                  <li key={check.key} className="flex items-start gap-2.5 py-2 sm:items-center">
                     <span
-                      className={cn("h-2 w-2 shrink-0 rounded-full", HEALTH_TONE[check.state])}
+                      className={cn("mt-1.5 h-2 w-2 shrink-0 rounded-full sm:mt-0", HEALTH_TONE[check.state])}
                       aria-hidden
                     />
-                    <span className="flex-1 truncate text-[13px] text-admin-ink">{check.label}</span>
-                    <span className="admin-meta shrink-0">{check.detail}</span>
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2.5">
+                      <span className="truncate text-[13px] text-admin-ink sm:flex-1">{check.label}</span>
+                      <span className="admin-meta sm:shrink-0">{check.detail}</span>
+                    </span>
                     <span className="admin-meta w-16 shrink-0 text-left">{HEALTH_WORD[check.state]}</span>
                   </li>
                 ))}

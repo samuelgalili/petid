@@ -169,4 +169,37 @@ test.describe("the admin's first screen", () => {
     await expect(page.getByText("₪0").first()).toBeVisible();
     await expect(page.getByText("עוד לא נרשמה פעילות")).toBeVisible();
   });
+
+  test("on a phone, the check reporting a problem is still the one you can read", async ({ page }) => {
+    /*
+     * THE ROW THAT HID ITS OWN BAD NEWS. The label had flex-1 and the detail
+     * shrink-0, so the longer the detail the less room the name had - and a
+     * detail is long exactly when something is wrong. At 390px "מיילים יוצאים"
+     * came out as "מיילי…", so the one check reporting a failure was the one
+     * check you could not identify.
+     *
+     * The detail is supplied here rather than read from live data on purpose:
+     * with a short detail nothing overflows and the test would pass over the
+     * bug it exists to catch.
+     */
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openHome(page, {
+      ...home,
+      health: [
+        { key: "database", label: "מסד נתונים", state: "ok", detail: "12ms" },
+        {
+          key: "email", label: "מיילים יוצאים", state: "down",
+          detail: "הכתובת היוצאת היא כתובת הבדיקה של Resend",
+        },
+      ],
+    });
+
+    const label = page.getByText("מיילים יוצאים", { exact: true });
+    await expect(label).toBeVisible();
+
+    // toBeVisible() is blind to this: a truncated label is present, painted,
+    // and wrong. Only the overflow says so.
+    const clipped = await label.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
+    expect(clipped).toBe(false);
+  });
 });
