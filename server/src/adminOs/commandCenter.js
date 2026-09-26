@@ -296,7 +296,7 @@ const buildColumn = async (pool, column) => {
  * invented, because a number nothing computes is the most convincing kind of
  * wrong thing to put on an operations screen.
  */
-const readHealth = async (pool) => {
+const readHealth = async (pool, emailState) => {
   const checks = [];
 
   const startedAt = Date.now();
@@ -341,6 +341,24 @@ const readHealth = async (pool) => {
     detail: stale > 0 ? `${stale} תקועים מעל שעה` : `${waiting} ממתינים`,
   });
 
+  /*
+   * OUTBOUND EMAIL, WHICH IS WHY THIS CHECK EXISTS AT ALL.
+   *
+   * "No verification email on signup" was reported, and every layer looked
+   * fine: the key is required at boot, so the server being up proved it was
+   * set. What is NOT proved by anything is that the FROM address can reach a
+   * customer - Resend's testing sender delivers only to the Resend account's
+   * own address and refuses everyone else with a 403 that is logged and
+   * swallowed.
+   *
+   * It is injected rather than imported, because this module must not pull in
+   * a 9,000-line server entry point to read two environment variables.
+   */
+  if (emailState) {
+    const mail = emailState();
+    checks.push({ key: "email", label: "מיילים יוצאים", state: mail.state, detail: mail.detail });
+  }
+
   const ai = await pool.query(`
     select
       count(*) filter (where status = 'error')::int as failed,
@@ -372,11 +390,11 @@ const readActivity = async (pool) => {
   }));
 };
 
-export const readCommandCenter = async ({ pool }) => {
+export const readCommandCenter = async ({ pool, emailState = null }) => {
   const [columns, activity, health] = await Promise.all([
     Promise.all(COLUMNS.map((column) => buildColumn(pool, column))),
     readActivity(pool),
-    readHealth(pool),
+    readHealth(pool, emailState),
   ]);
 
   return {

@@ -42,6 +42,9 @@ export const createAdminOsRoutes = ({
   // module is mounted before it is defined. Passing it also keeps the one
   // function that knows what an order is as the ONLY function that makes one.
   createOrder,
+  // Reads whether outbound mail can reach a customer. Injected because it
+  // lives in index.js, which this module is mounted from.
+  emailState = null,
   logger = console,
 }) => {
   const audit = createAuditService({ pool, logger });
@@ -93,7 +96,7 @@ export const createAdminOsRoutes = ({
     permission: ADMIN_PERMISSIONS.FULL_ACCESS,
     idempotent: false,
     handler: async (request, response) => {
-      const result = await adminHome({ pool });
+      const result = await adminHome({ pool, emailState });
       sendJson(response, result.status, result.body);
     },
   });

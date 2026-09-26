@@ -42,25 +42,55 @@ test("production still refuses to start without an email key", () => {
   );
 });
 
-test("production refuses the sender that can only reach one person", () => {
+test("a sender that can only reach one person is reported, not fatal", () => {
   /*
-   * THE ACTUAL BUG. A key without a verified sender is a mail system that
-   * works for the account owner and nobody else - which is indistinguishable
-   * from a working mail system until a customer registers.
+   * THE FIRST VERSION OF THIS THREW AT BOOT, AND THAT WAS WRONG.
    *
-   * Refused at boot rather than at send time on purpose: a deployment that
-   * cannot mail its customers is not in a state worth serving, and finding
-   * out on somebody's first registration means finding out from them.
+   * Refusing to start looks decisive. But this codebase already decided,
+   * deliberately and with a comment saying so, that a signup succeeds whether
+   * or not the mail goes out - the account exists either way. Taking the
+   * whole site down because the FROM address is wrong contradicts that, and
+   * in exactly the case where the check is RIGHT it turns "customers are not
+   * getting email" into "nobody can reach the shop at all".
+   *
+   * So the state is computed and reported. The two places it surfaces are the
+   * start-up log and the Command Center's health panel, which is where
+   * somebody actually looks.
    */
+  assert.doesNotMatch(
+    productionChecks, /RESEND_TESTING_SENDER|passwordResetFromEmail/,
+    "the FROM address is fatal at boot again: a mail misconfiguration would\n"
+    + "take the entire site down rather than stopping the email",
+  );
+
   assert.match(
-    productionChecks, /RESEND_TESTING_SENDER/,
-    "production accepts Resend's testing sender, which delivers only to the\n"
-    + "Resend account's own address and refuses every customer with a 403",
+    source, /export const emailDeliveryState = \(\) => \{/,
+    "nothing computes whether outbound mail can reach a customer",
+  );
+
+  // To the function's OWN closing brace, at column zero. Slicing to the first
+  // "};" stopped inside the first `return { ... };` and read three lines.
+  const stateStart = source.indexOf("export const emailDeliveryState");
+  const stateBlock = source.slice(stateStart, source.indexOf("\n};", stateStart));
+  assert.match(stateBlock, /RESEND_TESTING_SENDER/, "the check does not look at the sender");
+  assert.match(stateBlock, /state: "down"/, "a testing sender is not reported as broken");
+  assert.match(stateBlock, /state: "unknown"/, "a missing key is reported as something other than unknown");
+});
+
+test("the deploy log says it, and so does the screen", () => {
+  // Two audiences: whoever is watching a deploy, and whoever opens the admin
+  // tomorrow. A log line alone is what let this hide in the first place.
+  assert.match(
+    source, /OUTBOUND EMAIL IS NOT DELIVERABLE/,
+    "start-up is silent about an undeliverable mail configuration",
   );
   assert.match(
-    productionChecks, /passwordResetFromEmail/,
-    "the production check does not look at the FROM address at all",
+    source, /emailState: emailDeliveryState/,
+    "the admin is never given the mail state, so the health panel cannot show it",
   );
+
+  const centre = readFileSync(path.join(repoRoot, "server/src/adminOs/commandCenter.js"), "utf8");
+  assert.match(centre, /key: "email"/, "the health panel has no outbound-email check");
 });
 
 test("the testing sender is still the local default", () => {

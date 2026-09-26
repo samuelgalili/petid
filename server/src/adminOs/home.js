@@ -114,13 +114,13 @@ const one = async (pool, sql) => {
  * besides, so keeping the queue as well would be two representations of one
  * thing - and the way two representations end is disagreeing.
  */
-export const adminHome = async ({ pool }) => {
+export const adminHome = async ({ pool, emailState = null }) => {
   const [pending, revenue, unpublished, customers, centre] = await Promise.all([
     one(pool, PENDING_ORDERS),
     one(pool, REVENUE),
     one(pool, UNPUBLISHED_PRODUCTS),
     one(pool, NEW_CUSTOMERS),
-    readCommandCenter({ pool }),
+    readCommandCenter({ pool, emailState }),
   ]);
 
   return {
