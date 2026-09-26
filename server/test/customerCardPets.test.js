@@ -20,7 +20,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const code = readFileSync(path.join(repoRoot, "src/pages/admin/AdminCustomers.tsx"), "utf8")
+// THE CARD IS ITS OWN PAGE NOW. It was a panel beside the list; the list is
+// still AdminCustomers.tsx and the card moved to AdminCustomer360.tsx, so
+// reading the list would have left both checks passing over a file that no
+// longer draws a pet at all.
+const code = readFileSync(path.join(repoRoot, "src/pages/admin/AdminCustomer360.tsx"), "utf8")
   .replace(/\/\*[\s\S]*?\*\//g, "")
   .split("\n")
   .filter((line) => !/^\s*(\/\/|\*)/.test(line))

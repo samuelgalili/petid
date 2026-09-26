@@ -131,7 +131,8 @@ test.describe("the admin shell on a phone", () => {
      */
     await page.goto("/admin/customers");
     await page.getByText("דנה כהן").first().click();
-    await page.getByRole("button", { name: "עריכה" }).click();
+    // The card is a page now, and the button says what it edits.
+  await page.getByRole("button", { name: "עריכת פרטים" }).click();
 
     const name = page.getByLabel("שם מלא");
     await expect(name).toBeVisible();

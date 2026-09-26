@@ -209,6 +209,7 @@ const AdminPlannedScreen = lazy(() => import("@/pages/admin/AdminPlannedScreen")
 const AdminAnalytics = lazy(() => import("@/pages/admin/AdminAnalytics"));
 const AdminOrders = lazy(() => import("@/pages/admin/AdminOrders"));
 const AdminCustomers = lazy(() => import("@/pages/admin/AdminCustomers"));
+const AdminCustomer360 = lazy(() => import("@/pages/admin/AdminCustomer360"));
 const AdminProducts = lazy(() => import("@/pages/admin/AdminProducts"));
 const AdminAuditLog = lazy(() => import("@/pages/admin/AdminAuditLog"));
 const AdminConnectors = lazy(() => import("@/pages/admin/AdminConnectors"));
@@ -330,6 +331,10 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/ai-economics", element: <AdminPage component={AdminEconomics} pageName="כלכלת AI" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
   { path: "/admin/orders", element: <AdminPage component={AdminOrders} pageName="הזמנות" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
   { path: "/admin/customers", element: <AdminPage component={AdminCustomers} pageName="לקוחות" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
+  // Customer 360. Declared AFTER the list so the static path wins its own
+  // match, and gated the same way: a record is not a lighter capability than
+  // the list of records.
+  { path: "/admin/customers/:identityId", element: <AdminPage component={AdminCustomer360} pageName="כרטיס לקוח" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
   // Either permission gets you in, and the screen shows the half you hold.
   // SELLER_ADMIN has intake.read and NOT products.read, so a single
   // products.read here would have quietly taken the publication queue away

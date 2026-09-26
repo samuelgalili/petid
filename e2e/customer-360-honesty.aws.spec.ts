@@ -145,6 +145,8 @@ test.describe("Customer 360 says what it does not know", () => {
     // And the count above the list describes the list: 2 live, 1 archived,
     // said separately. Asking after a dead pet by name is the worst thing
     // this screen can cause.
-    await expect(page.getByText("· 1 בארכיון")).toBeVisible();
+    // The wording moved with the card when it became a page; the claim did
+    // not. One archived animal, said in words rather than as "1 חיות".
+    await expect(page.getByText("חיה אחת בארכיון")).toBeVisible();
   });
 });

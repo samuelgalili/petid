@@ -65,7 +65,8 @@ async function openCard(page: Page, customer: typeof guest) {
 
   await page.goto("/admin/customers");
   await page.getByText("דנה כהן").first().click();
-  await page.getByRole("button", { name: "עריכה" }).click();
+  // The card is a page now, and the button says what it edits.
+  await page.getByRole("button", { name: "עריכת פרטים" }).click();
   await expect(page.getByLabel("שם מלא")).toBeVisible();
 
   return sent;
