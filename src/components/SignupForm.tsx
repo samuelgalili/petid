@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { rememberVerificationSent } from "@/lib/emailConfigured";
 
 const validateAge = (birthdate: Date): boolean => differenceInYears(new Date(), birthdate) >= 13;
 
@@ -106,14 +107,21 @@ export const SignupForm = () => {
        * Failing to send is not failing to register, so this is not an error
        * state: it is a different sentence and a way to try again.
        */
-      if (emailVerification && !emailVerification.sent) {
+      if (emailVerification?.sent === true) {
+        rememberVerificationSent(true);
+        toast({ title: "החשבון נוצר!", description: "שלחנו מייל לאימות הכתובת." });
+      } else if (emailVerification && !emailVerification.sent) {
+        rememberVerificationSent(false);
         toast({
           title: "החשבון נוצר, אבל מייל האימות לא נשלח",
           description: "אפשר לבקש אותו שוב מההגדרות. החשבון פעיל בינתיים.",
           variant: "destructive",
         });
       } else {
-        toast({ title: "החשבון נוצר!", description: "שלחנו מייל לאימות הכתובת." });
+        toast({
+          title: "החשבון נוצר!",
+          description: "אפשר להמשיך. לא נשלח מייל אימות.",
+        });
       }
 
       navigate("/onboarding");

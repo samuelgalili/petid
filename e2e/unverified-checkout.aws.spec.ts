@@ -147,26 +147,54 @@ test.describe("unverified checkout reaches Cardcom", () => {
   });
 });
 
+async function openHome(page: Page, health: Record<string, unknown> | "down") {
+  await page.route("**/api/**", async (route) => {
+    await route.fulfill({ json: {} });
+  });
+  await page.route("**/api/auth/me", async (route) => {
+    await route.fulfill({
+      json: { user: unverifiedUser, profile: null, is_admin: false },
+    });
+  });
+  await page.route("**/api/me/pets", async (route) => {
+    await route.fulfill({ json: { pets: [] } });
+  });
+  await page.route("**/api/health", async (route) => {
+    if (health === "down") {
+      await route.abort();
+      return;
+    }
+    await route.fulfill({ json: health });
+  });
+  await page.addInitScript((id) => {
+    localStorage.setItem("mipo-onboarding-complete", "true");
+    localStorage.setItem(`profile_prompt_snooze_until_${id}`, String(Date.now() + 86_400_000));
+  }, userId);
+  const healthSettled = health === "down"
+    ? null
+    : page.waitForResponse((response) => response.url().includes("/api/health"));
+  await page.goto("/");
+  await healthSettled;
+  await expect(page.getByRole("heading", { name: /איך החבר שלך מרגיש/ })).toBeVisible();
+}
+
 test.describe("home copy matches checkout", () => {
   test("the banner does not say an order requires verification first", async ({ page }) => {
-    await page.route("**/api/**", async (route) => {
-      await route.fulfill({ json: {} });
-    });
-    await page.route("**/api/auth/me", async (route) => {
-      await route.fulfill({
-        json: { user: unverifiedUser, profile: null, is_admin: false },
-      });
-    });
-    await page.route("**/api/me/pets", async (route) => {
-      await route.fulfill({ json: { pets: [] } });
-    });
-    await page.addInitScript((id) => {
-      localStorage.setItem("mipo-onboarding-complete", "true");
-      localStorage.setItem(`profile_prompt_snooze_until_${id}`, String(Date.now() + 86_400_000));
-    }, userId);
-
-    await page.goto("/");
+    await openHome(page, { ok: true, email: { configured: true } });
     await expect(page.getByText("אפשר להזמין גם לפני האימות")).toBeVisible();
+    await expect(page.getByRole("button", { name: "שליחה חוזרת" })).toBeVisible();
     await expect(page.getByText("להזמנה צריך לאמת קודם")).toHaveCount(0);
+  });
+
+  test("the banner stays hidden when mail is not configured", async ({ page }) => {
+    await openHome(page, { ok: true, email: { configured: false } });
+    await expect(page.getByText("שלחנו מייל")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "שליחה חוזרת" })).toHaveCount(0);
+  });
+
+  test("the banner stays hidden when health does not say mail is configured", async ({ page }) => {
+    await openHome(page, "down");
+    await expect(page.getByText("שלחנו מייל")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "שליחה חוזרת" })).toHaveCount(0);
   });
 });

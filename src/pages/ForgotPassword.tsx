@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { confirmPasswordReset, requestPasswordReset } from "@/lib/mipoApi";
+import { loadEmailConfigured } from "@/lib/emailConfiguredClient";
 import { Loader2, ArrowLeft, Mail, KeyRound, Eye, EyeOff, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MipoLogo } from "@/components/MipoLogo";
@@ -35,6 +36,7 @@ const ForgotPassword = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<Step>("email");
+  const [codeSent, setCodeSent] = useState(false);
   const [error, setError] = useState("");
   const [videoEnded, setVideoEnded] = useState(true);
   const { toast } = useToast();
@@ -54,15 +56,17 @@ const ForgotPassword = () => {
 
     try {
       const reset = await requestPasswordReset(email);
+      const delivered = (await loadEmailConfigured()) && reset.email_delivery === "sent";
 
+      setCodeSent(delivered);
       setStep("otp");
-      toast({
-        title: reset.email_delivery === "not_configured" ? "מנגנון המייל לא מוגדר" : "קוד נשלח",
-        description: reset.email_delivery === "not_configured"
-          ? "פנה למנהל כדי לקבל קוד איפוס."
-          : "קוד אימות נשלח לאימייל שלך",
-        variant: reset.email_delivery === "not_configured" ? "destructive" : "default",
-      });
+      toast(delivered
+        ? { title: "קוד נשלח", description: "קוד אימות נשלח לאימייל שלך" }
+        : {
+          title: "הקוד לא נשלח",
+          description: "מנגנון המייל לא זמין כרגע.",
+          variant: "destructive",
+        });
       if (reset.debug_otp) setOtp(reset.debug_otp);
     } catch (error: any) {
       console.error("Error sending OTP:", error);
@@ -123,11 +127,15 @@ const ForgotPassword = () => {
     setLoading(true);
     try {
       const reset = await requestPasswordReset(email);
-      toast({
-        title: reset.email_delivery === "not_configured" ? "מנגנון המייל לא מוגדר" : "קוד נשלח מחדש",
-        description: reset.email_delivery === "not_configured" ? "פנה למנהל כדי לקבל קוד איפוס." : "בדוק את האימייל שלך",
-        variant: reset.email_delivery === "not_configured" ? "destructive" : "default",
-      });
+      const delivered = (await loadEmailConfigured()) && reset.email_delivery === "sent";
+      setCodeSent(delivered);
+      toast(delivered
+        ? { title: "קוד נשלח מחדש", description: "בדוק את האימייל שלך" }
+        : {
+          title: "הקוד לא נשלח",
+          description: "מנגנון המייל לא זמין כרגע.",
+          variant: "destructive",
+        });
       if (reset.debug_otp) setOtp(reset.debug_otp);
     } catch (error: any) {
       toast({
@@ -296,7 +304,8 @@ const ForgotPassword = () => {
                     </div>
                     <h2 className="text-2xl font-bold font-jakarta text-foreground mb-2">הזנת קוד אימות</h2>
                     <p className="text-sm font-jakarta text-muted-foreground leading-relaxed">
-                      שלחנו קוד בן 6 ספרות אל<br />
+                      {codeSent ? "שלחנו קוד בן 6 ספרות אל" : "לא נשלח קוד. אם יש לכם אחד, הוא שייך אל"}
+                      <br />
                       <strong className="text-foreground">{email}</strong>
                     </p>
                   </motion.div>

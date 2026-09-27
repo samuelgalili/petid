@@ -13,6 +13,8 @@ import { MailWarning, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { requestEmailVerification, MipoApiError } from "@/lib/mipoApi";
+import { rememberedVerificationSent, rememberVerificationSent } from "@/lib/emailConfigured";
+import { useEmailConfigured } from "@/lib/emailConfiguredClient";
 import { isInProgressFlow } from "@/lib/flowSurfaces";
 import { cn } from "@/lib/utils";
 
@@ -20,19 +22,33 @@ export const EmailVerificationBanner = ({ className }: { className?: string }) =
   const { user, loading } = useAuth();
   const { toast } = useToast();
   const location = useLocation();
+  const configured = useEmailConfigured();
   const [sending, setSending] = useState(false);
+  const [denied, setDenied] = useState(() => rememberedVerificationSent() === false);
 
-  if (loading || !user || user.email_verified !== false || isInProgressFlow(location.pathname)) return null;
+  // Hidden until health says mail can leave, including while that answer is
+  // still unknown. The resend button goes with the banner.
+  if (loading || configured !== true || !user || user.email_verified !== false || isInProgressFlow(location.pathname)) return null;
 
   const resend = async () => {
     setSending(true);
     try {
       const result = await requestEmailVerification();
-      toast(result.sent
-        ? { title: "המייל נשלח", description: `בדקו את ${user.email}` }
-        : { title: "לא הצלחנו לשלוח כרגע", description: "נסו שוב בעוד רגע", variant: "destructive" });
+      if (result.sent) {
+        rememberVerificationSent(true);
+        setDenied(false);
+        toast({ title: "המייל נשלח", description: `בדקו את ${user.email}` });
+      } else {
+        rememberVerificationSent(false);
+        setDenied(true);
+        toast({ title: "לא הצלחנו לשלוח כרגע", description: "נסו שוב בעוד רגע", variant: "destructive" });
+      }
     } catch (error) {
       const status = error instanceof MipoApiError ? error.status : 0;
+      if (status !== 429) {
+        rememberVerificationSent(false);
+        setDenied(true);
+      }
       toast(status === 429
         ? { title: "כבר שלחנו מייל", description: "המתינו רגע לפני שליחה נוספת" }
         : { title: "השליחה נכשלה", description: "נסו שוב בעוד רגע", variant: "destructive" });
@@ -52,8 +68,17 @@ export const EmailVerificationBanner = ({ className }: { className?: string }) =
     >
       <MailWarning className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" strokeWidth={1.7} />
       <p className="flex-1 min-w-[12rem] text-xs leading-relaxed text-amber-900 dark:text-amber-100">
-        שלחנו מייל אימות ל־<span className="font-semibold">{user.email}</span>.
-        אפשר להזמין גם לפני האימות. כך נשלח עדכונים לכתובת הנכונה.
+        {denied ? (
+          <>
+            הכתובת עוד לא אומתה. אפשר לבקש מייל חדש.
+            אפשר להזמין גם לפני האימות.
+          </>
+        ) : (
+          <>
+            שלחנו מייל אימות ל־<span className="font-semibold">{user.email}</span>.
+            אפשר להזמין גם לפני האימות. כך נשלח עדכונים לכתובת הנכונה.
+          </>
+        )}
       </p>
       <div className="flex items-center gap-2">
         <button

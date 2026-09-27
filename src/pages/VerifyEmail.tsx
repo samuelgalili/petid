@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageTransition } from "@/components/PageTransition";
 import { confirmEmailVerification, MipoApiError } from "@/lib/mipoApi";
+import { rememberedVerificationSent } from "@/lib/emailConfigured";
+import { useEmailConfigured } from "@/lib/emailConfiguredClient";
 
 const errorMessage = (error: unknown): string => {
   const status = error instanceof MipoApiError ? error.status : null;
@@ -28,6 +30,8 @@ const errorMessage = (error: unknown): string => {
 const VerifyEmail = () => {
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  const emailConfigured = useEmailConfigured();
+  const claimSent = emailConfigured === true && rememberedVerificationSent() !== false;
   const [email, setEmail] = useState(params.get("email") || "");
   const [otp, setOtp] = useState(params.get("otp") || "");
   const [status, setStatus] = useState<"idle" | "working" | "done">("idle");
@@ -91,7 +95,9 @@ const VerifyEmail = () => {
             ) : (
               <form className="space-y-4" onSubmit={handleSubmit}>
                 <p className="text-sm text-muted-foreground">
-                  הזינו את הקוד בן שש הספרות ששלחנו במייל.
+                  {claimSent
+                    ? "הזינו את הקוד בן שש הספרות ששלחנו במייל."
+                    : "הזינו קוד בן שש ספרות, אם יש לכם אחד. לא נשלח מייל אם השליחה לא זמינה."}
                 </p>
 
                 <div className="space-y-2">
