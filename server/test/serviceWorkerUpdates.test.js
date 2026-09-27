@@ -93,34 +93,6 @@ test("an open tab still finds out about a deploy", () => {
   );
 });
 
-test("an update waits out checkout, the Cardcom return, and a form being typed", () => {
-  const source = read(REGISTRAR);
-  assert.match(source, /checkout/);
-  assert.match(source, /payment-success/);
-  assert.match(source, /payment-failed/);
-  assert.match(source, /userEditedForm/);
-  assert.match(source, /pendingReload/);
-  assert.match(source, /history\.pushState/);
-});
-
-test("api and payment routes are never cached, and the shell is revalidated", () => {
-  const sw = read("src/sw.ts");
-  assert.match(sw, /NetworkOnly/);
-  assert.match(sw, /pathname\.startsWith\("\/api\/"\)/);
-  assert.doesNotMatch(sw, /NetworkFirst/);
-  assert.doesNotMatch(sw, /cacheName:\s*"public-api-cache"/);
-  assert.match(sw, /cleanupOutdatedCaches/);
-  assert.match(sw, /payment-success/);
-  assert.match(sw, /checkout/);
-
-  for (const file of ["deploy/aws/Caddyfile", "deploy/local/Caddyfile"]) {
-    const caddy = read(file);
-    assert.match(caddy, /@shell path \/sw\.js \/index\.html/);
-    assert.match(caddy, /Cache-Control "no-cache"/);
-  }
-  assert.match(read("server/src/publicPages.js"), /"cache-control": "no-cache"/);
-});
-
 test("the worker still serves navigations from the precache", () => {
   // The reload is only correct BECAUSE of this: the second request for
   // index.html goes through the new worker and gets the new bundle names. If

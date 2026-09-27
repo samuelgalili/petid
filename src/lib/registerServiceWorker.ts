@@ -31,40 +31,6 @@
  */
 
 let reloading = false;
-let pendingReload = false;
-let userEditedForm = false;
-
-// Checkout and the Cardcom return are a payment in progress. Reloading there
-// drops the handoff. A form the visitor has typed into is the same kind of
-// loss. Both wait for the next navigation that is not itself a payment page.
-const PAYMENT_PATH = /^\/(?:checkout|payment-success|payment-failed|order-confirmation)(?:\/|$)/;
-
-const onPaymentPath = () => PAYMENT_PATH.test(window.location.pathname);
-
-const reloadForUpdate = () => {
-  if (reloading) return;
-  if (onPaymentPath() || userEditedForm) {
-    pendingReload = true;
-    return;
-  }
-  pendingReload = false;
-  reloading = true;
-  // reload() rather than a router navigation: the point is to re-request
-  // index.html through the NEW worker and pick up the new bundle names. A
-  // client-side route change would keep the old JS in memory.
-  window.location.reload();
-};
-
-const reloadAfterNavigation = () => {
-  if (!pendingReload || reloading) return;
-  // The route has already changed. A move from checkout to the Cardcom return
-  // is still the handoff, so it keeps waiting. Anywhere else, apply the build.
-  if (onPaymentPath()) return;
-  userEditedForm = false;
-  pendingReload = false;
-  reloading = true;
-  window.location.reload();
-};
 
 export const registerServiceWorker = () => {
   if (!("serviceWorker" in navigator)) return;
@@ -76,36 +42,13 @@ export const registerServiceWorker = () => {
   // was never stale, and reloading there would do it again on every load.
   const hadController = Boolean(navigator.serviceWorker.controller);
 
-  document.addEventListener("input", (event) => {
-    const target = event.target;
-    if (
-      target instanceof HTMLInputElement
-      || target instanceof HTMLTextAreaElement
-      || target instanceof HTMLSelectElement
-    ) {
-      if (target instanceof HTMLInputElement && ["hidden", "submit", "button", "image"].includes(target.type)) return;
-      userEditedForm = true;
-    }
-  }, true);
-
-  const notifyNavigation = () => {
-    queueMicrotask(reloadAfterNavigation);
-  };
-  const pushState = history.pushState.bind(history);
-  const replaceState = history.replaceState.bind(history);
-  history.pushState = (data, unused, url) => {
-    pushState(data, unused, url);
-    notifyNavigation();
-  };
-  history.replaceState = (data, unused, url) => {
-    replaceState(data, unused, url);
-    notifyNavigation();
-  };
-  window.addEventListener("popstate", notifyNavigation);
-
   navigator.serviceWorker.addEventListener("controllerchange", () => {
     if (!hadController || reloading) return;
-    reloadForUpdate();
+    reloading = true;
+    // reload() rather than a router navigation: the point is to re-request
+    // index.html through the NEW worker and pick up the new bundle names. A
+    // client-side route change would keep the old JS in memory.
+    window.location.reload();
   });
 
   window.addEventListener("load", () => {

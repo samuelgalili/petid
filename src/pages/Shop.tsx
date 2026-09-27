@@ -265,9 +265,9 @@ const Shop = () => {
 
   // Fetch products from the AWS API backed by RDS.
   const { data: dbProducts = [], isLoading: isLoadingProducts, isFetching, isError: isProductsError } = useQuery({
-    queryKey: ["shop-products-aws", "storefront"],
+    queryKey: ["shop-products-aws"],
     queryFn: async () => {
-      const products = await getShopProducts({ view: "storefront" });
+      const products = await getShopProducts();
       return products.filter((product) => product.in_stock !== false);
     },
     staleTime: 1000 * 60 * 2, // 2 minutes

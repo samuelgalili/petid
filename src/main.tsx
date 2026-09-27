@@ -22,7 +22,7 @@ if ("caches" in window) {
   window.caches.keys()
     .then((keys) => Promise.all(
       keys
-        .filter((key) => key === "api-cache" || key === "public-api-cache" || /^mipo-v\d+$/.test(key))
+        .filter((key) => key === "api-cache" || /^mipo-v\d+$/.test(key))
         .map((key) => window.caches.delete(key)),
     ))
     .catch(() => undefined);

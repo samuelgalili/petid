@@ -22,7 +22,7 @@ interface SEOProps {
   author?: string;
 }
 
-const DEFAULT_IMAGE = appUrl('/og-default.png');
+const DEFAULT_IMAGE = appUrl('/pwa-512x512.png');
 const SITE_NAME = 'MIPO';
 const DEFAULT_DESCRIPTION = 'MIPO היא אפליקציה לניהול החיים עם חיית המחמד: פרופיל, טיפול, תזכורות, קהילה וחנות.';
 const JSON_LD_ESCAPES: Record<string, string> = {
@@ -38,17 +38,6 @@ const serializeJsonLd = (value: unknown) => JSON.stringify(value).replace(
   (character) => JSON_LD_ESCAPES[character],
 );
 
-const withBrand = (title?: string) => {
-  if (!title || !title.trim()) return `${SITE_NAME} — My Precious One`;
-  let trimmed = title.trim();
-  while (/\s*\|\s*MIPO\s*$/i.test(trimmed)) {
-    trimmed = trimmed.replace(/\s*\|\s*MIPO\s*$/i, "").trim();
-  }
-  if (!trimmed) return SITE_NAME;
-  if (/^MIPO(\s|$)/.test(trimmed)) return trimmed;
-  return `${trimmed} | ${SITE_NAME}`;
-};
-
 export const SEO = ({
   title,
   description = DEFAULT_DESCRIPTION,
@@ -62,7 +51,7 @@ export const SEO = ({
   publishedTime,
   author,
 }: SEOProps) => {
-  const fullTitle = withBrand(title);
+  const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} — My Precious One`;
   const fullUrl = url ? appUrl(url) : APP_URL;
   const fullImage = image.startsWith('http') ? image : appUrl(image);
 
@@ -184,17 +173,17 @@ function getStructuredData(props: {
       return {
         ...baseData,
         '@type': 'Product',
-        name: props.title.replace(/\s*\|\s*MIPO\s*$/i, ""),
+        name: props.title,
         description: props.description,
         image: props.image,
         url: props.url,
-        ...(props.price !== undefined && props.price !== null && {
+        ...(props.price && {
           offers: {
             '@type': 'Offer',
-            price: Number(props.price).toFixed(2),
+            price: props.price,
             priceCurrency: props.currency || 'ILS',
-            availability: props.availability === 'in_stock'
-              ? 'https://schema.org/InStock'
+            availability: props.availability === 'in_stock' 
+              ? 'https://schema.org/InStock' 
               : 'https://schema.org/OutOfStock',
           },
         }),

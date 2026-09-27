@@ -4,7 +4,7 @@
  */
 
 import { useMemo } from "react";
-import { HelpCircle, ShieldAlert, ShieldX } from "lucide-react";
+import { ShieldAlert, ShieldX } from "lucide-react";
 import type { ActivePet } from "@/hooks/useActivePet";
 
 export type ProductSafety = "safe" | "caution" | "unsafe" | "unknown";
@@ -105,11 +105,9 @@ export const SafetyBadge = ({ level, reason, compact = false }: SafetyBadgeProps
      */
     const treatment = level === "unsafe"
       ? "bg-destructive/15 border-destructive/30 text-destructive"
-      : level === "unknown"
-        ? "bg-mipo-soft/90 border-mipo-line text-mipo-muted"
-        : "bg-mipo-peach/15 border-mipo-peach/40 text-mipo-peach";
+      : "bg-mipo-peach/15 border-mipo-peach/40 text-mipo-peach";
 
-    const Glyph = level === "unsafe" ? ShieldX : level === "unknown" ? HelpCircle : ShieldAlert;
+    const Glyph = level === "unsafe" ? ShieldX : ShieldAlert;
 
     return (
       <div className="absolute top-1.5 left-1.5 z-10">
@@ -125,17 +123,11 @@ export const SafetyBadge = ({ level, reason, compact = false }: SafetyBadgeProps
       className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] font-semibold ${
         level === "unsafe"
           ? "bg-destructive/10 text-destructive border border-destructive/20"
-          : level === "unknown"
-            ? "bg-muted text-muted-foreground border border-border"
-            // mipo-peach, not amber-500: the same token the compact mark uses,
-            // and it inverts with the theme, which amber-700 ink never did.
-            : "bg-mipo-peach/15 text-mipo-peach border border-mipo-peach/30"
+          : "bg-mipo-peach/15 text-mipo-peach border border-mipo-peach/30"
       }`}
     >
       {level === "unsafe" ? (
         <ShieldX className="w-3 h-3" strokeWidth={2} />
-      ) : level === "unknown" ? (
-        <HelpCircle className="w-3 h-3" strokeWidth={2} />
       ) : (
         <ShieldAlert className="w-3 h-3" strokeWidth={2} />
       )}
