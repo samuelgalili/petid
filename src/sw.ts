@@ -24,7 +24,10 @@ cleanupOutdatedCaches();
 
 registerRoute(
   new NavigationRoute(createHandlerBoundToURL("/index.html"), {
-    denylist: [/^\/~oauth/, /^\/api\//],
+    // sitemap.xml and robots.txt are documents, not app screens. Without this
+    // a browser navigation is answered with index.html and the missing-page
+    // screen, which is the 404 a crawler reports.
+    denylist: [/^\/~oauth/, /^\/api\//, /^\/sitemap\.xml$/, /^\/robots\.txt$/],
   }),
 );
 

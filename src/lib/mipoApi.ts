@@ -733,7 +733,21 @@ export async function getCurrentAdmin(): Promise<MipoAdmin | null> {
   return admin;
 }
 
-export async function getCurrentUser(): Promise<MipoAuthResult | null> {
+// One shared lookup. The home screen mounts several components that each ask
+// who is signed in; without this they each hit /auth/me, and an anonymous
+// visit is a handful of 401s. The cookie itself is HttpOnly, so the page
+// cannot skip the call by reading it. Caching the in-flight request is the
+// check, not a second way to be signed in — private endpoints still require
+// the session.
+let currentUserGeneration = 0;
+let currentUserPending: Promise<MipoAuthResult | null> | null = null;
+
+const rememberCurrentUser = (value: MipoAuthResult | null) => {
+  currentUserGeneration += 1;
+  currentUserPending = Promise.resolve(value);
+};
+
+async function fetchCurrentUser(): Promise<MipoAuthResult | null> {
   const response = await fetch(`${API_BASE_URL}/auth/me`, {
     credentials: "same-origin",
     headers: {
@@ -763,6 +777,22 @@ export async function getCurrentUser(): Promise<MipoAuthResult | null> {
   };
 }
 
+export async function getCurrentUser(): Promise<MipoAuthResult | null> {
+  if (currentUserPending) return currentUserPending;
+
+  const ticket = currentUserGeneration;
+  const request = fetchCurrentUser().then(
+    (value) => (ticket !== currentUserGeneration ? currentUserPending ?? value : value),
+    (error) => {
+      if (ticket !== currentUserGeneration && currentUserPending) return currentUserPending;
+      if (ticket === currentUserGeneration) currentUserPending = null;
+      throw error;
+    },
+  );
+  currentUserPending = request;
+  return request;
+}
+
 export async function requestEmailVerification(): Promise<{ ok: boolean; sent: boolean; reason: string }> {
   return apiFetch("/auth/email-verification/request", { method: "POST", body: "{}" });
 }
@@ -783,6 +813,7 @@ export async function loginUser(email: string, password: string, rememberMe = fa
     method: "POST",
     body: JSON.stringify({ email, password, remember_me: rememberMe }),
   });
+  rememberCurrentUser(auth);
   setStorageHint(userSessionHintKey, true);
   return auth;
 }
@@ -800,6 +831,7 @@ export async function signupUser(input: {
     method: "POST",
     body: JSON.stringify(input),
   });
+  rememberCurrentUser(auth);
   setStorageHint(userSessionHintKey, true);
   return auth;
 }
@@ -810,6 +842,7 @@ export async function logoutUser() {
     body: JSON.stringify({}),
   });
   if (!result.ok) throw new Error("Sign out failed");
+  rememberCurrentUser(null);
   setStorageHint(userSessionHintKey, false);
   return result;
 }
@@ -1392,8 +1425,14 @@ export interface MipoShippingProfile {
   updated_at: string;
 }
 
-/** Null for a customer who has not ordered yet; throws 401 for a guest. */
+/**
+ * Null when nobody is signed in, and null for a customer who has not ordered
+ * yet. Guests used to call this and get a 401 on the way into checkout. The
+ * route itself still requires a session.
+ */
 export async function getMyShippingProfile(): Promise<MipoShippingProfile | null> {
+  const auth = await getCurrentUser();
+  if (!auth) return null;
   const result = await apiFetch<{ profile: MipoShippingProfile | null }>("/me/shipping-profile");
   return result.profile;
 }
