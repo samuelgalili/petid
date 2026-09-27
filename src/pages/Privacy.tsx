@@ -1,6 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
+import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 
 const Privacy = () => {
@@ -8,6 +9,7 @@ const Privacy = () => {
 
   return (
     <div className="h-screen overflow-hidden bg-background" dir="rtl">
+      <SEO title="מדיניות פרטיות" description="מדיניות הפרטיות של MIPO: איזה מידע נאסף, למה הוא משמש, ואיך מוחקים אותו." url="/privacy-policy" />
       <div className="h-full overflow-y-auto pb-[70px]">
         <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
           <div className="mx-auto flex h-14 max-w-2xl items-center gap-3 px-4">

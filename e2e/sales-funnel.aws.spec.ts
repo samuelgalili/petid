@@ -121,7 +121,9 @@ test.describe("customer-facing product specs", () => {
 });
 
 async function mockCatalog(page: Page) {
-  await page.route("**/api/products", async (route) => {
+  // The shop asks for ?view=storefront. A pattern with no query misses that
+  // request, so the search has nothing to find.
+  await page.route(/\/api\/products(?:\?|$)/, async (route) => {
     await route.fulfill({ json: { products: catalog } });
   });
   await page.route(`**/api/products/${quattroId}`, async (route) => {

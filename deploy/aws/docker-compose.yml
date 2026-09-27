@@ -10,6 +10,9 @@ services:
       PORT: "3000"
       UPLOAD_DIR: /app/uploads
       PRIVATE_UPLOAD_DIR: /app/private-uploads
+      # index.html for per-route meta. The directory is published after the API
+      # starts; the renderer re-reads the file when it changes.
+      WEB_ROOT: /srv/www
       # The commit this container was recreated for, reported by /api/health.
       # `:-` and not `:?`: compose interpolates this whole file before it
       # applies profiles, so a required-variable form here would abort every
@@ -38,6 +41,12 @@ services:
         target: /app/private-uploads
         bind:
           create_host_path: false
+      - type: bind
+        source: ${MIPO_REMOTE_PATH:-/opt/mipo}/dist
+        target: /srv/www
+        read_only: true
+        bind:
+          create_host_path: false
     networks:
       - mipo
 
@@ -49,14 +58,21 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    # The entrypoint turns an empty MIPO_WWW_ADDRESS into www.mipo.pet on the
+    # apex and into a localhost placeholder on any other site, then starts Caddy.
+    entrypoint: ["/bin/sh", "/etc/caddy/caddy-entrypoint.sh"]
+    command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
     environment:
       # Read from the host .env. Production sets the mipo.pet pair; staging sets
       # only MIPO_SITE_ADDRESS plus MIPO_ROBOTS_POLICY.
+      # An empty robots policy used to be passed through, and Caddy then sent
+      # the header with nothing in it. "all" is the production value.
       MIPO_SITE_ADDRESS: ${MIPO_SITE_ADDRESS:-mipo.pet}
-      MIPO_WWW_ADDRESS: ${MIPO_WWW_ADDRESS:-http://localhost:8081}
-      MIPO_ROBOTS_POLICY: ${MIPO_ROBOTS_POLICY:-}
+      MIPO_WWW_ADDRESS: ${MIPO_WWW_ADDRESS:-}
+      MIPO_ROBOTS_POLICY: ${MIPO_ROBOTS_POLICY:-all}
     volumes:
       - ${MIPO_REMOTE_PATH:-/opt/mipo}/deploy/aws/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${MIPO_REMOTE_PATH:-/opt/mipo}/deploy/aws/caddy-entrypoint.sh:/etc/caddy/caddy-entrypoint.sh:ro
       - ${MIPO_REMOTE_PATH:-/opt/mipo}/dist:/srv/www:ro
       - caddy_data:/data
       - caddy_config:/config

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
+import { SEO } from "@/components/SEO";
 
 const DataDeletion = () => {
   const navigate = useNavigate();
@@ -10,6 +11,7 @@ const DataDeletion = () => {
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
+      <SEO title="מחיקת נתונים" description="איך לבקש מחיקה של חשבון ושל נתונים ב-MIPO." url="/data-deletion" />
       <header className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-2xl items-center gap-3 px-4">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="חזרה">
