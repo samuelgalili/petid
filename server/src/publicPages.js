@@ -12,6 +12,7 @@
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 
+import { isProductionRoute } from "./knownRoutes.js";
 import { clipPlainText, plainText } from "./productText.js";
 import { publiclyVisibleProduct } from "./shopVisibility.js";
 import { SUPPORT_EMAIL, SUPPORT_PHONE } from "./siteContact.js";
@@ -95,46 +96,6 @@ const PAGE_META = {
   },
 };
 
-const EXACT_PATHS = new Set([
-  "/",
-  "/auth", "/auth/callback", "/signup", "/forgot-password", "/reset-password",
-  "/verify-email", "/install", "/onboarding",
-  "/feed", "/old-feed", "/explore", "/reels", "/live",
-  "/shop", "/shop/explore", "/shop/feed", "/cart", "/favorites", "/checkout",
-  "/order-confirmation", "/reorder-confirmation", "/order-history",
-  "/payment-success", "/payment-failed",
-  "/add-pet", "/pet-profile", "/archived-pets", "/photos", "/documents",
-  "/training", "/grooming", "/insurance", "/dog-parks", "/adoption",
-  "/breeds", "/breed-quiz", "/breed-detect",
-  "/profile", "/edit-profile", "/settings", "/notifications",
-  "/messages", "/messages/new", "/privacy-settings", "/chat", "/owner-profile",
-  "/businesses", "/convert-to-business", "/creator-dashboard", "/creator-analytics",
-  "/smart-notifications", "/business-settings", "/business-crm", "/product-sourcing",
-  "/ad-campaigns", "/parks", "/experiences", "/guides", "/radar",
-  "/science", "/accessibility", "/privacy-policy", "/terms", "/club-terms",
-  "/support", "/data-deletion",
-]);
-
-const PARAM_PATHS = [
-  /^\/user\/[^/]+$/,
-  /^\/profile\/[^/]+$/,
-  /^\/post\/[^/]+$/,
-  /^\/story\/[^/]+$/,
-  /^\/highlight\/[^/]+$/,
-  /^\/live\/[^/]+$/,
-  /^\/live\/[^/]+\/broadcast$/,
-  /^\/order-tracking\/[^/]+$/,
-  /^\/pet\/[^/]+$/,
-  /^\/pet\/[^/]+\/.+$/,
-  /^\/pet-profile\/[^/]+$/,
-  /^\/edit-pet\/[^/]+$/,
-  /^\/breed-history\/[^/]+$/,
-  /^\/messages\/[^/]+$/,
-  /^\/business\/[^/]+$/,
-  /^\/found-pet\/[^/]+$/,
-  /^\/admin(?:\/.*)?$/,
-  /^\/factory(?:\/.*)?$/,
-];
 
 const BUSINESS_SITEMAP_SQL = [
   "select id::text as id, updated_at from public.business_products where in_stock is not false and coalesce(shop_hidden, false) = false",
@@ -197,9 +158,14 @@ export const documentTitle = (title) => {
 };
 
 export const normalizePath = (pathname) => {
+  let raw = String(pathname || "/");
+  const hash = raw.indexOf("#");
+  if (hash !== -1) raw = raw.slice(0, hash);
+  const query = raw.indexOf("?");
+  if (query !== -1) raw = raw.slice(0, query);
   let decoded;
   try {
-    decoded = decodeURIComponent(String(pathname || "/"));
+    decoded = decodeURIComponent(raw);
   } catch {
     return null;
   }
@@ -208,7 +174,9 @@ export const normalizePath = (pathname) => {
   return decoded;
 };
 
-const isKnownPage = (pathname) => EXACT_PATHS.has(pathname) || PARAM_PATHS.some((pattern) => pattern.test(pathname));
+// Known pages are the production route table (src/routes), not a prefix of
+// /admin or /factory. A path that is not in that table is a 404.
+const isKnownPage = (pathname) => isProductionRoute(pathname);
 
 export const classifyPath = (pathname) => {
   const path = normalizePath(pathname);

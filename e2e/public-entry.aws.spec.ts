@@ -508,4 +508,11 @@ test.describe("public entry", () => {
     await page.goto("/shop");
     await expect(page.getByTestId("guest-value-strip")).toHaveCount(0);
   });
+
+  test("an unknown path stays put and shows the not-found screen", async ({ page }) => {
+    await mockAnonymous(page);
+    await page.goto("/this-page-does-not-exist?from=share");
+    await expect(page).toHaveURL(/\/this-page-does-not-exist\?from=share$/);
+    await expect(page.getByRole("heading", { name: /אופס! הדף ברח!/ })).toBeVisible();
+  });
 });

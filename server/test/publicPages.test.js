@@ -8,6 +8,12 @@ import { fileURLToPath } from "node:url";
 import { clipPlainText, stripImportArtifact } from "../src/productText.js";
 import { pageWindow, pickStorefrontProduct } from "../src/storefrontProduct.js";
 import {
+  PRODUCTION_ROUTE_PATTERNS,
+  isProductionRoute,
+  navigationScreenHrefs,
+  productionRoutePatterns,
+} from "../src/knownRoutes.js";
+import {
   buildSitemapXml,
   classifyPath,
   createPublicPageRenderer,
@@ -102,35 +108,80 @@ test("a product page carries the product, the price, and one brand suffix", asyn
   assert.match(page.html, /rel="canonical" href="https:\/\/mipo\.pet\/product\/1dbfeceb-52f8-480a-8540-17479194ae48"/);
 });
 
+const sampleRoute = (pattern) => (
+  pattern === "/product/:id"
+    ? `/product/${productId}`
+    : pattern.replace(/:[A-Za-z0-9_]+/g, "abc").replace(/\*/g, "extra")
+);
+
 test("an unknown path and an unknown product are 404 with the shell", async () => {
-  const missing = await htmlOf("/this-page-does-not-exist-xyz");
-  assert.equal(missing.status, 404);
-  assert.match(missing.html, /<div id="root"><\/div>/);
-  assert.doesNotMatch(missing.html, /splash-paw/);
-  assert.doesNotMatch(missing.html, /טוען\.\.\./);
-  assert.match(missing.html, /noindex/);
-  assert.match(missing.html, /העמוד לא נמצא/);
+  for (const pathname of [
+    "/this-page-does-not-exist",
+    "/this-page-does-not-exist-xyz",
+    "/admin/not-a-real-screen",
+    "/admin/customers/abc/extra",
+    "/factory/secret",
+    "/dev/pet-avatar",
+  ]) {
+    const missing = await htmlOf(`${pathname}?from=share`);
+    assert.equal(missing.status, 404, pathname);
+    assert.equal(missing.headers.location, undefined, pathname);
+    assert.match(missing.html, /<div id="root"><\/div>/);
+    assert.doesNotMatch(missing.html, /splash-paw/);
+    assert.doesNotMatch(missing.html, /טוען\.\.\./);
+    assert.match(missing.html, /name="robots" content="noindex, nofollow"/);
+    assert.match(missing.html, /העמוד לא נמצא/);
+    assert.equal(classifyPath(pathname).kind, "unknown", pathname);
+  }
 
   const product = await htmlOf("/product/00000000-0000-4000-8000-000000000000");
   assert.equal(product.status, 404);
   assert.match(product.html, /<div id="root"><\/div>/);
   assert.doesNotMatch(product.html, /splash-paw/);
+  assert.match(product.html, /noindex/);
 
   assert.equal(classifyPath("/api/health").kind, "api");
   assert.equal((await renderer()("/api/health")), null);
+  assert.equal(classifyPath("/sitemap.xml").kind, "sitemap");
+  assert.equal(classifyPath("/robots.txt").kind, "unknown");
 });
 
-test("every client route is a known path, and the catch-all is not", () => {
+test("every route in the route table is a 200, including a deep link query", async () => {
   const routes = read("src/routes/index.tsx");
-  const paths = [...routes.matchAll(/path:\s*"([^"]+)"/g)].map((match) => match[1]);
-  assert.ok(paths.includes("/shop"));
-  for (const routePath of paths) {
-    if (routePath === "*") {
-      assert.equal(classifyPath("/this-page-does-not-exist-xyz").kind, "unknown");
-      continue;
-    }
-    const sample = routePath.replace(/:[A-Za-z]+/g, "abc").replace(/\*/g, "extra");
+  const navigation = read("src/components/admin/adminNavigation.ts");
+  const parsed = productionRoutePatterns(routes, navigation);
+  const withDev = productionRoutePatterns(routes, navigation, { includeDev: true });
+  assert.deepEqual(PRODUCTION_ROUTE_PATTERNS, parsed);
+  assert.ok(parsed.includes("/shop"));
+  assert.ok(parsed.includes("/product/:id"));
+  assert.equal(parsed.includes("*"), false);
+  assert.match(read("server/src/index.js"), /renderPublicPage\(url\.pathname\)/);
+  assert.doesNotMatch(read("server/src/knownRoutes.js"), /from\s+["']\.\.\//);
+  assert.doesNotMatch(read("server/src/publicPages.js"), /from\s+["']\.\.\//);
+
+  for (const href of navigationScreenHrefs(navigation)) {
+    assert.equal(isProductionRoute(href), true, href);
+  }
+
+  for (const pattern of parsed) {
+    const sample = sampleRoute(pattern);
+    const deepLink = new URL(sample, "https://mipo.pet");
+    deepLink.search = "?ref=deep-link&q=1";
+    assert.equal(deepLink.pathname, sample, pattern);
+    const page = await htmlOf(`${deepLink.pathname}${deepLink.search}`);
+    assert.equal(page.status, 200, pattern);
+    assert.equal(page.headers.location, undefined, pattern);
     assert.notEqual(classifyPath(sample).kind, "unknown", sample);
+    assert.notEqual(classifyPath(`${sample}?ref=deep-link#section`).kind, "unknown", pattern);
+  }
+
+  const devOnly = withDev.filter((pattern) => !parsed.includes(pattern));
+  for (const pattern of devOnly) {
+    const sample = sampleRoute(pattern);
+    const page = await htmlOf(sample);
+    assert.equal(page.status, 404, pattern);
+    assert.match(page.html, /noindex/);
+    assert.equal(classifyPath(sample).kind, "unknown", sample);
   }
 });
 
