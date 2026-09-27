@@ -283,7 +283,10 @@ test("an unset www address becomes www.mipo.pet only for the apex", () => {
   assert.equal(staging.stdout.split("\n")[0], "http://localhost:8081");
   assert.match(staging.stdout, /noindex, nofollow/);
   const explicit = run({ MIPO_SITE_ADDRESS: "mipo.pet", MIPO_WWW_ADDRESS: "www.example.test" });
-  assert.equal(explicit.stdout.split("\n")[0], "www.example.test");
+  assert.equal(explicit.status, 0);
+  assert.match(explicit.stderr, /www site left out so the apex can start/);
+  assert.match(explicit.stdout, /^other$/m);
+  assert.doesNotMatch(explicit.stdout, /www\.example\.test/);
 });
 
 test("the service worker does not answer sitemap.xml with the app shell", () => {

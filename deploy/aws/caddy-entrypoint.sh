@@ -17,15 +17,43 @@
 set -eu
 
 site="${MIPO_SITE_ADDRESS:-mipo.pet}"
-www="${MIPO_WWW_ADDRESS:-}"
+# Same normalization as deploy/aws/www-address.sh. Only three raw values are
+# accepted: unset, the localhost placeholder, and www.mipo.pet. Anything else
+# is refused here as well as in the deploy pre-flight, and the apex still starts.
+raw=$(printf '%s' "${MIPO_WWW_ADDRESS:-}" | tr -d '\r')
+raw=$(printf '%s' "$raw" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+case "$raw" in
+  \"*\")
+    raw=${raw#\"}
+    raw=${raw%\"}
+    ;;
+  \'*\')
+    raw=${raw#\'}
+    raw=${raw%\'}
+    ;;
+esac
+raw=$(printf '%s' "$raw" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
 
-case "$www" in
+skip_www=no
+case "$raw" in
   ""|http://localhost:8081)
     if [ "$site" = "mipo.pet" ]; then
       www="www.mipo.pet"
     else
       www="http://localhost:8081"
     fi
+    ;;
+  www.mipo.pet)
+    www="www.mipo.pet"
+    ;;
+  *)
+    skip_www=yes
+    www=""
+    contains=no
+    case "$raw" in
+      *mipo.pet*) contains=yes ;;
+    esac
+    echo "MIPO_WWW_ADDRESS is other (length=${#raw} contains_mipo_pet=${contains}); www site left out so the apex can start" >&2
     ;;
 esac
 
@@ -73,18 +101,29 @@ assemble() {
 }
 
 if [ "${1:-}" = "--print" ]; then
-  printf '%s\n' "$MIPO_WWW_ADDRESS"
+  if [ "$skip_www" = "yes" ]; then
+    printf 'other\n'
+    printf 'length=%s\n' "${#raw}"
+    printf 'contains_mipo_pet=%s\n' "$contains"
+  else
+    printf '%s\n' "$MIPO_WWW_ADDRESS"
+  fi
   printf '%s\n' "$MIPO_ROBOTS_POLICY"
   exit 0
 fi
 
+include_www=yes
+if [ "$skip_www" = "yes" ]; then
+  include_www=no
+fi
+
 if [ "${1:-}" = "--render" ]; then
-  assemble yes
+  assemble "$include_www"
   cat "$runtime_file"
   exit 0
 fi
 
-assemble yes
+assemble "$include_www"
 if command -v caddy >/dev/null 2>&1; then
   if ! caddy validate --config "$runtime_file" --adapter caddyfile >/tmp/caddy-validate.txt 2>&1; then
     # omit the www site so the apex can start
