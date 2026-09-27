@@ -9,6 +9,8 @@
   "scripts": {
     "start": "node src/index.js",
     "admin:provision": "node --env-file-if-exists=../.env src/provisionAdmin.js",
+    "admin:reset-2fa": "node --env-file-if-exists=../.env src/resetAdminTwoFactor.js",
+    "secret:keygen": "node src/generateSecretKey.js",
     "test": "node --test",
     "test:integration": "node scripts/aiGatewayIntegrationCheck.mjs",
     "test:integration:pet-facts": "node scripts/petFactsIntegrationCheck.mjs"
