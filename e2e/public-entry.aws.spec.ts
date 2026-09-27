@@ -271,6 +271,35 @@ test.describe("public entry", () => {
     expect(shipping).toBeGreaterThan(0);
   });
 
+  test("a product photo that cannot load stays a white frame", async ({ page }) => {
+    await mockAnonymous(page);
+    await page.route("**/api/products*", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        products: [{
+          ...product("1", "מזון בלי תמונה", 79),
+          image_url: "https://ken-hatuki.co.il/broken-product.jpg",
+          images: ["https://ken-hatuki.co.il/broken-product.jpg"],
+          is_featured: true,
+        }],
+      }),
+    }));
+    await page.route("https://ken-hatuki.co.il/**", (route) => route.fulfill({
+      status: 202,
+      contentType: "text/html; charset=utf-8",
+      body: "<!DOCTYPE html><html><body>captcha</body></html>",
+    }));
+
+    await page.goto("/shop");
+    const fallback = page.getByTestId("product-image-fallback").first();
+    await expect(fallback).toBeVisible();
+    await expect(fallback).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await expect(fallback).toHaveText("אין תמונה");
+    await expect(page.locator("img[src*='ken-hatuki']")).toHaveCount(0);
+    await expect(page.getByText("מזון בלי תמונה")).toBeVisible();
+  });
+
   test("sitemap and robots are real documents", async ({ page }) => {
     const sitemap = await page.request.get("/sitemap.xml");
     expect(sitemap.status()).toBe(200);

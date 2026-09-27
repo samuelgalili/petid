@@ -48,15 +48,6 @@
 		}
 	}
 
-	# The catalogue sitemap. A file under /srv/www would be the copy baked into
-	# the frontend, without product URLs, and try_files would answer a missing
-	# file with index.html. The API builds it from the public catalogue.
-	handle /sitemap.xml {
-		reverse_proxy mipo-api:3000 {
-			header_up X-Forwarded-For {remote_host}
-		}
-	}
-
 	# Hashed build assets are served before the single-page fallback below, and
 	# without it. Under try_files a chunk that no longer exists — every deploy
 	# replaces them all, and a browser with the app already open still asks for

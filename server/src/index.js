@@ -16,7 +16,6 @@ import {
 } from "./productIntel.js";
 import { fallbackBreeds } from "./referenceData.js";
 import { assertLegacyIntakeAllowed, sourceHostForLog } from "./legacyIntakeFreeze.js";
-import { buildSitemapXml, listSitemapProducts, sitemapOrigin } from "./sitemap.js";
 import { measureLegacyExposure } from "./legacyExposureMeasurement.js";
 import {
   DEFAULT_OWNERSHIP_STATE,
@@ -8034,26 +8033,6 @@ const handleRequest = async (request, response) => {
   const url = new URL(request.url || "/", "http://localhost");
 
   try {
-    if (request.method === "GET" && (url.pathname === "/sitemap.xml" || url.pathname === "/api/sitemap.xml")) {
-      let products = [];
-      try {
-        products = await listSitemapProducts((sql) => pool.query(sql));
-      } catch (error) {
-        console.error("sitemap product list failed", error);
-      }
-      const xml = buildSitemapXml({
-        origin: sitemapOrigin(configuredPublicAppUrl),
-        products,
-      });
-      response.writeHead(200, {
-        "content-type": "application/xml; charset=utf-8",
-        "cache-control": "public, max-age=3600",
-        "x-content-type-options": "nosniff",
-      });
-      response.end(xml);
-      return;
-    }
-
     if (request.method === "GET" && url.pathname.startsWith("/uploads/")) {
       if (!(await servePublicUpload(request, response, url.pathname))) {
         sendError(response, 404, "File not found");

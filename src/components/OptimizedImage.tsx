@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface OptimizedImageProps {
@@ -13,6 +13,8 @@ interface OptimizedImageProps {
   onLoad?: () => void;
   onClick?: () => void;
 }
+
+const LOAD_TIMEOUT_MS = 12000;
 
 export const OptimizedImage = ({
   src,
@@ -32,7 +34,13 @@ export const OptimizedImage = ({
   const [isInView, setIsInView] = useState(priority);
   const imgRef = useRef<HTMLDivElement>(null);
 
-  // Intersection Observer for lazy loading
+  useEffect(() => {
+    setIsLoaded(false);
+    setHasError(false);
+    setImageSrc(priority ? src : "");
+    if (priority) setIsInView(true);
+  }, [priority, src]);
+
   useEffect(() => {
     if (priority || !imgRef.current) {
       setIsInView(true);
@@ -61,26 +69,11 @@ export const OptimizedImage = ({
     };
   }, [priority]);
 
-  // Generate WebP version URL
-  const getWebPUrl = (url: string) => {
-    // For external URLs (unsplash, etc.), try to add format parameter
-    if (url.includes("unsplash.com")) {
-      const urlObj = new URL(url);
-      urlObj.searchParams.set("fm", "webp");
-      urlObj.searchParams.set("q", "80");
-      return urlObj.toString();
-    }
-    // For local images, replace extension with .webp
-    return url.replace(/\.(jpg|jpeg|png)$/i, ".webp");
-  };
-
-  // Generate srcset for responsive images
   const generateSrcSet = (url: string) => {
     if (!url.includes("unsplash.com")) return undefined;
 
-    const urlObj = new URL(url);
     const widths = [320, 640, 768, 1024, 1280, 1536];
-    
+
     return widths
       .map((w) => {
         const srcSetUrl = new URL(url);
@@ -93,10 +86,14 @@ export const OptimizedImage = ({
   };
 
   useEffect(() => {
-    if (isInView) {
-      setImageSrc(src);
-    }
+    if (isInView && src) setImageSrc(src);
   }, [isInView, src]);
+
+  useEffect(() => {
+    if (!isInView || !imageSrc || hasError || isLoaded) return;
+    const timer = window.setTimeout(() => setHasError(true), LOAD_TIMEOUT_MS);
+    return () => window.clearTimeout(timer);
+  }, [hasError, imageSrc, isInView, isLoaded]);
 
   const handleLoad = () => {
     setIsLoaded(true);
@@ -106,10 +103,6 @@ export const OptimizedImage = ({
 
   const handleError = () => {
     setHasError(true);
-    // Try to load original image without modifications
-    if (imageSrc !== src) {
-      setImageSrc(src);
-    }
   };
 
   const objectFitClass = {
@@ -121,40 +114,48 @@ export const OptimizedImage = ({
   }[objectFit];
 
   return (
-    <div 
-      ref={imgRef} 
-      className={cn("relative overflow-hidden", className)}
+    <div
+      ref={imgRef}
+      className={cn("relative overflow-hidden bg-white", className)}
       onClick={onClick}
     >
-      {!isLoaded && <div className="absolute inset-0 bg-white" />}
-
-      {/* Main image */}
-      {isInView && (
-        <picture>
-          {/* WebP source with srcset */}
-          <source
-            type="image/webp"
-            srcSet={generateSrcSet(src)}
-            sizes={sizes}
-          />
-          
-          {/* Fallback to original format */}
-          <img
-            src={imageSrc}
-            alt={alt}
-            width={width}
-            height={height}
-            loading={priority ? "eager" : "lazy"}
-            decoding="async"
-            onLoad={handleLoad}
-            onError={handleError}
-            className={cn(
-              "w-full h-full transition-opacity duration-300",
-              objectFitClass,
-              isLoaded ? "opacity-100" : "opacity-0"
-            )}
-          />
-        </picture>
+      {hasError || !src ? (
+        <div
+          data-testid="product-image-fallback"
+          role="img"
+          aria-label={alt || "אין תמונה"}
+          className="absolute inset-0 flex items-center justify-center bg-white"
+        >
+          <span className="text-xs text-neutral-400">אין תמונה</span>
+        </div>
+      ) : (
+        <>
+          {!isLoaded && <div className="absolute inset-0 bg-white" aria-hidden="true" />}
+          {isInView && imageSrc && (
+            <picture>
+              <source
+                type="image/webp"
+                srcSet={generateSrcSet(src)}
+                sizes={sizes}
+              />
+              <img
+                src={imageSrc}
+                alt={alt}
+                width={width}
+                height={height}
+                loading={priority ? "eager" : "lazy"}
+                decoding="async"
+                onLoad={handleLoad}
+                onError={handleError}
+                className={cn(
+                  "h-full w-full transition-opacity duration-300",
+                  objectFitClass,
+                  isLoaded ? "opacity-100" : "opacity-0",
+                )}
+              />
+            </picture>
+          )}
+        </>
       )}
     </div>
   );
