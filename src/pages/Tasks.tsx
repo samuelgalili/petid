@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import confetti from "canvas-confetti";
 import { AppHeader } from "@/components/AppHeader";
+import { CountFraction } from "@/components/CountFraction";
 
 interface Task {
   id: string;
@@ -196,9 +197,12 @@ const Tasks = () => {
                     <Calendar className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
                     <span className="font-medium text-foreground font-jakarta">התקדמות יומית</span>
                   </div>
-                  <span className="text-sm text-muted-foreground font-jakarta">
-                    {dailyCompleted}/{dailyTasks.length}
-                  </span>
+                  <CountFraction
+                    current={dailyCompleted}
+                    total={dailyTasks.length}
+                    separator="/"
+                    className="text-sm text-muted-foreground font-jakarta"
+                  />
                 </div>
                 <Progress value={dailyProgress} className="h-2" />
               </Card>
@@ -264,9 +268,12 @@ const Tasks = () => {
                     <Trophy className="w-5 h-5 text-accent" strokeWidth={1.5} />
                     <span className="font-semibold text-foreground font-jakarta">התקדמות שבועית</span>
                   </div>
-                  <span className="text-sm text-muted-foreground">
-                    {weeklyCompleted}/{weeklyTasks.length}
-                  </span>
+                  <CountFraction
+                    current={weeklyCompleted}
+                    total={weeklyTasks.length}
+                    separator="/"
+                    className="text-sm text-muted-foreground"
+                  />
                 </div>
                 <Progress value={weeklyProgress} className="h-2" />
               </Card>
