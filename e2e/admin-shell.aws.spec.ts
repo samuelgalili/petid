@@ -88,8 +88,16 @@ test.describe("the admin shell on a phone", () => {
     await page.goto("/admin/customers");
     await expect(bar(page)).toBeVisible();
 
-    await page.mouse.wheel(0, 20_000);
-    await page.waitForTimeout(400);
+    // A wheel event on this phone layout does not move the document, so the
+    // check used to measure the unscrolled page and flake. Scroll to the end
+    // the way the list actually moves, then see whether the last row clears
+    // the bar.
+    await page.evaluate(() => {
+      const root = document.documentElement;
+      root.style.scrollBehavior = "auto";
+      window.scrollTo(0, root.scrollHeight);
+    });
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
 
     const barTop = (await bar(page).boundingBox())?.y ?? 0;
     expect(barTop).toBeGreaterThan(0);
