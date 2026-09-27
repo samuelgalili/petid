@@ -75,7 +75,7 @@ export const PWAInstallPrompt = () => {
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-foreground text-base mb-1">
-                    הוסף למסך הבית 📱
+                    הוסיפו למסך הבית 📱
                   </h3>
                   <p className="text-sm text-muted-foreground leading-snug">
                     גישה מהירה לכל התכונות, גם במצב לא מקוון
@@ -99,7 +99,7 @@ export const PWAInstallPrompt = () => {
                   className="flex-1 gap-2 bg-primary hover:bg-primary/90"
                 >
                   <Download className="w-4 h-4" />
-                  {isInstalling ? "מתקין..." : "התקן עכשיו"}
+                  {isInstalling ? "מתקינים..." : "התקינו עכשיו"}
                 </Button>
                 <Button
                   variant="outline"

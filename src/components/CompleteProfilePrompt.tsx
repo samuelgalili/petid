@@ -12,6 +12,7 @@ import { getCurrentUser, updateMyProfile } from "@/lib/mipoApi";
 import {
   PROFILE_PROMPT_DELAY_MS,
   profilePromptAllowed,
+  profilePromptPastFirstSession,
   profilePromptSnoozed,
   readOnboardingFlag,
   snoozeProfilePrompt,
@@ -34,11 +35,14 @@ const CompleteProfilePrompt = () => {
   const [dismissed, setDismissed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [form, setForm] = useState({ first_name: "", last_name: "", phone: "", city: "" });
+  const [form, setForm] = useState({ first_name: "", last_name: "", city: "" });
   const [missingFields, setMissingFields] = useState<string[]>([]);
 
   useEffect(() => {
     if (!isAuthenticated || !user || dismissed) return;
+    // Mark the session even on onboarding, so the same tab's first home
+    // landing is still the first session.
+    if (!profilePromptPastFirstSession()) return;
     if (!profilePromptAllowed(location.pathname, readOnboardingFlag())) return;
     if (profilePromptSnoozed(user.id)) return;
 
@@ -63,7 +67,6 @@ const CompleteProfilePrompt = () => {
         const missing: string[] = [];
         if (!data.first_name) missing.push("first_name");
         if (!data.last_name) missing.push("last_name");
-        if (!data.phone) missing.push("phone");
         if (!data.city) missing.push("city");
 
         if (missing.length === 0) return;
@@ -112,7 +115,6 @@ const CompleteProfilePrompt = () => {
     const updates: Partial<ProfileData> & { full_name?: string } = {};
     if (missingFields.includes("first_name") && form.first_name) updates.first_name = form.first_name.trim();
     if (missingFields.includes("last_name") && form.last_name) updates.last_name = form.last_name.trim();
-    if (missingFields.includes("phone") && form.phone) updates.phone = form.phone.trim();
     if (missingFields.includes("city") && form.city) updates.city = form.city.trim();
 
     // Update full_name if first/last changed
@@ -124,7 +126,7 @@ const CompleteProfilePrompt = () => {
 
     try {
       await updateMyProfile(updates);
-      toast({ title: "הפרטים נשמרו! ✅", description: "תודה שהשלמת את הפרופיל" });
+      toast({ title: "הפרטים נשמרו", description: "תודה שהשלמתם את הפרופיל" });
       handleDismiss();
     } catch {
       toast({ title: "שגיאה", description: "לא הצלחנו לשמור את הפרטים", variant: "destructive" });
@@ -152,7 +154,7 @@ const CompleteProfilePrompt = () => {
               </div>
               <div>
                 <h3 className="font-bold text-sm">השלמת פרופיל 🐾</h3>
-                <p className="text-xs text-muted-foreground">עזור לנו להכיר אותך טוב יותר</p>
+                <p className="text-xs text-muted-foreground">עזרו לנו להכיר אתכם טוב יותר</p>
               </div>
             </div>
             <button type="button" onClick={handleDismiss} aria-label="סגירה" className="text-muted-foreground hover:text-foreground p-1">
@@ -181,20 +183,6 @@ const CompleteProfilePrompt = () => {
                     className="h-9 text-sm"
                   />
                 </div>
-              </div>
-            )}
-
-            {missingFields.includes("phone") && (
-              <div>
-                <Label className="text-xs">טלפון</Label>
-                <Input
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  placeholder="050-0000000"
-                  type="tel"
-                  dir="ltr"
-                  className="h-9 text-sm"
-                />
               </div>
             )}
 

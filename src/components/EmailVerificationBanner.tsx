@@ -53,7 +53,7 @@ export const EmailVerificationBanner = ({ className }: { className?: string }) =
       <MailWarning className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" strokeWidth={1.7} />
       <p className="flex-1 min-w-[12rem] text-xs leading-relaxed text-amber-900 dark:text-amber-100">
         שלחנו מייל אימות ל־<span className="font-semibold">{user.email}</span>.
-        אפשר להזמין גם לפני האימות. האימות עוזר לשלוח עדכונים לכתובת הנכונה.
+        אפשר להזמין גם לפני האימות. כך נשלח עדכונים לכתובת הנכונה.
       </p>
       <div className="flex items-center gap-2">
         <button

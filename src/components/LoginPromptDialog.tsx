@@ -41,7 +41,7 @@ export const LoginPromptDialog = () => {
             </motion.div>
             
             <DialogTitle className="text-xl font-bold text-foreground">
-              הצטרף לקהילה
+              הצטרפו לקהילה
             </DialogTitle>
             
             <DialogDescription className="text-muted-foreground text-sm leading-relaxed">
@@ -72,7 +72,7 @@ export const LoginPromptDialog = () => {
             onClick={closeLoginPrompt}
             className="mt-4 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            המשך לגלוש
+            המשיכו לגלוש
           </button>
         </div>
       </DialogContent>
