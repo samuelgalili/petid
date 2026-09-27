@@ -35,6 +35,7 @@ import {
 } from "@/lib/petSafetyScore";
 import { feedingGuidanceSourceLabelHe, readFeedingGuidance } from "@/lib/feedingGuidance";
 import { readCustomerSpecAttributes } from "@/lib/productSpecs";
+import { DiscountPercent } from "@/components/shop/DiscountPercent";
 import { PetFitCard } from "@/components/shop/PetFitCard";
 import {
   FREE_SHIPPING_THRESHOLD,
@@ -393,7 +394,7 @@ const ProductDetailAws = () => {
                   <span className="pb-1 text-sm text-muted-foreground line-through">₪{listPrice.toFixed(2)}</span>
                 )}
                 {hasDiscount && (
-                  <span className="pb-1 text-sm font-semibold text-mipo-ink">-{discountPercent}%</span>
+                  <DiscountPercent percent={discountPercent} className="pb-1 text-sm font-semibold text-mipo-ink" />
                 )}
                 {asNumber(product.price_per_weight) > 0 && product.weight_unit && (
                   <span className="pb-1 text-xs text-muted-foreground">

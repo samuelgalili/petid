@@ -14,17 +14,20 @@ const longDescription = Array.from({ length: 12 }, () => (
   "תיאור ארוך של שק המזון, כדי שהעמוד יהיה גבוה מהמסך והפס התחתון לא ייחשב גלוי רק כי התוכן קצר."
 )).join(" ");
 
+// Same field shape as GET /api/products/0022bbc6-… : category is the import
+// slug, category_id is set, and category_name / category_slug are absent.
+// original_price is set so the page badge is exactly -7%.
 const product = {
   id: productId,
   name: "קוואטרו כלבים אדולט מיני עוף 7 ק״ג",
   description: longDescription,
   price: 199,
-  original_price: 249,
+  original_price: 214,
   sale_price: null,
   image_url: "/placeholder.svg",
   images: ["/placeholder.svg"],
   category: "dry-food",
-  category_name: null,
+  category_id: "8d136fea-2e86-4bc2-8f44-4b21e1b685e1",
   brand: "קוואטרו",
   pet_type: "dog",
   in_stock: true,
@@ -32,6 +35,18 @@ const product = {
   weight_unit: "ק״ג",
   ingredients: "עוף, תירס, שעורה",
   benefits: ["חלבון מן החי", "ללא חיטה"],
+  special_diet: [],
+  medical_tags: [],
+  breed_tags: [],
+  flavors: [],
+  life_stage: null,
+  dog_size: null,
+  product_attributes: {
+    product_type: "מזון",
+    family_code: "dogs",
+    family_description: "מזון כלבים",
+    animal: "כלב",
+  },
 };
 
 const shelfProduct = {
@@ -124,6 +139,32 @@ test.describe("mobile product bar and shop prices", () => {
     expect(metrics.transition?.transform).toBe("none");
     await expect(page.getByText("dry-food")).toHaveCount(0);
     await expect(page.getByText("מזון יבש", { exact: true }).first()).toBeVisible();
+
+    const discount = page.getByTestId("discount-percent");
+    await expect(discount).toHaveText("-7%");
+    await expect(discount).toHaveAttribute("dir", "ltr");
+
+    const policyButton = page.getByRole("button", { name: "זכויות צרכן ומדיניות ביטול מלאה" });
+    await policyButton.evaluate((el) => el.scrollIntoView({ block: "center" }));
+    await policyButton.click();
+    const policyKeys = ["consumer-protection", "privacy-policy", "terms", "accessibility", "club-terms"];
+    for (const key of policyKeys) {
+      await page.evaluate((policyKey) => {
+        window.dispatchEvent(new CustomEvent("open-legal-drawer", { detail: { key: policyKey } }));
+      }, key);
+      const viewport = page.locator("[data-radix-scroll-area-viewport]");
+      const body = page.getByTestId("legal-policy-body");
+      await expect(body).toBeVisible();
+      await expect(viewport).toHaveCount(1);
+      const direction = await viewport.evaluate((el) => getComputedStyle(el).direction);
+      const align = await body.evaluate((el) => getComputedStyle(el).textAlign);
+      expect(direction).toBe("rtl");
+      expect(align).toBe("right");
+      await expect(body).toHaveAttribute("dir", "rtl");
+      if (key === "consumer-protection") {
+        await expect(body).toContainText("1. זכות ביטול עסקה:");
+      }
+    }
   });
 
   test("support text scrolls clear of the add button at 390px", async ({ page }, testInfo) => {

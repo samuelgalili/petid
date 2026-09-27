@@ -15,6 +15,7 @@ import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { computePetAdjustedScore, safetyLevelFor } from "@/lib/petSafetyScore";
 import { displayProductDescription } from "@/lib/productDescription";
 import { SHIPPING_ESTIMATE_HE } from "@/lib/shipping";
+import { DiscountPercent } from "@/components/shop/DiscountPercent";
 
 interface ProductInfoDrawerProps {
   product: {
@@ -129,7 +130,7 @@ export const ProductInfoDrawer = ({ product, onClose, onAddToCart, onAddToCarePl
                   <span className="text-base text-muted-foreground line-through">₪{product.originalPrice}</span>
                 )}
                 {discount && (
-                  <span className="text-sm font-semibold text-mipo-ink">-{discount}%</span>
+                  <DiscountPercent percent={discount} className="text-sm font-semibold text-mipo-ink" />
                 )}
               </div>
             </div>
