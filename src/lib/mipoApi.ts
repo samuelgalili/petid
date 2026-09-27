@@ -1422,8 +1422,14 @@ export interface MipoShippingProfile {
   updated_at: string;
 }
 
-/** Null for a customer who has not ordered yet; throws 401 for a guest. */
+/**
+ * Null when nobody is signed in, and null for a customer who has not ordered
+ * yet. Guests used to call this and get a 401 on the way into checkout. The
+ * route itself still requires a session.
+ */
 export async function getMyShippingProfile(): Promise<MipoShippingProfile | null> {
+  const auth = await getCurrentUser();
+  if (!auth) return null;
   const result = await apiFetch<{ profile: MipoShippingProfile | null }>("/me/shipping-profile");
   return result.profile;
 }

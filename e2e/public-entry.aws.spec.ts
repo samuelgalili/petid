@@ -193,6 +193,98 @@ test.describe("public entry", () => {
     await expect(page.getByRole("heading", { name: "הפיד מתחיל ברגע אחד" })).toBeVisible();
   });
 
+  test("guest checkout does not ask for a shipping profile", async ({ page }) => {
+    const shippingCalls: string[] = [];
+    await mockAnonymous(page);
+    await page.route("**/api/me/shipping-profile", (route) => {
+      shippingCalls.push(route.request().method());
+      return route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "Unauthorized" }),
+      });
+    });
+    await page.addInitScript(() => {
+      localStorage.setItem("mipo-cart", JSON.stringify([{
+        id: "line-1",
+        productId: "1",
+        name: "מזון יבש לכלב 7 קילו",
+        price: 189,
+        image: "/placeholder.svg",
+        quantity: 1,
+      }]));
+    });
+
+    await page.goto("/checkout");
+    await expect(page.getByRole("heading", { name: "כתובת למשלוח" })).toBeVisible();
+    await page.waitForTimeout(400);
+    expect(shippingCalls).toEqual([]);
+  });
+
+  test("signed-in checkout still loads the saved address", async ({ page }) => {
+    let shipping = 0;
+    await page.route("**/api/**", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: "{}",
+    }));
+    await page.route("**/api/auth/me", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        user,
+        profile: { id: USER_ID, full_name: "בעלים", email: user.email },
+        is_admin: false,
+      }),
+    }));
+    await page.route("**/api/me/shipping-profile", (route) => {
+      shipping += 1;
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          profile: {
+            full_name: "בעלים",
+            city: "חיפה",
+            street: "הרצל",
+            entrance_type: "house",
+            leave_at_door: false,
+            updated_at: "2026-01-01T00:00:00.000Z",
+          },
+        }),
+      });
+    });
+    await page.addInitScript(() => {
+      localStorage.setItem("mipo-cart", JSON.stringify([{
+        id: "line-1",
+        productId: "1",
+        name: "מזון יבש לכלב 7 קילו",
+        price: 189,
+        image: "/placeholder.svg",
+        quantity: 1,
+      }]));
+    });
+
+    await page.goto("/checkout");
+    await expect(page.getByRole("heading", { name: "כתובת למשלוח" })).toBeVisible();
+    await expect(page.getByLabel(/^עיר/)).toHaveValue("חיפה");
+    expect(shipping).toBeGreaterThan(0);
+  });
+
+  test("sitemap and robots are real documents", async ({ page }) => {
+    const sitemap = await page.request.get("/sitemap.xml");
+    expect(sitemap.status()).toBe(200);
+    const body = await sitemap.text();
+    expect(sitemap.headers()["content-type"] || "").toContain("xml");
+    expect(body).toContain("/shop");
+    expect(body).toContain("/support");
+    expect(body).not.toContain("<!doctype html");
+
+    const robots = await page.request.get("/robots.txt");
+    expect(robots.status()).toBe(200);
+    expect(await robots.text()).toContain("Sitemap: https://mipo.pet/sitemap.xml");
+  });
+
   test("a logged-in home is still the pet home", async ({ page }) => {
     await page.route("**/api/**", (route) => route.fulfill({
       status: 200,

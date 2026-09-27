@@ -128,7 +128,8 @@ const Checkout = () => {
       // Ignore stale local data.
     }
 
-    // A guest has no profile; the 401 is expected and means "nothing saved".
+    // Guests have nothing saved. getMyShippingProfile does not call the
+    // authenticated route in that case; a 401 here used to show up in checkout.
     getMyShippingProfile()
       .then((profile) => { if (profile) fillFrom(profile as unknown as Record<string, unknown>); })
       .catch(() => undefined);
