@@ -1,3 +1,5 @@
+לפני שמתחילים, לקרוא את HANDOFF.md
+
 # CLAUDE.md
 
 Rules for Claude Code and Cursor agents in this repo. The map of the system is `CONTEXT.md`. Open work, with links, is `todo.md`. If a doc under `docs/` disagrees with `server/sql` or `server/src`, the code wins.
