@@ -32,13 +32,12 @@ interface ProductInfoDrawerProps {
     flavors?: string[];
     inStock?: boolean;
   } | null;
-  petName?: string;
   onClose: () => void;
   onAddToCart?: () => void;
   onAddToCarePlan?: () => void;
 }
 
-export const ProductInfoDrawer = ({ product, petName, onClose, onAddToCart, onAddToCarePlan }: ProductInfoDrawerProps) => {
+export const ProductInfoDrawer = ({ product, onClose, onAddToCart, onAddToCarePlan }: ProductInfoDrawerProps) => {
   const { toast } = useToast();
   const { activePet } = usePetPreference();
 
@@ -160,13 +159,6 @@ export const ProductInfoDrawer = ({ product, petName, onClose, onAddToCart, onAd
                     <span className={`text-lg font-black ${safetyColors[safetyLevel].text}`}>{safetyScore}/10</span>
                     <span className="text-xs font-semibold text-foreground">ציון בטיחות</span>
                   </div>
-                  {petName && (
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {safetyLevel === "safe" 
-                        ? `מאושר על ידי המומחה עבור ${petName}` 
-                        : `דורש בדיקה נוספת עבור ${petName}`}
-                    </p>
-                  )}
                 </div>
               </motion.div>
             )}

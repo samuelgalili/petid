@@ -155,7 +155,7 @@ export const PetVaultDrawer = ({ isOpen, onClose, pet }: PetVaultDrawerProps) =>
 
       toast({
         title: `המסמך נשמר בכספת של ${pet?.name || 'חיית המחמד'}`,
-        description: 'עיבוד AI יחזור לאחר חיבור שירות OCR ב-AWS',
+        description: 'זיהוי הטקסט במסמך עדיין לא זמין',
       });
 
       window.dispatchEvent(new CustomEvent('vault-scan-complete', {

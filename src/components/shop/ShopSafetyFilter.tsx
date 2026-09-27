@@ -44,7 +44,7 @@ const SAFETY_RULES: { condition: string[]; unsafeKeywords: string[]; reason: str
 
 export function checkProductSafety(productText: string, pet: ActivePet | null): SafetyCheckResult {
   if (!pet?.medical_conditions || pet.medical_conditions.length === 0) {
-    return { level: "unknown", reason: "לא ניתן לאמת התאמה רפואית מפרטי הקטלוג" };
+    return { level: "unknown", reason: null };
   }
 
   const lower = productText.toLowerCase();
@@ -64,7 +64,7 @@ export function checkProductSafety(productText: string, pet: ActivePet | null): 
     }
   }
 
-  return { level: "unknown", reason: "לא נמצא מידע מספיק לאימות התאמה רפואית" };
+  return { level: "unknown", reason: null };
 }
 
 export function useShopSafety(productName: string, description: string, pet: ActivePet | null): SafetyCheckResult {
@@ -77,12 +77,13 @@ export function useShopSafety(productName: string, description: string, pet: Act
 interface SafetyBadgeProps {
   level: ProductSafety;
   reason: string | null;
-  petName?: string;
   compact?: boolean;
 }
 
-export const SafetyBadge = ({ level, reason, petName, compact = false }: SafetyBadgeProps) => {
-  if (level === "safe") return null;
+export const SafetyBadge = ({ level, reason, compact = false }: SafetyBadgeProps) => {
+  // "unknown" used to print a medical-verification line on ordinary food.
+  // With no reason there is nothing to show, including the question-mark mark.
+  if (level === "safe" || level === "unknown" || !reason) return null;
 
   if (compact) {
     /**

@@ -239,9 +239,6 @@ export const SmartRecommendations = () => {
           </motion.div>
         ))}
       </div>
-      <p className="mt-3 text-[12px] leading-relaxed text-mipo-muted">
-        המיון אינו קובע התאמה רפואית ואינו מחליף בדיקה של תווית המוצר או ייעוץ וטרינרי.
-      </p>
     </motion.div>
   );
 };

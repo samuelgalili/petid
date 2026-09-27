@@ -818,7 +818,7 @@ const Shop = () => {
                 const safety = checkProductSafety(`${selectedProduct.name} ${selectedProduct.description}`, activePet);
                 return safety.level !== "safe" && (
                   <div className="px-5 pb-2">
-                    <SafetyBadge level={safety.level} reason={safety.reason} petName={activePet?.name} />
+                    <SafetyBadge level={safety.level} reason={safety.reason} />
                   </div>
                 );
               })()}
@@ -882,7 +882,7 @@ const Shop = () => {
       {/* Product Info Drawer */}
       <AnimatePresence>
         {infoDrawerProduct && (
-          <ProductInfoDrawer product={infoDrawerProduct} petName={activePet?.name} onClose={() => setInfoDrawerProduct(null)} onAddToCart={() => { handleAddToCart(); setInfoDrawerProduct(null); }} onAddToCarePlan={() => { if (infoDrawerProduct) addToCarePlan({ id: infoDrawerProduct.id, name: infoDrawerProduct.name, image: infoDrawerProduct.image, price: infoDrawerProduct.price, safetyScore: infoDrawerProduct.safetyScore, category: infoDrawerProduct.category }); }} />
+          <ProductInfoDrawer product={infoDrawerProduct} onClose={() => setInfoDrawerProduct(null)} onAddToCart={() => { handleAddToCart(); setInfoDrawerProduct(null); }} onAddToCarePlan={() => { if (infoDrawerProduct) addToCarePlan({ id: infoDrawerProduct.id, name: infoDrawerProduct.name, image: infoDrawerProduct.image, price: infoDrawerProduct.price, safetyScore: infoDrawerProduct.safetyScore, category: infoDrawerProduct.category }); }} />
         )}
       </AnimatePresence>
       </div>
