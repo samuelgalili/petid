@@ -378,6 +378,23 @@ export const factoryRoutes: RouteObject[] = [
   { path: "/factory", element: <Navigate to="/admin/products" replace /> },
 ];
 
+/**
+ * Living-avatar spike. `import.meta.env.DEV` is false in `vite build`, and the
+ * dynamic import sits in the discarded branch, so the page is not in the
+ * production graph and there is no link to it from the app.
+ */
+const devPetAvatarRoutes: RouteObject[] = import.meta.env.DEV
+  ? [{
+      path: "/dev/pet-avatar",
+      element: (
+        <LazyPage
+          component={lazy(() => import("@/pages/dev/PetAvatarPrototype"))}
+          pageName="אב טיפוס דמות"
+        />
+      ),
+    }]
+  : [];
+
 export const allRoutes: RouteObject[] = [
   ...authRoutes,
   ...feedRoutes,
@@ -388,6 +405,7 @@ export const allRoutes: RouteObject[] = [
   ...adminRoutes,
   ...factoryRoutes,
   ...staticRoutes,
+  ...devPetAvatarRoutes,
 ];
 
 if (import.meta.env.DEV) {
