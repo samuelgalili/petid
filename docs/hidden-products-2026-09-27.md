@@ -1,8 +1,10 @@
 # Hidden products, 27 September 2026
 
-Temporary and reversible. These 25 in-stock products stay in the catalogue. No product, variant, offer or inventory row is deleted. Stock quantities are not changed. `in_stock` is not changed.
+Temporary and reversible. These products stay in the catalogue. No product, variant, offer or inventory row is deleted. Stock quantities are not changed. `in_stock` is not changed. Possible duplicates are left as they are: nothing here deletes or merges a product.
 
-Each one is hidden because its main image is a broken external hotlink. 23 are on ken-hatuki.co.il (the image response was HTML, an HTTP 202 captcha). 2 are on speedog.co.il (HTTP 403).
+The first table is the original 25. The section "Added 2026-09-27 04:30" adds 3. The workflow allowlist is all 28, in this order.
+
+Each of the original 25 is hidden because its main image is a broken external hotlink. 23 are on ken-hatuki.co.il (the image response was HTML, an HTTP 202 captcha). 2 are on speedog.co.il (HTTP 403).
 
 Legacy `business_products` rows have no slug column. The public path is `/product/<id>`.
 
@@ -35,6 +37,18 @@ Legacy `business_products` rows have no slug column. The public path is `/produc
 | `e0c6ac9b-0784-4587-90f6-82816c879c08` | קוואטרו סניור מיני דג לבן וקריל גרין פרי 1.5 ק"ג | `/product/e0c6ac9b-0784-4587-90f6-82816c879c08` | ken-hatuki.co.il | Main image is an external hotlink that returned HTML (HTTP 202 captcha) instead of an image. |
 | `7c0c170e-00ca-4727-a6ec-82c2e2f9a65d` | קוואטרו סניור מיני דג לבן וקריל גרין פרי 7 ק"ג | `/product/7c0c170e-00ca-4727-a6ec-82c2e2f9a65d` | ken-hatuki.co.il | Main image is an external hotlink that returned HTML (HTTP 202 captcha) instead of an image. |
 | `27e1a898-c4cb-4846-9044-93cc113204b6` | קונג כדור טניס בנוני 1 יח' | `/product/27e1a898-c4cb-4846-9044-93cc113204b6` | speedog.co.il | Main image is an external hotlink that returned HTTP 403. |
+
+## Added 2026-09-27 04:30
+
+Three more products, same rule: the main image is wrong, broken, or hosted on a competitor store. Each id is the only catalogue row with that id. Lookalikes stay on the shelf.
+
+| id | name | public path | source domain | reason |
+| --- | --- | --- | --- | --- |
+| `7608b0ce-d268-4613-b095-0020936cb705` | קוואטרו כלבים גורים ואימהות ברווז ללא דגנים 7 ק"ג | `/product/7608b0ce-d268-4613-b095-0020936cb705` | local catalogue upload | Puppy food is shown with the adult package image of 9f795f85-dbb0-4a8e-8c05-8e39e5ae0d38 (the same file /uploads/catalog-7b68037a4eb110ea210c6b3b.png). |
+| `ab5e3710-312b-4106-9319-6e01642ad401` | חלבית 440 לא רפואי לעגלים 25 ק"ג | `/product/ab5e3710-312b-4106-9319-6e01642ad401` | phibroisrael.com | Main image is a broken external hotlink: phibroisrael.com redirects to an abuse page. |
+| `28fefd70-cdc9-4e00-a8d2-c636744a88ed` | חטיף אלפא דוג משקולות עוף וברווז עם עור בקר 80 גרם | `/product/28fefd70-cdc9-4e00-a8d2-c636744a88ed` | petparadise.co.il | Main image is hosted on a competitor store (petparadise.co.il). |
+
+Not hidden: `9f795f85-dbb0-4a8e-8c05-8e39e5ae0d38` (the adult package those puppy bags are copying), `53dd23a5-8ab1-4ada-ba31-ee1620e7b329` (חלבית 335), and the other אלפא דוג rows that already have a local image (`50174f7a-2f60-44d8-87e1-8ebbc1a2ce65`, `6a792134-642b-4c1d-a7a3-4f76571f2a2a`, `6c028c65-b87f-47bf-86e1-4c8e334f5d87`, `aa333476-36bf-4a63-9c49-9001c4a9ba5e`, `e0b0b719-7e3e-4093-81a0-9e8bb734ef14`, `e4791760-c025-4219-bade-24cd70263bd6`).
 
 ## What the shop, search and sitemap filter on
 
@@ -71,4 +85,6 @@ Dry-run is the default. It prints, for each id, the current `shop_hidden`, the c
 
 `unhide` sets `shop_hidden` back to `previous_shop_hidden` on that hold, then deletes the hold. It does not assume the product was visible. A hidden row with no recorded previous value is refused, and nothing is written. The append-only log `product_shop_visibility_events` keeps both the value before the action and the value after it.
 
-Both writes refuse any id that is not in the table above. Neither statement updates `in_stock`, price, variants, offers or inventory.
+Dry-run prints `allowlist_count=28`, then `ids:`, then the 28 ids in the same order as the tables above, then one detail line per id. Compare that list to this document before a write.
+
+Both writes refuse any id that is not in either table above. Neither statement updates `in_stock`, price, variants, offers or inventory.

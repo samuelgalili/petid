@@ -24,6 +24,7 @@ import {
   BROKEN_IMAGE_PRODUCTS,
   assertAllowlisted,
   blockingActions,
+  formatShopVisibilityReport,
   parseMode,
   planShopVisibility,
   unexpectedIds,
@@ -60,10 +61,10 @@ const catalogue = [
   },
 ];
 
-test("the allowlist is the 25 broken main images, and nothing else", () => {
-  assert.equal(BROKEN_IMAGE_PRODUCTS.length, 25);
+test("the allowlist is the 25 broken main images, plus the three added later, and nothing else", () => {
+  assert.equal(BROKEN_IMAGE_PRODUCTS.length, 28);
   const ids = BROKEN_IMAGE_PRODUCTS.map((entry) => entry.id);
-  assert.equal(new Set(ids).size, 25);
+  assert.equal(new Set(ids).size, 28);
   const ken = BROKEN_IMAGE_PRODUCTS.filter((entry) => entry.source_domain === "ken-hatuki.co.il");
   const speedog = BROKEN_IMAGE_PRODUCTS.filter((entry) => entry.source_domain === "speedog.co.il");
   assert.equal(ken.length, 23);
@@ -71,6 +72,23 @@ test("the allowlist is the 25 broken main images, and nothing else", () => {
   assert.ok(ken.every((entry) => entry.reason.includes("HTTP 202")));
   assert.ok(speedog.every((entry) => entry.reason.includes("403")));
   assert.equal(BROKEN_IMAGE_PRODUCTS.some((entry) => entry.source_domain === "foodforafriend.co.il"), false);
+  assert.deepEqual(ids.slice(-3), [
+    "7608b0ce-d268-4613-b095-0020936cb705",
+    "ab5e3710-312b-4106-9319-6e01642ad401",
+    "28fefd70-cdc9-4e00-a8d2-c636744a88ed",
+  ]);
+  for (const leftAlone of [
+    "9f795f85-dbb0-4a8e-8c05-8e39e5ae0d38",
+    "53dd23a5-8ab1-4ada-ba31-ee1620e7b329",
+    "50174f7a-2f60-44d8-87e1-8ebbc1a2ce65",
+    "6a792134-642b-4c1d-a7a3-4f76571f2a2a",
+    "6c028c65-b87f-47bf-86e1-4c8e334f5d87",
+    "aa333476-36bf-4a63-9c49-9001c4a9ba5e",
+    "e0b0b719-7e3e-4093-81a0-9e8bb734ef14",
+    "e4791760-c025-4219-bade-24cd70263bd6",
+  ]) {
+    assert.equal(ids.includes(leftAlone), false, leftAlone);
+  }
 });
 
 test("the doc names every id, name and domain, and how to restore them", () => {
@@ -85,6 +103,10 @@ test("the doc names every id, name and domain, and how to restore them", () => {
   assert.match(doc, /UNHIDE-BROKEN-IMAGES/);
   assert.match(doc, /previous_shop_hidden/);
   assert.match(doc, /`in_stock` is not changed/);
+  assert.match(doc, /## Added 2026-09-27 04:30/);
+  const listed = [...doc.matchAll(/`([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})`/g)].map((match) => match[1]);
+  const hiddenInDoc = listed.filter((id) => BROKEN_IMAGE_PRODUCTS.some((entry) => entry.id === id));
+  assert.deepEqual(hiddenInDoc, BROKEN_IMAGE_PRODUCTS.map((entry) => entry.id));
 });
 
 test("an id that is not on the list is refused", () => {
@@ -148,7 +170,11 @@ test("unhide restores the recorded value, including a value that was already hid
 
 test("dry-run writes nothing and still reports a missing id", () => {
   const plans = planShopVisibility("dry-run", new Map(), new Map());
-  assert.equal(plans.length, 25);
+  assert.equal(plans.length, 28);
+  const report = formatShopVisibilityReport("dry-run", plans);
+  assert.match(report, /^allowlist_count=28\nids:\n/);
+  const reportedIds = report.split("\n").slice(2, 30);
+  assert.deepEqual(reportedIds, BROKEN_IMAGE_PRODUCTS.map((entry) => entry.id));
   assert.ok(plans.every((plan) => plan.write === false));
   assert.ok(plans.every((plan) => plan.action === "missing"));
 });

@@ -1,5 +1,5 @@
-# Temporarily hide the 25 in-stock products whose main image is a broken
-# external hotlink, and restore them later.
+# Temporarily hide the 28 products whose main image is wrong, broken, or
+# hosted on a competitor store, and restore them later.
 #
 # This workflow WRITES when mode is hide or unhide. Dry-run is the default and
 # writes nothing. The two write modes each need their own confirmation text,
