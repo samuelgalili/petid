@@ -78,7 +78,9 @@ async function mockShop(page: Page) {
     contentType: "application/json",
     body: JSON.stringify({ error: "Unauthorized" }),
   }));
-  await page.route("**/api/products", (route) => route.fulfill({
+  // The shop asks for /api/products?view=storefront. An exact /api/products
+  // route misses that query, and the catch-all then returns an empty body.
+  await page.route("**/api/products*", (route) => route.fulfill({
     status: 200,
     contentType: "application/json",
     body: JSON.stringify({ products: [shelfProduct, { ...shelfProduct, id: "shelf-sale-2", name: "חטיף במבצע", is_featured: false }] }),
