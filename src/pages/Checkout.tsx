@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Check, CreditCard, MapPin, Package, Truck, Smartphone, Wallet, Tag, X, Loader2, Heart, AlertTriangle } from "lucide-react";
 import { CheckoutSafetyCheck } from "@/components/shop/CheckoutSafetyCheck";
@@ -14,9 +14,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { shippingFor } from "@/lib/shipping";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
-import { z } from "zod";
 import { AppHeader } from "@/components/AppHeader";
 import { CHECKOUT } from "@/lib/brandVoice";
+import {
+  validateCheckoutShipping,
+  type CheckoutShippingInput,
+} from "@/lib/checkoutContact";
 import { createShopOrder, createShopPaymentSession, getMyShippingProfile, MipoApiError, MipoCoupon, validateCouponCode } from "@/lib/mipoApi";
 import { rememberOrderAccess } from "@/lib/orderAccess";
 
@@ -24,40 +27,6 @@ import { rememberOrderAccess } from "@/lib/orderAccess";
 // gets recorded on the order.
 const LEAVE_AT_DOOR_TERMS =
   "אם אין מענה בכתובת, המשלוח יושאר ליד הדלת. מרגע ההשארה האחריות על החבילה היא של הלקוח בלבד.";
-
-// Mirrors normalizeShippingAddress on the server. The server still decides;
-// this exists so the customer is told which field is wrong instead of one flat
-// "invalid shipping details" after the round trip.
-const shippingSchema = z.object({
-  fullName: z.string().trim().min(2, "שם מלא חייב להכיל לפחות 2 תווים").max(100, "שם מלא חייב להכיל פחות מ-100 תווים"),
-  email: z.string().trim().email("כתובת אימייל לא תקינה").max(255, "אימייל חייב להכיל פחות מ-255 תווים"),
-  phone: z.string().trim().regex(/^[0-9]{9,15}$/, "מספר טלפון חייב להכיל 9-15 ספרות"),
-  phoneSecondary: z.string().trim().regex(/^([0-9]{9,15})?$/, "מספר טלפון חייב להכיל 9-15 ספרות"),
-  address: z.string().trim().min(2, "רחוב חייב להכיל לפחות 2 תווים").max(200, "שם הרחוב ארוך מדי"),
-  building: z.string().trim().min(1, "מספר בית או בניין הוא שדה חובה").max(20, "מספר בית ארוך מדי"),
-  entranceType: z.enum(["house", "building"]),
-  floor: z.string().trim().max(10, "קומה ארוכה מדי"),
-  apartment: z.string().trim().max(20, "מספר דירה ארוך מדי"),
-  lobbyCode: z.string().trim().max(30, "קוד כניסה ארוך מדי"),
-  city: z.string().trim().min(2, "עיר חייבת להכיל לפחות 2 תווים").max(50, "עיר חייבת להכיל פחות מ-50 תווים"),
-  zipCode: z.string().trim().regex(/^[0-9]{5,7}$/, "מיקוד חייב להכיל 5-7 ספרות"),
-  notes: z.string().trim().max(500, "ההערות ארוכות מדי"),
-  leaveAtDoor: z.boolean(),
-}).superRefine((data, ctx) => {
-  // A courier stuck at a locked lobby door cannot deliver, so in a building
-  // these two carry the same weight as the street name.
-  if (data.entranceType === "building") {
-    if (!data.apartment) {
-      ctx.addIssue({ code: "custom", path: ["apartment"], message: "מספר דירה הוא שדה חובה בבניין" });
-    }
-    if (!data.lobbyCode) {
-      ctx.addIssue({ code: "custom", path: ["lobbyCode"], message: "קוד כניסה ללובי הוא שדה חובה בבניין" });
-    }
-  }
-  if (!data.leaveAtDoor) {
-    ctx.addIssue({ code: "custom", path: ["leaveAtDoor"], message: "יש לאשר את התנאי כדי להמשיך" });
-  }
-});
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -70,14 +39,14 @@ const Checkout = () => {
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<MipoCoupon | null>(null);
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
-  const [shippingData, setShippingData] = useState({
+  const [shippingData, setShippingData] = useState<CheckoutShippingInput>({
     fullName: "",
     email: "",
     phone: "",
     phoneSecondary: "",
     address: "",
     building: "",
-    entranceType: "house" as "house" | "building",
+    entranceType: "house",
     floor: "",
     apartment: "",
     lobbyCode: "",
@@ -88,6 +57,7 @@ const Checkout = () => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isProcessing, setIsProcessing] = useState(false);
+  const shippingFormRef = useRef<HTMLFormElement>(null);
   const isUnder18 = false;
   const ageCheckLoading = false;
 
@@ -285,22 +255,14 @@ const Checkout = () => {
   }
 
   const validateShipping = () => {
-    try {
-      shippingSchema.parse(shippingData);
-      setErrors({});
-      return true;
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const newErrors: Record<string, string> = {};
-        error.issues.forEach((issue) => {
-          if (issue.path[0]) {
-            newErrors[issue.path[0] as string] = issue.message;
-          }
-        });
-        setErrors(newErrors);
-      }
+    const result = validateCheckoutShipping(shippingData, shippingFormRef.current);
+    if (result.ok === false) {
+      setErrors(result.errors);
       return false;
     }
+    setShippingData(result.values);
+    setErrors({});
+    return true;
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -332,6 +294,13 @@ const Checkout = () => {
     } else if (currentStep === 2) {
       setCurrentStep(3);
     }
+  };
+
+  const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    // The review step charges only from the explicit place-order button.
+    if (currentStep >= 3) return;
+    handleNextStep();
   };
 
   const handlePlaceOrder = async () => {
@@ -534,6 +503,14 @@ const Checkout = () => {
           })}
         </div>
 
+        <form
+          ref={shippingFormRef}
+          onSubmit={handleFormSubmit}
+          noValidate
+          className="space-y-4"
+          autoComplete="on"
+          data-testid="checkout-shipping-form"
+        >
         {/* Step Content */}
         <AnimatePresence mode="wait">
           {/* Step 1: Shipping Address */}
@@ -558,6 +535,8 @@ const Checkout = () => {
                   </Label>
                   <Input
                     id="fullName"
+                    name="fullName"
+                    autoComplete="name"
                     value={shippingData.fullName}
                     onChange={(e) => handleInputChange("fullName", e.target.value)}
                     className={`mt-1.5 font-jakarta rounded-xl ${errors.fullName ? "border-destructive" : ""}`}
@@ -574,7 +553,10 @@ const Checkout = () => {
                   </Label>
                   <Input
                     id="email"
+                    name="email"
                     type="email"
+                    autoComplete="email"
+                    dir="ltr"
                     value={shippingData.email}
                     onChange={(e) => handleInputChange("email", e.target.value)}
                     className={`mt-1.5 font-jakarta rounded-xl ${errors.email ? "border-destructive" : ""}`}
@@ -591,7 +573,11 @@ const Checkout = () => {
                   </Label>
                   <Input
                     id="phone"
+                    name="phone"
                     type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    dir="ltr"
                     value={shippingData.phone}
                     onChange={(e) => handleInputChange("phone", e.target.value)}
                     className={`mt-1.5 font-jakarta rounded-xl ${errors.phone ? "border-destructive" : ""}`}
@@ -608,7 +594,11 @@ const Checkout = () => {
                   </Label>
                   <Input
                     id="phoneSecondary"
+                    name="phoneSecondary"
                     type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    dir="ltr"
                     value={shippingData.phoneSecondary}
                     onChange={(e) => handleInputChange("phoneSecondary", e.target.value)}
                     className={`mt-1.5 font-jakarta rounded-xl ${errors.phoneSecondary ? "border-destructive" : ""}`}
@@ -626,6 +616,8 @@ const Checkout = () => {
                     </Label>
                     <Input
                       id="address"
+                      name="address"
+                      autoComplete="address-line1"
                       value={shippingData.address}
                       onChange={(e) => handleInputChange("address", e.target.value)}
                       className={`mt-1.5 font-jakarta rounded-xl ${errors.address ? "border-destructive" : ""}`}
@@ -642,6 +634,9 @@ const Checkout = () => {
                     </Label>
                     <Input
                       id="building"
+                      name="building"
+                      inputMode="text"
+                      autoComplete="off"
                       value={shippingData.building}
                       onChange={(e) => handleInputChange("building", e.target.value)}
                       className={`mt-1.5 font-jakarta rounded-xl ${errors.building ? "border-destructive" : ""}`}
@@ -687,6 +682,7 @@ const Checkout = () => {
                         </Label>
                         <Input
                           id="floor"
+                          name="floor"
                           value={shippingData.floor}
                           onChange={(e) => handleInputChange("floor", e.target.value)}
                           className={`mt-1.5 font-jakarta rounded-xl ${errors.floor ? "border-destructive" : ""}`}
@@ -703,6 +699,7 @@ const Checkout = () => {
                         </Label>
                         <Input
                           id="apartment"
+                          name="apartment"
                           value={shippingData.apartment}
                           onChange={(e) => handleInputChange("apartment", e.target.value)}
                           className={`mt-1.5 font-jakarta rounded-xl ${errors.apartment ? "border-destructive" : ""}`}
@@ -720,6 +717,8 @@ const Checkout = () => {
                       </Label>
                       <Input
                         id="lobbyCode"
+                        name="lobbyCode"
+                        dir="ltr"
                         value={shippingData.lobbyCode}
                         onChange={(e) => handleInputChange("lobbyCode", e.target.value)}
                         className={`mt-1.5 font-jakarta rounded-xl ${errors.lobbyCode ? "border-destructive" : ""}`}
@@ -742,6 +741,8 @@ const Checkout = () => {
                     </Label>
                     <Input
                       id="city"
+                      name="city"
+                      autoComplete="address-level2"
                       value={shippingData.city}
                       onChange={(e) => handleInputChange("city", e.target.value)}
                       className={`mt-1.5 font-jakarta rounded-xl ${errors.city ? "border-destructive" : ""}`}
@@ -758,6 +759,10 @@ const Checkout = () => {
                     </Label>
                     <Input
                       id="zipCode"
+                      name="zipCode"
+                      autoComplete="postal-code"
+                      inputMode="numeric"
+                      dir="ltr"
                       value={shippingData.zipCode}
                       onChange={(e) => handleInputChange("zipCode", e.target.value)}
                       className={`mt-1.5 font-jakarta rounded-xl ${errors.zipCode ? "border-destructive" : ""}`}
@@ -775,6 +780,7 @@ const Checkout = () => {
                   </Label>
                   <Input
                     id="notes"
+                    name="notes"
                     value={shippingData.notes}
                     onChange={(e) => handleInputChange("notes", e.target.value)}
                     className={`mt-1.5 font-jakarta rounded-xl ${errors.notes ? "border-destructive" : ""}`}
@@ -823,7 +829,7 @@ const Checkout = () => {
             >
               <div className="flex items-center gap-2 mb-4 max-w-md mx-auto">
                 <CreditCard className="w-5 h-5 text-accent" strokeWidth={1.5} />
-                <h2 className="text-lg font-bold text-foreground font-jakarta">אמצעי תשלום</h2>
+                <h2 className="text-lg font-bold text-foreground font-jakarta" data-testid="checkout-payment-heading">אמצעי תשלום</h2>
               </div>
 
               <Card className="p-5 bg-card border-0 rounded-2xl shadow-lg max-w-md mx-auto">
@@ -992,6 +998,7 @@ const Checkout = () => {
                   <div className="flex gap-2 flex-wrap">
                     {[1, 3, 6, 12].map((num) => (
                       <button
+                        type="button"
                         key={num}
                         onClick={() => setInstallments(num)}
                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
@@ -1036,7 +1043,7 @@ const Checkout = () => {
                             : `₪${appliedCoupon.discount_value} הנחה`}
                       </p>
                     </div>
-                    <button onClick={removeCoupon} className="p-1 hover:bg-destructive/10 rounded-full transition-colors">
+                    <button type="button" onClick={removeCoupon} className="p-1 hover:bg-destructive/10 rounded-full transition-colors">
                       <X className="w-4 h-4 text-destructive" />
                     </button>
                   </div>
@@ -1049,6 +1056,7 @@ const Checkout = () => {
                       className="flex-1 font-jakarta rounded-xl"
                     />
                     <Button
+                      type="button"
                       onClick={validateCoupon}
                       disabled={!couponCode.trim() || isValidatingCoupon}
                       className="bg-accent hover:bg-accent-hover text-accent-foreground rounded-xl font-jakarta"
@@ -1089,6 +1097,7 @@ const Checkout = () => {
                     כתובת למשלוח
                   </h3>
                   <Button
+                    type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => setCurrentStep(1)}
@@ -1113,6 +1122,7 @@ const Checkout = () => {
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-bold text-foreground font-jakarta text-base">אמצעי תשלום</h3>
                   <Button
+                    type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => setCurrentStep(2)}
@@ -1228,6 +1238,7 @@ const Checkout = () => {
         <div className="flex gap-3 mt-6 px-4 max-w-md mx-auto">
           {currentStep > 1 && (
             <Button
+              type="button"
               variant="outline"
               size="lg"
               className="flex-1 border border-border text-foreground hover:bg-muted rounded-xl font-bold font-jakarta h-14"
@@ -1238,9 +1249,11 @@ const Checkout = () => {
             </Button>
           )}
           <Button
+            type={currentStep === 3 ? "button" : "submit"}
             size="lg"
+            data-testid="checkout-continue"
             className={`flex-1 bg-accent hover:bg-accent-hover text-accent-foreground rounded-2xl font-bold font-jakarta shadow-xl h-14 ${currentStep === 1 ? 'w-full' : ''}`}
-            onClick={currentStep === 3 ? handlePlaceOrder : handleNextStep}
+            onClick={currentStep === 3 ? handlePlaceOrder : undefined}
             disabled={isProcessing}
           >
             {isProcessing ? (
@@ -1257,6 +1270,7 @@ const Checkout = () => {
             )}
           </Button>
         </div>
+        </form>
       </div>
     </div>
   );

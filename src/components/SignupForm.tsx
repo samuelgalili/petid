@@ -203,7 +203,7 @@ export const SignupForm = () => {
               fieldErrors.email ? "border-destructive" : ""
             }`}
             autoComplete="email"
-            dir="rtl"
+            dir="ltr"
           />
         </div>
         {fieldErrors.email && <p className="text-xs text-destructive mt-1 text-right">{fieldErrors.email}</p>}
@@ -228,7 +228,7 @@ export const SignupForm = () => {
               fieldErrors.password ? "border-destructive" : ""
             }`}
             autoComplete="new-password"
-            dir="rtl"
+            dir="ltr"
           />
           <button
             type="button"
@@ -261,7 +261,7 @@ export const SignupForm = () => {
               fieldErrors.confirmPassword ? "border-destructive" : ""
             }`}
             autoComplete="new-password"
-            dir="rtl"
+            dir="ltr"
           />
         </div>
         {fieldErrors.confirmPassword && <p className="text-xs text-destructive mt-1 text-right">{fieldErrors.confirmPassword}</p>}

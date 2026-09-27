@@ -118,14 +118,7 @@ const Cart = () => {
       sessionStorage.removeItem('appliedCoupon');
     }
     
-    toast({
-      title: "🎉 תודה!",
-      description: "מעבר לדף תשלום...",
-      duration: 2000,
-    });
-    setTimeout(() => {
-      navigate("/checkout");
-    }, 1000);
+    navigate("/checkout");
   };
 
   if (items.length === 0) {
@@ -240,9 +233,11 @@ const Cart = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 bg-muted rounded-full px-2 py-1">
                         <motion.button
+                          type="button"
                           whileTap={{ scale: 0.9 }}
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="flex h-7 w-7 items-center justify-center rounded-full border border-mipo-line bg-mipo-surface transition-colors hover:bg-mipo-soft"
+                          aria-label="הפחת כמות"
+                          className="flex h-11 w-11 items-center justify-center rounded-full border border-mipo-line bg-mipo-surface transition-colors hover:bg-mipo-soft"
                         >
                           <Minus className="w-4 h-4 text-foreground" strokeWidth={1.5} />
                         </motion.button>
@@ -250,9 +245,11 @@ const Cart = () => {
                           {item.quantity}
                         </span>
                         <motion.button
+                          type="button"
                           whileTap={{ scale: 0.9 }}
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="flex h-7 w-7 items-center justify-center rounded-full border border-mipo-line bg-mipo-surface transition-colors hover:bg-mipo-soft"
+                          aria-label="הוסף כמות"
+                          className="flex h-11 w-11 items-center justify-center rounded-full border border-mipo-line bg-mipo-surface transition-colors hover:bg-mipo-soft"
                         >
                           <Plus className="w-4 h-4 text-foreground" strokeWidth={1.5} />
                         </motion.button>
@@ -260,9 +257,11 @@ const Cart = () => {
 
                       {/* Remove Button */}
                       <motion.button
+                        type="button"
                         whileTap={{ scale: 0.9 }}
                         onClick={() => handleRemoveItem(item.id, item.name)}
-                        className="p-2 text-destructive hover:bg-destructive/10 rounded-full transition-colors"
+                        aria-label="הסר מהעגלה"
+                        className="flex h-11 w-11 items-center justify-center text-destructive hover:bg-destructive/10 rounded-full transition-colors"
                       >
                         <Trash2 className="w-5 h-5" strokeWidth={1.5} />
                       </motion.button>

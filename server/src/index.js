@@ -28,10 +28,11 @@ import {
   toHistoryEntry,
 } from "./ownershipReview.js";
 import {
+  cardcomAttemptToken,
+  cardcomWebhookAuthorized,
   getCardcomString,
-  isSuccessfulCardcomCharge,
-  parseCardcomReturnValue,
-  parseVerifiedCardcomIndicator,
+  readVerifiedCardcomNotification,
+  settleCardcomNotification,
 } from "./cardcom.js";
 import {
   FixedWindowRateLimiter,
@@ -7071,17 +7072,6 @@ const bulkUpdateOrders = async (ids, updates) => {
   return { updated: result.rowCount };
 };
 
-const verifyCardcomSignature = (rawBody, signature) => {
-  if (!cardcomWebhookSecret) return false;
-  if (!rawBody || !signature) return false;
-
-  const expected = createHmac("sha256", cardcomWebhookSecret)
-    .update(rawBody)
-    .digest("base64");
-
-  return secretsEqual(signature, expected);
-};
-
 const formatCardcomMoney = (value) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed.toFixed(2) : "0.00";
@@ -7145,6 +7135,7 @@ const fetchCardcomLowProfileIndicator = async (lowProfileCode) => {
     TerminalNumber: cardcomTerminal,
     UserName: cardcomUsername,
     LowProfileCode: lowProfileCode,
+    codepage: "65001",
   });
 
   let indicatorResponse;
@@ -7490,9 +7481,15 @@ const handleCardcomWebhook = async (request, url) => {
   const rawBody = request.method === "GET" ? "" : await readRawBody(request);
   const signature = request.headers["x-cardcom-signature"];
   const queryToken = url.searchParams.get("token");
-  const authenticated = secretsEqual(queryToken, cardcomWebhookSecret)
-    || (rawBody && verifyCardcomSignature(rawBody, signature));
-  if (!authenticated) {
+  // Authorize before calling Cardcom. The query string is not evidence of
+  // payment; a wrong token must not become a lookup, a paid order, or a 502
+  // that makes Cardcom retry a request we already rejected.
+  if (!cardcomWebhookAuthorized({
+    queryToken,
+    webhookSecret: cardcomWebhookSecret,
+    rawBody,
+    signature,
+  })) {
     const error = new Error("Invalid CardCom signature");
     error.statusCode = 401;
     throw error;
@@ -7515,55 +7512,53 @@ const handleCardcomWebhook = async (request, url) => {
   }
 
   const indicatorPayload = await fetchCardcomLowProfileIndicator(lowProfileCode);
-  const {
-    operation,
-    chargedAmountMinor,
-    operationResponse,
-    dealResponse,
-    tokenResponse,
-    returnValue,
-  } = parseVerifiedCardcomIndicator(indicatorPayload, {
-    requestedLowProfileCode: lowProfileCode,
+  const opened = readVerifiedCardcomNotification({
     terminalNumber: cardcomTerminal,
+    requestedLowProfileCode: lowProfileCode,
+    indicatorPayload,
   });
-  const { orderId: parsedOrderId, attemptToken } = parseCardcomReturnValue(returnValue);
+  const { parsed, reference } = opened;
   const transactionId = getCardcomString(indicatorPayload, [
     "TranzactionId",
     "TransactionId",
     "InternalDealNumber",
+    "internaldealnumber",
     "DealNumber",
     "LowProfileDealId",
-  ]) || getCardcomString(payload, [
-    "TranzactionId",
-    "TransactionId",
-    "InternalDealNumber",
-    "LowProfileDealId",
   ]) || lowProfileCode;
+  const attemptToken = cardcomAttemptToken(reference.attemptToken);
+  const acceptedPaymentIdentifiers = [lowProfileCode, attemptToken]
+    .filter(Boolean)
+    .map((value) => value.toLowerCase());
 
-  if (!parsedOrderId || !uuidPattern.test(parsedOrderId)) {
-    const error = new Error("Invalid CardCom order reference");
-    error.statusCode = 400;
-    throw error;
-  }
-
-  const validAttemptToken = /^creating:[0-9a-fA-F-]{36}$/.test(String(attemptToken || ""))
-    ? attemptToken
-    : null;
-  const acceptedPaymentIdentifiers = validAttemptToken
-    ? [lowProfileCode, validAttemptToken]
-    : [lowProfileCode];
   const orderResult = await pool.query(
     `
       select id, order_number, payment_status, payment_transaction_id, total
       from public.orders
       where id = $1
-        and payment_transaction_id = any($2::text[])
+        and lower(payment_transaction_id) = any($2::text[])
       limit 1
     `,
-    [parsedOrderId, acceptedPaymentIdentifiers],
+    [reference.orderId, acceptedPaymentIdentifiers],
   );
 
-  const order = orderResult.rows[0] || null;
+  let order = orderResult.rows[0] || null;
+  const bound = Boolean(order);
+  if (!order) {
+    // The attempt id is cleared once a decline is applied, and a later
+    // capture for the same order still has to be recognizable. The order id
+    // here is the one Cardcom echoed from the low-profile deal we created.
+    const byId = await pool.query(
+      `
+        select id, order_number, payment_status, payment_transaction_id, total
+        from public.orders
+        where id = $1
+        limit 1
+      `,
+      [reference.orderId],
+    );
+    order = byId.rows[0] || null;
+  }
   if (!order) {
     const error = new Error("Order not found");
     error.statusCode = 404;
@@ -7571,119 +7566,101 @@ const handleCardcomWebhook = async (request, url) => {
   }
 
   const expectedAmountMinor = Math.round(toMoney(order.total) * 100);
-  if (chargedAmountMinor !== expectedAmountMinor) {
-    await pool.query(
-      `
-        insert into public.cardcom_events (
-          order_id, low_profile_code, operation_response, deal_response, is_success, payload_json
-        )
-        values ($1, $2, $3, $4, false, $5::jsonb)
-      `,
-      [
-        order.id,
-        lowProfileCode,
-        operationResponse,
-        dealResponse,
-        JSON.stringify({ stage: "rejected_indicator", reason: "amount_mismatch" }),
-      ],
-    );
-    const error = new Error("CardCom payment amount does not match the order");
-    error.statusCode = 409;
+  let plan;
+  try {
+    plan = settleCardcomNotification({
+      opened,
+      order: { paymentStatus: order.payment_status, expectedAmountMinor },
+      bound,
+    });
+  } catch (error) {
+    if (error.statusCode === 409) {
+      await pool.query(
+        `
+          insert into public.cardcom_events (
+            order_id, low_profile_code, operation_response, deal_response, is_success, payload_json
+          )
+          values ($1, $2, $3, $4, false, $5::jsonb)
+        `,
+        [
+          order.id,
+          lowProfileCode,
+          parsed.operationResponse,
+          parsed.dealResponse,
+          JSON.stringify({ stage: "rejected_indicator", reason: "amount_mismatch" }),
+        ],
+      );
+    }
     throw error;
   }
-  const isSuccess = isSuccessfulCardcomCharge({ operationResponse, dealResponse });
 
-  await pool.query(
-    `
-      insert into public.cardcom_events (
-        order_id,
-        low_profile_code,
-        transaction_id,
-        operation_response,
-        deal_response,
-        is_success,
-        payload_json
-      )
-      values ($1, $2, $3, $4, $5, $6, $7::jsonb)
-    `,
-    [
-      order?.id || null,
-      lowProfileCode,
-      transactionId,
-      operationResponse,
-      dealResponse,
-      isSuccess,
-      JSON.stringify({
-        stage: "verified_indicator",
-        method: request.method,
-        operation,
-        token_response: tokenResponse,
-      }),
-    ],
-  );
-
-  // The status change and its event are written together. The update stays
-  // conditional, so a webhook CardCom retries changes nothing the second time —
-  // and because the event is only emitted when a row actually changed, a
-  // duplicate delivery cannot produce a duplicate event either.
-  // ownerNotice is set only in those same branches, and only sent after commit.
+  // The status change and its domain event are written together. The update
+  // stays conditional, so a replay changes nothing the second time — and
+  // because the event is only emitted when a row actually changed, a duplicate
+  // delivery cannot produce a duplicate event either. A decline that is no
+  // longer the current attempt is acknowledged without touching that attempt,
+  // which is what stops Cardcom retrying after the first failure was recorded.
+  // ownerNotice is set only when a row changed, and only sent after commit.
+  const client = await pool.connect();
+  let paymentStatus = plan.paymentStatus;
   let ownerNotice = null;
-  if (isSuccess) {
-    if (order.payment_status !== "paid") {
-      const client = await pool.connect();
-      try {
-        await client.query("begin");
-        const updated = await client.query(
-          `
+  try {
+    await client.query("begin");
+    if (plan.mutate === "pay") {
+      const updated = await client.query(
+        bound
+          ? `
             update public.orders
             set payment_status = 'paid',
                 payment_transaction_id = $2,
                 status = 'processing',
                 updated_at = now()
             where id = $1
-              and payment_transaction_id = any($3::text[])
-              and payment_status <> 'paid'
+              and lower(payment_transaction_id) = any($3::text[])
+              and payment_status not in ('paid', 'refunded')
+            returning order_number, user_id, customer_id, customer_email, total, status
+          `
+          : `
+            update public.orders
+            set payment_status = 'paid',
+                payment_transaction_id = $2,
+                status = 'processing',
+                updated_at = now()
+            where id = $1
+              and payment_status not in ('paid', 'refunded')
             returning order_number, user_id, customer_id, customer_email, total, status
           `,
-          [order.id, lowProfileCode, acceptedPaymentIdentifiers],
-        );
-
-        if (updated.rowCount > 0) {
-          const paid = updated.rows[0];
-          await emitEvent(client, {
-            type: EVENT_TYPES.ORDER_PAID,
-            entityType: "order",
-            entityId: order.id,
-            payload: {
-              order_number: paid.order_number,
-              user_id: paid.user_id,
-              customer_id: paid.customer_id,
-              customer_email: paid.customer_email,
-              total: Number(paid.total),
-              status: paid.status,
-              transaction_id: transactionId,
-              low_profile_code: lowProfileCode,
-            },
-          });
-          ownerNotice = {
-            kind: "paid",
-            orderId: order.id,
-            orderNumber: paid.order_number,
+        bound
+          ? [order.id, lowProfileCode, acceptedPaymentIdentifiers]
+          : [order.id, lowProfileCode],
+      );
+      if (updated.rowCount > 0) {
+        const paid = updated.rows[0];
+        await emitEvent(client, {
+          type: EVENT_TYPES.ORDER_PAID,
+          entityType: "order",
+          entityId: order.id,
+          payload: {
+            order_number: paid.order_number,
+            user_id: paid.user_id,
+            customer_id: paid.customer_id,
+            customer_email: paid.customer_email,
             total: Number(paid.total),
-          };
-        }
-        await client.query("commit");
-      } catch (error) {
-        await client.query("rollback").catch(() => {});
-        throw error;
-      } finally {
-        client.release();
+            status: paid.status,
+            transaction_id: transactionId,
+            low_profile_code: lowProfileCode,
+          },
+        });
+        ownerNotice = {
+          kind: "paid",
+          orderId: order.id,
+          orderNumber: paid.order_number,
+          total: Number(paid.total),
+        };
+      } else {
+        paymentStatus = order.payment_status;
       }
-    }
-  } else if (order.payment_status !== "paid") {
-    const client = await pool.connect();
-    try {
-      await client.query("begin");
+    } else if (plan.mutate === "fail") {
       const updated = await client.query(
         `
           update public.orders
@@ -7692,13 +7669,12 @@ const handleCardcomWebhook = async (request, url) => {
               payment_url = null,
               updated_at = now()
           where id = $1
-            and payment_transaction_id = any($2::text[])
-            and payment_status <> 'paid'
+            and lower(payment_transaction_id) = any($2::text[])
+            and payment_status not in ('paid', 'refunded')
           returning order_number, user_id, customer_email, total
         `,
         [order.id, acceptedPaymentIdentifiers],
       );
-
       if (updated.rowCount > 0) {
         const failed = updated.rows[0];
         await emitEvent(client, {
@@ -7710,8 +7686,8 @@ const handleCardcomWebhook = async (request, url) => {
             user_id: failed.user_id,
             customer_email: failed.customer_email,
             total: Number(failed.total),
-            operation_response: operationResponse,
-            deal_response: dealResponse,
+            operation_response: parsed.operationResponse,
+            deal_response: parsed.dealResponse,
             low_profile_code: lowProfileCode,
           },
         });
@@ -7720,17 +7696,64 @@ const handleCardcomWebhook = async (request, url) => {
           orderId: order.id,
           orderNumber: failed.order_number,
           total: Number(failed.total),
-          operationResponse,
-          dealResponse,
+          operationResponse: parsed.operationResponse,
+          dealResponse: parsed.dealResponse,
         };
+      } else {
+        paymentStatus = order.payment_status;
       }
-      await client.query("commit");
-    } catch (error) {
-      await client.query("rollback").catch(() => {});
-      throw error;
-    } finally {
-      client.release();
     }
+
+    const alreadyRecorded = await client.query(
+      `
+        select 1
+        from public.cardcom_events
+        where order_id = $1
+          and low_profile_code = $2
+          and operation_response is not distinct from $3
+          and is_success = $4
+          and payload_json->>'stage' = 'verified_indicator'
+        limit 1
+      `,
+      [order.id, lowProfileCode, parsed.operationResponse, opened.isSuccess],
+    );
+    if (alreadyRecorded.rowCount === 0) {
+      await client.query(
+        `
+          insert into public.cardcom_events (
+            order_id,
+            low_profile_code,
+            transaction_id,
+            operation_response,
+            deal_response,
+            is_success,
+            payload_json
+          )
+          values ($1, $2, $3, $4, $5, $6, $7::jsonb)
+        `,
+        [
+          order.id,
+          lowProfileCode,
+          transactionId,
+          parsed.operationResponse,
+          parsed.dealResponse,
+          opened.isSuccess,
+          JSON.stringify({
+            stage: "verified_indicator",
+            method: request.method,
+            operation: parsed.operation,
+            token_response: parsed.tokenResponse,
+            bound,
+          }),
+        ],
+      );
+    }
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback").catch(() => {});
+    throw error;
+  } finally {
+    client.release();
   }
 
   if (ownerNotice?.kind === "paid") {
@@ -7739,7 +7762,6 @@ const handleCardcomWebhook = async (request, url) => {
     reportDeclinedPayment(notifyOwner, ownerNotice);
   }
 
-  const paymentStatus = order.payment_status === "paid" || isSuccess ? "paid" : "failed";
   return {
     received: true,
     order_id: order.id,
