@@ -106,22 +106,26 @@ dbTest("two concurrent requests with one key: exactly one runs", async () => {
     let runs = 0;
     let release;
     const gate = new Promise((resolve) => { release = resolve; });
+    let markStarted;
+    const started = new Promise((resolve) => { markStarted = resolve; });
     const work = async () => {
       runs += 1;
+      markStarted();
       await gate;
       return { status: 201, body: { ok: true } };
     };
     const payload = { amount: 50 };
 
     // The case a check-then-act misses: both read "not seen", both charge.
+    // Wait until the first call is inside the work, which is only possible
+    // after it has claimed the row. A fixed delay let the first call finish
+    // before the second looked, so the second was answered as a replay
+    // instead of as a request still in progress.
     const a = withIdempotency({ scope, key: "k3", payload }, work);
-    // Give the first call time to claim the row before the second arrives.
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    const b = withIdempotency({ scope, key: "k3", payload }, work).catch((error) => error);
-
+    await started;
+    const second = await withIdempotency({ scope, key: "k3", payload }, work).catch((error) => error);
     release();
     await a;
-    const second = await b;
 
     assert.equal(runs, 1, "both requests ran the work");
     assert.ok(second instanceof IdempotencyConflict);
