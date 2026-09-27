@@ -105,13 +105,16 @@ test("a product page carries the product, the price, and one brand suffix", asyn
 test("an unknown path and an unknown product are 404 with the shell", async () => {
   const missing = await htmlOf("/this-page-does-not-exist-xyz");
   assert.equal(missing.status, 404);
-  assert.match(missing.html, /<div id="root"><\/div>/);
+  assert.match(missing.html, /<div id="root">/);
+  assert.match(missing.html, /id="mipo-boot"/);
+  assert.match(missing.html, /src="\/splash-paw\.png"/);
   assert.match(missing.html, /noindex/);
   assert.match(missing.html, /העמוד לא נמצא/);
 
   const product = await htmlOf("/product/00000000-0000-4000-8000-000000000000");
   assert.equal(product.status, 404);
-  assert.match(product.html, /<div id="root"><\/div>/);
+  assert.match(product.html, /<div id="root">/);
+  assert.match(product.html, /id="mipo-boot"/);
 
   assert.equal(classifyPath("/api/health").kind, "api");
   assert.equal((await renderer()("/api/health")), null);
