@@ -122,6 +122,17 @@ import {
 import { createPetFactService } from "./petFactService.js";
 import { createPublicPageRenderer, listInStockSitemapProducts } from "./publicPages.js";
 import { pageWindow, pickStorefrontProduct } from "./storefrontProduct.js";
+import {
+  authorizeOwnerQa,
+  createOwnerNotifier,
+  qaEventFromBody,
+  reportDeclinedPayment,
+  reportNewUser,
+  reportPaidOrder,
+  reportServerError,
+  reportUnsettledPayment,
+  schedulePaidOrderNotice,
+} from "./ownerNotify.js";
 
 const port = Number(process.env.PORT || 3000);
 const databaseUrl = process.env.DATABASE_URL;
@@ -295,6 +306,29 @@ const pool = new Pool({
   max: Number(process.env.DB_POOL_MAX || 8),
   connectionTimeoutMillis: Number(process.env.DB_CONNECTION_TIMEOUT_MS || 5000),
 });
+
+// Owner WhatsApp. A no-op until the Twilio settings are present. notify()
+// returns immediately; a slow or failed send cannot delay the request that
+// triggered it. See ownerNotify.js.
+const ownerNotifier = createOwnerNotifier({ env: process.env });
+const notifyOwner = (event) => ownerNotifier.notify(event);
+
+const notifyOwnerPaidOrder = (orderId, orderNumber, total, lines) => {
+  if (Array.isArray(lines)) {
+    reportPaidOrder(notifyOwner, { orderId, orderNumber, total, lines });
+    return;
+  }
+  schedulePaidOrderNotice(notifyOwner, async () => {
+    const result = await pool.query(
+      "select product_name, quantity from public.order_items where order_id = $1 order by created_at asc",
+      [orderId],
+    );
+    return result.rows.map((row) => ({
+      name: row.product_name,
+      quantity: row.quantity,
+    }));
+  }, { orderId, orderNumber, total });
+};
 
 // Every AI call in the API goes through this gateway. Features never hold a
 // provider key or talk to a provider directly.
@@ -490,6 +524,7 @@ const rateLimits = {
   documentUpload: { limit: 20, windowMs: 60 * 60 * 1000 },
   couponValidate: { limit: 30, windowMs: 10 * 60 * 1000 },
   publicPetScan: { limit: 60, windowMs: 60 * 60 * 1000 },
+  ownerQa: { limit: 30, windowMs: 10 * 60 * 1000 },
 };
 
 const getPublicBaseUrl = (request) => {
@@ -1267,6 +1302,11 @@ const signupUser = async (request, body) => {
 
     const token = await createUserSession(request, userResult.rows[0].id, client);
     await client.query("commit");
+
+    reportNewUser(notifyOwner, {
+      userId: userResult.rows[0].id,
+      displayName: fullName,
+    });
 
     // Identity now lives on app_users, so merge it back for the response shape.
     const profile = serializeProfile({
@@ -6533,6 +6573,20 @@ const createOrder = async (body, currentUser = null, eventOrigin = "app", option
       await saveShippingProfile(currentUser.id, shippingAddress).catch(() => {});
     }
 
+    // Card payments are still pending here. An admin-attested order is already
+    // paid, so this is its successful-payment notice. Cash on delivery is not.
+    if (paymentStatus === "paid") {
+      reportPaidOrder(notifyOwner, {
+        orderId: order.id,
+        orderNumber: order.order_number,
+        total: Number(order.total),
+        lines: orderItems.map((item) => ({
+          name: item.product_name,
+          quantity: item.quantity,
+        })),
+      });
+    }
+
     return {
       order: mapOrder(order, itemsResult.rows.map(mapOrderItem)),
       accessToken,
@@ -7607,8 +7661,10 @@ const handleCardcomWebhook = async (request, url) => {
   // delivery cannot produce a duplicate event either. A decline that is no
   // longer the current attempt is acknowledged without touching that attempt,
   // which is what stops Cardcom retrying after the first failure was recorded.
+  // ownerNotice is set only when a row changed, and only sent after commit.
   const client = await pool.connect();
   let paymentStatus = plan.paymentStatus;
+  let ownerNotice = null;
   try {
     await client.query("begin");
     if (plan.mutate === "pay") {
@@ -7656,6 +7712,12 @@ const handleCardcomWebhook = async (request, url) => {
             low_profile_code: lowProfileCode,
           },
         });
+        ownerNotice = {
+          kind: "paid",
+          orderId: order.id,
+          orderNumber: paid.order_number,
+          total: Number(paid.total),
+        };
       } else {
         paymentStatus = order.payment_status;
       }
@@ -7690,6 +7752,14 @@ const handleCardcomWebhook = async (request, url) => {
             low_profile_code: lowProfileCode,
           },
         });
+        ownerNotice = {
+          kind: "failed",
+          orderId: order.id,
+          orderNumber: failed.order_number,
+          total: Number(failed.total),
+          operationResponse: parsed.operationResponse,
+          dealResponse: parsed.dealResponse,
+        };
       } else {
         paymentStatus = order.payment_status;
       }
@@ -7745,6 +7815,12 @@ const handleCardcomWebhook = async (request, url) => {
     throw error;
   } finally {
     client.release();
+  }
+
+  if (ownerNotice?.kind === "paid") {
+    notifyOwnerPaidOrder(ownerNotice.orderId, ownerNotice.orderNumber, ownerNotice.total);
+  } else if (ownerNotice?.kind === "failed") {
+    reportDeclinedPayment(notifyOwner, ownerNotice);
   }
 
   return {
@@ -8179,6 +8255,30 @@ const handleRequest = async (request, response) => {
         checked: schema.checked,
         ...(schema.ok ? {} : { failures: schema.failures }),
       });
+      return;
+    }
+
+    // A QA agent reports a short result after a deploy. The shared secret is
+    // the only credential. Missing secret hides the route. The send itself is
+    // still gated by the Twilio settings inside the notifier.
+    if (request.method === "POST" && url.pathname === "/api/internal/owner-notify/qa") {
+      const qaSecret = String(process.env.OWNER_NOTIFY_QA_SECRET || "");
+      if (!qaSecret) {
+        sendError(response, 404, "Not found");
+        return;
+      }
+      if (!enforceRateLimit(request, response, "owner-qa", rateLimits.ownerQa)) return;
+      if (authorizeOwnerQa(qaSecret, request.headers.authorization) !== "ok") {
+        sendError(response, 401, "Unauthorized");
+        return;
+      }
+      const parsed = qaEventFromBody(await readBody(request));
+      if (parsed.error) {
+        sendError(response, 400, parsed.error);
+        return;
+      }
+      notifyOwner(parsed.notify);
+      sendJson(response, 202, { accepted: true });
       return;
     }
 
@@ -9188,7 +9288,15 @@ const handleRequest = async (request, response) => {
     }
 
     if ((request.method === "POST" || request.method === "GET") && url.pathname === "/api/payments/cardcom/webhook") {
-      sendJson(response, 200, await handleCardcomWebhook(request, url));
+      try {
+        sendJson(response, 200, await handleCardcomWebhook(request, url));
+      } catch (error) {
+        // Thrown paths: amount mismatch, unknown order, indicator parse, and
+        // any other failure before the order is marked paid. Declines that
+        // were recorded return 200 above and are notified from the handler.
+        reportUnsettledPayment(notifyOwner, { statusCode: error.statusCode || 500 });
+        throw error;
+      }
       return;
     }
 
@@ -9581,6 +9689,15 @@ const handleRequest = async (request, response) => {
 
     sendError(response, 404, "Not found");
   } catch (error) {
+    const statusCode = error.statusCode || 500;
+    // The Cardcom route already reported this as a payment problem.
+    if (statusCode >= 500 && url.pathname !== "/api/payments/cardcom/webhook") {
+      reportServerError(notifyOwner, {
+        statusCode,
+        method: request.method,
+        path: url.pathname,
+      });
+    }
     if (!error.statusCode || error.statusCode >= 500) console.error(error);
     // A code lets the client tell one 403 from another and offer the right
     // next step, instead of matching on a message that may be translated.

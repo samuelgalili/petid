@@ -1,0 +1,45 @@
+name: Site health
+
+# Runs outside the API on purpose. An in-process check cannot send anything
+# once the process, Caddy, or the host is down. This job curls the public
+# health endpoint from a GitHub runner and, on failure, sends the owner a
+# WhatsApp through the same notifier the server uses.
+#
+# Each run is a new machine, so the in-memory throttle does not carry over.
+# The schedule is the throttle: at most one alert per ten minutes while the
+# site stays down. The job is not bound to the production environment, so it
+# does not wait for a deploy approval. It reads repository Actions secrets.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: Probe public health
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19.0"
+
+      - name: Curl health and alert if it fails
+        env:
+          HEALTH_URL: ${{ vars.MIPO_PUBLIC_BASE_URL || 'https://mipo.pet' }}
+          OWNER_NOTIFICATIONS_ENABLED: ${{ secrets.OWNER_NOTIFICATIONS_ENABLED }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_WHATSAPP_FROM: ${{ secrets.TWILIO_WHATSAPP_FROM }}
+          OWNER_WHATSAPP_TO: ${{ secrets.OWNER_WHATSAPP_TO }}
+          TWILIO_WHATSAPP_CONTENT_SIDS: ${{ secrets.TWILIO_WHATSAPP_CONTENT_SIDS }}
+          SITE_URL: ${{ vars.SITE_URL || vars.MIPO_PUBLIC_BASE_URL }}
+        run: node server/src/ownerNotifyCli.js site-health

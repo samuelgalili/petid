@@ -340,3 +340,38 @@ jobs:
             echo "::error::The API reports version '${reported}' but this run deployed '${expected}'. The container was not replaced." >&2
             exit 1
           fi
+
+      # WhatsApp is sent from this job, not from the server: a failed deploy may
+      # have taken the API down, and this runner is still up. Missing Twilio
+      # secrets make the script a no-op. continue-on-error keeps a Twilio
+      # problem from painting a finished deploy red (which would also fire the
+      # failure notice below). Production only — staging deploys stay quiet.
+      # Secrets are repository Actions secrets so the scheduled health workflow,
+      # which is not bound to the production environment, can read the same set.
+      - name: Tell the owner the production deploy failed
+        if: failure() && github.ref_name == 'aws-migration'
+        continue-on-error: true
+        env:
+          OWNER_NOTIFICATIONS_ENABLED: ${{ secrets.OWNER_NOTIFICATIONS_ENABLED }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_WHATSAPP_FROM: ${{ secrets.TWILIO_WHATSAPP_FROM }}
+          OWNER_WHATSAPP_TO: ${{ secrets.OWNER_WHATSAPP_TO }}
+          TWILIO_WHATSAPP_CONTENT_SIDS: ${{ secrets.TWILIO_WHATSAPP_CONTENT_SIDS }}
+          MIPO_DEPLOY_SHA: ${{ github.sha }}
+          SITE_URL: ${{ vars.SITE_URL || vars.MIPO_PUBLIC_BASE_URL }}
+        run: node server/src/ownerNotifyCli.js deploy-failure
+
+      - name: Tell the owner the production deploy succeeded
+        if: success() && github.ref_name == 'aws-migration'
+        continue-on-error: true
+        env:
+          OWNER_NOTIFICATIONS_ENABLED: ${{ secrets.OWNER_NOTIFICATIONS_ENABLED }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_WHATSAPP_FROM: ${{ secrets.TWILIO_WHATSAPP_FROM }}
+          OWNER_WHATSAPP_TO: ${{ secrets.OWNER_WHATSAPP_TO }}
+          TWILIO_WHATSAPP_CONTENT_SIDS: ${{ secrets.TWILIO_WHATSAPP_CONTENT_SIDS }}
+          MIPO_DEPLOY_SHA: ${{ github.sha }}
+          SITE_URL: ${{ vars.SITE_URL || vars.MIPO_PUBLIC_BASE_URL }}
+        run: node server/src/ownerNotifyCli.js deploy-success
