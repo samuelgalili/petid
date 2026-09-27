@@ -99,6 +99,10 @@ test.describe("public entry", () => {
     await expect(page).toHaveURL(/\/shop$/);
     await expect(page).not.toHaveURL(/auth/);
     await expect(page.getByRole("heading", { name: "חנות", exact: true })).toBeVisible();
+    await expect(page.getByTestId("guest-value-strip")).toBeVisible();
+    await expect(page.getByTestId("guest-value-strip")).toContainText("משלוח חינם מעל ₪199");
+    await expect(page.getByTestId("guest-value-strip")).toContainText("3-5 ימי עסקים");
+    await expect(page.getByRole("link", { name: /050-5929209/ })).toHaveAttribute("href", "https://wa.me/972505929209");
     await expect(page.getByRole("heading", { name: "מומלצים" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "כל המוצרים" })).toBeVisible();
     await expect(page.getByText("מזון יבש לכלב 7 קילו")).toBeVisible();
@@ -131,6 +135,16 @@ test.describe("public entry", () => {
     await expect(page.getByRole("heading", { name: "חנות", exact: true })).toBeVisible();
     await page.waitForTimeout(400);
     expect(authMe).toBe(1);
+  });
+
+  test("sign-in explains Mipo and still offers the shop", async ({ page }) => {
+    await mockAnonymous(page);
+    await page.goto("/auth");
+    await expect(page.getByRole("heading", { name: "ברוכים הבאים ל-MIPO" })).toBeVisible();
+    await expect(page.getByText("פרופיל, קהילה וחנות במקום אחד")).toBeVisible();
+    await page.getByRole("link", { name: "המשיכו לחנות בלי להירשם" }).click();
+    await expect(page).toHaveURL(/\/shop$/);
+    await expect(page.getByTestId("guest-value-strip")).toBeVisible();
   });
 
   test("/support loads without an account", async ({ page }) => {
@@ -355,5 +369,8 @@ test.describe("public entry", () => {
     await expect(page).toHaveURL(/\/$/);
     await expect(page).not.toHaveURL(/\/shop|\/auth/);
     await expect(page.getByRole("heading", { name: /איך לוקה מרגיש/ })).toBeVisible();
+
+    await page.goto("/shop");
+    await expect(page.getByTestId("guest-value-strip")).toHaveCount(0);
   });
 });

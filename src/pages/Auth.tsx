@@ -9,6 +9,7 @@ import { PawPrint, Heart, Shield } from "lucide-react";
 import { readStoredOnboardingDraft } from "@/lib/mipoOnboardingDraft";
 import { getMyPets } from "@/lib/mipoApi";
 import { safeReturnPath } from "@/lib/returnPath";
+import { GUEST_VALUE_LINE } from "@/lib/supportContact";
 
 const Auth = () => {
   const { isAuthenticated, loading: authLoading, user } = useAuth();
@@ -67,7 +68,7 @@ const Auth = () => {
         >
           <h1 className="text-xl font-semibold text-mipo-ink mb-1">ברוכים הבאים ל-MIPO</h1>
           <p className="text-sm text-mipo-muted">
-            My Precious One
+            {GUEST_VALUE_LINE}
           </p>
         </motion.div>
 
@@ -114,7 +115,7 @@ const Auth = () => {
         </p>
         <p className="mt-1 text-sm text-foreground">
           <Link to="/shop" className="inline-flex min-h-11 items-center justify-center font-semibold text-mipo-ink underline underline-offset-4">
-            לקניות בחנות
+            המשיכו לחנות בלי להירשם
           </Link>
         </p>
       </motion.div>

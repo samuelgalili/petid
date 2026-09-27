@@ -27,6 +27,7 @@ import { ProductInfoDrawer } from "@/components/shop/ProductInfoDrawer";
 import { useCarePlan } from "@/hooks/useCarePlan";
 import { createContentReport, getShopProducts } from "@/lib/mipoApi";
 import { FREE_SHIPPING_THRESHOLD } from "@/lib/shipping";
+import { GuestShopValue } from "@/components/shop/GuestShopValue";
 import { searchCatalogDetailed } from "@/lib/catalogSearch";
 
 const asPrice = (value: number | string | null | undefined) => {
@@ -178,7 +179,7 @@ const ShopProductCard = ({
 
 const Shop = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { addToCart, getTotalItems, cartShake } = useCart();
   const { triggerFly, setCartIconPosition } = useFlyingCart();
   const { pet: activePet } = useActivePet();
@@ -625,6 +626,7 @@ const Shop = () => {
         <div className="flex-grow pt-4">
           {!hasQuery ? (
             <div className="space-y-4">
+              {!authLoading && !user && <GuestShopValue />}
               {isLoadingProducts ? (
                 <SkeletonProductGrid />
               ) : isProductsError ? (
