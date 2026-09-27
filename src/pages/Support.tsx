@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import { motion } from "framer-motion";
+import { useAuth } from "@/hooks/useAuth";
 
 const Support = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   const supportOptions = [
     {
@@ -27,8 +29,16 @@ const Support = () => {
     {
       icon: Settings,
       title: "ניהול החשבון",
-      description: "ייצוא נתונים, פרטיות ומחיקת חשבון",
-      action: () => navigate("/settings"),
+      description: isAuthenticated
+        ? "ייצוא נתונים, פרטיות ומחיקת חשבון"
+        : "התחברו כדי לייצא נתונים או למחוק חשבון",
+      action: () => {
+        if (!isAuthenticated) {
+          navigate("/auth?next=%2Fsettings");
+          return;
+        }
+        navigate("/settings");
+      },
       color: "bg-icon-orange/10",
       iconColor: "text-icon-orange",
     },

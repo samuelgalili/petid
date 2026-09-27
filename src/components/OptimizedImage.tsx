@@ -126,22 +126,7 @@ export const OptimizedImage = ({
       className={cn("relative overflow-hidden", className)}
       onClick={onClick}
     >
-      {/* Shimmer placeholder */}
-      {!isLoaded && (
-        <div
-          className="absolute inset-0 bg-gradient-to-br from-amber-50 via-gray-100 to-amber-50/50"
-          style={{
-            backgroundSize: "200% 200%",
-            animation: "shimmer 1.5s ease-in-out infinite",
-          }}
-        >
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-mipo-gold/20 to-amber-200/30 flex items-center justify-center">
-              <span className="text-2xl opacity-50">🐾</span>
-            </div>
-          </div>
-        </div>
-      )}
+      {!isLoaded && <div className="absolute inset-0 bg-white" />}
 
       {/* Main image */}
       {isInView && (
@@ -174,22 +159,3 @@ export const OptimizedImage = ({
     </div>
   );
 };
-
-// Add shimmer animation to global styles
-if (typeof document !== "undefined") {
-  const style = document.createElement("style");
-  style.textContent = `
-    @keyframes shimmer {
-      0% {
-        background-position: 0% 50%;
-      }
-      50% {
-        background-position: 100% 50%;
-      }
-      100% {
-        background-position: 0% 50%;
-      }
-    }
-  `;
-  document.head.appendChild(style);
-}
