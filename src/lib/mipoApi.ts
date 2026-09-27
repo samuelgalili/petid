@@ -154,9 +154,39 @@ export interface MipoAdmin {
   role: string;
   permissions: string[];
   must_change_password: boolean;
+  /** Server flag. Absent or false means login is the password-only flow. */
+  mfa_enabled?: boolean;
+  /** When true, an unenrolled admin cannot reach the panel. */
+  mfa_enrollment_required?: boolean;
+  /** Whether this account has an authenticator registered. */
+  mfa_enrolled?: boolean;
+  /** Whether this session may open the panel. True when the flag is off. */
+  mfa_verified?: boolean;
+  /** Flag on, not enrolled, enrolment not mandatory: show the prompt. */
+  mfa_enrollment_prompt?: boolean;
   created_at?: string | null;
   last_login_at?: string | null;
 }
+
+export interface MipoAdminTwoFactorSetup {
+  secret: string;
+  otpauth_url: string;
+}
+
+export interface MipoAdminTwoFactorVerification {
+  ok: boolean;
+  used_recovery_code: boolean;
+  recovery_codes_remaining: number | null;
+}
+
+/** Where a successful password sign-in goes next. Password change wins, then
+ *  a code the server says is still owed, then an optional enrolment prompt. */
+export const adminPostLoginPath = (admin: MipoAdmin, fallback: string) => {
+  if (admin.must_change_password) return "/admin/change-password";
+  if (admin.mfa_enabled && admin.mfa_verified === false) return "/admin/two-factor";
+  if (admin.mfa_enrollment_prompt && !admin.mfa_enrolled) return "/admin/two-factor";
+  return fallback;
+};
 
 export interface MipoCoupon {
   id: string;
@@ -1313,6 +1343,44 @@ export async function changeAdminPassword(password: string): Promise<MipoAdmin> 
   });
   setStorageHint(adminSessionHintKey, false);
   return result.admin;
+}
+
+/** Starts authenticator enrolment. The seed is returned once. */
+export async function startAdminTwoFactorSetup(): Promise<MipoAdminTwoFactorSetup> {
+  return apiFetch<MipoAdminTwoFactorSetup>("/admin/2fa/setup", {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
+/** Confirms enrolment with the first code and returns the recovery codes once. */
+export async function activateAdminTwoFactor(code: string): Promise<string[]> {
+  const result = await apiFetch<{ ok: boolean; recovery_codes: string[] }>("/admin/2fa/activate", {
+    method: "POST",
+    body: JSON.stringify({ code }),
+  });
+  return result.recovery_codes;
+}
+
+/** Proves the second factor for the current session, by code or recovery code. */
+export async function verifyAdminTwoFactor(code: string): Promise<MipoAdminTwoFactorVerification> {
+  return apiFetch<MipoAdminTwoFactorVerification>("/admin/2fa/verify", {
+    method: "POST",
+    body: JSON.stringify({ code }),
+  });
+}
+
+export async function getAdminRecoveryCodesRemaining(): Promise<number> {
+  const result = await adminApiFetch<{ remaining: number }>("/admin/2fa/recovery-codes");
+  return result.remaining;
+}
+
+export async function reissueAdminRecoveryCodes(): Promise<string[]> {
+  const result = await adminApiFetch<{ ok: boolean; recovery_codes: string[] }>("/admin/2fa/recovery-codes", {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+  return result.recovery_codes;
 }
 
 export async function getAdminDispatchConfig(): Promise<{ warehouse_whatsapp: string | null }> {
