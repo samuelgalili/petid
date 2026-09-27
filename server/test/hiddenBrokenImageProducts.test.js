@@ -221,6 +221,7 @@ test("a public product url is a 404 for a hidden product, and a full view still 
   const page = read("src/pages/ProductDetailAws.tsx");
   assert.match(page, /המוצר לא נמצא/);
   assert.match(page, /isError \|\| !product/);
+  assert.match(page, /<Link to="\/shop">חזרה לחנות<\/Link>/);
 });
 
 test("a cart keeps the hidden line visible, drops it from the total, and can still buy the rest", () => {
