@@ -31,6 +31,7 @@ import {
   type SafetyLevel,
 } from "@/lib/petSafetyScore";
 import { feedingGuidanceSourceLabelHe, readFeedingGuidance } from "@/lib/feedingGuidance";
+import { readCustomerSpecAttributes } from "@/lib/productSpecs";
 import { PetFitCard } from "@/components/shop/PetFitCard";
 import {
   FREE_SHIPPING_THRESHOLD,
@@ -96,26 +97,6 @@ const VALUE_LABELS_HE: Record<string, string> = {
 
 const labelValue = (value: string) => VALUE_LABELS_HE[value.trim().toLowerCase()] || value;
 
-// The same column carries two different shapes depending on the importer:
-// array values are variant options, scalar values are specification rows
-// (protein 32%, ph controlled). Both are real data; render each as what it is.
-const readSpecAttributes = (attributes: unknown): Array<{ label: string; value: string }> => {
-  if (!attributes || typeof attributes !== "object" || Array.isArray(attributes)) return [];
-  const labels: Record<string, string> = {
-    protein: "חלבון",
-    fat: "שומן",
-    fiber: "סיבים",
-    moisture: "לחות",
-    ash: "אפר",
-    ph: "רמת חומציות",
-    calcium: "סידן",
-    phosphorus: "זרחן",
-  };
-  return Object.entries(attributes as Record<string, unknown>)
-    .filter(([, value]) => value !== null && value !== undefined && !Array.isArray(value) && typeof value !== "object")
-    .map(([key, value]) => ({ label: labels[key] || key, value: labelValue(String(value)) }))
-    .filter((row) => row.value !== "");
-};
 
 // Shown for every product whether or not there is a value, so that two
 // products describe themselves in the same shape. A page that simply omits
@@ -252,7 +233,7 @@ const ProductDetailAws = () => {
       { label: "קטגוריה", value: product.category_name || product.category || NOT_SPECIFIED },
       { label: "מלאי", value: product.in_stock === false ? "אזל מהמלאי" : "במלאי" },
       ...optional,
-      ...readSpecAttributes(product.product_attributes),
+      ...readCustomerSpecAttributes(product.product_attributes),
     ];
   }, [product]);
 
@@ -307,7 +288,7 @@ const ProductDetailAws = () => {
   const categoryLabel = product.category_name || product.category;
 
   return (
-    <div className="min-h-screen bg-background pb-28" dir="rtl">
+    <div className="min-h-screen bg-background pb-36 md:pb-8" dir="rtl">
       <SEO
         title={`${product.name} | MIPO`}
         description={product.description || `פרטי מוצר: ${product.name}`}
@@ -467,7 +448,7 @@ const ProductDetailAws = () => {
                 </Button>
               </div>
 
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid gap-2 max-md:hidden sm:grid-cols-2">
                 <Button size="lg" className="mipo-cta-button" onClick={() => handleAddToCart(false)} disabled={outOfStock}>
                   <ShoppingCart className="ml-2 h-5 w-5" />
                   הוסף לעגלה
@@ -620,6 +601,21 @@ const ProductDetailAws = () => {
           </Section>
         </div>
       </main>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 p-3 backdrop-blur md:hidden pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="mx-auto flex max-w-5xl items-center gap-3">
+          <span className="text-lg font-bold tabular-nums text-mipo-ink">₪{price.toFixed(2)}</span>
+          <Button
+            size="lg"
+            className="mipo-cta-button h-12 flex-1"
+            onClick={() => handleAddToCart(false)}
+            disabled={outOfStock}
+          >
+            <ShoppingCart className="ml-2 h-5 w-5" />
+            {outOfStock ? "אזל מהמלאי" : "הוסף לעגלה"}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };

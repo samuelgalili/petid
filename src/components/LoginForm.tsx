@@ -162,7 +162,7 @@ export const LoginForm = () => {
               fieldErrors.email ? "border-destructive" : ""
             }`}
             autoComplete="email"
-            dir="rtl"
+            dir="ltr"
           />
         </div>
         <AnimatePresence>
@@ -202,7 +202,7 @@ export const LoginForm = () => {
               fieldErrors.password ? "border-destructive" : ""
             }`}
             autoComplete="current-password"
-            dir="rtl"
+            dir="ltr"
           />
           <button
             type="button"

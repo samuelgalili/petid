@@ -45,6 +45,9 @@ const HIDDEN_PREFIXES = [
   "/add-pet",
   "/stories",
   "/story",
+  "/checkout",
+  "/cart",
+  "/product",
 ];
 
 export const AvatarCompanion = () => {

@@ -105,6 +105,11 @@ const Auth = () => {
             הרשמה
           </Link>
         </p>
+        <p className="mt-1 text-sm text-foreground">
+          <Link to="/shop" className="inline-flex min-h-11 items-center justify-center font-semibold text-mipo-ink underline underline-offset-4">
+            לקניות בחנות
+          </Link>
+        </p>
       </motion.div>
 
       {/* Footer Links */}
