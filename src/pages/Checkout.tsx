@@ -155,7 +155,6 @@ const Checkout = () => {
   );
   const orderItems = partition.available;
   const subtotal = chargeableSubtotal(orderItems);
-  const cataloguePending = catalogue.isPending;
   const nothingToBuy = catalogue.isSuccess && orderItems.length === 0;
   const baseShipping = shippingFor(subtotal);
   
@@ -318,7 +317,6 @@ const Checkout = () => {
   };
 
   const handlePlaceOrder = async () => {
-    if (cataloguePending) return;
     if (nothingToBuy) {
       toast({
         title: UNAVAILABLE_ITEM_HE,
@@ -1278,7 +1276,7 @@ const Checkout = () => {
             data-testid="checkout-continue"
             className={`flex-1 bg-accent hover:bg-accent-hover text-accent-foreground rounded-2xl font-bold font-jakarta shadow-xl h-14 ${currentStep === 1 ? 'w-full' : ''}`}
             onClick={currentStep === 3 ? handlePlaceOrder : undefined}
-            disabled={isProcessing || (currentStep === 3 && (cataloguePending || nothingToBuy))}
+            disabled={isProcessing || (currentStep === 3 && nothingToBuy)}
           >
             {isProcessing ? (
               <>
