@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SEO } from "@/components/SEO";
+import { displayProductDescription, productMetaDescription } from "@/lib/productDescription";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
@@ -290,9 +291,14 @@ const ProductDetailAws = () => {
   return (
     <div className="min-h-screen bg-background pb-36 md:pb-8" dir="rtl">
       <SEO
-        title={`${product.name} | MIPO`}
-        description={product.description || `פרטי מוצר: ${product.name}`}
+        title={product.name}
+        description={productMetaDescription(product.description, `פרטי מוצר: ${product.name}`)}
+        image={images[0] || "/og-default.png"}
         url={`/product/${product.id}`}
+        type="product"
+        price={price}
+        currency="ILS"
+        availability={product.in_stock === false ? "out_of_stock" : "in_stock"}
       />
 
       <header className="sticky top-0 z-20 border-b border-border/50 bg-background/90 backdrop-blur">
@@ -481,8 +487,8 @@ const ProductDetailAws = () => {
               a product nobody has written about yet — and the shopper cannot
               tell which of the two they are looking at. */}
           <Section title="תיאור">
-            {product.description ? (
-              <p className="text-sm leading-7 text-muted-foreground">{product.description}</p>
+            {displayProductDescription(product.description) ? (
+              <p className="text-sm leading-7 text-muted-foreground">{displayProductDescription(product.description)}</p>
             ) : (
               <p className="text-sm leading-7 text-muted-foreground/70">
                 עדיין לא נכתב תיאור למוצר הזה. המפרט למטה מרכז את מה שידוע עליו.

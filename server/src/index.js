@@ -105,6 +105,8 @@ import {
   startDispatcher,
 } from "./events.js";
 import { createPetFactService } from "./petFactService.js";
+import { createPublicPageRenderer, listInStockSitemapProducts } from "./publicPages.js";
+import { pageWindow, pickStorefrontProduct } from "./storefrontProduct.js";
 
 const port = Number(process.env.PORT || 3000);
 const databaseUrl = process.env.DATABASE_URL;
@@ -7891,6 +7893,7 @@ const sendStoredFile = (response, buffer, {
   fileName,
   isPrivate = false,
   sandbox = false,
+  head = false,
 } = {}) => {
   const disposition = contentType.startsWith("image/")
     || contentType.startsWith("video/")
@@ -7908,7 +7911,7 @@ const sendStoredFile = (response, buffer, {
   };
   if (sandbox) headers["content-security-policy"] = "default-src 'none'; sandbox";
   response.writeHead(200, headers);
-  response.end(buffer);
+  response.end(head ? undefined : buffer);
 };
 
 const readDocumentFile = async (document) => {
@@ -8025,15 +8028,25 @@ const servePublicUpload = async (request, response, pathname) => {
     fileName: storageKey,
     isPrivate: Boolean(documentResult.rows[0]),
     sandbox: Boolean(documentResult.rows[0]),
+    head: request.method === "HEAD",
   });
   return true;
 };
+
+// Navigations that are not files. Caddy proxies them here so the status and
+// the share tags belong to the path. /api stays JSON.
+const renderPublicPage = createPublicPageRenderer({
+  origin: configuredPublicAppUrl,
+  webRoot: process.env.WEB_ROOT || "/srv/www",
+  loadProduct: (id) => fetchPublicProductById(id),
+  loadSitemapProducts: () => listInStockSitemapProducts((sql) => pool.query(sql)),
+});
 
 const handleRequest = async (request, response) => {
   const url = new URL(request.url || "/", "http://localhost");
 
   try {
-    if (request.method === "GET" && url.pathname.startsWith("/uploads/")) {
+    if ((request.method === "GET" || request.method === "HEAD") && url.pathname.startsWith("/uploads/")) {
       if (!(await servePublicUpload(request, response, url.pathname))) {
         sendError(response, 404, "File not found");
       }
@@ -9172,11 +9185,30 @@ const handleRequest = async (request, response) => {
       // its own products in full and everybody else's in exactly the shape an
       // anonymous visitor sees - so one Seller's cost_price, commission_rate
       // and supplier_id never reach another.
+      //
+      // view=storefront is the shop grid: the same public rows, without the
+      // feeding guide and the bookkeeping columns. limit/offset page that
+      // list. Omitting both leaves the full public catalogue, which is what
+      // every existing caller still receives.
       const identity = await resolveAdminIdentity(request);
-      sendJson(response, 200, {
-        products: products.map((product) =>
-          (adminProductView(identity, product) === "full" ? product : toPublicProduct(product))),
+      const view = url.searchParams.get("view");
+      const mapped = products.map((product) => {
+        if (adminProductView(identity, product) === "full") return product;
+        const pub = toPublicProduct(product);
+        return view === "storefront" ? pickStorefrontProduct(pub) : pub;
       });
+      const windowed = pageWindow(mapped, {
+        limit: url.searchParams.get("limit"),
+        offset: url.searchParams.get("offset"),
+      });
+      const body = {
+        products: windowed.products,
+        ...(windowed.limit !== undefined
+          ? { total: windowed.total, limit: windowed.limit, offset: windowed.offset }
+          : {}),
+      };
+      const cacheable = view === "storefront" && !identity;
+      sendJson(response, 200, body, cacheable ? { "cache-control": "public, max-age=60" } : {});
       return;
     }
 
@@ -9448,6 +9480,15 @@ const handleRequest = async (request, response) => {
       const auth = await getUserFromSession(request).catch(() => null);
       sendJson(response, 201, { report: await createReport(await readBody(request), auth?.user?.id || null) });
       return;
+    }
+
+    if (request.method === "GET" || request.method === "HEAD") {
+      const rendered = await renderPublicPage(url.pathname);
+      if (rendered) {
+        response.writeHead(rendered.status, rendered.headers);
+        response.end(request.method === "HEAD" ? undefined : rendered.body);
+        return;
+      }
     }
 
     sendError(response, 404, "Not found");

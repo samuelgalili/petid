@@ -90,7 +90,7 @@ export const SuccessCard = ({ open, onClose, title, subtitle, insight, score, pe
                   transition={{ delay: 0.3 }}
                 >
                   <ShieldCheck className="w-5 h-5 text-green-500" />
-                  <span className="text-sm font-medium">SafeScore</span>
+                  <span className="text-sm font-medium">ציון בטיחות</span>
                   <span className="text-xl font-bold text-green-500">{score}/10</span>
                 </motion.div>
               )}

@@ -47,6 +47,7 @@ services:
       UPLOAD_DIR: /app/uploads
       PRIVATE_UPLOAD_DIR: /app/private-uploads
       PUBLIC_APP_URL: http://localhost:8080
+      WEB_ROOT: /srv/www
       # Verification codes and reset codes come back in the response instead of
       # an email, so the flows can be walked through without a mail provider.
       # The server refuses to start with this on when NODE_ENV=production, which
@@ -62,6 +63,7 @@ services:
     volumes:
       - workbench_uploads:/app/uploads
       - workbench_private_uploads:/app/private-uploads
+      - ../../dist:/srv/www:ro
     networks:
       - mipo
 

@@ -24,7 +24,9 @@ cleanupOutdatedCaches();
 
 registerRoute(
   new NavigationRoute(createHandlerBoundToURL("/index.html"), {
-    denylist: [/^\/~oauth/, /^\/api\//],
+    // sitemap.xml and robots.txt are documents, not app screens. A navigation
+    // that matches the app shell is answered with index.html.
+    denylist: [/^\/~oauth/, /^\/api\//, /^\/sitemap\.xml$/, /^\/robots\.txt$/],
   }),
 );
 

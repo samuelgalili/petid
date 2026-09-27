@@ -26,6 +26,7 @@ import { useActivePet } from "@/hooks/useActivePet";
 import { ProductInfoDrawer } from "@/components/shop/ProductInfoDrawer";
 import { useCarePlan } from "@/hooks/useCarePlan";
 import { createContentReport, getShopProducts } from "@/lib/mipoApi";
+import { displayProductDescription } from "@/lib/productDescription";
 import { FREE_SHIPPING_THRESHOLD } from "@/lib/shipping";
 import { searchCatalogDetailed } from "@/lib/catalogSearch";
 
@@ -264,9 +265,9 @@ const Shop = () => {
 
   // Fetch products from the AWS API backed by RDS.
   const { data: dbProducts = [], isLoading: isLoadingProducts, isFetching, isError: isProductsError } = useQuery({
-    queryKey: ["shop-products-aws"],
+    queryKey: ["shop-products-aws", "storefront"],
     queryFn: async () => {
-      const products = await getShopProducts();
+      const products = await getShopProducts({ view: "storefront" });
       return products.filter((product) => product.in_stock !== false);
     },
     staleTime: 1000 * 60 * 2, // 2 minutes
@@ -291,7 +292,7 @@ const Shop = () => {
       return {
         id: p.id,
         name: p.name,
-        description: p.description || "",
+        description: displayProductDescription(p.description),
         price,
         originalPrice,
         images: p.images?.length ? p.images : [p.image_url],

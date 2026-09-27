@@ -2,6 +2,7 @@ import { ArrowRight, Mail, FileText, HelpCircle, ChevronLeft, Shield, Settings }
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
+import { SEO } from "@/components/SEO";
 import { motion } from "framer-motion";
 
 const Support = () => {
@@ -43,6 +44,7 @@ const Support = () => {
 
   return (
     <div className="h-screen bg-surface overflow-hidden" dir="rtl">
+      <SEO title="תמיכה" description="תמיכה של MIPO באימייל support@mipo.pet, ובדף העזרה." url="/support" />
       <div className="h-full overflow-y-auto pb-[70px]">
       {/* Header */}
       <div className="bg-card border-b border-border sticky top-0 z-10">

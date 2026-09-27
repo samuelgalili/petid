@@ -1750,8 +1750,14 @@ export async function bulkUpdateAdminOrders(ids: string[], updates: Partial<Pick
   });
 }
 
-export async function getShopProducts(): Promise<MipoProduct[]> {
-  const result = await apiFetch<{ products: MipoProduct[] }>("/products");
+export async function getShopProducts(options?: {
+  view?: "storefront";
+  // Present when this function is passed straight to react-query as queryFn.
+  // That context has no view, so the call stays on the full public catalogue.
+  queryKey?: readonly unknown[];
+}): Promise<MipoProduct[]> {
+  const query = options?.view === "storefront" ? "?view=storefront" : "";
+  const result = await apiFetch<{ products: MipoProduct[] }>(`/products${query}`);
   return result.products;
 }
 

@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { computePetAdjustedScore, safetyLevelFor } from "@/lib/petSafetyScore";
+import { displayProductDescription } from "@/lib/productDescription";
 import { SHIPPING_ESTIMATE_HE } from "@/lib/shipping";
 
 interface ProductInfoDrawerProps {
@@ -157,7 +158,7 @@ export const ProductInfoDrawer = ({ product, petName, onClose, onAddToCart, onAd
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className={`text-lg font-black ${safetyColors[safetyLevel].text}`}>{safetyScore}/10</span>
-                    <span className="text-xs font-semibold text-foreground">SafeScore</span>
+                    <span className="text-xs font-semibold text-foreground">ציון בטיחות</span>
                   </div>
                   {petName && (
                     <p className="text-xs text-muted-foreground mt-0.5">
@@ -171,14 +172,14 @@ export const ProductInfoDrawer = ({ product, petName, onClose, onAddToCart, onAd
             )}
 
             {/* Description */}
-            {product.description && (
+            {displayProductDescription(product.description) && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
                 className="mb-4"
               >
-                <p className="text-sm text-muted-foreground leading-relaxed">{product.description}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{displayProductDescription(product.description)}</p>
               </motion.div>
             )}
 

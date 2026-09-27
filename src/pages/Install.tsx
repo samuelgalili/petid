@@ -58,7 +58,7 @@ const Install = () => {
   },
   {
     icon: Brain,
-    title: "AI Scientist",
+    title: "היועץ החכם",
     description: "ניטור בריאות בזמן אמת וייעוץ חכם",
 
   },
@@ -239,7 +239,7 @@ const Install = () => {
               <div className="absolute inset-0 rounded-full bg-mipo-ink flex items-center justify-center shadow-2xl">
                 <div className="flex flex-col items-center">
                   <Shield className="w-10 h-10 text-mipo-surface mb-1" strokeWidth={1.5} />
-                  <span className="text-mipo-surface text-xs font-bold tracking-wider">SAFE</span>
+                  <span className="text-mipo-surface text-xs font-bold tracking-wider">בטוח</span>
                 </div>
               </div>
             </div>
@@ -250,7 +250,7 @@ const Install = () => {
               מאושר על ידי <span className="text-primary">המומחה</span>
             </h2>
             <p className="text-muted-foreground max-w-lg mx-auto mb-8 leading-relaxed">
-              כל מוצר בחנות עובר בדיקת SafeScore — ציון בטיחות מבוסס AI שמנתח
+              כל מוצר בחנות עובר בדיקת ציון הבטיחות — ציון מבוסס בינה מלאכותית שמנתח
               רכיבים, התאמה לגזע, ורגישויות — כדי שתדעו שאתם בוחרים נכון.
             </p>
           </ScrollReveal>
