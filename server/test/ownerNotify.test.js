@@ -7,6 +7,7 @@ import {
   authorizeOwnerQa,
   buildOwnerMessage,
   createOwnerNotifier,
+  githubLinksFromEnv,
   qaEventFromBody,
   readOwnerNotifyConfig,
   reportDeclinedPayment,
@@ -513,15 +514,231 @@ test("site-health alerts from outside the process and deploy alerts never fail t
   assert.equal(success, 0);
   assert.match(successCalls[0], /פריסה לייצור הצליחה/);
   assert.match(successCalls[0], /abc123def456/);
+  assert.equal(successCalls[0].includes("http"), false);
+});
+
+const siteUrl = "https://shop.example.test";
+const orderId = "22222222-2222-4222-8222-222222222222";
+const sha = "abc123def4567890abcd1234ef567890abcd1234";
+const runUrl = "https://git.example.test/org/repo/actions/runs/4242";
+const commitUrl = `https://git.example.test/org/repo/commit/${sha}`;
+
+test("page links are built from SITE_URL", () => {
+  const paid = buildOwnerMessage({
+    type: "order.paid",
+    orderId,
+    orderNumber: "MIPO-1001",
+    total: 150,
+    lines: [{ name: "רצועה", quantity: 1 }],
+  }, { siteUrl });
+  assert.match(paid.body, /הזמנות: https:\/\/shop\.example\.test\/admin\/orders$/);
+  assert.equal(paid.body.includes(`/admin/orders/${orderId}`), false);
+  assert.equal(paid.body.includes("?order="), false);
+  assert.equal(paid.contentVariables[4], "https://shop.example.test/admin/orders");
+
+  const declined = buildOwnerMessage({
+    type: "payment.failed",
+    orderId,
+    orderNumber: "MIPO-2002",
+    total: 80,
+    operationResponse: 2006,
+    dealResponse: 2006,
+  }, { siteUrl });
+  assert.match(declined.body, /הזמנות: https:\/\/shop\.example\.test\/admin\/orders$/);
+  assert.equal(declined.body.includes(orderId), false);
+
+  const unsettled = buildOwnerMessage({ type: "payment.unsettled", statusCode: 409 }, { siteUrl });
+  assert.match(unsettled.body, /הזמנות: https:\/\/shop\.example\.test\/admin\/orders$/);
+
+  const user = buildOwnerMessage({
+    type: "user.registered",
+    userId,
+    displayName: "דנה לוי",
+  }, { siteUrl });
+  assert.match(user.body, new RegExp(`כרטיס לקוח: https://shop\\.example\\.test/admin/customers/${userId}$`));
+
+  const anonymous = buildOwnerMessage({
+    type: "user.registered",
+    userId: "not-a-uuid",
+    displayName: "דנה",
+  }, { siteUrl });
+  assert.match(anonymous.body, /כרטיס לקוח: https:\/\/shop\.example\.test\/admin\/customers$/);
+  assert.equal(anonymous.body.includes("not-a-uuid"), false);
+
+  const error = buildOwnerMessage({
+    type: "server.error",
+    statusCode: 500,
+    method: "POST",
+    path: "/api/orders?token=super-secret",
+    runUrl,
+  }, { siteUrl });
+  assert.match(error.body, /נתיב: https:\/\/shop\.example\.test\/api\/orders\n/);
+  assert.match(error.body, new RegExp(`ריצה: ${runUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
+  assert.equal(error.body.includes("super-secret"), false);
+  assert.equal(error.body.includes("token="), false);
+
+  const noRun = buildOwnerMessage({
+    type: "server.error",
+    statusCode: 500,
+    method: "GET",
+    path: "/api/health",
+    runUrl: "http://git.example.test/org/repo/actions/runs/1",
+  }, { siteUrl });
+  assert.match(noRun.body, /נתיב: https:\/\/shop\.example\.test\/api\/health$/);
+  assert.equal(noRun.body.includes("ריצה:"), false);
+  assert.equal(noRun.body.includes("http://git.example.test"), false);
+
+  const down = buildOwnerMessage({
+    type: "site.down",
+    target: "https://example.test/api/health?x=1",
+    runUrl,
+  }, { siteUrl });
+  assert.match(down.body, /נתיב: https:\/\/shop\.example\.test\/api\/health\n/);
+  assert.match(down.body, /ריצה: https:\/\/git\.example\.test\/org\/repo\/actions\/runs\/4242/);
+  assert.equal(down.body.includes("x=1"), false);
+
+  const deploy = buildOwnerMessage({
+    type: "deploy",
+    ok: true,
+    sha,
+    commitUrl,
+    runUrl,
+  }, { siteUrl });
+  assert.match(deploy.body, /אתר: https:\/\/shop\.example\.test\/\n/);
+  assert.match(deploy.body, new RegExp(`קומיט: ${commitUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
+  assert.match(deploy.body, /ריצה: https:\/\/git\.example\.test\/org\/repo\/actions\/runs\/4242/);
+
+  const qa = buildOwnerMessage({ type: "qa", ok: true, summary: "החנות נפתחת" }, { siteUrl });
+  assert.match(qa.body, /אתר: https:\/\/shop\.example\.test\/$/);
+});
+
+test("a missing or unusable SITE_URL omits the link and invents no host", () => {
+  const event = {
+    type: "order.paid",
+    orderNumber: "MIPO-1001",
+    total: 10,
+    lines: [{ name: "רצועה", quantity: 1 }],
+  };
+  for (const value of ["", "javascript:alert(1)", "https://user:pass@shop.example.test", "https://shop.example.test?token=secret", "not a url"]) {
+    const message = buildOwnerMessage(event, { siteUrl: value });
+    assert.equal(message.body.includes("הזמנות:"), false, value);
+    assert.equal(message.body.includes("http"), false, value);
+    assert.equal(message.body.includes("javascript"), false, value);
+    assert.equal(message.body.includes("token="), false, value);
+    assert.equal(message.body.includes("user:pass"), false, value);
+  }
+  assert.equal(readOwnerNotifyConfig({ ...enabledEnv, SITE_URL: siteUrl }).siteUrl, siteUrl);
+  assert.equal(readOwnerNotifyConfig({ ...enabledEnv, SITE_URL: "https://shop.example.test/" }).siteUrl, siteUrl);
+  assert.equal(readOwnerNotifyConfig(enabledEnv).siteUrl, "");
+});
+
+test("a configured notifier without SITE_URL logs once and sends no site link", async () => {
+  const lines = [];
+  const { sent, transport } = recording();
+  const notifier = createOwnerNotifier({
+    env: enabledEnv,
+    transport,
+    log: { log: (line) => lines.push(line), error() {} },
+  });
+  notifier.notify({
+    type: "order.paid",
+    orderNumber: "MIPO-1001",
+    total: 10,
+    lines: [{ name: "רצועה", quantity: 1 }],
+  });
+  notifier.notify({ type: "qa", ok: true, summary: "בדיקה" });
+  await notifier.whenIdle();
+  assert.equal(lines.filter((line) => String(line).includes("SITE_URL")).length, 1);
+  assert.equal(sent[0].body.includes("http"), false);
+  assert.equal(sent[1].body.includes("http"), false);
+});
+
+test("the notifier puts SITE_URL on the message it sends", async () => {
+  const { sent, transport } = recording();
+  const notifier = createOwnerNotifier({
+    env: { ...enabledEnv, SITE_URL: siteUrl },
+    transport,
+    log: silent,
+  });
+  notifier.notify({
+    type: "order.paid",
+    orderId,
+    orderNumber: "MIPO-1001",
+    total: 10,
+    lines: [{ name: "רצועה", quantity: 1 }],
+  });
+  await notifier.whenIdle();
+  assert.match(sent[0].body, /הזמנות: https:\/\/shop\.example\.test\/admin\/orders/);
+  assert.equal(sent[0].body.includes(orderId), false);
+});
+
+test("actions links are built from the runner environment", async () => {
+  const gitEnv = {
+    GITHUB_SERVER_URL: "https://git.example.test",
+    GITHUB_REPOSITORY: "org/repo",
+    GITHUB_RUN_ID: "4242",
+    GITHUB_SHA: sha,
+  };
+  assert.deepEqual(githubLinksFromEnv(gitEnv), { runUrl, commitUrl });
+  assert.deepEqual(githubLinksFromEnv({
+    GITHUB_SERVER_URL: "http://git.example.test",
+    GITHUB_REPOSITORY: "org/repo",
+    GITHUB_RUN_ID: "4242",
+    GITHUB_SHA: sha,
+  }), {});
+  assert.deepEqual(githubLinksFromEnv({
+    GITHUB_SERVER_URL: "https://git.example.test/extra",
+    GITHUB_REPOSITORY: "org/repo",
+    GITHUB_RUN_ID: "4242",
+  }), {});
+
+  const bodies = [];
+  const success = await runOwnerNotifyCommand("deploy-success", {
+    env: { ...enabledEnv, ...gitEnv, SITE_URL: siteUrl, MIPO_DEPLOY_SHA: sha },
+    log: silent,
+    fetchImpl: async (_url, options) => {
+      bodies.push(new URLSearchParams(options.body).get("Body"));
+      return { ok: true, status: 201 };
+    },
+  });
+  assert.equal(success, 0);
+  assert.match(bodies[0], /אתר: https:\/\/shop\.example\.test\//);
+  assert.match(bodies[0], new RegExp(`קומיט: ${commitUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
+  assert.match(bodies[0], /ריצה: https:\/\/git\.example\.test\/org\/repo\/actions\/runs\/4242/);
+
+  const downBodies = [];
+  const down = await runOwnerNotifyCommand("site-health", {
+    env: { ...enabledEnv, ...gitEnv, SITE_URL: siteUrl, HEALTH_URL: "https://example.test/api/health" },
+    log: silent,
+    fetchImpl: async (url, options) => {
+      if (String(url).includes("api.twilio.com")) {
+        downBodies.push(new URLSearchParams(options.body).get("Body"));
+        return { ok: true, status: 201 };
+      }
+      return { ok: false, status: 503 };
+    },
+  });
+  assert.equal(down, 1);
+  assert.match(downBodies[0], /נתיב: https:\/\/shop\.example\.test\/api\/health/);
+  assert.match(downBodies[0], /ריצה: https:\/\/git\.example\.test\/org\/repo\/actions\/runs\/4242/);
+  assert.equal(downBodies[0].includes("https://example.test"), false);
 });
 
 test("the live request paths call the notifier", () => {
-  const source = readFileSync(new URL("../src/index.js", import.meta.url), "utf8");
-  assert.match(source, /notifyOwnerPaidOrder\(/);
-  assert.match(source, /reportPaidOrder\(notifyOwner/);
-  assert.match(source, /reportDeclinedPayment\(notifyOwner/);
-  assert.match(source, /reportUnsettledPayment\(notifyOwner/);
-  assert.match(source, /reportNewUser\(notifyOwner/);
-  assert.match(source, /reportServerError\(notifyOwner/);
-  assert.match(source, /authorizeOwnerQa\(/);
+  const indexSource = readFileSync(new URL("../src/index.js", import.meta.url), "utf8");
+  const notifierSource = readFileSync(new URL("../src/ownerNotify.js", import.meta.url), "utf8");
+  assert.match(indexSource, /notifyOwnerPaidOrder\(/);
+  assert.match(indexSource, /reportPaidOrder\(notifyOwner/);
+  assert.match(indexSource, /reportPaidOrder\(notifyOwner, \{ orderId, orderNumber, total, lines \}\)/);
+  assert.match(indexSource, /reportPaidOrder\(notifyOwner, \{\s*orderId: order\.id/);
+  assert.match(indexSource, /kind: "failed",\s*orderId: order\.id/);
+  assert.match(indexSource, /reportDeclinedPayment\(notifyOwner/);
+  assert.match(indexSource, /reportUnsettledPayment\(notifyOwner/);
+  assert.match(indexSource, /reportNewUser\(notifyOwner/);
+  assert.match(indexSource, /reportServerError\(notifyOwner/);
+  assert.match(indexSource, /authorizeOwnerQa\(/);
+  const productionHost = ["mipo", "pet"].join(".");
+  const forgeHost = ["github", "com"].join(".");
+  assert.equal(notifierSource.includes(productionHost), false);
+  assert.equal(notifierSource.includes(forgeHost), false);
 });

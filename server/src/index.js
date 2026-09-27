@@ -299,7 +299,7 @@ const notifyOwner = (event) => ownerNotifier.notify(event);
 
 const notifyOwnerPaidOrder = (orderId, orderNumber, total, lines) => {
   if (Array.isArray(lines)) {
-    reportPaidOrder(notifyOwner, { orderNumber, total, lines });
+    reportPaidOrder(notifyOwner, { orderId, orderNumber, total, lines });
     return;
   }
   schedulePaidOrderNotice(notifyOwner, async () => {
@@ -311,7 +311,7 @@ const notifyOwnerPaidOrder = (orderId, orderNumber, total, lines) => {
       name: row.product_name,
       quantity: row.quantity,
     }));
-  }, { orderNumber, total });
+  }, { orderId, orderNumber, total });
 };
 
 // Every AI call in the API goes through this gateway. Features never hold a
@@ -6515,6 +6515,7 @@ const createOrder = async (body, currentUser = null, eventOrigin = "app", option
     // paid, so this is its successful-payment notice. Cash on delivery is not.
     if (paymentStatus === "paid") {
       reportPaidOrder(notifyOwner, {
+        orderId: order.id,
         orderNumber: order.order_number,
         total: Number(order.total),
         lines: orderItems.map((item) => ({
@@ -7716,6 +7717,7 @@ const handleCardcomWebhook = async (request, url) => {
         });
         ownerNotice = {
           kind: "failed",
+          orderId: order.id,
           orderNumber: failed.order_number,
           total: Number(failed.total),
           operationResponse,

@@ -50,6 +50,8 @@ Server and Actions:
 - `TWILIO_WHATSAPP_FROM`
 - `OWNER_WHATSAPP_TO`
 
+Links, not a secret. The notifier reads `SITE_URL` and nothing else for the site origin. Set it in SSM (the sync script copies it into `/opt/mipo/.env`) to the same origin as `PUBLIC_APP_URL`. For deploy and site-health messages, set a repository Actions variable `SITE_URL`. If that variable is empty, those two workflows pass `vars.MIPO_PUBLIC_BASE_URL` into the process as `SITE_URL`. They do not invent a host in the workflow. A missing `SITE_URL` still sends the message, without a page link, and the process logs that once.
+
 Server only:
 
 - `OWNER_NOTIFY_QA_SECRET` — `POST /api/internal/owner-notify/qa`
@@ -70,3 +72,11 @@ curl -sS -X POST "$PUBLIC_BASE_URL/api/internal/owner-notify/qa" \
 ```
 
 `ok` is a JSON boolean. The response is 202 when the secret matches. The WhatsApp send still requires the Twilio settings above. Until `OWNER_NOTIFY_QA_SECRET` is set, the route answers 404.
+
+Every message appends a link built from `SITE_URL`:
+
+- Paid, declined, and unsettled payments link to `/admin/orders`. There is no `/admin/orders/:id` route, and the orders screen does not read an order id from the query string, so the message links to the list. The order number is in the text.
+- A new account links to `/admin/customers/:identityId`. For a signup that id is the app user id. `/admin/users` only redirects to the customer list.
+- A 5xx links to the failing path on `SITE_URL`, with the query string removed. There is no server-log page. `/admin/audit-log` is the admin action journal, so it is not used as a log link. A GitHub Actions run URL is added only when the event carries one.
+- Site-down links to `/api/health` on `SITE_URL`, plus the Actions run URL when that workflow provides it.
+- A deploy links to the site home page, the commit, and the Actions run. The commit and run URLs come from `GITHUB_SERVER_URL`, `GITHUB_REPOSITORY`, `GITHUB_RUN_ID`, and the sha. QA has no page of its own and links to the home page.

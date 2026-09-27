@@ -359,6 +359,7 @@ jobs:
           OWNER_WHATSAPP_TO: ${{ secrets.OWNER_WHATSAPP_TO }}
           TWILIO_WHATSAPP_CONTENT_SIDS: ${{ secrets.TWILIO_WHATSAPP_CONTENT_SIDS }}
           MIPO_DEPLOY_SHA: ${{ github.sha }}
+          SITE_URL: ${{ vars.SITE_URL || vars.MIPO_PUBLIC_BASE_URL }}
         run: node server/src/ownerNotifyCli.js deploy-failure
 
       - name: Tell the owner the production deploy succeeded
@@ -372,4 +373,5 @@ jobs:
           OWNER_WHATSAPP_TO: ${{ secrets.OWNER_WHATSAPP_TO }}
           TWILIO_WHATSAPP_CONTENT_SIDS: ${{ secrets.TWILIO_WHATSAPP_CONTENT_SIDS }}
           MIPO_DEPLOY_SHA: ${{ github.sha }}
+          SITE_URL: ${{ vars.SITE_URL || vars.MIPO_PUBLIC_BASE_URL }}
         run: node server/src/ownerNotifyCli.js deploy-success

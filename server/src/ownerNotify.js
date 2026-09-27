@@ -12,6 +12,9 @@
 // own copy; that would need a shared store.
 //
 // Nothing here may throw into a request. Callers do not await notify().
+//
+// Links use SITE_URL only. A missing or unusable value sends the message
+// without a link. The domain is never filled in from code.
 
 import { createHash, timingSafeEqual } from "node:crypto";
 
@@ -113,6 +116,101 @@ const shortSha = (value) => {
   return /^[a-f0-9]{7,40}$/i.test(text) ? text.slice(0, 12) : "";
 };
 
+const fullSha = (value) => {
+  const text = String(value ?? "").trim();
+  return /^[a-f0-9]{7,40}$/i.test(text) ? text : "";
+};
+
+/**
+ * Public site origin for links. http and https only, no userinfo, query, or
+ * fragment. A missing or unusable value means the message goes out without a
+ * link — the domain is never filled in from code.
+ */
+export const readSiteUrl = (value) => {
+  const text = String(value ?? "").trim();
+  if (!text) return "";
+  let url;
+  try {
+    url = new URL(text);
+  } catch {
+    return "";
+  }
+  if (url.protocol !== "https:" && url.protocol !== "http:") return "";
+  if (url.username || url.password || url.search || url.hash) return "";
+  const path = url.pathname === "/" ? "" : url.pathname.replace(/\/$/, "");
+  if (path.split("/").includes("..")) return "";
+  return `${url.origin}${path}`;
+};
+
+const safePagePath = (path) => {
+  const text = String(path ?? "");
+  if (!text.startsWith("/") || text.includes("..") || text.includes("\\") || text.includes("?") || text.includes("#")) {
+    return "";
+  }
+  return /^\/[A-Za-z0-9._~/-]*$/.test(text) ? text : "";
+};
+
+export const siteLink = (siteUrl, path) => {
+  const base = readSiteUrl(siteUrl);
+  const suffix = safePagePath(path);
+  if (!base || !suffix) return "";
+  return `${base}${suffix}`;
+};
+
+const safeExternalUrl = (value) => {
+  const text = String(value ?? "").trim();
+  if (!text) return "";
+  let url;
+  try {
+    url = new URL(text);
+  } catch {
+    return "";
+  }
+  if (url.protocol !== "https:" || url.username || url.password) return "";
+  return url.toString();
+};
+
+const accountId = (value) => (
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ""))
+    ? String(value)
+    : ""
+);
+
+/**
+ * Commit and Actions-run URLs from the variables GitHub Actions sets itself.
+ * The host comes from GITHUB_SERVER_URL. Nothing here names a forge.
+ */
+export const githubLinksFromEnv = (env = process.env) => {
+  const server = String(env.GITHUB_SERVER_URL || "").replace(/\/$/, "");
+  const repo = String(env.GITHUB_REPOSITORY || "");
+  if (!/^https:\/\/[A-Za-z0-9.-]+(?::\d+)?$/.test(server)) return {};
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo)) return {};
+  const links = {};
+  const runId = String(env.GITHUB_RUN_ID || "");
+  if (/^\d{1,20}$/.test(runId)) links.runUrl = `${server}/${repo}/actions/runs/${runId}`;
+  const sha = fullSha(env.MIPO_DEPLOY_SHA || env.GITHUB_SHA || "");
+  if (sha) links.commitUrl = `${server}/${repo}/commit/${sha}`;
+  return links;
+};
+
+const ORDERS_PATH = "/admin/orders";
+
+const labeledLinks = (pairs) => pairs.filter(([, href]) => href);
+
+const composeBody = (textLines, links) => {
+  const text = redactBody(textLines.filter(Boolean).join("\n"));
+  const linkText = links.map(([label, href]) => `${label}: ${href}`).join("\n");
+  if (!linkText) return text.slice(0, 1500);
+  const room = Math.max(0, 1500 - linkText.length - 1);
+  return `${text.slice(0, room)}\n${linkText}`;
+};
+
+const withPrimaryLink = (variables, links) => {
+  const href = links[0]?.[1];
+  if (!href) return variables;
+  return { ...variables, [String(Object.keys(variables).length + 1)]: href };
+};
+
 const unsettledReason = (statusCode) => {
   switch (statusCode) {
     case 409: return "הסכום שחויב לא תואם את ההזמנה";
@@ -127,13 +225,35 @@ const unsettledReason = (statusCode) => {
 
 const digest = (value) => createHash("sha256").update(String(value)).digest("hex").slice(0, 12);
 
+const finishMessage = (type, key, aggregate, textLines, variables, links) => {
+  const present = labeledLinks(links);
+  return {
+    type,
+    key,
+    aggregate,
+    body: composeBody(textLines, present),
+    contentVariables: withPrimaryLink(variables, present),
+  };
+};
+
 /**
  * Hebrew text for one event, plus the template variables a future Content SID
- * would fill. Returns null when the event is not one we send.
+ * would fill. Links are appended from siteUrl (SITE_URL). Returns null when
+ * the event is not one we send.
+ *
+ * There is no admin order page and no transaction page. /admin/orders is the
+ * list, and it does not read an order id from the query string, so paid,
+ * declined, and unsettled payments link there. An order id on the event is
+ * not placed in the path. /admin/customers/:identityId is the customer card;
+ * for an account that id is the app user id. There is no server-log page.
  */
-export const buildOwnerMessage = (event) => {
+export const buildOwnerMessage = (event, { siteUrl = "" } = {}) => {
   const type = event?.type;
   if (!EVENT_TYPES.has(type)) return null;
+  const ordersUrl = siteLink(siteUrl, ORDERS_PATH);
+  const homeUrl = siteLink(siteUrl, "/");
+  const runUrl = safeExternalUrl(event?.runUrl);
+  const commitUrl = safeExternalUrl(event?.commitUrl);
 
   if (type === "order.paid") {
     const orderNumber = cleanOrderNumber(event.orderNumber);
@@ -143,17 +263,15 @@ export const buildOwnerMessage = (event) => {
     if (orderNumber) lines.push(`מספר: ${orderNumber}`);
     if (amount) lines.push(`סכום: ${amount}`);
     lines.push(`מוצרים: ${products.length > 0 ? products.join(", ") : "לא פורטו"}`);
-    return {
+    const variables = { 1: orderNumber, 2: amount, 3: products.join(", ") };
+    return finishMessage(
       type,
-      key: `order.paid:${orderNumber || "unknown"}`,
-      aggregate: false,
-      body: redactBody(lines.join("\n")),
-      contentVariables: {
-        1: orderNumber,
-        2: amount,
-        3: products.join(", "),
-      },
-    };
+      `order.paid:${orderNumber || "unknown"}`,
+      false,
+      lines,
+      variables,
+      [["הזמנות", ordersUrl]],
+    );
   }
 
   if (type === "payment.failed") {
@@ -166,39 +284,43 @@ export const buildOwnerMessage = (event) => {
     if (orderNumber) lines.push(`מספר: ${orderNumber}`);
     if (amount) lines.push(`סכום: ${amount}`);
     if (code) lines.push(`קוד: ${code}`);
-    return {
+    return finishMessage(
       type,
-      key: `payment.failed:${orderNumber || "unknown"}`,
-      aggregate: false,
-      body: redactBody(lines.join("\n")),
-      contentVariables: { 1: orderNumber, 2: amount, 3: code },
-    };
+      `payment.failed:${orderNumber || "unknown"}`,
+      false,
+      lines,
+      { 1: orderNumber, 2: amount, 3: code },
+      [["הזמנות", ordersUrl]],
+    );
   }
 
   if (type === "payment.unsettled") {
     const statusCode = integerOrNull(event.statusCode) ?? 500;
     const reason = unsettledReason(statusCode);
-    return {
+    return finishMessage(
       type,
-      key: `payment.unsettled:${statusCode}`,
-      aggregate: true,
-      body: redactBody(`תשלום לא סומן כשולם\nסיבה: ${reason}`),
-      contentVariables: { 1: reason, 2: String(statusCode) },
-    };
+      `payment.unsettled:${statusCode}`,
+      true,
+      ["תשלום לא סומן כשולם", `סיבה: ${reason}`],
+      { 1: reason, 2: String(statusCode) },
+      [["הזמנות", ordersUrl]],
+    );
   }
 
   if (type === "user.registered") {
-    const userId = /^[0-9a-f-]{36}$/i.test(String(event.userId || "")) ? String(event.userId) : "";
+    const userId = accountId(event.userId);
     const name = scrubFreeText(event.displayName, 80);
     const lines = ["נרשם משתמש חדש"];
     if (name) lines.push(`שם: ${name}`);
-    return {
+    const profilePath = userId ? `/admin/customers/${userId}` : "/admin/customers";
+    return finishMessage(
       type,
-      key: `user.registered:${userId || digest(name || "anonymous")}`,
-      aggregate: false,
-      body: redactBody(lines.join("\n")),
-      contentVariables: { 1: name },
-    };
+      `user.registered:${userId || digest(name || "anonymous")}`,
+      false,
+      lines,
+      { 1: name },
+      [["כרטיס לקוח", siteLink(siteUrl, profilePath)]],
+    );
   }
 
   if (type === "server.error") {
@@ -206,26 +328,35 @@ export const buildOwnerMessage = (event) => {
     const method = httpMethod(event.method);
     const path = requestPath(event.path);
     const where = [method, path].filter(Boolean).join(" ");
-    return {
+    return finishMessage(
       type,
-      key: `server.error:${statusCode}:${method}:${path || "-"}`,
-      aggregate: true,
-      body: redactBody(`שגיאת שרת ${statusCode}\n${where}`.trim()),
-      contentVariables: { 1: String(statusCode), 2: where },
-    };
+      `server.error:${statusCode}:${method}:${path || "-"}`,
+      true,
+      [`שגיאת שרת ${statusCode}`, where],
+      { 1: String(statusCode), 2: where },
+      [
+        ["נתיב", path ? siteLink(siteUrl, path) : ""],
+        ["ריצה", runUrl],
+      ],
+    );
   }
 
   if (type === "site.down") {
     const host = hostOf(event.target);
     const lines = ["האתר לא מגיב", "בדיקת הבריאות נכשלה"];
-    if (host) lines.push(host);
-    return {
+    const health = siteLink(siteUrl, "/api/health");
+    if (!health && host) lines.push(host);
+    return finishMessage(
       type,
-      key: "site.down",
-      aggregate: true,
-      body: redactBody(lines.join("\n")),
-      contentVariables: { 1: host },
-    };
+      "site.down",
+      true,
+      lines,
+      { 1: health || host },
+      [
+        ["נתיב", health],
+        ["ריצה", runUrl],
+      ],
+    );
   }
 
   if (type === "deploy") {
@@ -233,26 +364,32 @@ export const buildOwnerMessage = (event) => {
     const sha = shortSha(event.sha);
     const lines = [ok ? "פריסה לייצור הצליחה" : "פריסה לייצור נכשלה"];
     if (sha) lines.push(`גרסה: ${sha}`);
-    return {
+    return finishMessage(
       type,
-      key: `deploy:${ok ? "ok" : "fail"}:${sha || "unknown"}`,
-      aggregate: false,
-      body: redactBody(lines.join("\n")),
-      contentVariables: { 1: ok ? "הצליחה" : "נכשלה", 2: sha },
-    };
+      `deploy:${ok ? "ok" : "fail"}:${sha || "unknown"}`,
+      false,
+      lines,
+      { 1: ok ? "הצליחה" : "נכשלה", 2: sha },
+      [
+        ["אתר", homeUrl],
+        ["קומיט", commitUrl],
+        ["ריצה", runUrl],
+      ],
+    );
   }
 
   const summary = scrubFreeText(event.summary, 180);
   const ok = event.ok === true;
   const lines = [ok ? "בדיקה אחרי פריסה: עברה" : "בדיקה אחרי פריסה: נכשלה"];
   if (summary) lines.push(summary);
-  return {
-    type: "qa",
-    key: `qa:${ok ? "ok" : "fail"}:${digest(summary)}`,
-    aggregate: false,
-    body: redactBody(lines.join("\n")),
-    contentVariables: { 1: ok ? "עברה" : "נכשלה", 2: summary },
-  };
+  return finishMessage(
+    "qa",
+    `qa:${ok ? "ok" : "fail"}:${digest(summary)}`,
+    false,
+    lines,
+    { 1: ok ? "עברה" : "נכשלה", 2: summary },
+    [["אתר", homeUrl]],
+  );
 };
 
 export const aggregateLine = (count, windowMs) => {
@@ -309,6 +446,7 @@ export const readOwnerNotifyConfig = (env = process.env) => {
     windowMs: Math.min(24 * 60 * 60 * 1000, Math.max(1000, positiveInt(env.OWNER_NOTIFY_THROTTLE_MS, DEFAULT_WINDOW_MS))),
     timeoutMs: Math.min(10_000, Math.max(500, positiveInt(env.OWNER_NOTIFY_TIMEOUT_MS, DEFAULT_TIMEOUT_MS))),
     contentSids: parseContentSids(env.TWILIO_WHATSAPP_CONTENT_SIDS),
+    siteUrl: readSiteUrl(env.SITE_URL),
   };
 };
 
@@ -424,6 +562,7 @@ const safeNotify = (notify, event) => {
 
 export const reportPaidOrder = (notify, notice) => safeNotify(notify, {
   type: "order.paid",
+  orderId: notice?.orderId,
   orderNumber: notice?.orderNumber,
   total: notice?.total,
   lines: notice?.lines,
@@ -431,6 +570,7 @@ export const reportPaidOrder = (notify, notice) => safeNotify(notify, {
 
 export const reportDeclinedPayment = (notify, notice) => safeNotify(notify, {
   type: "payment.failed",
+  orderId: notice?.orderId,
   orderNumber: notice?.orderNumber,
   total: notice?.total,
   operationResponse: notice?.operationResponse,
@@ -539,13 +679,20 @@ export const createOwnerNotifier = ({
       timeoutMs: resolvedTimeout,
     })
     : null);
-  let warned = false;
+  let warnedDisabled = false;
+  let warnedSite = false;
   let chain = Promise.resolve();
 
   const warnDisabled = () => {
-    if (warned) return;
-    warned = true;
+    if (warnedDisabled) return;
+    warnedDisabled = true;
     log.log?.("[owner-notify] off (missing OWNER_NOTIFICATIONS_ENABLED or Twilio WhatsApp settings)");
+  };
+
+  const warnMissingSite = () => {
+    if (config.siteUrl || warnedSite) return;
+    warnedSite = true;
+    log.log?.("[owner-notify] SITE_URL is not set; messages will not include links");
   };
 
   const send = async (message) => {
@@ -577,6 +724,7 @@ export const createOwnerNotifier = ({
   };
 
   if (!config.enabled) warnDisabled();
+  else warnMissingSite();
 
   const notify = (event) => {
     try {
@@ -584,7 +732,7 @@ export const createOwnerNotifier = ({
         warnDisabled();
         return;
       }
-      const built = buildOwnerMessage(event);
+      const built = buildOwnerMessage(event, { siteUrl: config.siteUrl });
       if (!built) return;
       const decision = throttle.take(built.key);
       if (!decision.deliver) return;
@@ -629,11 +777,14 @@ export const runOwnerNotifyCommand = async (command, {
   log = console,
 } = {}) => {
   const notifier = createOwnerNotifier({ env, fetchImpl, log });
+  const links = githubLinksFromEnv(env);
   if (command === "deploy-success" || command === "deploy-failure") {
     notifier.notify({
       type: "deploy",
       ok: command === "deploy-success",
       sha: env.MIPO_DEPLOY_SHA || env.GITHUB_SHA || "",
+      commitUrl: links.commitUrl,
+      runUrl: links.runUrl,
     });
     await notifier.whenIdle();
     return 0;
@@ -646,7 +797,7 @@ export const runOwnerNotifyCommand = async (command, {
     }
     const ok = await probeHealth(url, { fetchImpl });
     if (ok) return 0;
-    notifier.notify({ type: "site.down", target: url });
+    notifier.notify({ type: "site.down", target: url, runUrl: links.runUrl });
     await notifier.whenIdle();
     return 1;
   }

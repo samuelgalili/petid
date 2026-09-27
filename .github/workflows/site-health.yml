@@ -41,4 +41,5 @@ jobs:
           TWILIO_WHATSAPP_FROM: ${{ secrets.TWILIO_WHATSAPP_FROM }}
           OWNER_WHATSAPP_TO: ${{ secrets.OWNER_WHATSAPP_TO }}
           TWILIO_WHATSAPP_CONTENT_SIDS: ${{ secrets.TWILIO_WHATSAPP_CONTENT_SIDS }}
+          SITE_URL: ${{ vars.SITE_URL || vars.MIPO_PUBLIC_BASE_URL }}
         run: node server/src/ownerNotifyCli.js site-health
