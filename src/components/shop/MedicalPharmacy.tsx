@@ -10,7 +10,7 @@ import { useCart } from "@/contexts/CartContext";
 import { ShopRailCard } from "@/components/shop/ShopRailCard";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { getShopProducts } from "@/lib/mipoApi";
+import { getPublicShopProducts } from "@/lib/mipoApi";
 
 interface MedicalCategory {
   id: string;
@@ -51,7 +51,7 @@ export const MedicalPharmacy = () => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        const data = (await getShopProducts()).filter((product) => product.in_stock !== false);
+        const data = (await getPublicShopProducts()).filter((product) => product.in_stock !== false);
 
         const petConditions = pet?.medical_conditions?.map(c => c.toLowerCase()) || [];
 

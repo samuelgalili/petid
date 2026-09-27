@@ -11,7 +11,7 @@ import { useCart } from "@/contexts/CartContext";
 import { ShopRailCard } from "@/components/shop/ShopRailCard";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { getShopProducts } from "@/lib/mipoApi";
+import { getPublicShopProducts } from "@/lib/mipoApi";
 
 interface RecommendedProduct {
   id: string;
@@ -147,7 +147,7 @@ export const SmartRecommendations = () => {
     const fetchAndScore = async () => {
       setLoading(true);
       try {
-        const data = await getShopProducts();
+        const data = await getPublicShopProducts();
 
         if (!data || data.length === 0) {
           setProducts([]);
