@@ -8,8 +8,21 @@ test("an import slug is a Hebrew shelf name", () => {
   assert.equal(displayCategoryLabel(undefined, "DRY-FOOD"), "מזון יבש");
   assert.equal(displayCategoryLabel(null, "dry food"), "מזון יבש");
   assert.equal(displayCategoryLabel(null, "wet-food"), "מזון רטוב");
-  assert.equal(displayCategoryLabel(null, "treats"), "חטיפים");
-  assert.equal(displayCategoryLabel(null, "accessories"), "אביזרים");
+  assert.equal(displayCategoryLabel(null, "food-dry"), "אוכל יבש");
+  assert.equal(displayCategoryLabel(null, "food-wet"), "אוכל רטוב");
+  assert.equal(displayCategoryLabel(null, null, "beds"), "מיטות");
+  for (const [slug, label] of [
+    ["treats", "חטיפים"],
+    ["health", "בריאות"],
+    ["grooming", "טיפוח"],
+    ["toys", "צעצועים"],
+    ["accessories", "אביזרים"],
+    ["other", "אחר"],
+    ["supplements", "בריאות"],
+    ["snacks", "חטיפים"],
+  ]) {
+    assert.equal(displayCategoryLabel(null, slug), label, slug);
+  }
 });
 
 test("a Hebrew category name is kept", () => {

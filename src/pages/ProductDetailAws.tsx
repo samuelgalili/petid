@@ -233,7 +233,7 @@ const ProductDetailAws = () => {
     return [
       ...always,
       { label: "משקל", value: weight },
-      { label: "קטגוריה", value: displayCategoryLabel(product.category_name, product.category) || NOT_SPECIFIED },
+      { label: "קטגוריה", value: displayCategoryLabel(product.category_name, product.category, product.category_slug) || NOT_SPECIFIED },
       { label: "מלאי", value: product.in_stock === false ? "אזל מהמלאי" : "במלאי" },
       ...optional,
       ...readCustomerSpecAttributes(product.product_attributes),
@@ -288,7 +288,7 @@ const ProductDetailAws = () => {
     );
   }
 
-  const categoryLabel = displayCategoryLabel(product.category_name, product.category);
+  const categoryLabel = displayCategoryLabel(product.category_name, product.category, product.category_slug);
 
   // Portaled to document.body. The page transition wrapper animates with a
   // filter and a transform, and either one is a containing block, so a

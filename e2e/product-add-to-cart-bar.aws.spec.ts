@@ -126,6 +126,40 @@ test.describe("mobile product bar and shop prices", () => {
     await expect(page.getByText("מזון יבש", { exact: true }).first()).toBeVisible();
   });
 
+  test("support text scrolls clear of the add button at 390px", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "Mobile Chrome", "Mobile Chrome");
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.route("**/api/**", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: "{}",
+    }));
+    await page.route("**/api/auth/me", (route) => route.fulfill({
+      status: 401,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "Unauthorized" }),
+    }));
+
+    await page.goto("/support");
+    const fab = page.getByRole("button", { name: "הוספת חיה" });
+    const last = page.getByRole("button", { name: "הצהרת נגישות" });
+    await expect(fab).toBeVisible();
+    await page.getByTestId("support-scroll").evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+    });
+    await expect(last).toBeVisible();
+
+    const fabBox = await fab.boundingBox();
+    const lastBox = await last.boundingBox();
+    const viewport = page.viewportSize();
+    expect(fabBox).not.toBeNull();
+    expect(lastBox).not.toBeNull();
+    expect(lastBox!.y).toBeGreaterThanOrEqual(0);
+    expect(lastBox!.y + lastBox!.height).toBeLessThanOrEqual((viewport?.height ?? 844) + 1);
+    expect(boxesOverlap(fabBox!, lastBox!)).toBe(false);
+    expect(lastBox!.y + lastBox!.height).toBeLessThanOrEqual(fabBox!.y + 2);
+  });
+
   test("the struck price is not under the favorite heart", async ({ page }) => {
     await mockShop(page);
     await page.goto("/shop");
