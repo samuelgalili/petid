@@ -19,8 +19,25 @@ const MOODS: { id: PrototypeMood; label: string }[] = [
 ];
 
 const SPECIES: { id: PrototypeSpecies; label: string }[] = [
-  { id: "cat", label: "חתול" },
-  { id: "dog", label: "כלב" },
+  { id: "cat", label: "גוף בדיקה: חתול" },
+  { id: "dog", label: "גוף בדיקה: כלב" },
+];
+
+const PIPELINE = [
+  "העלאה בפרופיל של חיית המחמד, תמונה אחת שלה.",
+  "שער איכות לפני כל הוצאה: גוף מלא, חיה אחת, אור ורזולוציה, מבט מהצד או משלושת רבעים. דחייה בעברית, בלי קריאה לספק.",
+  "תור בשרת: אותו גיבוב של חיית מחמד ותמונה לא נשלח פעמיים, עם ניסיונות חוזרים ותקרה יומית.",
+  "ריג אוטומטי על ארבע. מנוחה, נשימה וזנב בקוד — לספק יש רק קליפ הליכה.",
+  "שמירת GLB לכל חיית מחמד, דחוס, עם תקרת משקל לטלפון.",
+  "בזמן ההמתנה נשארת התמונה, עם משפט שהבנייה אורכת כמה דקות. בסיום, התראה בתוך האפליקציה.",
+  "כשל, או דגל כבוי: שוב התמונה הרגילה.",
+];
+
+const REJECTIONS = [
+  "רואים רק חלק מהחיה. צריך שכל הגוף יופיע בתמונה — ראש, גוף, רגליים וזנב.",
+  "בתמונה יש יותר מחיית מחמד אחת, או שזו לא החיה מהפרופיל. צלמו רק אותה.",
+  "התמונה קטנה מדי, כהה מדי, או לא חדה. צלמו באור יום, עם כל הגוף בפריים.",
+  "התמונה ישר מלפנים. עדיף מהצד, או בזווית של שלושת רבעים, כדי שהמודל יקבל עומק.",
 ];
 
 /**
@@ -83,8 +100,26 @@ const PetAvatarPrototype = () => {
           דמות חיה במרכז המסך
         </h1>
         <p className="mt-3 text-sm leading-6 text-mipo-muted">
-          אב טיפוס לבדיקת נפח, נשימה, מצמוץ, זנב ומגע. זו לא הדמות של חיית מחמד אמיתית, והמסך הזה לא נכלל בבנייה לייצור.
+          התכנון הוא דגם ריאליסטי נפרד לכל חיית מחמד, מהתמונה שהועלתה. הדף הזה לא מעלה תמונה, לא קורא לספק, ואין בו מפתח. הוא לא נכלל בבנייה לייצור, והדגל כבוי.
         </p>
+
+        <section className="mt-8" aria-labelledby="pipeline-heading">
+          <h2 id="pipeline-heading" className="text-sm font-semibold text-mipo-ink">הצינור המתוכנן</h2>
+          <p className="mt-1 text-sm leading-6 text-mipo-muted">
+            רשימה בלבד. אין כאן כפתור שמתחיל יצירה.
+          </p>
+          <ol className="mt-3 list-inside list-decimal space-y-2 text-sm leading-6 text-mipo-ink">
+            {PIPELINE.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
+          <h3 className="mt-4 text-sm font-semibold text-mipo-ink">משוב אם התמונה נדחית</h3>
+          <ul className="mt-2 space-y-2 text-sm leading-6 text-mipo-muted">
+            {REJECTIONS.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </section>
 
         <section className="mt-8" aria-labelledby="today-heading">
           <h2 id="today-heading" className="text-sm font-semibold text-mipo-ink">מה שרואים היום בלי חבילת דמות</h2>
@@ -106,11 +141,11 @@ const PetAvatarPrototype = () => {
         </section>
 
         <section className="mt-10" aria-labelledby="proposal-heading">
-          <h2 id="proposal-heading" className="text-sm font-semibold text-mipo-ink">הצעה: נפח שמגיב</h2>
+          <h2 id="proposal-heading" className="text-sm font-semibold text-mipo-ink">תנועת מנוחה בקוד, עד שיהיה קובץ של החיה</h2>
           <p className="mt-1 text-sm leading-6 text-mipo-muted">
             {showScene
-              ? "WebGL מקומי, בלי ספרייה ובלי קובץ מודל. הקישו על הדמות."
-              : "WebGL לא זמין כאן, אז נשארת התמונה בעיגול — אותו גיבוי שההצעה שומרת למשתמשים."}
+              ? "הכדורים בודקים נשימה, מצמוץ, זנב ומגע. זו לא הדמות הריאליסטית, ולא דגם משותף למין. הקישו על הדמות."
+              : "WebGL לא זמין כאן, אז נשארת התמונה בעיגול — אותו גיבוי שנשאר כשהדגל כבוי או כשהיצירה נכשלת."}
           </p>
           <div className="mt-4 flex justify-center">
             {showScene ? (
@@ -139,7 +174,7 @@ const PetAvatarPrototype = () => {
             )}
           </div>
 
-          <div className="mt-6 flex justify-center gap-2" role="group" aria-label="מין הדמות">
+          <div className="mt-6 flex flex-wrap justify-center gap-2" role="group" aria-label="צורת גוף לבדיקת תנועה">
             {SPECIES.map((item) => (
               <button
                 key={item.id}
