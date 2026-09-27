@@ -13,6 +13,7 @@ import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 
 import { clipPlainText, plainText } from "./productText.js";
+import { SUPPORT_EMAIL, SUPPORT_PHONE } from "../../src/lib/siteContact.js";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const FALLBACK_ORIGIN = "https://mipo.pet";
@@ -56,7 +57,7 @@ const PAGE_META = {
   },
   "/support": {
     title: "תמיכה",
-    description: "תמיכה של MIPO באימייל support@mipo.pet, ובדף העזרה.",
+    description: `תמיכה של MIPO בוואטסאפ ${SUPPORT_PHONE} ובאימייל ${SUPPORT_EMAIL}.`,
   },
   "/accessibility": {
     title: "הצהרת נגישות",

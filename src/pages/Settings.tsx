@@ -541,7 +541,7 @@ const Settings = () => {
             <SettingRow
               icon={Info}
               label="תמיכה ועזרה"
-              description="צ'אט, טלפון, שאלות נפוצות"
+              description="וואטסאפ, אימייל, שאלות נפוצות"
               action={() => navigate("/support")}
             />
           </SettingsSection>

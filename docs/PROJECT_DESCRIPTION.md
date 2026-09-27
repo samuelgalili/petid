@@ -572,8 +572,8 @@ mipo/
 ## 📞 תמיכה
 
 - Email: support@mipo.pet
-- WhatsApp: בקרוב
-- Help Center: בקרוב
+- WhatsApp: 050-5929209 (https://wa.me/972505929209)
+- Help Center: https://mipo.pet/support
 
 ---
 
