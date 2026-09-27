@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Search, SlidersHorizontal, X, Dog, Cat } from "lucide-react";
+import { displayCategoryLabel } from "@/lib/categoryLabel";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ProductFilters {
@@ -159,7 +160,7 @@ export const AdvancedProductSearch = ({
                     {categories.map((cat) => (
                       <div key={cat} className="flex items-center space-x-2 space-x-reverse">
                         <RadioGroupItem value={cat} id={`cat-${cat}`} />
-                        <Label htmlFor={`cat-${cat}`} className="font-normal">{cat}</Label>
+                        <Label htmlFor={`cat-${cat}`} className="font-normal">{displayCategoryLabel(null, cat) || cat}</Label>
                       </div>
                     ))}
                   </RadioGroup>
@@ -264,7 +265,7 @@ export const AdvancedProductSearch = ({
             )}
             {filters.category && (
               <Badge variant="secondary" className="gap-1">
-                {filters.category}
+                {displayCategoryLabel(null, filters.category) || filters.category}
                 <X
                   className="w-3 h-3 cursor-pointer"
                   onClick={() => handleFilterChange('category', undefined)}

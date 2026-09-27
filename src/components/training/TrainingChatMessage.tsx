@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Bot, User, Check, X, Camera, Play, Clock, Star, ShoppingBag, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CountFraction } from "@/components/CountFraction";
 
 interface TrainingChatMessageProps {
   type: 'bot' | 'user' | 'system';
@@ -150,7 +151,9 @@ export const ModuleCard = ({
         <span className="text-2xl">{icon}</span>
         <div className="flex-1">
           <h4 className="font-semibold text-gray-900 text-sm">{title}</h4>
-          <p className="text-xs text-gray-500">{completedCount}/{lessonsCount} שיעורים</p>
+          <p className="text-xs text-gray-500">
+            <CountFraction current={completedCount} total={lessonsCount} separator="/" /> שיעורים
+          </p>
         </div>
         <ArrowLeft className="w-4 h-4 text-gray-400" />
       </div>

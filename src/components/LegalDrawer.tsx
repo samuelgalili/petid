@@ -111,9 +111,21 @@ export const LegalDrawer = () => {
               </button>
             </div>
 
-            {/* Content */}
-            <ScrollArea className="flex-1 px-5 pb-8">
-              <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+            {/* Radix defaults this viewport to dir=ltr, which reverses Hebrew
+                numbered lines ("1. זכות ביטול עסקה:" paints as ":זכות ביטול עסקה .1").
+                Every policy in this drawer shares the scroll area. */}
+            <ScrollArea
+              data-testid="legal-policy-scroll"
+              className="flex-1 px-5 pb-8"
+              dir={direction}
+            >
+              <p
+                data-testid="legal-policy-body"
+                dir={direction}
+                className={`text-sm text-muted-foreground leading-relaxed whitespace-pre-line ${
+                  direction === "rtl" ? "text-right" : "text-left"
+                }`}
+              >
                 {localized.body}
               </p>
             </ScrollArea>

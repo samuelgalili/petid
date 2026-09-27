@@ -64,7 +64,9 @@ const Support = () => {
   return (
     <div className="h-screen bg-surface overflow-hidden" dir="rtl">
       <SEO title="תמיכה" description={`תמיכה של MIPO בוואטסאפ ${SUPPORT_PHONE} ובאימייל ${SUPPORT_EMAIL}.`} url="/support" />
-      <div className="h-full overflow-y-auto pb-[70px]">
+      {/* 70px cleared the nav and left the last links under the companion.
+          The + sits 88px up and is 56px tall, so the scroll needs room past it. */}
+      <div data-testid="support-scroll" className="h-full overflow-y-auto pb-[calc(10.5rem+env(safe-area-inset-bottom))]">
       {/* Header */}
       <div className="bg-card border-b border-border sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">

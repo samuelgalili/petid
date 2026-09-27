@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
 import { FREE_SHIPPING_THRESHOLD } from "@/lib/shipping";
+import { DiscountPercent } from "@/components/shop/DiscountPercent";
 
 interface Product {
   id: string;
@@ -144,7 +145,7 @@ export const RecommendedProducts = ({
                     />
                     {product.originalPrice && product.originalPrice > product.price && (
                       <div className="absolute top-1 right-1 bg-destructive text-destructive-foreground text-[9px] px-1.5 py-0.5 rounded-full font-bold">
-                        -{Math.round((1 - product.price / product.originalPrice) * 100)}%
+                        <DiscountPercent percent={Math.round((1 - product.price / product.originalPrice) * 100)} />
                       </div>
                     )}
                   </div>

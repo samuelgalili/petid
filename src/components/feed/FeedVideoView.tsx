@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import { haptic } from "@/lib/haptics";
+import { displayCategoryLabel } from "@/lib/categoryLabel";
 
 interface FeedItem {
   type: 'post' | 'adoption' | 'product' | 'ad' | 'suggested' | 'challenge';
@@ -358,9 +359,9 @@ export const FeedVideoView = ({ items, currentUserId, onLike, onSave }: FeedVide
                       ⚖️ {item.data.weight_unit}
                     </span>
                   )}
-                  {item.data.category && (
+                  {displayCategoryLabel(item.data.category_name, item.data.category, item.data.category_slug) && (
                     <span className="bg-white/10 rounded-full px-2 py-1 text-[11px]">
-                      {item.data.category}
+                      {displayCategoryLabel(item.data.category_name, item.data.category, item.data.category_slug)}
                     </span>
                   )}
                   {item.data.flavors?.length > 0 && (
