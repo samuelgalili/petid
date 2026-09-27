@@ -56,17 +56,20 @@ export const publiclyVisibleProduct = (product, view) => {
 /**
  * Split a cart against the public catalogue.
  *
- * catalogueIds === null means the catalogue has not loaded. Treat every line
- * as still available so a failed request does not empty a basket. A loaded
- * catalogue that does not contain the id means the product is hidden (or
- * gone): show it, and do not charge it.
+ * Fail open. null (still loading or the request failed) and an empty id list
+ * are not evidence that a line is hidden, so every line stays available and
+ * checkout is not blocked. Only a non-empty storefront response that omits
+ * the id is positive: show that line, and do not charge it. POST /api/orders
+ * still refuses a hidden id.
  */
 export const partitionCartByCatalogue = (items, catalogueIds) => {
   const list = Array.isArray(items) ? items : [];
-  if (catalogueIds == null) {
+  const known = catalogueIds == null
+    ? null
+    : (catalogueIds instanceof Set ? catalogueIds : new Set(catalogueIds));
+  if (known == null || known.size === 0) {
     return { available: list.slice(), unavailable: [], catalogueKnown: false };
   }
-  const known = catalogueIds instanceof Set ? catalogueIds : new Set(catalogueIds);
   const available = [];
   const unavailable = [];
   for (const item of list) {

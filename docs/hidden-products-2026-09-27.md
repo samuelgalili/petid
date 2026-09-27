@@ -63,7 +63,7 @@ Not hidden: `9f795f85-dbb0-4a8e-8c05-8e39e5ae0d38` (the adult package those pupp
 
 ## How a cart behaves
 
-A line whose id is absent from the public catalogue is shown as "המוצר אינו זמין כרגע" and is left out of the subtotal, the shipping threshold and the order payload. The remaining lines check out on their own. If a client still posts a hidden id, `POST /api/orders` refuses that order with "המוצר אינו זמין לרכישה. אפשר להמשיך עם שאר הפריטים בעגלה." and writes nothing. The order total is still the sum of the lines the server resolved. The Cardcom webhook is unchanged and settles that total.
+A line is shown as "המוצר אינו זמין כרגע" and left out of the subtotal, the shipping threshold and the order payload only when a successful storefront response lists other products and not this one. An empty catalogue, a failed lookup, or a lookup that is still loading does not block checkout. If a client still posts a hidden id, `POST /api/orders` refuses that order with "המוצר אינו זמין לרכישה. אפשר להמשיך עם שאר הפריטים בעגלה." and writes nothing. The order total is still the sum of the lines the server resolved. The Cardcom webhook is unchanged and settles that total.
 
 ## How to hide, and how to restore
 
