@@ -4,7 +4,7 @@
  */
 
 import { useMemo } from "react";
-import { HelpCircle, ShieldAlert, ShieldX } from "lucide-react";
+import { ShieldAlert, ShieldX } from "lucide-react";
 import type { ActivePet } from "@/hooks/useActivePet";
 
 export type ProductSafety = "safe" | "caution" | "unsafe" | "unknown";
@@ -44,7 +44,7 @@ const SAFETY_RULES: { condition: string[]; unsafeKeywords: string[]; reason: str
 
 export function checkProductSafety(productText: string, pet: ActivePet | null): SafetyCheckResult {
   if (!pet?.medical_conditions || pet.medical_conditions.length === 0) {
-    return { level: "unknown", reason: "לא ניתן לאמת התאמה רפואית מפרטי הקטלוג" };
+    return { level: "unknown", reason: null };
   }
 
   const lower = productText.toLowerCase();
@@ -64,7 +64,7 @@ export function checkProductSafety(productText: string, pet: ActivePet | null): 
     }
   }
 
-  return { level: "unknown", reason: "לא נמצא מידע מספיק לאימות התאמה רפואית" };
+  return { level: "unknown", reason: null };
 }
 
 export function useShopSafety(productName: string, description: string, pet: ActivePet | null): SafetyCheckResult {
@@ -77,12 +77,13 @@ export function useShopSafety(productName: string, description: string, pet: Act
 interface SafetyBadgeProps {
   level: ProductSafety;
   reason: string | null;
-  petName?: string;
   compact?: boolean;
 }
 
-export const SafetyBadge = ({ level, reason, petName, compact = false }: SafetyBadgeProps) => {
-  if (level === "safe") return null;
+export const SafetyBadge = ({ level, reason, compact = false }: SafetyBadgeProps) => {
+  // "unknown" used to print a medical-verification line on ordinary food.
+  // With no reason there is nothing to show, including the question-mark mark.
+  if (level === "safe" || level === "unknown" || !reason) return null;
 
   if (compact) {
     /**
@@ -104,11 +105,9 @@ export const SafetyBadge = ({ level, reason, petName, compact = false }: SafetyB
      */
     const treatment = level === "unsafe"
       ? "bg-destructive/15 border-destructive/30 text-destructive"
-      : level === "unknown"
-        ? "bg-mipo-soft/90 border-mipo-line text-mipo-muted"
-        : "bg-mipo-peach/15 border-mipo-peach/40 text-mipo-peach";
+      : "bg-mipo-peach/15 border-mipo-peach/40 text-mipo-peach";
 
-    const Glyph = level === "unsafe" ? ShieldX : level === "unknown" ? HelpCircle : ShieldAlert;
+    const Glyph = level === "unsafe" ? ShieldX : ShieldAlert;
 
     return (
       <div className="absolute top-1.5 left-1.5 z-10">
@@ -124,17 +123,11 @@ export const SafetyBadge = ({ level, reason, petName, compact = false }: SafetyB
       className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] font-semibold ${
         level === "unsafe"
           ? "bg-destructive/10 text-destructive border border-destructive/20"
-          : level === "unknown"
-            ? "bg-muted text-muted-foreground border border-border"
-            // mipo-peach, not amber-500: the same token the compact mark uses,
-            // and it inverts with the theme, which amber-700 ink never did.
-            : "bg-mipo-peach/15 text-mipo-peach border border-mipo-peach/30"
+          : "bg-mipo-peach/15 text-mipo-peach border border-mipo-peach/30"
       }`}
     >
       {level === "unsafe" ? (
         <ShieldX className="w-3 h-3" strokeWidth={2} />
-      ) : level === "unknown" ? (
-        <HelpCircle className="w-3 h-3" strokeWidth={2} />
       ) : (
         <ShieldAlert className="w-3 h-3" strokeWidth={2} />
       )}

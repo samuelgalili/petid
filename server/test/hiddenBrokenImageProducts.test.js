@@ -240,6 +240,11 @@ test("a cart keeps the hidden line visible, drops it from the total, and can sti
   assert.equal(unknown.unavailable.length, 0);
   assert.equal(chargeableSubtotal(unknown.available), 360);
 
+  const empty = partitionCartByCatalogue(items, []);
+  assert.equal(empty.catalogueKnown, false);
+  assert.equal(empty.unavailable.length, 0);
+  assert.equal(chargeableSubtotal(empty.available), 360);
+
   const cart = read("src/pages/Cart.tsx");
   const checkout = read("src/pages/Checkout.tsx");
   assert.match(cart, /UNAVAILABLE_ITEM_HE/);

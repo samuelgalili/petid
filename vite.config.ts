@@ -48,7 +48,8 @@ export default defineConfig(({ mode }) => {
           short_name: "MIPO",
           description: "אפליקציה לניהול ומעקב אחר חיות המחמד שלכם - פרופיל, טיפול, חנות וקהילה",
           theme_color: "#6C63FF",
-          background_color: "#FFFFFF",
+          // Plain shell, the same colour as the empty wait (--mipo-soft).
+          background_color: "#f6f6f4",
           display: "standalone",
           orientation: "portrait",
           scope: "/",

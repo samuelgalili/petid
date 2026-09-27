@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { ShoppingCart, Loader2, Shield, Sparkles } from "lucide-react";
+import { ShoppingCart, Loader2, Shield } from "lucide-react";
 import { ServiceBottomSheet } from "./ServiceBottomSheet";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
@@ -65,7 +65,7 @@ const personalizedCopy = (category: SmartRecommendationSheetProps['category'], p
     coat: `מתאים לשגרת הטיפוח של ${petName}`,
     energy: `עוזר להוציא אנרגיה בצורה בטוחה`,
     health: `בחירה שימושית לשגרת בריאות מונעת`,
-    feeding: `מוצר תזונה שמתאים לפרופיל של ${petName}`,
+    feeding: "מזון מהחנות",
     mobility: `תמיכה עדינה במפרקים ובניידות`,
     digestion: `מתאים לבטן רגישה ושגרת עיכול יציבה`,
   };
@@ -99,7 +99,6 @@ export const SmartRecommendationSheet = ({
   const [products, setProducts] = useState<SmartProduct[]>([]);
   const [loading, setLoading] = useState(false);
   const [addingToCart, setAddingToCart] = useState<string | null>(null);
-  const [lifeStage, setLifeStage] = useState<string>('');
 
   const fetchRecommendations = useCallback(async () => {
     setLoading(true);
@@ -118,11 +117,10 @@ export const SmartRecommendationSheet = ({
           price: 0,
           image_url: '',
           label: 'ביטוח',
-          personalizedCopy: 'בדיקת התאמה לכיסוי רפואי והחזרים',
+          personalizedCopy: 'שאלה על ביטוח בצ׳אט',
         }]
         : [];
       setProducts([...insuranceOffer, ...mappedProducts]);
-      setLifeStage(pet.age_years && pet.age_years >= 8 ? 'senior' : pet.age_years && pet.age_years < 1 ? 'puppy' : '');
     } catch (error) {
       console.error("Error fetching smart recommendations:", error);
       setProducts([]);
@@ -164,8 +162,6 @@ export const SmartRecommendationSheet = ({
     }
   };
 
-  const lifeStageLabel = lifeStage === 'puppy' ? '🐾 גור' : lifeStage === 'senior' ? '🏥 סניור' : lifeStage === 'junior' ? '🌱 צעיר' : '';
-
   return (
     <ServiceBottomSheet
       isOpen={isOpen}
@@ -173,16 +169,6 @@ export const SmartRecommendationSheet = ({
       title={title || categoryTitles[category] || 'המלצות'}
     >
       <div className="space-y-4">
-        {/* Life stage badge */}
-        {lifeStageLabel && (
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/5 rounded-lg border border-primary/10">
-            <Sparkles className="w-3.5 h-3.5 text-primary" strokeWidth={1.5} />
-            <span className="text-[11px] text-primary font-medium">
-              מסונן לשלב חיים: {lifeStageLabel}
-            </span>
-          </div>
-        )}
-
         {loading ? (
           <div className="flex justify-center py-8">
             <Loader2 className="w-6 h-6 text-primary animate-spin" />
@@ -244,7 +230,7 @@ export const SmartRecommendationSheet = ({
           </div>
         ) : (
           <div className="text-center py-8">
-            <p className="text-sm text-muted-foreground">לא נמצאו מוצרים תואמים לפרופיל של {petName}</p>
+            <p className="text-sm text-muted-foreground">לא נמצאו מוצרים בקטגוריה הזו</p>
           </div>
         )}
       </div>

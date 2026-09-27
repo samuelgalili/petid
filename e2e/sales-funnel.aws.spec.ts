@@ -137,7 +137,7 @@ async function mockCatalog(page: Page) {
 test.describe("sales funnel", () => {
   test("entry offers the shop without an account", async ({ page }) => {
     await page.goto("/auth");
-    await page.getByRole("link", { name: "לקניות בחנות" }).click();
+    await page.getByRole("link", { name: "המשיכו לחנות בלי להירשם" }).click();
     await expect(page).toHaveURL(/\/shop$/);
     await expect(page.getByRole("heading", { name: "חנות", exact: true })).toBeVisible();
   });

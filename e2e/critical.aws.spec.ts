@@ -146,7 +146,11 @@ test.describe("AWS application smoke tests", () => {
 
   test("redirects protected customer and admin routes", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveURL(/\/auth$/);
+    await expect(page).toHaveURL(/\/shop$/);
+    await expect(page).not.toHaveURL(/\/auth/);
+
+    await page.goto("/profile");
+    await expect(page).toHaveURL(/\/auth\?next=/);
     await expect(page.getByRole("heading", { name: "ברוכים הבאים ל-MIPO" })).toBeVisible();
 
     await page.goto("/admin/products");
@@ -195,8 +199,8 @@ test.describe("AWS application smoke tests", () => {
 
     await expect(page.getByRole("heading", { name: "חנות", exact: true })).toBeVisible();
 
-    // Nothing is priced before a question is asked.
-    await expect(page.getByText("₪79", { exact: true })).toHaveCount(0);
+    // The shelf is priced before anyone types. Search then narrows it.
+    await expect(page.getByText("₪79", { exact: true }).first()).toBeVisible();
 
     await page.getByLabel("חיפוש בחנות").fill(catalog[0].name);
 

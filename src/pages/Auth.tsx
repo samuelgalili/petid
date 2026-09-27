@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { LoginForm } from "@/components/LoginForm";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,14 +8,22 @@ import { MipoLogo } from "@/components/MipoLogo";
 import { PawPrint, Heart, Shield } from "lucide-react";
 import { readStoredOnboardingDraft } from "@/lib/mipoOnboardingDraft";
 import { getMyPets } from "@/lib/mipoApi";
+import { safeReturnPath } from "@/lib/returnPath";
+import { GUEST_VALUE_LINE } from "@/lib/supportContact";
 
 const Auth = () => {
   const { isAuthenticated, loading: authLoading, user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnPath = safeReturnPath(searchParams.get("next"));
 
   useEffect(() => {
     const checkUserPets = async () => {
       if (!authLoading && isAuthenticated && user) {
+        if (returnPath) {
+          navigate(returnPath, { replace: true });
+          return;
+        }
         const pets = await getMyPets();
         if (pets.length > 0) {
           localStorage.setItem("onboardingCompleted", "true");
@@ -32,8 +40,8 @@ const Auth = () => {
         }
       }
     };
-    checkUserPets().catch(() => navigate("/onboarding"));
-  }, [isAuthenticated, authLoading, navigate, user]);
+    checkUserPets().catch(() => navigate(returnPath || "/onboarding"));
+  }, [isAuthenticated, authLoading, navigate, returnPath, user]);
 
   if (authLoading) {
     return <AuthLoadingSkeleton />;
@@ -60,7 +68,7 @@ const Auth = () => {
         >
           <h1 className="text-xl font-semibold text-mipo-ink mb-1">ברוכים הבאים ל-MIPO</h1>
           <p className="text-sm text-mipo-muted">
-            My Precious One
+            {GUEST_VALUE_LINE}
           </p>
         </motion.div>
 
@@ -107,7 +115,7 @@ const Auth = () => {
         </p>
         <p className="mt-1 text-sm text-foreground">
           <Link to="/shop" className="inline-flex min-h-11 items-center justify-center font-semibold text-mipo-ink underline underline-offset-4">
-            לקניות בחנות
+            המשיכו לחנות בלי להירשם
           </Link>
         </p>
       </motion.div>

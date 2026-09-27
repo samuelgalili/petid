@@ -15,6 +15,29 @@
     
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#6C63FF" />
+    <style>
+      /* First paint, before the stylesheet. Same shell as --mipo-soft.
+         Nothing is drawn on it: no mark, no spinner, no caption. */
+      html { color-scheme: light; background: #f6f6f4; }
+      html.dark { color-scheme: dark; background: #1f1f23; }
+      body, #root {
+        margin: 0;
+        min-height: 100%;
+        background: #f6f6f4;
+      }
+      html.dark body, html.dark #root {
+        background: #1f1f23;
+      }
+    </style>
+    <script>
+      try {
+        var storedTheme = localStorage.getItem("mipo-theme");
+        var systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        if (storedTheme === "dark" || (storedTheme !== "light" && systemDark)) {
+          document.documentElement.classList.add("dark");
+        }
+      } catch (e) {}
+    </script>
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="MIPO" />

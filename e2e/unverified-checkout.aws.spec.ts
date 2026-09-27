@@ -9,7 +9,21 @@ import { expect, test, type Page } from "@playwright/test";
 
 const userId = "11111111-1111-4111-8111-111111111111";
 const orderId = "22222222-2222-4222-8222-222222222222";
+const cartProductId = "d3affade-756c-4ada-bf9a-7e441b69f576";
+const otherProductId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const cardcomUrl = "https://secure.cardcom.solutions/External/LowProfile.aspx?LowProfileCode=test";
+
+type CatalogueMode = "present" | "empty" | "failed" | "hidden";
+
+function catalogueProduct(id: string) {
+  return {
+    id,
+    name: id === cartProductId ? "קוואטרו כלבים אדולט מיני עוף" : "מוצר אחר",
+    price: 199,
+    image_url: "/placeholder.svg",
+    in_stock: true,
+  };
+}
 
 const unverifiedUser = {
   id: userId,
@@ -42,7 +56,7 @@ const order = {
   order_date: "2026-09-27T00:00:00.000Z",
 };
 
-async function prepareCheckout(page: Page, signedIn: boolean) {
+async function prepareCheckout(page: Page, signedIn: boolean, catalogue: CatalogueMode = "present") {
   const calls: string[] = [];
   await page.route("**/api/**", async (route) => {
     if (route.request().method() === "GET") {
@@ -50,6 +64,18 @@ async function prepareCheckout(page: Page, signedIn: boolean) {
       return;
     }
     await route.fulfill({ status: 404, json: { error: "unmocked" } });
+  });
+  await page.route("**/api/products*", async (route) => {
+    if (catalogue === "empty") {
+      await route.fulfill({ json: { products: [] } });
+      return;
+    }
+    if (catalogue === "failed") {
+      await route.fulfill({ status: 500, json: { error: "catalogue down" } });
+      return;
+    }
+    const ids = catalogue === "hidden" ? [otherProductId] : [cartProductId];
+    await route.fulfill({ json: { products: ids.map(catalogueProduct) } });
   });
   await page.route("**/api/auth/me", async (route) => {
     if (!signedIn) {
@@ -115,21 +141,21 @@ async function prepareCheckout(page: Page, signedIn: boolean) {
       body: "<!doctype html><html lang=\"he\"><body><h1>Cardcom</h1></body></html>",
     });
   });
-  await page.addInitScript(() => {
+  await page.addInitScript((productId) => {
     localStorage.setItem("mipo-onboarding-complete", "true");
     localStorage.setItem("mipo-cart", JSON.stringify([{
       id: "line-1",
-      productId: "d3affade-756c-4ada-bf9a-7e441b69f576",
+      productId,
       name: "קוואטרו כלבים אדולט מיני עוף",
       price: 199,
       image: "/placeholder.svg",
       quantity: 1,
     }]));
-  });
+  }, cartProductId);
   return calls;
 }
 
-async function reachCardcom(page: Page) {
+async function reachOrderButton(page: Page) {
   await page.goto("/checkout");
   await expect(page.getByRole("heading", { name: "כתובת למשלוח" })).toBeVisible();
   await page.getByLabel(/שם מלא/).fill("דנה כהן");
@@ -143,6 +169,11 @@ async function reachCardcom(page: Page) {
   await page.getByTestId("checkout-continue").click();
   await expect(page.getByTestId("checkout-payment-heading")).toBeVisible();
   await page.getByTestId("checkout-continue").click();
+  await expect(page.getByRole("button", { name: /בצע הזמנה/ })).toBeVisible();
+}
+
+async function reachCardcom(page: Page) {
+  await reachOrderButton(page);
   await page.getByRole("button", { name: /בצע הזמנה/ }).click();
   await expect(page).toHaveURL(/secure\.cardcom\.solutions/);
   await expect(page.getByRole("heading", { name: "Cardcom" })).toBeVisible();
@@ -163,26 +194,74 @@ test.describe("unverified checkout reaches Cardcom", () => {
   });
 });
 
+test("an empty or failed catalogue does not disable checkout, and a hidden line does", async ({ page }) => {
+  await prepareCheckout(page, false, "empty");
+  await reachOrderButton(page);
+  await expect(page.getByRole("button", { name: /בצע הזמנה/ })).toBeEnabled();
+  await expect(page.getByText("המוצר אינו זמין כרגע")).toHaveCount(0);
+
+  const failed = await page.context().newPage();
+  await prepareCheckout(failed, false, "failed");
+  await reachOrderButton(failed);
+  await expect(failed.getByRole("button", { name: /בצע הזמנה/ })).toBeEnabled();
+  await failed.close();
+
+  const hidden = await page.context().newPage();
+  await prepareCheckout(hidden, false, "hidden");
+  await reachOrderButton(hidden);
+  await expect(hidden.getByRole("button", { name: /בצע הזמנה/ })).toBeDisabled();
+  await expect(hidden.getByText("המוצר אינו זמין כרגע").first()).toBeVisible();
+  await hidden.close();
+});
+
+async function openHome(page: Page, health: Record<string, unknown> | "down") {
+  await page.route("**/api/**", async (route) => {
+    await route.fulfill({ json: {} });
+  });
+  await page.route("**/api/auth/me", async (route) => {
+    await route.fulfill({
+      json: { user: unverifiedUser, profile: null, is_admin: false },
+    });
+  });
+  await page.route("**/api/me/pets", async (route) => {
+    await route.fulfill({ json: { pets: [] } });
+  });
+  await page.route("**/api/health", async (route) => {
+    if (health === "down") {
+      await route.abort();
+      return;
+    }
+    await route.fulfill({ json: health });
+  });
+  await page.addInitScript((id) => {
+    localStorage.setItem("mipo-onboarding-complete", "true");
+    localStorage.setItem(`profile_prompt_snooze_until_${id}`, String(Date.now() + 86_400_000));
+  }, userId);
+  const healthSettled = health === "down"
+    ? null
+    : page.waitForResponse((response) => response.url().includes("/api/health"));
+  await page.goto("/");
+  await healthSettled;
+  await expect(page.getByRole("heading", { name: /איך החבר שלך מרגיש/ })).toBeVisible();
+}
+
 test.describe("home copy matches checkout", () => {
   test("the banner does not say an order requires verification first", async ({ page }) => {
-    await page.route("**/api/**", async (route) => {
-      await route.fulfill({ json: {} });
-    });
-    await page.route("**/api/auth/me", async (route) => {
-      await route.fulfill({
-        json: { user: unverifiedUser, profile: null, is_admin: false },
-      });
-    });
-    await page.route("**/api/me/pets", async (route) => {
-      await route.fulfill({ json: { pets: [] } });
-    });
-    await page.addInitScript((id) => {
-      localStorage.setItem("mipo-onboarding-complete", "true");
-      localStorage.setItem(`profile_prompt_snooze_until_${id}`, String(Date.now() + 86_400_000));
-    }, userId);
-
-    await page.goto("/");
+    await openHome(page, { ok: true, email: { configured: true } });
     await expect(page.getByText("אפשר להזמין גם לפני האימות")).toBeVisible();
+    await expect(page.getByRole("button", { name: "שליחה חוזרת" })).toBeVisible();
     await expect(page.getByText("להזמנה צריך לאמת קודם")).toHaveCount(0);
+  });
+
+  test("the banner stays hidden when mail is not configured", async ({ page }) => {
+    await openHome(page, { ok: true, email: { configured: false } });
+    await expect(page.getByText("שלחנו מייל")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "שליחה חוזרת" })).toHaveCount(0);
+  });
+
+  test("the banner stays hidden when health does not say mail is configured", async ({ page }) => {
+    await openHome(page, "down");
+    await expect(page.getByText("שלחנו מייל")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "שליחה חוזרת" })).toHaveCount(0);
   });
 });
