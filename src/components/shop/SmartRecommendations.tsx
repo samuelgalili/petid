@@ -11,7 +11,7 @@ import { useCart } from "@/contexts/CartContext";
 import { ShopRailCard } from "@/components/shop/ShopRailCard";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { getShopProducts } from "@/lib/mipoApi";
+import { getPublicShopProducts } from "@/lib/mipoApi";
 
 interface RecommendedProduct {
   id: string;
@@ -147,7 +147,7 @@ export const SmartRecommendations = () => {
     const fetchAndScore = async () => {
       setLoading(true);
       try {
-        const data = await getShopProducts();
+        const data = await getPublicShopProducts();
 
         if (!data || data.length === 0) {
           setProducts([]);
@@ -239,9 +239,6 @@ export const SmartRecommendations = () => {
           </motion.div>
         ))}
       </div>
-      <p className="mt-3 text-[12px] leading-relaxed text-mipo-muted">
-        המיון אינו קובע התאמה רפואית ואינו מחליף בדיקה של תווית המוצר או ייעוץ וטרינרי.
-      </p>
     </motion.div>
   );
 };

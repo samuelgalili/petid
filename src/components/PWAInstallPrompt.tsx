@@ -1,17 +1,25 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Download, X, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { isInProgressFlow } from "@/lib/flowSurfaces";
 
 const STORAGE_KEY = "pwa_install_prompt_dismissed";
 
 export const PWAInstallPrompt = () => {
   const { isInstallable, isInstalled, installPWA } = usePWAInstall();
+  const location = useLocation();
+  const quiet = isInProgressFlow(location.pathname);
   const [isVisible, setIsVisible] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);
 
   useEffect(() => {
+    if (quiet) {
+      setIsVisible(false);
+      return;
+    }
     // Check if already dismissed or installed
     const isDismissed = localStorage.getItem(STORAGE_KEY);
     
@@ -22,7 +30,7 @@ export const PWAInstallPrompt = () => {
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [isInstalled, isInstallable]);
+  }, [isInstalled, isInstallable, quiet]);
 
   const handleInstall = async () => {
     setIsInstalling(true);
@@ -40,7 +48,7 @@ export const PWAInstallPrompt = () => {
   };
 
   // Don't render if not installable or already installed
-  if (!isInstallable || isInstalled) return null;
+  if (!isInstallable || isInstalled || quiet) return null;
 
   return (
     <AnimatePresence>
@@ -67,7 +75,7 @@ export const PWAInstallPrompt = () => {
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-foreground text-base mb-1">
-                    הוסף למסך הבית 📱
+                    הוסיפו למסך הבית 📱
                   </h3>
                   <p className="text-sm text-muted-foreground leading-snug">
                     גישה מהירה לכל התכונות, גם במצב לא מקוון
@@ -91,7 +99,7 @@ export const PWAInstallPrompt = () => {
                   className="flex-1 gap-2 bg-primary hover:bg-primary/90"
                 >
                   <Download className="w-4 h-4" />
-                  {isInstalling ? "מתקין..." : "התקן עכשיו"}
+                  {isInstalling ? "מתקינים..." : "התקינו עכשיו"}
                 </Button>
                 <Button
                   variant="outline"

@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { computePetAdjustedScore, safetyLevelFor } from "@/lib/petSafetyScore";
+import { displayProductDescription } from "@/lib/productDescription";
 import { SHIPPING_ESTIMATE_HE } from "@/lib/shipping";
 
 interface ProductInfoDrawerProps {
@@ -31,13 +32,12 @@ interface ProductInfoDrawerProps {
     flavors?: string[];
     inStock?: boolean;
   } | null;
-  petName?: string;
   onClose: () => void;
   onAddToCart?: () => void;
   onAddToCarePlan?: () => void;
 }
 
-export const ProductInfoDrawer = ({ product, petName, onClose, onAddToCart, onAddToCarePlan }: ProductInfoDrawerProps) => {
+export const ProductInfoDrawer = ({ product, onClose, onAddToCart, onAddToCarePlan }: ProductInfoDrawerProps) => {
   const { toast } = useToast();
   const { activePet } = usePetPreference();
 
@@ -113,19 +113,10 @@ export const ProductInfoDrawer = ({ product, petName, onClose, onAddToCart, onAd
               className="w-full h-full"
               objectFit="contain"
             />
-            {/* Gradient overlay */}
-            <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-background to-transparent" />
-
-            {/* Sale badge */}
-            {discount && (
-              <div className="absolute top-4 right-4 bg-destructive text-destructive-foreground text-sm font-bold px-3 py-1.5 rounded-xl shadow-lg">
-                -{discount}%
-              </div>
-            )}
           </div>
 
           {/* Content */}
-          <div className="px-5 -mt-8 relative z-10 pb-32">
+          <div className="relative z-10 px-5 pb-32">
             {/* Title + Price */}
             <div className="mb-4">
               {product.brand && (
@@ -136,6 +127,9 @@ export const ProductInfoDrawer = ({ product, petName, onClose, onAddToCart, onAd
                 <span className="text-3xl font-black text-foreground">₪{product.price}</span>
                 {product.originalPrice && product.originalPrice > product.price && (
                   <span className="text-base text-muted-foreground line-through">₪{product.originalPrice}</span>
+                )}
+                {discount && (
+                  <span className="text-sm font-semibold text-mipo-ink">-{discount}%</span>
                 )}
               </div>
             </div>
@@ -157,28 +151,21 @@ export const ProductInfoDrawer = ({ product, petName, onClose, onAddToCart, onAd
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className={`text-lg font-black ${safetyColors[safetyLevel].text}`}>{safetyScore}/10</span>
-                    <span className="text-xs font-semibold text-foreground">SafeScore</span>
+                    <span className="text-xs font-semibold text-foreground">ציון בטיחות</span>
                   </div>
-                  {petName && (
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {safetyLevel === "safe" 
-                        ? `מאושר על ידי המומחה עבור ${petName}` 
-                        : `דורש בדיקה נוספת עבור ${petName}`}
-                    </p>
-                  )}
                 </div>
               </motion.div>
             )}
 
             {/* Description */}
-            {product.description && (
+            {displayProductDescription(product.description) && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
                 className="mb-4"
               >
-                <p className="text-sm text-muted-foreground leading-relaxed">{product.description}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{displayProductDescription(product.description)}</p>
               </motion.div>
             )}
 

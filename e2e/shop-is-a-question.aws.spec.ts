@@ -100,15 +100,14 @@ async function openShop(page: Page) {
 test.describe("The shop is one question", () => {
   test.describe.configure({ mode: "serial" });
 
-  test("at rest it shows no products at all", async ({ page }) => {
+  test("at rest it shows the catalogue, not an empty search", async ({ page }) => {
     await openShop(page);
 
-    // THE LOAD-BEARING ASSERTION. A shelf of products at rest is what turns
-    // the question back into the catalogue this screen replaced, and it is the
-    // change most likely to be undone by someone who thinks the screen looks
-    // empty.
-    await expect(page.getByText("₪249")).toHaveCount(0);
-    await expect(page.getByText("₪119")).toHaveCount(0);
+    // Opening the shop is a shelf. Search still answers a question, but the
+    // first screen already has products on it.
+    await expect(page.getByRole("heading", { name: "המוצרים שלנו" })).toBeVisible();
+    await expect(page.getByText("₪249")).toBeVisible();
+    await expect(page.getByText("קוואטרו חתולים אדולט עוף 7 קילו")).toBeVisible();
 
     await expect(page.getByText("אפשר לשאול כל דבר")).toBeVisible();
     for (const prompt of ["הכלב שלי משיר הרבה", "אוכל יבש לגור", "צעצוע לתוכי"]) {

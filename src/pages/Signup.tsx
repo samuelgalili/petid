@@ -8,6 +8,7 @@ import { MipoLogo } from "@/components/MipoLogo";
 import { PawPrint, Sparkles, Users } from "lucide-react";
 import { readStoredOnboardingDraft } from "@/lib/mipoOnboardingDraft";
 import { getMyPets } from "@/lib/mipoApi";
+import { GUEST_VALUE_LINE } from "@/lib/supportContact";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -66,7 +67,7 @@ const Signup = () => {
           className="text-center mb-6"
         >
           <h1 className="text-xl font-semibold text-mipo-ink mb-1">הצטרפו ל-MIPO</h1>
-          <p className="text-sm text-mipo-muted">צרו חשבון וניהלו את חיות המחמד שלכם</p>
+          <p className="text-sm text-mipo-muted">{GUEST_VALUE_LINE}</p>
         </motion.div>
 
         {/* Signup Form */}
@@ -109,7 +110,7 @@ const Signup = () => {
         </p>
         <p className="mt-1 text-sm text-foreground">
           <Link to="/shop" className="inline-flex min-h-11 items-center justify-center font-semibold text-mipo-ink underline underline-offset-4">
-            לקניות בחנות
+            המשיכו לחנות בלי להירשם
           </Link>
         </p>
       </motion.div>

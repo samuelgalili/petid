@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -7,6 +7,7 @@ import { Loader2, Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { z } from "zod";
+import { safeReturnPath } from "@/lib/returnPath";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 
@@ -69,6 +70,7 @@ export const LoginForm = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { signIn } = useAuth();
 
   const validateForm = (): boolean => {
@@ -105,7 +107,7 @@ export const LoginForm = () => {
       }
 
       toast({ title: "התחברת בהצלחה!", description: "ברוכים השבים!" });
-      navigate("/");
+      navigate(safeReturnPath(searchParams.get("next")) || "/");
     } catch {
       setLoginError({
         message: "אירעה תקלה לא צפויה. נסו שוב.",
@@ -158,7 +160,7 @@ export const LoginForm = () => {
               setFieldErrors({ ...fieldErrors, email: undefined });
             }}
             disabled={loading}
-            className={`h-11 bg-muted/50 border border-border rounded-lg text-sm pr-10 text-right transition-colors ${
+            className={`h-11 bg-muted/50 border border-border rounded-lg text-sm pr-10 transition-colors ${
               fieldErrors.email ? "border-destructive" : ""
             }`}
             autoComplete="email"
@@ -198,7 +200,7 @@ export const LoginForm = () => {
               setFieldErrors({ ...fieldErrors, password: undefined });
             }}
             disabled={loading}
-            className={`h-11 bg-muted/50 border border-border rounded-lg text-sm pr-10 pl-14 text-right transition-colors ${
+            className={`h-11 bg-muted/50 border border-border rounded-lg text-sm pr-10 pl-14 transition-colors ${
               fieldErrors.password ? "border-destructive" : ""
             }`}
             autoComplete="current-password"

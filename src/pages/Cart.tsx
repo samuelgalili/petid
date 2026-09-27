@@ -14,11 +14,18 @@ import { SEO } from "@/components/SEO";
 import { SmartCartLayers } from "@/components/shop/SmartCartLayers";
 import { MipoCoupon, validateCouponCode } from "@/lib/mipoApi";
 import { FREE_SHIPPING_THRESHOLD, SHIPPING_FEE, amountToFreeShipping } from "@/lib/shipping";
+import { OptimizedImage } from "@/components/OptimizedImage";
 import { groupCartBySeller } from "@/lib/cartGrouping";
+import {
+  UNAVAILABLE_ITEM_HE,
+  chargeableSubtotal,
+  partitionCartByCatalogue,
+} from "@/lib/shopVisibility";
+import { usePublicCatalogueIds } from "@/lib/usePublicCatalogueIds";
 
 const Cart = () => {
   const navigate = useNavigate();
-  const { items, updateQuantity, removeFromCart, getSubtotal, getTotalItems } = useCart();
+  const { items, updateQuantity, removeFromCart } = useCart();
   const { toast } = useToast();
   
   // Coupon state
@@ -27,12 +34,17 @@ const Cart = () => {
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
   
 
-  const subtotal = getSubtotal();
-
-  // What this basket has to become. One group today, always - a marketplace
-  // line needs an offer_id the client does not carry - and the screen shows
-  // nothing extra while that is true.
-  const sellerGroups = useMemo(() => groupCartBySeller(items), [items]);
+  const catalogue = usePublicCatalogueIds();
+  const partition = useMemo(
+    () => partitionCartByCatalogue(items, catalogue.isSuccess ? catalogue.data ?? null : null),
+    [items, catalogue.isSuccess, catalogue.data],
+  );
+  const orderItems = partition.available;
+  // Unavailable lines stay in the basket so they can be restored, and they
+  // are not part of the total. One group today, always - a marketplace line
+  // needs an offer_id the client does not carry.
+  const sellerGroups = useMemo(() => groupCartBySeller(orderItems), [orderItems]);
+  const subtotal = chargeableSubtotal(orderItems);
   
   // Check if coupon is free shipping type
   const isFreeShippingCoupon = appliedCoupon?.discount_type === 'free_shipping';
@@ -205,11 +217,12 @@ const Cart = () => {
               <Card className="overflow-hidden rounded-3xl border border-mipo-line bg-mipo-surface shadow-none">
                 <div className="flex gap-4 p-4">
                   {/* Product Image */}
-                  <div className="w-24 h-24 bg-muted rounded-xl flex-shrink-0 overflow-hidden">
-                    <img
-                      src={item.image}
+                  <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl bg-white">
+                    <OptimizedImage
+                      src={item.image || ""}
                       alt={item.name}
-                      className="w-full h-full object-cover"
+                      className="h-full w-full"
+                      objectFit="contain"
                     />
                   </div>
 
@@ -273,6 +286,27 @@ const Cart = () => {
             )),
           ])}
         </AnimatePresence>
+
+        {partition.unavailable.length > 0 && (
+          <div className="mb-4 rounded-3xl border border-mipo-line bg-mipo-surface p-4">
+            <p className="text-sm font-semibold text-mipo-ink">{UNAVAILABLE_ITEM_HE}</p>
+            <p className="mt-1 text-xs text-mipo-muted">הפריטים האלה לא נכללים בסכום. אפשר להמשיך עם שאר המוצרים.</p>
+            <ul className="mt-3 space-y-2">
+              {partition.unavailable.map((item) => (
+                <li key={item.id} className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-mipo-ink">{item.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveItem(item.id, item.name)}
+                    className="min-h-11 px-2 text-xs text-destructive"
+                  >
+                    הסרה
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Coupon Input */}
         <motion.div
@@ -405,6 +439,7 @@ const Cart = () => {
               >
                 <Button
                   onClick={handleCheckout}
+                  disabled={catalogue.isSuccess && orderItems.length === 0}
                   className="mipo-cta-button h-14 w-full gap-3 rounded-2xl text-lg"
                 >
                   {sellerGroups.length > 1

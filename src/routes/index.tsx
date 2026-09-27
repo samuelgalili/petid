@@ -8,6 +8,7 @@
 import { lazy, Suspense, ComponentType } from "react";
 import { Navigate, RouteObject, useParams } from "react-router-dom";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { CommunityLoginGate, HomeEntry } from "@/components/AuthGates";
 import { AdminRoute } from "@/components/AdminRoute";
 import { PageTransition } from "@/components/PageTransition";
 import { PageErrorBoundary } from "@/components/PageErrorBoundary";
@@ -74,8 +75,8 @@ export const authRoutes: RouteObject[] = [
 ];
 
 export const feedRoutes: RouteObject[] = [
-  { path: "/", element: <Protected><LazyPage component={MainShell} pageName="בית" /></Protected> },
-  { path: "/feed", element: <Protected><LazyPage component={MainShell} pageName="בית" /></Protected> },
+  { path: "/", element: <HomeEntry><LazyPage component={MainShell} pageName="בית" /></HomeEntry> },
+  { path: "/feed", element: <CommunityLoginGate><LazyPage component={MainShell} pageName="קהילה" /></CommunityLoginGate> },
   { path: "/old-feed", element: <Navigate to="/feed" replace /> },
   { path: "/explore", element: <Navigate to="/feed" replace /> },
   { path: "/reels", element: <Navigate to="/feed" replace /> },
@@ -197,7 +198,7 @@ export const staticRoutes: RouteObject[] = [
   { path: "/privacy-policy", element: <LazyPage component={Privacy} pageName="מדיניות פרטיות" /> },
   { path: "/terms", element: <LazyPage component={Terms} pageName="תנאי שימוש" /> },
   { path: "/club-terms", element: <LazyPage component={ClubTerms} pageName="תנאי מועדון" /> },
-  { path: "/support", element: <Protected><LazyPage component={Support} pageName="תמיכה" /></Protected> },
+  { path: "/support", element: <LazyPage component={Support} pageName="תמיכה" /> },
   { path: "/data-deletion", element: <LazyPage component={DataDeletion} pageName="מחיקת נתונים" /> },
   { path: "*", element: <LazyPage component={NotFound} pageName="עמוד לא נמצא" /> },
 ];

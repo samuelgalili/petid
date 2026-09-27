@@ -9,7 +9,7 @@ import { ShoppingCart, Sparkles, ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
-import { getCurrentUser, getMyPets, getShopProducts } from "@/lib/mipoApi";
+import { getCurrentUser, getMyPets, getPublicShopProducts } from "@/lib/mipoApi";
 
 interface SmartProduct {
   id: string;
@@ -41,7 +41,7 @@ export const FeedProductCards = () => {
         const pet = pets[0];
         setPetName(pet?.name || null);
 
-        const prods = await getShopProducts();
+        const prods = await getPublicShopProducts();
         const petType = pet?.pet_type || pet?.type;
         const relevant = prods
           .filter((product) => product.in_stock !== false)

@@ -252,16 +252,15 @@ test("an attested payment without a note is refused", () => {
   assert.ok(block.includes("throw error"), "a missing note no longer stops the order");
 });
 
-test("the email gate is relaxed only for an admin-placed order", () => {
-  // The gate stops a stranger pointing order mail at an address they have not
-  // proven. An admin on the phone cannot make a customer click a link
-  // mid-call, and is themselves a known, audited account - but the exemption
-  // must be exactly that narrow.
+test("an unverified customer is not refused before payment", () => {
+  // The old gate stopped a signed-in customer who had not clicked the mail,
+  // which is every new account, and it stopped them before Cardcom. Guests
+  // were already allowed through. Verification is requested after the order
+  // exists. Admin-attested payment is still not a method a customer can name;
+  // that check is the one above this test.
   const source = orderSource();
-  assert.ok(
-    source.includes("if (currentUser && !currentUser.email_verified_at && !placedByAdmin)"),
-    "the email verification gate no longer distinguishes an admin-placed order",
-  );
+  assert.equal(source.includes("email_verification_required"), false);
+  assert.match(source, /shouldRequestVerificationAfterOrder/);
 });
 
 test("the attestation columns are written together or not at all", () => {

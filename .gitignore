@@ -32,8 +32,7 @@ supabase/.temp/
 *.sln
 *.sw?
 
-# Claude Code
-CLAUDE.md
+# Claude Code local state. CLAUDE.md is the shared agent rule file and is tracked.
 .claude/
 
 # Database dumps. A production dump is a full copy of every customer record;

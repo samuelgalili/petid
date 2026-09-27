@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SEO } from "@/components/SEO";
+import { displayProductDescription, productMetaDescription } from "@/lib/productDescription";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
@@ -290,9 +291,14 @@ const ProductDetailAws = () => {
   return (
     <div className="min-h-screen bg-background pb-36 md:pb-8" dir="rtl">
       <SEO
-        title={`${product.name} | MIPO`}
-        description={product.description || `פרטי מוצר: ${product.name}`}
+        title={product.name}
+        description={productMetaDescription(product.description, `פרטי מוצר: ${product.name}`)}
+        image={images[0] || "/og-default.png"}
         url={`/product/${product.id}`}
+        type="product"
+        price={price}
+        currency="ILS"
+        availability={product.in_stock === false ? "out_of_stock" : "in_stock"}
       />
 
       <header className="sticky top-0 z-20 border-b border-border/50 bg-background/90 backdrop-blur">
@@ -310,26 +316,17 @@ const ProductDetailAws = () => {
       <main className="mx-auto grid max-w-5xl gap-6 p-4 md:grid-cols-[1fr_0.9fr] md:items-start">
         {/* ---------------------------------------------------- gallery */}
         <div className="space-y-3">
-          <div className="relative overflow-hidden rounded-2xl border bg-card">
-            {/* Square, at every width, because the image pipeline's canvas is
-                square: IMAGE_PRESETS.product is 1200x1200. A 4:3 frame on
-                desktop left a normalized image pillarboxed inside grey bars and
-                rendered smaller than the space it was given. Every other
-                product surface in the app is already aspect-square; this page
-                was the one that disagreed. */}
-            <div className="aspect-square bg-muted">
+          <div className="overflow-hidden rounded-2xl border bg-white">
+            {/* Square white frame, the whole product inside it. A grey field
+                or a badge painted on the photo reads as part of the product. */}
+            <div className="aspect-square bg-white p-4">
               <OptimizedImage
-                src={images[activeImage] || "/placeholder.svg"}
+                src={images[activeImage] || ""}
                 alt={product.name}
                 className="h-full w-full"
                 objectFit="contain"
               />
             </div>
-            {hasDiscount && (
-              <span className="absolute end-3 top-3 rounded-full bg-destructive px-2.5 py-1 text-xs font-bold text-destructive-foreground">
-                -{discountPercent}%
-              </span>
-            )}
           </div>
 
           {images.length > 1 && (
@@ -340,11 +337,11 @@ const ProductDetailAws = () => {
                   onClick={() => setActiveImage(index)}
                   aria-label={`תמונה ${index + 1}`}
                   aria-current={index === activeImage}
-                  className={`h-16 w-16 shrink-0 overflow-hidden rounded-xl border transition ${
-                    index === activeImage ? "border-primary" : "border-transparent opacity-70 hover:opacity-100"
+                  className={`h-16 w-16 shrink-0 overflow-hidden rounded-xl border bg-white p-1 transition ${
+                    index === activeImage ? "border-mipo-ink" : "border-mipo-line opacity-70 hover:opacity-100"
                   }`}
                 >
-                  <OptimizedImage src={image} alt="" className="h-full w-full" objectFit="cover" />
+                  <OptimizedImage src={image} alt="" className="h-full w-full" objectFit="contain" />
                 </button>
               ))}
             </div>
@@ -368,6 +365,9 @@ const ProductDetailAws = () => {
                 <span className="text-3xl font-bold tabular-nums text-mipo-ink">₪{price.toFixed(2)}</span>
                 {hasDiscount && (
                   <span className="pb-1 text-sm text-muted-foreground line-through">₪{listPrice.toFixed(2)}</span>
+                )}
+                {hasDiscount && (
+                  <span className="pb-1 text-sm font-semibold text-mipo-ink">-{discountPercent}%</span>
                 )}
                 {asNumber(product.price_per_weight) > 0 && product.weight_unit && (
                   <span className="pb-1 text-xs text-muted-foreground">
@@ -481,8 +481,8 @@ const ProductDetailAws = () => {
               a product nobody has written about yet — and the shopper cannot
               tell which of the two they are looking at. */}
           <Section title="תיאור">
-            {product.description ? (
-              <p className="text-sm leading-7 text-muted-foreground">{product.description}</p>
+            {displayProductDescription(product.description) ? (
+              <p className="text-sm leading-7 text-muted-foreground">{displayProductDescription(product.description)}</p>
             ) : (
               <p className="text-sm leading-7 text-muted-foreground/70">
                 עדיין לא נכתב תיאור למוצר הזה. המפרט למטה מרכז את מה שידוע עליו.

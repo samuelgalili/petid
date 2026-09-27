@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, MapPin, User, Phone, Loader2 } from "lucide-react";
+import { X, MapPin, User, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { useLocation as useGeoLocation } from "@/hooks/useLocation";
 import { useLocation } from "react-router-dom";
 import { getCurrentUser, updateMyProfile } from "@/lib/mipoApi";
+import {
+  PROFILE_PROMPT_DELAY_MS,
+  profilePromptAllowed,
+  profilePromptPastFirstSession,
+  profilePromptSnoozed,
+  readOnboardingFlag,
+  snoozeProfilePrompt,
+} from "@/lib/flowSurfaces";
 
 interface ProfileData {
   full_name: string | null;
@@ -27,37 +35,42 @@ const CompleteProfilePrompt = () => {
   const [dismissed, setDismissed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [form, setForm] = useState({ first_name: "", last_name: "", phone: "", city: "" });
+  const [form, setForm] = useState({ first_name: "", last_name: "", city: "" });
   const [missingFields, setMissingFields] = useState<string[]>([]);
 
   useEffect(() => {
     if (!isAuthenticated || !user || dismissed) return;
+    // Mark the session even on onboarding, so the same tab's first home
+    // landing is still the first session.
+    if (!profilePromptPastFirstSession()) return;
+    if (!profilePromptAllowed(location.pathname, readOnboardingFlag())) return;
+    if (profilePromptSnoozed(user.id)) return;
 
-    // Check if already dismissed this session
-    const dismissedKey = `profile_prompt_dismissed_${user.id}`;
-    if (sessionStorage.getItem(dismissedKey)) return;
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        if (cancelled) return;
+        if (!profilePromptAllowed(location.pathname, readOnboardingFlag())) return;
 
-    const checkProfile = async () => {
-      const data = (await getCurrentUser())?.profile;
+        const data = (await getCurrentUser())?.profile;
+        if (cancelled || !data) return;
+        if (!profilePromptAllowed(location.pathname, readOnboardingFlag())) return;
 
-      if (!data) return;
-      setProfile({
-        full_name: data.full_name,
-        first_name: data.first_name ?? null,
-        last_name: data.last_name ?? null,
-        phone: data.phone ?? null,
-        city: data.city ?? null,
-      });
+        setProfile({
+          full_name: data.full_name,
+          first_name: data.first_name ?? null,
+          last_name: data.last_name ?? null,
+          phone: data.phone ?? null,
+          city: data.city ?? null,
+        });
 
-      const missing: string[] = [];
-      if (!data.first_name) missing.push("first_name");
-      if (!data.last_name) missing.push("last_name");
-      if (!data.phone) missing.push("phone");
-      if (!data.city) missing.push("city");
+        const missing: string[] = [];
+        if (!data.first_name) missing.push("first_name");
+        if (!data.last_name) missing.push("last_name");
+        if (!data.city) missing.push("city");
 
-      if (missing.length > 0) {
+        if (missing.length === 0) return;
         setMissingFields(missing);
-        // Pre-fill from full_name if available
         if (data.full_name && (!data.first_name || !data.last_name)) {
           const parts = data.full_name.split(" ");
           setForm(prev => ({
@@ -66,13 +79,15 @@ const CompleteProfilePrompt = () => {
             last_name: data.last_name || parts.slice(1).join(" ") || "",
           }));
         }
-        // Delay showing to not interrupt user flow
-        setTimeout(() => setShow(true), 5000);
-      }
-    };
+        setShow(true);
+      })();
+    }, PROFILE_PROMPT_DELAY_MS);
 
-    checkProfile();
-  }, [isAuthenticated, user, dismissed]);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [isAuthenticated, user, dismissed, location.pathname]);
 
   // Auto-detect city via GPS if city is missing
   useEffect(() => {
@@ -90,9 +105,7 @@ const CompleteProfilePrompt = () => {
   const handleDismiss = () => {
     setShow(false);
     setDismissed(true);
-    if (user) {
-      sessionStorage.setItem(`profile_prompt_dismissed_${user.id}`, "true");
-    }
+    if (user) snoozeProfilePrompt(user.id);
   };
 
   const handleSave = async () => {
@@ -102,7 +115,6 @@ const CompleteProfilePrompt = () => {
     const updates: Partial<ProfileData> & { full_name?: string } = {};
     if (missingFields.includes("first_name") && form.first_name) updates.first_name = form.first_name.trim();
     if (missingFields.includes("last_name") && form.last_name) updates.last_name = form.last_name.trim();
-    if (missingFields.includes("phone") && form.phone) updates.phone = form.phone.trim();
     if (missingFields.includes("city") && form.city) updates.city = form.city.trim();
 
     // Update full_name if first/last changed
@@ -114,7 +126,7 @@ const CompleteProfilePrompt = () => {
 
     try {
       await updateMyProfile(updates);
-      toast({ title: "הפרטים נשמרו! ✅", description: "תודה שהשלמת את הפרופיל" });
+      toast({ title: "הפרטים נשמרו", description: "תודה שהשלמתם את הפרופיל" });
       handleDismiss();
     } catch {
       toast({ title: "שגיאה", description: "לא הצלחנו לשמור את הפרטים", variant: "destructive" });
@@ -123,7 +135,7 @@ const CompleteProfilePrompt = () => {
     }
   };
 
-  if (!show || location.pathname === "/checkout") return null;
+  if (!show || !profilePromptAllowed(location.pathname, readOnboardingFlag())) return null;
 
   return (
     <AnimatePresence>
@@ -131,7 +143,8 @@ const CompleteProfilePrompt = () => {
         initial={{ opacity: 0, y: 80 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 80 }}
-        className="fixed bottom-20 left-4 right-4 z-50 md:left-auto md:right-6 md:max-w-sm"
+        className="fixed bottom-24 left-4 right-4 z-[10020] md:left-auto md:right-6 md:max-w-sm"
+        data-testid="complete-profile-prompt"
       >
         <div className="bg-card border border-border rounded-2xl shadow-xl p-5 space-y-4">
           <div className="flex items-start justify-between">
@@ -141,10 +154,10 @@ const CompleteProfilePrompt = () => {
               </div>
               <div>
                 <h3 className="font-bold text-sm">השלמת פרופיל 🐾</h3>
-                <p className="text-xs text-muted-foreground">עזור לנו להכיר אותך טוב יותר</p>
+                <p className="text-xs text-muted-foreground">עזרו לנו להכיר אתכם טוב יותר</p>
               </div>
             </div>
-            <button onClick={handleDismiss} className="text-muted-foreground hover:text-foreground p-1">
+            <button type="button" onClick={handleDismiss} aria-label="סגירה" className="text-muted-foreground hover:text-foreground p-1">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -170,20 +183,6 @@ const CompleteProfilePrompt = () => {
                     className="h-9 text-sm"
                   />
                 </div>
-              </div>
-            )}
-
-            {missingFields.includes("phone") && (
-              <div>
-                <Label className="text-xs">טלפון</Label>
-                <Input
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  placeholder="050-0000000"
-                  type="tel"
-                  dir="ltr"
-                  className="h-9 text-sm"
-                />
               </div>
             )}
 
@@ -216,7 +215,7 @@ const CompleteProfilePrompt = () => {
             <Button onClick={handleSave} size="sm" className="flex-1" disabled={loading}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "שמירה"}
             </Button>
-            <Button onClick={handleDismiss} size="sm" variant="ghost" className="text-muted-foreground">
+            <Button type="button" onClick={handleDismiss} size="sm" variant="ghost" className="text-muted-foreground" data-testid="complete-profile-skip">
               אח״כ
             </Button>
           </div>
