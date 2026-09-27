@@ -59,7 +59,10 @@ services:
       - "80:80"
       - "443:443"
     # The entrypoint turns an empty MIPO_WWW_ADDRESS into www.mipo.pet on the
-    # apex and into a localhost placeholder on any other site, then starts Caddy.
+    # apex and into a localhost placeholder on any other site. It writes
+    # /tmp/Caddyfile and execs caddy itself. If the www site will not load,
+    # that site is left out and the apex still starts. The command below is
+    # not the config that runs.
     entrypoint: ["/bin/sh", "/etc/caddy/caddy-entrypoint.sh"]
     command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
     environment:

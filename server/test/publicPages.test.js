@@ -145,11 +145,12 @@ test("the sitemap lists public pages and in-stock products, with a real lastmod"
     ],
   });
   assert.match(xml, /<loc>https:\/\/mipo\.pet\/shop<\/loc>/);
+  assert.match(xml, /<loc>https:\/\/mipo\.pet\/support<\/loc>/);
   assert.match(xml, /<loc>https:\/\/mipo\.pet\/terms<\/loc>/);
   assert.match(xml, /<loc>https:\/\/mipo\.pet\/data-deletion<\/loc>/);
   assert.match(xml, new RegExp(`<loc>https://mipo\\.pet/product/${productId}</loc><lastmod>2026-08-01</lastmod>`));
   assert.equal(xml.split(productId).length - 1, 1);
-  for (const blocked of ["/feed", "/explore", "/auth", "/cart", "/checkout", "/support", ">", "<"]) {
+  for (const blocked of ["/feed", "/explore", "/auth", "/cart", "/checkout", ">", "<"]) {
     assert.equal(xml.includes(`https://mipo.pet${blocked}<`), false, blocked);
   }
   assert.doesNotMatch(xml, /<loc>https:\/\/mipo\.pet\/<\/loc>/);
@@ -169,6 +170,7 @@ test("sitemap queries keep only in-stock rows, and a missing table does not drop
     return { rows: [{ id: productId, updated_at: "2026-08-01T00:00:00.000Z" }] };
   });
   assert.match(sql[0], /in_stock is not false/);
+  assert.match(sql[0], /shop_hidden/);
   assert.match(sql.find((statement) => statement.includes("scraped_products")), /stock_status/);
   assert.equal(products.length, 1);
 });
@@ -219,11 +221,47 @@ test("the public origin falls back to the live site", () => {
   assert.equal(publicOrigin(""), "https://mipo.pet");
 });
 
+test("a hidden product is not indexable and is not in the sitemap", async () => {
+  const hiddenId = "33333333-3333-4333-8333-333333333333";
+  const pageRenderer = renderer({
+    loadProduct: async () => ({
+      id: hiddenId,
+      name: "מוצר מוסתר",
+      description: "לא לפרסום",
+      price: 40,
+      in_stock: true,
+      shop_hidden: true,
+    }),
+  });
+  const page = await htmlOf(`/product/${hiddenId}`, pageRenderer);
+  assert.equal(page.status, 404);
+  assert.match(page.html, /noindex/);
+  assert.match(page.html, /המוצר לא נמצא/);
+  assert.doesNotMatch(page.html, /מוצר מוסתר/);
+  assert.doesNotMatch(page.html, /"@type":"Product"/);
+  assert.doesNotMatch(page.html, /"price":"40.00"/);
+
+  const xml = buildSitemapXml({
+    origin: "https://mipo.pet",
+    products: [
+      { id: productId, updated_at: "2026-08-01T12:00:00.000Z", shop_hidden: false },
+      { id: hiddenId, updated_at: "2026-08-01T12:00:00.000Z", shop_hidden: true, in_stock: true },
+    ],
+  });
+  assert.match(xml, new RegExp(`/product/${productId}`));
+  assert.equal(xml.includes(hiddenId), false);
+});
+
 test("www redirects to the apex with the path and query, and an empty robots policy is not sent", () => {
   const caddy = read("deploy/aws/Caddyfile");
-  assert.match(caddy, /redir https:\/\/\{\$MIPO_SITE_ADDRESS:mipo\.pet\}\{uri\} 308/);
-  assert.match(caddy, /\{\$MIPO_WWW_ADDRESS:www\.mipo\.pet\}/);
+  const entry = read("deploy/aws/caddy-entrypoint.sh");
+  assert.match(entry, /redir https:\/\/\$\{site\}\{uri\} 308/);
+  assert.match(entry, /on_demand/);
+  assert.match(entry, /omit the www site/);
   assert.match(caddy, /header X-Robots-Tag "\{\$MIPO_ROBOTS_POLICY:all\}"/);
+  assert.match(caddy, /response_header_timeout 3s/);
+  assert.match(caddy, /rewrite \* \/index\.html/);
+  assert.match(read("deploy/local/Caddyfile"), /rewrite \* \/index\.html/);
   const sitemap = caddy.indexOf("handle /sitemap.xml");
   const navigation = caddy.indexOf("reverse_proxy mipo-api:3000");
   assert.ok(sitemap > -1);

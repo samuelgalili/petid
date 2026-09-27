@@ -13,7 +13,8 @@ import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 
 import { clipPlainText, plainText } from "./productText.js";
-import { SUPPORT_EMAIL, SUPPORT_PHONE } from "../../src/lib/siteContact.js";
+import { publiclyVisibleProduct } from "./shopVisibility.js";
+import { SUPPORT_EMAIL, SUPPORT_PHONE } from "./siteContact.js";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const FALLBACK_ORIGIN = "https://mipo.pet";
@@ -23,15 +24,16 @@ const PRODUCT_CACHE_MAX = 500;
 const DEFAULT_DESCRIPTION = "MIPO היא אפליקציה לניהול החיים עם חיית המחמד: פרופיל, טיפול, תזכורות, קהילה וחנות.";
 const DEFAULT_IMAGE_PATH = "/og-default.png";
 
-// Pages a crawler should list. Each one is public, is not a client redirect,
-// and is not behind login on this branch.
+// Pages a crawler should list. Each one is public and is not a client redirect.
 //
-// `/` sends an anonymous visitor to /auth, and `/support` requires a session,
-// so neither is listed. The public-shop change opens both and also adds a
-// dynamic sitemap; keep this route (in-stock products, real lastmod) when the
-// two meet. A static public/sitemap.xml is only the page list, without products.
+// `/` is a public document for someone who is signed in, but an anonymous
+// visit is sent to /shop, so the home URL stays out of the sitemap. Support
+// is a public page. A static public/sitemap.xml repeats this list and nothing
+// else: production /sitemap.xml is this route, which adds in-stock public
+// products and a real lastmod.
 export const SITEMAP_PAGES = [
   { path: "/shop", changefreq: "daily", priority: "0.9" },
+  { path: "/support", changefreq: "monthly", priority: "0.6" },
   { path: "/breeds", changefreq: "weekly", priority: "0.7" },
   { path: "/science", changefreq: "monthly", priority: "0.5" },
   { path: "/install", changefreq: "monthly", priority: "0.4" },
@@ -42,9 +44,9 @@ export const SITEMAP_PAGES = [
   { path: "/data-deletion", changefreq: "yearly", priority: "0.3" },
 ];
 
-// Home and support get their own canonical in the HTML. They stay out of the
-// sitemap until they are public documents rather than login walls.
-const INDEXABLE = new Set(["/", "/support", ...SITEMAP_PAGES.map((page) => page.path)]);
+// Home and support get their own canonical in the HTML. Home is indexable
+// there and still absent from the sitemap, because the anonymous path redirects.
+const INDEXABLE = new Set(["/", ...SITEMAP_PAGES.map((page) => page.path)]);
 
 const PAGE_META = {
   "/": {
@@ -135,6 +137,8 @@ const PARAM_PATHS = [
 ];
 
 const BUSINESS_SITEMAP_SQL = [
+  "select id::text as id, updated_at from public.business_products where in_stock is not false and coalesce(shop_hidden, false) = false",
+  "select id::text as id, created_at as updated_at from public.business_products where in_stock is not false and coalesce(shop_hidden, false) = false",
   "select id::text as id, updated_at from public.business_products where in_stock is not false",
   "select id::text as id, created_at as updated_at from public.business_products where in_stock is not false",
 ];
@@ -353,6 +357,7 @@ export const buildSitemapXml = ({ origin, products = [] }) => {
   }));
   const seen = new Set();
   for (const product of products) {
+    if (!publiclyVisibleProduct(product, "public")) continue;
     if (product?.in_stock === false) continue;
     if (product?.stock_status && product.stock_status !== "in_stock") continue;
     const id = String(product?.id || "").trim().toLowerCase();
@@ -486,7 +491,11 @@ export const createPublicPageRenderer = ({
         });
       } else {
         const product = await loadCachedProduct(classified.id);
-        if (!product) {
+        // Same predicate as GET /api/products/:id. A hidden row is not a
+        // public product: no name, no price, no Product JSON-LD. The shell
+        // still loads so the page can show the same unavailable state the
+        // shopper gets from the 404 JSON.
+        if (!publiclyVisibleProduct(product, "public")) {
           document = pageDocument(siteOrigin, classified.path, {
             status: 404,
             title: "המוצר לא נמצא",

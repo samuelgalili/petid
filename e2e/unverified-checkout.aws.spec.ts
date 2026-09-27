@@ -104,22 +104,6 @@ async function prepareCheckout(page: Page, signedIn: boolean, catalogue: Catalog
   await page.route("**/api/me/shipping-profile", async (route) => {
     await route.fulfill({ status: signedIn ? 200 : 401, json: signedIn ? { profile: null } : { error: "Unauthorized" } });
   });
-  // Checkout only charges lines the public catalogue still lists. An empty
-  // products body would mark this line unavailable and leave the pay button off.
-  await page.route("**/api/products", async (route) => {
-    await route.fulfill({
-      json: {
-        products: [{
-          id: "d3affade-756c-4ada-bf9a-7e441b69f576",
-          name: "קוואטרו כלבים אדולט מיני עוף",
-          price: 199,
-          image_url: "/placeholder.svg",
-          in_stock: true,
-          shop_hidden: false,
-        }],
-      },
-    });
-  });
   await page.route("**/api/orders", async (route) => {
     calls.push(`order:${route.request().method()}`);
     await route.fulfill({ status: 201, json: { order, access_token: "guest-token" } });
