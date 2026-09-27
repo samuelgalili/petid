@@ -206,7 +206,7 @@ test.describe("AWS application smoke tests", () => {
 
     await foodProduct.click();
     const productDialog = page.getByRole("dialog");
-    await expect(productDialog.getByText("₪79", { exact: true })).toBeVisible();
+    await expect(productDialog.getByText("₪79", { exact: true }).first()).toBeVisible();
     await expect(productDialog.getByText("₪100", { exact: true })).toBeVisible();
     await productDialog.getByRole("button", { name: "סגירה" }).click();
     await expect(productDialog).toBeHidden();
