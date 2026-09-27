@@ -205,6 +205,7 @@ export const staticRoutes: RouteObject[] = [
 
 const AdminLogin = lazy(() => import("@/pages/admin/AdminLogin"));
 const AdminChangePassword = lazy(() => import("@/pages/admin/AdminChangePassword"));
+const AdminTwoFactor = lazy(() => import("@/pages/admin/AdminTwoFactor"));
 const AdminHome = lazy(() => import("@/pages/admin/AdminHome"));
 const AdminPlannedScreen = lazy(() => import("@/pages/admin/AdminPlannedScreen"));
 const AdminAnalytics = lazy(() => import("@/pages/admin/AdminAnalytics"));
@@ -325,6 +326,7 @@ const legacyAdminRedirects = legacyAdminPaths.map((path) => {
 export const adminRoutes: RouteObject[] = [
   { path: "/admin/login", element: <LazyPage component={AdminLogin} pageName="כניסת מנהל" /> },
   { path: "/admin/change-password", element: <Admin><LazyPage component={AdminChangePassword} pageName="בחירת סיסמה" /></Admin> },
+  { path: "/admin/two-factor", element: <Admin><LazyPage component={AdminTwoFactor} pageName="אימות דו-שלבי" /></Admin> },
   // /admin used to redirect to the product list, which is why an owner
   // opening the admin landed in a catalogue rather than on the day.
   { path: "/admin", element: <AdminPage component={AdminHome} pageName="בית" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
@@ -378,6 +380,23 @@ export const factoryRoutes: RouteObject[] = [
   { path: "/factory", element: <Navigate to="/admin/products" replace /> },
 ];
 
+/**
+ * Living-avatar spike. `import.meta.env.DEV` is false in `vite build`, and the
+ * dynamic import sits in the discarded branch, so the page is not in the
+ * production graph and there is no link to it from the app.
+ */
+const devPetAvatarRoutes: RouteObject[] = import.meta.env.DEV
+  ? [{
+      path: "/dev/pet-avatar",
+      element: (
+        <LazyPage
+          component={lazy(() => import("@/pages/dev/PetAvatarPrototype"))}
+          pageName="אב טיפוס דמות"
+        />
+      ),
+    }]
+  : [];
+
 export const allRoutes: RouteObject[] = [
   ...authRoutes,
   ...feedRoutes,
@@ -388,6 +407,7 @@ export const allRoutes: RouteObject[] = [
   ...adminRoutes,
   ...factoryRoutes,
   ...staticRoutes,
+  ...devPetAvatarRoutes,
 ];
 
 if (import.meta.env.DEV) {

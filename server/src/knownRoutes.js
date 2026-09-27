@@ -405,6 +405,7 @@ export const PRODUCTION_ROUTE_PATTERNS = [
   "/admin/test-suite",
   "/admin/time-tracking",
   "/admin/transactions",
+  "/admin/two-factor",
   "/admin/user-timeline",
   "/admin/users",
   "/admin/vendor-audit",
