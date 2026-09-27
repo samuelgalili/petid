@@ -27,6 +27,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { readStoredOnboardingDraft } from "@/lib/mipoOnboardingDraft";
+import { isInProgressFlow } from "@/lib/flowSurfaces";
 
 const HIDDEN_PREFIXES = [
   // AND THE ADMIN, WHERE IT HAS NO BUSINESS AT ALL.
@@ -80,6 +81,7 @@ export const AvatarCompanion = () => {
   const hidden = useMemo(
     () =>
       onboardingActive ||
+      isInProgressFlow(location.pathname) ||
       HIDDEN_PREFIXES.some((p) => location.pathname.startsWith(p)) ||
       location.pathname === "/chat" ||
       location.pathname === "/shop",

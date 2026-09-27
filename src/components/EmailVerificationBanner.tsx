@@ -1,26 +1,28 @@
 /**
  * Reminds a signed-in person that their address is not verified yet.
  *
- * It reminds rather than blocks, on purpose: nothing about browsing, adding a
- * pet or reading documents needs a proven address. Only placing an order does,
- * because that is what sends a confirmation and an invoice to whatever address
- * the account carries, and the server refuses that one on its own.
+ * It reminds rather than blocks. Ordering does not wait on the mail: a new
+ * customer can pay, and the server asks for the code again after the order
+ * is stored. The banner stays off onboarding and checkout so it cannot cover
+ * those steps.
  */
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { MailWarning, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { requestEmailVerification, MipoApiError } from "@/lib/mipoApi";
+import { isInProgressFlow } from "@/lib/flowSurfaces";
 import { cn } from "@/lib/utils";
 
 export const EmailVerificationBanner = ({ className }: { className?: string }) => {
   const { user, loading } = useAuth();
   const { toast } = useToast();
+  const location = useLocation();
   const [sending, setSending] = useState(false);
 
-  if (loading || !user || user.email_verified !== false) return null;
+  if (loading || !user || user.email_verified !== false || isInProgressFlow(location.pathname)) return null;
 
   const resend = async () => {
     setSending(true);
@@ -51,7 +53,7 @@ export const EmailVerificationBanner = ({ className }: { className?: string }) =
       <MailWarning className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" strokeWidth={1.7} />
       <p className="flex-1 min-w-[12rem] text-xs leading-relaxed text-amber-900 dark:text-amber-100">
         שלחנו מייל אימות ל־<span className="font-semibold">{user.email}</span>.
-        אפשר להמשיך להשתמש באפליקציה, אבל להזמנה צריך לאמת קודם.
+        אפשר להזמין גם לפני האימות. כך נשלח עדכונים לכתובת הנכונה.
       </p>
       <div className="flex items-center gap-2">
         <button
