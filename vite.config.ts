@@ -48,7 +48,9 @@ export default defineConfig(({ mode }) => {
           short_name: "MIPO",
           description: "אפליקציה לניהול ומעקב אחר חיות המחמד שלכם - פרופיל, טיפול, חנות וקהילה",
           theme_color: "#6C63FF",
-          background_color: "#FFFFFF",
+          // Same shell as the boot screen (--mipo-soft in light). Not white:
+          // a white launch surface was the rectangle behind the paw.
+          background_color: "#f6f6f4",
           display: "standalone",
           orientation: "portrait",
           scope: "/",
@@ -67,6 +69,12 @@ export default defineConfig(({ mode }) => {
               sizes: "512x512",
               type: "image/png",
               purpose: "any",
+            },
+            {
+              src: "/pwa-maskable-512.png",
+              sizes: "512x512",
+              type: "image/png",
+              purpose: "maskable",
             },
           ],
         },

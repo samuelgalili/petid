@@ -45,6 +45,9 @@ export const useAuth = () => {
       try {
         const auth = await getCurrentUser();
         if (isMounted) applyAuth(auth);
+      } catch {
+        // /auth/me with no deadline used to leave «טוען...» up for good.
+        // The timeout rejects, and the screen that was waiting can continue.
       } finally {
         if (isMounted) setLoading(false);
       }

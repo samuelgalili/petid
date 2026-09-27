@@ -15,6 +15,50 @@
     
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#6C63FF" />
+    <style>
+      /* First paint, before the stylesheet. Same shell as --mipo-soft. */
+      html { color-scheme: light; background: #f6f6f4; }
+      html.dark { color-scheme: dark; background: #1f1f23; }
+      body, #root, #mipo-boot {
+        margin: 0;
+        min-height: 100%;
+        background: #f6f6f4;
+        color: #6d6d68;
+      }
+      html.dark body, html.dark #root, html.dark #mipo-boot {
+        background: #1f1f23;
+        color: #a3a3a8;
+      }
+      #mipo-boot {
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-family: Assistant, "Segoe UI", sans-serif;
+      }
+      #mipo-boot img { width: 11rem; height: auto; background: transparent; }
+      #mipo-boot .spin {
+        margin-top: 2rem;
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 999px;
+        border: 3px solid rgba(108, 99, 255, 0.25);
+        border-top-color: #6C63FF;
+        animation: mipo-boot-spin 1s linear infinite;
+      }
+      #mipo-boot p { margin: 1.5rem 0 0; font-size: 0.875rem; font-weight: 500; }
+      @keyframes mipo-boot-spin { to { transform: rotate(360deg); } }
+    </style>
+    <script>
+      try {
+        var storedTheme = localStorage.getItem("mipo-theme");
+        var systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        if (storedTheme === "dark" || (storedTheme !== "light" && systemDark)) {
+          document.documentElement.classList.add("dark");
+        }
+      } catch (e) {}
+    </script>
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="MIPO" />
@@ -61,7 +105,13 @@
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="mipo-boot" dir="rtl" lang="he">
+        <img src="/splash-paw.png" alt="MIPO" width="220" height="243" />
+        <div class="spin" aria-hidden="true"></div>
+        <p>טוען...</p>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
