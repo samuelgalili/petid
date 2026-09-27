@@ -30,7 +30,7 @@
 		file_server
 	}
 
-	@branded path /fonts/* /favicon.ico /favicon-16x16.png /favicon-32x32.png /apple-touch-icon.png /pwa-192x192.png /pwa-512x512.png /pwa-maskable-512.png /splash-paw.png /og-default.png /mipo-mark.svg /placeholder.svg
+	@branded path /fonts/* /favicon.ico /favicon-16x16.png /favicon-32x32.png /apple-touch-icon.png /pwa-192x192.png /pwa-512x512.png /pwa-maskable-512.png /og-default.png /mipo-mark.svg /placeholder.svg
 	handle @branded {
 		root * /srv/www
 		header Cache-Control "public, max-age=31536000, immutable"
