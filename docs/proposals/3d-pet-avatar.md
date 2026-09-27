@@ -89,7 +89,55 @@ PR #15 הוסיף נשימה ל־`PetHeroVisual` על ענף של דמות הפ�
 - אידמפוטנטיות: אותו חיית מחמד ואותו גיבוב לא פותחים עבודה שנייה. אם יש כבר עבודה בתור, בריצה, או מוכנה — מחזירים אותה. אחרי שיש `task_id`, מרעננים סטטוס ולא שולחים יצירה מחדש.
 - ניסיונות חוזרים: כשל רשת, או קוד 2000 (תקרת המקביליות של Tripo), עם השהיה עולה, עד שלושה ניסיונות. משימה שהספק סימן ככושלת לא מחויבת, לפי ה־FAQ, ואז מותר לפתוח משימה חדשה על אותו גיבוב.
 - קצב: תקרת ברירת המחדל של Tripo היא 10 משימות במקביל ([FAQ](https://docs.tripo3d.ai/other/support-faq.html)). ריג ואנימציה חולקים 3 במקביל ([דף האנימציה](https://developers.tripo3d.ai/en/models/animation)). התור שלנו נשאר מתחת לשתי התקרות.
-- תקרה שלנו, לא של Tripo: שתי יצירות שהצליחו למשתמש ביום. אותו גיבוב לא נספר שוב. המספר הוא החלטה של המוצר.
+
+המכסה נספרת בשרת לפי `pet_id`, לא לפי משתמש. שורה בסטטוס `failed` לא נספרת. אותו גיבוב תמונה שכבר הצליח או שעדיין רץ מחזיר את אותה עבודה, ולא פותח יצירה חדשה.
+
+### מכסה לפי מסלול
+
+אין היום במאגר הבחנה בין מסלול חינמי למסלול בתשלום. זה תלות פתוחה, מפורטת למטה. עד שתהיה הבחנה, אין איפה לקרוא «פרו».
+
+מסלול חינמי, לכל חיית מחמד, לכל החיים: יצירה אחת, ועוד החלפה אחת מתמונה אחרת. אחרי שההחלפה נוצלה (שתי שורות `succeeded` עם שני גיבובים שונים), הכפתור כבוי והטקסט הוא: «ההחלפה כבר נוצלה לחיית המחמד הזו.»
+
+מסלול בתשלום: בממשק אין תקרת החלפות. בשרת יש תקרת שימוש לרעה, נסתרת, לכל חיית מחמד: לכל היותר 5 יצירות שהצליחו בחודש קלנדרי, ולכל היותר 3 ביום קלנדרי. היום והחודש לפי `Asia/Jerusalem`. שתי התקרות באות ממשתני סביבה, ברירת מחדל 5 ו־3: `PET_AVATAR_PRO_MONTHLY_CAP` ו־`PET_AVATAR_PRO_DAILY_CAP`. לא שמים אותם ב־`.env` ב־PR הזה. כשאחת מהן נתפסת, המשתמש רואה «נסו שוב מחר», בלי מספרים ובלי שם של תקרה. אותה שורה גם כשהחודש נגמר, כדי לא לגלות איזו תקרה זו.
+
+באותו רגע נשלחת התראה לבעלים. ב־PR #30, שעדיין פתוח ולא בענף הזה, יש `notifyOwner` מתוך `createOwnerNotifier` ב־`server/src/ownerNotify.js`. `buildOwnerMessage` מחזיר null לסוג אירוע שלא נמצא ב־`EVENT_TYPES`, וההודעה לא נשלחת. הסוג המוצע הוא `pet.avatar.abuse`, עם `userId`, `petId`, ו־`window` (`day` או `month`). הטקסט לבעלים מזהה את החשבון ואת חיית המחמד, ומקשר ל־`/admin/customers/<user id>`, כמו הרשמה ב־#30. הוא לא חייב להסתיר את סוג החלון. עד ש־#30 נכנס ל־`aws-migration` ומוסיף את הסוג לרשימה, האירוע מוגדר כאן ואין לו פונקציה לקרוא לה.
+
+### טבלת המונים
+
+```sql
+create table public.pet_avatar_generations (
+  id uuid primary key default gen_random_uuid(),
+  pet_id uuid not null references public.pets(id) on delete cascade,
+  user_id uuid not null references public.app_users(id),
+  photo_hash text not null,
+  status text not null check (status in ('queued', 'running', 'succeeded', 'failed')),
+  provider_task_id text,
+  created_at timestamptz not null default now()
+);
+```
+
+`user_id` נשמר בשביל ההתראה לבעלים. הספירה היא `where pet_id = $1`. אינדקס ייחודי חלקי על `(pet_id, photo_hash)` כשהסטטוס הוא `queued`, `running` או `succeeded`, כדי שאותה תמונה לא תיפתח פעמיים.
+
+הבדיקה, לפני קריאה לספק:
+
+1. שורות `failed` לא בתמונה.
+2. שורות `queued` ו־`running` תופסות מקום, כדי ששתי לחיצות במקביל לא יעברו יחד. אם העבודה נכשלת, המקום מתפנה.
+3. גיבוב שכבר יש לו שורה פתוחה או שהצליחה: מחזירים אותה. זו לא יצירה חדשה.
+4. מסלול חינמי: מספר השורות שתופסות מקום הוא 0, מותר. הוא 1, והגיבוב חדש, מותר — זו ההחלפה. הוא 1 והגיבוב זהה, מחזירים את הקיימת. הוא 2 ומעלה, הכפתור כבוי.
+5. מסלול בתשלום: סופרים את השורות שתופסות מקום וש־`created_at` שלהן ביום הנוכחי, ובחודש הנוכחי, לפי `Asia/Jerusalem`. אם היום הגיע ל־`PET_AVATAR_PRO_DAILY_CAP` או החודש ל־`PET_AVATAR_PRO_MONTHLY_CAP`, דוחים בלי לקרוא לספק, מראים «נסו שוב מחר», ושולחים `pet.avatar.abuse`.
+
+### מה קיים היום במקום מסלול
+
+נבדק בקוד של הענף הזה. אין שדה מסלול, אין מנוי לאפליקציה, ואין טבלת זכאויות.
+
+- `public.app_users` ב־`server/sql/0005_auth_profiles_pets.sql`: אימייל, סיסמה, שם, טלפון, תאריך לידה, `is_active`. אחר כך נוספו שדות ייבוא (`server/sql/0011_supabase_identity_migration_support.sql`), אימות אימייל (`server/sql/0024_email_verification.sql`), ו־`terms_accepted_at` / `terms_version` (`server/sql/0023_terms_acceptance.sql`). אין עמודת מסלול.
+- `public.profiles`: `points` ברירת מחדל 0 (`server/sql/0011_supabase_identity_migration_support.sql`). אלו נקודות, לא מסלול בתשלום.
+- `public.pets` באותו קובץ 0005, והשדות שנוספו ב־`server/sql/0007_profile_health_fields.sql` וב־0011: בריאות, ביטוח חיה, מצב רוח. אין מסלול.
+- מועדון: `src/pages/ClubTerms.tsx` ו־`src/components/LegalDrawer.tsx`. ההצטרפות חינמית ופתוחה לכולם. אין מסלול מועדון בתשלום.
+- Cardcom: `public.cardcom_events` ב־`server/sql/0004_payments.sql`, והטיפול ב־`server/src/cardcom.js` וב־`server/src/index.js`. זה תשלום על הזמנת חנות. `order_type` יכול להיות `auto-restock` (מנוי על מוצר, `want_recurring_order` ב־`server/src/index.js`). זה לא מנוי על האפליקציה.
+- ספר העלויות ב־`server/sql/0026_ai_gateway_foundation.sql` (`ai_requests`, `usage_events`, `cost_events`) רושם שימוש במודל. הוא לא אומר מי במסלול בתשלום.
+
+תלות פתוחה: בלי עמודה או טבלה שמבחינה בין חינמי לבתשלום, אי אפשר להפעיל את שתי המכסות. ההצעה לא מוסיפה את העמודה. כשתוכרע, מקום טבעי הוא `app_users.plan` עם הערכים `free` ו־`pro`, ברירת מחדל `free`. עד אז כל חשבון נשאר בלי מסלול, והדמות לא נבנית למשתמשים.
 
 המפתח `TRIPO_API_KEY` נקרא רק כאן, בשרת, בכותרת `Authorization: Bearer`. במדריך המהיר Tripo קוראים למשתנה `TRIPO_API_KEY`. ב־FAQ המפתח מתחיל ב־`tsk_` (מזהה הלקוח `tcli_` הוא לא מפתח). לא `VITE_`. אין ערך ב־PR הזה.
 
@@ -147,9 +195,13 @@ PR #15 הוסיף נשימה ל־`PetHeroVisual` על ענף של דמות הפ�
 | `preset:quadruped:walk` | 10 | 0.10 | מחירון ה־API, 10 לאנימציה |
 | נשימה, מצמוץ, זנב | אין שורה | 0 | לא ברשימת ה־quadruped; נעשה בקוד |
 
-לחיית מחמד אחת, המסלול המוצע: טקסטורה סטנדרטית + ריג, בלי קליפ הליכה, כי המנוחה בקוד. **55 קרדיטים, $0.55.** עם קליפ ההליכה: **65 קרדיטים, $0.65.** עם טקסטורה מפורטת וקליפ הליכה: **75 קרדיטים, $0.75.**
+ליצירה אחת, המסלול המוצע: טקסטורה סטנדרטית + ריג, בלי קליפ הליכה, כי המנוחה בקוד. **55 קרדיטים, $0.55.** עם קליפ ההליכה: **65 קרדיטים, $0.65.** עם טקסטורה מפורטת וקליפ הליכה: **75 קרדיטים, $0.75.**
 
 P1 עם טקסטורה, לפי מחירון ה־OpenAPI, הוא 50 במקום 30. אז 50+25=**$0.75** בלי הליכה, ו־50+25+10=**$0.85** עם הליכה. דף המחירון החדש מציג לשונית P Series; בטקסט שנקרא הופיעה רק טבלת H, אז אין כאן מספרים מלשונית ה־P החדשה.
+
+מסלול חינמי הוא שתי יצירות שהצליחו, כולל ריג. כשל אצל הספק לא נספר ולא מחויב. שתי יצירות בסדרת H עם טקסטורה סטנדרטית וריג, בלי הליכה: **$1.10.** עם הליכה: **$1.30.** עם טקסטורה מפורטת והליכה: **$1.50.** P1 בלי הליכה גם **$1.50.** P1 עם הליכה הוא **$1.70**, מחוץ לטווח של בערך $1.10–$1.50.
+
+במסלול בתשלום התקרה החודשית היא זו שסוגרת את החודש: 5 יצירות שהצליחו לחיית מחמד. אותו מחירון: **$2.75** בלי הליכה, **$3.25** עם הליכה, **$3.75** עם טקסטורה מפורטת והליכה, **$4.25** ל־P1 עם הליכה. תקרת היום (3) מגבילה יום אחד ל־3 מתוך ה־5, לא את החודש.
 
 משימה שהצליחה אבל לא דומה לחיה עולה את מלוא הסכום. לכן השער רץ קודם. משימה שנכשלה מתועדת כלא מחויבת.
 
@@ -175,7 +227,15 @@ Home centre is `PetOrbit` inside `MipoHome`. A ready character pack plus an alph
 
 Direction: one realistic GLB per pet, generated from that pet's photo. Not one mesh per species, and not the cartoon reel. The reel stays an unbuilt scratch-reveal idea for `/install` only.
 
-Pipeline, not built in this PR: profile upload; a quality gate (client heuristics, then an optional extension of the existing Gemini photo review) before any provider call; a server job keyed by pet id plus SHA-256 of the photo, with retries, Tripo's documented concurrency (10, and 3 for rig/animation), and a product cap of two successful generations per user per day; quadruped auto-rig (`v2.5-20260210`); idle, blink, and tail in three.js because the only documented quadruped preset is `preset:quadruped:walk`; store `pets/{petId}/avatar/{photoHash}.glb` with Tripo's `compress: "geometry"` (meshopt) and a 4MB budget of ours. Flag `PET_AVATAR_3D` stays off. Failure, flag off, or no WebGL keeps the photo.
+Pipeline, not built in this PR: profile upload; a quality gate before any provider call; a `pet_avatar_generations` row per attempt (`pet_id`, `user_id`, `photo_hash`, `status`, `provider_task_id`, `created_at`). Quota is per `pet_id`. Rows in `failed` do not count. In-flight `queued` / `running` rows hold a slot. The same photo hash returns the existing row.
+
+There is no Free vs Pro field on `app_users`, `profiles`, or `pets`. Club copy says membership is free for everyone. Cardcom and `auto-restock` are shop payments, not an app plan. `profiles.points` is a loyalty counter. Applying the two quotas is an open dependency (a future `app_users.plan` of `free` or `pro` is the natural place; this PR does not add it).
+
+When that field exists: free is one successful generation plus one successful regenerate from a different photo, lifetime, then the button is disabled with «ההחלפה כבר נוצלה לחיית המחמד הזו.» Pro shows unlimited changes. The server still caps successful generations at `PET_AVATAR_PRO_DAILY_CAP` (default 3) per Asia/Jerusalem day and `PET_AVATAR_PRO_MONTHLY_CAP` (default 5) per calendar month, per pet. The user sees «נסו שוב מחר» with no numbers. The owner alert is event `pet.avatar.abuse`. `notifyOwner` is not in this branch. PR #30 (open) drops unknown event types in `buildOwnerMessage` until `pet.avatar.abuse` is added to `EVENT_TYPES`.
+
+Free max, two successful H-series generations with standard texture and rig: $1.10 without the walk clip, $1.30 with it, $1.50 with detailed texture and the walk clip. P1 with the walk clip is $1.70, outside that band. Pro worst case per pet per month is five successes: $2.75, $3.25, $3.75, or $4.25 on those same four bills.
+
+Quadruped auto-rig (`v2.5-20260210`); idle, blink, and tail in three.js because the only documented quadruped preset is `preset:quadruped:walk`. Store `pets/{petId}/avatar/{photoHash}.glb` with Tripo's `compress: "geometry"` (meshopt) and a 4MB budget of ours. Flag `PET_AVATAR_3D` stays off. Failure, flag off, or no WebGL keeps the photo. Tripo concurrency stays 10, and 3 for rig/animation.
 
 Credits, $0.01 each, from the pages linked in the Hebrew section. Standard image-to-3D already includes texture at 30. Rig is 25. Walk is 10. Rig check is free. Recommended per pet: 55 credits ($0.55) without the walk clip, 65 ($0.65) with it. Detailed texture is +10. P1 with texture is 50 on the OpenAPI pricing page. Failed tasks are documented as not charged. A successful but rejected likeness is charged in full. Rig-only latency is not documented. Typical generation is 10–120 seconds. The only published multi-step estimate is ~105 seconds for a different biped pipeline. UI copy says a few minutes.
 

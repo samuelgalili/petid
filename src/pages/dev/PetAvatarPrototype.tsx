@@ -26,7 +26,7 @@ const SPECIES: { id: PrototypeSpecies; label: string }[] = [
 const PIPELINE = [
   "העלאה בפרופיל של חיית המחמד, תמונה אחת שלה.",
   "שער איכות לפני כל הוצאה: גוף מלא, חיה אחת, אור ורזולוציה, מבט מהצד או משלושת רבעים. דחייה בעברית, בלי קריאה לספק.",
-  "תור בשרת: אותו גיבוב של חיית מחמד ותמונה לא נשלח פעמיים, עם ניסיונות חוזרים ותקרה יומית.",
+  "תור בשרת: אותו גיבוב של חיית מחמד ותמונה לא נשלח פעמיים. המכסה נספרת לפי חיית המחמד, וכשל אצל הספק לא נספר.",
   "ריג אוטומטי על ארבע. מנוחה, נשימה וזנב בקוד — לספק יש רק קליפ הליכה.",
   "שמירת GLB לכל חיית מחמד, דחוס, עם תקרת משקל לטלפון.",
   "בזמן ההמתנה נשארת התמונה, עם משפט שהבנייה אורכת כמה דקות. בסיום, התראה בתוך האפליקציה.",
@@ -119,6 +119,21 @@ const PetAvatarPrototype = () => {
               <li key={line}>{line}</li>
             ))}
           </ul>
+          <h3 className="mt-4 text-sm font-semibold text-mipo-ink">אחרי שההחלפה נוצלה</h3>
+          <p className="mt-1 text-sm leading-6 text-mipo-muted">
+            תצוגה בלבד. במסלול החינמי, אחרי יצירה אחת והחלפה אחת לאותה חיית מחמד, הכפתור כבוי. אין כאן ספירה אמיתית.
+          </p>
+          <button
+            type="button"
+            disabled
+            className="mt-3 min-h-11 rounded-full border border-mipo-ink/10 px-4 text-sm font-semibold text-mipo-ink opacity-60"
+          >
+            החלפת הדמות
+          </button>
+          <p className="mt-2 text-sm leading-6 text-mipo-ink">ההחלפה כבר נוצלה לחיית המחמד הזו.</p>
+          <p className="mt-2 text-sm leading-6 text-mipo-muted">
+            במסלול בתשלום הכפתור נשאר פעיל. אם תקרת השימוש הנסתרת נתפסת, המשפט הוא: נסו שוב מחר.
+          </p>
         </section>
 
         <section className="mt-8" aria-labelledby="today-heading">
