@@ -76,6 +76,16 @@
 		file_server
 	}
 
+	# The worker and the shell are how a deploy reaches a tab that is already
+	# open. Caching either of them is how that tab keeps asking for last week's
+	# hashed bundle. no-cache makes the browser revalidate on every load.
+	@shell path /sw.js /index.html
+	handle @shell {
+		root * /srv/www
+		header Cache-Control "no-cache"
+		file_server
+	}
+
 	# Fonts and icons are not content-hashed. They still change rarely, and the
 	# names are stable, so they are cached for a year. A replacement has to use
 	# a new filename. robots.txt, the worker and index.html stay revalidated.

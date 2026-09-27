@@ -414,6 +414,7 @@ const ForgotPassword = () => {
                           }}
                           disabled={loading}
                           className="h-12 bg-secondary/50 border-border/50 text-foreground pl-12 focus:bg-background focus:border-primary/50 font-jakarta rounded-xl transition-all"
+                          autoComplete="new-password"
                           required
                         />
                         <button
@@ -442,6 +443,7 @@ const ForgotPassword = () => {
                           }}
                           disabled={loading}
                           className="h-12 bg-secondary/50 border-border/50 text-foreground pl-12 focus:bg-background focus:border-primary/50 font-jakarta rounded-xl transition-all"
+                          autoComplete="new-password"
                           required
                         />
                         <button

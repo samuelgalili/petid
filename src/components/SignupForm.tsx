@@ -199,7 +199,7 @@ export const SignupForm = () => {
               setFieldErrors({ ...fieldErrors, email: undefined });
             }}
             disabled={loading}
-            className={`h-11 bg-muted/50 border border-border rounded-lg text-sm pr-10 text-right ${
+            className={`h-11 bg-muted/50 border border-border rounded-lg text-sm pr-10 ${
               fieldErrors.email ? "border-destructive" : ""
             }`}
             autoComplete="email"
@@ -224,7 +224,7 @@ export const SignupForm = () => {
               setFieldErrors({ ...fieldErrors, password: undefined });
             }}
             disabled={loading}
-            className={`h-11 bg-muted/50 border border-border rounded-lg text-sm pr-10 pl-14 text-right ${
+            className={`h-11 bg-muted/50 border border-border rounded-lg text-sm pr-10 pl-14 ${
               fieldErrors.password ? "border-destructive" : ""
             }`}
             autoComplete="new-password"
@@ -257,7 +257,7 @@ export const SignupForm = () => {
               setFieldErrors({ ...fieldErrors, confirmPassword: undefined });
             }}
             disabled={loading}
-            className={`h-11 bg-muted/50 border border-border rounded-lg text-sm pr-10 text-right ${
+            className={`h-11 bg-muted/50 border border-border rounded-lg text-sm pr-10 ${
               fieldErrors.confirmPassword ? "border-destructive" : ""
             }`}
             autoComplete="new-password"
