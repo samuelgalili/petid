@@ -72,6 +72,11 @@ import {
   hasAdminPermission,
 } from "./adminPermissions.js";
 import { adminProductView } from "./sellerScope.js";
+import {
+  CHECKOUT_UNAVAILABLE_HE,
+  matchesCategory,
+  publiclyVisibleProduct,
+} from "./shopVisibility.js";
 import { isSellerEligible } from "./sellerEligibility.js";
 import { commissionForLine, readPlatformCommissionRate } from "./platformCommission.js";
 import { createProductIntakeRoutes } from "./productIntakeRoutes.js";
@@ -5823,18 +5828,45 @@ const resolveMarketplaceOrderItem = async (client, requestedItem) => {
   };
 };
 
+// shop_hidden is selected when 0061 is applied. A savepoint keeps a database
+// that has not migrated yet from aborting the order transaction: the column
+// is then treated as visible, which is what every row was before the column
+// existed. Once the column exists, a hidden row is refused below.
+const selectBusinessProductForOrder = async (client, productId) => {
+  await client.query("savepoint manual_product_visibility");
+  try {
+    const result = await client.query(
+      `
+        select id, name, image_url, price, sale_price, in_stock, sku, weight, weight_unit,
+               coalesce(shop_hidden, false) as shop_hidden
+        from public.business_products
+        where id = $1
+        for share
+      `,
+      [productId],
+    );
+    await client.query("release savepoint manual_product_visibility");
+    return result;
+  } catch (error) {
+    await client.query("rollback to savepoint manual_product_visibility");
+    if (error.code !== "42703") throw error;
+    return client.query(
+      `
+        select id, name, image_url, price, sale_price, in_stock, sku, weight, weight_unit,
+               false as shop_hidden
+        from public.business_products
+        where id = $1
+        for share
+      `,
+      [productId],
+    );
+  }
+};
+
 const resolveCatalogOrderItem = async (client, requestedItem) => {
   if (requestedItem.offer_id) return await resolveMarketplaceOrderItem(client, requestedItem);
 
-  const findManual = () => client.query(
-    `
-      select id, name, image_url, price, sale_price, in_stock, sku, weight, weight_unit
-      from public.business_products
-      where id = $1
-      for share
-    `,
-    [requestedItem.product_id],
-  );
+  const findManual = () => selectBusinessProductForOrder(client, requestedItem.product_id);
   const findScraped = () => client.query(
     `
       select
@@ -5883,6 +5915,16 @@ const resolveCatalogOrderItem = async (client, requestedItem) => {
   if (!inStock) {
     const error = new Error("Product is out of stock");
     error.statusCode = 409;
+    throw error;
+  }
+  // Hidden is not out of stock. The row is still in the catalogue, and the
+  // other lines in this request are not this line. Refusing here, before
+  // amounts are computed, means no order is written and the webhook has
+  // nothing new to settle. The client omits the line and checks out the rest.
+  if (source === "manual" && row.shop_hidden === true) {
+    const error = new Error(CHECKOUT_UNAVAILABLE_HE);
+    error.statusCode = 409;
+    error.code = "PRODUCT_UNAVAILABLE";
     throw error;
   }
 
@@ -9172,11 +9214,21 @@ const handleRequest = async (request, response) => {
       // its own products in full and everybody else's in exactly the shape an
       // anonymous visitor sees - so one Seller's cost_price, commission_rate
       // and supplier_id never reach another.
+      //
+      // shop_hidden is applied here, at the public call site, and not inside
+      // listProducts. Admin analytics and the ownership queue share that
+      // function, and a hidden product is still a catalogue row.
       const identity = await resolveAdminIdentity(request);
-      sendJson(response, 200, {
-        products: products.map((product) =>
-          (adminProductView(identity, product) === "full" ? product : toPublicProduct(product))),
-      });
+      const rawCategory = url.searchParams.get("category_id") || url.searchParams.get("category");
+      const categoryKey = rawCategory && rawCategory.trim() ? rawCategory.trim() : null;
+      const listed = [];
+      for (const product of products) {
+        const view = adminProductView(identity, product);
+        if (!publiclyVisibleProduct(product, view)) continue;
+        if (categoryKey && !matchesCategory(product, categoryKey)) continue;
+        listed.push(view === "full" ? product : toPublicProduct(product));
+      }
+      sendJson(response, 200, { products: listed });
       return;
     }
 
@@ -9326,13 +9378,16 @@ const handleRequest = async (request, response) => {
     const publicProductMatch = url.pathname.match(/^\/api\/products\/([0-9a-fA-F-]{36})$/);
     if (publicProductMatch && request.method === "GET") {
       const product = await fetchPublicProductById(publicProductMatch[1]);
-      if (!product) {
+      const identity = await resolveAdminIdentity(request);
+      const view = adminProductView(identity, product);
+      // A hidden product is the same answer as a missing one for a shopper:
+      // 404, which the product page renders as a friendly unavailable state.
+      if (!publiclyVisibleProduct(product, view)) {
         sendError(response, 404, "Product not found");
         return;
       }
-      const identity = await resolveAdminIdentity(request);
       sendJson(response, 200, {
-        product: adminProductView(identity, product) === "full" ? product : toPublicProduct(product),
+        product: view === "full" ? product : toPublicProduct(product),
       });
       return;
     }

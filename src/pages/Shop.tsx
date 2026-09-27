@@ -25,7 +25,7 @@ import { checkProductSafety, SafetyBadge } from "@/components/shop/ShopSafetyFil
 import { useActivePet } from "@/hooks/useActivePet";
 import { ProductInfoDrawer } from "@/components/shop/ProductInfoDrawer";
 import { useCarePlan } from "@/hooks/useCarePlan";
-import { createContentReport, getShopProducts } from "@/lib/mipoApi";
+import { createContentReport, getPublicShopProducts } from "@/lib/mipoApi";
 import { FREE_SHIPPING_THRESHOLD } from "@/lib/shipping";
 import { searchCatalogDetailed } from "@/lib/catalogSearch";
 
@@ -266,7 +266,7 @@ const Shop = () => {
   const { data: dbProducts = [], isLoading: isLoadingProducts, isFetching, isError: isProductsError } = useQuery({
     queryKey: ["shop-products-aws"],
     queryFn: async () => {
-      const products = await getShopProducts();
+      const products = await getPublicShopProducts();
       return products.filter((product) => product.in_stock !== false);
     },
     staleTime: 1000 * 60 * 2, // 2 minutes
