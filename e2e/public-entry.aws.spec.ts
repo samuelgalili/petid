@@ -119,6 +119,67 @@ test.describe("public entry", () => {
     expect(overflow).toBe(false);
   });
 
+  test("a guest can open the shop and a product without /auth", async ({ page }) => {
+    await mockAnonymous(page);
+    await page.route("**/api/products/1", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ product: products[0] }),
+    }));
+    await page.route("**/api/products/hidden-1", (route) => route.fulfill({
+      status: 404,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "Not found" }),
+    }));
+
+    await page.goto("/");
+    await expect(page).toHaveURL(/\/shop$/);
+    await expect(page).not.toHaveURL(/\/auth/);
+
+    await page.goto("/shop");
+    await expect(page).toHaveURL(/\/shop$/);
+    await expect(page).not.toHaveURL(/\/auth/);
+    await expect(page.getByRole("heading", { name: "חנות", exact: true })).toBeVisible();
+
+    await page.goto("/product/1");
+    await expect(page).toHaveURL(/\/product\/1$/);
+    await expect(page).not.toHaveURL(/\/auth/);
+    await expect(page.getByRole("heading", { name: "מזון יבש לכלב 7 קילו" })).toBeVisible();
+  });
+
+  test("a hidden product stays out of the shop", async ({ page }) => {
+    await mockAnonymous(page);
+    await page.route("**/api/products*", (route) => {
+      if (route.request().url().includes("/products/hidden-1")) {
+        return route.fulfill({
+          status: 404,
+          contentType: "application/json",
+          body: JSON.stringify({ error: "Not found" }),
+        });
+      }
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          products: [
+            ...products,
+            { ...product("hidden-1", "מוצר מוסתר", 12), shop_hidden: true },
+          ],
+        }),
+      });
+    });
+
+    await page.goto("/shop");
+    await expect(page).not.toHaveURL(/\/auth/);
+    await expect(page.getByText("מזון יבש לכלב 7 קילו")).toBeVisible();
+    await expect(page.getByText("מוצר מוסתר")).toHaveCount(0);
+
+    await page.goto("/product/hidden-1");
+    await expect(page).toHaveURL(/\/product\/hidden-1$/);
+    await expect(page).not.toHaveURL(/\/auth/);
+    await expect(page.getByRole("heading", { name: "המוצר לא נמצא" })).toBeVisible();
+  });
+
   test("anonymous visitors check the session once", async ({ page }) => {
     let authMe = 0;
     await mockAnonymous(page);
