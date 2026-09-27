@@ -134,7 +134,8 @@ const Checkout = () => {
       // Ignore stale local data.
     }
 
-    // A guest has no profile; the 401 is expected and means "nothing saved".
+    // Guests have nothing saved. getMyShippingProfile does not call the
+    // authenticated route in that case; a 401 here used to show up in checkout.
     getMyShippingProfile()
       .then((profile) => { if (profile) fillFrom(profile as unknown as Record<string, unknown>); })
       .catch(() => undefined);
@@ -155,7 +156,6 @@ const Checkout = () => {
   );
   const orderItems = partition.available;
   const subtotal = chargeableSubtotal(orderItems);
-  const cataloguePending = catalogue.isPending;
   const nothingToBuy = catalogue.isSuccess && orderItems.length === 0;
   const baseShipping = shippingFor(subtotal);
   
@@ -318,7 +318,6 @@ const Checkout = () => {
   };
 
   const handlePlaceOrder = async () => {
-    if (cataloguePending) return;
     if (nothingToBuy) {
       toast({
         title: UNAVAILABLE_ITEM_HE,
@@ -1278,7 +1277,7 @@ const Checkout = () => {
             data-testid="checkout-continue"
             className={`flex-1 bg-accent hover:bg-accent-hover text-accent-foreground rounded-2xl font-bold font-jakarta shadow-xl h-14 ${currentStep === 1 ? 'w-full' : ''}`}
             onClick={currentStep === 3 ? handlePlaceOrder : undefined}
-            disabled={isProcessing || (currentStep === 3 && (cataloguePending || nothingToBuy))}
+            disabled={isProcessing || (currentStep === 3 && nothingToBuy)}
           >
             {isProcessing ? (
               <>

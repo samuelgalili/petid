@@ -9,7 +9,21 @@ import { expect, test, type Page } from "@playwright/test";
 
 const userId = "11111111-1111-4111-8111-111111111111";
 const orderId = "22222222-2222-4222-8222-222222222222";
+const cartProductId = "d3affade-756c-4ada-bf9a-7e441b69f576";
+const otherProductId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const cardcomUrl = "https://secure.cardcom.solutions/External/LowProfile.aspx?LowProfileCode=test";
+
+type CatalogueMode = "present" | "empty" | "failed" | "hidden";
+
+function catalogueProduct(id: string) {
+  return {
+    id,
+    name: id === cartProductId ? "קוואטרו כלבים אדולט מיני עוף" : "מוצר אחר",
+    price: 199,
+    image_url: "/placeholder.svg",
+    in_stock: true,
+  };
+}
 
 const unverifiedUser = {
   id: userId,
@@ -42,7 +56,7 @@ const order = {
   order_date: "2026-09-27T00:00:00.000Z",
 };
 
-async function prepareCheckout(page: Page, signedIn: boolean) {
+async function prepareCheckout(page: Page, signedIn: boolean, catalogue: CatalogueMode = "present") {
   const calls: string[] = [];
   await page.route("**/api/**", async (route) => {
     if (route.request().method() === "GET") {
@@ -50,6 +64,18 @@ async function prepareCheckout(page: Page, signedIn: boolean) {
       return;
     }
     await route.fulfill({ status: 404, json: { error: "unmocked" } });
+  });
+  await page.route("**/api/products*", async (route) => {
+    if (catalogue === "empty") {
+      await route.fulfill({ json: { products: [] } });
+      return;
+    }
+    if (catalogue === "failed") {
+      await route.fulfill({ status: 500, json: { error: "catalogue down" } });
+      return;
+    }
+    const ids = catalogue === "hidden" ? [otherProductId] : [cartProductId];
+    await route.fulfill({ json: { products: ids.map(catalogueProduct) } });
   });
   await page.route("**/api/auth/me", async (route) => {
     if (!signedIn) {
@@ -78,22 +104,6 @@ async function prepareCheckout(page: Page, signedIn: boolean) {
   await page.route("**/api/me/shipping-profile", async (route) => {
     await route.fulfill({ status: signedIn ? 200 : 401, json: signedIn ? { profile: null } : { error: "Unauthorized" } });
   });
-  // Checkout only charges lines the public catalogue still lists. An empty
-  // products body would mark this line unavailable and leave the pay button off.
-  await page.route("**/api/products", async (route) => {
-    await route.fulfill({
-      json: {
-        products: [{
-          id: "d3affade-756c-4ada-bf9a-7e441b69f576",
-          name: "קוואטרו כלבים אדולט מיני עוף",
-          price: 199,
-          image_url: "/placeholder.svg",
-          in_stock: true,
-          shop_hidden: false,
-        }],
-      },
-    });
-  });
   await page.route("**/api/orders", async (route) => {
     calls.push(`order:${route.request().method()}`);
     await route.fulfill({ status: 201, json: { order, access_token: "guest-token" } });
@@ -115,21 +125,21 @@ async function prepareCheckout(page: Page, signedIn: boolean) {
       body: "<!doctype html><html lang=\"he\"><body><h1>Cardcom</h1></body></html>",
     });
   });
-  await page.addInitScript(() => {
+  await page.addInitScript((productId) => {
     localStorage.setItem("mipo-onboarding-complete", "true");
     localStorage.setItem("mipo-cart", JSON.stringify([{
       id: "line-1",
-      productId: "d3affade-756c-4ada-bf9a-7e441b69f576",
+      productId,
       name: "קוואטרו כלבים אדולט מיני עוף",
       price: 199,
       image: "/placeholder.svg",
       quantity: 1,
     }]));
-  });
+  }, cartProductId);
   return calls;
 }
 
-async function reachCardcom(page: Page) {
+async function reachOrderButton(page: Page) {
   await page.goto("/checkout");
   await expect(page.getByRole("heading", { name: "כתובת למשלוח" })).toBeVisible();
   await page.getByLabel(/שם מלא/).fill("דנה כהן");
@@ -143,6 +153,11 @@ async function reachCardcom(page: Page) {
   await page.getByTestId("checkout-continue").click();
   await expect(page.getByTestId("checkout-payment-heading")).toBeVisible();
   await page.getByTestId("checkout-continue").click();
+  await expect(page.getByRole("button", { name: /בצע הזמנה/ })).toBeVisible();
+}
+
+async function reachCardcom(page: Page) {
+  await reachOrderButton(page);
   await page.getByRole("button", { name: /בצע הזמנה/ }).click();
   await expect(page).toHaveURL(/secure\.cardcom\.solutions/);
   await expect(page.getByRole("heading", { name: "Cardcom" })).toBeVisible();
@@ -161,6 +176,26 @@ test.describe("unverified checkout reaches Cardcom", () => {
     await reachCardcom(page);
     expect(calls).toEqual(["order:POST", "payment"]);
   });
+});
+
+test("an empty or failed catalogue does not disable checkout, and a hidden line does", async ({ page }) => {
+  await prepareCheckout(page, false, "empty");
+  await reachOrderButton(page);
+  await expect(page.getByRole("button", { name: /בצע הזמנה/ })).toBeEnabled();
+  await expect(page.getByText("המוצר אינו זמין כרגע")).toHaveCount(0);
+
+  const failed = await page.context().newPage();
+  await prepareCheckout(failed, false, "failed");
+  await reachOrderButton(failed);
+  await expect(failed.getByRole("button", { name: /בצע הזמנה/ })).toBeEnabled();
+  await failed.close();
+
+  const hidden = await page.context().newPage();
+  await prepareCheckout(hidden, false, "hidden");
+  await reachOrderButton(hidden);
+  await expect(hidden.getByRole("button", { name: /בצע הזמנה/ })).toBeDisabled();
+  await expect(hidden.getByText("המוצר אינו זמין כרגע").first()).toBeVisible();
+  await hidden.close();
 });
 
 async function openHome(page: Page, health: Record<string, unknown> | "down") {

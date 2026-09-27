@@ -113,19 +113,10 @@ export const ProductInfoDrawer = ({ product, onClose, onAddToCart, onAddToCarePl
               className="w-full h-full"
               objectFit="contain"
             />
-            {/* Gradient overlay */}
-            <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-background to-transparent" />
-
-            {/* Sale badge */}
-            {discount && (
-              <div className="absolute top-4 right-4 bg-destructive text-destructive-foreground text-sm font-bold px-3 py-1.5 rounded-xl shadow-lg">
-                -{discount}%
-              </div>
-            )}
           </div>
 
           {/* Content */}
-          <div className="px-5 -mt-8 relative z-10 pb-32">
+          <div className="relative z-10 px-5 pb-32">
             {/* Title + Price */}
             <div className="mb-4">
               {product.brand && (
@@ -136,6 +127,9 @@ export const ProductInfoDrawer = ({ product, onClose, onAddToCart, onAddToCarePl
                 <span className="text-3xl font-black text-foreground">₪{product.price}</span>
                 {product.originalPrice && product.originalPrice > product.price && (
                   <span className="text-base text-muted-foreground line-through">₪{product.originalPrice}</span>
+                )}
+                {discount && (
+                  <span className="text-sm font-semibold text-mipo-ink">-{discount}%</span>
                 )}
               </div>
             </div>
