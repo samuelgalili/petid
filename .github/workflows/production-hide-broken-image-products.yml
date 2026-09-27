@@ -1,0 +1,224 @@
+# Temporarily hide the 28 products whose main image is wrong, broken, or
+# hosted on a competitor store, and restore them later.
+#
+# This workflow WRITES when mode is hide or unhide. Dry-run is the default and
+# writes nothing. The two write modes each need their own confirmation text,
+# checked before anything is contacted. A backup is taken before a write.
+#
+# It updates shop_hidden on the allowlisted ids only, and records the previous
+# value so unhide can put it back. It does not delete products, variants,
+# offers or inventory, and it does not change stock.
+#
+# The script is bind-mounted. server/Dockerfile does not copy scripts, and the
+# deploy rsync does put server/ on the host. DATABASE_URL is never read or
+# printed here. The container receives it from compose, the same way the API does.
+#
+# Running mode=hide changes production data. It needs the owner's approval.
+
+name: Hide broken external product images
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'dry-run prints each id and writes nothing. hide sets shop_hidden. unhide restores the recorded value.'
+        required: true
+        default: 'dry-run'
+        type: choice
+        options:
+          - dry-run
+          - hide
+          - unhide
+      confirmation:
+        description: 'For hide, type HIDE-BROKEN-IMAGES. For unhide, type UNHIDE-BROKEN-IMAGES. Ignored for dry-run.'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aws-production
+  cancel-in-progress: false
+
+jobs:
+  hide-products:
+    name: Hide or restore the broken-image products
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+
+    env:
+      MIPO_AWS_HOST: ${{ vars.MIPO_AWS_HOST || '63.183.241.110' }}
+      MIPO_AWS_USER: ${{ vars.MIPO_AWS_USER || 'ubuntu' }}
+      MIPO_REMOTE_PATH: ${{ vars.MIPO_REMOTE_PATH || '/opt/mipo' }}
+
+    steps:
+      - name: Confirm intent
+        env:
+          MODE: ${{ inputs.mode }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          set -euo pipefail
+
+          case "$MODE" in
+            dry-run|hide|unhide) ;;
+            *)
+              echo "Nothing was contacted. Production was not touched." >&2
+              echo "mode must be dry-run, hide or unhide." >&2
+              exit 1
+              ;;
+          esac
+
+          case "$MODE" in
+            hide) expected="HIDE-BROKEN-IMAGES" ;;
+            unhide) expected="UNHIDE-BROKEN-IMAGES" ;;
+            *) expected="" ;;
+          esac
+
+          if [ -n "$expected" ] && [ "$CONFIRMATION" != "$expected" ]; then
+            echo "Nothing was contacted. Production was not touched." >&2
+            echo "" >&2
+            echo "mode=$MODE changes production data and needs the owner's approval." >&2
+            echo "The confirmation box has to contain exactly this text:" >&2
+            echo "" >&2
+            echo "    $expected" >&2
+            echo "" >&2
+            echo "Leave mode on dry-run to print each id without writing." >&2
+            exit 1
+          fi
+
+          if [ "$MODE" = "dry-run" ]; then
+            echo "Confirmed: dry run. Nothing will be written."
+          else
+            echo "Confirmed: $MODE. A backup is taken first. This changes production data."
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify the script writes only shop visibility
+        run: |
+          set -euo pipefail
+          script="server/scripts/hideBrokenImageProducts.mjs"
+          if [ ! -f "$script" ]; then
+            echo "BLOCKED-PROD: $script is not in this checkout." >&2
+            echo "This job ran from branch '${GITHUB_REF_NAME}'." >&2
+            echo "In Run workflow, set 'Use workflow from' to aws-migration." >&2
+            exit 1
+          fi
+
+          code="$(grep -vE '^[[:space:]]*(//|\*|/\*)' "$script")"
+          if printf '%s\n' "$code" | grep -inE '\b(drop|truncate)\b'; then
+            echo "BLOCKED-PROD: the script contains a destructive statement." >&2
+            exit 1
+          fi
+          if printf '%s\n' "$code" | grep -in 'delete from public.business_products'; then
+            echo "BLOCKED-PROD: the script deletes products." >&2
+            exit 1
+          fi
+          # The only delete is the visibility hold, after unhide has restored it.
+          if printf '%s\n' "$code" | grep -in 'delete from' | grep -iv 'product_shop_visibility_holds'; then
+            echo "BLOCKED-PROD: a delete targets something other than the visibility hold." >&2
+            exit 1
+          fi
+          for forbidden in 'seller_offers' 'product_variants' 'catalog_products' 'public.inventory'; do
+            if printf '%s\n' "$code" | grep -in "$forbidden"; then
+              echo "BLOCKED-PROD: the script mentions ${forbidden}." >&2
+              exit 1
+            fi
+          done
+          printf '%s\n' "$code" | grep -q 'update public.business_products' \
+            || { echo "BLOCKED-PROD: the script does not update business_products"; exit 1; }
+          printf '%s\n' "$code" | grep -q 'set shop_hidden' \
+            || { echo "BLOCKED-PROD: the script does not set shop_hidden"; exit 1; }
+          # Stock is selected for the log. It must not be assigned.
+          if printf '%s\n' "$code" | grep -inE 'set[[:space:]].*in_stock|in_stock[[:space:]]*='; then
+            echo "BLOCKED-PROD: the script assigns in_stock." >&2
+            exit 1
+          fi
+          grep -qE '\bassertAllowlisted\b[[:space:]]*\(' "$script" \
+            || { echo "BLOCKED-PROD: the script must call assertAllowlisted()"; exit 1; }
+          echo "Verified: shop_hidden on the allowlist only. No stock write, no deletes of catalogue rows."
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.MIPO_AWS_SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SSH_PRIVATE_KEY:-}" ]; then
+            echo "BLOCKED-PROD: the production environment has no MIPO_AWS_SSH_PRIVATE_KEY." >&2
+            exit 1
+          fi
+          if [ -z "${MIPO_AWS_HOST}" ]; then
+            echo "BLOCKED-PROD: MIPO_AWS_HOST is empty for the production environment." >&2
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/mipo_aws_key
+          chmod 600 ~/.ssh/mipo_aws_key
+          ssh-keyscan -T 30 -H "$MIPO_AWS_HOST" >> ~/.ssh/known_hosts || true
+          echo "SSH configured for ${MIPO_AWS_USER}@${MIPO_AWS_HOST}"
+
+      - name: Run the mode
+        env:
+          MODE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 \
+            "${MIPO_AWS_USER}@${MIPO_AWS_HOST}" \
+            "MIPO_REMOTE_PATH='${MIPO_REMOTE_PATH}' MODE='${MODE}' bash -s" <<'REMOTE'
+          set -euo pipefail
+
+          compose_file="${MIPO_REMOTE_PATH}/deploy/aws/docker-compose.yml"
+          scripts_dir="${MIPO_REMOTE_PATH}/server/scripts"
+          script_name="hideBrokenImageProducts.mjs"
+
+          test -f "$compose_file" || { echo "BLOCKED-PROD: no compose file at $compose_file" >&2; exit 1; }
+          if [ ! -f "${scripts_dir}/${script_name}" ]; then
+            echo "BLOCKED-PROD: ${scripts_dir}/${script_name} is not on the host." >&2
+            echo "The deploy's rsync puts server/ here; deploy aws-migration first." >&2
+            exit 1
+          fi
+
+          echo "Checking 0061 is applied..."
+          docker compose -f "$compose_file" run --rm --no-deps -T mipo-api \
+            node -e "
+              const pg = require('pg');
+              const pool = new pg.Pool({
+                connectionString: process.env.DATABASE_URL,
+                ssl: process.env.DB_SSL === 'false'
+                  ? false
+                  : { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' },
+              });
+              pool.query(\"select filename from public.schema_migrations where filename = '0061_product_shop_visibility.sql'\")
+                .then(r => {
+                  if (r.rows.length === 0) {
+                    console.error('BLOCKED-PROD: 0061 is not applied. Deploy aws-migration first.');
+                    process.exit(1);
+                  }
+                  console.log('0061 is applied.');
+                  return pool.end();
+                })
+                .catch(e => { console.error(e.message); process.exit(1); });
+            " </dev/null
+
+          if [ "$MODE" != "dry-run" ]; then
+            echo "Backing up before writing..."
+            bash "${MIPO_REMOTE_PATH}/deploy/aws/backup-before-migrate.sh" \
+              "${MIPO_REMOTE_PATH}" "hide-broken-images-${MODE}-$(date -u +%Y%m%dT%H%M%SZ)"
+          fi
+
+          echo "Running: node scripts/${script_name} --mode=${MODE}"
+          echo ""
+          docker compose -f "$compose_file" run --rm --no-deps -T \
+            -v "${scripts_dir}:/app/scripts:ro" \
+            mipo-api node "scripts/${script_name}" "--mode=${MODE}" </dev/null
+          REMOTE
+
+      - name: Remove the key
+        if: always()
+        run: |
+          set -euo pipefail
+          rm -f ~/.ssh/mipo_aws_key
+          echo "Key removed from the runner."

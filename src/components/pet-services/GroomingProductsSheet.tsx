@@ -65,7 +65,7 @@ export const GroomingProductsSheet = ({ pet, isOpen, onClose }: GroomingProducts
         {getGroomingFrequency()}
       </p>
       <p className="text-xs text-muted-foreground mt-2">
-        המלצה כללית עד שנחבר מאגר גזעים מלא ב-AWS.
+        המלצה כללית.
       </p>
     </div>
   );

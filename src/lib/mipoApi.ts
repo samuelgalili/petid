@@ -1,4 +1,5 @@
 import { emitPetCompanionEvent } from "@/lib/petCompanionReactions";
+import { visibleShopProducts } from "@/lib/shopVisibility";
 
 export interface MipoProduct {
   id: string;
@@ -17,6 +18,8 @@ export interface MipoProduct {
   category_name?: string | null;
   pet_type?: string | null;
   in_stock: boolean | null;
+  /** Present on a full admin row. Public responses omit hidden products instead. */
+  shop_hidden?: boolean | null;
   is_featured?: boolean | null;
   business_id?: string | null;
   sku?: string | null;
@@ -760,12 +763,30 @@ export async function getCurrentAdmin(): Promise<MipoAdmin | null> {
   return admin;
 }
 
-export async function getCurrentUser(): Promise<MipoAuthResult | null> {
+// One shared lookup. The home screen mounts several components that each ask
+// who is signed in; without this they each hit /auth/me, and an anonymous
+// visit is a handful of 401s. The cookie itself is HttpOnly, so the page
+// cannot skip the call by reading it. Caching the in-flight request is the
+// check, not a second way to be signed in — private endpoints still require
+// the session.
+let currentUserGeneration = 0;
+let currentUserPending: Promise<MipoAuthResult | null> | null = null;
+
+const rememberCurrentUser = (value: MipoAuthResult | null) => {
+  currentUserGeneration += 1;
+  currentUserPending = Promise.resolve(value);
+};
+
+async function fetchCurrentUser(): Promise<MipoAuthResult | null> {
   const response = await fetch(`${API_BASE_URL}/auth/me`, {
     credentials: "same-origin",
     headers: {
       "content-type": "application/json",
     },
+    // The first screen waits on this call. Without a deadline a stalled
+    // connection leaves that wait up for good. Eight seconds, then the caller
+    // stops waiting and shows the page a signed-out visitor would see.
+    signal: AbortSignal.timeout(8000),
   });
 
   if (response.status === 401) {
@@ -790,6 +811,22 @@ export async function getCurrentUser(): Promise<MipoAuthResult | null> {
   };
 }
 
+export async function getCurrentUser(): Promise<MipoAuthResult | null> {
+  if (currentUserPending) return currentUserPending;
+
+  const ticket = currentUserGeneration;
+  const request = fetchCurrentUser().then(
+    (value) => (ticket !== currentUserGeneration ? currentUserPending ?? value : value),
+    (error) => {
+      if (ticket !== currentUserGeneration && currentUserPending) return currentUserPending;
+      if (ticket === currentUserGeneration) currentUserPending = null;
+      throw error;
+    },
+  );
+  currentUserPending = request;
+  return request;
+}
+
 export async function requestEmailVerification(): Promise<{ ok: boolean; sent: boolean; reason: string }> {
   return apiFetch("/auth/email-verification/request", { method: "POST", body: "{}" });
 }
@@ -810,6 +847,7 @@ export async function loginUser(email: string, password: string, rememberMe = fa
     method: "POST",
     body: JSON.stringify({ email, password, remember_me: rememberMe }),
   });
+  rememberCurrentUser(auth);
   setStorageHint(userSessionHintKey, true);
   return auth;
 }
@@ -827,6 +865,7 @@ export async function signupUser(input: {
     method: "POST",
     body: JSON.stringify(input),
   });
+  rememberCurrentUser(auth);
   setStorageHint(userSessionHintKey, true);
   return auth;
 }
@@ -837,6 +876,7 @@ export async function logoutUser() {
     body: JSON.stringify({}),
   });
   if (!result.ok) throw new Error("Sign out failed");
+  rememberCurrentUser(null);
   setStorageHint(userSessionHintKey, false);
   return result;
 }
@@ -1457,8 +1497,14 @@ export interface MipoShippingProfile {
   updated_at: string;
 }
 
-/** Null for a customer who has not ordered yet; throws 401 for a guest. */
+/**
+ * Null when nobody is signed in, and null for a customer who has not ordered
+ * yet. Guests used to call this and get a 401 on the way into checkout. The
+ * route itself still requires a session.
+ */
 export async function getMyShippingProfile(): Promise<MipoShippingProfile | null> {
+  const auth = await getCurrentUser();
+  if (!auth) return null;
   const result = await apiFetch<{ profile: MipoShippingProfile | null }>("/me/shipping-profile");
   return result.profile;
 }
@@ -1821,6 +1867,11 @@ export async function bulkUpdateAdminOrders(ids: string[], updates: Partial<Pick
 export async function getShopProducts(): Promise<MipoProduct[]> {
   const result = await apiFetch<{ products: MipoProduct[] }>("/products");
   return result.products;
+}
+
+/** The shelf a shopper sees. Hidden products are absent even on an admin session. */
+export async function getPublicShopProducts(): Promise<MipoProduct[]> {
+  return visibleShopProducts(await getShopProducts());
 }
 
 export interface MipoProductCategory {

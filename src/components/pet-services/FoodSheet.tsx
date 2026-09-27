@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { ServiceBottomSheet } from './ServiceBottomSheet';
 import { Button } from '@/components/ui/button';
 import { fetchRecommendedProducts } from '@/lib/productRecommendations';
+import { displayProductDescription } from '@/lib/productDescription';
 
 interface Pet {
   id: string;
@@ -105,9 +106,9 @@ export const FoodSheet = ({ isOpen, onClose, pet }: FoodSheetProps) => {
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-foreground text-sm line-clamp-2">{product.name}</h3>
-                  {product.description && (
+                  {displayProductDescription(product.description) && (
                     <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
-                      {product.description}
+                      {displayProductDescription(product.description)}
                     </p>
                   )}
                   <div className="flex items-center justify-between mt-2">

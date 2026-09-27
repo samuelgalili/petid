@@ -2,12 +2,15 @@ import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
+import { SEO } from "@/components/SEO";
+import { ACCESSIBILITY_EMAIL, SUPPORT_PHONE, SUPPORT_WHATSAPP_URL } from "@/lib/siteContact";
 
 const Accessibility = () => {
   const navigate = useNavigate();
 
   return (
     <div className="h-screen bg-background overflow-hidden" dir="rtl">
+      <SEO title="הצהרת נגישות" description="הצהרת הנגישות של MIPO, לפי תקן ישראלי 5568 ולהנחיות WCAG 2.1." url="/accessibility" />
       <div className="h-full overflow-y-auto pb-[70px]">
       {/* Header */}
       <div className="bg-surface border-b border-border sticky top-0 z-10">
@@ -47,7 +50,12 @@ const Accessibility = () => {
           <p className="text-muted-foreground font-jakarta leading-relaxed">
             נתקלתם בבעיית נגישות? נשמח לשמוע ולטפל בהקדם.
             <br />
-            דוא"ל: accessibility@mipo.pet
+            דוא"ל: {ACCESSIBILITY_EMAIL}
+            <br />
+            וואטסאפ:{" "}
+            <a href={SUPPORT_WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="underline">
+              {SUPPORT_PHONE}
+            </a>
           </p>
 
           <p className="text-xs text-muted-foreground/60 mt-8 font-jakarta">

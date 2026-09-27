@@ -257,6 +257,16 @@ const Onboarding = () => {
   };
 
   useEffect(() => {
+    try {
+      if (localStorage.getItem("mipo-onboarding-complete") !== "true") {
+        localStorage.setItem("mipo-onboarding-complete", "false");
+      }
+    } catch {
+      // ignore storage quota / private mode
+    }
+  }, []);
+
+  useEffect(() => {
     const stored = readStoredOnboardingDraft();
     if (stored) hydrateFromDraft(stored);
   }, [hydrateFromDraft]);

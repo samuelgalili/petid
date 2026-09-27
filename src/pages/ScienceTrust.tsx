@@ -1,16 +1,16 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowRight, FlaskConical, ShieldCheck, Brain,
-  Microscope, BookOpen, ArrowLeft, Sparkles
+  ArrowRight, FlaskConical, Brain,
+  Microscope, ArrowLeft, Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScienceBadge } from '@/components/ui/ScienceBadge';
+import { SEO } from '@/components/SEO';
 
 const pillars = [
   {
     icon: FlaskConical,
-    title: 'NRC 2006 Standards',
     titleHe: 'תקני NRC 2006',
     description:
       'האלגוריתמים התזונתיים שלנו מבוססים על נתוני ה-National Research Council — מחקר עמיתים (peer-reviewed) שמגדיר את הצרכים התזונתיים המדויקים לכל גזע, גיל, ומצב בריאותי. כל המלצה עוברת אימות מול הנחיות אלו.',
@@ -19,7 +19,6 @@ const pillars = [
   },
   {
     icon: Microscope,
-    title: 'Clinical Verification',
     titleHe: 'אימות קליני',
     description:
       'כל מוצר בקטלוג הגלובלי שלנו עובר תהליך סינון קפדני. אנו בוחנים מחקרים קליניים מפורסמים, בודקים את הרכב המרכיבים, ומוודאים שהמוצר עומד בסטנדרטים של רפואה וטרינרית מבוססת ראיות (Evidence-Based Veterinary Medicine).',
@@ -28,7 +27,6 @@ const pillars = [
   },
   {
     icon: Brain,
-    title: 'AI Integrity',
     titleHe: 'יושרה של בינה מלאכותית',
     description:
       'העוזרים הדיגיטליים שלנו — Danny ו-Sarah — פועלים בגבולות מידע וטרינרי מאומת בלבד. הם אינם ממציאים עובדות, אינם מניחים הנחות רפואיות, ומסמנים בבירור כאשר נדרשת התייעצות עם וטרינר מוסמך.',
@@ -42,6 +40,11 @@ const ScienceTrust = () => {
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
+      <SEO
+        title="מדע ואמון"
+        description="הסטנדרט המדעי של MIPO, כולל תקני NRC 2006."
+        url="/science"
+      />
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/40">
         <div className="flex items-center justify-between px-5 h-14 max-w-3xl mx-auto">
@@ -61,14 +64,14 @@ const ScienceTrust = () => {
           className="text-center space-y-5"
         >
           <div className="flex justify-center">
-            <ScienceBadge size="lg" label="Science-Verified" />
+            <ScienceBadge size="lg" label="מאומת מדעית" />
           </div>
 
           <h1 className="text-[28px] sm:text-[34px] font-bold leading-tight tracking-tight">
-            The MIPO Scientific Standard
+            הסטנדרט המדעי של MIPO
           </h1>
           <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl mx-auto">
-            Why Data Matters — כל החלטה ב-MIPO מבוססת על מידע מדעי מאומת,
+            למה המידע חשוב — כל החלטה ב-MIPO מבוססת על מידע מדעי מאומת,
             לא על שיווק או ניחושים.
           </p>
         </motion.div>
@@ -91,10 +94,7 @@ const ScienceTrust = () => {
                   </div>
                   <div className="space-y-2 flex-1">
                     <div>
-                      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.15em]">
-                        {pillar.title}
-                      </p>
-                      <h2 className="text-lg font-bold mt-0.5">{pillar.titleHe}</h2>
+                      <h2 className="text-lg font-bold">{pillar.titleHe}</h2>
                     </div>
                     <p className="text-sm text-muted-foreground leading-relaxed">
                       {pillar.description}
@@ -114,12 +114,12 @@ const ScienceTrust = () => {
           className="rounded-[24px] border border-border/50 bg-card p-6 sm:p-8 text-center space-y-5"
         >
           <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.15em]">
-            THE BADGE
+            התג
           </p>
           <div className="flex justify-center gap-4 flex-wrap">
             <ScienceBadge size="sm" />
-            <ScienceBadge size="md" label="Science-Verified" />
-            <ScienceBadge size="lg" label="MIPO Verified · NRC 2006" />
+            <ScienceBadge size="md" label="מאומת מדעית" />
+            <ScienceBadge size="lg" label="מאומת MIPO · NRC 2006" />
           </div>
           <p className="text-sm text-muted-foreground leading-relaxed max-w-md mx-auto">
             התג הזה מופיע על מוצרים, המלצות, ותכנים שעברו את תהליך האימות המדעי שלנו.
