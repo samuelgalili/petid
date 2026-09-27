@@ -1,5 +1,4 @@
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, ShoppingCart, Truck } from "lucide-react";
 import type { CartItem } from "@/contexts/CartContext";
 import { amountToFreeShipping } from "@/lib/shipping";
@@ -22,10 +21,7 @@ export const SmartCartLayers = ({ items, subtotal }: SmartCartLayersProps) => {
             <ShieldCheck className="h-4 w-4 text-primary" strokeWidth={1.6} />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="mb-1 flex items-center gap-2">
-              <p className="text-xs font-bold text-foreground">בדיקת עגלה</p>
-              <Badge variant="secondary" className="text-[10px]">AWS</Badge>
-            </div>
+            <p className="mb-1 text-xs font-bold text-foreground">בדיקת עגלה</p>
             <p className="text-[11px] leading-relaxed text-muted-foreground">
               יש בעגלה {items.length} פריטים. לפני התשלום ודאו שהמוצרים מתאימים לגיל, משקל ורגישויות של חיית המחמד.
             </p>

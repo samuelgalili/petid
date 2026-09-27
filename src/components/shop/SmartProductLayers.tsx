@@ -3,15 +3,14 @@
  * 1. Health Impact Gauge
  * 2. Personalized "Why" section
  * 3. Smart Feeding/Usage Guide
- * 4. Veterinary Approval Badge
- * 5. Floating "Ask the Brain" chat button
- * 6. Subscribe & Save hook
+ * 4. Floating "Ask the Brain" chat button
+ * 5. Subscribe & Save hook
  */
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Gauge, Sparkles, ShieldCheck, Brain, RefreshCw, Check,
+  Gauge, Sparkles, Brain, RefreshCw, Check,
   Calculator, TrendingUp, Stethoscope, MessageCircle, X,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -283,64 +282,7 @@ const SmartFeedingGuide = ({ pet, productName, productPrice }: {
   );
 };
 
-// ── 4. Veterinary Approval Badge ──
-
-const VetApprovalBadge = ({ pet, productName, productDescription }: {
-  pet: ActivePet;
-  productName: string;
-  productDescription: string;
-}) => {
-  const matchedCondition = useMemo(() => {
-    if (!pet.medical_conditions || pet.medical_conditions.length === 0) return null;
-    const text = `${productName} ${productDescription}`.toLowerCase();
-    
-    const conditionKeywordMap: Record<string, string[]> = {
-      "עיכול": ["gastro", "digestive", "עיכול", "sensitive stomach"],
-      "כליות": ["renal", "kidney", "כליות"],
-      "שתן": ["urinary", "שתן", "struvite"],
-      "עור": ["skin", "derma", "עור", "hypoallergenic"],
-      "משקל": ["diet", "weight", "light", "דיאטה"],
-      "מפרקים": ["joint", "mobility", "מפרקים", "glucosamine"],
-      "סוכרת": ["diabetic", "סוכרת", "low carb"],
-    };
-
-    for (const condition of pet.medical_conditions) {
-      const condLower = condition.toLowerCase();
-      for (const [key, keywords] of Object.entries(conditionKeywordMap)) {
-        if (condLower.includes(key) && keywords.some(kw => text.includes(kw))) {
-          return condition;
-        }
-      }
-    }
-    return null;
-  }, [pet, productName, productDescription]);
-
-  if (!matchedCondition) return null;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="flex items-center gap-2.5 px-4 py-3 rounded-xl border-2"
-      style={{
-        borderColor: "hsl(var(--primary) / 0.3)",
-        background: "linear-gradient(135deg, hsl(var(--primary) / 0.05), hsl(var(--primary) / 0.1))",
-      }}
-    >
-      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-        <ShieldCheck className="w-4 h-4 text-primary" strokeWidth={2} />
-      </div>
-      <div>
-        <p className="text-xs font-bold text-primary">מאושר רפואית</p>
-        <p className="text-[10px] text-muted-foreground">
-          מתאים לטיפול ב{matchedCondition} של {pet.name}
-        </p>
-      </div>
-    </motion.div>
-  );
-};
-
-// ── 5. Ask the Brain FAB ──
+// ── 4. Ask the Brain FAB ──
 
 const AskBrainFAB = ({ pet, productName }: {
   pet: ActivePet;
@@ -501,7 +443,6 @@ export const SmartProductLayers = ({
         <HealthImpactGauge pet={pet} productName={productName} productCategory={productCategory} productDescription={fullDescription} />
         <PersonalizedWhy pet={pet} productName={productName} productDescription={fullDescription} />
         <SmartFeedingGuide pet={pet} productName={productName} productPrice={productPrice} />
-        <VetApprovalBadge pet={pet} productName={productName} productDescription={fullDescription} />
         <SubscribeHook pet={pet} productName={productName} productPrice={productPrice} />
       </div>
 

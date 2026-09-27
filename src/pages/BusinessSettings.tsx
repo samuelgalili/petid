@@ -244,7 +244,7 @@ const BusinessSettings = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium">הצג רק מוצרים מאומתים</p>
-                        <p className="text-[10px] text-muted-foreground">סנן מוצרים ללא תג Science-Verified</p>
+                        <p className="text-[10px] text-muted-foreground">סנן מוצרים ללא תג מאומת מדעית</p>
                       </div>
                       <Switch checked={scienceOnly} onCheckedChange={setScienceOnly} />
                     </div>
@@ -416,7 +416,7 @@ const BusinessSettings = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium">סינון Science-Verified</p>
+                      <p className="text-sm font-medium">סינון מאומת מדעית</p>
                       <p className="text-[10px] text-muted-foreground">העדף מוצרים מאומתים בהמלצות AI</p>
                     </div>
                     <Switch checked={scienceBadgeFilter} onCheckedChange={setScienceBadgeFilter} />

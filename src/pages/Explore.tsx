@@ -15,7 +15,7 @@ import { CreatePostDialog } from "@/components/CreatePostDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
-import { getMyPets, getShopProducts } from "@/lib/mipoApi";
+import { getMyPets, getPublicShopProducts } from "@/lib/mipoApi";
 import { PROMO_POSTS } from "@/data/promoPostsConfig";
 
 // Park images
@@ -419,7 +419,7 @@ const Explore = () => {
   const fetchDeals = async () => {
     try {
       setLoading(true);
-      const products = await getShopProducts();
+      const products = await getPublicShopProducts();
       setDeals(products
         .filter((product) => product.in_stock !== false)
         .map((product) => {

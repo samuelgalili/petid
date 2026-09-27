@@ -8,7 +8,8 @@ import { Card } from "@/components/ui/card";
 import BottomNav from "@/components/BottomNav";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
-import { getShopProducts, type MipoProduct } from "@/lib/mipoApi";
+import { getPublicShopProducts, type MipoProduct } from "@/lib/mipoApi";
+import { displayProductDescription } from "@/lib/productDescription";
 
 const readFavorites = (): string[] => {
   try {
@@ -31,7 +32,7 @@ const Favorites = () => {
   const [favorites, setFavorites] = useState(readFavorites);
   const { data: products = [], isLoading, isError } = useQuery({
     queryKey: ["shop-products-aws"],
-    queryFn: getShopProducts,
+    queryFn: getPublicShopProducts,
     staleTime: 1000 * 60 * 2,
   });
 
@@ -44,7 +45,7 @@ const Favorites = () => {
       return {
         id: product.id,
         name: product.name,
-        description: product.description || "",
+        description: displayProductDescription(product.description),
         image: product.image_url || "/placeholder.svg",
         price,
         originalPrice: salePrice > 0 && regularPrice > salePrice ? regularPrice : null,

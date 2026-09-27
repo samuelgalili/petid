@@ -23,11 +23,12 @@ import { MipoLogo } from "@/components/MipoLogo";
 import { SubscribeAndSave } from "@/components/shop/SubscribeAndSave";
 import { checkProductSafety, SafetyBadge } from "@/components/shop/ShopSafetyFilter";
 import { useActivePet } from "@/hooks/useActivePet";
-import { SlideToConfirm } from "@/components/shop/SlideToConfirm";
 import { ProductInfoDrawer } from "@/components/shop/ProductInfoDrawer";
 import { useCarePlan } from "@/hooks/useCarePlan";
-import { createContentReport, getShopProducts } from "@/lib/mipoApi";
+import { createContentReport, getPublicShopProducts } from "@/lib/mipoApi";
+import { displayProductDescription } from "@/lib/productDescription";
 import { FREE_SHIPPING_THRESHOLD } from "@/lib/shipping";
+import { GuestShopValue } from "@/components/shop/GuestShopValue";
 import { searchCatalogDetailed } from "@/lib/catalogSearch";
 
 const asPrice = (value: number | string | null | undefined) => {
@@ -179,7 +180,7 @@ const ShopProductCard = ({
 
 const Shop = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { addToCart, getTotalItems, cartShake } = useCart();
   const { triggerFly, setCartIconPosition } = useFlyingCart();
   const { pet: activePet } = useActivePet();
@@ -267,7 +268,7 @@ const Shop = () => {
   const { data: dbProducts = [], isLoading: isLoadingProducts, isFetching, isError: isProductsError } = useQuery({
     queryKey: ["shop-products-aws"],
     queryFn: async () => {
-      const products = await getShopProducts();
+      const products = await getPublicShopProducts();
       return products.filter((product) => product.in_stock !== false);
     },
     staleTime: 1000 * 60 * 2, // 2 minutes
@@ -292,11 +293,11 @@ const Shop = () => {
       return {
         id: p.id,
         name: p.name,
-        description: p.description || "",
+        description: displayProductDescription(p.description),
         price,
         originalPrice,
-        images: p.images?.length ? p.images : [p.image_url],
-        image: p.image_url || "/placeholder.svg",
+        images: (p.images?.length ? p.images : [p.image_url]).filter((url): url is string => Boolean(url)),
+        image: p.image_url || "",
         inStock: p.in_stock ?? true,
         freeShipping: price >= FREE_SHIPPING_THRESHOLD,
         category: p.category_name || p.category,
@@ -325,6 +326,7 @@ const Shop = () => {
         // one value that names nothing. The importer kept the real species in
         // here, and without it those 141 are findable by no animal word.
         product_attributes: p.product_attributes,
+        isFeatured: Boolean(p.is_featured),
         isFlagged: p.is_flagged || false,
         flaggedReason: p.flagged_reason,
         flavors: p.flavors || [],
@@ -363,6 +365,14 @@ const Shop = () => {
     [products, searchQuery],
   );
   const filteredAndSortedProducts = search.results;
+
+  // Featured first, then the rest of the catalogue. The shelf is what a
+  // visitor sees before they have asked anything.
+  const shelf = useMemo(() => {
+    const featured = products.filter((product) => product.isFeatured);
+    const others = products.filter((product) => !product.isFeatured);
+    return { featured, others };
+  }, [products]);
 
   const clearSearch = useCallback(() => {
     setSearchQuery("");
@@ -538,9 +548,11 @@ const Shop = () => {
           a card could never reach - the design is a DIFFERENT SCREEN.
 
           The Main artboard is a single live search field with the pet above
-          it. At rest there are no products at all: a line, three things you
-          might ask, and nothing else. Results arrive as the characters land -
-          no submit, no spinner between the query and the first card.
+          it. Results still arrive as the characters land - no submit, no
+          spinner between the query and the first card. Opening the shop also
+          shows the catalogue itself: a rail of featured products when any
+          are marked, and a grid of the rest, so the first screen is a shelf
+          and not an empty question.
 
           The three blocks that went are the three that decided FOR the
           shopper - what is recommended, what is medically relevant, what
@@ -553,9 +565,7 @@ const Shop = () => {
           One element, two positions - not two designs. The field is centred
           while the screen is resting and pinned to the top once there is a
           query, and it is the same element either way. */}
-      <div className="mx-auto flex min-h-[calc(100dvh-13rem)] max-w-2xl flex-col px-5 pb-8">
-        {resting && <div className="flex-grow" />}
-
+      <div className="mx-auto flex min-w-0 max-w-2xl flex-col px-5 pb-8">
         {/* The pet, and the only aurora on the screen. The rules page is
             explicit that the glow belongs to the animal being asked about and
             not to the control doing the asking - "ברגע שהזוהר מופיע במקום
@@ -564,9 +574,9 @@ const Shop = () => {
             app uses, so this is the app's aurora rather than a second one
             drawn here. */}
         {resting && (
-          <div className="flex shrink-0 flex-col items-center gap-3 pb-7">
-            <div className="mipo-avatar-glow h-24 w-24">
-              <div className="mipo-gradient-ring h-24 w-24">
+          <div className="flex shrink-0 flex-col items-center gap-2 pb-3 pt-2">
+            <div className="mipo-avatar-glow h-16 w-16">
+              <div className="mipo-gradient-ring h-16 w-16">
                 <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-mipo-soft">
                   {activePet?.avatar_url ? (
                     <OptimizedImage
@@ -576,7 +586,7 @@ const Shop = () => {
                       objectFit="cover"
                     />
                   ) : (
-                    <PawPrint className="h-10 w-10 text-mipo-muted" strokeWidth={1.3} />
+                    <PawPrint className="h-7 w-7 text-mipo-muted" strokeWidth={1.3} />
                   )}
                 </div>
               </div>
@@ -616,21 +626,78 @@ const Shop = () => {
 
         <div className="flex-grow pt-4">
           {!hasQuery ? (
-            /* At rest the screen offers three things you might ask, and shows
-               no products. A shelf of products here is what turns the question
-               back into a catalogue. */
-            <div className="space-y-2.5">
-              <p className="text-[13px] font-medium text-mipo-muted">אפשר לשאול כל דבר</p>
-              <div className="flex flex-wrap gap-2">
-                {RESTING_PROMPTS.map((prompt) => (
-                  <button
-                    key={prompt}
-                    onClick={() => setSearchQuery(prompt)}
-                    className="min-h-11 rounded-full bg-mipo-soft px-4 text-[13px] text-mipo-muted transition-colors hover:bg-mipo-soft-deep"
-                  >
-                    {prompt}
-                  </button>
-                ))}
+            <div className="space-y-4">
+              {!authLoading && !user && <GuestShopValue />}
+              {isLoadingProducts ? (
+                <SkeletonProductGrid />
+              ) : isProductsError ? (
+                <div className="py-16 text-center">
+                  <p className="text-sm font-medium text-mipo-ink">משהו השתבש</p>
+                  <p className="mt-1 text-xs text-mipo-muted">לא הצלחנו לטעון את המוצרים. נסו שוב מאוחר יותר.</p>
+                </div>
+              ) : (
+                <section aria-label="מוצרים בחנות" data-testid="shop-product-shelf" className="min-w-0 space-y-4">
+                  {shelf.featured.length > 0 && (
+                    <div className="min-w-0">
+                      <h2 className="mb-2 text-sm font-semibold text-mipo-ink">מומלצים</h2>
+                      <div className="flex min-w-0 gap-3 overflow-x-auto pb-1">
+                        {shelf.featured.map((product) => (
+                          <button
+                            key={product.id}
+                            type="button"
+                            onClick={() => handleProductClick(product)}
+                            className="w-[148px] shrink-0 text-right"
+                          >
+                            <ShopProductCard
+                              product={product}
+                              activePet={activePet}
+                              isFavorite={favorites.includes(product.id)}
+                              onToggleFavorite={toggleFavorite}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {(shelf.featured.length === 0 ? products : shelf.others).length > 0 && (
+                    <div>
+                      <h2 className="mb-2 text-sm font-semibold text-mipo-ink">
+                        {shelf.featured.length > 0 ? "כל המוצרים" : "המוצרים שלנו"}
+                      </h2>
+                      <div className="grid grid-cols-2 gap-3" data-testid="shop-product-grid">
+                        {(shelf.featured.length === 0 ? products : shelf.others).map((product) => (
+                          <button
+                            key={product.id}
+                            type="button"
+                            onClick={() => handleProductClick(product)}
+                            className="text-right"
+                          >
+                            <ShopProductCard
+                              product={product}
+                              activePet={activePet}
+                              isFavorite={favorites.includes(product.id)}
+                              onToggleFavorite={toggleFavorite}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </section>
+              )}
+              <div className="space-y-2">
+                <p className="text-[13px] font-medium text-mipo-muted">אפשר לשאול כל דבר</p>
+                <div className="flex flex-wrap gap-2">
+                  {RESTING_PROMPTS.map((prompt) => (
+                    <button
+                      key={prompt}
+                      onClick={() => setSearchQuery(prompt)}
+                      className="min-h-11 rounded-full bg-mipo-soft px-4 text-[13px] text-mipo-muted transition-colors hover:bg-mipo-soft-deep"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           ) : isLoadingProducts ? (
@@ -690,7 +757,7 @@ const Shop = () => {
       <Sheet open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
         <SheetContent 
           side="bottom" 
-          className="rounded-t-[28px] bg-background p-0 border-0 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] !pb-0"
+          className="max-h-[92dvh] overflow-y-auto rounded-t-[28px] bg-background p-0 border-0 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] !pb-0"
           aria-describedby="product-details-description"
         >
           {/* Background extension to cover gap above BottomNav */}
@@ -699,7 +766,7 @@ const Shop = () => {
           <SheetDescription id="product-details-description" className="sr-only">צפה בפרטי המוצר והוסף לעגלה</SheetDescription>
           {selectedProduct && (
             <motion.div 
-              className="flex flex-col h-full" 
+              className="flex flex-col" 
               dir="rtl"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -715,7 +782,7 @@ const Shop = () => {
                 {/* Product Image - Elevated */}
                 <motion.div 
                   ref={productImageRef}
-                  className="relative w-[100px] h-[100px] flex-shrink-0 rounded-2xl overflow-hidden bg-card shadow-lg"
+                  className="relative aspect-square w-[100px] flex-shrink-0 overflow-hidden rounded-2xl bg-white p-2"
                   initial={{ scale: 0.9 }}
                   animate={{ scale: 1 }}
                   transition={{ duration: 0.25 }}
@@ -723,8 +790,8 @@ const Shop = () => {
                   <OptimizedImage
                     src={selectedProduct.image}
                     alt={selectedProduct.name}
-                    className="w-full h-full"
-                    objectFit="cover"
+                    className="h-full w-full"
+                    objectFit="contain"
                   />
                   {/* The sale badge is gone from here too. This drawer is the
                       shop's FOURTH card surface and it carried the same red
@@ -818,13 +885,13 @@ const Shop = () => {
                 const safety = checkProductSafety(`${selectedProduct.name} ${selectedProduct.description}`, activePet);
                 return safety.level !== "safe" && (
                   <div className="px-5 pb-2">
-                    <SafetyBadge level={safety.level} reason={safety.reason} petName={activePet?.name} />
+                    <SafetyBadge level={safety.level} reason={safety.reason} />
                   </div>
                 );
               })()}
 
               {/* Subscribe & Save */}
-              <div className="px-5">
+              <div className="px-5 pb-4">
                 <SubscribeAndSave
                   productName={selectedProduct.name}
                   productPrice={selectedProduct.price}
@@ -833,8 +900,9 @@ const Shop = () => {
                 />
               </div>
 
-              {/* Action Bar - Slide to Confirm */}
-              <div className="px-5 pt-4 pb-24 bg-background border-t border-border/20 mt-auto">
+              {/* The add control stays on screen. A slide that only confirms
+                  after a long drag looked pressed and left the cart empty. */}
+              <div className="sticky bottom-0 border-t border-border/20 bg-background px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
                 {selectedProduct.isFlagged ? (
                   <div className="flex items-center justify-center gap-2 py-3 rounded-2xl bg-destructive/5 text-destructive border border-destructive/10">
                     <Flag className="w-4 h-4" />
@@ -843,24 +911,30 @@ const Shop = () => {
                 ) : (
                   <div className="flex items-center gap-3">
                     <div className="flex items-center bg-muted/80 rounded-2xl p-1">
-                      <button onClick={decreaseQuantity} className="w-11 h-11 rounded-xl bg-card shadow-sm flex items-center justify-center active:scale-95 transition-transform">
+                      <button type="button" onClick={decreaseQuantity} aria-label="הפחת כמות" className="w-11 h-11 rounded-xl bg-card shadow-sm flex items-center justify-center active:scale-95 transition-transform">
                         <Minus className="w-5 h-5 text-foreground" />
                       </button>
                       <span className="text-lg font-bold w-10 text-center">{quantity}</span>
-                      <button onClick={increaseQuantity} className="w-11 h-11 rounded-xl bg-card shadow-sm flex items-center justify-center active:scale-95 transition-transform">
+                      <button type="button" onClick={increaseQuantity} aria-label="הוסף כמות" className="w-11 h-11 rounded-xl bg-card shadow-sm flex items-center justify-center active:scale-95 transition-transform">
                         <Plus className="w-5 h-5 text-foreground" />
                       </button>
                     </div>
-                    <div className="flex-1">
-                      <SlideToConfirm onConfirm={handleAddToCart} label="החלק לרכישה" confirmLabel="נוסף לסל!" price={`₪${selectedProduct.price * quantity}`} disabled={!selectedProduct.inStock} />
-                    </div>
+                    <Button
+                      type="button"
+                      onClick={handleAddToCart}
+                      disabled={!selectedProduct.inStock}
+                      className="h-14 flex-1 rounded-2xl text-base font-bold"
+                      data-testid="shop-add-to-cart"
+                    >
+                      <ShoppingBag className="h-5 w-5" />
+                      הוסף לעגלה
+                      <span className="tabular-nums">₪{selectedProduct.price * quantity}</span>
+                    </Button>
                   </div>
                 )}
 
-                {/* The sheet is a quick look. Everything the product actually
-                    carries - ingredients, feeding guide, variants, spec - lives
-                    on its own page, which is also what a shared link opens. */}
                 <button
+                  type="button"
                   onClick={() => navigate(`/product/${selectedProduct.id}${activePet?.id ? `?petId=${activePet.id}` : ""}`)}
                   className="mt-3 min-h-11 w-full rounded-2xl border border-border/60 text-sm font-medium text-foreground transition-colors hover:bg-muted/50"
                 >
@@ -875,7 +949,7 @@ const Shop = () => {
       {/* Product Info Drawer */}
       <AnimatePresence>
         {infoDrawerProduct && (
-          <ProductInfoDrawer product={infoDrawerProduct} petName={activePet?.name} onClose={() => setInfoDrawerProduct(null)} onAddToCart={() => { handleAddToCart(); setInfoDrawerProduct(null); }} onAddToCarePlan={() => { if (infoDrawerProduct) addToCarePlan({ id: infoDrawerProduct.id, name: infoDrawerProduct.name, image: infoDrawerProduct.image, price: infoDrawerProduct.price, safetyScore: infoDrawerProduct.safetyScore, category: infoDrawerProduct.category }); }} />
+          <ProductInfoDrawer product={infoDrawerProduct} onClose={() => setInfoDrawerProduct(null)} onAddToCart={() => { handleAddToCart(); setInfoDrawerProduct(null); }} onAddToCarePlan={() => { if (infoDrawerProduct) addToCarePlan({ id: infoDrawerProduct.id, name: infoDrawerProduct.name, image: infoDrawerProduct.image, price: infoDrawerProduct.price, safetyScore: infoDrawerProduct.safetyScore, category: infoDrawerProduct.category }); }} />
         )}
       </AnimatePresence>
       </div>

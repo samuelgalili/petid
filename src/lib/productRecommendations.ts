@@ -1,4 +1,4 @@
-import { getShopProducts, type MipoProduct } from "@/lib/mipoApi";
+import { getPublicShopProducts, type MipoProduct } from "@/lib/mipoApi";
 
 export interface RecommendedProduct {
   id: string;
@@ -80,7 +80,7 @@ export async function fetchRecommendedProducts({
   products,
   fallbackToPetProducts = true,
 }: ProductRecommendationOptions = {}): Promise<RecommendedProduct[]> {
-  const sourceProducts = products || await getShopProducts();
+  const sourceProducts = products || await getPublicShopProducts();
   const normalizedProducts = sourceProducts
     .filter((product) => product.in_stock !== false)
     .map(normalizeMipoProduct)
@@ -96,7 +96,7 @@ export async function fetchRecommendedProducts({
 export async function fetchRecommendedProductGroups(
   groups: Array<ProductRecommendationOptions & { key: string; label?: string }>,
 ): Promise<Record<string, RecommendedProduct[]>> {
-  const products = await getShopProducts();
+  const products = await getPublicShopProducts();
   const entries = await Promise.all(groups.map(async (group) => [
     group.key,
     await fetchRecommendedProducts({ ...group, products }),

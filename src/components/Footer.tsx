@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { SUPPORT_PHONE, SUPPORT_WHATSAPP_URL } from "@/lib/siteContact";
 
 const Footer = () => {
   const footerLinks = [
@@ -26,6 +27,16 @@ const Footer = () => {
             </span>
           ))}
         </div>
+        <p className="text-center text-xs mt-3 font-jakarta">
+          <a
+            href={SUPPORT_WHATSAPP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-mipo-muted hover:text-mipo-violet hover:underline"
+          >
+            וואטסאפ {SUPPORT_PHONE}
+          </a>
+        </p>
         <p className="text-center text-[10px] text-mipo-muted/70 mt-3 font-jakarta">
           © {new Date().getFullYear()} MIPO. כל הזכויות שמורות.
         </p>
