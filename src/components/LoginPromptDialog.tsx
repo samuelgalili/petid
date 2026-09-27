@@ -1,5 +1,6 @@
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useGuest } from "@/contexts/GuestContext";
+import { isInProgressFlow } from "@/lib/flowSurfaces";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { LogIn, UserPlus } from "lucide-react";
@@ -7,7 +8,9 @@ import { motion } from "framer-motion";
 
 export const LoginPromptDialog = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { showLoginPrompt, loginPromptMessage, closeLoginPrompt, setGuestMode } = useGuest();
+  const open = showLoginPrompt && !isInProgressFlow(location.pathname);
 
   const handleLogin = () => {
     setGuestMode(false);
@@ -22,7 +25,7 @@ export const LoginPromptDialog = () => {
   };
 
   return (
-    <Dialog open={showLoginPrompt} onOpenChange={closeLoginPrompt}>
+    <Dialog open={open} onOpenChange={closeLoginPrompt}>
       <DialogContent className="sm:max-w-[340px] rounded-2xl border-0 bg-card p-0 overflow-hidden">
         {/* Instagram-style gradient header */}
         <div className="h-2 bg-gradient-instagram" />

@@ -1,17 +1,25 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Download, X, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { isInProgressFlow } from "@/lib/flowSurfaces";
 
 const STORAGE_KEY = "pwa_install_prompt_dismissed";
 
 export const PWAInstallPrompt = () => {
   const { isInstallable, isInstalled, installPWA } = usePWAInstall();
+  const location = useLocation();
+  const quiet = isInProgressFlow(location.pathname);
   const [isVisible, setIsVisible] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);
 
   useEffect(() => {
+    if (quiet) {
+      setIsVisible(false);
+      return;
+    }
     // Check if already dismissed or installed
     const isDismissed = localStorage.getItem(STORAGE_KEY);
     
@@ -22,7 +30,7 @@ export const PWAInstallPrompt = () => {
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [isInstalled, isInstallable]);
+  }, [isInstalled, isInstallable, quiet]);
 
   const handleInstall = async () => {
     setIsInstalling(true);
@@ -40,7 +48,7 @@ export const PWAInstallPrompt = () => {
   };
 
   // Don't render if not installable or already installed
-  if (!isInstallable || isInstalled) return null;
+  if (!isInstallable || isInstalled || quiet) return null;
 
   return (
     <AnimatePresence>

@@ -34,6 +34,7 @@ import {
   readVerifiedCardcomNotification,
   settleCardcomNotification,
 } from "./cardcom.js";
+import { shouldRequestVerificationAfterOrder } from "./customerOrderAccess.js";
 import {
   FixedWindowRateLimiter,
   contentTypeForSafeExtension,
@@ -6222,23 +6223,10 @@ const createOrder = async (body, currentUser = null, eventOrigin = "app", option
     error.statusCode = 400;
     throw error;
   }
-  // An order sends a confirmation, an invoice and delivery updates to the
-  // account's address, so this is the point where the address has to be
-  // proven. Guest checkout is untouched: it has no account to protect, and
-  // its address is entered per order rather than inherited from one.
-  //
-  // An admin placing the order is the exception, and not a loophole: the point
-  // of the gate is that a stranger must not be able to point order mail at an
-  // address they have not proven. An admin taking an order over the phone has
-  // no way to make the customer click a verification link mid-call, and the
-  // person entering the address is a known, audited account rather than an
-  // anonymous one.
-  if (currentUser && !currentUser.email_verified_at && !placedByAdmin) {
-    const error = new Error("Verify your email address before placing an order");
-    error.statusCode = 403;
-    error.code = "email_verification_required";
-    throw error;
-  }
+  // Verification does not block the order. A new customer reaches payment
+  // the same way a guest does. The mail is requested after this function
+  // returns, and a send failure must not roll the order back. Amount checks
+  // below are unchanged.
 
   const accessToken = currentUser ? null : createOpaqueToken();
   const client = await pool.connect();
@@ -9123,6 +9111,11 @@ const handleRequest = async (request, response) => {
       const body = await readBody(request);
       const auth = await getUserFromSession(request).catch(() => null);
       const result = await createOrder(body, auth?.user || null, originFromRequest(request));
+      if (shouldRequestVerificationAfterOrder({ currentUser: auth?.user, placedByAdmin: false })) {
+        issueEmailVerification(request, auth.user).catch((error) => {
+          console.error("Post-order verification email was not sent:", error?.message || error);
+        });
+      }
       sendJson(response, 201, {
         order: result.order,
         ...(result.accessToken ? { access_token: result.accessToken } : {}),

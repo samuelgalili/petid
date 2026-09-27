@@ -1,0 +1,172 @@
+import { expect, test, type Page } from "@playwright/test";
+
+/**
+ * A new account used to die at "place order": the server answered 403 and the
+ * checkout screen sent the person to /verify-email, so Cardcom was never
+ * opened. Guests were already allowed through. Both must reach the payment
+ * URL now, and the home banner must not say otherwise.
+ */
+
+const userId = "11111111-1111-4111-8111-111111111111";
+const orderId = "22222222-2222-4222-8222-222222222222";
+const cardcomUrl = "https://secure.cardcom.solutions/External/LowProfile.aspx?LowProfileCode=test";
+
+const unverifiedUser = {
+  id: userId,
+  email: "new@example.com",
+  full_name: "דנה כהן",
+  email_verified: false,
+  email_verified_at: null,
+};
+
+const order = {
+  id: orderId,
+  order_number: "MP-1001",
+  items: [{
+    id: "line-1",
+    product_id: "d3affade-756c-4ada-bf9a-7e441b69f576",
+    product_name: "קוואטרו כלבים אדולט מיני עוף",
+    product_image: "/placeholder.svg",
+    price: 199,
+    quantity: 1,
+  }],
+  shipping_address: {},
+  payment_method: "credit-card",
+  payment_status: "pending",
+  subtotal: 199,
+  shipping: 0,
+  tax: 0,
+  discount_amount: 0,
+  cash_on_delivery_fee: 0,
+  total: 199,
+  order_date: "2026-09-27T00:00:00.000Z",
+};
+
+async function prepareCheckout(page: Page, signedIn: boolean) {
+  const calls: string[] = [];
+  await page.route("**/api/**", async (route) => {
+    if (route.request().method() === "GET") {
+      await route.fulfill({ json: {} });
+      return;
+    }
+    await route.fulfill({ status: 404, json: { error: "unmocked" } });
+  });
+  await page.route("**/api/auth/me", async (route) => {
+    if (!signedIn) {
+      await route.fulfill({ status: 401, json: { error: "Unauthorized" } });
+      return;
+    }
+    await route.fulfill({
+      json: {
+        user: unverifiedUser,
+        profile: {
+          id: userId,
+          email: unverifiedUser.email,
+          full_name: unverifiedUser.full_name,
+          first_name: "דנה",
+          last_name: "כהן",
+          phone: null,
+          city: null,
+        },
+        is_admin: false,
+      },
+    });
+  });
+  await page.route("**/api/me/pets", async (route) => {
+    await route.fulfill({ json: { pets: [] } });
+  });
+  await page.route("**/api/me/shipping-profile", async (route) => {
+    await route.fulfill({ status: signedIn ? 200 : 401, json: signedIn ? { profile: null } : { error: "Unauthorized" } });
+  });
+  await page.route("**/api/orders", async (route) => {
+    calls.push(`order:${route.request().method()}`);
+    await route.fulfill({ status: 201, json: { order, access_token: "guest-token" } });
+  });
+  await page.route("**/api/payments/shop", async (route) => {
+    calls.push("payment");
+    await route.fulfill({
+      json: {
+        success: true,
+        order_id: orderId,
+        payment_url: cardcomUrl,
+      },
+    });
+  });
+  await page.route("https://secure.cardcom.solutions/**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "text/html",
+      body: "<!doctype html><html lang=\"he\"><body><h1>Cardcom</h1></body></html>",
+    });
+  });
+  await page.addInitScript(() => {
+    localStorage.setItem("mipo-onboarding-complete", "true");
+    localStorage.setItem("mipo-cart", JSON.stringify([{
+      id: "line-1",
+      productId: "d3affade-756c-4ada-bf9a-7e441b69f576",
+      name: "קוואטרו כלבים אדולט מיני עוף",
+      price: 199,
+      image: "/placeholder.svg",
+      quantity: 1,
+    }]));
+  });
+  return calls;
+}
+
+async function reachCardcom(page: Page) {
+  await page.goto("/checkout");
+  await expect(page.getByRole("heading", { name: "כתובת למשלוח" })).toBeVisible();
+  await page.getByLabel(/שם מלא/).fill("דנה כהן");
+  await page.getByLabel(/^אימייל/).fill("new@example.com");
+  await page.getByLabel(/מספר טלפון/).fill("050-123-4567");
+  await page.getByLabel(/^רחוב/).fill("הרצל");
+  await page.getByLabel(/מס׳ בית/).fill("12");
+  await page.getByLabel(/^עיר/).fill("תל אביב");
+  await page.getByLabel(/מיקוד/).fill("12345");
+  await page.getByRole("checkbox").click();
+  await page.getByTestId("checkout-continue").click();
+  await expect(page.getByTestId("checkout-payment-heading")).toBeVisible();
+  await page.getByTestId("checkout-continue").click();
+  await page.getByRole("button", { name: /בצע הזמנה/ }).click();
+  await expect(page).toHaveURL(/secure\.cardcom\.solutions/);
+  await expect(page.getByRole("heading", { name: "Cardcom" })).toBeVisible();
+  expect(page.url()).not.toContain("/verify-email");
+}
+
+test.describe("unverified checkout reaches Cardcom", () => {
+  test("a new customer with an unverified email is sent to payment", async ({ page }) => {
+    const calls = await prepareCheckout(page, true);
+    await reachCardcom(page);
+    expect(calls).toEqual(["order:POST", "payment"]);
+  });
+
+  test("a guest is sent to payment as well", async ({ page }) => {
+    const calls = await prepareCheckout(page, false);
+    await reachCardcom(page);
+    expect(calls).toEqual(["order:POST", "payment"]);
+  });
+});
+
+test.describe("home copy matches checkout", () => {
+  test("the banner does not say an order requires verification first", async ({ page }) => {
+    await page.route("**/api/**", async (route) => {
+      await route.fulfill({ json: {} });
+    });
+    await page.route("**/api/auth/me", async (route) => {
+      await route.fulfill({
+        json: { user: unverifiedUser, profile: null, is_admin: false },
+      });
+    });
+    await page.route("**/api/me/pets", async (route) => {
+      await route.fulfill({ json: { pets: [] } });
+    });
+    await page.addInitScript((id) => {
+      localStorage.setItem("mipo-onboarding-complete", "true");
+      localStorage.setItem(`profile_prompt_snooze_until_${id}`, String(Date.now() + 86_400_000));
+    }, userId);
+
+    await page.goto("/");
+    await expect(page.getByText("אפשר להזמין גם לפני האימות")).toBeVisible();
+    await expect(page.getByText("להזמנה צריך לאמת קודם")).toHaveCount(0);
+  });
+});
