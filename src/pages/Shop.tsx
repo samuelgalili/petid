@@ -144,25 +144,30 @@ const ShopProductCard = ({
           The favourite sits here rather than over the photo, as a hairline
           circle at the same 44px as ShopRailCard's add button - which is what
           finally makes the two cards on this page one card. The discount
-          percentage went with the red pill: the struck original beside the
+          percentage went with the red pill: the struck original under the
           price already says it, and saying it twice is what put a third
           colour on a page that allows two. */}
       <div className="space-y-1 p-3">
         <h3 className="line-clamp-2 min-h-[2.5rem] text-[13px] leading-5 text-mipo-ink">
           {product.name}
         </h3>
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex min-w-0 items-baseline gap-2">
+        <div className="flex items-center justify-between gap-1" data-testid="shop-card-price-row">
+          {/* The struck price sits under the sale price. On a 148px rail card
+              the heart is 44px, and sharing one line put it on top of the
+              original price in RTL. */}
+          <div className="flex min-w-0 flex-col items-start">
             <span className="text-[17px] font-bold tabular-nums text-mipo-ink">₪{product.price}</span>
             {product.originalPrice && product.originalPrice > product.price && (
-              <span className="text-xs tabular-nums text-mipo-muted line-through">
+              <span data-testid="shop-original-price" className="text-xs tabular-nums text-mipo-muted line-through">
                 ₪{product.originalPrice}
               </span>
             )}
           </div>
           <button
+            type="button"
+            data-testid="shop-favorite"
             onClick={(event) => onToggleFavorite(product.id, event)}
-            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border border-mipo-line transition-colors hover:bg-mipo-soft"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-mipo-line transition-colors hover:bg-mipo-soft"
             aria-label={isFavorite ? "הסר ממועדפים" : "הוסף למועדפים"}
           >
             {/* Filled in ink when it is on. A red heart is a third meaning for

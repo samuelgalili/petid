@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
 interface PageTransitionProps {
@@ -59,19 +59,35 @@ export const PageTransition = ({ children, variant }: PageTransitionProps) => {
   // Use route-specific variant, prop variant, or default
   const selectedVariantKey = variant || routeVariantMap[location.pathname] || "default";
   const selectedVariant = variants[selectedVariantKey];
+  // The enter animation is allowed to use a filter and a transform. The
+  // resting frame is not: either one keeps position:fixed pinned to this
+  // wrapper, which is why the product bar sat at the end of the page.
+  const [settled, setSettled] = useState(false);
+
+  useEffect(() => {
+    setSettled(false);
+    const timer = window.setTimeout(() => setSettled(true), 450);
+    return () => window.clearTimeout(timer);
+  }, [location.pathname, selectedVariantKey]);
 
   return (
     <motion.div
       initial={selectedVariant.initial}
       animate={selectedVariant.animate}
       exit={selectedVariant.exit}
+      onAnimationComplete={(definition) => {
+        if (definition === selectedVariant.animate) setSettled(true);
+      }}
+      onAnimationStart={(definition) => {
+        if (definition === selectedVariant.exit) setSettled(false);
+      }}
       transition={{
         duration: 0.35,
         ease: [0.25, 0.46, 0.45, 0.94], // Custom smooth easing
         filter: { duration: 0.3 },
         scale: { type: "spring", stiffness: 300, damping: 30 },
       }}
-      className="w-full h-full"
+      className={`h-full w-full${settled ? " page-transition-settled" : ""}`}
     >
       {children}
     </motion.div>

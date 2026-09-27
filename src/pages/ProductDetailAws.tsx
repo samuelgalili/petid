@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -19,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SEO } from "@/components/SEO";
+import { displayCategoryLabel } from "@/lib/categoryLabel";
 import { displayProductDescription, productMetaDescription } from "@/lib/productDescription";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { useCart } from "@/contexts/CartContext";
@@ -231,7 +233,7 @@ const ProductDetailAws = () => {
     return [
       ...always,
       { label: "משקל", value: weight },
-      { label: "קטגוריה", value: product.category_name || product.category || NOT_SPECIFIED },
+      { label: "קטגוריה", value: displayCategoryLabel(product.category_name, product.category) || NOT_SPECIFIED },
       { label: "מלאי", value: product.in_stock === false ? "אזל מהמלאי" : "במלאי" },
       ...optional,
       ...readCustomerSpecAttributes(product.product_attributes),
@@ -286,7 +288,31 @@ const ProductDetailAws = () => {
     );
   }
 
-  const categoryLabel = product.category_name || product.category;
+  const categoryLabel = displayCategoryLabel(product.category_name, product.category);
+
+  // Portaled to document.body. The page transition wrapper animates with a
+  // filter and a transform, and either one is a containing block, so a
+  // position:fixed bar inside the page sits at the bottom of the document.
+  const addToCartBar = (
+    <div
+      data-testid="product-add-to-cart-bar"
+      dir="rtl"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 p-3 backdrop-blur md:hidden pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+    >
+      <div className="mx-auto flex max-w-5xl items-center gap-3">
+        <span className="text-lg font-bold tabular-nums text-mipo-ink">₪{price.toFixed(2)}</span>
+        <Button
+          size="lg"
+          className="mipo-cta-button h-12 flex-1"
+          onClick={() => handleAddToCart(false)}
+          disabled={outOfStock}
+        >
+          <ShoppingCart className="ml-2 h-5 w-5" />
+          {outOfStock ? "אזל מהמלאי" : "הוסף לעגלה"}
+        </Button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background pb-36 md:pb-8" dir="rtl">
@@ -602,20 +628,7 @@ const ProductDetailAws = () => {
         </div>
       </main>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 p-3 backdrop-blur md:hidden pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <div className="mx-auto flex max-w-5xl items-center gap-3">
-          <span className="text-lg font-bold tabular-nums text-mipo-ink">₪{price.toFixed(2)}</span>
-          <Button
-            size="lg"
-            className="mipo-cta-button h-12 flex-1"
-            onClick={() => handleAddToCart(false)}
-            disabled={outOfStock}
-          >
-            <ShoppingCart className="ml-2 h-5 w-5" />
-            {outOfStock ? "אזל מהמלאי" : "הוסף לעגלה"}
-          </Button>
-        </div>
-      </div>
+      {createPortal(addToCartBar, document.body)}
     </div>
   );
 };
