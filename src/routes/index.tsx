@@ -52,25 +52,25 @@ const PetQrRedirect = () => {
   return <Navigate to={petId ? `/found-pet/${petId}` : "/"} replace />;
 };
 
-import Auth from "@/pages/Auth";
-import Signup from "@/pages/Signup";
-import ForgotPassword from "@/pages/ForgotPassword";
-import ResetPassword from "@/pages/ResetPassword";
-import VerifyEmail from "@/pages/VerifyEmail";
-import Install from "@/pages/Install";
+const Auth = lazy(() => import("@/pages/Auth"));
+const Signup = lazy(() => import("@/pages/Signup"));
+const ForgotPassword = lazy(() => import("@/pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
+const VerifyEmail = lazy(() => import("@/pages/VerifyEmail"));
+const Install = lazy(() => import("@/pages/Install"));
 
 const MainShell = lazy(() => import("@/components/MainShell"));
 const Onboarding = lazy(() => import("@/pages/Onboarding"));
 
 export const authRoutes: RouteObject[] = [
-  { path: "/auth", element: <PageTransition><Auth /></PageTransition> },
+  { path: "/auth", element: <LazyPage component={Auth} pageName="התחברות" /> },
   { path: "/auth/callback", element: <Navigate to="/auth" replace /> },
-  { path: "/signup", element: <PageTransition><Signup /></PageTransition> },
-  { path: "/forgot-password", element: <PageTransition><ForgotPassword /></PageTransition> },
-  { path: "/reset-password", element: <PageTransition><ResetPassword /></PageTransition> },
+  { path: "/signup", element: <LazyPage component={Signup} pageName="הרשמה" /> },
+  { path: "/forgot-password", element: <LazyPage component={ForgotPassword} pageName="שחזור סיסמה" /> },
+  { path: "/reset-password", element: <LazyPage component={ResetPassword} pageName="איפוס סיסמה" /> },
   // Open: the link is followed wherever the mail is read, often on another device.
-  { path: "/verify-email", element: <VerifyEmail /> },
-  { path: "/install", element: <PageTransition><Install /></PageTransition> },
+  { path: "/verify-email", element: <LazyPage component={VerifyEmail} pageName="אימות אימייל" /> },
+  { path: "/install", element: <LazyPage component={Install} pageName="התקנה" /> },
   { path: "/onboarding", element: <Protected><LazyPage component={Onboarding} pageName="הצטרפות" /></Protected> },
 ];
 
@@ -205,6 +205,7 @@ export const staticRoutes: RouteObject[] = [
 
 const AdminLogin = lazy(() => import("@/pages/admin/AdminLogin"));
 const AdminChangePassword = lazy(() => import("@/pages/admin/AdminChangePassword"));
+const AdminTwoFactor = lazy(() => import("@/pages/admin/AdminTwoFactor"));
 const AdminHome = lazy(() => import("@/pages/admin/AdminHome"));
 const AdminPlannedScreen = lazy(() => import("@/pages/admin/AdminPlannedScreen"));
 const AdminAnalytics = lazy(() => import("@/pages/admin/AdminAnalytics"));
@@ -325,6 +326,7 @@ const legacyAdminRedirects = legacyAdminPaths.map((path) => {
 export const adminRoutes: RouteObject[] = [
   { path: "/admin/login", element: <LazyPage component={AdminLogin} pageName="כניסת מנהל" /> },
   { path: "/admin/change-password", element: <Admin><LazyPage component={AdminChangePassword} pageName="בחירת סיסמה" /></Admin> },
+  { path: "/admin/two-factor", element: <Admin><LazyPage component={AdminTwoFactor} pageName="אימות דו-שלבי" /></Admin> },
   // /admin used to redirect to the product list, which is why an owner
   // opening the admin landed in a catalogue rather than on the day.
   { path: "/admin", element: <AdminPage component={AdminHome} pageName="בית" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },

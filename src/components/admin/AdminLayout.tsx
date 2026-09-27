@@ -355,6 +355,15 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
             </div>
           </header>
 
+          {admin?.mfa_enrollment_prompt && !admin.mfa_enrolled && (
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-admin-line bg-admin-accent-soft px-4 py-3 text-sm" role="status">
+              <p>אימות דו-שלבי עדיין לא הופעל בחשבון הזה.</p>
+              <Button type="button" size="sm" variant="outline" onClick={() => navigate("/admin/two-factor")}>
+                הפעלת אימות
+              </Button>
+            </div>
+          )}
+
           {children}
 
           {/* Clears the phone bar. Without it the bar covers the last row of

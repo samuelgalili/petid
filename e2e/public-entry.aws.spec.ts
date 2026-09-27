@@ -178,6 +178,29 @@ test.describe("public entry", () => {
     await expect(page).toHaveURL(/\/product\/hidden-1$/);
     await expect(page).not.toHaveURL(/\/auth/);
     await expect(page.getByRole("heading", { name: "המוצר לא נמצא" })).toBeVisible();
+    const hiddenShop = page.getByRole("link", { name: "חזרה לחנות" });
+    await expect(hiddenShop).toHaveAttribute("href", "/shop");
+    await hiddenShop.click();
+    await expect(page).toHaveURL(/\/shop$/);
+  });
+
+  test("a missing product says it is gone and links back to the shop", async ({ page }) => {
+    await mockAnonymous(page);
+    await page.route("**/api/products/does-not-exist", (route) => route.fulfill({
+      status: 404,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "Not found" }),
+    }));
+
+    await page.goto("/product/does-not-exist");
+    await expect(page).toHaveURL(/\/product\/does-not-exist$/);
+    await expect(page).not.toHaveURL(/\/auth/);
+    await expect(page.getByRole("heading", { name: "המוצר לא נמצא" })).toBeVisible();
+    const missingShop = page.getByRole("link", { name: "חזרה לחנות" });
+    await expect(missingShop).toHaveAttribute("href", "/shop");
+    await missingShop.click();
+    await expect(page).toHaveURL(/\/shop$/);
+    await expect(page.getByRole("heading", { name: "חנות", exact: true })).toBeVisible();
   });
 
   test("anonymous visitors check the session once", async ({ page }) => {
@@ -484,5 +507,12 @@ test.describe("public entry", () => {
 
     await page.goto("/shop");
     await expect(page.getByTestId("guest-value-strip")).toHaveCount(0);
+  });
+
+  test("an unknown path stays put and shows the not-found screen", async ({ page }) => {
+    await mockAnonymous(page);
+    await page.goto("/this-page-does-not-exist?from=share");
+    await expect(page).toHaveURL(/\/this-page-does-not-exist\?from=share$/);
+    await expect(page.getByRole("heading", { name: /אופס! הדף ברח!/ })).toBeVisible();
   });
 });

@@ -65,10 +65,16 @@ export const SCHEMA_PROBES = [
     left join public.order_items i on i.order_id = o.id
     limit 1`],
 
-  // The admin panel's own identity.
+  // The admin panel's own identity, including the two-factor columns the
+  // login query selects. Migration 0061 adds them; a build that asks for
+  // them against an older schema fails this probe instead of failing the
+  // first sign-in.
   ["admin", `
-    select id, email, password_hash, role, is_active
-    from public.admin_users
+    select au.id, au.email, au.password_hash, au.role, au.is_active,
+           au.totp_secret_encrypted, au.totp_enrolled_at, au.totp_last_used_step,
+           s.mfa_verified_at
+    from public.admin_users au
+    left join public.admin_sessions s on s.admin_user_id = au.id
     limit 1`],
 
   // Signup writes the code here before it calls Resend. A missing column is

@@ -40,7 +40,9 @@ const cartItem = {
 };
 
 async function mockCatalog(page: Page) {
-  await page.route("**/api/products", async (route) => {
+  // The shop asks for ?view=storefront. A pattern with no query misses that
+  // request, and the catalogue never arrives.
+  await page.route(/\/api\/products(?:\?|$)/, async (route) => {
     await route.fulfill({ json: { products: catalog } });
   });
 }
@@ -189,7 +191,7 @@ test.describe("AWS application smoke tests", () => {
     // still for is unchanged: a shopper can find a product and open it.
     await mockCatalog(page);
     const catalogResponse = page.waitForResponse((response) => (
-      response.url().endsWith("/api/products") && response.status() === 200
+      new URL(response.url()).pathname.endsWith("/api/products") && response.status() === 200
     ));
 
     await page.goto("/shop");

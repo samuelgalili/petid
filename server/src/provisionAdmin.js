@@ -155,6 +155,9 @@ const main = async () => {
             business_id = $6,
             is_active = true,
             must_change_password = true,
+            totp_secret_encrypted = null,
+            totp_enrolled_at = null,
+            totp_last_used_step = null,
             updated_at = now()
           where id = $1
           returning id, email, display_name, role, business_id
@@ -180,6 +183,13 @@ const main = async () => {
 
     await client.query(
       "delete from public.admin_sessions where admin_user_id = $1",
+      [result.rows[0].id],
+    );
+    // Re-provisioning is the break-glass that also rotates the password. It
+    // clears the authenticator so the admin can register a new device. The
+    // password-preserving reset is admin:reset-2fa.
+    await client.query(
+      "delete from public.admin_recovery_codes where admin_user_id = $1",
       [result.rows[0].id],
     );
 
@@ -212,6 +222,7 @@ const main = async () => {
         JSON.stringify({
           must_change_password: true,
           sessions_revoked: true,
+          mfa_enrolment_cleared: true,
           scope: scopeResult.scope,
           scope_changed: Boolean(previous) && previous.business_id !== businessId,
           role_changed: Boolean(previous) && previous.role !== role,
