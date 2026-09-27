@@ -75,10 +75,14 @@ export const PET_CARD = {
 } as const;
 
 // === Checkout Messages ===
+/** The line above the step bar. The count is the number of steps on screen. */
+export const checkoutStepsLabel = (count: number) =>
+  count === 1 ? "צעד אחד בלבד" : `${count} צעדים בלבד`;
+
 export const CHECKOUT = {
   saveForRecurring: "אפשר לשמור את בחירתכם להזמנה קבועה.\nתמיד תקבלו תזכורת לפני החיוב.",
   transparentPricing: "שקיפות מלאה",
-  twoStepsOnly: "2 צעדים בלבד",
+  twoStepsOnly: checkoutStepsLabel(2),
   noAutoCharge: "ללא חיוב אוטומטי",
   reminderBeforeCharge: "תזכורת לפני כל חיוב",
 } as const;

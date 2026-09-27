@@ -139,8 +139,17 @@ async function prepareCheckout(page: Page, signedIn: boolean, catalogue: Catalog
   return calls;
 }
 
+async function expectStepCountMatchesCopy(page: Page) {
+  const steps = page.getByTestId("checkout-step");
+  await expect(steps.first()).toBeVisible();
+  const count = await steps.count();
+  const label = count === 1 ? "צעד אחד בלבד" : `${count} צעדים בלבד`;
+  await expect(page.getByTestId("checkout-step-count")).toContainText(label);
+}
+
 async function reachOrderButton(page: Page) {
   await page.goto("/checkout");
+  await expectStepCountMatchesCopy(page);
   await expect(page.getByRole("heading", { name: "כתובת למשלוח" })).toBeVisible();
   await page.getByLabel(/שם מלא/).fill("דנה כהן");
   await page.getByLabel(/^אימייל/).fill("new@example.com");
@@ -163,6 +172,19 @@ async function reachCardcom(page: Page) {
   await expect(page.getByRole("heading", { name: "Cardcom" })).toBeVisible();
   expect(page.url()).not.toContain("/verify-email");
 }
+
+test.describe("checkout step count matches the bar", () => {
+  for (const [who, signedIn] of [
+    ["a guest", false],
+    ["a signed-in customer", true],
+  ] as const) {
+    test(`${who} sees the same number of steps in the heading and the bar`, async ({ page }) => {
+      await prepareCheckout(page, signedIn);
+      await page.goto("/checkout");
+      await expectStepCountMatchesCopy(page);
+    });
+  }
+});
 
 test.describe("unverified checkout reaches Cardcom", () => {
   test("a new customer with an unverified email is sent to payment", async ({ page }) => {

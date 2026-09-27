@@ -15,7 +15,7 @@ import { shippingFor } from "@/lib/shipping";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { AppHeader } from "@/components/AppHeader";
-import { CHECKOUT } from "@/lib/brandVoice";
+import { CHECKOUT, checkoutStepsLabel } from "@/lib/brandVoice";
 import {
   validateCheckoutShipping,
   type CheckoutShippingInput,
@@ -463,8 +463,8 @@ const Checkout = () => {
 
       {/* Calm Checkout Header Message */}
       <div className="px-4 pt-4 pb-2 text-center">
-        <p className="text-sm text-muted-foreground">
-          {CHECKOUT.twoStepsOnly} • {CHECKOUT.transparentPricing}
+        <p className="text-sm text-muted-foreground" data-testid="checkout-step-count">
+          {checkoutStepsLabel(steps.length)} • {CHECKOUT.transparentPricing}
         </p>
       </div>
 
@@ -477,7 +477,7 @@ const Checkout = () => {
             const isActive = currentStep === step.number;
 
             return (
-              <div key={step.number} className="flex items-center flex-1">
+              <div key={step.number} className="flex items-center flex-1" data-testid="checkout-step">
                 <div className="flex flex-col items-center flex-1">
                   <div
                     className={`w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-md ${
