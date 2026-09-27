@@ -314,6 +314,57 @@ test.describe("public entry", () => {
     await expect(page.getByText("מזון בלי תמונה")).toBeVisible();
   });
 
+  test("the cart uses the same white frame when a photo is missing", async ({ page }) => {
+    await mockAnonymous(page);
+    await page.route("https://ken-hatuki.co.il/**", (route) => route.fulfill({
+      status: 202,
+      contentType: "text/html; charset=utf-8",
+      body: "<!DOCTYPE html><html><body>captcha</body></html>",
+    }));
+    await page.route("**/api/products/empty-photo", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        product: {
+          ...product("empty-photo", "בלי תמונה", 49),
+          image_url: "",
+          images: [],
+        },
+      }),
+    }));
+    await page.addInitScript(() => {
+      localStorage.setItem("mipo-cart", JSON.stringify([
+        {
+          id: "line-empty",
+          productId: "empty-photo",
+          name: "בלי תמונה",
+          price: 49,
+          image: "",
+          quantity: 1,
+        },
+        {
+          id: "line-broken",
+          productId: "broken-photo",
+          name: "תמונה חיצונית",
+          price: 79,
+          image: "https://ken-hatuki.co.il/broken-product.jpg",
+          quantity: 1,
+        },
+      ]));
+    });
+
+    await page.goto("/cart");
+    await expect(page.getByRole("heading", { name: "בלי תמונה" })).toBeVisible();
+    const frames = page.getByTestId("product-image-fallback");
+    await expect(frames).toHaveCount(2);
+    await expect(frames.first()).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await expect(page.locator("img[src*='ken-hatuki']")).toHaveCount(0);
+
+    await page.goto("/product/empty-photo");
+    await expect(page.getByRole("heading", { name: "בלי תמונה" })).toBeVisible();
+    await expect(page.getByTestId("product-image-fallback").first()).toBeVisible();
+  });
+
   test("sitemap and robots are real documents", async ({ page }) => {
     const sitemap = await page.request.get("/sitemap.xml");
     expect(sitemap.status()).toBe(200);

@@ -14,6 +14,7 @@ import { SEO } from "@/components/SEO";
 import { SmartCartLayers } from "@/components/shop/SmartCartLayers";
 import { MipoCoupon, validateCouponCode } from "@/lib/mipoApi";
 import { FREE_SHIPPING_THRESHOLD, SHIPPING_FEE, amountToFreeShipping } from "@/lib/shipping";
+import { OptimizedImage } from "@/components/OptimizedImage";
 import { groupCartBySeller } from "@/lib/cartGrouping";
 
 const Cart = () => {
@@ -205,11 +206,12 @@ const Cart = () => {
               <Card className="overflow-hidden rounded-3xl border border-mipo-line bg-mipo-surface shadow-none">
                 <div className="flex gap-4 p-4">
                   {/* Product Image */}
-                  <div className="w-24 h-24 bg-muted rounded-xl flex-shrink-0 overflow-hidden">
-                    <img
-                      src={item.image}
+                  <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl bg-white">
+                    <OptimizedImage
+                      src={item.image || ""}
                       alt={item.name}
-                      className="w-full h-full object-cover"
+                      className="h-full w-full"
+                      objectFit="contain"
                     />
                   </div>
 

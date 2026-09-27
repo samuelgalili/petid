@@ -315,7 +315,7 @@ const ProductDetailAws = () => {
                 or a badge painted on the photo reads as part of the product. */}
             <div className="aspect-square bg-white p-4">
               <OptimizedImage
-                src={images[activeImage] || "/placeholder.svg"}
+                src={images[activeImage] || ""}
                 alt={product.name}
                 className="h-full w-full"
                 objectFit="contain"
