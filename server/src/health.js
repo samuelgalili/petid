@@ -70,6 +70,15 @@ export const SCHEMA_PROBES = [
     select id, email, password_hash, role, is_active
     from public.admin_users
     limit 1`],
+
+  // Signup writes the code here before it calls Resend. A missing column is
+  // caught and reported as "the mail was not sent", which looks like a
+  // provider failure and is a migration that did not land.
+  ["email_verification", `
+    select u.email_verified_at, u.email_verification_last_sent_at, o.otp_hash
+    from public.app_users u
+    left join public.email_verification_otps o on o.user_id = u.id
+    limit 1`],
 ];
 
 /**
