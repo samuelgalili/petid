@@ -1,7 +1,9 @@
-import { ArrowRight, Mail, FileText, HelpCircle, ChevronLeft, Shield, Settings } from "lucide-react";
+import { ArrowRight, Mail, FileText, HelpCircle, ChevronLeft, Shield, Settings, MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
+import { SEO } from "@/components/SEO";
+import { SUPPORT_EMAIL, SUPPORT_PHONE, SUPPORT_WHATSAPP_URL } from "@/lib/siteContact";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -11,10 +13,18 @@ const Support = () => {
 
   const supportOptions = [
     {
+      icon: MessageCircle,
+      title: "וואטסאפ",
+      description: SUPPORT_PHONE,
+      action: () => window.open(SUPPORT_WHATSAPP_URL, "_blank", "noopener,noreferrer"),
+      color: "bg-icon-green/10",
+      iconColor: "text-icon-green",
+    },
+    {
       icon: Mail,
       title: "תמיכה באימייל",
-      description: "support@mipo.pet",
-      action: () => window.open("mailto:support@mipo.pet"),
+      description: SUPPORT_EMAIL,
+      action: () => window.open(`mailto:${SUPPORT_EMAIL}`),
       color: "bg-icon-blue/10",
       iconColor: "text-icon-blue",
     },
@@ -53,6 +63,7 @@ const Support = () => {
 
   return (
     <div className="h-screen bg-surface overflow-hidden" dir="rtl">
+      <SEO title="תמיכה" description={`תמיכה של MIPO בוואטסאפ ${SUPPORT_PHONE} ובאימייל ${SUPPORT_EMAIL}.`} url="/support" />
       <div className="h-full overflow-y-auto pb-[70px]">
       {/* Header */}
       <div className="bg-card border-b border-border sticky top-0 z-10">

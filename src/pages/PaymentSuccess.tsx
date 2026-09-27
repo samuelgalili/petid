@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { getShopOrder, type MipoOrder } from "@/lib/mipoApi";
 import { getOrderAccessToken, rememberOrderAccess } from "@/lib/orderAccess";
+import { useEmailConfigured } from "@/lib/emailConfiguredClient";
 
 type ShippingAddress = {
   fullName?: string;
@@ -57,6 +58,7 @@ const PaymentSuccess = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { clearCart } = useCart();
+  const emailConfigured = useEmailConfigured();
   const orderId = searchParams.get('order_id');
   const [order, setOrder] = useState<MipoOrder | null>(null);
   const [loading, setLoading] = useState(true);
@@ -179,7 +181,7 @@ const PaymentSuccess = () => {
                 <span className="text-muted-foreground">סכום ששולם:</span>
                 <span className="font-bold text-green-600">₪{order.total.toFixed(2)}</span>
               </div>
-              {getShippingAddress(order).email && order.payment_status === "paid" && (
+              {emailConfigured === true && getShippingAddress(order).email && order.payment_status === "paid" && (
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted-foreground">אישור נשלח ל:</span>
                   <span className="font-medium">{getShippingAddress(order).email}</span>

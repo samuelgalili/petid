@@ -26,6 +26,7 @@ import { useActivePet } from "@/hooks/useActivePet";
 import { ProductInfoDrawer } from "@/components/shop/ProductInfoDrawer";
 import { useCarePlan } from "@/hooks/useCarePlan";
 import { createContentReport, getPublicShopProducts } from "@/lib/mipoApi";
+import { displayProductDescription } from "@/lib/productDescription";
 import { FREE_SHIPPING_THRESHOLD } from "@/lib/shipping";
 import { GuestShopValue } from "@/components/shop/GuestShopValue";
 import { searchCatalogDetailed } from "@/lib/catalogSearch";
@@ -292,7 +293,7 @@ const Shop = () => {
       return {
         id: p.id,
         name: p.name,
-        description: p.description || "",
+        description: displayProductDescription(p.description),
         price,
         originalPrice,
         images: (p.images?.length ? p.images : [p.image_url]).filter((url): url is string => Boolean(url)),
@@ -884,7 +885,7 @@ const Shop = () => {
                 const safety = checkProductSafety(`${selectedProduct.name} ${selectedProduct.description}`, activePet);
                 return safety.level !== "safe" && (
                   <div className="px-5 pb-2">
-                    <SafetyBadge level={safety.level} reason={safety.reason} petName={activePet?.name} />
+                    <SafetyBadge level={safety.level} reason={safety.reason} />
                   </div>
                 );
               })()}
@@ -948,7 +949,7 @@ const Shop = () => {
       {/* Product Info Drawer */}
       <AnimatePresence>
         {infoDrawerProduct && (
-          <ProductInfoDrawer product={infoDrawerProduct} petName={activePet?.name} onClose={() => setInfoDrawerProduct(null)} onAddToCart={() => { handleAddToCart(); setInfoDrawerProduct(null); }} onAddToCarePlan={() => { if (infoDrawerProduct) addToCarePlan({ id: infoDrawerProduct.id, name: infoDrawerProduct.name, image: infoDrawerProduct.image, price: infoDrawerProduct.price, safetyScore: infoDrawerProduct.safetyScore, category: infoDrawerProduct.category }); }} />
+          <ProductInfoDrawer product={infoDrawerProduct} onClose={() => setInfoDrawerProduct(null)} onAddToCart={() => { handleAddToCart(); setInfoDrawerProduct(null); }} onAddToCarePlan={() => { if (infoDrawerProduct) addToCarePlan({ id: infoDrawerProduct.id, name: infoDrawerProduct.name, image: infoDrawerProduct.image, price: infoDrawerProduct.price, safetyScore: infoDrawerProduct.safetyScore, category: infoDrawerProduct.category }); }} />
         )}
       </AnimatePresence>
       </div>

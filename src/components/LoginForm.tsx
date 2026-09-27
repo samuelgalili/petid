@@ -160,7 +160,7 @@ export const LoginForm = () => {
               setFieldErrors({ ...fieldErrors, email: undefined });
             }}
             disabled={loading}
-            className={`h-11 bg-muted/50 border border-border rounded-lg text-sm pr-10 text-right transition-colors ${
+            className={`h-11 bg-muted/50 border border-border rounded-lg text-sm pr-10 transition-colors ${
               fieldErrors.email ? "border-destructive" : ""
             }`}
             autoComplete="email"
@@ -200,7 +200,7 @@ export const LoginForm = () => {
               setFieldErrors({ ...fieldErrors, password: undefined });
             }}
             disabled={loading}
-            className={`h-11 bg-muted/50 border border-border rounded-lg text-sm pr-10 pl-14 text-right transition-colors ${
+            className={`h-11 bg-muted/50 border border-border rounded-lg text-sm pr-10 pl-14 transition-colors ${
               fieldErrors.password ? "border-destructive" : ""
             }`}
             autoComplete="current-password"

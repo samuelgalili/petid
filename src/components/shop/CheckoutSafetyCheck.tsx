@@ -5,7 +5,7 @@
 
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { HelpCircle, ShieldAlert, AlertTriangle } from "lucide-react";
+import { ShieldAlert, AlertTriangle } from "lucide-react";
 import { useActivePet } from "@/hooks/useActivePet";
 import { checkProductSafety, type ProductSafety } from "@/components/shop/ShopSafetyFilter";
 
@@ -37,37 +37,11 @@ export const CheckoutSafetyCheck = ({ items }: { items: CartItem[] }) => {
       .filter(r => r.level !== "safe");
   }, [items, pet]);
 
-  if (!pet) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 5 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-start gap-2 px-4 py-3 rounded-xl bg-muted/50 border border-border max-w-md mx-auto"
-      >
-        <HelpCircle className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" strokeWidth={2} />
-        <span className="text-xs text-muted-foreground">
-          לא בוצעה בדיקת התאמה לחיית מחמד. יש לבדוק תוויות ולהתייעץ עם וטרינר בעת הצורך.
-        </span>
-      </motion.div>
-    );
-  }
+  if (!pet) return null;
 
-  const warnings = results.filter((result) => result.level === "caution" || result.level === "unsafe");
+  const warnings = results.filter((result) => (result.level === "caution" || result.level === "unsafe") && result.reason);
 
-  if (warnings.length === 0) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 5 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-start gap-2 px-4 py-3 rounded-xl bg-muted/50 border border-border max-w-md mx-auto"
-      >
-        <HelpCircle className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" strokeWidth={2} />
-        <span className="text-xs text-muted-foreground">
-          אין מספיק מידע בקטלוג כדי לאמת התאמה רפואית ל{pet.name}. יש לבדוק את התווית ולהתייעץ עם וטרינר.
-        </span>
-      </motion.div>
-    );
-  }
+  if (warnings.length === 0) return null;
 
   return (
     <motion.div

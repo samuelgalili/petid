@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useGuest } from "@/contexts/GuestContext";
-import { Loader2 } from "lucide-react";
+import { AuthLoadingSkeleton } from "@/components/AuthLoadingSkeleton";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -22,11 +22,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }, [isAuthenticated, loading, isGuest, navigate, location.pathname, location.search]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <AuthLoadingSkeleton />;
   }
 
   if (!isAuthenticated && !isGuest) {

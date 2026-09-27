@@ -1,14 +1,8 @@
 import { Link, useLocation, Navigate } from "react-router-dom";
-import { Loader2 } from "lucide-react";
 
+import { AuthLoadingSkeleton } from "@/components/AuthLoadingSkeleton";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
-
-const AuthLoading = () => (
-  <div className="flex min-h-screen items-center justify-center">
-    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-  </div>
-);
 
 /**
  * Logged-in visitors keep the pet home. Everyone else lands in the shop,
@@ -17,7 +11,7 @@ const AuthLoading = () => (
 export const HomeEntry = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, loading } = useAuth();
 
-  if (loading) return <AuthLoading />;
+  if (loading) return <AuthLoadingSkeleton />;
   if (!isAuthenticated) return <Navigate to="/shop" replace />;
   return <>{children}</>;
 };
@@ -30,7 +24,7 @@ export const CommunityLoginGate = ({ children }: { children: React.ReactNode }) 
   const { isAuthenticated, loading } = useAuth();
   const location = useLocation();
 
-  if (loading) return <AuthLoading />;
+  if (loading) return <AuthLoadingSkeleton />;
   if (isAuthenticated) return <>{children}</>;
 
   const next = `${location.pathname}${location.search}`;

@@ -753,6 +753,10 @@ async function fetchCurrentUser(): Promise<MipoAuthResult | null> {
     headers: {
       "content-type": "application/json",
     },
+    // The first screen waits on this call. Without a deadline a stalled
+    // connection leaves that wait up for good. Eight seconds, then the caller
+    // stops waiting and shows the page a signed-out visitor would see.
+    signal: AbortSignal.timeout(8000),
   });
 
   if (response.status === 401) {
