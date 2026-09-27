@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type FormEvent } from "react";
+import { useState, useEffect, useMemo, useRef, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Check, CreditCard, MapPin, Package, Truck, Smartphone, Wallet, Tag, X, Loader2, Heart, AlertTriangle } from "lucide-react";
 import { CheckoutSafetyCheck } from "@/components/shop/CheckoutSafetyCheck";
@@ -22,6 +22,12 @@ import {
 } from "@/lib/checkoutContact";
 import { createShopOrder, createShopPaymentSession, getMyShippingProfile, MipoCoupon, validateCouponCode } from "@/lib/mipoApi";
 import { rememberOrderAccess } from "@/lib/orderAccess";
+import {
+  UNAVAILABLE_ITEM_HE,
+  chargeableSubtotal,
+  partitionCartByCatalogue,
+} from "@/lib/shopVisibility";
+import { usePublicCatalogueIds } from "@/lib/usePublicCatalogueIds";
 
 // Kept identical to LEAVE_AT_DOOR_TERMS on the server, which is what actually
 // gets recorded on the order.
@@ -31,7 +37,7 @@ const LEAVE_AT_DOOR_TERMS =
 const Checkout = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { items, getSubtotal, clearCart } = useCart();
+  const { items, removeFromCart, clearCart } = useCart();
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState("credit-card");
@@ -142,7 +148,15 @@ const Checkout = () => {
     }
   }, [ageCheckLoading, isProcessing, isUnder18, items.length, navigate]);
 
-  const subtotal = getSubtotal();
+  const catalogue = usePublicCatalogueIds();
+  const partition = useMemo(
+    () => partitionCartByCatalogue(items, catalogue.isSuccess ? catalogue.data ?? null : null),
+    [items, catalogue.isSuccess, catalogue.data],
+  );
+  const orderItems = partition.available;
+  const subtotal = chargeableSubtotal(orderItems);
+  const cataloguePending = catalogue.isPending;
+  const nothingToBuy = catalogue.isSuccess && orderItems.length === 0;
   const baseShipping = shippingFor(subtotal);
   
   // Check if coupon is free shipping type
@@ -304,6 +318,15 @@ const Checkout = () => {
   };
 
   const handlePlaceOrder = async () => {
+    if (cataloguePending) return;
+    if (nothingToBuy) {
+      toast({
+        title: UNAVAILABLE_ITEM_HE,
+        description: "אין פריטים זמינים לתשלום.",
+        variant: "destructive",
+      });
+      return;
+    }
     setIsProcessing(true);
 
     try {
@@ -322,7 +345,7 @@ const Checkout = () => {
       }
 
       const { order, access_token: orderAccessToken } = await createShopOrder({
-        items: items.map(item => ({
+        items: orderItems.map(item => ({
           id: item.productId,
           product_id: item.productId,
           name: item.name,
@@ -370,7 +393,8 @@ const Checkout = () => {
       sessionStorage.setItem("mipo_checkout_contact", JSON.stringify(shippingData));
 
       if (paymentMethod === "cash-on-delivery") {
-        clearCart();
+        if (partition.unavailable.length === 0) clearCart();
+        else orderItems.forEach((item) => removeFromCart(item.id));
         toast({
           title: "ההזמנה נשמרה",
           description: "התשלום יתבצע במסירה",
@@ -1132,10 +1156,10 @@ const Checkout = () => {
               {/* Order Items */}
               <Card className="p-5 bg-card border-0 rounded-2xl shadow-lg max-w-md mx-auto">
                 <h3 className="font-bold text-foreground font-jakarta text-base mb-4">
-                  פריטים בהזמנה ({items.length})
+                  פריטים בהזמנה ({orderItems.length})
                 </h3>
                 <div className="space-y-3">
-                  {items.map((item) => (
+                  {orderItems.map((item) => (
                     <div key={item.id} className="flex gap-3">
                       <div className="w-16 h-16 rounded-xl overflow-hidden bg-muted flex-shrink-0">
                         <img
@@ -1216,7 +1240,19 @@ const Checkout = () => {
               </Card>
 
               {/* Safety Check */}
-              <CheckoutSafetyCheck items={items} />
+              {partition.unavailable.length > 0 && (
+                <div className="mx-auto max-w-md rounded-2xl border border-border px-4 py-3 text-sm" dir="rtl">
+                  <p className="font-semibold">{UNAVAILABLE_ITEM_HE}</p>
+                  <ul className="mt-2 space-y-1">
+                    {partition.unavailable.map((item) => (
+                      <li key={item.id}>{item.name}</li>
+                    ))}
+                  </ul>
+                  <p className="mt-2 text-muted-foreground">הפריטים האלה לא נכללים בסכום. אפשר להמשיך עם שאר המוצרים.</p>
+                </div>
+              )}
+
+              <CheckoutSafetyCheck items={orderItems} />
 
             </motion.div>
           )}
@@ -1242,7 +1278,7 @@ const Checkout = () => {
             data-testid="checkout-continue"
             className={`flex-1 bg-accent hover:bg-accent-hover text-accent-foreground rounded-2xl font-bold font-jakarta shadow-xl h-14 ${currentStep === 1 ? 'w-full' : ''}`}
             onClick={currentStep === 3 ? handlePlaceOrder : undefined}
-            disabled={isProcessing}
+            disabled={isProcessing || (currentStep === 3 && (cataloguePending || nothingToBuy))}
           >
             {isProcessing ? (
               <>

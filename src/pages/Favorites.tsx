@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import BottomNav from "@/components/BottomNav";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
-import { getShopProducts, type MipoProduct } from "@/lib/mipoApi";
+import { getPublicShopProducts, type MipoProduct } from "@/lib/mipoApi";
 
 const readFavorites = (): string[] => {
   try {
@@ -31,7 +31,7 @@ const Favorites = () => {
   const [favorites, setFavorites] = useState(readFavorites);
   const { data: products = [], isLoading, isError } = useQuery({
     queryKey: ["shop-products-aws"],
-    queryFn: getShopProducts,
+    queryFn: getPublicShopProducts,
     staleTime: 1000 * 60 * 2,
   });
 
