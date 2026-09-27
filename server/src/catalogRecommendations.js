@@ -63,6 +63,7 @@ export const buildCatalogSearch = (terms, petType) => {
   const values = [terms.map((term) => `%${escapeLikeTerm(term)}%`)];
   const where = [
     "coalesce(p.in_stock, true) = true",
+    "coalesce(p.shop_hidden, false) = false",
     `(p.name ilike any($${values.length}::text[]) or coalesce(p.brand, '') ilike any($${values.length}::text[]) or coalesce(p.category, '') ilike any($${values.length}::text[]))`,
   ];
 

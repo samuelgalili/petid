@@ -68,13 +68,11 @@ test("a sender that can only reach one person is reported, not fatal", () => {
     "nothing computes whether outbound mail can reach a customer",
   );
 
-  // To the function's OWN closing brace, at column zero. Slicing to the first
-  // "};" stopped inside the first `return { ... };` and read three lines.
-  const stateStart = source.indexOf("export const emailDeliveryState");
-  const stateBlock = source.slice(stateStart, source.indexOf("\n};", stateStart));
-  assert.match(stateBlock, /RESEND_TESTING_SENDER/, "the check does not look at the sender");
-  assert.match(stateBlock, /state: "down"/, "a testing sender is not reported as broken");
-  assert.match(stateBlock, /state: "unknown"/, "a missing key is reported as something other than unknown");
+  const delivery = readFileSync(path.join(repoRoot, "server/src/emailDelivery.js"), "utf8");
+  assert.match(delivery, /RESEND_TESTING_SENDER/, "the check does not look at the sender");
+  assert.match(delivery, /state: "down"/, "a testing sender is not reported as broken");
+  assert.match(delivery, /state: "unknown"/, "a missing key is reported as something other than unknown");
+  assert.match(delivery, /configured: false/, "a broken sender is not reported as unconfigured");
 });
 
 test("the deploy log says it, and so does the screen", () => {
@@ -96,15 +94,20 @@ test("the deploy log says it, and so does the screen", () => {
 test("the testing sender is still the local default", () => {
   // Refusing it everywhere would leave local development with no mail at all,
   // which is worse than mail that only reaches one inbox.
+  const delivery = readFileSync(path.join(repoRoot, "server/src/emailDelivery.js"), "utf8");
   assert.match(
-    source, /const RESEND_TESTING_SENDER = "onboarding@resend\.dev"/,
+    delivery, /const RESEND_TESTING_SENDER = "onboarding@resend\.dev"/,
     "the testing sender is no longer named, so the production check cannot\n"
     + "be reading the address it is meant to refuse",
   );
   assert.match(
-    source,
-    /passwordResetFromEmail = process\.env\.PASSWORD_RESET_FROM_EMAIL \|\| `MIPO <\$\{RESEND_TESTING_SENDER\}>`/,
+    delivery,
+    /return trimmed \|\| `MIPO <\$\{RESEND_TESTING_SENDER\}>`/,
     "the default sender changed; local development may now have no sender",
+  );
+  assert.match(
+    source, /passwordResetFromEmail = resolveFromEmail\(process\.env\.PASSWORD_RESET_FROM_EMAIL\)/,
+    "the process no longer reads PASSWORD_RESET_FROM_EMAIL",
   );
 });
 
@@ -157,6 +160,13 @@ test("a signup still succeeds when the mail does not", () => {
     "issueEmailVerification no longer swallows a send failure, so a provider\n"
     + "outage would now fail the registration itself",
   );
+  const sendAt = issueBlock.indexOf("await sendEmailVerification");
+  const stampAt = issueBlock.indexOf("set email_verification_last_sent_at = now()");
+  assert.ok(sendAt > 0 && stampAt > sendAt, "the cooldown is stamped before the provider accepts the mail");
+  assert.match(
+    issueBlock, /if \(delivery\.sent\)/,
+    "a refused send still starts the resend cooldown",
+  );
 });
 
 test("the client is told whether the mail went out", () => {
@@ -180,5 +190,13 @@ test("the client is told whether the mail went out", () => {
   assert.match(
     form, /!emailVerification\.sent/,
     "the signup form reads the result without branching on it",
+  );
+  assert.match(
+    source, /configured: describeEmailDelivery\(/,
+    "health does not say whether outbound mail is configured",
+  );
+  assert.match(
+    source, /version: deployVersion, email/,
+    "the health response does not include the mail flag",
   );
 });
