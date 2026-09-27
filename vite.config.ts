@@ -69,6 +69,12 @@ export default defineConfig(({ mode }) => {
               type: "image/png",
               purpose: "any",
             },
+            {
+              src: "/pwa-maskable-512.png",
+              sizes: "512x512",
+              type: "image/png",
+              purpose: "maskable",
+            },
           ],
         },
         injectManifest: {

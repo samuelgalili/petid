@@ -2,6 +2,7 @@ import { ArrowRight, ScrollText, Users, ShoppingBag, Shield, Scale, FileText, Be
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
+import { SEO } from "@/components/SEO";
 import { motion } from "framer-motion";
 
 const Terms = () => {
@@ -197,6 +198,7 @@ const Terms = () => {
 
   return (
     <div className="h-screen bg-background overflow-hidden" dir="rtl">
+      <SEO title="תנאי שימוש" description="תנאי השימוש של MIPO באתר ובאפליקציה." url="/terms" />
       <div className="h-full overflow-y-auto pb-[70px]">
       {/* Header */}
       <div className="bg-surface border-b border-border sticky top-0 z-10">

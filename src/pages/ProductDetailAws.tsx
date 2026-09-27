@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
@@ -279,7 +279,9 @@ const ProductDetailAws = () => {
             <Store className="mx-auto h-10 w-10 text-muted-foreground" />
             <h1 className="text-xl font-bold">המוצר לא נמצא</h1>
             <p className="text-sm text-muted-foreground">ייתכן שהמוצר הוסר או שהקישור אינו תקין.</p>
-            <Button onClick={() => navigate("/shop")} className="w-full">חזרה לחנות</Button>
+            <Button asChild className="w-full">
+              <Link to="/shop">חזרה לחנות</Link>
+            </Button>
           </CardContent>
         </Card>
       </div>

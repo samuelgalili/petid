@@ -221,6 +221,7 @@ test("a public product url is a 404 for a hidden product, and a full view still 
   const page = read("src/pages/ProductDetailAws.tsx");
   assert.match(page, /המוצר לא נמצא/);
   assert.match(page, /isError \|\| !product/);
+  assert.match(page, /<Link to="\/shop">חזרה לחנות<\/Link>/);
 });
 
 test("a cart keeps the hidden line visible, drops it from the total, and can still buy the rest", () => {
@@ -316,7 +317,7 @@ test("the browser's visibility rules are the server's, character for character",
 
 test("the shop listing and the public product fetch both go through the visibility filter", () => {
   const shop = read("src/pages/Shop.tsx");
-  assert.match(shop, /getPublicShopProducts\(\)/);
+  assert.match(shop, /getPublicShopProducts\(/);
   assert.match(shop, /searchCatalogDetailed\(products, searchQuery\)/);
   assert.match(shop, /in_stock !== false/);
   const api = read("src/lib/mipoApi.ts");

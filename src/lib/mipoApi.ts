@@ -1864,13 +1864,25 @@ export async function bulkUpdateAdminOrders(ids: string[], updates: Partial<Pick
   });
 }
 
-export async function getShopProducts(): Promise<MipoProduct[]> {
-  const result = await apiFetch<{ products: MipoProduct[] }>("/products");
+export async function getShopProducts(options?: {
+  view?: "storefront";
+  // Present when this function is passed straight to react-query as queryFn.
+  // That context has no view, so the call stays on the full public catalogue.
+  queryKey?: readonly unknown[];
+}): Promise<MipoProduct[]> {
+  const query = options?.view === "storefront" ? "?view=storefront" : "";
+  const result = await apiFetch<{ products: MipoProduct[] }>(`/products${query}`);
   return result.products;
 }
 
 /** The shelf a shopper sees. Hidden products are absent even on an admin session. */
-export async function getPublicShopProducts(): Promise<MipoProduct[]> {
+export async function getPublicShopProducts(options?: {
+  view?: "storefront";
+  queryKey?: readonly unknown[];
+}): Promise<MipoProduct[]> {
+  if (options?.view === "storefront") {
+    return visibleShopProducts(await getShopProducts(options));
+  }
   return visibleShopProducts(await getShopProducts());
 }
 

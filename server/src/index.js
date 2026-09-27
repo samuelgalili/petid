@@ -138,6 +138,8 @@ import {
   startDispatcher,
 } from "./events.js";
 import { createPetFactService } from "./petFactService.js";
+import { createPublicPageRenderer, listInStockSitemapProducts } from "./publicPages.js";
+import { pageWindow, pickStorefrontProduct } from "./storefrontProduct.js";
 import {
   authorizeOwnerQa,
   createOwnerNotifier,
@@ -8165,6 +8167,7 @@ const sendStoredFile = (response, buffer, {
   fileName,
   isPrivate = false,
   sandbox = false,
+  head = false,
 } = {}) => {
   const disposition = contentType.startsWith("image/")
     || contentType.startsWith("video/")
@@ -8182,7 +8185,7 @@ const sendStoredFile = (response, buffer, {
   };
   if (sandbox) headers["content-security-policy"] = "default-src 'none'; sandbox";
   response.writeHead(200, headers);
-  response.end(buffer);
+  response.end(head ? undefined : buffer);
 };
 
 const readDocumentFile = async (document) => {
@@ -8299,9 +8302,19 @@ const servePublicUpload = async (request, response, pathname) => {
     fileName: storageKey,
     isPrivate: Boolean(documentResult.rows[0]),
     sandbox: Boolean(documentResult.rows[0]),
+    head: request.method === "HEAD",
   });
   return true;
 };
+
+// Navigations that are not files. Caddy proxies them here so the status and
+// the share tags belong to the path. /api stays JSON.
+const renderPublicPage = createPublicPageRenderer({
+  origin: configuredPublicAppUrl,
+  webRoot: process.env.WEB_ROOT || "/srv/www",
+  loadProduct: (id) => fetchPublicProductById(id),
+  loadSitemapProducts: () => listInStockSitemapProducts((sql) => pool.query(sql)),
+});
 
 /**
  * Enrolment and verification. Reached with the password alone, because an
@@ -8512,7 +8525,7 @@ const handleRequest = async (request, response) => {
   const url = new URL(request.url || "/", "http://localhost");
 
   try {
-    if (request.method === "GET" && url.pathname.startsWith("/uploads/")) {
+    if ((request.method === "GET" || request.method === "HEAD") && url.pathname.startsWith("/uploads/")) {
       if (!(await servePublicUpload(request, response, url.pathname))) {
         sendError(response, 404, "File not found");
       }
@@ -9706,17 +9719,39 @@ const handleRequest = async (request, response) => {
       // shop_hidden is applied here, at the public call site, and not inside
       // listProducts. Admin analytics and the ownership queue share that
       // function, and a hidden product is still a catalogue row.
+      //
+      // view=storefront is the shop grid: the same public rows, without the
+      // feeding guide and the bookkeeping columns. limit/offset page that
+      // list. Omitting both leaves the full public catalogue, which is what
+      // every existing caller still receives.
       const identity = await resolveAdminIdentity(request);
+      const storefront = url.searchParams.get("view") === "storefront";
       const rawCategory = url.searchParams.get("category_id") || url.searchParams.get("category");
       const categoryKey = rawCategory && rawCategory.trim() ? rawCategory.trim() : null;
-      const listed = [];
+      const mapped = [];
       for (const product of products) {
-        const view = adminProductView(identity, product);
-        if (!publiclyVisibleProduct(product, view)) continue;
+        const rowView = adminProductView(identity, product);
+        if (!publiclyVisibleProduct(product, rowView)) continue;
         if (categoryKey && !matchesCategory(product, categoryKey)) continue;
-        listed.push(view === "full" ? product : toPublicProduct(product));
+        if (rowView === "full") {
+          mapped.push(product);
+        } else {
+          const pub = toPublicProduct(product);
+          mapped.push(storefront ? pickStorefrontProduct(pub) : pub);
+        }
       }
-      sendJson(response, 200, { products: listed });
+      const windowed = pageWindow(mapped, {
+        limit: url.searchParams.get("limit"),
+        offset: url.searchParams.get("offset"),
+      });
+      const body = {
+        products: windowed.products,
+        ...(windowed.limit !== undefined
+          ? { total: windowed.total, limit: windowed.limit, offset: windowed.offset }
+          : {}),
+      };
+      const cacheable = storefront && !identity;
+      sendJson(response, 200, body, cacheable ? { "cache-control": "public, max-age=60" } : {});
       return;
     }
 
@@ -9991,6 +10026,15 @@ const handleRequest = async (request, response) => {
       const auth = await getUserFromSession(request).catch(() => null);
       sendJson(response, 201, { report: await createReport(await readBody(request), auth?.user?.id || null) });
       return;
+    }
+
+    if (request.method === "GET" || request.method === "HEAD") {
+      const rendered = await renderPublicPage(url.pathname);
+      if (rendered) {
+        response.writeHead(rendered.status, rendered.headers);
+        response.end(request.method === "HEAD" ? undefined : rendered.body);
+        return;
+      }
     }
 
     sendError(response, 404, "Not found");

@@ -12,7 +12,8 @@ const read = (relative) => readFileSync(path.join(repoRoot, relative), "utf8");
 
 test("legal copy has no placeholder phone and states VAT at 18 percent", () => {
   const legal = read("src/components/LegalDrawer.tsx");
-  const contact = read("src/lib/siteContact.js");
+  const contact = read("server/src/siteContact.js");
+  assert.equal(read("src/lib/siteContact.js"), contact);
   assert.equal(legal.includes("03-1234567"), false);
   assert.equal(legal.includes("17%"), false);
   assert.match(legal, /VAT_PERCENT|18%/);
@@ -21,6 +22,8 @@ test("legal copy has no placeholder phone and states VAT at 18 percent", () => {
   assert.match(contact, /https:\/\/wa\.me\/972505929209/);
   assert.match(contact, /support@mipo\.pet/);
   assert.equal(contact.includes("03-1234567"), false);
+  assert.doesNotMatch(read("server/src/publicPages.js"), /\.\.\/\.\.\/src\/lib\/siteContact/);
+  assert.match(read("server/src/publicPages.js"), /from "\.\/siteContact\.js"/);
   assert.equal(contact.includes("VITE_SUPPORT_PHONE"), false);
   for (const file of [
     "src/components/Footer.tsx",
