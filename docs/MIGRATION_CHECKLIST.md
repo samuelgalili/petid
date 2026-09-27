@@ -14,6 +14,7 @@ This branch targets AWS Lightsail + RDS. Supabase/Vercel are no longer part of t
 - [x] The migration ledger baselines `0001`-`0012` and records security migration `0013`.
 - [x] Required production configuration, including CardCom, is stored in SSM.
 - [x] Production smoke tests pass on desktop Chromium and Pixel 5.
+- [x] Admin two-factor migration `0061_admin_two_factor.sql` is additive. The feature stays off until `ADMIN_2FA_ENABLED=true`. See `docs/ADMIN_2FA_DEPLOYMENT.md`.
 
 ## Remaining Cutover Work
 

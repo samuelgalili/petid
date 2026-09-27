@@ -27,6 +27,15 @@ REQUIRED_KEYS=(
 )
 
 OPTIONAL_KEYS=(
+  # Admin two-factor stays off until ADMIN_2FA_ENABLED=true. The key and the
+  # flags are optional here so a sync still succeeds before the owner creates
+  # them; once they exist under the SSM prefix they are copied to the host.
+  SECRET_ENCRYPTION_KEY
+  SECRET_ENCRYPTION_KEYS_RETIRED
+  ADMIN_2FA_ENABLED
+  ADMIN_2FA_REQUIRE_ENROLLMENT
+  ADMIN_MFA_STEP_UP_MINUTES
+  ADMIN_TOTP_ISSUER
   WAREHOUSE_WHATSAPP_NUMBER
   CARDCOM_TERMINAL_NUMBER
   CARDCOM_USERNAME

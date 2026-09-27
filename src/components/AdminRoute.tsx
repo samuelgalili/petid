@@ -19,7 +19,7 @@ interface AdminRouteProps {
 }
 
 export const AdminRoute = ({ children, permission }: AdminRouteProps) => {
-  const { admin, isAdmin, loading } = useAwsAdminAuth();
+  const { admin, needsTwoFactor, loading } = useAwsAdminAuth();
   const location = useLocation();
 
   if (loading) {
@@ -30,12 +30,23 @@ export const AdminRoute = ({ children, permission }: AdminRouteProps) => {
     );
   }
 
-  if (!isAdmin) {
+  if (!admin) {
     return <Navigate to="/admin/login" replace state={{ from: location.pathname }} />;
   }
 
-  if (admin?.must_change_password && location.pathname !== "/admin/change-password") {
-    return <Navigate to="/admin/change-password" replace />;
+  // Each unfinished step owns one screen. Falling through is what turned two
+  // guards into a redirect loop: the screen that clears a step must be allowed
+  // to render while that step is still outstanding.
+  if (admin.must_change_password) {
+    return location.pathname === "/admin/change-password"
+      ? <>{children}</>
+      : <Navigate to="/admin/change-password" replace />;
+  }
+
+  if (needsTwoFactor) {
+    return location.pathname === "/admin/two-factor"
+      ? <>{children}</>
+      : <Navigate to="/admin/two-factor" replace />;
   }
 
   const required = permission === undefined ? [] : [permission].flat();
