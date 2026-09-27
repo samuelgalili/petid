@@ -1,6 +1,6 @@
 # MIPO — context for coding agents
 
-Written against `aws-migration` at `29fec3ab` (2026-09-26). This file describes the tree that production runs. `CLAUDE.md` is the short rule list. `todo.md` is the open work, with links.
+Written against `aws-migration` at `e8583a02` (2026-09-27), which is the merge of [#29](https://github.com/samuelgalili/petid/pull/29) and includes [#27](https://github.com/samuelgalili/petid/pull/27). This file describes the tree that production runs once that deploy finishes. `CLAUDE.md` is the short rule list. `todo.md` is the open work, with links.
 
 `CONTEXT.md`, `CLAUDE.md`, and `todo.md` were not in git on this branch when this snapshot was written. Older design notes under `docs/` often describe an earlier schema. When they disagree with `server/sql` and `server/src`, trust the code.
 
@@ -141,7 +141,7 @@ Pull requests into `aws-migration`, `main`, or `master` run `.github/workflows/e
 
 ### Production read-only and one-shot workflows
 
-All four are `workflow_dispatch` only. They use the `production` environment and the existing SSH key. They do not create a second credential. Concurrency group is the literal `aws-production`, the same group a production deploy holds, so a measurement cannot sit on `ACCESS SHARE` locks while a migration waits on `ACCESS EXCLUSIVE`.
+These workflows are `workflow_dispatch` only. They use the `production` environment and the existing SSH key. They do not create a second credential. Concurrency group is the literal `aws-production`, the same group a production deploy holds, so a measurement cannot sit on `ACCESS SHARE` locks while a migration waits on `ACCESS EXCLUSIVE`.
 
 Shared safety pattern:
 
@@ -157,6 +157,7 @@ Shared safety pattern:
 | C-0 catalogue measurement | `production-catalogue-measure.yml` | Counts over the legacy catalogue. No product names, descriptions, supplier URLs, or barcode values. |
 | S-0 search vocabulary | `production-search-vocabulary.yml` | Word frequencies for `catalogSearch.js`. Brands and categories are the deliberate exception. |
 | Legacy catalogue migration | `production-legacy-catalogue-migrate.yml` | **Writes.** Dry-run is the default. `apply` needs a second confirmation that matches the step (`MIGRATE-LEGACY`, `APPROVE-LEGACY`, `COMPLETE-LEGACY`, `SELLER-STATUS`). Takes the deploy's backup first. `migrate` inserts only into `raw_import_records` and `product_drafts` (drafts stay `IMPORTED`). `approve`, `complete`, and `seller` are separate steps. `seller` changes one business id, never "all". |
+| Cardcom missed payments | `production-cardcom-missed-payments-readonly.yml` | Read-only list of shop orders that may have been charged while the indicator webhook answered 502. Confirmation text is `READ-ONLY`. Selects order numbers and low-profile codes, not names, emails, phones, or addresses. Added by [#27](https://github.com/samuelgalili/petid/pull/27). It does not mark anything paid. |
 
 ## Data model
 
@@ -184,9 +185,9 @@ Schema is the SQL files, in filename order. The runner sorts filenames, so the t
 
 **Shop, cart, checkout.** The shop page calls `getShopProducts()` → `GET /api/products`, which reads `business_products`. Search runs in the browser from `catalogSearch.ts` over that payload. `/api/catalog` is live and unused by the shop. Switching `/api/products` to the new tables would empty the shop: current products have not been through intake, and legacy rows are not treated as published.
 
-The cart is `localStorage` key `mipo-cart`. `sellerId` exists on the line type and is not populated, so checkout is one group (`src/lib/cartGrouping.ts`). `POST /api/orders` can be a guest; the price is computed on the server from the catalogue, not from the client. Shipping is validated in `src/pages/Checkout.tsx` with Zod before payment. Coupons are `POST /api/coupons/validate`.
+`/shop` is reachable without an account. `/` still requires one. Login and signup link to the shop ([#29](https://github.com/samuelgalili/petid/pull/29)). The cart is `localStorage` key `mipo-cart`. `sellerId` exists on the line type and is not populated, so checkout is one group (`src/lib/cartGrouping.ts`). `POST /api/orders` can be a guest; the price is computed on the server from the catalogue, not from the client. Shipping is validated with Zod. Phone and zip are reduced to digits first (`src/lib/checkoutContact.ts`), so a dashed phone or a spaced zip still reaches the payment step. Product pages hide import-only columns (`src/lib/productSpecs.ts`). Coupons are `POST /api/coupons/validate`.
 
-**Cardcom.** `POST /api/payments/shop` starts a Low Profile session when terminal, username, API password, and webhook secret are all set. If any one is set, boot fails until all four are set. If none are set, production payment returns 503; a non-production server marks the order `dev_approved`. The webhook is `POST` or `GET` `/api/payments/cardcom/webhook`. It checks the shared secret before it records `cardcom_events` and advances the order. Cash on delivery is a separate payment method and does not call Cardcom.
+**Cardcom.** `POST /api/payments/shop` starts a Low Profile session when terminal, username, API password, and webhook secret are all set. If any one is set, boot fails until all four are set. If none are set, production payment returns 503; a non-production server marks the order `dev_approved`. The webhook is `POST` or `GET` `/api/payments/cardcom/webhook`. It checks the shared secret before it asks Cardcom for the indicator. A verified capture whose amount matches the order is marked paid. A decline, including one with no amount fields, is recorded and answered 200, and is not marked paid ([#27](https://github.com/samuelgalili/petid/pull/27)). Merging that fix does not replay old callbacks. Cash on delivery is a separate payment method and does not call Cardcom.
 
 **Admin.** `POST /api/admin/login`, then a password change for a provisioned account (`/admin/change-password`) before other admin calls. Provision with:
 
