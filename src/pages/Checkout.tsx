@@ -20,7 +20,7 @@ import {
   validateCheckoutShipping,
   type CheckoutShippingInput,
 } from "@/lib/checkoutContact";
-import { createShopOrder, createShopPaymentSession, getMyShippingProfile, MipoApiError, MipoCoupon, validateCouponCode } from "@/lib/mipoApi";
+import { createShopOrder, createShopPaymentSession, getMyShippingProfile, MipoCoupon, validateCouponCode } from "@/lib/mipoApi";
 import { rememberOrderAccess } from "@/lib/orderAccess";
 
 // Kept identical to LEAVE_AT_DOOR_TERMS on the server, which is what actually
@@ -409,18 +409,6 @@ const Checkout = () => {
       console.error("Error placing order:", error);
       setIsProcessing(false);
       
-      // The one refusal a person can fix themselves right now, so it gets its
-      // own message and a way out instead of "try again".
-      if (error instanceof MipoApiError && error.status === 403) {
-        toast({
-          title: "צריך לאמת את המייל",
-          description: "שלחנו לכם קוד אימות. אחרי האימות אפשר להשלים את ההזמנה.",
-          variant: "destructive",
-        });
-        navigate("/verify-email");
-        return;
-      }
-
       // More specific error messages
       const message = error instanceof Error ? error.message : "";
       let errorMessage = "נכשל בביצוע ההזמנה. נסו שוב.";

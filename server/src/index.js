@@ -34,6 +34,7 @@ import {
   readVerifiedCardcomNotification,
   settleCardcomNotification,
 } from "./cardcom.js";
+import { shouldRequestVerificationAfterOrder } from "./customerOrderAccess.js";
 import {
   FixedWindowRateLimiter,
   contentTypeForSafeExtension,
@@ -43,6 +44,15 @@ import {
   verifyOpaqueToken,
 } from "./security.js";
 import { checkDatabaseHealth, checkSchemaHealth } from "./health.js";
+import {
+  RESEND_TESTING_SENDER,
+  configNamesForProviderStatus,
+  describeEmailDelivery,
+  emailFailureLogLine,
+  redactEmailLog,
+  resolveFromEmail,
+  summarizeProviderFailure,
+} from "./emailDelivery.js";
 import { createProviderRegistry } from "./aiProviders.js";
 import { createAiGateway, newRequestId, newTraceId } from "./aiGateway.js";
 import {
@@ -132,16 +142,15 @@ const resendApiKey = process.env.RESEND_API_KEY;
  * THE DEFAULT IS A TESTING ADDRESS AND IT REACHES EXACTLY ONE PERSON.
  * Resend allows onboarding@resend.dev only to the address the Resend account
  * itself is registered to; a send to anybody else is refused with 403. So a
- * deployment that sets RESEND_API_KEY and forgets this one passes every
- * start-up check, logs nothing a person reads, and silently fails to verify
- * every customer who is not the owner - which is what "no verification email"
- * looks like from outside.
+ * deployment that sets RESEND_API_KEY and leaves PASSWORD_RESET_FROM_EMAIL
+ * on the testing sender passes every start-up check and then tells the new
+ * customer the verification mail was not sent.
  *
  * It stays the default for local work, where the alternative is no mail at
- * all. Production refuses it below.
+ * all. Production reports it; it does not refuse to boot.
  */
-export const RESEND_TESTING_SENDER = "onboarding@resend.dev";
-const passwordResetFromEmail = process.env.PASSWORD_RESET_FROM_EMAIL || `MIPO <${RESEND_TESTING_SENDER}>`;
+export { RESEND_TESTING_SENDER };
+const passwordResetFromEmail = resolveFromEmail(process.env.PASSWORD_RESET_FROM_EMAIL);
 
 /**
  * Whether outbound mail can actually reach a customer.
@@ -160,16 +169,11 @@ const passwordResetFromEmail = process.env.PASSWORD_RESET_FROM_EMAIL || `MIPO <$
  * somebody looks, and the log line below is for whoever is watching a deploy.
  */
 export const emailDeliveryState = () => {
-  if (!resendApiKey) {
-    return { state: "unknown", detail: "לא הוגדר מפתח שליחה" };
-  }
-  if (passwordResetFromEmail.includes(RESEND_TESTING_SENDER)) {
-    return {
-      state: "down",
-      detail: "כתובת השולח היא כתובת הבדיקה של Resend — מגיעה רק לבעל החשבון",
-    };
-  }
-  return { state: "ok", detail: `נשלח מ-${passwordResetFromEmail}` };
+  const described = describeEmailDelivery({
+    apiKey: resendApiKey,
+    fromEmail: passwordResetFromEmail,
+  });
+  return { state: described.state, detail: described.detail };
 };
 // A verification link is followed at leisure, often on another device, so it
 // lives far longer than a password reset code.
@@ -232,9 +236,13 @@ if (!databaseUrl) {
 {
   // Said at start-up because a mail system that reaches one person looks
   // exactly like a working one until a customer registers.
-  const mail = emailDeliveryState();
-  if (mail.state !== "ok") {
+  const mail = describeEmailDelivery({
+    apiKey: resendApiKey,
+    fromEmail: passwordResetFromEmail,
+  });
+  if (!mail.configured) {
     console.error(`[mipo] OUTBOUND EMAIL IS NOT DELIVERABLE: ${mail.detail}. `
+      + `Missing or unusable: ${mail.missing.join(", ")}. `
       + "Set PASSWORD_RESET_FROM_EMAIL to an address on a domain verified in Resend.");
   }
 }
@@ -1357,8 +1365,17 @@ const hashPasswordResetOtp = (email, otp) => createHmac("sha256", adminApiKey ||
   .update(`${normalizeEmail(email)}:${String(otp || "")}`)
   .digest("hex");
 
+const logEmailTransportFailure = (kind, status, body) => {
+  const summary = summarizeProviderFailure(status, body);
+  const configNames = configNamesForProviderStatus(status, passwordResetFromEmail);
+  console.error(emailFailureLogLine(kind, summary, configNames));
+};
+
 const sendPasswordResetEmail = async (request, email, otp) => {
-  if (!resendApiKey) return { sent: false, reason: "not_configured" };
+  if (!resendApiKey) {
+    console.error("[mipo] password reset email was not sent: missing config RESEND_API_KEY");
+    return { sent: false, reason: "not_configured" };
+  }
 
   const resetUrl = new URL("/reset-password", `${getPublicBaseUrl(request)}/`);
   resetUrl.searchParams.set("email", email);
@@ -1390,13 +1407,13 @@ const sendPasswordResetEmail = async (request, email, otp) => {
       }),
     }, 15_000);
   } catch (error) {
-    console.error("Password reset email request failed:", error.message);
+    console.error("[mipo] password reset email request failed:", redactEmailLog(error.message));
     return { sent: false, reason: "send_failed" };
   }
 
   if (!response.ok) {
     const details = await response.text().catch(() => "");
-    console.error("Password reset email failed:", response.status, details.slice(0, 300));
+    logEmailTransportFailure("password reset", response.status, details);
     return { sent: false, reason: "send_failed" };
   }
 
@@ -1408,7 +1425,14 @@ const hashEmailVerificationOtp = (email, otp) => createHmac("sha256", adminApiKe
   .digest("hex");
 
 const sendEmailVerification = async (request, email, otp, fullName) => {
-  if (!resendApiKey) return { sent: false, reason: "not_configured" };
+  if (!resendApiKey) {
+    console.error("[mipo] verification email was not sent: missing config RESEND_API_KEY");
+    return { sent: false, reason: "not_configured" };
+  }
+  if (passwordResetFromEmail.includes(RESEND_TESTING_SENDER)) {
+    console.error("[mipo] verification email: PASSWORD_RESET_FROM_EMAIL is the Resend testing sender. "
+      + "Resend delivers it only to the account owner.");
+  }
 
   const verifyUrl = new URL("/verify-email", `${getPublicBaseUrl(request)}/`);
   verifyUrl.searchParams.set("email", email);
@@ -1443,13 +1467,13 @@ const sendEmailVerification = async (request, email, otp, fullName) => {
       }),
     }, 15_000);
   } catch (error) {
-    console.error("Verification email request failed:", error.message);
+    console.error("[mipo] verification email request failed:", redactEmailLog(error.message));
     return { sent: false, reason: "send_failed" };
   }
 
   if (!response.ok) {
     const details = await response.text().catch(() => "");
-    console.error("Verification email failed:", response.status, details.slice(0, 300));
+    logEmailTransportFailure("verification", response.status, details);
     /*
      * The status is carried out, not just logged.
      *
@@ -1519,12 +1543,18 @@ const issueEmailVerification = async (request, user, { force = false } = {}) => 
       [email, user.id, hashEmailVerificationOtp(email, otp), expiresAt],
     );
 
-    await pool.query(
-      "update public.app_users set email_verification_last_sent_at = now(), updated_at = now() where id = $1",
-      [user.id],
-    );
-
     const delivery = await sendEmailVerification(request, email, otp, user.full_name);
+    // Only a mail the provider accepted starts the cooldown. Stamping it
+    // first turned a refused first send into a 429 on the retry the screen
+    // just offered.
+    if (delivery.sent) {
+      await pool.query(
+        "update public.app_users set email_verification_last_sent_at = now(), updated_at = now() where id = $1",
+        [user.id],
+      ).catch((error) => {
+        console.error("[mipo] verification email was sent but the cooldown was not recorded:", error.message);
+      });
+    }
     return {
       sent: delivery.sent,
       reason: delivery.reason,
@@ -6222,23 +6252,10 @@ const createOrder = async (body, currentUser = null, eventOrigin = "app", option
     error.statusCode = 400;
     throw error;
   }
-  // An order sends a confirmation, an invoice and delivery updates to the
-  // account's address, so this is the point where the address has to be
-  // proven. Guest checkout is untouched: it has no account to protect, and
-  // its address is entered per order rather than inherited from one.
-  //
-  // An admin placing the order is the exception, and not a loophole: the point
-  // of the gate is that a stranger must not be able to point order mail at an
-  // address they have not proven. An admin taking an order over the phone has
-  // no way to make the customer click a verification link mid-call, and the
-  // person entering the address is a known, audited account rather than an
-  // anonymous one.
-  if (currentUser && !currentUser.email_verified_at && !placedByAdmin) {
-    const error = new Error("Verify your email address before placing an order");
-    error.statusCode = 403;
-    error.code = "email_verification_required";
-    throw error;
-  }
+  // Verification does not block the order. A new customer reaches payment
+  // the same way a guest does. The mail is requested after this function
+  // returns, and a send failure must not roll the order back. Amount checks
+  // below are unchanged.
 
   const accessToken = currentUser ? null : createOpaqueToken();
   const client = await pool.connect();
@@ -8077,11 +8094,19 @@ const handleRequest = async (request, response) => {
     }
 
     if (request.method === "GET" && url.pathname === "/api/health") {
+      // True only when a key is set and the FROM address is not Resend's
+      // testing sender. No key, no address, no provider text.
+      const email = {
+        configured: describeEmailDelivery({
+          apiKey: resendApiKey,
+          fromEmail: passwordResetFromEmail,
+        }).configured,
+      };
       if (!(await checkDatabaseHealth(pool))) {
-        sendJson(response, 503, { ok: false, service: "mipo-api", version: deployVersion, error: "Database unavailable" });
+        sendJson(response, 503, { ok: false, service: "mipo-api", version: deployVersion, error: "Database unavailable", email });
         return;
       }
-      sendJson(response, 200, { ok: true, service: "mipo-api", version: deployVersion });
+      sendJson(response, 200, { ok: true, service: "mipo-api", version: deployVersion, email });
       return;
     }
 
@@ -9123,6 +9148,11 @@ const handleRequest = async (request, response) => {
       const body = await readBody(request);
       const auth = await getUserFromSession(request).catch(() => null);
       const result = await createOrder(body, auth?.user || null, originFromRequest(request));
+      if (shouldRequestVerificationAfterOrder({ currentUser: auth?.user, placedByAdmin: false })) {
+        issueEmailVerification(request, auth.user).catch((error) => {
+          console.error("Post-order verification email was not sent:", error?.message || error);
+        });
+      }
       sendJson(response, 201, {
         order: result.order,
         ...(result.accessToken ? { access_token: result.accessToken } : {}),
