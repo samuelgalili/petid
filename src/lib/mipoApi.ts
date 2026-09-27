@@ -1,4 +1,5 @@
 import { emitPetCompanionEvent } from "@/lib/petCompanionReactions";
+import { visibleShopProducts } from "@/lib/shopVisibility";
 
 export interface MipoProduct {
   id: string;
@@ -17,6 +18,8 @@ export interface MipoProduct {
   category_name?: string | null;
   pet_type?: string | null;
   in_stock: boolean | null;
+  /** Present on a full admin row. Public responses omit hidden products instead. */
+  shop_hidden?: boolean | null;
   is_featured?: boolean | null;
   business_id?: string | null;
   sku?: string | null;
@@ -1757,6 +1760,11 @@ export async function bulkUpdateAdminOrders(ids: string[], updates: Partial<Pick
 export async function getShopProducts(): Promise<MipoProduct[]> {
   const result = await apiFetch<{ products: MipoProduct[] }>("/products");
   return result.products;
+}
+
+/** The shelf a shopper sees. Hidden products are absent even on an admin session. */
+export async function getPublicShopProducts(): Promise<MipoProduct[]> {
+  return visibleShopProducts(await getShopProducts());
 }
 
 export interface MipoProductCategory {

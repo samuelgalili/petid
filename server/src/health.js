@@ -46,7 +46,7 @@ export const SCHEMA_PROBES = [
 
   // The catalogue, including the columns the warehouse label prints from.
   ["catalog", `
-    select id, name, price, sku, weight, category_id, image_source_url
+    select id, name, price, sku, weight, category_id, image_source_url, shop_hidden
     from public.business_products
     limit 1`],
 
