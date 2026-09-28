@@ -74,7 +74,12 @@ export const Entity360Header = ({
 
           <div className="min-w-0 flex-1 space-y-1.5">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="admin-title truncate">{title}</h1>
+              {/* h2, NOT h1. AdminLayout above already renders the page's one
+                  <h1>, and a 360 that repeated the record's name as a second
+                  h1 put two identical headings on the page - which reads as a
+                  duplicated title and makes "the heading named X" ambiguous.
+                  The outline is now the page, then the record inside it. */}
+              <h2 className="admin-title truncate">{title}</h2>
               {status && (
                 <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold", tone)}>
                   {status}
@@ -216,7 +221,8 @@ export const Entity360Panel = ({ title, action, children, className }: {
 }) => (
   <section className={cn("admin-card p-4", className)} aria-label={title}>
     <div className="flex items-center justify-between gap-2 pb-2.5">
-      <h2 className="admin-section">{title}</h2>
+      {/* h3: a panel sits inside the record, whose heading is the h2 above. */}
+      <h3 className="admin-section">{title}</h3>
       {action}
     </div>
     {children}

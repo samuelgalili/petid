@@ -29,6 +29,18 @@
  * Each column returns a cap of rows AND a true total. A morning with forty
  * exceptions must say forty, and show eight; a column that shows eight and
  * says eight is a dashboard that gets quieter the worse things get.
+ *
+ * ─── AN href HERE IS A PROMISE THE CLIENT HAS TO KEEP ───────────────────────
+ *
+ * Every card carries the URL it opens, built on this side. For a while the four
+ * order cards all pointed at `/admin/orders?order=<id>` and the orders screen
+ * never read that parameter, so pressing an exception landed on the unfiltered
+ * order list: the card said "this order failed" and then would not show it to
+ * you. A link that reaches the right SCREEN but not the right RECORD is the
+ * quietest kind of broken - nothing errors, and the page that loads looks fine.
+ *
+ * So the rule for adding a card: the href names a record, and something on the
+ * client asserts that the URL it builds actually opens that record.
  */
 
 const PER_COLUMN = 6;
@@ -203,7 +215,7 @@ const COLUMNS = [
       { kind: "order_failed", sql: EXCEPTION_ORDERS, row: (r) => ({
         id: r.id, title: `הזמנה ${r.order_number}`, subtitle: r.why,
         detail: r.customer_name || "ללא שם", amount: r.total, at: r.created_at,
-        href: `/admin/orders?order=${r.id}`,
+        href: `/admin/orders/${r.id}`,
       }) },
       { kind: "product_flagged", sql: EXCEPTION_PRODUCTS, row: (r) => ({
         id: r.id, title: r.name, subtitle: r.why, detail: null,
@@ -225,7 +237,7 @@ const COLUMNS = [
       { kind: "order_pending", sql: APPROVAL_ORDERS, row: (r) => ({
         id: r.id, title: `הזמנה ${r.order_number}`, subtitle: "ממתינה לאישור",
         detail: r.customer_name || "ללא שם", amount: r.total, at: r.created_at,
-        href: `/admin/orders?order=${r.id}`,
+        href: `/admin/orders/${r.id}`,
       }) },
       { kind: "draft_in_review", sql: APPROVAL_DRAFTS, row: (r) => ({
         id: r.id, title: r.name, subtitle: "טיוטה בביקורת",
@@ -245,7 +257,7 @@ const COLUMNS = [
       { kind: "order_processing", sql: PROGRESS_ORDERS, row: (r) => ({
         id: r.id, title: `הזמנה ${r.order_number}`, subtitle: r.why,
         detail: r.customer_name || "ללא שם", amount: r.total, at: r.updated_at,
-        href: `/admin/orders?order=${r.id}`,
+        href: `/admin/orders/${r.id}`,
       }) },
       { kind: "draft_open", sql: PROGRESS_DRAFTS, row: (r) => ({
         id: r.id, title: r.name, subtitle: "טיוטה בעריכה", detail: null,
@@ -259,7 +271,7 @@ const COLUMNS = [
       { kind: "order_delivered", sql: DONE_ORDERS, row: (r) => ({
         id: r.id, title: `הזמנה ${r.order_number}`, subtitle: "נמסרה",
         detail: r.customer_name || "ללא שם", amount: r.total, at: r.updated_at,
-        href: `/admin/orders?order=${r.id}`,
+        href: `/admin/orders/${r.id}`,
       }) },
       { kind: "product_published", sql: DONE_PUBLISHED, row: (r) => ({
         id: r.id, title: r.name, subtitle: "פורסם לחנות", detail: null,

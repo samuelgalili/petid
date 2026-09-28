@@ -60,7 +60,19 @@ export { commandDestinations };
 
 interface AdminLayoutProps {
   children: ReactNode;
+  /**
+   * The page's heading, and the document's ONLY <h1>.
+   *
+   * Screens used to build a second header of their own beneath this one, which
+   * put two <h1> elements carrying the same words on the page - visually
+   * redundant, and ambiguous to anything addressing a page by its heading.
+   * `description` and `actions` exist so a screen has no reason to.
+   */
   title: string;
+  /** One line on what this screen is for. Under the title, in the one header. */
+  description?: string;
+  /** The screen's own controls - refresh, "new X" - on the header's other end. */
+  actions?: ReactNode;
   icon?: LucideIcon;
   breadcrumbs?: { label: string; href?: string }[];
 }
@@ -75,7 +87,9 @@ const PHONE_TABS = ["/admin", "/admin/orders", "/admin/customers", "/admin/produ
 
 const collapsedKey = "admin_sidebar_collapsed";
 
-export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: AdminLayoutProps) => {
+export const AdminLayout = ({
+  children, title, description, actions, icon: Icon, breadcrumbs = [],
+}: AdminLayoutProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { admin, logout } = useAwsAdminAuth();
@@ -331,14 +345,15 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
         />
 
         <div className="px-4 py-4 lg:px-6 lg:py-5">
-          <header className="mb-4 flex min-w-0 items-center gap-2">
+          <header className="mb-4 flex min-w-0 flex-wrap items-center gap-2">
             {Icon && (
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-admin-accent-soft text-admin-accent">
                 <Icon className="h-[18px] w-[18px]" strokeWidth={1.75} />
               </span>
             )}
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <h1 className="admin-title truncate">{title}</h1>
+              {description && <p className="admin-meta truncate">{description}</p>}
               {breadcrumbs.length > 0 && (
                 <nav className="flex items-center gap-1 pt-0.5" aria-label="נתיב">
                   <Link to="/admin" className="admin-meta admin-focus rounded hover:text-admin-ink">ניהול</Link>
@@ -353,6 +368,7 @@ export const AdminLayout = ({ children, title, icon: Icon, breadcrumbs = [] }: A
                 </nav>
               )}
             </div>
+            {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
           </header>
 
           {children}

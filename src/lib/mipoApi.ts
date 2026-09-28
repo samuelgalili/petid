@@ -330,6 +330,45 @@ export interface MipoOrderCreationResult {
   access_token?: string;
 }
 
+/** One thing that happened to an order, out of the outbox. */
+export interface MipoOrderEvent {
+  id: string;
+  /** Dotted and past tense: "order.paid", "order.status_changed". */
+  type: string;
+  /** Who caused it: app, admin, automation, system. */
+  origin: string;
+  at: string;
+  /** Carries the from/to of whatever moved, so the screen can name the change. */
+  payload: Record<string, unknown>;
+}
+
+/** The customer's other orders, for "is this person new here". */
+export interface MipoOrderSibling {
+  id: string;
+  order_number: string;
+  status: string;
+  payment_status: string;
+  total: number;
+  placed_at: string | null;
+}
+
+export interface MipoOrderDetail {
+  order: MipoOrder;
+  /** Null only when the order has no identity at all — neither account nor guest row. */
+  customer: MipoCustomer | null;
+  events: MipoOrderEvent[];
+  sibling_orders: MipoOrderSibling[];
+  /**
+   * Whether the event stream reaches back to the order being placed.
+   *
+   * False for orders older than the outbox (migration 0020) and for a stream
+   * whose early rows were swept. Both look like a complete history on screen,
+   * so the page says "the record starts here" rather than letting an empty or
+   * half stream read as "nothing happened".
+   */
+  history_covers_order: boolean;
+}
+
 export interface MipoUser {
   id: string;
   email: string;
@@ -1438,6 +1477,16 @@ export async function getAdminOrders(): Promise<MipoOrder[]> {
   return result.orders;
 }
 
+/**
+ * One order, with who placed it and what has happened to it.
+ *
+ * There was no endpoint for a single order until Order 360: the list was the
+ * only way to read one, which is why every link to an order went to the list.
+ */
+export async function getAdminOrder(orderId: string): Promise<MipoOrderDetail> {
+  return adminApiFetch<MipoOrderDetail>(`/admin/orders/${encodeURIComponent(orderId)}`);
+}
+
 export async function updateAdminOrder(
   orderId: string,
   updates: Partial<Pick<MipoOrder, "status" | "payment_status" | "shipping_status" | "tracking_number" | "special_instructions">>,
@@ -2093,7 +2142,21 @@ export interface MipoIntakeDraft {
   raw_import_record_id: string | null;
   updated_at: string;
   approved_catalog_product_id: string | null;
+  /**
+   * Who sent it for review, and why it was sent back.
+   *
+   * `submitted_by` is what lets the screen disable "אישור" with a reason
+   * instead of offering it and catching a 403: the submitter may not approve
+   * their own draft, and a draft with no recorded submitter cannot be approved
+   * by anybody — the server fails closed rather than assume it was someone else.
+   */
+  submitted_by: string | null;
+  review_note: string | null;
 }
+
+/** The states a draft moves through. IMPORTED → DRAFT → IN_REVIEW → APPROVED. */
+export type MipoDraftState =
+  | "IMPORTED" | "DRAFT" | "IN_REVIEW" | "APPROVED" | "REJECTED" | "ARCHIVED";
 
 /** Every reason a product may not be published, named rather than counted. */
 export interface MipoPublicationReadiness {
@@ -2108,6 +2171,70 @@ export async function listIntakeDrafts(state?: string): Promise<MipoIntakeDraft[
   const query = state ? `?state=${encodeURIComponent(state)}` : "";
   const result = await adminApiFetch<{ drafts: MipoIntakeDraft[] }>(`/admin/intake/drafts${query}`);
   return result.drafts;
+}
+
+/*
+ * THE THREE CALLS THAT MOVE A DRAFT, AND WHY THEY WERE MISSING.
+ *
+ * The intake API has nineteen endpoints and this client used four of them:
+ * list, readiness, approve an image, publish. Submitting a draft, approving it
+ * and rejecting it — the review the whole chain is built around — had no
+ * client function, so no screen could offer the button and every approval was
+ * done by dispatching a GitHub workflow by hand.
+ *
+ * `approve` is the only place a catalog_product is ever created, which is why
+ * nothing downstream of it could be reached from the admin either.
+ */
+
+/** DRAFT → IN_REVIEW. Refused with DRAFT_INCOMPLETE if it has no name or category. */
+export async function submitIntakeDraft(draftId: string): Promise<{ draft: MipoIntakeDraft }> {
+  return adminApiFetch(`/admin/intake/drafts/${encodeURIComponent(draftId)}/submit`, {
+    method: "POST",
+  });
+}
+
+/**
+ * IN_REVIEW → APPROVED, and the moment the catalogue product is created.
+ *
+ * Refused with 403 SELF_APPROVAL_FORBIDDEN when the caller is the admin who
+ * submitted it. That is not a bug to route around: a reviewer approving their
+ * own submission is a review that did not happen.
+ */
+export async function approveIntakeDraft(
+  draftId: string,
+): Promise<{ draft: MipoIntakeDraft; product: { id: string; name: string } }> {
+  return adminApiFetch(`/admin/intake/drafts/${encodeURIComponent(draftId)}/approve`, {
+    method: "POST",
+  });
+}
+
+/** IN_REVIEW → REJECTED. The server requires a reason, so this does too. */
+export async function rejectIntakeDraft(
+  draftId: string,
+  reviewNote: string,
+): Promise<{ draft: MipoIntakeDraft }> {
+  return adminApiFetch(`/admin/intake/drafts/${encodeURIComponent(draftId)}/reject`, {
+    method: "POST",
+    body: JSON.stringify({ review_note: reviewNote }),
+  });
+}
+
+/**
+ * Discarding a draft: IMPORTED, DRAFT or REJECTED → ARCHIVED.
+ *
+ * The row is archived rather than deleted, and it leaves every screen — the
+ * draft list filters `archived_at is null`. That is not a softened delete for
+ * its own sake: catalog_products.origin_draft_id references this row under a
+ * trigger that freezes it and a foreign key declared ON DELETE RESTRICT, so a
+ * draft that was ever approved cannot be removed at all.
+ *
+ * IN_REVIEW and APPROVED are refused with 409 and the answer names which
+ * transitions ARE allowed, so the screen can say what to do instead.
+ */
+export async function archiveIntakeDraft(draftId: string): Promise<{ draft: MipoIntakeDraft }> {
+  return adminApiFetch(`/admin/intake/drafts/${encodeURIComponent(draftId)}/archive`, {
+    method: "POST",
+  });
 }
 
 export async function getPublicationReadiness(productId: string): Promise<MipoPublicationReadiness> {
@@ -2127,7 +2254,32 @@ export async function approveIntakeMedia(mediaId: string): Promise<{ media: { id
   });
 }
 
-export async function publishIntakeProduct(productId: string): Promise<MipoPublicationReadiness> {
+/**
+ * What publishing answers with, now that publishing reaches the shop.
+ *
+ * `product` is the catalogue row; `shop` is the listing the bridge wrote into
+ * business_products, which is the table `/api/products` actually serves. The
+ * two are separate on purpose: a product can be PUBLISHED and still not on the
+ * shelf, because the shop's only visibility switch is `in_stock` and that comes
+ * from inventory availability.
+ *
+ * This used to be typed as MipoPublicationReadiness, which is the shape of the
+ * 409 body when the gate REFUSES. The success body never looked like that.
+ */
+export interface MipoPublishOutcome {
+  product: { id: string; name?: string | null; publication_state: string };
+  shop: {
+    business_product_id: string;
+    /** Whether a shopper can see it. False when availability is not IN_STOCK. */
+    in_stock: boolean;
+    price: number;
+    /** The offer the price was taken from — the cheapest active one. */
+    offer_id: string;
+    availability: string | null;
+  };
+}
+
+export async function publishIntakeProduct(productId: string): Promise<MipoPublishOutcome> {
   return adminApiFetch(`/admin/intake/products/${encodeURIComponent(productId)}/publish`, {
     method: "POST",
   });

@@ -27,9 +27,14 @@ interface LabelOrder {
   id: string;
   order_number: string;
   order_date: string;
-  customer_name: string | null;
-  pet_name: string | null;
-  shipping_address: ShippingAddressFields | string | null;
+  // OPTIONAL, not merely nullable. Both are read with a `||` fallback below, so
+  // this component never needed them present - but requiring the KEY meant only
+  // a screen declaring its own order shape could pass a row in, which is part of
+  // why the orders screen kept a local `interface Order` restating MipoOrder.
+  // An API row satisfies this now.
+  customer_name?: string | null;
+  pet_name?: string | null;
+  shipping_address?: ShippingAddressFields | string | null;
   order_items?: OrderItem[];
   total: number;
   shipping: number;

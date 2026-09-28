@@ -31,14 +31,14 @@ const home = {
       kind: "order_failed", id: "aaaaaaaa-1111-4111-8111-111111111111",
       title: "הזמנה MP-1024", subtitle: "התשלום נכשל", detail: "דנה כהן",
       amount: 219, at: new Date().toISOString(),
-      href: "/admin/orders?order=aaaaaaaa-1111-4111-8111-111111111111",
+      href: "/admin/orders/aaaaaaaa-1111-4111-8111-111111111111",
     }]),
     // Nine in total, one listed: the header has to say nine.
     approval: column(9, [{
       kind: "order_pending", id: "bbbbbbbb-2222-4222-8222-222222222222",
       title: "הזמנה MP-1025", subtitle: "ממתינה לאישור", detail: "יוסי לוי",
       amount: 89, at: new Date().toISOString(),
-      href: "/admin/orders?order=bbbbbbbb-2222-4222-8222-222222222222",
+      href: "/admin/orders/bbbbbbbb-2222-4222-8222-222222222222",
     }]),
     in_progress: column(0, []),
     completed: column(1, [{
@@ -63,10 +63,38 @@ const json = (body: unknown, status = 200) => ({
   status, contentType: "application/json", body: JSON.stringify(body),
 });
 
+/**
+ * The order behind the exception card, so pressing it can be followed all the
+ * way to a rendered record rather than only to a URL.
+ */
+const failedOrder = {
+  order: {
+    id: "aaaaaaaa-1111-4111-8111-111111111111",
+    order_number: "MP-1024", status: "pending", payment_status: "failed",
+    payment_method: "credit-card", subtotal: 219, shipping: 0, tax: 0,
+    discount_amount: 0, cash_on_delivery_fee: 0, total: 219,
+    customer_name: "דנה כהן", shipping_address: { city: "תל אביב", address: "דיזנגוף 1" },
+    order_type: "regular", order_date: new Date().toISOString(),
+    items: [], order_items: [],
+  },
+  customer: {
+    identity_id: "dddddddd-1111-4111-8111-111111111111",
+    identity_kind: "account", email: "dana@example.com", full_name: "דנה כהן",
+    phone: "0521234567", orders_count: 4, total_spent: 812, pets_count: 1,
+  },
+  events: [],
+  sibling_orders: [],
+  history_covers_order: false,
+};
+
 async function openHome(page: Page, payload: unknown = home) {
   await page.route("**/api/auth/me", (route) => route.fulfill(json({ error: "Unauthorized" }, 401)));
   await page.route("**/api/reports", (route) => route.fulfill(json({ reports: [] })));
   await page.route("**/api/admin/me", (route) => route.fulfill(json({ admin })));
+  // The single order comes BEFORE the list pattern, because `**/api/admin/orders*`
+  // matches the detail URL too and would answer it with an empty list - which
+  // renders "ההזמנה לא נמצאה" and would make the assertion below unprovable.
+  await page.route("**/api/admin/orders/*", (route) => route.fulfill(json(failedOrder)));
   await page.route("**/api/admin/orders*", (route) => route.fulfill(json({ orders: [] })));
   await page.route("**/api/admin/os/home", (route) => route.fulfill(json(payload)));
   await page.goto("/admin");
@@ -116,9 +144,32 @@ test.describe("the admin's first screen", () => {
 
     await expect(page.getByText("הזמנה MP-1024")).toBeVisible();
     await expect(page.getByText("התשלום נכשל")).toBeVisible();
+  });
+
+  test("pressing a card opens the record it names, not the list it lives in", async ({ page }) => {
+    /*
+     * THE ASSERTION THIS TEST USED TO MAKE, AND WHY IT PROVED NOTHING.
+     *
+     * It pressed the card and checked `toHaveURL(/order=aaaa…/)`. That passed
+     * for a year while the link was dead: the four order cards pointed at
+     * `/admin/orders?order=<id>` and the orders screen never read that
+     * parameter, so every press landed on the unfiltered order list. The URL
+     * contained the id, the test was satisfied, and the operator pressing
+     * "התשלום נכשל" got a list and started searching.
+     *
+     * Checking a URL checks that the client BUILT a link. Only rendering the
+     * destination checks that the link goes anywhere.
+     */
+    await openHome(page);
 
     await page.getByText("הזמנה MP-1024").click();
-    await expect(page).toHaveURL(/order=aaaaaaaa-1111-4111-8111-111111111111/);
+
+    // The order's own page, and the order on it.
+    await expect(page).toHaveURL(/\/admin\/orders\/aaaaaaaa-1111-4111-8111-111111111111/);
+    await expect(page.getByRole("heading", { name: "MP-1024" })).toBeVisible();
+    await expect(page.getByText("דנה כהן").first()).toBeVisible();
+    // And not the list it used to land on.
+    await expect(page.getByText("מציג 0 מתוך 0 הזמנות")).toHaveCount(0);
   });
 
   test("a column says how many there are, not how many fit", async ({ page }) => {

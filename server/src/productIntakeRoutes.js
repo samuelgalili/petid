@@ -31,6 +31,7 @@ import {
   isPublicationTransitionAllowed,
   mayApproveDraft,
 } from "./productIntakeState.js";
+import { hideFromShop, publishToShop } from "./catalogShopBridge.js";
 import { sellerIneligibilityReason } from "./sellerEligibility.js";
 import { mayActOnRow, resolveWriteBusinessId, sessionSellerScope, NO_ACCESS } from "./sellerScope.js";
 
@@ -127,9 +128,14 @@ export const createProductIntakeRoutes = ({
     }
 
     const { rows } = await pool.query(
+      // submitted_by and review_note travel with the row because the screen has
+      // to know, BEFORE offering a button, that pressing it will be refused:
+      // the submitter may not approve their own draft, and a draft submitted
+      // with no recorded submitter cannot be approved by anybody. A disabled
+      // control that says why beats a 403 the reviewer has to interpret.
       `select d.id, d.business_id, d.state, d.name, d.brand, d.category_id,
               d.proposed_price, d.raw_import_record_id, d.updated_at,
-              d.approved_catalog_product_id
+              d.approved_catalog_product_id, d.submitted_by, d.review_note
          from public.product_drafts d
         where d.archived_at is null${scoped.sql}${stateSql}
         order by d.updated_at desc
@@ -1095,6 +1101,88 @@ export const createProductIntakeRoutes = ({
   };
 
   /**
+   * POST /api/admin/intake/drafts/:id/archive - discarding a draft.
+   *
+   * ─── THE HALF-BUILT MECHANISM ───────────────────────────────────────────
+   *
+   * product_drafts has carried `archived_at` and `archived_by` since 0043, and
+   * listDrafts has always filtered on `archived_at is null`. The column
+   * existed, the filter existed, and no route ever set it - so nothing in the
+   * admin could discard anything, and a mistaken import stayed in the queue
+   * forever. The owner's report was the visible half of that: no delete button.
+   *
+   * ─── WHY ARCHIVE AND NOT DELETE ─────────────────────────────────────────
+   *
+   * catalog_products.origin_draft_id is NOT NULL and references this row, so a
+   * draft that was ever approved cannot be deleted without taking a catalogue
+   * product with it. Archiving is what the schema was built for, and it is what
+   * an operator means anyway: the row leaves every screen and the audit trail
+   * keeps what happened.
+   *
+   * ─── ONLY WHERE THE STATE MACHINE ALLOWS IT ─────────────────────────────
+   *
+   * IMPORTED, DRAFT and REJECTED may be archived. IN_REVIEW and APPROVED may
+   * NOT, and that is deliberate rather than an omission: a draft in review is
+   * somebody else's open task, and an approved one has a catalogue product
+   * behind it that may already be in the shop. Discarding either is a chain of
+   * decisions, not one button, so this refuses and names what is allowed
+   * instead of quietly walking the chain.
+   */
+  const archiveDraft = async (request, response, match) => {
+    if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.INTAKE_WRITE))) return true;
+    const admin = request.admin;
+
+    const outcome = await withOwnedRow(
+      admin,
+      { sql: "select * from public.product_drafts where id = $1 for update", params: [match[1]] },
+      async (client, draft) => {
+        // Already gone. Reported rather than repeated, so a double-press does
+        // not rewrite archived_by to whoever pressed second.
+        if (draft.archived_at) {
+          return { status: 409, body: { error: "ALREADY_ARCHIVED", archived_at: draft.archived_at } };
+        }
+
+        if (!isDraftTransitionAllowed(draft.state, DRAFT_STATES.ARCHIVED)) {
+          return {
+            status: 409,
+            body: {
+              error: "INVALID_STATE_TRANSITION",
+              from: draft.state,
+              to: DRAFT_STATES.ARCHIVED,
+              allowed: allowedDraftTransitions(draft.state),
+            },
+          };
+        }
+
+        const { rows } = await client.query(
+          `update public.product_drafts
+              set state = 'ARCHIVED', archived_at = clock_timestamp(), archived_by = $2,
+                  updated_by = $2, updated_at = now()
+            where id = $1 returning *`,
+          [draft.id, admin.id === "api-key" ? null : admin.id],
+        );
+
+        return {
+          status: 200,
+          body: { draft: rows[0] },
+          audit: {
+            actionType: "product_draft.archived",
+            entityType: "product_draft",
+            entityId: draft.id,
+            oldValues: { state: draft.state },
+            newValues: { state: "ARCHIVED" },
+          },
+        };
+      },
+    );
+
+    if (outcome.crossSeller) await auditCrossSellerAttempt(admin, "product_draft", match[1]);
+    if (outcome.audit) await recordAdminAudit(admin, outcome.audit);
+    sendJson(response, outcome.status, outcome.body);
+    return true;
+  };
+
+  /**
    * POST /api/admin/intake/products/:id/publish
    *
    * The gate is evaluated INSIDE the transaction that publishes, against rows
@@ -1139,15 +1227,39 @@ export const createProductIntakeRoutes = ({
             where id = $1 returning *`,
           [product.id, admin.id === "api-key" ? null : admin.id],
         );
+
+        /*
+         * AND THE HALF-STEP THAT MAKES THE BUTTON TRUE.
+         *
+         * The line above is everything publishing used to do: a column on a
+         * table the shop does not read. `/api/products` serves
+         * business_products, so a product could be PUBLISHED, gated, audited
+         * and entirely absent from mipo.pet.
+         *
+         * Inside this transaction, with the catalogue row still locked and the
+         * gate that just passed evaluated against the same snapshot. A shop
+         * listing that committed without the state behind it would be a
+         * product the admin cannot withdraw.
+         */
+        const shop = await publishToShop(client, product.id, admin.id === "api-key" ? null : admin.id);
+
         return {
           status: 200,
-          body: { product: rows[0] },
+          // `shop` travels with the response because "published" and "on the
+          // shelf" are now two facts and can differ: availability that is not
+          // IN_STOCK puts the row in the table and keeps it out of the shop.
+          // The screen can say which happened instead of reporting success.
+          body: { product: rows[0], shop },
           audit: {
             actionType: "catalog_product.published",
             entityType: "catalog_product",
             entityId: product.id,
             oldValues: { publication_state: product.publication_state },
-            newValues: { publication_state: "PUBLISHED" },
+            newValues: {
+              publication_state: "PUBLISHED",
+              business_product_id: shop.business_product_id,
+              shop_in_stock: shop.in_stock,
+            },
           },
         };
       },
@@ -1190,15 +1302,27 @@ export const createProductIntakeRoutes = ({
             where id = $1 returning *`,
           [product.id, body?.reason ?? null, admin.id === "api-key" ? null : admin.id],
         );
+
+        /*
+         * Off the shelf in the same transaction, and by the only lever the
+         * shop honours. Without this, withdrawing a product would clear its
+         * state and leave it on sale - which is the publish bug inverted, and
+         * the more expensive direction of the two: somebody can buy it.
+         *
+         * 0 rows for a product published before the bridge existed. Nothing to
+         * withdraw is not a failure, so it is reported rather than raised.
+         */
+        const withdrawn = await hideFromShop(client, product.id);
+
         return {
           status: 200,
-          body: { product: rows[0] },
+          body: { product: rows[0], shop: { withdrawn } },
           audit: {
             actionType: "catalog_product.unpublished",
             entityType: "catalog_product",
             entityId: product.id,
             oldValues: { publication_state: product.publication_state },
-            newValues: { publication_state: "UNPUBLISHED" },
+            newValues: { publication_state: "UNPUBLISHED", shop_rows_withdrawn: withdrawn },
           },
         };
       },
@@ -1228,6 +1352,7 @@ export const createProductIntakeRoutes = ({
     [route("POST", `/api/admin/intake/drafts/${UUID}/submit`), submitDraft],
     [route("POST", `/api/admin/intake/drafts/${UUID}/approve`), approveDraft],
     [route("POST", `/api/admin/intake/drafts/${UUID}/reject`), rejectDraft],
+    [route("POST", `/api/admin/intake/drafts/${UUID}/archive`), archiveDraft],
     [route("POST", `/api/admin/intake/products/${UUID}/publish`), publishProduct],
     [route("POST", `/api/admin/intake/products/${UUID}/unpublish`), unpublishProduct],
   ];

@@ -64,9 +64,10 @@ import { useToast } from "@/hooks/use-toast";
 import { customerGreeting, openWhatsApp, whatsAppLink } from "@/lib/customerContact";
 import { formatPetAgeHe } from "@/lib/petAge";
 import {
-  NOTE_KINDS, NOTE_KIND_BY_VALUE, ORDER_STATUS_LABELS, PET_TYPE_LABELS,
+  NOTE_KINDS, NOTE_KIND_BY_VALUE, PET_TYPE_LABELS,
   formatCurrency, formatDate,
 } from "@/lib/adminCustomerLabels";
+import { ORDER_STATUS_LABELS } from "@/lib/adminOrderLabels";
 import {
   createAdminCustomerNote, deleteAdminCustomerNote, getAdminCustomer,
   type MipoCustomerDetail, type MipoCustomerNote, type MipoCustomerNoteKind, type MipoOrder,
@@ -214,7 +215,10 @@ export const AdminCustomer360 = () => {
       title: `הזמנה ${order.order_number}`,
       tone: ORDER_TONE[order.status] ?? "neutral",
       body: `${formatCurrency(Number(order.total) || 0)} · ${ORDER_STATUS_LABELS[order.status] || order.status}`,
-      onOpen: () => navigate(`/admin/orders?order=${order.id}`),
+      // The order's own page. This used to be `/admin/orders?order=<id>`, which
+      // the orders screen never read - so every order on a customer's card
+      // landed on the unfiltered list and the agent started searching again.
+      onOpen: () => navigate(`/admin/orders/${order.id}`),
     }));
 
     const notes: TimelineEntry[] = detail.notes.map((note) => {
@@ -441,7 +445,10 @@ export const AdminCustomer360 = () => {
 
   return (
     <AdminLayout
-      title={customer.full_name || "ללא שם"}
+      // The name is in the breadcrumb and in the record's heading below. Passing
+      // it here as well printed it three times and put two <h1> elements with
+      // the same words on the page.
+      title="כרטיס לקוח"
       icon={Users}
       breadcrumbs={[{ label: "לקוחות", href: "/admin/customers" }, { label: customer.full_name || "ללא שם" }]}
     >

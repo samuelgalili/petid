@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { AdminTile } from "@/components/admin/AdminTile";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -113,25 +114,12 @@ const HEALTH_WORD: Record<MipoHealthCheck["state"], string> = {
   unknown: "אין נתונים",
 };
 
-const NumberTile = ({ label, value, sub, icon: Icon, tone, onClick }: {
-  label: string; value: string | number; sub: string;
-  icon: typeof Package; tone: string; onClick: () => void;
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className="admin-card admin-card-hover admin-focus flex items-center gap-2.5 p-3 text-right"
-  >
-    <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", tone)}>
-      <Icon className="h-[18px] w-[18px]" strokeWidth={1.75} />
-    </span>
-    <span className="min-w-0 flex-1">
-      <span className="admin-label block truncate">{label}</span>
-      <span className="admin-figure block truncate">{value}</span>
-      <span className="admin-meta block truncate">{sub}</span>
-    </span>
-  </button>
-);
+/*
+ * The number tile lived here, and the orders screen needed the same one. It is
+ * AdminTile in components/admin now - a second copy would have drifted in
+ * padding and icon size first and in meaning eventually, which is exactly the
+ * history of the four product screens this admin just merged into one.
+ */
 
 const BoardCard = ({ item, onGo }: { item: MipoBoardItem; onGo: () => void }) => (
   <button
@@ -254,7 +242,7 @@ export const AdminHome = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-            <NumberTile
+            <AdminTile
               label="הזמנות ממתינות" value={numbers?.pending_orders ?? 0} sub="מחכות לטיפול"
               icon={ShoppingCart}
               tone={numbers?.pending_orders
@@ -262,13 +250,13 @@ export const AdminHome = () => {
                 : "bg-admin-sunk text-admin-ink-subtle"}
               onClick={() => navigate("/admin/orders?status=pending")}
             />
-            <NumberTile
+            <AdminTile
               label="הכנסות היום" value={shekels(numbers?.revenue_today ?? 0)}
               sub={againstYesterday(numbers?.revenue_today ?? 0, numbers?.revenue_yesterday ?? 0)}
               icon={Wallet} tone="bg-admin-success-soft text-admin-success"
               onClick={() => navigate("/admin/analytics")}
             />
-            <NumberTile
+            <AdminTile
               label="לא פורסמו לחנות" value={numbers?.unpublished_products ?? 0} sub="אושרו וממתינים"
               icon={Package}
               tone={numbers?.unpublished_products
@@ -276,7 +264,7 @@ export const AdminHome = () => {
                 : "bg-admin-sunk text-admin-ink-subtle"}
               onClick={() => navigate("/admin/products?section=publishing")}
             />
-            <NumberTile
+            <AdminTile
               label="לקוחות חדשים" value={numbers?.new_customers_this_week ?? 0} sub="בשבוע האחרון"
               icon={UserPlus} tone="bg-admin-accent-soft text-admin-accent"
               onClick={() => navigate("/admin/customers")}

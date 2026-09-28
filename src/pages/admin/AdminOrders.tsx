@@ -1,333 +1,323 @@
 /**
- * AdminOrders — V55 Order Management View
- * High-density table with medical urgency, order type, customer+pet,
- * slide-out details panel, inventory warnings, and bulk actions.
+ * The order queue.
+ *
+ * ─── WHY IT WAS RESTYLED, AND WHY THAT IS NOT COSMETIC ──────────────────────
+ *
+ * This screen kept the old styles after the shell around it moved onto the
+ * admin tokens, and the result read worse than it had before: `bg-muted/30`
+ * headers and `border-border/30` cards inside a surface that no longer matched
+ * them, five status colours drawn from Tailwind's raw palette rather than from
+ * the four the design system defines, and text at `text-[10px]` in a scale
+ * whose smallest step is 11. Two tone systems on one screen is not a matter of
+ * taste - it is a screen where colour has stopped meaning anything, because
+ * amber-500/10 and --admin-warning-soft are both "sort of a warning".
+ *
+ * ─── THE PANEL IS GONE, AND THE ROW HAS AN ADDRESS ──────────────────────────
+ *
+ * The order used to open in a column beside the list. That column has a page of
+ * its own now at /admin/orders/:orderId, for the reason the customer panel
+ * became a page: an order needs a URL. Four Command Center cards and every
+ * order on a customer's card pointed at `/admin/orders?order=<id>`, a parameter
+ * this screen never read, so each of them landed here on the unfiltered list.
+ * The link is honoured below for anything still holding one, and then replaced.
+ *
+ * What stays is the queue's own job: filter, select, and move a batch of orders
+ * along without opening any of them.
  */
 
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
-  Package, Clock, CheckCircle, Truck, XCircle, RefreshCw,
-  ShoppingCart, DollarSign, Eye, AlertCircle, Printer,
-  MapPin, MessageSquare, ChevronRight, Repeat, Heart,
-  CheckSquare, Square, Send, Download, User, PawPrint,
-  AlertTriangle, X, Sparkles, type LucideIcon,
+  AlertTriangle, CheckCircle, ChevronRight, Clock, Download, Heart, Printer,
+  RefreshCw, ShoppingCart, Truck, User, PawPrint, Repeat, X,
 } from "lucide-react";
+
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import { AdminChip, AdminTile } from "@/components/admin/AdminTile";
+import { OrderLabelGenerator, type LabelFormat } from "@/components/admin/OrderLabelGenerator";
+import { OrderShareMenu } from "@/components/admin/OrderShareMenu";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import {
-} from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminNotifications } from "@/hooks/useAdminNotifications";
-import { AdminLayout } from "@/components/admin/AdminLayout";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { formatCurrency, formatDate } from "@/lib/adminCustomerLabels";
 import {
-  AdminStatCard, AdminStatsGrid, AdminToolbar,
-  AdminEmptyState, AdminPageHeader,
-} from "@/components/admin/AdminStyles";
+  ORDER_STATUSES, ORDER_STATUS, ORDER_URGENCY, TONE_CHIP, TONE_DOT,
+  detectMedicalUrgency, orderStatusOf, paymentStatusOf, type OrderStatus,
+} from "@/lib/adminOrderLabels";
+import {
+  bulkUpdateAdminOrders, getAdminOrders, updateAdminOrder, type MipoOrder,
+} from "@/lib/mipoApi";
 import { cn } from "@/lib/utils";
-import { AdminWorkspace } from "@/components/admin/AdminWorkspace";
-import { OrderLabelGenerator, type LabelFormat } from "@/components/admin/OrderLabelGenerator";
-import { OrderShareMenu } from "@/components/admin/OrderShareMenu";
-import { bulkUpdateAdminOrders, getAdminOrders, updateAdminOrder } from "@/lib/mipoApi";
 
-interface OrderItem {
-  id: string;
-  product_name: string;
-  product_image: string;
-  quantity: number;
-  price: number;
-  size?: string | null;
-  variant?: string | null;
-  product_id?: string | null;
-}
+type ShippingAddressFields = { fullName?: string };
 
-interface AdminShippingAddress {
-  fullName?: string;
-  address?: string;
-  street?: string;
-  apartment?: string;
-  city?: string;
-  zipCode?: string;
-  phone?: string;
-  email?: string;
-}
-
-interface Order {
-  id: string;
-  order_number: string;
-  order_date: string;
-  status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
-  payment_status: string;
-  payment_method: string;
-  total: number;
-  subtotal: number;
-  shipping: number;
-  tax: number;
-  user_id: string | null;
-  customer_email: string | null;
-  customer_phone: string | null;
-  shipping_address: AdminShippingAddress;
-  order_type: string;
-  pet_name: string | null;
-  customer_name: string | null;
-  special_instructions: string | null;
-  medical_urgency: string | null;
-  order_items?: OrderItem[];
-}
-
-// Medical urgency keywords
-const URGENT_KEYWORDS = ["urinary", "renal", "שתן", "כליות", "kidney"];
-const MEDIUM_KEYWORDS = ["gastro", "diabetic", "סוכרת", "עיכול", "derma", "עור"];
-
-function detectMedicalUrgency(items: OrderItem[]): string {
-  const allText = items.map(i => i.product_name.toLowerCase()).join(" ");
-  if (URGENT_KEYWORDS.some(kw => allText.includes(kw))) return "high";
-  if (MEDIUM_KEYWORDS.some(kw => allText.includes(kw))) return "medium";
-  return "none";
-}
-
-const STATUS_CONFIG: Record<string, { label: string; icon: LucideIcon; color: string }> = {
-  pending: { label: "ממתין", icon: Clock, color: "text-amber-500 bg-amber-500/10 border-amber-500/20" },
-  processing: { label: "באריזה", icon: RefreshCw, color: "text-blue-500 bg-blue-500/10 border-blue-500/20" },
-  shipped: { label: "נשלח", icon: Truck, color: "text-violet-500 bg-violet-500/10 border-violet-500/20" },
-  delivered: { label: "נמסר", icon: CheckCircle, color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20" },
-  cancelled: { label: "בוטל", icon: XCircle, color: "text-rose-500 bg-rose-500/10 border-rose-500/20" },
-};
-
-const PAYMENT_CONFIG: Record<string, { label: string; color: string }> = {
-  paid: { label: "שולם", color: "text-emerald-600 bg-emerald-500/10" },
-  pending: { label: "ממתין", color: "text-amber-600 bg-amber-500/10" },
-  failed: { label: "נכשל", color: "text-rose-600 bg-rose-500/10" },
-  awaiting_cod: { label: "תשלום במסירה", color: "text-amber-600 bg-amber-500/10" },
-  dev_approved: { label: "פיתוח", color: "text-blue-600 bg-blue-500/10" },
-  refunded: { label: "הוחזר", color: "text-violet-600 bg-violet-500/10" },
-  libra_credit: { label: "קרדיט ביטוח", color: "text-primary bg-primary/10" },
-};
-
-const URGENCY_CONFIG: Record<string, { label: string; dot: string }> = {
-  high: { label: "דחוף", dot: "bg-rose-500" },
-  medium: { label: "בינוני", dot: "bg-amber-500" },
-  none: { label: "רגיל", dot: "bg-emerald-500" },
-};
+/** An order as this screen needs it: the API's row plus the urgency it implies. */
+type QueueOrder = MipoOrder & { urgency: string; display_name: string };
 
 const AdminOrders = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   useAdminNotifications();
+  /*
+   * ONE QUEUE IN THE DOM, NOT TWO.
+   *
+   * The table and the phone cards were `hidden md:block` and `md:hidden`, which
+   * renders BOTH and lets CSS pick. That doubles the node count for a list that
+   * can run to five hundred rows, and it makes every order number, customer
+   * name and total appear twice to anything reading the document - the first
+   * test to look for an order after the change failed on it.
+   *
+   * 768 is the `md` breakpoint this hook already uses, so the two cannot drift.
+   */
+  const isPhone = useIsMobile();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<QueueOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [updatingStatus, setUpdatingStatus] = useState(false);
-  const [outOfStockItems, setOutOfStockItems] = useState<Set<string>>(new Set());
+  const [updating, setUpdating] = useState(false);
   const [showLabels, setShowLabels] = useState(false);
   const [labelFormat, setLabelFormat] = useState<LabelFormat>("lite");
 
+  /*
+   * THE LINK THAT USED TO GO NOWHERE.
+   *
+   * `?order=<id>` was built by the Command Center and by the customer card and
+   * read by nobody, so those links loaded this list with no order open. The
+   * sources now point at /admin/orders/:orderId; this redirect is for anything
+   * still holding the old shape - a bookmark, an open tab, a card rendered
+   * before a deploy - and it goes to the order rather than filtering the list,
+   * because "show me this one order" is what the link always meant.
+   */
   useEffect(() => {
-    let nextParams: URLSearchParams | null = null;
+    const requested = searchParams.get("order");
+    if (requested) {
+      navigate(`/admin/orders/${requested}`, { replace: true });
+      return;
+    }
+
+    let next: URLSearchParams | null = null;
     const requestedStatus = searchParams.get("status");
 
     if (requestedStatus) {
-      if (STATUS_CONFIG[requestedStatus]) {
+      if (ORDER_STATUS[requestedStatus as OrderStatus]) {
         setStatusFilter(requestedStatus);
       } else {
         setStatusFilter("all");
-        nextParams = new URLSearchParams(searchParams);
-        nextParams.delete("status");
+        next = new URLSearchParams(searchParams);
+        next.delete("status");
       }
     }
 
     if (searchParams.get("new") === "true") {
+      // A manual order is placed from the customer's card, where the admin is
+      // already looking at who they are taking it for.
       toast({
-        title: "יצירת הזמנה ידנית אינה זמינה",
-        description: "הזמנות חדשות נוצרות דרך תהליך הצ'קאאוט.",
+        title: "הזמנה ידנית נפתחת מכרטיס הלקוח",
+        description: "בחרו את הלקוח ולחצו ״הזמנה חדשה״.",
       });
-      nextParams = nextParams || new URLSearchParams(searchParams);
-      nextParams.delete("new");
+      next = next || new URLSearchParams(searchParams);
+      next.delete("new");
     }
 
-    if (nextParams) {
-      setSearchParams(nextParams, { replace: true });
-    }
-  }, [searchParams, setSearchParams, toast]);
+    if (next) setSearchParams(next, { replace: true });
+  }, [navigate, searchParams, setSearchParams, toast]);
 
   const fetchOrders = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const data = await getAdminOrders();
-      setOutOfStockItems(new Set());
-
-      const enrichedOrders: Order[] = (data || []).map(o => {
-        const items = (o.order_items || []) as OrderItem[];
-        const shippingAddress = (o.shipping_address || {}) as AdminShippingAddress;
-        const urgency = o.medical_urgency && o.medical_urgency !== "none"
-          ? o.medical_urgency
-          : detectMedicalUrgency(items);
+      const rows = await getAdminOrders();
+      setOrders((rows || []).map((row) => {
+        const items = row.order_items || row.items || [];
+        const address = (row.shipping_address || {}) as ShippingAddressFields;
         return {
-          ...o,
-          user_id: o.user_id ?? o.customer_id ?? null,
-          shipping_address: shippingAddress,
+          ...row,
           order_items: items,
-          medical_urgency: urgency,
-          customer_name: o.customer_name || shippingAddress.fullName || null,
-        } as Order;
+          urgency: row.medical_urgency && row.medical_urgency !== "none"
+            ? row.medical_urgency
+            : detectMedicalUrgency(items),
+          display_name: row.customer_name || address.fullName || "ללא שם",
+        };
+      }));
+    } catch (error) {
+      toast({
+        title: "טעינת ההזמנות נכשלה",
+        description: error instanceof Error ? error.message : "נסה לרענן",
+        variant: "destructive",
       });
-
-      setOrders(enrichedOrders);
-    } catch (error: unknown) {
-      console.error("Error fetching orders:", error);
-      toast({ title: "שגיאה בטעינת הזמנות", variant: "destructive" });
     } finally {
       setLoading(false);
     }
   }, [toast]);
 
-  useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
+  useEffect(() => { void fetchOrders(); }, [fetchOrders]);
 
-  const handleStatusFilterChange = useCallback((value: string) => {
+  const changeStatusFilter = useCallback((value: string) => {
     setStatusFilter(value);
-    const nextParams = new URLSearchParams(searchParams);
-    if (value === "all") {
-      nextParams.delete("status");
-    } else {
-      nextParams.set("status", value);
-    }
-    setSearchParams(nextParams, { replace: true });
+    const next = new URLSearchParams(searchParams);
+    if (value === "all") next.delete("status");
+    else next.set("status", value);
+    setSearchParams(next, { replace: true });
   }, [searchParams, setSearchParams]);
 
-  const filteredOrders = useMemo(() => {
-    let result = [...orders];
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(o =>
-        o.order_number?.toLowerCase().includes(q) ||
-        o.customer_name?.toLowerCase().includes(q) ||
-        o.pet_name?.toLowerCase().includes(q)
-      );
-    }
-    if (statusFilter !== "all") result = result.filter(o => o.status === statusFilter);
-    if (typeFilter !== "all") result = result.filter(o => o.order_type === typeFilter);
-    return result;
-  }, [orders, searchQuery, statusFilter, typeFilter]);
-
-  // Stats
-  const totalRevenue = orders.reduce((s, o) => s + (o.total || 0), 0);
-  const pendingCount = orders.filter(o => o.status === "pending").length;
-  const urgentCount = orders.filter(o => o.medical_urgency === "high").length;
-  const autoRestockCount = orders.filter(o => o.order_type === "auto-restock").length;
-
-  // Selection
-  const toggleSelect = (id: string) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return orders.filter((order) => {
+      if (statusFilter !== "all" && order.status !== statusFilter) return false;
+      if (typeFilter !== "all" && order.order_type !== typeFilter) return false;
+      if (!term) return true;
+      return [order.order_number, order.display_name, order.pet_name, order.customer_email]
+        .some((field) => field?.toLowerCase().includes(term));
     });
-  };
-  const toggleAll = () => {
-    if (selectedIds.size === filteredOrders.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(filteredOrders.map(o => o.id)));
-    }
-  };
+  }, [orders, search, statusFilter, typeFilter]);
 
-  // Bulk actions
-  const bulkUpdateStatus = async (newStatus: Order["status"]) => {
+  const stats = useMemo(() => ({
+    total: orders.length,
+    revenue: orders.reduce((sum, order) => sum + (Number(order.total) || 0), 0),
+    pending: orders.filter((order) => order.status === "pending").length,
+    urgent: orders.filter((order) => order.urgency === "high").length,
+    subscriptions: orders.filter((order) => order.order_type === "auto-restock").length,
+  }), [orders]);
+
+  const toggle = (id: string) => setSelectedIds((current) => {
+    const next = new Set(current);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    return next;
+  });
+
+  const toggleAll = () => setSelectedIds((current) => (
+    current.size === filtered.length ? new Set() : new Set(filtered.map((order) => order.id))
+  ));
+
+  const bulkStatus = async (status: OrderStatus) => {
     if (selectedIds.size === 0) return;
-    setUpdatingStatus(true);
+    setUpdating(true);
     try {
-      await bulkUpdateAdminOrders([...selectedIds], { status: newStatus });
-      toast({ title: `${selectedIds.size} הזמנות עודכנו ל${STATUS_CONFIG[newStatus].label}` });
+      await bulkUpdateAdminOrders([...selectedIds], { status });
+      toast({ title: `${selectedIds.size} הזמנות עודכנו ל${ORDER_STATUS[status].label}` });
       setSelectedIds(new Set());
-      fetchOrders();
-    } catch {
-      toast({ title: "שגיאה בעדכון", variant: "destructive" });
+      await fetchOrders();
+    } catch (error) {
+      toast({
+        title: "העדכון נכשל",
+        description: error instanceof Error ? error.message : "נסה שוב",
+        variant: "destructive",
+      });
     } finally {
-      setUpdatingStatus(false);
+      setUpdating(false);
     }
   };
 
-  const updateSingleStatus = async (orderId: string, newStatus: Order["status"]) => {
-    setUpdatingStatus(true);
+  const changeStatus = async (orderId: string, status: OrderStatus) => {
+    setUpdating(true);
     try {
-      await updateAdminOrder(orderId, { status: newStatus });
-      toast({ title: `סטטוס עודכן ל${STATUS_CONFIG[newStatus].label}` });
-      if (selectedOrder?.id === orderId) {
-        setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
-      }
-      fetchOrders();
-    } catch {
-      toast({ title: "שגיאה", variant: "destructive" });
+      await updateAdminOrder(orderId, { status });
+      toast({ title: `הסטטוס עודכן ל${ORDER_STATUS[status].label}` });
+      await fetchOrders();
+    } catch (error) {
+      toast({
+        title: "העדכון נכשל",
+        description: error instanceof Error ? error.message : "נסה שוב",
+        variant: "destructive",
+      });
     } finally {
-      setUpdatingStatus(false);
+      setUpdating(false);
     }
   };
 
-  // Check if order has out-of-stock items
-  const orderHasOOS = (order: Order) => {
-    return order.order_items?.some(i => i.product_id && outOfStockItems.has(i.product_id));
-  };
+  /** The ids the list is showing, in its order, so the order page can step through them. */
+  const listParam = filtered.map((order) => order.id).join(",");
 
   return (
-    <AdminLayout title="ניהול הזמנות" icon={ShoppingCart}>
-      <div className="space-y-5" dir="rtl">
-        <AdminPageHeader
-          title="ניהול הזמנות"
-          description="מעקב, ניהול וטיפול בהזמנות לקוחות"
-          icon={ShoppingCart}
-          onRefresh={fetchOrders}
-          isRefreshing={loading}
-        />
-
-        {/* Stats */}
-        <AdminStatsGrid>
-          <AdminStatCard title="סה״כ הזמנות" value={orders.length} icon={ShoppingCart} color="primary" />
-          <AdminStatCard title="הכנסות" value={`₪${totalRevenue.toLocaleString()}`} icon={DollarSign} color="success" />
-          <AdminStatCard title="ממתינות" value={pendingCount} icon={Clock} color="warning" />
-          <AdminStatCard title="דחופות רפואית" value={urgentCount} icon={Heart} color="danger" />
-        </AdminStatsGrid>
-
-        {/* Toolbar */}
-        <AdminToolbar
-          searchValue={searchQuery}
-          onSearchChange={setSearchQuery}
-          searchPlaceholder="חיפוש לפי מספר הזמנה, לקוח או חיית מחמד..."
-          onRefresh={fetchOrders}
-          isRefreshing={loading}
+    <AdminLayout
+      title="הזמנות"
+      description="התור, מהחריגות עד המסירה"
+      icon={ShoppingCart}
+      // In the shell's header rather than in a second one below it. This screen
+      // used to build its own title block, which put a second <h1> reading
+      // "הזמנות" directly under the first.
+      actions={
+        <Button
+          variant="outline" size="sm" className="admin-focus gap-1.5"
+          onClick={() => void fetchOrders()} disabled={loading}
         >
-          <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
-            <SelectTrigger className="w-36">
-              <SelectValue placeholder="סטטוס" />
+          <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
+          רענון
+        </Button>
+      }
+    >
+      <div className="space-y-3">
+        {/* Every tile is a filter, not a figure to read. A number on an
+            operations screen that cannot be opened is a number somebody has to
+            go and reproduce by hand. */}
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+          <AdminTile
+            label="סה״כ הזמנות" value={stats.total}
+            // Hebrew counts one differently, and "1 מנויים" is the kind of
+            // wrongness that reads as a machine wrote the screen.
+            sub={stats.subscriptions === 0 ? "הכל"
+              : stats.subscriptions === 1 ? "מנוי אחד"
+                : `${stats.subscriptions} מנויים`}
+            icon={ShoppingCart} tone={TONE_CHIP.accent}
+            onClick={() => { changeStatusFilter("all"); setTypeFilter("all"); }}
+          />
+          <AdminTile
+            label="הכנסות" value={formatCurrency(stats.revenue)}
+            // Said plainly, because it is the sum of what is LOADED and not of
+            // every order ever placed - and a revenue figure that quietly means
+            // something narrower than it says is the one number nobody checks.
+            sub="מתוך ההזמנות שנטענו"
+            icon={CheckCircle} tone={TONE_CHIP.good}
+          />
+          <AdminTile
+            label="ממתינות" value={stats.pending} sub="דורשות החלטה"
+            icon={Clock} tone={TONE_CHIP.warn}
+            onClick={() => changeStatusFilter("pending")}
+          />
+          <AdminTile
+            label="דחופות רפואית" value={stats.urgent}
+            sub={stats.urgent > 0 ? "מזון רפואי או כרוני" : "אין"}
+            icon={Heart} tone={stats.urgent > 0 ? TONE_CHIP.bad : TONE_CHIP.neutral}
+          />
+        </div>
+
+        <div className="admin-card flex flex-wrap items-center gap-2 p-2.5">
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="חיפוש לפי מספר הזמנה, לקוח, חיה או אימייל"
+            // The admin's own line and surface, not `border-input bg-background`
+            // off the customer app's palette: on a white admin card those are
+            // white on white, so the field had no edge and did not read as a
+            // field at all.
+            className="admin-focus h-9 min-w-[200px] flex-1 border-admin-line bg-admin-sunk text-[13px]"
+            aria-label="חיפוש הזמנות"
+          />
+          <Select value={statusFilter} onValueChange={changeStatusFilter}>
+            <SelectTrigger className="admin-focus h-9 w-32 text-[13px]" aria-label="סינון לפי סטטוס">
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">כל הסטטוסים</SelectItem>
-              {Object.entries(STATUS_CONFIG).map(([k, v]) => (
-                <SelectItem key={k} value={k}>{v.label}</SelectItem>
+              {ORDER_STATUSES.map((status) => (
+                <SelectItem key={status} value={status}>{ORDER_STATUS[status].label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-36">
-              <SelectValue placeholder="סוג" />
+            <SelectTrigger className="admin-focus h-9 w-28 text-[13px]" aria-label="סינון לפי סוג">
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">כל הסוגים</SelectItem>
@@ -335,422 +325,315 @@ const AdminOrders = () => {
               <SelectItem value="auto-restock">מנוי</SelectItem>
             </SelectContent>
           </Select>
-        </AdminToolbar>
+        </div>
 
-        {/* Bulk Actions Bar */}
         {selectedIds.size > 0 && (
-          <Card className="border-primary/30 bg-primary/5">
-            <CardContent className="p-3 flex items-center gap-3 flex-wrap">
-              <span className="text-sm font-medium">{selectedIds.size} נבחרו</span>
-              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => bulkUpdateStatus("shipped")} disabled={updatingStatus}>
-                <Truck className="w-3.5 h-3.5" /> סמן כנשלח
-              </Button>
-              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => bulkUpdateStatus("delivered")} disabled={updatingStatus}>
-                <CheckCircle className="w-3.5 h-3.5" /> סמן כנמסר
-              </Button>
-              <Button size="sm" variant="outline" className="gap-1.5">
-                <Download className="w-3.5 h-3.5" /> ייצוא לשליח
-              </Button>
-              <Button size="sm" variant="default" className="gap-1.5" onClick={() => setShowLabels(true)}>
-                <Printer className="w-3.5 h-3.5" /> הדפס תוויות
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
-                <X className="w-3.5 h-3.5" /> ביטול
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="admin-card flex flex-wrap items-center gap-2 border-admin-accent/40 bg-admin-accent-soft p-2.5">
+            <span className="text-[13px] font-semibold text-admin-accent">
+              {selectedIds.size} נבחרו
+            </span>
+            <Button
+              size="sm" variant="outline" className="admin-focus gap-1.5 text-[12px]"
+              disabled={updating} onClick={() => void bulkStatus("shipped")}
+            >
+              <Truck className="h-3.5 w-3.5" />
+              סמן כנשלח
+            </Button>
+            <Button
+              size="sm" variant="outline" className="admin-focus gap-1.5 text-[12px]"
+              disabled={updating} onClick={() => void bulkStatus("delivered")}
+            >
+              <CheckCircle className="h-3.5 w-3.5" />
+              סמן כנמסר
+            </Button>
+            <Button
+              size="sm" className="admin-focus gap-1.5 text-[12px]"
+              onClick={() => { setLabelFormat("lite"); setShowLabels(true); }}
+            >
+              <Printer className="h-3.5 w-3.5" />
+              הדפס תוויות
+            </Button>
+            <Button
+              size="sm" variant="ghost" className="admin-focus gap-1.5 text-[12px]"
+              onClick={() => setSelectedIds(new Set())}
+            >
+              <X className="h-3.5 w-3.5" />
+              ביטול
+            </Button>
+          </div>
         )}
 
-        {/* Table */}
-        {/* The order beside the list, not over it: a status can be changed
-            while the queue it came from is still on screen. */}
-        <AdminWorkspace
-          open={!!selectedOrder}
-          onClose={() => setSelectedOrder(null)}
-          detail={
-            selectedOrder && (
-              <OrderDetailPanel
-                order={selectedOrder}
-                outOfStockItems={outOfStockItems}
-                onStatusChange={updateSingleStatus}
-                isUpdating={updatingStatus}
-                onClose={() => setSelectedOrder(null)}
-                onPrintLabel={(format: LabelFormat) => {
-                  setSelectedIds(new Set([selectedOrder.id]));
-                  setLabelFormat(format);
-                  setShowLabels(true);
-                  setSelectedOrder(null);
-                }}
-              />
-            )
-          }
-        >
-          {loading ? (
-            <div className="space-y-2">
-              {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-lg" />)}
-            </div>
-          ) : filteredOrders.length === 0 ? (
-            <AdminEmptyState icon={Package} title="אין הזמנות" description="לא נמצאו הזמנות התואמות לחיפוש" />
-          ) : (
-            <Card className="border-border/30 overflow-hidden">
+        {loading ? (
+          <div className="space-y-2">
+            {[...Array(6)].map((_, index) => <Skeleton key={index} className="h-14 w-full rounded-xl" />)}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="admin-card p-8 text-center">
+            <p className="admin-section">אין הזמנות</p>
+            <p className="admin-body pt-1">
+              {orders.length === 0 ? "עוד לא התקבלה הזמנה" : "אין הזמנות שתואמות לסינון"}
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* ── the table, from md up ─────────────────────────────────────
+                Below that it is a list of cards. A nine-column table on a
+                390px screen is a horizontal scroll in which the status is
+                always off-frame, and the status is the column an operator
+                reads. */}
+            {!isPhone && (
+              <div className="admin-card overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full">
                   <thead>
-                    <tr className="border-b bg-muted/30 text-muted-foreground">
-                      <th className="py-3 px-3 text-right w-10">
+                    <tr className="border-b border-admin-line bg-admin-sunk">
+                      <th className="w-10 px-3 py-2.5">
                         <Checkbox
-                          checked={selectedIds.size === filteredOrders.length && filteredOrders.length > 0}
+                          checked={selectedIds.size === filtered.length && filtered.length > 0}
                           onCheckedChange={toggleAll}
+                          aria-label="בחירת כל ההזמנות"
                         />
                       </th>
-                      <th className="py-3 px-3 text-right font-medium">הזמנה</th>
-                      <th className="py-3 px-3 text-right font-medium">לקוח וחיה</th>
-                      <th className="py-3 px-3 text-right font-medium">סוג</th>
-                      <th className="py-3 px-3 text-center font-medium">דחיפות</th>
-                      <th className="py-3 px-3 text-right font-medium">סטטוס</th>
-                      <th className="py-3 px-3 text-right font-medium">תשלום</th>
-                      <th className="py-3 px-3 text-left font-medium">סה״כ</th>
-                      <th className="py-3 px-3 text-center font-medium">שיתוף</th>
-                      <th className="py-3 px-3 w-10"></th>
+                      {["הזמנה", "לקוח וחיה", "סטטוס", "תשלום", "סה״כ", "שיתוף"].map((heading) => (
+                        <th key={heading} className="admin-label px-3 py-2.5 text-right font-semibold">
+                          {heading}
+                        </th>
+                      ))}
+                      <th className="w-8 px-3 py-2.5" />
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredOrders.map((order) => {
-                      const statusCfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
-                      const StatusIcon = statusCfg.icon;
-                      const paymentCfg = PAYMENT_CONFIG[order.payment_status] || PAYMENT_CONFIG.pending;
-                      const urgencyCfg = URGENCY_CONFIG[order.medical_urgency || "none"] || URGENCY_CONFIG.none;
-                      const hasOOS = orderHasOOS(order);
+                    {filtered.map((order) => {
+                      const status = orderStatusOf(order.status);
+                      const payment = paymentStatusOf(order.payment_status);
+                      const urgency = ORDER_URGENCY[order.urgency] ?? ORDER_URGENCY.none;
+                      const StatusIcon = status.icon;
 
                       return (
                         <tr
                           key={order.id}
-                          aria-selected={selectedOrder?.id === order.id}
-                          className={cn(
-                            "border-b hover:bg-muted/30 transition-colors cursor-pointer",
-                            selectedIds.has(order.id) && "bg-primary/5",
-                            order.medical_urgency === "high" && "bg-rose-500/5",
-                            hasOOS && "bg-amber-500/5",
-                            // Last, so the open row wins over the urgency and
-                            // out-of-stock tints. selectedIds above is the bulk
-                            // checkbox - a different selection from the one the
-                            // pane beside the list is showing.
-                            selectedOrder?.id === order.id && "bg-mipo-soft",
-                          )}
-                          onClick={() => setSelectedOrder(order)}
+                          className="cursor-pointer border-b border-admin-line transition-colors last:border-0 hover:bg-admin-sunk"
+                          onClick={() => navigate(`/admin/orders/${order.id}?list=${listParam}`)}
                         >
-                          <td className="py-3 px-3" onClick={(e) => e.stopPropagation()}>
+                          <td className="px-3 py-2.5" onClick={(event) => event.stopPropagation()}>
                             <Checkbox
                               checked={selectedIds.has(order.id)}
-                              onCheckedChange={() => toggleSelect(order.id)}
+                              onCheckedChange={() => toggle(order.id)}
+                              aria-label={`בחירת הזמנה ${order.order_number}`}
                             />
                           </td>
-                          <td className="py-3 px-3">
-                            <p className="font-semibold text-foreground text-xs">{order.order_number}</p>
-                            <p className="text-[10px] text-muted-foreground">
-                              {new Date(order.order_date).toLocaleDateString("he-IL")}
-                            </p>
-                          </td>
-                          <td className="py-3 px-3">
-                            <div className="flex items-center gap-1.5">
-                              <User className="w-3 h-3 text-muted-foreground flex-shrink-0" strokeWidth={1.5} />
-                              <span className="text-xs font-medium truncate max-w-[120px]">
-                                {order.customer_name || "—"}
-                              </span>
-                            </div>
-                            {order.pet_name && (
-                              <div className="flex items-center gap-1.5 mt-0.5">
-                                <PawPrint className="w-3 h-3 text-primary flex-shrink-0" strokeWidth={1.5} />
-                                <span className="text-[10px] text-primary font-medium">{order.pet_name}</span>
-                              </div>
-                            )}
-                          </td>
-                          <td className="py-3 px-3">
-                            {order.order_type === "auto-restock" ? (
-                              <Badge variant="outline" className="text-[10px] gap-0.5 border-primary/30 text-primary">
-                                <Repeat className="w-2.5 h-2.5" /> מנוי
-                              </Badge>
-                            ) : (
-                              <span className="text-[10px] text-muted-foreground">רגיל</span>
-                            )}
-                          </td>
-                          <td className="py-3 px-3 text-center">
-                            <div className="flex items-center justify-center gap-1.5">
-                              <div className={cn("w-2 h-2 rounded-full", urgencyCfg.dot)} />
-                              {order.medical_urgency === "high" && (
-                                <span className="text-[10px] font-bold text-rose-500">דחוף</span>
+                          <td className="px-3 py-2.5">
+                            <p className="flex items-center gap-1.5 text-[13px] font-semibold text-admin-ink">
+                              {/* The dot appears only when the urgency is not
+                                  ordinary, so it reads as a flag rather than as
+                                  a decoration on every row. */}
+                              {order.urgency !== "none" && (
+                                <span
+                                  className={cn("h-2 w-2 shrink-0 rounded-full", TONE_DOT[urgency.tone])}
+                                  title={urgency.label}
+                                />
                               )}
-                            </div>
+                              {order.order_number}
+                            </p>
+                            <p className="admin-meta">{formatDate(order.order_date)}</p>
                           </td>
-                          <td className="py-3 px-3" onClick={(event) => event.stopPropagation()}>
+                          <td className="px-3 py-2.5">
+                            <p className="flex items-center gap-1.5 text-[13px] text-admin-ink">
+                              <User className="h-3 w-3 shrink-0 text-admin-ink-subtle" strokeWidth={1.6} />
+                              <span className="max-w-[160px] truncate">{order.display_name}</span>
+                            </p>
+                            {order.pet_name && (
+                              <p className="admin-meta flex items-center gap-1.5">
+                                <PawPrint className="h-3 w-3 shrink-0" strokeWidth={1.6} />
+                                {order.pet_name}
+                              </p>
+                            )}
+                          </td>
+                          <td className="px-3 py-2.5" onClick={(event) => event.stopPropagation()}>
                             <Select
                               value={order.status}
-                              onValueChange={(value) => updateSingleStatus(order.id, value as Order["status"])}
-                              disabled={updatingStatus}
+                              onValueChange={(value) => void changeStatus(order.id, value as OrderStatus)}
+                              disabled={updating}
                             >
                               <SelectTrigger
-                                className={cn("h-8 w-[116px] gap-1 rounded-full px-2 text-[10px] font-medium", statusCfg.color)}
+                                className={cn(
+                                  "admin-focus h-7 w-[118px] gap-1 rounded-full border-0 px-2.5 text-[11px] font-medium",
+                                  TONE_CHIP[status.tone],
+                                )}
                                 aria-label={`שינוי סטטוס הזמנה ${order.order_number}`}
                               >
-                                <span className="inline-flex items-center gap-1">
+                                {/* !inline-flex, because SelectTrigger sets
+                                    `[&>span]:line-clamp-1` and line-clamp is
+                                    `display:-webkit-box` with a vertical box
+                                    orient - which stacked the icon ABOVE the
+                                    word and made every status pill two lines
+                                    tall. */}
+                                <span className="!inline-flex items-center gap-1 whitespace-nowrap">
                                   <StatusIcon className="h-3 w-3" />
-                                  {statusCfg.label}
+                                  {status.label}
                                 </span>
                               </SelectTrigger>
                               <SelectContent>
-                                {Object.entries(STATUS_CONFIG).map(([key, config]) => (
-                                  <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                                {ORDER_STATUSES.map((value) => (
+                                  <SelectItem key={value} value={value}>{ORDER_STATUS[value].label}</SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
                           </td>
-                          <td className="py-3 px-3">
-                            <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-medium", paymentCfg.color)}>
-                              {paymentCfg.label}
+                          <td className="px-3 py-2.5">
+                            <AdminChip label={payment.label} tone={payment.tone} />
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <span className="admin-figure text-[13px] tabular-nums">
+                              {formatCurrency(Number(order.total) || 0)}
                             </span>
                           </td>
-                          <td className="py-3 px-3 text-left">
-                            <div className="flex items-center gap-1">
-                              <span className="font-bold text-foreground">₪{order.total?.toFixed(0)}</span>
-                              {hasOOS && (
-                                <AlertTriangle className="w-3.5 h-3.5 text-amber-500" strokeWidth={2} />
-                              )}
-                            </div>
-                          </td>
-                          <td className="py-3 px-3 text-center" onClick={(event) => event.stopPropagation()}>
+                          <td className="px-3 py-2.5" onClick={(event) => event.stopPropagation()}>
                             <OrderShareMenu order={order} />
                           </td>
-                          <td className="py-3 px-3">
-                            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                          <td className="px-3 py-2.5">
+                            {/* Points LEFT: the row leads forward, and forward
+                                in Hebrew runs left. */}
+                            <ChevronRight className="h-4 w-4 rotate-180 text-admin-ink-subtle" />
                           </td>
                         </tr>
                       );
                     })}
                   </tbody>
                 </table>
+                </div>
+                <div className="admin-meta border-t border-admin-line bg-admin-sunk px-3 py-2">
+                  מציג {filtered.length} מתוך {orders.length} הזמנות
+                </div>
               </div>
-              <div className="p-3 border-t bg-muted/20 text-xs text-muted-foreground">
-                מציג {filteredOrders.length} מתוך {orders.length} הזמנות
-                {autoRestockCount > 0 && ` • ${autoRestockCount} מנויים פעילים`}
-              </div>
-            </Card>
-          )}
-        </AdminWorkspace>
+            )}
 
-        {/* Label Generator */}
-        <OrderLabelGenerator
-          orders={filteredOrders.filter(o => selectedIds.has(o.id))}
-          open={showLabels}
-          onClose={() => setShowLabels(false)}
-          initialFormat={labelFormat}
-        />
+            {/* ── the same queue as cards, on a phone ───────────────────── */}
+            {isPhone && (
+              <div className="space-y-2">
+              {filtered.map((order) => {
+                const status = orderStatusOf(order.status);
+                const payment = paymentStatusOf(order.payment_status);
+                const urgency = ORDER_URGENCY[order.urgency] ?? ORDER_URGENCY.none;
+
+                return (
+                  <div key={order.id} className="admin-card p-3">
+                    <div className="flex items-start gap-2.5">
+                      <span className="pt-0.5" onClick={(event) => event.stopPropagation()}>
+                        <Checkbox
+                          checked={selectedIds.has(order.id)}
+                          onCheckedChange={() => toggle(order.id)}
+                          aria-label={`בחירת הזמנה ${order.order_number}`}
+                        />
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/admin/orders/${order.id}?list=${listParam}`)}
+                        className="admin-focus admin-tap min-w-0 flex-1 rounded-lg text-right"
+                      >
+                        <span className="flex items-baseline justify-between gap-2">
+                          <span className="flex items-center gap-1.5 text-[13px] font-semibold text-admin-ink">
+                            {order.urgency !== "none" && (
+                              <span className={cn("h-2 w-2 shrink-0 rounded-full", TONE_DOT[urgency.tone])} />
+                            )}
+                            {order.order_number}
+                          </span>
+                          <span className="admin-figure text-[13px] tabular-nums">
+                            {formatCurrency(Number(order.total) || 0)}
+                          </span>
+                        </span>
+                        <span className="admin-meta mt-0.5 block truncate">
+                          {order.display_name}
+                          {order.pet_name ? ` · ${order.pet_name}` : ""}
+                          {` · ${formatDate(order.order_date)}`}
+                        </span>
+                        <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                          <AdminChip label={payment.label} tone={payment.tone} />
+                          {order.order_type === "auto-restock" && (
+                            <AdminChip label="מנוי" tone="accent" icon={Repeat} />
+                          )}
+                        </span>
+                      </button>
+                    </div>
+
+                    {/*
+                      * THE STATUS AND THE SHARE, ON THE CARD.
+                      *
+                      * Outside the button above, because a <select> and a menu
+                      * inside a <button> is invalid markup that browsers
+                      * resolve by swallowing the inner control's clicks.
+                      *
+                      * They are here rather than a tap away on the order's page
+                      * because the phone is exactly where an operator moves a
+                      * queue along - standing at the bench with a parcel in one
+                      * hand. Sending them to the record to change one field
+                      * would make the phone the slow way to do the thing the
+                      * phone is for.
+                      */}
+                    <div className="mt-2 flex items-center gap-2 border-t border-admin-line pt-2">
+                      <Select
+                        value={order.status}
+                        onValueChange={(value) => void changeStatus(order.id, value as OrderStatus)}
+                        disabled={updating}
+                      >
+                        <SelectTrigger
+                          className={cn(
+                            "admin-focus h-8 flex-1 gap-1 rounded-full border-0 px-3 text-[12px] font-medium",
+                            TONE_CHIP[status.tone],
+                          )}
+                          aria-label={`שינוי סטטוס הזמנה ${order.order_number}`}
+                        >
+                          <span className="!inline-flex items-center gap-1.5 whitespace-nowrap">
+                            <status.icon className="h-3.5 w-3.5" />
+                            {status.label}
+                          </span>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ORDER_STATUSES.map((value) => (
+                            <SelectItem key={value} value={value}>{ORDER_STATUS[value].label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <OrderShareMenu order={order} />
+                    </div>
+                  </div>
+                );
+              })}
+                <p className="admin-meta px-1 text-center">
+                  מציג {filtered.length} מתוך {orders.length} הזמנות
+                </p>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Not wired to anything yet, and it says so rather than looking
+            available. A courier export that silently does nothing is worse than
+            a button that admits it is not built. */}
+        {selectedIds.size > 0 && (
+          <p className="admin-meta flex items-center gap-1.5 px-1">
+            <Download className="h-3 w-3" />
+            ייצוא לשליח עדיין לא מחובר. בינתיים ההדפסה היא הדרך להוציא חבילה.
+          </p>
+        )}
+
+        {stats.urgent > 0 && (
+          <p className="admin-meta flex items-start gap-1.5 px-1">
+            <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0 text-admin-warning" />
+            דחיפות רפואית נקבעת משמות המוצרים, ולכן היא ניחוש: היא תפספס מזון רפואי
+            ששמו בעברית ותסמן שמפו בשם ״derma״.
+          </p>
+        )}
       </div>
+
+      <OrderLabelGenerator
+        orders={filtered.filter((order) => selectedIds.has(order.id))}
+        open={showLabels}
+        onClose={() => setShowLabels(false)}
+        initialFormat={labelFormat}
+      />
     </AdminLayout>
   );
 };
-
-// =====================================================
-// Order Detail Side Panel
-// =====================================================
-
-function OrderDetailPanel({
-  order, outOfStockItems, onStatusChange, isUpdating, onClose, onPrintLabel,
-}: {
-  order: Order;
-  outOfStockItems: Set<string>;
-  onStatusChange: (id: string, status: Order["status"]) => void;
-  isUpdating: boolean;
-  onClose: () => void;
-  onPrintLabel: (format: LabelFormat) => void;
-}) {
-  const urgencyCfg = URGENCY_CONFIG[order.medical_urgency || "none"] || URGENCY_CONFIG.none;
-  const addr = order.shipping_address;
-  const hasOOS = order.order_items?.some(i => i.product_id && outOfStockItems.has(i.product_id));
-
-  return (
-    <ScrollArea className="h-full" dir="rtl">
-      <div className="p-5 space-y-5">
-        {/* Header */}
-        {/* Plain markup, not SheetHeader/SheetTitle: this panel now renders
-            standalone in the workspace column too, and a Radix Dialog.Title
-            throws when there is no Dialog above it. */}
-        <div className="space-y-1 p-0 pl-10">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold text-mipo-ink">{order.order_number}</h2>
-            <div className="flex items-center gap-1.5">
-              <div className={cn("w-2 h-2 rounded-full", urgencyCfg.dot)} />
-              <span className="text-[10px] font-medium text-muted-foreground">{urgencyCfg.label}</span>
-            </div>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {new Date(order.order_date).toLocaleDateString("he-IL", {
-              year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit",
-            })}
-          </p>
-        </div>
-
-        {/* Customer & Pet */}
-        <Card className="border-border/30">
-          <CardContent className="p-3 space-y-2">
-            <div className="flex items-center gap-2">
-              <User className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
-              <span className="text-sm font-medium">{order.customer_name || addr?.fullName || "—"}</span>
-            </div>
-            {order.pet_name && (
-              <div className="flex items-center gap-2">
-                <PawPrint className="w-4 h-4 text-primary" strokeWidth={1.5} />
-                <span className="text-sm text-primary font-medium">{order.pet_name}</span>
-              </div>
-            )}
-            {order.order_type === "auto-restock" && (
-              <Badge variant="outline" className="text-[10px] gap-1 border-primary/30 text-primary">
-                <Repeat className="w-3 h-3" /> הזמנת מנוי אוטומטי
-              </Badge>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Out-of-Stock Warning */}
-        {hasOOS && (
-          <Card className="border-amber-500/30 bg-amber-500/5">
-            <CardContent className="p-3 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" strokeWidth={2} />
-              <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
-                הזמנה זו מכילה מוצרים שאזלו מהמלאי!
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Items */}
-        <div>
-          <p className="text-xs font-semibold text-muted-foreground mb-2">פריטים ({order.order_items?.length || 0})</p>
-          <div className="space-y-2">
-            {order.order_items?.map(item => {
-              const isOOS = item.product_id && outOfStockItems.has(item.product_id);
-              return (
-                <div key={item.id} className={cn(
-                  "flex items-center gap-3 p-2 rounded-lg border border-border/20",
-                  isOOS && "border-amber-500/30 bg-amber-500/5"
-                )}>
-                  <img
-                    src={item.product_image || "/placeholder.svg"}
-                    alt={item.product_name}
-                    className="w-12 h-12 rounded-lg object-cover bg-muted"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium truncate">{item.product_name}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[10px] text-muted-foreground">x{item.quantity}</span>
-                      {item.size && <span className="text-[10px] text-muted-foreground">({item.size})</span>}
-                      {isOOS && (
-                        <Badge variant="destructive" className="text-[8px] px-1 py-0">אזל</Badge>
-                      )}
-                    </div>
-                  </div>
-                  <span className="text-xs font-bold">₪{(item.price * item.quantity).toFixed(0)}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Price Summary */}
-        <div className="space-y-1 text-xs border-t pt-3">
-          <div className="flex justify-between"><span className="text-muted-foreground">סכום ביניים</span><span>₪{order.subtotal?.toFixed(2)}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">משלוח</span><span>₪{order.shipping?.toFixed(2)}</span></div>
-          {order.tax > 0 && <div className="flex justify-between"><span className="text-muted-foreground">מע"מ</span><span>₪{order.tax?.toFixed(2)}</span></div>}
-          <div className="flex justify-between font-bold text-sm pt-1 border-t">
-            <span>סה״כ</span><span>₪{order.total?.toFixed(2)}</span>
-          </div>
-        </div>
-
-        {/* Shipping Address */}
-        {addr && (
-          <div>
-            <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5" strokeWidth={1.5} /> כתובת למשלוח
-            </p>
-            <Card className="border-border/30">
-              <CardContent className="p-3 text-xs space-y-1">
-                <p>{addr.address || addr.street} {addr.apartment ? `דירה ${addr.apartment}` : ""}</p>
-                <p>{addr.city}{addr.zipCode ? `, ${addr.zipCode}` : ""}</p>
-                {addr.phone && <p dir="ltr" className="text-muted-foreground">{addr.phone}</p>}
-                {addr.city && (
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${addr.address || addr.street || ""}, ${addr.city}`)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-primary text-[10px] font-medium mt-1 hover:underline"
-                  >
-                    <MapPin className="w-3 h-3" /> פתח במפות
-                  </a>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Special Instructions */}
-        {order.special_instructions && (
-          <div>
-            <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
-              <MessageSquare className="w-3.5 h-3.5" strokeWidth={1.5} /> הוראות מיוחדות
-            </p>
-            <Card className="border-primary/20 bg-primary/5">
-              <CardContent className="p-3 text-xs">{order.special_instructions}</CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Status Change */}
-        <div>
-          <p className="text-xs font-semibold text-muted-foreground mb-2">עדכון סטטוס</p>
-          <div className="grid grid-cols-2 gap-1.5">
-            {(Object.entries(STATUS_CONFIG) as [string, typeof STATUS_CONFIG[string]][]).map(([key, cfg]) => {
-              const Icon = cfg.icon;
-              return (
-                <Button
-                  key={key}
-                  variant={order.status === key ? "default" : "outline"}
-                  size="sm"
-                  className="text-[10px] gap-1 h-8"
-                  disabled={isUpdating || order.status === key}
-                  onClick={() => onStatusChange(order.id, key as Order["status"])}
-                >
-                  <Icon className="w-3 h-3" />
-                  {cfg.label}
-                </Button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Print Label with Format Selection */}
-        <div className="space-y-2">
-          <p className="text-xs font-semibold text-muted-foreground">הדפסת תווית</p>
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              variant="outline"
-              className="gap-1.5 text-[10px] h-9"
-              onClick={() => onPrintLabel("lite")}
-            >
-              <Package className="w-3.5 h-3.5" />
-              Lite 10×15
-            </Button>
-            <Button
-              variant="outline"
-              className="gap-1.5 text-[10px] h-9 border-amber-500/30 text-amber-600 hover:bg-amber-500/5"
-              onClick={() => onPrintLabel("premium")}
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              Premium A5
-            </Button>
-          </div>
-        </div>
-      </div>
-    </ScrollArea>
-  );
-}
 
 export default AdminOrders;

@@ -192,3 +192,59 @@ test.describe("the screens that do not exist yet", () => {
     await expect(sidebar.getByRole("link", { name: /Inventory/ })).toContainText("soon");
   });
 });
+
+/**
+ * ONE <h1> PER SCREEN.
+ *
+ * AdminLayout renders the page's heading. Screens then built a header of their
+ * own beneath it, so the title appeared twice — and on a 360 page, three times
+ * counting the breadcrumb. It is visible if you look, which is why it survived:
+ * it reads as a design choice rather than as two elements claiming to be the
+ * page's subject.
+ *
+ * It bites in two places that are not cosmetic. `getByRole("heading", { name })`
+ * becomes ambiguous, which is the strict-mode failure that blocked a deploy in
+ * this repository once already over a duplicated image name. And a screen reader
+ * user jumping by heading lands on a page whose top level has two entries saying
+ * the same thing.
+ *
+ * The list is the screens that are on the design system. Five more still carry
+ * their own <h1> — AdminEconomics, AdminAnalytics, AdminCategories,
+ * AdminNotifications, and AdminCustomers through AdminPageHeader — and they join
+ * this list as they are restyled rather than being asserted about now, because a
+ * test that expects two headings would be codifying the defect.
+ */
+test.describe("the page's heading", () => {
+  const ORDER_ID = "aaaaaaaa-1111-4111-8111-111111111111";
+
+  // The heading the SCREEN passes to AdminLayout, which is not always the name
+  // the route table gives the page: /admin is registered as "בית" and headed
+  // "מרכז הבקרה".
+  const screens = [
+    { path: "/admin", name: "מרכז הבקרה" },
+    { path: "/admin/orders", name: "הזמנות" },
+    { path: `/admin/orders/${ORDER_ID}`, name: "הזמנה" },
+  ];
+
+  for (const screen of screens) {
+    test(`${screen.path} has exactly one <h1>`, async ({ page }, testInfo) => {
+      test.skip(testInfo.project.name.toLowerCase().includes("mobile"), "Desktop chrome");
+      await signedIn(page, owner);
+      await page.route("**/api/admin/orders/*", (route) => route.fulfill(json({
+        order: {
+          id: ORDER_ID, order_number: "MP-1024", status: "pending",
+          payment_status: "paid", payment_method: "credit-card",
+          subtotal: 100, shipping: 0, tax: 0, discount_amount: 0,
+          cash_on_delivery_fee: 0, total: 100, shipping_address: {},
+          order_type: "regular", order_date: new Date().toISOString(),
+          items: [], order_items: [],
+        },
+        customer: null, events: [], sibling_orders: [], history_covers_order: false,
+      })));
+
+      await page.goto(screen.path);
+      await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(screen.name);
+    });
+  }
+});

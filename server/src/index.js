@@ -77,6 +77,7 @@ import { createProductIntakeRoutes } from "./productIntakeRoutes.js";
 import { createAdminOsRoutes } from "./adminOs/routes.js";
 import { shippingFor } from "./shipping.js";
 import { createCustomerEntity360 } from "./adminOs/entity360.js";
+import { createOrderEntity360 } from "./adminOs/order360.js";
 import { createPublicCatalog } from "./publicCatalog.js";
 import {
   archiveSocialPost,
@@ -6755,12 +6756,24 @@ const {
   listAdminCustomers,
   getAdminCustomer,
   customerNoteSubjects,
+  mapCustomerIdentity,
 } = createCustomerEntity360({
   pool,
   toMoney,
   attachOrderItems: (orders) => attachOrderItems(orders),
   listUserPets: (userId, archived) => listUserPets(userId, archived),
   listCustomerNotes: (subjects) => listCustomerNotes(subjects),
+});
+
+// Order 360, the same way, and taking mapCustomerIdentity from the customer
+// module rather than mapping the identity again: an order screen that described
+// a customer differently from the customer screen would be two answers to
+// "who is this" reached from two directions.
+const { getAdminOrder360 } = createOrderEntity360({
+  pool,
+  toMoney,
+  attachOrderItems: (orders) => attachOrderItems(orders),
+  mapCustomerIdentity,
 });
 
 const CUSTOMER_NOTE_KINDS = ["note", "call", "whatsapp", "email", "meeting"];
@@ -9034,6 +9047,20 @@ const handleRequest = async (request, response) => {
     }
 
     const adminOrderMatch = url.pathname.match(/^\/api\/admin\/orders\/([0-9a-fA-F-]{36})$/);
+    // One order, with the person who placed it and what has happened to it.
+    // There was no endpoint for a single order at all, which is why every link
+    // to one went to the list.
+    if (adminOrderMatch && request.method === "GET") {
+      if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      const detail = await getAdminOrder360(adminOrderMatch[1]);
+      if (!detail) {
+        sendError(response, 404, "Order not found");
+        return;
+      }
+      sendJson(response, 200, detail);
+      return;
+    }
+
     if (adminOrderMatch && request.method === "PATCH") {
       if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
       const order = await updateOrder(

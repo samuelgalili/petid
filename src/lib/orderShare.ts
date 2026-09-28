@@ -23,6 +23,20 @@ export interface ShareableOrder {
   order_items?: OrderShareItem[];
 }
 
+/*
+ * A THIRD COPY OF THESE WORDS, AND IT STAYS.
+ *
+ * The admin screens share one copy in adminOrderLabels.ts, because two admin
+ * screens disagreeing about what `processing` is called is a bug - they did,
+ * for a while, "באריזה" on one and "בטיפול" on the other.
+ *
+ * This file is not an admin screen. It composes a message that goes TO the
+ * customer over WhatsApp or email, written in a different register on purpose:
+ * "ממתין לתשלום" where the chip says "ממתין", "אושר בסביבת פיתוח" where the
+ * chip says "פיתוח". Importing the admin map would tie a sentence a customer
+ * reads to the width of a badge in a table, so shortening a chip would quietly
+ * reword somebody's WhatsApp. Separate deliberately, not an oversight to tidy.
+ */
 const ORDER_STATUS_LABELS: Record<string, string> = {
   pending: "ממתין",
   processing: "באריזה",

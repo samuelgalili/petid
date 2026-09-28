@@ -12,13 +12,12 @@ import {
 
 import type { MipoCustomerNoteKind } from "@/lib/mipoApi";
 
-export const ORDER_STATUS_LABELS: Record<string, string> = {
-  pending: "ממתין",
-  processing: "בטיפול",
-  shipped: "נשלח",
-  delivered: "נמסר",
-  cancelled: "בוטל",
-};
+/*
+ * ORDER_STATUS_LABELS used to be declared here as well, with "בטיפול" where the
+ * orders screen said "באריזה". One order, one column, two words - which is the
+ * exact failure the comment above warns about, sitting in the file that warns
+ * about it. It lives in adminOrderLabels.ts now, and this screen imports it.
+ */
 
 export const PET_TYPE_LABELS: Record<string, string> = {
   dog: "כלב",

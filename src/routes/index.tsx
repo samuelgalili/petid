@@ -208,6 +208,7 @@ const AdminHome = lazy(() => import("@/pages/admin/AdminHome"));
 const AdminPlannedScreen = lazy(() => import("@/pages/admin/AdminPlannedScreen"));
 const AdminAnalytics = lazy(() => import("@/pages/admin/AdminAnalytics"));
 const AdminOrders = lazy(() => import("@/pages/admin/AdminOrders"));
+const AdminOrder360 = lazy(() => import("@/pages/admin/AdminOrder360"));
 const AdminCustomers = lazy(() => import("@/pages/admin/AdminCustomers"));
 const AdminCustomer360 = lazy(() => import("@/pages/admin/AdminCustomer360"));
 const AdminProducts = lazy(() => import("@/pages/admin/AdminProducts"));
@@ -330,6 +331,10 @@ export const adminRoutes: RouteObject[] = [
   { path: "/admin/analytics", element: <AdminPage component={AdminAnalytics} pageName="אנליטיקס" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
   { path: "/admin/ai-economics", element: <AdminPage component={AdminEconomics} pageName="כלכלת AI" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
   { path: "/admin/orders", element: <AdminPage component={AdminOrders} pageName="הזמנות" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
+  // Order 360. An order had no URL until now, which is why four Command Center
+  // cards and every order on a customer's card landed on the list instead of on
+  // the order they named.
+  { path: "/admin/orders/:orderId", element: <AdminPage component={AdminOrder360} pageName="הזמנה" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
   { path: "/admin/customers", element: <AdminPage component={AdminCustomers} pageName="לקוחות" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
   // Customer 360. Declared AFTER the list so the static path wins its own
   // match, and gated the same way: a record is not a lighter capability than

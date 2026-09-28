@@ -194,6 +194,32 @@ dbTest("every row on the board leads somewhere", async () => {
   });
 });
 
+dbTest("an order card links to the order's own page, not to the list with a query", async () => {
+  /*
+   * WHAT `startsWith("/admin")` IS NOT ENOUGH TO CATCH, AND WHAT IT COST.
+   *
+   * All four order cards pointed at `/admin/orders?order=<id>` for as long as
+   * this board has existed. That starts with /admin, contains the id, and
+   * satisfies both assertions above - and the orders screen never read the
+   * `order` parameter, so pressing "התשלום נכשל" loaded the unfiltered order
+   * list. The card named an order and then would not show it to you, and
+   * nothing anywhere went red.
+   *
+   * So the SHAPE is asserted rather than the prefix: the href is the record's
+   * own path. A query string is what a filter looks like, and a filter is not
+   * what a card promises.
+   */
+  await withDb(async ({ pool, tag }) => {
+    const id = await makeOrder(pool, tag, { status: "pending", paymentStatus: "failed" });
+    const { board } = await readCommandCenter({ pool });
+    const row = board.exception.items.find((item) => item.id === id);
+
+    assert.ok(row, "the failed order is not on the board at all");
+    assert.equal(row.href, `/admin/orders/${id}`);
+    assert.ok(!row.href.includes("?"), "the card links to a filtered list rather than to the order");
+  });
+});
+
 // ─── health says what it measured ────────────────────────────────────────────
 
 dbTest("health reports a state and a measurement for each check", async () => {
