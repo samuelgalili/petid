@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Trophy, Lock } from "lucide-react";
 import { fadeIn, staggerContainer, staggerItem } from "@/lib/animations";
 import BottomNav from "@/components/BottomNav";
+import { CountFraction } from "@/components/CountFraction";
 
 const rarityColors = {
   common: "bg-secondary text-foreground border-border",
@@ -76,7 +77,7 @@ const Achievements = () => {
         <Card className="p-6 space-y-3">
           <div className="flex justify-between text-sm">
             <span className="font-medium">התקדמות כללית</span>
-            <span className="text-muted-foreground">{earnedBadges.length} / {badges.length}</span>
+            <CountFraction current={earnedBadges.length} total={badges.length} className="text-muted-foreground" />
           </div>
           <Progress value={completionPercentage} className="h-3" />
         </Card>

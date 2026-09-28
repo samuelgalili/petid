@@ -17,6 +17,18 @@
 @tailwind utilities;
 
 /*
+ * The page transition may animate with a filter and a transform. Either one,
+ * including blur(0) and translateY(0), is a containing block for position:fixed
+ * children, so a bottom bar sticks to the end of the page instead of the
+ * viewport. The resting class clears both after the enter animation.
+ */
+.page-transition-settled {
+  transform: none !important;
+  filter: none !important;
+  will-change: auto !important;
+}
+
+/*
  * MIPO DESIGN SYSTEM
  * ==============================
  * Quiet white surfaces, soft gray controls, and pastel gradient accents.
@@ -25,6 +37,7 @@
 @layer base {
   /* Smooth scrolling + accessible base font size */
   html {
+    color-scheme: light;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
     font-size: 100%;
@@ -310,6 +323,7 @@
 
   /* DARK MODE - Light Blue (תכלת) palette */
   .dark {
+    color-scheme: dark;
     /* MIPO Gen-3 dark values (F02) — components on mipo tokens need no dark variants */
     --mipo-ink: 0 0% 95%;
     --mipo-muted: 240 5% 64%;

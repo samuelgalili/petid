@@ -226,6 +226,35 @@ jobs:
           chmod 600 ~/.ssh/mipo_aws_key
           ssh-keyscan -T 30 -H "$MIPO_AWS_HOST" >> ~/.ssh/known_hosts || true
 
+      # Read-only. This is the value Caddy will see, taken from the env file
+      # sync-ssm-env.sh writes (/opt/mipo/.env). It prints a classification
+      # and never the value. An unexpected value stops the deploy here, before
+      # any file is copied and before the API or Caddy is recreated, so the
+      # previous build keeps serving.
+      - name: Classify MIPO_WWW_ADDRESS
+        run: |
+          set -euo pipefail
+          set +e
+          report="$(ssh -i ~/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 \
+            "${MIPO_AWS_USER}@${MIPO_AWS_HOST}" \
+            "sh -s -- classify-file '${MIPO_REMOTE_PATH}/.env'" \
+            < deploy/aws/www-address.sh)"
+          status=$?
+          set -e
+          printf '%s\n' "$report"
+          case "$report" in
+            unset|placeholder|www.mipo.pet) ;;
+            *)
+              echo "MIPO_WWW_ADDRESS is not unset, the localhost placeholder, or www.mipo.pet." >&2
+              echo "Refusing to deploy before any container is recreated. Production stays on the previous build." >&2
+              exit 1
+              ;;
+          esac
+          if [ "$status" -ne 0 ]; then
+            echo "MIPO_WWW_ADDRESS classification failed before the deploy touched a container." >&2
+            exit 1
+          fi
+
       - name: Prepare remote directories
         run: |
           set -euo pipefail
@@ -340,3 +369,38 @@ jobs:
             echo "::error::The API reports version '${reported}' but this run deployed '${expected}'. The container was not replaced." >&2
             exit 1
           fi
+
+      # WhatsApp is sent from this job, not from the server: a failed deploy may
+      # have taken the API down, and this runner is still up. Missing Twilio
+      # secrets make the script a no-op. continue-on-error keeps a Twilio
+      # problem from painting a finished deploy red (which would also fire the
+      # failure notice below). Production only — staging deploys stay quiet.
+      # Secrets are repository Actions secrets so the scheduled health workflow,
+      # which is not bound to the production environment, can read the same set.
+      - name: Tell the owner the production deploy failed
+        if: failure() && github.ref_name == 'aws-migration'
+        continue-on-error: true
+        env:
+          OWNER_NOTIFICATIONS_ENABLED: ${{ secrets.OWNER_NOTIFICATIONS_ENABLED }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_WHATSAPP_FROM: ${{ secrets.TWILIO_WHATSAPP_FROM }}
+          OWNER_WHATSAPP_TO: ${{ secrets.OWNER_WHATSAPP_TO }}
+          TWILIO_WHATSAPP_CONTENT_SIDS: ${{ secrets.TWILIO_WHATSAPP_CONTENT_SIDS }}
+          MIPO_DEPLOY_SHA: ${{ github.sha }}
+          SITE_URL: ${{ vars.SITE_URL || vars.MIPO_PUBLIC_BASE_URL }}
+        run: node server/src/ownerNotifyCli.js deploy-failure
+
+      - name: Tell the owner the production deploy succeeded
+        if: success() && github.ref_name == 'aws-migration'
+        continue-on-error: true
+        env:
+          OWNER_NOTIFICATIONS_ENABLED: ${{ secrets.OWNER_NOTIFICATIONS_ENABLED }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_WHATSAPP_FROM: ${{ secrets.TWILIO_WHATSAPP_FROM }}
+          OWNER_WHATSAPP_TO: ${{ secrets.OWNER_WHATSAPP_TO }}
+          TWILIO_WHATSAPP_CONTENT_SIDS: ${{ secrets.TWILIO_WHATSAPP_CONTENT_SIDS }}
+          MIPO_DEPLOY_SHA: ${{ github.sha }}
+          SITE_URL: ${{ vars.SITE_URL || vars.MIPO_PUBLIC_BASE_URL }}
+        run: node server/src/ownerNotifyCli.js deploy-success

@@ -8,6 +8,7 @@
 import { lazy, Suspense, ComponentType } from "react";
 import { Navigate, RouteObject, useParams } from "react-router-dom";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { CommunityLoginGate, HomeEntry } from "@/components/AuthGates";
 import { AdminRoute } from "@/components/AdminRoute";
 import { PageTransition } from "@/components/PageTransition";
 import { PageErrorBoundary } from "@/components/PageErrorBoundary";
@@ -51,31 +52,31 @@ const PetQrRedirect = () => {
   return <Navigate to={petId ? `/found-pet/${petId}` : "/"} replace />;
 };
 
-import Auth from "@/pages/Auth";
-import Signup from "@/pages/Signup";
-import ForgotPassword from "@/pages/ForgotPassword";
-import ResetPassword from "@/pages/ResetPassword";
-import VerifyEmail from "@/pages/VerifyEmail";
-import Install from "@/pages/Install";
+const Auth = lazy(() => import("@/pages/Auth"));
+const Signup = lazy(() => import("@/pages/Signup"));
+const ForgotPassword = lazy(() => import("@/pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
+const VerifyEmail = lazy(() => import("@/pages/VerifyEmail"));
+const Install = lazy(() => import("@/pages/Install"));
 
 const MainShell = lazy(() => import("@/components/MainShell"));
 const Onboarding = lazy(() => import("@/pages/Onboarding"));
 
 export const authRoutes: RouteObject[] = [
-  { path: "/auth", element: <PageTransition><Auth /></PageTransition> },
+  { path: "/auth", element: <LazyPage component={Auth} pageName="התחברות" /> },
   { path: "/auth/callback", element: <Navigate to="/auth" replace /> },
-  { path: "/signup", element: <PageTransition><Signup /></PageTransition> },
-  { path: "/forgot-password", element: <PageTransition><ForgotPassword /></PageTransition> },
-  { path: "/reset-password", element: <PageTransition><ResetPassword /></PageTransition> },
+  { path: "/signup", element: <LazyPage component={Signup} pageName="הרשמה" /> },
+  { path: "/forgot-password", element: <LazyPage component={ForgotPassword} pageName="שחזור סיסמה" /> },
+  { path: "/reset-password", element: <LazyPage component={ResetPassword} pageName="איפוס סיסמה" /> },
   // Open: the link is followed wherever the mail is read, often on another device.
-  { path: "/verify-email", element: <VerifyEmail /> },
-  { path: "/install", element: <PageTransition><Install /></PageTransition> },
+  { path: "/verify-email", element: <LazyPage component={VerifyEmail} pageName="אימות אימייל" /> },
+  { path: "/install", element: <LazyPage component={Install} pageName="התקנה" /> },
   { path: "/onboarding", element: <Protected><LazyPage component={Onboarding} pageName="הצטרפות" /></Protected> },
 ];
 
 export const feedRoutes: RouteObject[] = [
-  { path: "/", element: <Protected><LazyPage component={MainShell} pageName="בית" /></Protected> },
-  { path: "/feed", element: <Protected><LazyPage component={MainShell} pageName="בית" /></Protected> },
+  { path: "/", element: <HomeEntry><LazyPage component={MainShell} pageName="בית" /></HomeEntry> },
+  { path: "/feed", element: <CommunityLoginGate><LazyPage component={MainShell} pageName="קהילה" /></CommunityLoginGate> },
   { path: "/old-feed", element: <Navigate to="/feed" replace /> },
   { path: "/explore", element: <Navigate to="/feed" replace /> },
   { path: "/reels", element: <Navigate to="/feed" replace /> },
@@ -197,13 +198,14 @@ export const staticRoutes: RouteObject[] = [
   { path: "/privacy-policy", element: <LazyPage component={Privacy} pageName="מדיניות פרטיות" /> },
   { path: "/terms", element: <LazyPage component={Terms} pageName="תנאי שימוש" /> },
   { path: "/club-terms", element: <LazyPage component={ClubTerms} pageName="תנאי מועדון" /> },
-  { path: "/support", element: <Protected><LazyPage component={Support} pageName="תמיכה" /></Protected> },
+  { path: "/support", element: <LazyPage component={Support} pageName="תמיכה" /> },
   { path: "/data-deletion", element: <LazyPage component={DataDeletion} pageName="מחיקת נתונים" /> },
   { path: "*", element: <LazyPage component={NotFound} pageName="עמוד לא נמצא" /> },
 ];
 
 const AdminLogin = lazy(() => import("@/pages/admin/AdminLogin"));
 const AdminChangePassword = lazy(() => import("@/pages/admin/AdminChangePassword"));
+const AdminTwoFactor = lazy(() => import("@/pages/admin/AdminTwoFactor"));
 const AdminHome = lazy(() => import("@/pages/admin/AdminHome"));
 const AdminPlannedScreen = lazy(() => import("@/pages/admin/AdminPlannedScreen"));
 const AdminAnalytics = lazy(() => import("@/pages/admin/AdminAnalytics"));
@@ -325,6 +327,7 @@ const legacyAdminRedirects = legacyAdminPaths.map((path) => {
 export const adminRoutes: RouteObject[] = [
   { path: "/admin/login", element: <LazyPage component={AdminLogin} pageName="כניסת מנהל" /> },
   { path: "/admin/change-password", element: <Admin><LazyPage component={AdminChangePassword} pageName="בחירת סיסמה" /></Admin> },
+  { path: "/admin/two-factor", element: <Admin><LazyPage component={AdminTwoFactor} pageName="אימות דו-שלבי" /></Admin> },
   // /admin used to redirect to the product list, which is why an owner
   // opening the admin landed in a catalogue rather than on the day.
   { path: "/admin", element: <AdminPage component={AdminHome} pageName="בית" permission={ADMIN_PERMISSIONS.FULL_ACCESS} /> },
@@ -382,6 +385,23 @@ export const factoryRoutes: RouteObject[] = [
   { path: "/factory", element: <Navigate to="/admin/products" replace /> },
 ];
 
+/**
+ * Living-avatar spike. `import.meta.env.DEV` is false in `vite build`, and the
+ * dynamic import sits in the discarded branch, so the page is not in the
+ * production graph and there is no link to it from the app.
+ */
+const devPetAvatarRoutes: RouteObject[] = import.meta.env.DEV
+  ? [{
+      path: "/dev/pet-avatar",
+      element: (
+        <LazyPage
+          component={lazy(() => import("@/pages/dev/PetAvatarPrototype"))}
+          pageName="אב טיפוס דמות"
+        />
+      ),
+    }]
+  : [];
+
 export const allRoutes: RouteObject[] = [
   ...authRoutes,
   ...feedRoutes,
@@ -392,6 +412,7 @@ export const allRoutes: RouteObject[] = [
   ...adminRoutes,
   ...factoryRoutes,
   ...staticRoutes,
+  ...devPetAvatarRoutes,
 ];
 
 if (import.meta.env.DEV) {

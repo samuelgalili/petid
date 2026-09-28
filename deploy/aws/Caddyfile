@@ -1,20 +1,19 @@
 # Site addresses come from the environment so one file serves both
-# environments. docker-compose passes them through from the host .env:
+# environments. The caddy entrypoint (deploy/aws/caddy-entrypoint.sh) fills
+# them in before this file is read:
 #
 #   production   MIPO_SITE_ADDRESS=mipo.pet
-#                MIPO_WWW_ADDRESS=www.mipo.pet
+#                MIPO_WWW_ADDRESS=www.mipo.pet   (this is the default)
 #   staging      MIPO_SITE_ADDRESS=staging.mipo.pet
-#                MIPO_WWW_ADDRESS unset
+#                MIPO_WWW_ADDRESS=http://localhost:8081
 #
-# With MIPO_WWW_ADDRESS unset the redirect block binds a plain-HTTP localhost
-# port that is never published, so Caddy does not try to obtain a certificate
-# for a hostname that does not resolve.
-
-{$MIPO_WWW_ADDRESS:http://localhost:8081} {
-	redir https://{$MIPO_SITE_ADDRESS:mipo.pet}{uri} permanent
-}
+# www.mipo.pet gets its own certificate and permanently redirects to the apex,
+# path and query included. The entrypoint prepends that site. It is not in
+# this file: a www block that Caddy cannot load is left out, so the apex
+# still starts. Staging never asks for the public www certificate.
 
 {$MIPO_SITE_ADDRESS:mipo.pet} {
+	# gzip and zstd. Brotli is not in the stock caddy image, so it is not enabled.
 	encode zstd gzip
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
@@ -27,7 +26,8 @@
 
 	# Staging sets MIPO_ROBOTS_POLICY="noindex, nofollow" so it can never be
 	# indexed. Production leaves it unset and gets "all", the explicit
-	# index-normally value — never an empty header.
+	# index-normally value — never an empty header. The compose default and
+	# the entrypoint both turn an empty value into "all".
 	header X-Robots-Tag "{$MIPO_ROBOTS_POLICY:all}"
 
 	# X-Forwarded-For is replaced, not appended to. Caddy's default is to append
@@ -48,6 +48,30 @@
 		}
 	}
 
+	# The catalogue sitemap is built by the API (in-stock products, real
+	# lastmod). If the API is down, slow, or returns a 5xx, the static page
+	# list under /srv/www is the fallback. A 4xx from the API is kept.
+	# try_files would answer a missing file with index.html, so this handle
+	# does not use it. Dial failures never produce a response, so the
+	# site-level handle_errors below serves the same file.
+	handle /sitemap.xml {
+		reverse_proxy mipo-api:3000 {
+			header_up X-Forwarded-For {remote_host}
+			transport http {
+				dial_timeout 2s
+				response_header_timeout 3s
+			}
+			@upstream_down status 500 502 503 504
+			handle_response @upstream_down {
+				rewrite * /sitemap.xml
+				file_server {
+					root /srv/www
+					status 200
+				}
+			}
+		}
+	}
+
 	# Hashed build assets are served before the single-page fallback below, and
 	# without it. Under try_files a chunk that no longer exists — every deploy
 	# replaces them all, and a browser with the app already open still asks for
@@ -64,28 +88,82 @@
 		file_server
 	}
 
-	# Everything else, and this is the part that matters.
-	#
-	# Nothing here set Cache-Control at all, which does not mean "do not cache" —
-	# it means the browser invents a lifetime, and browsers heuristically cache a
-	# 200 that carries no freshness information. index.html and sw.js are exactly
-	# the two files that must never be held: index.html names the hashed bundles,
-	# and sw.js is what fetches new versions of everything else. Hold those two
-	# and a visitor keeps running an old build indefinitely, with no way to tell
-	# and nothing a later deploy can do about it.
-	#
-	# That is not hypothetical. On 9 September one browser was serving a build
-	# old enough to still contain a home screen that had been replaced weeks
-	# earlier, while a different browser on the same phone showed the current
-	# one. The shop looked broken in the stale browser for the same reason: an
-	# old bundle calling an API that had moved on.
-	#
-	# no-cache is not no-store. The file is still stored; it is revalidated, and
-	# an unchanged one comes back as a 304 with no body.
-	handle {
+	# The worker and the shell are how a deploy reaches a tab that is already
+	# open. Caching either of them is how that tab keeps asking for last week's
+	# hashed bundle. no-cache makes the browser revalidate on every load.
+	@shell path /sw.js /index.html
+	handle @shell {
 		root * /srv/www
 		header Cache-Control "no-cache"
-		try_files {path} /index.html
 		file_server
+	}
+
+	# Fonts and icons are not content-hashed. They still change rarely, and the
+	# names are stable, so they are cached for a year. A replacement has to use
+	# a new filename. robots.txt, the worker and index.html stay revalidated.
+	@branded path /fonts/* /favicon.ico /favicon-16x16.png /favicon-32x32.png /apple-touch-icon.png /pwa-192x192.png /pwa-512x512.png /pwa-maskable-512.png /og-default.png /mipo-mark.svg /placeholder.svg
+	handle @branded {
+		root * /srv/www
+		header Cache-Control "public, max-age=31536000, immutable"
+		file_server
+	}
+
+	# Real files (robots.txt, the worker, the manifest) are served as files.
+	# Everything else is a navigation. The API returns index.html with this
+	# path's meta tags, and 404 when the path is not a page — try_files would
+	# have forced a 200 for every URL.
+	handle {
+		root * /srv/www
+		@static file
+		handle @static {
+			header Cache-Control "no-cache"
+			file_server
+		}
+		# HTML navigations come from the API so the status and the meta tags
+		# match the path. A short timeout, then the shell from disk, so a
+		# down API does not take the whole site down. /api is not in this
+		# handle: a JSON client must not receive index.html. A 4xx from the
+		# API (unknown path, hidden product) is returned as the API sent it.
+		reverse_proxy mipo-api:3000 {
+			header_up X-Forwarded-For {remote_host}
+			transport http {
+				dial_timeout 2s
+				response_header_timeout 3s
+			}
+			@upstream_down status 500 502 503 504
+			handle_response @upstream_down {
+				rewrite * /index.html
+				file_server {
+					root /srv/www
+					status 200
+				}
+			}
+		}
+	}
+
+	# Connection failures and timeouts are errors, not responses, so
+	# handle_response above does not run. Serve the shell ourselves. Asset,
+	# API, and upload errors stay errors: a missing chunk must not become
+	# index.html.
+	handle_errors {
+		@sitemap path /sitemap.xml
+		handle @sitemap {
+			rewrite * /sitemap.xml
+			file_server {
+				root /srv/www
+				status 200
+			}
+		}
+		@spa {
+			not path /api/* /uploads/* /assets/* /fonts/*
+			not path *.js *.css *.map *.png *.jpg *.jpeg *.gif *.webp *.svg *.ico *.woff *.woff2 *.ttf *.txt *.xml *.webmanifest *.json
+		}
+		handle @spa {
+			rewrite * /index.html
+			file_server {
+				root /srv/www
+				status 200
+			}
+		}
 	}
 }

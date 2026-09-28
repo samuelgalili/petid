@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Download, CheckCircle2, Shield, Heart, Brain, ShoppingBag,
-  ChevronDown, Share, Plus, Sparkles, Star, ArrowLeft } from
+  Download, CheckCircle2, Heart, Brain, ShoppingBag,
+  ChevronDown, Share, Plus, ArrowLeft } from
 "lucide-react";
 import { motion, useInView, useScroll, useTransform } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -58,14 +58,14 @@ const Install = () => {
   },
   {
     icon: Brain,
-    title: "AI Scientist",
-    description: "ניטור בריאות בזמן אמת וייעוץ חכם",
+    title: "היועץ החכם",
+    description: "שאלות על חיית המחמד, במקום אחד",
 
   },
   {
     icon: ShoppingBag,
     title: "חנות חכמה",
-    description: "רק המוצרים הטובים והמאומתים לחיית המחמד שלכם",
+    description: "מוצרים לחיית המחמד שלכם",
 
   }];
 
@@ -215,80 +215,6 @@ const Install = () => {
               </ScrollReveal>
             )}
           </div>
-        </div>
-      </section>
-
-      {/* ===== SAFESCORE / SCIENTIST APPROVED ===== */}
-      <section className="py-24 px-6 bg-muted/50">
-        <div className="max-w-3xl mx-auto text-center">
-          <ScrollReveal>
-            {/* Glowing badge */}
-            <div className="relative w-32 h-32 mx-auto mb-10">
-              {/* Glow rings */}
-              <motion.div
-                animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0, 0.3] }}
-                transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
-                className="absolute inset-0 rounded-full bg-primary/20" />
-
-              <motion.div
-                animate={{ scale: [1, 1.5, 1], opacity: [0.2, 0, 0.2] }}
-                transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut", delay: 0.3 }}
-                className="absolute inset-0 rounded-full bg-primary/10" />
-
-              {/* Badge core */}
-              <div className="absolute inset-0 rounded-full bg-mipo-ink flex items-center justify-center shadow-2xl">
-                <div className="flex flex-col items-center">
-                  <Shield className="w-10 h-10 text-mipo-surface mb-1" strokeWidth={1.5} />
-                  <span className="text-mipo-surface text-xs font-bold tracking-wider">SAFE</span>
-                </div>
-              </div>
-            </div>
-          </ScrollReveal>
-
-          <ScrollReveal delay={0.2}>
-            <h2 className="text-3xl md:text-4xl font-black text-foreground mb-4">
-              מאושר על ידי <span className="text-primary">המומחה</span>
-            </h2>
-            <p className="text-muted-foreground max-w-lg mx-auto mb-8 leading-relaxed">
-              כל מוצר בחנות עובר בדיקת SafeScore — ציון בטיחות מבוסס AI שמנתח
-              רכיבים, התאמה לגזע, ורגישויות — כדי שתדעו שאתם בוחרים נכון.
-            </p>
-          </ScrollReveal>
-
-          <ScrollReveal delay={0.4}>
-            <div className="flex items-center justify-center gap-6 flex-wrap">
-              {[
-              { label: "מוצרים מאומתים", value: "1,200+" },
-              { label: "גזעים נתמכים", value: "150+" },
-              { label: "דירוג בטיחות ממוצע", value: "94%" }].
-              map((stat) =>
-              <div key={stat.label} className="text-center">
-                  <div className="text-2xl font-black text-primary">{stat.value}</div>
-                  <div className="text-xs text-muted-foreground mt-1">{stat.label}</div>
-                </div>
-              )}
-            </div>
-          </ScrollReveal>
-        </div>
-      </section>
-
-      {/* ===== TESTIMONIAL / SOCIAL PROOF ===== */}
-      <section className="py-24 px-6">
-        <div className="max-w-2xl mx-auto">
-          <ScrollReveal>
-            <div className="bg-card border border-border rounded-3xl p-8 md:p-12 text-center relative overflow-hidden">
-              <Sparkles className="w-8 h-8 text-primary/30 absolute top-6 right-6" />
-              <div className="flex justify-center gap-1 mb-6">
-                {[...Array(5)].map((_, i) =>
-                <Star key={i} className="w-5 h-5 fill-amber-400 text-amber-400" />
-                )}
-              </div>
-              <p className="text-foreground text-lg md:text-xl leading-relaxed mb-6 italic">
-                "מאז שהתחלנו להשתמש ב-MIPO, הטיפול בשבע השתדרג משמעותית. ה-AI זיהה לנו רגישות למזון שלא ידענו עליה."
-              </p>
-              <div className="text-sm text-muted-foreground">— מיכל ושבע 🐕</div>
-            </div>
-          </ScrollReveal>
         </div>
       </section>
 

@@ -1,4 +1,5 @@
 import { emitPetCompanionEvent } from "@/lib/petCompanionReactions";
+import { visibleShopProducts } from "@/lib/shopVisibility";
 
 export interface MipoProduct {
   id: string;
@@ -17,6 +18,8 @@ export interface MipoProduct {
   category_name?: string | null;
   pet_type?: string | null;
   in_stock: boolean | null;
+  /** Present on a full admin row. Public responses omit hidden products instead. */
+  shop_hidden?: boolean | null;
   is_featured?: boolean | null;
   business_id?: string | null;
   sku?: string | null;
@@ -154,9 +157,39 @@ export interface MipoAdmin {
   role: string;
   permissions: string[];
   must_change_password: boolean;
+  /** Server flag. Absent or false means login is the password-only flow. */
+  mfa_enabled?: boolean;
+  /** When true, an unenrolled admin cannot reach the panel. */
+  mfa_enrollment_required?: boolean;
+  /** Whether this account has an authenticator registered. */
+  mfa_enrolled?: boolean;
+  /** Whether this session may open the panel. True when the flag is off. */
+  mfa_verified?: boolean;
+  /** Flag on, not enrolled, enrolment not mandatory: show the prompt. */
+  mfa_enrollment_prompt?: boolean;
   created_at?: string | null;
   last_login_at?: string | null;
 }
+
+export interface MipoAdminTwoFactorSetup {
+  secret: string;
+  otpauth_url: string;
+}
+
+export interface MipoAdminTwoFactorVerification {
+  ok: boolean;
+  used_recovery_code: boolean;
+  recovery_codes_remaining: number | null;
+}
+
+/** Where a successful password sign-in goes next. Password change wins, then
+ *  a code the server says is still owed, then an optional enrolment prompt. */
+export const adminPostLoginPath = (admin: MipoAdmin, fallback: string) => {
+  if (admin.must_change_password) return "/admin/change-password";
+  if (admin.mfa_enabled && admin.mfa_verified === false) return "/admin/two-factor";
+  if (admin.mfa_enrollment_prompt && !admin.mfa_enrolled) return "/admin/two-factor";
+  return fallback;
+};
 
 export interface MipoCoupon {
   id: string;
@@ -769,12 +802,30 @@ export async function getCurrentAdmin(): Promise<MipoAdmin | null> {
   return admin;
 }
 
-export async function getCurrentUser(): Promise<MipoAuthResult | null> {
+// One shared lookup. The home screen mounts several components that each ask
+// who is signed in; without this they each hit /auth/me, and an anonymous
+// visit is a handful of 401s. The cookie itself is HttpOnly, so the page
+// cannot skip the call by reading it. Caching the in-flight request is the
+// check, not a second way to be signed in — private endpoints still require
+// the session.
+let currentUserGeneration = 0;
+let currentUserPending: Promise<MipoAuthResult | null> | null = null;
+
+const rememberCurrentUser = (value: MipoAuthResult | null) => {
+  currentUserGeneration += 1;
+  currentUserPending = Promise.resolve(value);
+};
+
+async function fetchCurrentUser(): Promise<MipoAuthResult | null> {
   const response = await fetch(`${API_BASE_URL}/auth/me`, {
     credentials: "same-origin",
     headers: {
       "content-type": "application/json",
     },
+    // The first screen waits on this call. Without a deadline a stalled
+    // connection leaves that wait up for good. Eight seconds, then the caller
+    // stops waiting and shows the page a signed-out visitor would see.
+    signal: AbortSignal.timeout(8000),
   });
 
   if (response.status === 401) {
@@ -799,6 +850,22 @@ export async function getCurrentUser(): Promise<MipoAuthResult | null> {
   };
 }
 
+export async function getCurrentUser(): Promise<MipoAuthResult | null> {
+  if (currentUserPending) return currentUserPending;
+
+  const ticket = currentUserGeneration;
+  const request = fetchCurrentUser().then(
+    (value) => (ticket !== currentUserGeneration ? currentUserPending ?? value : value),
+    (error) => {
+      if (ticket !== currentUserGeneration && currentUserPending) return currentUserPending;
+      if (ticket === currentUserGeneration) currentUserPending = null;
+      throw error;
+    },
+  );
+  currentUserPending = request;
+  return request;
+}
+
 export async function requestEmailVerification(): Promise<{ ok: boolean; sent: boolean; reason: string }> {
   return apiFetch("/auth/email-verification/request", { method: "POST", body: "{}" });
 }
@@ -819,6 +886,7 @@ export async function loginUser(email: string, password: string, rememberMe = fa
     method: "POST",
     body: JSON.stringify({ email, password, remember_me: rememberMe }),
   });
+  rememberCurrentUser(auth);
   setStorageHint(userSessionHintKey, true);
   return auth;
 }
@@ -836,6 +904,7 @@ export async function signupUser(input: {
     method: "POST",
     body: JSON.stringify(input),
   });
+  rememberCurrentUser(auth);
   setStorageHint(userSessionHintKey, true);
   return auth;
 }
@@ -846,6 +915,7 @@ export async function logoutUser() {
     body: JSON.stringify({}),
   });
   if (!result.ok) throw new Error("Sign out failed");
+  rememberCurrentUser(null);
   setStorageHint(userSessionHintKey, false);
   return result;
 }
@@ -1354,6 +1424,44 @@ export async function changeAdminPassword(password: string): Promise<MipoAdmin> 
   return result.admin;
 }
 
+/** Starts authenticator enrolment. The seed is returned once. */
+export async function startAdminTwoFactorSetup(): Promise<MipoAdminTwoFactorSetup> {
+  return apiFetch<MipoAdminTwoFactorSetup>("/admin/2fa/setup", {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
+/** Confirms enrolment with the first code and returns the recovery codes once. */
+export async function activateAdminTwoFactor(code: string): Promise<string[]> {
+  const result = await apiFetch<{ ok: boolean; recovery_codes: string[] }>("/admin/2fa/activate", {
+    method: "POST",
+    body: JSON.stringify({ code }),
+  });
+  return result.recovery_codes;
+}
+
+/** Proves the second factor for the current session, by code or recovery code. */
+export async function verifyAdminTwoFactor(code: string): Promise<MipoAdminTwoFactorVerification> {
+  return apiFetch<MipoAdminTwoFactorVerification>("/admin/2fa/verify", {
+    method: "POST",
+    body: JSON.stringify({ code }),
+  });
+}
+
+export async function getAdminRecoveryCodesRemaining(): Promise<number> {
+  const result = await adminApiFetch<{ remaining: number }>("/admin/2fa/recovery-codes");
+  return result.remaining;
+}
+
+export async function reissueAdminRecoveryCodes(): Promise<string[]> {
+  const result = await adminApiFetch<{ ok: boolean; recovery_codes: string[] }>("/admin/2fa/recovery-codes", {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+  return result.recovery_codes;
+}
+
 export async function getAdminDispatchConfig(): Promise<{ warehouse_whatsapp: string | null }> {
   return adminApiFetch<{ warehouse_whatsapp: string | null }>("/admin/dispatch-config");
 }
@@ -1428,8 +1536,14 @@ export interface MipoShippingProfile {
   updated_at: string;
 }
 
-/** Null for a customer who has not ordered yet; throws 401 for a guest. */
+/**
+ * Null when nobody is signed in, and null for a customer who has not ordered
+ * yet. Guests used to call this and get a 401 on the way into checkout. The
+ * route itself still requires a session.
+ */
 export async function getMyShippingProfile(): Promise<MipoShippingProfile | null> {
+  const auth = await getCurrentUser();
+  if (!auth) return null;
   const result = await apiFetch<{ profile: MipoShippingProfile | null }>("/me/shipping-profile");
   return result.profile;
 }
@@ -1799,9 +1913,26 @@ export async function bulkUpdateAdminOrders(ids: string[], updates: Partial<Pick
   });
 }
 
-export async function getShopProducts(): Promise<MipoProduct[]> {
-  const result = await apiFetch<{ products: MipoProduct[] }>("/products");
+export async function getShopProducts(options?: {
+  view?: "storefront";
+  // Present when this function is passed straight to react-query as queryFn.
+  // That context has no view, so the call stays on the full public catalogue.
+  queryKey?: readonly unknown[];
+}): Promise<MipoProduct[]> {
+  const query = options?.view === "storefront" ? "?view=storefront" : "";
+  const result = await apiFetch<{ products: MipoProduct[] }>(`/products${query}`);
   return result.products;
+}
+
+/** The shelf a shopper sees. Hidden products are absent even on an admin session. */
+export async function getPublicShopProducts(options?: {
+  view?: "storefront";
+  queryKey?: readonly unknown[];
+}): Promise<MipoProduct[]> {
+  if (options?.view === "storefront") {
+    return visibleShopProducts(await getShopProducts(options));
+  }
+  return visibleShopProducts(await getShopProducts());
 }
 
 export interface MipoProductCategory {

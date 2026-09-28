@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
-    <title>MIPO — My Precious One</title>
+    <title>MIPO — הבית של חיית המחמד</title>
     <meta name="description" content="MIPO היא אפליקציה לניהול החיים עם חיית המחמד: פרופיל, טיפול, תזכורות, קהילה וחנות.">
     <meta name="author" content="MIPO" />
     <!-- Which frontend build this is. Lets anyone compare what their browser is
@@ -15,6 +15,29 @@
     
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#6C63FF" />
+    <style>
+      /* First paint, before the stylesheet. Same shell as --mipo-soft.
+         Nothing is drawn on it: no mark, no spinner, no caption. */
+      html { color-scheme: light; background: #f6f6f4; }
+      html.dark { color-scheme: dark; background: #1f1f23; }
+      body, #root {
+        margin: 0;
+        min-height: 100%;
+        background: #f6f6f4;
+      }
+      html.dark body, html.dark #root {
+        background: #1f1f23;
+      }
+    </style>
+    <script>
+      try {
+        var storedTheme = localStorage.getItem("mipo-theme");
+        var systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        if (storedTheme === "dark" || (storedTheme !== "light" && systemDark)) {
+          document.documentElement.classList.add("dark");
+        }
+      } catch (e) {}
+    </script>
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="MIPO" />
@@ -23,6 +46,7 @@
     
     <!-- Favicon -->
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     
@@ -35,37 +59,26 @@
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="MIPO" />
     <meta property="og:locale" content="he_IL" />
-    <meta property="og:title" content="MIPO — My Precious One">
-    <meta property="og:description" content="אפליקציה לניהול החיים עם חיית המחמד: פרופיל, טיפול, תזכורות, קהילה וחנות.">
-    <meta property="og:image" content="https://mipo.pet/pwa-512x512.png" />
+    <meta property="og:title" content="MIPO — הבית של חיית המחמד">
+    <meta property="og:description" content="MIPO היא החנות והבית של חיית המחמד: מזון, ציוד, פרופיל וטיפול במקום אחד.">
+    <meta property="og:image" content="https://mipo.pet/og-default.png" />
     <meta property="og:url" content="https://mipo.pet/" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@MIPO" />
-    <meta name="twitter:title" content="MIPO — My Precious One">
-    <meta name="twitter:description" content="אפליקציה לניהול החיים עם חיית המחמד: פרופיל, טיפול, תזכורות, קהילה וחנות.">
-    <meta name="twitter:image" content="https://mipo.pet/pwa-512x512.png" />
+    <meta name="twitter:title" content="MIPO — הבית של חיית המחמד">
+    <meta name="twitter:description" content="MIPO היא החנות והבית של חיית המחמד: מזון, ציוד, פרופיל וטיפול במקום אחד.">
+    <meta name="twitter:image" content="https://mipo.pet/og-default.png" />
     
     <!-- Structured Data -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebApplication",
+      "@type": "WebSite",
       "name": "MIPO",
-      "description": "My Precious One - ניהול, טיפול, קהילה וחנות לחיית המחמד",
-      "url": "https://mipo.pet",
-      "applicationCategory": "LifestyleApplication",
-      "operatingSystem": "Web",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "ILS"
-      },
-      "author": {
-        "@type": "Organization",
-        "name": "MIPO"
-      }
+      "description": "MIPO היא החנות והבית של חיית המחמד: מזון, ציוד, פרופיל וטיפול במקום אחד.",
+      "url": "https://mipo.pet/"
     }
     </script>
   </head>

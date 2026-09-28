@@ -183,10 +183,11 @@ dbTest("a new admin created the existing way gets NULL, not a Seller", async () 
 
 dbTest("the login and session column list still resolves", async () => {
   await withDb(async (client) => {
-    // Exactly the shared adminUserSelect list from server/src/index.js.
+    // Exactly the shared adminUserSelect list from server/src/index.js,
+    // including the two-factor columns migration 0061 adds.
     await assert.doesNotReject(() => client.query(
       `select id, email, display_name, role, is_active,
-              must_change_password, created_at, updated_at, last_login_at
+              must_change_password, totp_enrolled_at, created_at, updated_at, last_login_at
          from public.admin_users limit 1`,
     ));
   });

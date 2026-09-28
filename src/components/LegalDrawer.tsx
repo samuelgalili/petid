@@ -3,16 +3,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { ACCESSIBILITY_EMAIL, VAT_PERCENT, cancellationChannels, contactLines } from "@/lib/siteContact";
 
 const legalContent: Record<string, { he: { title: string; body: string }; en: { title: string; body: string } }> = {
   accessibility: {
     he: {
       title: "הצהרת נגישות",
-      body: `MIPO מחויבת להנגשת האפליקציה לכלל המשתמשים, לרבות אנשים עם מוגבלויות.\n\nאנו פועלים בהתאם לתקן הישראלי 5568 ולהנחיות WCAG 2.1 ברמה AA.\n\nאם נתקלתם בבעיית נגישות, אנא פנו אלינו:\nדוא"ל: accessibility@mipo.pet\nטלפון: 03-1234567\n\nאנו מתחייבים לטפל בכל פניה בתוך 7 ימי עסקים.`,
+      body: `MIPO מחויבת להנגשת האפליקציה לכלל המשתמשים, לרבות אנשים עם מוגבלויות.\n\nאנו פועלים בהתאם לתקן הישראלי 5568 ולהנחיות WCAG 2.1 ברמה AA.\n\nאם נתקלתם בבעיית נגישות, אנא פנו אלינו:\n${contactLines("he", ACCESSIBILITY_EMAIL)}\n\nאנו מתחייבים לטפל בכל פניה בתוך 7 ימי עסקים.`,
     },
     en: {
       title: "Accessibility Statement",
-      body: `MIPO is committed to making the application accessible to all users, including people with disabilities.\n\nWe comply with Israeli Standard 5568 and WCAG 2.1 Level AA guidelines.\n\nIf you encounter an accessibility issue, please contact us:\nEmail: accessibility@mipo.pet\nPhone: 03-1234567\n\nWe commit to addressing every inquiry within 7 business days.`,
+      body: `MIPO is committed to making the application accessible to all users, including people with disabilities.\n\nWe comply with Israeli Standard 5568 and WCAG 2.1 Level AA guidelines.\n\nIf you encounter an accessibility issue, please contact us:\n${contactLines("en", ACCESSIBILITY_EMAIL)}\n\nWe commit to addressing every inquiry within 7 business days.`,
     },
   },
   "club-terms": {
@@ -48,11 +49,11 @@ const legalContent: Record<string, { he: { title: string; body: string }; en: { 
   "consumer-protection": {
     he: {
       title: "זכויות צרכן ומדיניות ביטול",
-      body: `מדיניות ביטול והחזרים — בהתאם לחוק הגנת הצרכן, התשמ"א-1981\n\n1. זכות ביטול עסקה:\nבהתאם לסעיף 14ג לחוק, הצרכן רשאי לבטל עסקה תוך 14 ימים מיום קבלת המוצר או מיום קבלת מסמך הגילוי (לפי המאוחר), בתנאי שהמוצר לא נפגם ולא נעשה בו שימוש.\n\n2. ביטול עסקת מרחוק:\nעסקאות שבוצעו באמצעות האפליקציה נחשבות עסקאות מרחוק. ניתן לבטלן תוך 14 ימים מיום קבלת המוצר, בכפוף לדמי ביטול של עד 5% ממחיר העסקה או 100 ש"ח — הנמוך מביניהם.\n\n3. החזרים:\nזיכוי יינתן באמצעי התשלום המקורי תוך 14 ימי עסקים ממועד אישור הביטול.\n\n4. חריגים:\nמוצרים פסידים (מזון לחיות מחמד שנפתח), מוצרים מותאמים אישית, ושירותים שכבר סופקו — אינם ניתנים לביטול.\n\n5. הגשת בקשת ביטול:\nניתן לפנות באמצעות:\n• אימייל: support@mipo.pet\n• טלפון: 03-1234567\n• דרך אזור "הגדרות > ניהול מידע" באפליקציה\n\n6. אחריות על מוצרים:\nכל המוצרים הנמכרים באפליקציה כפופים לתקנות אחריות ושירות לאחר מכירה בהתאם לחוק.\n\n7. מחירים ותשלום:\nכל המחירים כוללים מע"מ (17%). תשלום מבוצע בצורה מאובטחת דרך שער תשלומים מורשה.`,
+      body: `מדיניות ביטול והחזרים — בהתאם לחוק הגנת הצרכן, התשמ"א-1981\n\n1. זכות ביטול עסקה:\nבהתאם לסעיף 14ג לחוק, הצרכן רשאי לבטל עסקה תוך 14 ימים מיום קבלת המוצר או מיום קבלת מסמך הגילוי (לפי המאוחר), בתנאי שהמוצר לא נפגם ולא נעשה בו שימוש.\n\n2. ביטול עסקת מרחוק:\nעסקאות שבוצעו באמצעות האפליקציה נחשבות עסקאות מרחוק. ניתן לבטלן תוך 14 ימים מיום קבלת המוצר, בכפוף לדמי ביטול של עד 5% ממחיר העסקה או 100 ש"ח — הנמוך מביניהם.\n\n3. החזרים:\nזיכוי יינתן באמצעי התשלום המקורי תוך 14 ימי עסקים ממועד אישור הביטול.\n\n4. חריגים:\nמוצרים פסידים (מזון לחיות מחמד שנפתח), מוצרים מותאמים אישית, ושירותים שכבר סופקו — אינם ניתנים לביטול.\n\n5. הגשת בקשת ביטול:\nניתן לפנות באמצעות:\n${cancellationChannels("he")}\n\n6. אחריות על מוצרים:\nכל המוצרים הנמכרים באפליקציה כפופים לתקנות אחריות ושירות לאחר מכירה בהתאם לחוק.\n\n7. מחירים ותשלום:\nכל המחירים כוללים מע"מ (${VAT_PERCENT}%). תשלום מבוצע בצורה מאובטחת דרך שער תשלומים מורשה.`,
     },
     en: {
       title: "Consumer Rights & Cancellation Policy",
-      body: `Cancellation & Refund Policy — Per Israeli Consumer Protection Law, 5741-1981\n\n1. Right to Cancel:\nPer Section 14C, consumers may cancel within 14 days of receiving the product or disclosure document (whichever is later), provided the product is undamaged and unused.\n\n2. Distance Transactions:\nPurchases made via the app are distance transactions. Cancellation is allowed within 14 days, subject to a fee of up to 5% of the price or NIS 100 — whichever is lower.\n\n3. Refunds:\nCredits are issued to the original payment method within 14 business days of cancellation approval.\n\n4. Exceptions:\nPerishable goods (opened pet food), custom products, and already-delivered services are non-refundable.\n\n5. How to Cancel:\n• Email: support@mipo.pet\n• Phone: 03-1234567\n• In-app: Settings > Data Management\n\n6. Product Warranty:\nAll products are subject to post-sale warranty regulations under the law.\n\n7. Pricing:\nAll prices include VAT (17%). Payment is processed securely through a licensed payment gateway.`,
+      body: `Cancellation & Refund Policy — Per Israeli Consumer Protection Law, 5741-1981\n\n1. Right to Cancel:\nPer Section 14C, consumers may cancel within 14 days of receiving the product or disclosure document (whichever is later), provided the product is undamaged and unused.\n\n2. Distance Transactions:\nPurchases made via the app are distance transactions. Cancellation is allowed within 14 days, subject to a fee of up to 5% of the price or NIS 100 — whichever is lower.\n\n3. Refunds:\nCredits are issued to the original payment method within 14 business days of cancellation approval.\n\n4. Exceptions:\nPerishable goods (opened pet food), custom products, and already-delivered services are non-refundable.\n\n5. How to Cancel:\n${cancellationChannels("en")}\n\n6. Product Warranty:\nAll products are subject to post-sale warranty regulations under the law.\n\n7. Pricing:\nAll prices include VAT (${VAT_PERCENT}%). Payment is processed securely through a licensed payment gateway.`,
     },
   },
 };
@@ -110,9 +111,21 @@ export const LegalDrawer = () => {
               </button>
             </div>
 
-            {/* Content */}
-            <ScrollArea className="flex-1 px-5 pb-8">
-              <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+            {/* Radix defaults this viewport to dir=ltr, which reverses Hebrew
+                numbered lines ("1. זכות ביטול עסקה:" paints as ":זכות ביטול עסקה .1").
+                Every policy in this drawer shares the scroll area. */}
+            <ScrollArea
+              data-testid="legal-policy-scroll"
+              className="flex-1 px-5 pb-8"
+              dir={direction}
+            >
+              <p
+                data-testid="legal-policy-body"
+                dir={direction}
+                className={`text-sm text-muted-foreground leading-relaxed whitespace-pre-line ${
+                  direction === "rtl" ? "text-right" : "text-left"
+                }`}
+              >
                 {localized.body}
               </p>
             </ScrollArea>

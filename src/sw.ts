@@ -4,7 +4,7 @@ import { CacheableResponsePlugin } from "workbox-cacheable-response";
 import { ExpirationPlugin } from "workbox-expiration";
 import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from "workbox-precaching";
 import { NavigationRoute, registerRoute } from "workbox-routing";
-import { CacheFirst, NetworkFirst } from "workbox-strategies";
+import { CacheFirst, NetworkOnly } from "workbox-strategies";
 
 type PushPayload = {
   title?: string;
@@ -24,23 +24,36 @@ cleanupOutdatedCaches();
 
 registerRoute(
   new NavigationRoute(createHandlerBoundToURL("/index.html"), {
-    denylist: [/^\/~oauth/, /^\/api\//],
-  }),
-);
-
-registerRoute(
-  ({ url, request }) => request.method === "GET"
-    && url.origin === sw.location.origin
-    && /^\/api\/(?:products|breeds)(?:\/|$)/i.test(url.pathname),
-  new NetworkFirst({
-    cacheName: "public-api-cache",
-    networkTimeoutSeconds: 10,
-    plugins: [
-      new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 5 * 60 }),
-      new CacheableResponsePlugin({ statuses: [0, 200] }),
+    // sitemap.xml and robots.txt are documents, not app screens. API, checkout
+    // and the Cardcom return pages are never answered from the precached shell.
+    denylist: [
+      /^\/~oauth/,
+      /^\/api\//,
+      /^\/sitemap\.xml$/,
+      /^\/robots\.txt$/,
+      /^\/checkout(?:\/|$)/,
+      /^\/payment-success(?:\/|$)/,
+      /^\/payment-failed(?:\/|$)/,
+      /^\/order-confirmation(?:\/|$)/,
     ],
   }),
 );
+
+// Nothing under /api is cached, including payments and the Cardcom webhook.
+// A catalogue response kept in the worker is how a deploy could keep serving
+// last week's prices, and a cached webhook response would be worse.
+const networkOnly = new NetworkOnly();
+const apiMethods = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"] as const;
+for (const method of apiMethods) {
+  registerRoute(
+    ({ url }) => url.origin === sw.location.origin && (
+      url.pathname.startsWith("/api/")
+      || /^\/(?:checkout|payment-success|payment-failed|order-confirmation)(?:\/|$)/.test(url.pathname)
+    ),
+    networkOnly,
+    method,
+  );
+}
 
 registerRoute(
   ({ url }) => url.origin === "https://fonts.googleapis.com" || url.origin === "https://fonts.gstatic.com",
@@ -73,7 +86,7 @@ sw.addEventListener("activate", (event) => {
     const keys = await caches.keys();
     await Promise.all(
       keys
-        .filter((key) => key === "api-cache" || /^mipo-v\d+$/.test(key))
+        .filter((key) => key === "api-cache" || key === "public-api-cache" || /^mipo-v\d+$/.test(key))
         .map((key) => caches.delete(key)),
     );
     await sw.clients.claim();

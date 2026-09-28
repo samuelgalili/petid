@@ -65,8 +65,10 @@ Attach a static IP — the deploy targets it by address.
 ## 2 · DNS
 
 Point `staging.mipo.pet` at the static IP (an `A` record at Namecheap). Do not
-create a `www.staging` record; the Caddyfile only asks for a certificate for the
-name in `MIPO_SITE_ADDRESS`.
+create a `www.staging` record. Leave `MIPO_WWW_ADDRESS` unset: the Caddy
+entrypoint asks Let's Encrypt for `www.mipo.pet` only when `MIPO_SITE_ADDRESS`
+is the production apex. On staging it keeps a localhost placeholder, so this
+host does not request the public www certificate.
 
 ## 3 · Bootstrap the host
 
@@ -103,7 +105,8 @@ PORT=3000
 MIPO_SITE_ADDRESS=staging.mipo.pet
 MIPO_ROBOTS_POLICY=noindex, nofollow
 PUBLIC_APP_URL=https://staging.mipo.pet
-# MIPO_WWW_ADDRESS deliberately unset
+# MIPO_WWW_ADDRESS left unset. The entrypoint then uses a localhost placeholder
+# because MIPO_SITE_ADDRESS is not mipo.pet. Do not set www.mipo.pet here.
 
 # Containerised database
 STAGING_DB_NAME=mipo

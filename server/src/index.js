@@ -28,11 +28,13 @@ import {
   toHistoryEntry,
 } from "./ownershipReview.js";
 import {
+  cardcomAttemptToken,
+  cardcomWebhookAuthorized,
   getCardcomString,
-  isSuccessfulCardcomCharge,
-  parseCardcomReturnValue,
-  parseVerifiedCardcomIndicator,
+  readVerifiedCardcomNotification,
+  settleCardcomNotification,
 } from "./cardcom.js";
+import { shouldRequestVerificationAfterOrder } from "./customerOrderAccess.js";
 import {
   FixedWindowRateLimiter,
   contentTypeForSafeExtension,
@@ -42,6 +44,15 @@ import {
   verifyOpaqueToken,
 } from "./security.js";
 import { checkDatabaseHealth, checkSchemaHealth } from "./health.js";
+import {
+  RESEND_TESTING_SENDER,
+  configNamesForProviderStatus,
+  describeEmailDelivery,
+  emailFailureLogLine,
+  redactEmailLog,
+  resolveFromEmail,
+  summarizeProviderFailure,
+} from "./emailDelivery.js";
 import { createProviderRegistry } from "./aiProviders.js";
 import { createAiGateway, newRequestId, newTraceId } from "./aiGateway.js";
 import {
@@ -62,6 +73,24 @@ import {
 } from "./imagePipeline.js";
 import { createGeminiBackgroundRemover } from "./backgroundRemoval.js";
 import { hashPassword, verifyPassword } from "./passwords.js";
+import { getSecretBox, parseSecretKey } from "./secretBox.js";
+import { buildOtpAuthUrl, verifyTotp } from "./totp.js";
+import {
+  ADMIN_MFA_VERIFY_LIMIT,
+  adminSessionGate,
+  confirmTotpEnrolment,
+  consumeAdminRecoveryCode,
+  countAdminRecoveryCodesRemaining,
+  issueAdminRecoveryCodes,
+  loadAdminTotpSecret,
+  markAdminSessionMfaVerified,
+  mfaStepUpIsFresh,
+  normalizeUserAgent,
+  publicMfaFields,
+  readAdminTwoFactorFlags,
+  recordAdminTotpStep,
+  storePendingTotpSecret,
+} from "./adminTwoFactor.js";
 import {
   ADMIN_PERMISSIONS,
   ADMIN_ROLES,
@@ -71,6 +100,11 @@ import {
   hasAdminPermission,
 } from "./adminPermissions.js";
 import { adminProductView } from "./sellerScope.js";
+import {
+  CHECKOUT_UNAVAILABLE_HE,
+  matchesCategory,
+  publiclyVisibleProduct,
+} from "./shopVisibility.js";
 import { isSellerEligible } from "./sellerEligibility.js";
 import { commissionForLine, readPlatformCommissionRate } from "./platformCommission.js";
 import { createProductIntakeRoutes } from "./productIntakeRoutes.js";
@@ -105,6 +139,19 @@ import {
   startDispatcher,
 } from "./events.js";
 import { createPetFactService } from "./petFactService.js";
+import { createPublicPageRenderer, listInStockSitemapProducts } from "./publicPages.js";
+import { pageWindow, pickStorefrontProduct } from "./storefrontProduct.js";
+import {
+  authorizeOwnerQa,
+  createOwnerNotifier,
+  qaEventFromBody,
+  reportDeclinedPayment,
+  reportNewUser,
+  reportPaidOrder,
+  reportServerError,
+  reportUnsettledPayment,
+  schedulePaidOrderNotice,
+} from "./ownerNotify.js";
 
 const port = Number(process.env.PORT || 3000);
 const databaseUrl = process.env.DATABASE_URL;
@@ -132,16 +179,15 @@ const resendApiKey = process.env.RESEND_API_KEY;
  * THE DEFAULT IS A TESTING ADDRESS AND IT REACHES EXACTLY ONE PERSON.
  * Resend allows onboarding@resend.dev only to the address the Resend account
  * itself is registered to; a send to anybody else is refused with 403. So a
- * deployment that sets RESEND_API_KEY and forgets this one passes every
- * start-up check, logs nothing a person reads, and silently fails to verify
- * every customer who is not the owner - which is what "no verification email"
- * looks like from outside.
+ * deployment that sets RESEND_API_KEY and leaves PASSWORD_RESET_FROM_EMAIL
+ * on the testing sender passes every start-up check and then tells the new
+ * customer the verification mail was not sent.
  *
  * It stays the default for local work, where the alternative is no mail at
- * all. Production refuses it below.
+ * all. Production reports it; it does not refuse to boot.
  */
-export const RESEND_TESTING_SENDER = "onboarding@resend.dev";
-const passwordResetFromEmail = process.env.PASSWORD_RESET_FROM_EMAIL || `MIPO <${RESEND_TESTING_SENDER}>`;
+export { RESEND_TESTING_SENDER };
+const passwordResetFromEmail = resolveFromEmail(process.env.PASSWORD_RESET_FROM_EMAIL);
 
 /**
  * Whether outbound mail can actually reach a customer.
@@ -160,16 +206,11 @@ const passwordResetFromEmail = process.env.PASSWORD_RESET_FROM_EMAIL || `MIPO <$
  * somebody looks, and the log line below is for whoever is watching a deploy.
  */
 export const emailDeliveryState = () => {
-  if (!resendApiKey) {
-    return { state: "unknown", detail: "לא הוגדר מפתח שליחה" };
-  }
-  if (passwordResetFromEmail.includes(RESEND_TESTING_SENDER)) {
-    return {
-      state: "down",
-      detail: "כתובת השולח היא כתובת הבדיקה של Resend — מגיעה רק לבעל החשבון",
-    };
-  }
-  return { state: "ok", detail: `נשלח מ-${passwordResetFromEmail}` };
+  const described = describeEmailDelivery({
+    apiKey: resendApiKey,
+    fromEmail: passwordResetFromEmail,
+  });
+  return { state: described.state, detail: described.detail };
 };
 // A verification link is followed at leisure, often on another device, so it
 // lives far longer than a password reset code.
@@ -181,6 +222,19 @@ const adminSessionHours = Number.isFinite(configuredAdminSessionHours) && config
   ? configuredAdminSessionHours
   : 8;
 const adminSessionMs = adminSessionHours * 60 * 60 * 1000;
+// Off unless set. An existing admin is never asked for a code while this is
+// off, and the server still boots without SECRET_ENCRYPTION_KEY.
+const adminTwoFactorFlags = readAdminTwoFactorFlags(process.env);
+const adminTwoFactorEnabled = adminTwoFactorFlags.enabled;
+const adminTwoFactorRequireEnrollment = adminTwoFactorFlags.requireEnrollment;
+// Re-proving the second factor for a sensitive action: long enough that an
+// admin working through the settings screens is not challenged repeatedly,
+// short enough that an unattended laptop is not a standing authorisation.
+const configuredAdminStepUpMinutes = Number(process.env.ADMIN_MFA_STEP_UP_MINUTES || 15);
+const adminStepUpMs = (Number.isFinite(configuredAdminStepUpMinutes) && configuredAdminStepUpMinutes > 0
+  ? configuredAdminStepUpMinutes
+  : 15) * 60 * 1000;
+const adminTotpIssuer = process.env.ADMIN_TOTP_ISSUER || "MIPO";
 const configuredUserSessionDays = Number(process.env.USER_SESSION_DAYS || 30);
 const userSessionDays = Number.isFinite(configuredUserSessionDays) && configuredUserSessionDays > 0
   ? configuredUserSessionDays
@@ -232,9 +286,13 @@ if (!databaseUrl) {
 {
   // Said at start-up because a mail system that reaches one person looks
   // exactly like a working one until a customer registers.
-  const mail = emailDeliveryState();
-  if (mail.state !== "ok") {
+  const mail = describeEmailDelivery({
+    apiKey: resendApiKey,
+    fromEmail: passwordResetFromEmail,
+  });
+  if (!mail.configured) {
     console.error(`[mipo] OUTBOUND EMAIL IS NOT DELIVERABLE: ${mail.detail}. `
+      + `Missing or unusable: ${mail.missing.join(", ")}. `
       + "Set PASSWORD_RESET_FROM_EMAIL to an address on a domain verified in Resend.");
   }
 }
@@ -247,6 +305,19 @@ if (isProduction) {
   ].filter(([, value]) => !value).map(([name]) => name);
   if (missingRequiredConfiguration.length > 0) {
     throw new Error(`Missing required production configuration: ${missingRequiredConfiguration.join(", ")}`);
+  }
+  // Only when two-factor is actually on. Requiring the key at every boot would
+  // take the API down on the deploy that adds the code, before the owner has
+  // put a key in SSM. With the flag off the key is unused and login is unchanged.
+  if (adminTwoFactorEnabled) {
+    try {
+      parseSecretKey(process.env.SECRET_ENCRYPTION_KEY, "SECRET_ENCRYPTION_KEY");
+    } catch (error) {
+      throw new Error(
+        `ADMIN_2FA_ENABLED requires a valid SECRET_ENCRYPTION_KEY (${error.message}). `
+        + "Generate one with: openssl rand -base64 32",
+      );
+    }
   }
   if (passwordResetDebug) {
     throw new Error("PASSWORD_RESET_DEBUG must be disabled in production");
@@ -280,6 +351,29 @@ const pool = new Pool({
   max: Number(process.env.DB_POOL_MAX || 8),
   connectionTimeoutMillis: Number(process.env.DB_CONNECTION_TIMEOUT_MS || 5000),
 });
+
+// Owner WhatsApp. A no-op until the Twilio settings are present. notify()
+// returns immediately; a slow or failed send cannot delay the request that
+// triggered it. See ownerNotify.js.
+const ownerNotifier = createOwnerNotifier({ env: process.env });
+const notifyOwner = (event) => ownerNotifier.notify(event);
+
+const notifyOwnerPaidOrder = (orderId, orderNumber, total, lines) => {
+  if (Array.isArray(lines)) {
+    reportPaidOrder(notifyOwner, { orderId, orderNumber, total, lines });
+    return;
+  }
+  schedulePaidOrderNotice(notifyOwner, async () => {
+    const result = await pool.query(
+      "select product_name, quantity from public.order_items where order_id = $1 order by created_at asc",
+      [orderId],
+    );
+    return result.rows.map((row) => ({
+      name: row.product_name,
+      quantity: row.quantity,
+    }));
+  }, { orderId, orderNumber, total });
+};
 
 // Every AI call in the API goes through this gateway. Features never hold a
 // provider key or talk to a provider directly.
@@ -410,9 +504,27 @@ const serializeAdmin = (row) => {
     permissions: getAdminPermissions(row.role),
     identity_source: "session",
     must_change_password: Boolean(row.must_change_password),
+    ...publicMfaFields({
+      enabled: adminTwoFactorEnabled,
+      requireEnrollment: adminTwoFactorRequireEnrollment,
+      enrolled: Boolean(row.totp_enrolled_at),
+      mfaVerifiedAt: row.mfa_verified_at || null,
+    }),
     created_at: row.created_at || null,
     last_login_at: row.last_login_at || null,
   };
+};
+
+// session_token_hash and mfa_verified_at stay on the request. They are not
+// part of the JSON a browser receives.
+const toPublicAdmin = (admin) => {
+  if (!admin) return null;
+  const {
+    session_token_hash: _sessionTokenHash,
+    mfa_verified_at: _mfaVerifiedAt,
+    ...publicAdmin
+  } = admin;
+  return publicAdmin;
 };
 
 const adminUserSelect = `
@@ -423,6 +535,7 @@ const adminUserSelect = `
   business_id,
   is_active,
   must_change_password,
+  totp_enrolled_at,
   created_at,
   updated_at,
   last_login_at
@@ -457,6 +570,7 @@ const enforceRateLimit = (request, response, scope, options, identity = "") => {
 
 const rateLimits = {
   adminLogin: { limit: 8, windowMs: 15 * 60 * 1000 },
+  adminMfaVerify: ADMIN_MFA_VERIFY_LIMIT,
   userLogin: { limit: 20, windowMs: 15 * 60 * 1000 },
   signup: { limit: 8, windowMs: 60 * 60 * 1000 },
   passwordResetRequest: { limit: 5, windowMs: 60 * 60 * 1000 },
@@ -475,6 +589,7 @@ const rateLimits = {
   documentUpload: { limit: 20, windowMs: 60 * 60 * 1000 },
   couponValidate: { limit: 30, windowMs: 10 * 60 * 1000 },
   publicPetScan: { limit: 60, windowMs: 60 * 60 * 1000 },
+  ownerQa: { limit: 30, windowMs: 10 * 60 * 1000 },
 };
 
 const getPublicBaseUrl = (request) => {
@@ -546,7 +661,7 @@ const createAdminSession = async (request, adminUserId, db = pool) => {
       adminUserId,
       tokenHash,
       expiresAt,
-      request.headers["user-agent"] || null,
+      normalizeUserAgent(request.headers["user-agent"]),
       getRequestIp(request),
     ],
   );
@@ -569,9 +684,12 @@ const getAdminFromSession = async (request) => {
         au.business_id,
         au.is_active,
         au.must_change_password,
+        au.totp_enrolled_at,
         au.created_at,
         au.updated_at,
-        au.last_login_at
+        au.last_login_at,
+        admin_session.user_agent as session_user_agent,
+        admin_session.mfa_verified_at
       from public.admin_sessions admin_session
       join public.admin_users au on au.id = admin_session.admin_user_id
       where admin_session.session_token_hash = $1
@@ -583,13 +701,32 @@ const getAdminFromSession = async (request) => {
   );
 
   if (result.rowCount === 0) return null;
+  const row = result.rows[0];
+
+  // Only while two-factor is on. With the flag off a session is accepted the
+  // way it always was, including from a client whose User-Agent has changed.
+  if (adminTwoFactorEnabled) {
+    const presented = normalizeUserAgent(request.headers["user-agent"]);
+    if (presented !== (row.session_user_agent || null)) {
+      await pool.query(
+        "delete from public.admin_sessions where session_token_hash = $1",
+        [tokenHash],
+      );
+      console.warn("Admin session rejected: user agent did not match the session it was issued to");
+      return null;
+    }
+  }
 
   await pool.query(
     "update public.admin_sessions set last_seen_at = now() where session_token_hash = $1",
     [tokenHash],
   );
 
-  return serializeAdmin(result.rows[0]);
+  return {
+    ...serializeAdmin(row),
+    session_token_hash: tokenHash,
+    mfa_verified_at: row.mfa_verified_at || null,
+  };
 };
 
 // The x-admin-api-key identity.
@@ -612,20 +749,73 @@ const apiKeyAdminIdentity = () => ({
 const matchesAdminApiKey = (request) =>
   Boolean(adminApiKey) && secretsEqual(request.headers["x-admin-api-key"], adminApiKey);
 
-const requireAdmin = async (request, response) => {
+const requireAdmin = async (request, response, { allowPendingMfa = false } = {}) => {
   if (matchesAdminApiKey(request)) {
-    request.admin = apiKeyAdminIdentity();
+    // The service key is a machine caller. There is no person to challenge,
+    // and it is not an enrolled admin session.
+    request.admin = {
+      ...apiKeyAdminIdentity(),
+      mfa_enrolled: true,
+      mfa_verified_at: new Date().toISOString(),
+    };
     return true;
   }
 
   const admin = await getAdminFromSession(request);
-  if (admin) {
-    request.admin = admin;
-    return true;
+  if (!admin) {
+    sendError(response, 401, "Unauthorized");
+    return false;
   }
 
-  sendError(response, 401, "Unauthorized");
+  request.admin = admin;
+  if (allowPendingMfa || !adminTwoFactorEnabled) return true;
+
+  const gate = adminSessionGate({
+    enabled: adminTwoFactorEnabled,
+    requireEnrollment: adminTwoFactorRequireEnrollment,
+    enrolled: admin.mfa_enrolled,
+    mfaVerifiedAt: admin.mfa_verified_at,
+  });
+  if (gate === "full") return true;
+
+  sendJson(response, 403, {
+    error: gate === "verify"
+      ? "Two-factor verification required"
+      : "Two-factor enrolment required",
+    mfa_required: true,
+    mfa_enrolled: Boolean(admin.mfa_enrolled),
+  });
   return false;
+};
+
+/**
+ * Step-up for a sensitive action, and only for an account that has enrolled.
+ * With the flag off, or before enrolment, this is a no-op so password change
+ * keeps working exactly as it does today.
+ */
+const requireFreshAdminMfa = async (request, response) => {
+  if (!adminTwoFactorEnabled || !request.admin?.mfa_enrolled) return true;
+  if (request.admin.id === "api-key") return true;
+
+  if (!mfaStepUpIsFresh(request.admin.mfa_verified_at, Date.now(), adminStepUpMs)) {
+    sendJson(response, 403, {
+      error: "Re-enter your authentication code to continue",
+      mfa_step_up_required: true,
+      max_age_seconds: Math.floor(adminStepUpMs / 1000),
+    });
+    return false;
+  }
+
+  return true;
+};
+
+const requireSecretBox = (response) => {
+  const secretBox = getSecretBox();
+  if (!secretBox) {
+    sendError(response, 503, "Two-factor authentication is not configured on this server");
+    return null;
+  }
+  return secretBox;
 };
 
 /**
@@ -1253,6 +1443,11 @@ const signupUser = async (request, body) => {
     const token = await createUserSession(request, userResult.rows[0].id, client);
     await client.query("commit");
 
+    reportNewUser(notifyOwner, {
+      userId: userResult.rows[0].id,
+      displayName: fullName,
+    });
+
     // Identity now lives on app_users, so merge it back for the response shape.
     const profile = serializeProfile({
       ...profileResult.rows[0],
@@ -1357,8 +1552,17 @@ const hashPasswordResetOtp = (email, otp) => createHmac("sha256", adminApiKey ||
   .update(`${normalizeEmail(email)}:${String(otp || "")}`)
   .digest("hex");
 
+const logEmailTransportFailure = (kind, status, body) => {
+  const summary = summarizeProviderFailure(status, body);
+  const configNames = configNamesForProviderStatus(status, passwordResetFromEmail);
+  console.error(emailFailureLogLine(kind, summary, configNames));
+};
+
 const sendPasswordResetEmail = async (request, email, otp) => {
-  if (!resendApiKey) return { sent: false, reason: "not_configured" };
+  if (!resendApiKey) {
+    console.error("[mipo] password reset email was not sent: missing config RESEND_API_KEY");
+    return { sent: false, reason: "not_configured" };
+  }
 
   const resetUrl = new URL("/reset-password", `${getPublicBaseUrl(request)}/`);
   resetUrl.searchParams.set("email", email);
@@ -1390,13 +1594,13 @@ const sendPasswordResetEmail = async (request, email, otp) => {
       }),
     }, 15_000);
   } catch (error) {
-    console.error("Password reset email request failed:", error.message);
+    console.error("[mipo] password reset email request failed:", redactEmailLog(error.message));
     return { sent: false, reason: "send_failed" };
   }
 
   if (!response.ok) {
     const details = await response.text().catch(() => "");
-    console.error("Password reset email failed:", response.status, details.slice(0, 300));
+    logEmailTransportFailure("password reset", response.status, details);
     return { sent: false, reason: "send_failed" };
   }
 
@@ -1408,7 +1612,14 @@ const hashEmailVerificationOtp = (email, otp) => createHmac("sha256", adminApiKe
   .digest("hex");
 
 const sendEmailVerification = async (request, email, otp, fullName) => {
-  if (!resendApiKey) return { sent: false, reason: "not_configured" };
+  if (!resendApiKey) {
+    console.error("[mipo] verification email was not sent: missing config RESEND_API_KEY");
+    return { sent: false, reason: "not_configured" };
+  }
+  if (passwordResetFromEmail.includes(RESEND_TESTING_SENDER)) {
+    console.error("[mipo] verification email: PASSWORD_RESET_FROM_EMAIL is the Resend testing sender. "
+      + "Resend delivers it only to the account owner.");
+  }
 
   const verifyUrl = new URL("/verify-email", `${getPublicBaseUrl(request)}/`);
   verifyUrl.searchParams.set("email", email);
@@ -1443,13 +1654,13 @@ const sendEmailVerification = async (request, email, otp, fullName) => {
       }),
     }, 15_000);
   } catch (error) {
-    console.error("Verification email request failed:", error.message);
+    console.error("[mipo] verification email request failed:", redactEmailLog(error.message));
     return { sent: false, reason: "send_failed" };
   }
 
   if (!response.ok) {
     const details = await response.text().catch(() => "");
-    console.error("Verification email failed:", response.status, details.slice(0, 300));
+    logEmailTransportFailure("verification", response.status, details);
     /*
      * The status is carried out, not just logged.
      *
@@ -1519,12 +1730,18 @@ const issueEmailVerification = async (request, user, { force = false } = {}) => 
       [email, user.id, hashEmailVerificationOtp(email, otp), expiresAt],
     );
 
-    await pool.query(
-      "update public.app_users set email_verification_last_sent_at = now(), updated_at = now() where id = $1",
-      [user.id],
-    );
-
     const delivery = await sendEmailVerification(request, email, otp, user.full_name);
+    // Only a mail the provider accepted starts the cooldown. Stamping it
+    // first turned a refused first send into a 429 on the retry the screen
+    // just offered.
+    if (delivery.sent) {
+      await pool.query(
+        "update public.app_users set email_verification_last_sent_at = now(), updated_at = now() where id = $1",
+        [user.id],
+      ).catch((error) => {
+        console.error("[mipo] verification email was sent but the cooldown was not recorded:", error.message);
+      });
+    }
     return {
       sent: delivery.sent,
       reason: delivery.reason,
@@ -5823,18 +6040,45 @@ const resolveMarketplaceOrderItem = async (client, requestedItem) => {
   };
 };
 
+// shop_hidden is selected when 0061 is applied. A savepoint keeps a database
+// that has not migrated yet from aborting the order transaction: the column
+// is then treated as visible, which is what every row was before the column
+// existed. Once the column exists, a hidden row is refused below.
+const selectBusinessProductForOrder = async (client, productId) => {
+  await client.query("savepoint manual_product_visibility");
+  try {
+    const result = await client.query(
+      `
+        select id, name, image_url, price, sale_price, in_stock, sku, weight, weight_unit,
+               coalesce(shop_hidden, false) as shop_hidden
+        from public.business_products
+        where id = $1
+        for share
+      `,
+      [productId],
+    );
+    await client.query("release savepoint manual_product_visibility");
+    return result;
+  } catch (error) {
+    await client.query("rollback to savepoint manual_product_visibility");
+    if (error.code !== "42703") throw error;
+    return client.query(
+      `
+        select id, name, image_url, price, sale_price, in_stock, sku, weight, weight_unit,
+               false as shop_hidden
+        from public.business_products
+        where id = $1
+        for share
+      `,
+      [productId],
+    );
+  }
+};
+
 const resolveCatalogOrderItem = async (client, requestedItem) => {
   if (requestedItem.offer_id) return await resolveMarketplaceOrderItem(client, requestedItem);
 
-  const findManual = () => client.query(
-    `
-      select id, name, image_url, price, sale_price, in_stock, sku, weight, weight_unit
-      from public.business_products
-      where id = $1
-      for share
-    `,
-    [requestedItem.product_id],
-  );
+  const findManual = () => selectBusinessProductForOrder(client, requestedItem.product_id);
   const findScraped = () => client.query(
     `
       select
@@ -5883,6 +6127,16 @@ const resolveCatalogOrderItem = async (client, requestedItem) => {
   if (!inStock) {
     const error = new Error("Product is out of stock");
     error.statusCode = 409;
+    throw error;
+  }
+  // Hidden is not out of stock. The row is still in the catalogue, and the
+  // other lines in this request are not this line. Refusing here, before
+  // amounts are computed, means no order is written and the webhook has
+  // nothing new to settle. The client omits the line and checks out the rest.
+  if (source === "manual" && row.shop_hidden === true) {
+    const error = new Error(CHECKOUT_UNAVAILABLE_HE);
+    error.statusCode = 409;
+    error.code = "PRODUCT_UNAVAILABLE";
     throw error;
   }
 
@@ -6222,23 +6476,10 @@ const createOrder = async (body, currentUser = null, eventOrigin = "app", option
     error.statusCode = 400;
     throw error;
   }
-  // An order sends a confirmation, an invoice and delivery updates to the
-  // account's address, so this is the point where the address has to be
-  // proven. Guest checkout is untouched: it has no account to protect, and
-  // its address is entered per order rather than inherited from one.
-  //
-  // An admin placing the order is the exception, and not a loophole: the point
-  // of the gate is that a stranger must not be able to point order mail at an
-  // address they have not proven. An admin taking an order over the phone has
-  // no way to make the customer click a verification link mid-call, and the
-  // person entering the address is a known, audited account rather than an
-  // anonymous one.
-  if (currentUser && !currentUser.email_verified_at && !placedByAdmin) {
-    const error = new Error("Verify your email address before placing an order");
-    error.statusCode = 403;
-    error.code = "email_verification_required";
-    throw error;
-  }
+  // Verification does not block the order. A new customer reaches payment
+  // the same way a guest does. The mail is requested after this function
+  // returns, and a send failure must not roll the order back. Amount checks
+  // below are unchanged.
 
   const accessToken = currentUser ? null : createOpaqueToken();
   const client = await pool.connect();
@@ -6470,6 +6711,20 @@ const createOrder = async (body, currentUser = null, eventOrigin = "app", option
     // failing to cache an address must not turn that into an error.
     if (currentUser?.id) {
       await saveShippingProfile(currentUser.id, shippingAddress).catch(() => {});
+    }
+
+    // Card payments are still pending here. An admin-attested order is already
+    // paid, so this is its successful-payment notice. Cash on delivery is not.
+    if (paymentStatus === "paid") {
+      reportPaidOrder(notifyOwner, {
+        orderId: order.id,
+        orderNumber: order.order_number,
+        total: Number(order.total),
+        lines: orderItems.map((item) => ({
+          name: item.product_name,
+          quantity: item.quantity,
+        })),
+      });
     }
 
     return {
@@ -7030,17 +7285,6 @@ const bulkUpdateOrders = async (ids, updates) => {
   return { updated: result.rowCount };
 };
 
-const verifyCardcomSignature = (rawBody, signature) => {
-  if (!cardcomWebhookSecret) return false;
-  if (!rawBody || !signature) return false;
-
-  const expected = createHmac("sha256", cardcomWebhookSecret)
-    .update(rawBody)
-    .digest("base64");
-
-  return secretsEqual(signature, expected);
-};
-
 const formatCardcomMoney = (value) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed.toFixed(2) : "0.00";
@@ -7104,6 +7348,7 @@ const fetchCardcomLowProfileIndicator = async (lowProfileCode) => {
     TerminalNumber: cardcomTerminal,
     UserName: cardcomUsername,
     LowProfileCode: lowProfileCode,
+    codepage: "65001",
   });
 
   let indicatorResponse;
@@ -7449,9 +7694,15 @@ const handleCardcomWebhook = async (request, url) => {
   const rawBody = request.method === "GET" ? "" : await readRawBody(request);
   const signature = request.headers["x-cardcom-signature"];
   const queryToken = url.searchParams.get("token");
-  const authenticated = secretsEqual(queryToken, cardcomWebhookSecret)
-    || (rawBody && verifyCardcomSignature(rawBody, signature));
-  if (!authenticated) {
+  // Authorize before calling Cardcom. The query string is not evidence of
+  // payment; a wrong token must not become a lookup, a paid order, or a 502
+  // that makes Cardcom retry a request we already rejected.
+  if (!cardcomWebhookAuthorized({
+    queryToken,
+    webhookSecret: cardcomWebhookSecret,
+    rawBody,
+    signature,
+  })) {
     const error = new Error("Invalid CardCom signature");
     error.statusCode = 401;
     throw error;
@@ -7474,55 +7725,53 @@ const handleCardcomWebhook = async (request, url) => {
   }
 
   const indicatorPayload = await fetchCardcomLowProfileIndicator(lowProfileCode);
-  const {
-    operation,
-    chargedAmountMinor,
-    operationResponse,
-    dealResponse,
-    tokenResponse,
-    returnValue,
-  } = parseVerifiedCardcomIndicator(indicatorPayload, {
-    requestedLowProfileCode: lowProfileCode,
+  const opened = readVerifiedCardcomNotification({
     terminalNumber: cardcomTerminal,
+    requestedLowProfileCode: lowProfileCode,
+    indicatorPayload,
   });
-  const { orderId: parsedOrderId, attemptToken } = parseCardcomReturnValue(returnValue);
+  const { parsed, reference } = opened;
   const transactionId = getCardcomString(indicatorPayload, [
     "TranzactionId",
     "TransactionId",
     "InternalDealNumber",
+    "internaldealnumber",
     "DealNumber",
     "LowProfileDealId",
-  ]) || getCardcomString(payload, [
-    "TranzactionId",
-    "TransactionId",
-    "InternalDealNumber",
-    "LowProfileDealId",
   ]) || lowProfileCode;
+  const attemptToken = cardcomAttemptToken(reference.attemptToken);
+  const acceptedPaymentIdentifiers = [lowProfileCode, attemptToken]
+    .filter(Boolean)
+    .map((value) => value.toLowerCase());
 
-  if (!parsedOrderId || !uuidPattern.test(parsedOrderId)) {
-    const error = new Error("Invalid CardCom order reference");
-    error.statusCode = 400;
-    throw error;
-  }
-
-  const validAttemptToken = /^creating:[0-9a-fA-F-]{36}$/.test(String(attemptToken || ""))
-    ? attemptToken
-    : null;
-  const acceptedPaymentIdentifiers = validAttemptToken
-    ? [lowProfileCode, validAttemptToken]
-    : [lowProfileCode];
   const orderResult = await pool.query(
     `
       select id, order_number, payment_status, payment_transaction_id, total
       from public.orders
       where id = $1
-        and payment_transaction_id = any($2::text[])
+        and lower(payment_transaction_id) = any($2::text[])
       limit 1
     `,
-    [parsedOrderId, acceptedPaymentIdentifiers],
+    [reference.orderId, acceptedPaymentIdentifiers],
   );
 
-  const order = orderResult.rows[0] || null;
+  let order = orderResult.rows[0] || null;
+  const bound = Boolean(order);
+  if (!order) {
+    // The attempt id is cleared once a decline is applied, and a later
+    // capture for the same order still has to be recognizable. The order id
+    // here is the one Cardcom echoed from the low-profile deal we created.
+    const byId = await pool.query(
+      `
+        select id, order_number, payment_status, payment_transaction_id, total
+        from public.orders
+        where id = $1
+        limit 1
+      `,
+      [reference.orderId],
+    );
+    order = byId.rows[0] || null;
+  }
   if (!order) {
     const error = new Error("Order not found");
     error.statusCode = 404;
@@ -7530,111 +7779,101 @@ const handleCardcomWebhook = async (request, url) => {
   }
 
   const expectedAmountMinor = Math.round(toMoney(order.total) * 100);
-  if (chargedAmountMinor !== expectedAmountMinor) {
-    await pool.query(
-      `
-        insert into public.cardcom_events (
-          order_id, low_profile_code, operation_response, deal_response, is_success, payload_json
-        )
-        values ($1, $2, $3, $4, false, $5::jsonb)
-      `,
-      [
-        order.id,
-        lowProfileCode,
-        operationResponse,
-        dealResponse,
-        JSON.stringify({ stage: "rejected_indicator", reason: "amount_mismatch" }),
-      ],
-    );
-    const error = new Error("CardCom payment amount does not match the order");
-    error.statusCode = 409;
+  let plan;
+  try {
+    plan = settleCardcomNotification({
+      opened,
+      order: { paymentStatus: order.payment_status, expectedAmountMinor },
+      bound,
+    });
+  } catch (error) {
+    if (error.statusCode === 409) {
+      await pool.query(
+        `
+          insert into public.cardcom_events (
+            order_id, low_profile_code, operation_response, deal_response, is_success, payload_json
+          )
+          values ($1, $2, $3, $4, false, $5::jsonb)
+        `,
+        [
+          order.id,
+          lowProfileCode,
+          parsed.operationResponse,
+          parsed.dealResponse,
+          JSON.stringify({ stage: "rejected_indicator", reason: "amount_mismatch" }),
+        ],
+      );
+    }
     throw error;
   }
-  const isSuccess = isSuccessfulCardcomCharge({ operationResponse, dealResponse });
 
-  await pool.query(
-    `
-      insert into public.cardcom_events (
-        order_id,
-        low_profile_code,
-        transaction_id,
-        operation_response,
-        deal_response,
-        is_success,
-        payload_json
-      )
-      values ($1, $2, $3, $4, $5, $6, $7::jsonb)
-    `,
-    [
-      order?.id || null,
-      lowProfileCode,
-      transactionId,
-      operationResponse,
-      dealResponse,
-      isSuccess,
-      JSON.stringify({
-        stage: "verified_indicator",
-        method: request.method,
-        operation,
-        token_response: tokenResponse,
-      }),
-    ],
-  );
-
-  // The status change and its event are written together. The update stays
-  // conditional, so a webhook CardCom retries changes nothing the second time —
-  // and because the event is only emitted when a row actually changed, a
-  // duplicate delivery cannot produce a duplicate event either.
-  if (isSuccess) {
-    if (order.payment_status !== "paid") {
-      const client = await pool.connect();
-      try {
-        await client.query("begin");
-        const updated = await client.query(
-          `
+  // The status change and its domain event are written together. The update
+  // stays conditional, so a replay changes nothing the second time — and
+  // because the event is only emitted when a row actually changed, a duplicate
+  // delivery cannot produce a duplicate event either. A decline that is no
+  // longer the current attempt is acknowledged without touching that attempt,
+  // which is what stops Cardcom retrying after the first failure was recorded.
+  // ownerNotice is set only when a row changed, and only sent after commit.
+  const client = await pool.connect();
+  let paymentStatus = plan.paymentStatus;
+  let ownerNotice = null;
+  try {
+    await client.query("begin");
+    if (plan.mutate === "pay") {
+      const updated = await client.query(
+        bound
+          ? `
             update public.orders
             set payment_status = 'paid',
                 payment_transaction_id = $2,
                 status = 'processing',
                 updated_at = now()
             where id = $1
-              and payment_transaction_id = any($3::text[])
-              and payment_status <> 'paid'
+              and lower(payment_transaction_id) = any($3::text[])
+              and payment_status not in ('paid', 'refunded')
+            returning order_number, user_id, customer_id, customer_email, total, status
+          `
+          : `
+            update public.orders
+            set payment_status = 'paid',
+                payment_transaction_id = $2,
+                status = 'processing',
+                updated_at = now()
+            where id = $1
+              and payment_status not in ('paid', 'refunded')
             returning order_number, user_id, customer_id, customer_email, total, status
           `,
-          [order.id, lowProfileCode, acceptedPaymentIdentifiers],
-        );
-
-        if (updated.rowCount > 0) {
-          const paid = updated.rows[0];
-          await emitEvent(client, {
-            type: EVENT_TYPES.ORDER_PAID,
-            entityType: "order",
-            entityId: order.id,
-            payload: {
-              order_number: paid.order_number,
-              user_id: paid.user_id,
-              customer_id: paid.customer_id,
-              customer_email: paid.customer_email,
-              total: Number(paid.total),
-              status: paid.status,
-              transaction_id: transactionId,
-              low_profile_code: lowProfileCode,
-            },
-          });
-        }
-        await client.query("commit");
-      } catch (error) {
-        await client.query("rollback").catch(() => {});
-        throw error;
-      } finally {
-        client.release();
+        bound
+          ? [order.id, lowProfileCode, acceptedPaymentIdentifiers]
+          : [order.id, lowProfileCode],
+      );
+      if (updated.rowCount > 0) {
+        const paid = updated.rows[0];
+        await emitEvent(client, {
+          type: EVENT_TYPES.ORDER_PAID,
+          entityType: "order",
+          entityId: order.id,
+          payload: {
+            order_number: paid.order_number,
+            user_id: paid.user_id,
+            customer_id: paid.customer_id,
+            customer_email: paid.customer_email,
+            total: Number(paid.total),
+            status: paid.status,
+            transaction_id: transactionId,
+            low_profile_code: lowProfileCode,
+          },
+        });
+        ownerNotice = {
+          kind: "paid",
+          orderId: order.id,
+          orderNumber: paid.order_number,
+          total: Number(paid.total),
+        };
+      } else {
+        paymentStatus = order.payment_status;
       }
-    }
-  } else if (order.payment_status !== "paid") {
-    const client = await pool.connect();
-    try {
-      await client.query("begin");
+    } else if (plan.mutate === "fail") {
       const updated = await client.query(
         `
           update public.orders
@@ -7643,13 +7882,12 @@ const handleCardcomWebhook = async (request, url) => {
               payment_url = null,
               updated_at = now()
           where id = $1
-            and payment_transaction_id = any($2::text[])
-            and payment_status <> 'paid'
+            and lower(payment_transaction_id) = any($2::text[])
+            and payment_status not in ('paid', 'refunded')
           returning order_number, user_id, customer_email, total
         `,
         [order.id, acceptedPaymentIdentifiers],
       );
-
       if (updated.rowCount > 0) {
         const failed = updated.rows[0];
         await emitEvent(client, {
@@ -7661,22 +7899,82 @@ const handleCardcomWebhook = async (request, url) => {
             user_id: failed.user_id,
             customer_email: failed.customer_email,
             total: Number(failed.total),
-            operation_response: operationResponse,
-            deal_response: dealResponse,
+            operation_response: parsed.operationResponse,
+            deal_response: parsed.dealResponse,
             low_profile_code: lowProfileCode,
           },
         });
+        ownerNotice = {
+          kind: "failed",
+          orderId: order.id,
+          orderNumber: failed.order_number,
+          total: Number(failed.total),
+          operationResponse: parsed.operationResponse,
+          dealResponse: parsed.dealResponse,
+        };
+      } else {
+        paymentStatus = order.payment_status;
       }
-      await client.query("commit");
-    } catch (error) {
-      await client.query("rollback").catch(() => {});
-      throw error;
-    } finally {
-      client.release();
     }
+
+    const alreadyRecorded = await client.query(
+      `
+        select 1
+        from public.cardcom_events
+        where order_id = $1
+          and low_profile_code = $2
+          and operation_response is not distinct from $3
+          and is_success = $4
+          and payload_json->>'stage' = 'verified_indicator'
+        limit 1
+      `,
+      [order.id, lowProfileCode, parsed.operationResponse, opened.isSuccess],
+    );
+    if (alreadyRecorded.rowCount === 0) {
+      await client.query(
+        `
+          insert into public.cardcom_events (
+            order_id,
+            low_profile_code,
+            transaction_id,
+            operation_response,
+            deal_response,
+            is_success,
+            payload_json
+          )
+          values ($1, $2, $3, $4, $5, $6, $7::jsonb)
+        `,
+        [
+          order.id,
+          lowProfileCode,
+          transactionId,
+          parsed.operationResponse,
+          parsed.dealResponse,
+          opened.isSuccess,
+          JSON.stringify({
+            stage: "verified_indicator",
+            method: request.method,
+            operation: parsed.operation,
+            token_response: parsed.tokenResponse,
+            bound,
+          }),
+        ],
+      );
+    }
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback").catch(() => {});
+    throw error;
+  } finally {
+    client.release();
   }
 
-  const paymentStatus = order.payment_status === "paid" || isSuccess ? "paid" : "failed";
+  if (ownerNotice?.kind === "paid") {
+    notifyOwnerPaidOrder(ownerNotice.orderId, ownerNotice.orderNumber, ownerNotice.total);
+  } else if (ownerNotice?.kind === "failed") {
+    reportDeclinedPayment(notifyOwner, ownerNotice);
+  }
+
   return {
     received: true,
     order_id: order.id,
@@ -7882,6 +8180,7 @@ const sendStoredFile = (response, buffer, {
   fileName,
   isPrivate = false,
   sandbox = false,
+  head = false,
 } = {}) => {
   const disposition = contentType.startsWith("image/")
     || contentType.startsWith("video/")
@@ -7899,7 +8198,7 @@ const sendStoredFile = (response, buffer, {
   };
   if (sandbox) headers["content-security-policy"] = "default-src 'none'; sandbox";
   response.writeHead(200, headers);
-  response.end(buffer);
+  response.end(head ? undefined : buffer);
 };
 
 const readDocumentFile = async (document) => {
@@ -8016,15 +8315,230 @@ const servePublicUpload = async (request, response, pathname) => {
     fileName: storageKey,
     isPrivate: Boolean(documentResult.rows[0]),
     sandbox: Boolean(documentResult.rows[0]),
+    head: request.method === "HEAD",
   });
   return true;
+};
+
+// Navigations that are not files. Caddy proxies them here so the status and
+// the share tags belong to the path. /api stays JSON.
+const renderPublicPage = createPublicPageRenderer({
+  origin: configuredPublicAppUrl,
+  webRoot: process.env.WEB_ROOT || "/srv/www",
+  loadProduct: (id) => fetchPublicProductById(id),
+  loadSitemapProducts: () => listInStockSitemapProducts((sql) => pool.query(sql)),
+});
+
+/**
+ * Enrolment and verification. Reached with the password alone, because an
+ * admin who has not enrolled has no second factor to offer yet, and an
+ * enrolled admin has not proven it on this session.
+ *
+ * Returns false when the path is not one of these, so the caller keeps going.
+ * With the flag off every one of them is a 404: login never comes here.
+ */
+const handleAdminMfaRoute = async (request, response, url) => {
+  if (!url.pathname.startsWith("/api/admin/2fa/")) return false;
+  if (!adminTwoFactorEnabled) {
+    sendError(response, 404, "Not found");
+    return true;
+  }
+
+  const signedInAdmin = async () => {
+    if (!(await requireAdmin(request, response, { allowPendingMfa: true }))) return null;
+    if (request.admin.id === "api-key") {
+      sendError(response, 403, "A signed-in admin session is required");
+      return null;
+    }
+    return request.admin;
+  };
+
+  if (request.method === "POST" && url.pathname === "/api/admin/2fa/setup") {
+    if (!enforceRateLimit(request, response, "admin-mfa-ip", rateLimits.adminMfaVerify)) return true;
+    const admin = await signedInAdmin();
+    if (!admin) return true;
+    if (!enforceRateLimit(request, response, "admin-mfa-admin", rateLimits.adminMfaVerify, admin.id)) return true;
+    if (admin.mfa_enrolled) {
+      sendError(response, 409, "Two-factor authentication is already enrolled for this account");
+      return true;
+    }
+    const secretBox = requireSecretBox(response);
+    if (!secretBox) return true;
+
+    const secret = await storePendingTotpSecret(pool, admin.id, secretBox);
+    sendJson(response, 200, {
+      secret,
+      otpauth_url: buildOtpAuthUrl({
+        secret,
+        accountName: admin.email,
+        issuer: adminTotpIssuer,
+      }),
+    });
+    return true;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/admin/2fa/activate") {
+    if (!enforceRateLimit(request, response, "admin-mfa-ip", rateLimits.adminMfaVerify)) return true;
+    const admin = await signedInAdmin();
+    if (!admin) return true;
+    if (!enforceRateLimit(request, response, "admin-mfa-admin", rateLimits.adminMfaVerify, admin.id)) return true;
+    if (admin.mfa_enrolled) {
+      sendError(response, 409, "Two-factor authentication is already enrolled for this account");
+      return true;
+    }
+
+    const secretBox = requireSecretBox(response);
+    if (!secretBox) return true;
+
+    const stored = await loadAdminTotpSecret(pool, admin.id, secretBox);
+    if (!stored) {
+      sendError(response, 409, "Start two-factor enrolment before confirming a code");
+      return true;
+    }
+
+    const body = await readBody(request);
+    const verification = verifyTotp(stored.secret, body.code, { lastUsedStep: stored.lastUsedStep });
+    if (!verification.valid) {
+      sendError(response, 400, "The authentication code is not valid");
+      return true;
+    }
+
+    // Enrolment finishes on the session the admin already holds. No sign-out
+    // in the middle, so the next screen is not a gate they have just passed.
+    const client = await pool.connect();
+    let recoveryCodes;
+    try {
+      await client.query("begin");
+      await confirmTotpEnrolment(client, admin.id, verification.step);
+      recoveryCodes = await issueAdminRecoveryCodes(client, admin.id);
+      await markAdminSessionMfaVerified(client, admin.session_token_hash);
+      await client.query("commit");
+    } catch (error) {
+      await client.query("rollback").catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+
+    await recordAdminAudit(admin, {
+      actionType: "admin.mfa_enrolled",
+      entityType: "admin_user",
+      entityId: admin.id,
+      metadata: { recovery_codes_issued: recoveryCodes.length },
+    });
+
+    sendJson(response, 200, { ok: true, recovery_codes: recoveryCodes });
+    return true;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/admin/2fa/verify") {
+    if (!enforceRateLimit(request, response, "admin-mfa-ip", rateLimits.adminMfaVerify)) return true;
+    const admin = await signedInAdmin();
+    if (!admin) return true;
+    if (!enforceRateLimit(request, response, "admin-mfa-admin", rateLimits.adminMfaVerify, admin.id)) return true;
+    if (!admin.mfa_enrolled) {
+      sendError(response, 409, "Enrol two-factor authentication before verifying a code");
+      return true;
+    }
+
+    const body = await readBody(request);
+    const secretBox = getSecretBox();
+    let verification = { valid: false, step: null };
+    if (secretBox) {
+      const stored = await loadAdminTotpSecret(pool, admin.id, secretBox);
+      if (stored) {
+        verification = verifyTotp(stored.secret, body.code, { lastUsedStep: stored.lastUsedStep });
+      }
+    }
+
+    let usedRecoveryCode = false;
+    if (verification.valid) {
+      await recordAdminTotpStep(pool, admin.id, verification.step);
+    } else if (await consumeAdminRecoveryCode(pool, admin.id, body.code, getRequestIp(request))) {
+      // Recovery codes are scrypt hashes. They still work if the encryption
+      // key is missing, which is the case they exist for: the device is gone.
+      usedRecoveryCode = true;
+    } else if (!secretBox) {
+      sendError(response, 503, "Two-factor authentication is not configured on this server");
+      return true;
+    } else {
+      sendError(response, 400, "The authentication code is not valid");
+      return true;
+    }
+
+    await markAdminSessionMfaVerified(pool, admin.session_token_hash);
+
+    const remaining = usedRecoveryCode ? await countAdminRecoveryCodesRemaining(pool, admin.id) : null;
+    if (usedRecoveryCode) {
+      await recordAdminAudit(admin, {
+        actionType: "admin.mfa_recovery_code_used",
+        entityType: "admin_user",
+        entityId: admin.id,
+        metadata: { recovery_codes_remaining: remaining },
+      });
+    }
+
+    sendJson(response, 200, {
+      ok: true,
+      used_recovery_code: usedRecoveryCode,
+      recovery_codes_remaining: remaining,
+    });
+    return true;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/admin/2fa/recovery-codes") {
+    if (!(await requireAdmin(request, response))) return true;
+    if (request.admin.id === "api-key") {
+      sendError(response, 403, "A signed-in admin session is required");
+      return true;
+    }
+    sendJson(response, 200, {
+      remaining: await countAdminRecoveryCodesRemaining(pool, request.admin.id),
+    });
+    return true;
+  }
+
+  // A new sheet of recovery codes is a new set of standing bypasses.
+  if (request.method === "POST" && url.pathname === "/api/admin/2fa/recovery-codes") {
+    if (!(await requireAdmin(request, response))) return true;
+    if (request.admin.id === "api-key") {
+      sendError(response, 403, "A signed-in admin session is required");
+      return true;
+    }
+    if (!(await requireFreshAdminMfa(request, response))) return true;
+
+    const client = await pool.connect();
+    let recoveryCodes;
+    try {
+      await client.query("begin");
+      recoveryCodes = await issueAdminRecoveryCodes(client, request.admin.id);
+      await client.query("commit");
+    } catch (error) {
+      await client.query("rollback").catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+
+    await recordAdminAudit(request.admin, {
+      actionType: "admin.mfa_recovery_codes_reissued",
+      entityType: "admin_user",
+      entityId: request.admin.id,
+      metadata: { recovery_codes_issued: recoveryCodes.length },
+    });
+
+    sendJson(response, 200, { ok: true, recovery_codes: recoveryCodes });
+    return true;
+  }
+
+  return false;
 };
 
 const handleRequest = async (request, response) => {
   const url = new URL(request.url || "/", "http://localhost");
 
   try {
-    if (request.method === "GET" && url.pathname.startsWith("/uploads/")) {
+    if ((request.method === "GET" || request.method === "HEAD") && url.pathname.startsWith("/uploads/")) {
       if (!(await servePublicUpload(request, response, url.pathname))) {
         sendError(response, 404, "File not found");
       }
@@ -8068,11 +8582,19 @@ const handleRequest = async (request, response) => {
     }
 
     if (request.method === "GET" && url.pathname === "/api/health") {
+      // True only when a key is set and the FROM address is not Resend's
+      // testing sender. No key, no address, no provider text.
+      const email = {
+        configured: describeEmailDelivery({
+          apiKey: resendApiKey,
+          fromEmail: passwordResetFromEmail,
+        }).configured,
+      };
       if (!(await checkDatabaseHealth(pool))) {
-        sendJson(response, 503, { ok: false, service: "mipo-api", version: deployVersion, error: "Database unavailable" });
+        sendJson(response, 503, { ok: false, service: "mipo-api", version: deployVersion, error: "Database unavailable", email });
         return;
       }
-      sendJson(response, 200, { ok: true, service: "mipo-api", version: deployVersion });
+      sendJson(response, 200, { ok: true, service: "mipo-api", version: deployVersion, email });
       return;
     }
 
@@ -8090,6 +8612,30 @@ const handleRequest = async (request, response) => {
         checked: schema.checked,
         ...(schema.ok ? {} : { failures: schema.failures }),
       });
+      return;
+    }
+
+    // A QA agent reports a short result after a deploy. The shared secret is
+    // the only credential. Missing secret hides the route. The send itself is
+    // still gated by the Twilio settings inside the notifier.
+    if (request.method === "POST" && url.pathname === "/api/internal/owner-notify/qa") {
+      const qaSecret = String(process.env.OWNER_NOTIFY_QA_SECRET || "");
+      if (!qaSecret) {
+        sendError(response, 404, "Not found");
+        return;
+      }
+      if (!enforceRateLimit(request, response, "owner-qa", rateLimits.ownerQa)) return;
+      if (authorizeOwnerQa(qaSecret, request.headers.authorization) !== "ok") {
+        sendError(response, 401, "Unauthorized");
+        return;
+      }
+      const parsed = qaEventFromBody(await readBody(request));
+      if (parsed.error) {
+        sendError(response, 400, parsed.error);
+        return;
+      }
+      notifyOwner(parsed.notify);
+      sendJson(response, 202, { accepted: true });
       return;
     }
 
@@ -8120,7 +8666,7 @@ const handleRequest = async (request, response) => {
       const body = await readBody(request);
       if (!enforceRateLimit(request, response, "admin-login-email", rateLimits.adminLogin, normalizeEmail(body.email))) return;
       const result = await loginAdmin(request, body);
-      sendJson(response, 200, { admin: result.admin }, { "set-cookie": buildAdminCookie(request, result.token) });
+      sendJson(response, 200, { admin: toPublicAdmin(result.admin) }, { "set-cookie": buildAdminCookie(request, result.token) });
       return;
     }
 
@@ -8137,16 +8683,22 @@ const handleRequest = async (request, response) => {
         return;
       }
 
-      sendJson(response, 200, { admin });
+      sendJson(response, 200, { admin: toPublicAdmin(admin) });
       return;
     }
 
+    if (await handleAdminMfaRoute(request, response, url)) return;
+
     if (request.method === "POST" && url.pathname === "/api/admin/password") {
-      if (!(await requireAdmin(request, response))) return;
+      if (!(await requireAdmin(request, response, { allowPendingMfa: true }))) return;
       if (request.admin.id === "api-key") {
         sendError(response, 403, "A signed-in admin session is required");
         return;
       }
+      // Once enrolled, changing the password is a step-up action. Before
+      // enrolment — including the forced first-login change — there is no
+      // second factor to ask for, and with the flag off this check is a no-op.
+      if (request.admin.mfa_enrolled && !request.admin.must_change_password && !(await requireFreshAdminMfa(request, response))) return;
       const admin = await changeAdminPassword(request.admin.id, await readBody(request));
       await recordAdminAudit(request.admin, {
         actionType: "admin.password_changed",
@@ -9113,7 +9665,15 @@ const handleRequest = async (request, response) => {
     }
 
     if ((request.method === "POST" || request.method === "GET") && url.pathname === "/api/payments/cardcom/webhook") {
-      sendJson(response, 200, await handleCardcomWebhook(request, url));
+      try {
+        sendJson(response, 200, await handleCardcomWebhook(request, url));
+      } catch (error) {
+        // Thrown paths: amount mismatch, unknown order, indicator parse, and
+        // any other failure before the order is marked paid. Declines that
+        // were recorded return 200 above and are notified from the handler.
+        reportUnsettledPayment(notifyOwner, { statusCode: error.statusCode || 500 });
+        throw error;
+      }
       return;
     }
 
@@ -9128,6 +9688,11 @@ const handleRequest = async (request, response) => {
       const body = await readBody(request);
       const auth = await getUserFromSession(request).catch(() => null);
       const result = await createOrder(body, auth?.user || null, originFromRequest(request));
+      if (shouldRequestVerificationAfterOrder({ currentUser: auth?.user, placedByAdmin: false })) {
+        issueEmailVerification(request, auth.user).catch((error) => {
+          console.error("Post-order verification email was not sent:", error?.message || error);
+        });
+      }
       sendJson(response, 201, {
         order: result.order,
         ...(result.accessToken ? { access_token: result.accessToken } : {}),
@@ -9177,11 +9742,43 @@ const handleRequest = async (request, response) => {
       // its own products in full and everybody else's in exactly the shape an
       // anonymous visitor sees - so one Seller's cost_price, commission_rate
       // and supplier_id never reach another.
+      //
+      // shop_hidden is applied here, at the public call site, and not inside
+      // listProducts. Admin analytics and the ownership queue share that
+      // function, and a hidden product is still a catalogue row.
+      //
+      // view=storefront is the shop grid: the same public rows, without the
+      // feeding guide and the bookkeeping columns. limit/offset page that
+      // list. Omitting both leaves the full public catalogue, which is what
+      // every existing caller still receives.
       const identity = await resolveAdminIdentity(request);
-      sendJson(response, 200, {
-        products: products.map((product) =>
-          (adminProductView(identity, product) === "full" ? product : toPublicProduct(product))),
+      const storefront = url.searchParams.get("view") === "storefront";
+      const rawCategory = url.searchParams.get("category_id") || url.searchParams.get("category");
+      const categoryKey = rawCategory && rawCategory.trim() ? rawCategory.trim() : null;
+      const mapped = [];
+      for (const product of products) {
+        const rowView = adminProductView(identity, product);
+        if (!publiclyVisibleProduct(product, rowView)) continue;
+        if (categoryKey && !matchesCategory(product, categoryKey)) continue;
+        if (rowView === "full") {
+          mapped.push(product);
+        } else {
+          const pub = toPublicProduct(product);
+          mapped.push(storefront ? pickStorefrontProduct(pub) : pub);
+        }
+      }
+      const windowed = pageWindow(mapped, {
+        limit: url.searchParams.get("limit"),
+        offset: url.searchParams.get("offset"),
       });
+      const body = {
+        products: windowed.products,
+        ...(windowed.limit !== undefined
+          ? { total: windowed.total, limit: windowed.limit, offset: windowed.offset }
+          : {}),
+      };
+      const cacheable = storefront && !identity;
+      sendJson(response, 200, body, cacheable ? { "cache-control": "public, max-age=60" } : {});
       return;
     }
 
@@ -9331,13 +9928,16 @@ const handleRequest = async (request, response) => {
     const publicProductMatch = url.pathname.match(/^\/api\/products\/([0-9a-fA-F-]{36})$/);
     if (publicProductMatch && request.method === "GET") {
       const product = await fetchPublicProductById(publicProductMatch[1]);
-      if (!product) {
+      const identity = await resolveAdminIdentity(request);
+      const view = adminProductView(identity, product);
+      // A hidden product is the same answer as a missing one for a shopper:
+      // 404, which the product page renders as a friendly unavailable state.
+      if (!publiclyVisibleProduct(product, view)) {
         sendError(response, 404, "Product not found");
         return;
       }
-      const identity = await resolveAdminIdentity(request);
       sendJson(response, 200, {
-        product: adminProductView(identity, product) === "full" ? product : toPublicProduct(product),
+        product: view === "full" ? product : toPublicProduct(product),
       });
       return;
     }
@@ -9455,8 +10055,26 @@ const handleRequest = async (request, response) => {
       return;
     }
 
+    if (request.method === "GET" || request.method === "HEAD") {
+      const rendered = await renderPublicPage(url.pathname);
+      if (rendered) {
+        response.writeHead(rendered.status, rendered.headers);
+        response.end(request.method === "HEAD" ? undefined : rendered.body);
+        return;
+      }
+    }
+
     sendError(response, 404, "Not found");
   } catch (error) {
+    const statusCode = error.statusCode || 500;
+    // The Cardcom route already reported this as a payment problem.
+    if (statusCode >= 500 && url.pathname !== "/api/payments/cardcom/webhook") {
+      reportServerError(notifyOwner, {
+        statusCode,
+        method: request.method,
+        path: url.pathname,
+      });
+    }
     if (!error.statusCode || error.statusCode >= 500) console.error(error);
     // A code lets the client tell one 403 from another and offer the right
     // next step, instead of matching on a message that may be translated.

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, HeartHandshake } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { isInProgressFlow } from "@/lib/flowSurfaces";
 
 /**
  * SarahCrashPopup — Friendly popup from Sarah (Support Bot) 
@@ -14,8 +15,8 @@ export const SarahCrashPopup = () => {
   const [visible, setVisible] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const shownRef = useRef(false);
-  const hiddenRoute = ["/auth", "/signup", "/forgot-password", "/reset-password", "/onboarding", "/add-pet"]
-    .some((path) => location.pathname.startsWith(path));
+  const hiddenRoute = isInProgressFlow(location.pathname)
+    || ["/forgot-password", "/reset-password"].some((path) => location.pathname.startsWith(path));
 
   const showPopup = useCallback((msg: string) => {
     if (hiddenRoute) return;

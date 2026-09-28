@@ -62,6 +62,17 @@ async function mockSignedIn(page: Page, pets: typeof createdPet[] = []) {
 }
 
 test.describe("AWS onboarding persist (AC-ONB-1)", () => {
+  test("the step counter reads in order on an RTL page", async ({ page }) => {
+    await mockSignedIn(page);
+    await page.goto("/onboarding");
+    const step = page.getByTestId("onboarding-step");
+    await expect(step).toHaveText("שלב 1 מתוך 5");
+    await expect(step).toHaveCSS("direction", "rtl");
+    await expect(step).not.toContainText("/");
+    await page.getByRole("button", { name: "מתחילים" }).click();
+    await expect(step).toHaveText("שלב 2 מתוך 5");
+  });
+
   test("signed-in complete writes a pets row and onboarding flags", async ({ page }) => {
     let created: typeof createdPet | null = null;
     let submitted: Record<string, unknown> | null = null;

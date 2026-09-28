@@ -257,6 +257,16 @@ const Onboarding = () => {
   };
 
   useEffect(() => {
+    try {
+      if (localStorage.getItem("mipo-onboarding-complete") !== "true") {
+        localStorage.setItem("mipo-onboarding-complete", "false");
+      }
+    } catch {
+      // ignore storage quota / private mode
+    }
+  }, []);
+
+  useEffect(() => {
     const stored = readStoredOnboardingDraft();
     if (stored) hydrateFromDraft(stored);
   }, [hydrateFromDraft]);
@@ -282,7 +292,9 @@ const Onboarding = () => {
       <div className="mipo-shell relative flex min-h-[100dvh] flex-col overflow-hidden px-6 pb-8 pt-5">
         <div className="flex items-center justify-between">
           <MipoLogo variant="mark" size="xs" showAnimals={false} />
-          <span className="text-xs font-semibold tracking-wide text-mipo-muted">{stepForPhase[phase]} / 5</span>
+          <span data-testid="onboarding-step" className="text-xs font-semibold tracking-wide text-mipo-muted">
+            שלב {stepForPhase[phase]} מתוך 5
+          </span>
         </div>
         <div className="mt-4 grid grid-cols-5 gap-2" aria-label={`שלב ${stepForPhase[phase]} מתוך 5`}>
           {[1, 2, 3, 4, 5].map((step) => (

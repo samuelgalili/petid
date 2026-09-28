@@ -40,7 +40,9 @@ const cartItem = {
 };
 
 async function mockCatalog(page: Page) {
-  await page.route("**/api/products", async (route) => {
+  // The shop asks for ?view=storefront. A pattern with no query misses that
+  // request, and the catalogue never arrives.
+  await page.route(/\/api\/products(?:\?|$)/, async (route) => {
     await route.fulfill({ json: { products: catalog } });
   });
 }
@@ -144,7 +146,11 @@ test.describe("AWS application smoke tests", () => {
 
   test("redirects protected customer and admin routes", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveURL(/\/auth$/);
+    await expect(page).toHaveURL(/\/shop$/);
+    await expect(page).not.toHaveURL(/\/auth/);
+
+    await page.goto("/profile");
+    await expect(page).toHaveURL(/\/auth\?next=/);
     await expect(page.getByRole("heading", { name: "ברוכים הבאים ל-MIPO" })).toBeVisible();
 
     await page.goto("/admin/products");
@@ -185,7 +191,7 @@ test.describe("AWS application smoke tests", () => {
     // still for is unchanged: a shopper can find a product and open it.
     await mockCatalog(page);
     const catalogResponse = page.waitForResponse((response) => (
-      response.url().endsWith("/api/products") && response.status() === 200
+      new URL(response.url()).pathname.endsWith("/api/products") && response.status() === 200
     ));
 
     await page.goto("/shop");
@@ -193,8 +199,8 @@ test.describe("AWS application smoke tests", () => {
 
     await expect(page.getByRole("heading", { name: "חנות", exact: true })).toBeVisible();
 
-    // Nothing is priced before a question is asked.
-    await expect(page.getByText("₪79", { exact: true })).toHaveCount(0);
+    // The shelf is priced before anyone types. Search then narrows it.
+    await expect(page.getByText("₪79", { exact: true }).first()).toBeVisible();
 
     await page.getByLabel("חיפוש בחנות").fill(catalog[0].name);
 
@@ -206,7 +212,7 @@ test.describe("AWS application smoke tests", () => {
 
     await foodProduct.click();
     const productDialog = page.getByRole("dialog");
-    await expect(productDialog.getByText("₪79", { exact: true })).toBeVisible();
+    await expect(productDialog.getByText("₪79", { exact: true }).first()).toBeVisible();
     await expect(productDialog.getByText("₪100", { exact: true })).toBeVisible();
     await productDialog.getByRole("button", { name: "סגירה" }).click();
     await expect(productDialog).toBeHidden();

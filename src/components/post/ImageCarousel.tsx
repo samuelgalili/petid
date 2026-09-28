@@ -3,6 +3,7 @@ import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { OptimizedImage } from '@/components/OptimizedImage';
 import { cn } from '@/lib/utils';
+import { CountFraction } from '@/components/CountFraction';
 
 interface ImageCarouselProps {
   images: string[];
@@ -161,7 +162,7 @@ export const ImageCarousel = ({
 
       {/* Slide Counter */}
       <div className="absolute top-4 right-4 bg-black/60 text-white text-xs px-2.5 py-1 rounded-full z-10">
-        {currentIndex + 1}/{images.length}
+        <CountFraction current={currentIndex + 1} total={images.length} separator="/" />
       </div>
 
       {children}
