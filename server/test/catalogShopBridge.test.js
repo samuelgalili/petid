@@ -46,8 +46,19 @@ const shopSees = async (client, businessProductId) => {
        left join public.product_categories c on c.id = p.category_id
       order by p.created_at desc, p.id`,
   );
-  // And the browser's half: Shop.tsx keeps `in_stock !== false`.
-  return rows.filter((row) => row.in_stock !== false)
+  /*
+   * BOTH HALVES OF WHAT THE SHOP ACTUALLY DROPS, and they are different facts.
+   *
+   * `shop_hidden` is the visibility flag migration 0061 added, applied at the
+   * public call site in index.js through shopVisibility.js. `in_stock !== false`
+   * is the browser's own filter in Shop.tsx, and it is about stock.
+   *
+   * This helper modelled only the second one while the bridge was written, and
+   * that is precisely why the bridge expressed "unpublished" by writing a stock
+   * column: the test agreed with the mistake, so nothing went red.
+   */
+  return rows
+    .filter((row) => row.shop_hidden !== true && row.in_stock !== false)
     .find((row) => row.id === businessProductId) ?? null;
 };
 
@@ -206,6 +217,9 @@ dbTest("a product with no stock reaches the table and stays out of the shop", as
 
     assert.equal(result.in_stock, false);
     assert.equal(result.availability, "OUT_OF_STOCK");
+    // Out of stock is not hidden. The two facts stay apart: this product is
+    // published and visible, and simply has nothing to sell.
+    assert.equal(result.shop_hidden, false);
     assert.equal(await shopSees(client, result.business_product_id), null,
       "an out-of-stock product is on the shelf");
 
@@ -295,10 +309,14 @@ dbTest("the withdrawn listing is kept, so republishing lands on it", async () =>
     await hideFromShop(client, productId);
 
     const { rows } = await client.query(
-      "select id, in_stock from public.business_products where catalog_product_id = $1", [productId],
+      "select id, in_stock, shop_hidden from public.business_products where catalog_product_id = $1",
+      [productId],
     );
     assert.equal(rows.length, 1, "the listing was removed rather than hidden");
-    assert.equal(rows[0].in_stock, false);
+    assert.equal(rows[0].shop_hidden, true);
+    // AND THE STOCK IS UNTOUCHED. Withdrawing a product does not empty the
+    // shelf it is sitting on, and the warehouse reads this column.
+    assert.equal(rows[0].in_stock, true, "unpublishing wrote a stock fact");
 
     const second = await publishToShop(client, productId, adminId);
     assert.equal(second.business_product_id, first.business_product_id);

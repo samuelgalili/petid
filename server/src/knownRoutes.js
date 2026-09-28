@@ -376,6 +376,7 @@ export const PRODUCTION_ROUTE_PATTERNS = [
   "/admin/notifications",
   "/admin/ocr-verification",
   "/admin/orders",
+  "/admin/orders/:orderId",
   "/admin/parks",
   "/admin/pet-services",
   "/admin/pricing",

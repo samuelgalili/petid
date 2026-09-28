@@ -41,11 +41,25 @@
  *     offer the price came from, so the answer exists in the row rather than
  *     having to be reconstructed.
  *
- *  2. UNPUBLISH: the row stays and `in_stock` goes false. That is the only
- *     switch the shop honours, so it removes the product immediately; keeping
- *     the row means republishing lands on the same listing rather than minting
- *     a second one, and an order that already points at this product id still
- *     resolves.
+ *  2. UNPUBLISH: the row stays and it leaves the shop. Keeping the row means
+ *     republishing lands on the same listing rather than minting a second one,
+ *     and an order that already points at this product id still resolves.
+ *
+ * ─── VISIBILITY IS NOT STOCK, AND THIS GOT IT WRONG FIRST ───────────────────
+ *
+ * The first version of this module set `in_stock = false` to unpublish,
+ * because at the time that was the only switch the shop honoured. Migration
+ * 0061 added `shop_hidden`, and server/src/shopVisibility.js draws the line
+ * this module had blurred: "that is a stock fact, not a reason to pretend a
+ * product with stock is gone", and "nothing here reads or writes in_stock".
+ *
+ * So the two columns now carry the two different facts they name:
+ *   - `shop_hidden` is the publication decision. Unpublishing sets it.
+ *   - `in_stock` is inventory availability, and publishing takes it from the
+ *     offer's inventory row, which is what it has always meant.
+ *
+ * Writing a stock fact to express a publication decision would also have been
+ * destructive in a way that is easy to miss: the warehouse reads in_stock.
  */
 
 /**
@@ -176,9 +190,11 @@ export const publishToShop = async (client, catalogProductId, adminId = null) =>
       insert into public.business_products (
         business_id, catalog_product_id, name, description, brand,
         category_id, pet_type, price, sale_price, sku, weight, weight_unit,
-        image_url, images, in_stock, product_attributes, shop_offer_id, updated_at
+        image_url, images, in_stock, product_attributes, shop_offer_id,
+        shop_hidden, updated_at
       )
-      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, now())
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
+              false, now())
       on conflict (catalog_product_id) where catalog_product_id is not null
       do update set
         name = excluded.name,
@@ -196,8 +212,11 @@ export const publishToShop = async (client, catalogProductId, adminId = null) =>
         in_stock = excluded.in_stock,
         product_attributes = excluded.product_attributes,
         shop_offer_id = excluded.shop_offer_id,
+        -- Publishing is what un-hides. Without this, a product taken off the
+        -- shelf and published again would stay hidden with no sign of why.
+        shop_hidden = false,
         updated_at = now()
-      returning id, in_stock, price
+      returning id, in_stock, shop_hidden, price
     `,
     [
       row.owning_business_id, row.id, row.name, row.description ?? null, row.brand ?? null,
@@ -210,6 +229,7 @@ export const publishToShop = async (client, catalogProductId, adminId = null) =>
   return {
     business_product_id: result.rows[0].id,
     in_stock: result.rows[0].in_stock,
+    shop_hidden: result.rows[0].shop_hidden,
     price: Number(result.rows[0].price),
     offer_id: row.offer_id,
     // Said out loud rather than left for somebody to notice: the product is in
@@ -223,9 +243,10 @@ export const publishToShop = async (client, catalogProductId, adminId = null) =>
 /**
  * Take a published product back off the shelf.
  *
- * `in_stock = false` and the row stays, which is what the owner chose. It is
- * also the only lever that works: the shop has no published flag to clear, so
- * anything short of setting this leaves the product on sale.
+ * `shop_hidden = true` and the row stays, which is what the owner chose. The
+ * stock columns are not touched: a withdrawn product has exactly as much stock
+ * on the shelf as it did a moment ago, and telling the warehouse otherwise to
+ * express a publication decision is how a picking list goes wrong.
  *
  * Returns how many rows moved, which is 0 for a product that was published
  * before this bridge existed. That is not an error - there is nothing on the
@@ -234,8 +255,8 @@ export const publishToShop = async (client, catalogProductId, adminId = null) =>
 export const hideFromShop = async (client, catalogProductId) => {
   const result = await client.query(
     `update public.business_products
-        set in_stock = false, updated_at = now()
-      where catalog_product_id = $1 and in_stock is distinct from false`,
+        set shop_hidden = true, updated_at = now()
+      where catalog_product_id = $1 and shop_hidden is distinct from true`,
     [catalogProductId],
   );
   return result.rowCount;
