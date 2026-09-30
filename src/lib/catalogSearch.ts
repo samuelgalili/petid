@@ -367,8 +367,8 @@ const intersects = (left, right) => {
  *
  * A name is what a product IS; a description is what it mentions. Ranking by
  * that difference is what stops eleven products that mention a word from
- * burying the one product called it - which matters here because the shop
- * shows twelve cards and then stops.
+ * burying the one product called it. The strongest match still leads, because
+ * that is the card a person reads first.
  *
  * sku and source_url are absent on purpose: a warehouse code and a supplier's
  * address are not things a shopper names a product by, and matching them
