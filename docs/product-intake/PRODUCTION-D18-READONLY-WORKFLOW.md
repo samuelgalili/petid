@@ -53,7 +53,7 @@ The measurement becomes an event with a reviewer, a timestamp and a run id.
 | 1 | **Confirm intent** — the `confirmation` input must be exactly `READ-ONLY` | no |
 | 2 | **Checkout** | no |
 | 3 | **Verify the embedded SQL is read-only** — statically checks the SQL block *before anything connects* | no |
-| 4 | **Configure SSH** — writes the deploy key to the runner, `chmod 600`, `ssh-keyscan` | no |
+| 4 | **Configure SSH** — writes the deploy key to the runner, `chmod 600`, writes the pinned host key from `MIPO_AWS_KNOWN_HOSTS` (stops if it is missing) | no |
 | 5 | **Run D-18 against production** — SSH, read `DATABASE_URL`, run 25 `SELECT`s in one read-only transaction, `ROLLBACK` | **reads only** |
 | 6 | **Remove the key** — `if: always()` | no |
 
@@ -68,7 +68,7 @@ workflows share only the SSH configuration step.
 |---|---|---|
 | `workflow_dispatch` only | `on:` | the only trigger. No `push`, no `schedule`, no `pull_request`, no `workflow_call` |
 | GitHub Environment `production` | `jobs.measure.environment` | same environment as the deploy job — so the same required reviewer gates it |
-| Existing deployment SSH mechanism | *Configure SSH* | `secrets.MIPO_AWS_SSH_PRIVATE_KEY`, same key path, same `ssh-keyscan`, same flags as `deploy-aws.yml:217-228` |
+| Existing deployment SSH mechanism | *Configure SSH* | `secrets.MIPO_AWS_SSH_PRIVATE_KEY`, same key path, same pinned `MIPO_AWS_KNOWN_HOSTS` host key and `StrictHostKeyChecking=yes` as `deploy-aws.yml` *Configure SSH* |
 | Production host only | job `env` | `MIPO_AWS_HOST` from the **production environment's** variables. The environment scopes the target; there is no branch- or input-driven host selection to get wrong |
 | Read `DATABASE_URL` from `/opt/mipo/.env` **without `source`** | remote script | `grep … \| tail -1 \| cut -d= -f2-`, then CR/quote/whitespace stripping — the `backup-before-migrate.sh` pattern verbatim. **`tail -1`, not `head -1`**: docker compose's `env_file` lets a later definition win, so the last one is what the API actually uses |
 | Never print the connection string | remote script | only its **length** and **scheme** are echoed, and only on a malformed value. No `set -x` anywhere — tracing would echo the expansion |

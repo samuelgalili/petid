@@ -151,6 +151,7 @@ jobs:
       - name: Configure SSH
         env:
           SSH_PRIVATE_KEY: ${{ secrets.MIPO_AWS_SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.MIPO_AWS_KNOWN_HOSTS }}
         run: |
           set -euo pipefail
           if [ -z "${SSH_PRIVATE_KEY:-}" ]; then
@@ -164,7 +165,22 @@ jobs:
           mkdir -p ~/.ssh
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/mipo_aws_key
           chmod 600 ~/.ssh/mipo_aws_key
-          ssh-keyscan -T 30 -H "$MIPO_AWS_HOST" >> ~/.ssh/known_hosts || true
+          # The host key is pinned, not discovered. ssh-keyscan on a fresh runner
+          # trusted whatever answered at MIPO_AWS_HOST, so a hijacked address would
+          # have received this connection. MIPO_AWS_KNOWN_HOSTS holds the host's
+          # known_hosts line(s), taken once from the host itself. Without it the run
+          # stops here; it never falls back to trusting an unknown key.
+          if [ -z "${SSH_KNOWN_HOSTS:-}" ]; then
+            echo "BLOCKED: the environment has no MIPO_AWS_KNOWN_HOSTS secret." >&2
+            echo "Add the production host's known_hosts line(s) as that secret. SSH will not trust an unpinned host key." >&2
+            exit 1
+          fi
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+          if ! ssh-keygen -F "$MIPO_AWS_HOST" -f ~/.ssh/known_hosts >/dev/null; then
+            echo "BLOCKED: MIPO_AWS_KNOWN_HOSTS has no entry for MIPO_AWS_HOST." >&2
+            exit 1
+          fi
           echo "SSH configured for ${MIPO_AWS_USER}@${MIPO_AWS_HOST}"
 
       - name: Run the mode
@@ -172,7 +188,7 @@ jobs:
           MODE: ${{ inputs.mode }}
         run: |
           set -euo pipefail
-          ssh -i ~/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 \
+          ssh -i ~/.ssh/mipo_aws_key -o StrictHostKeyChecking=yes -o ConnectTimeout=20 \
             "${MIPO_AWS_USER}@${MIPO_AWS_HOST}" \
             "MIPO_REMOTE_PATH='${MIPO_REMOTE_PATH}' MODE='${MODE}' bash -s" <<'REMOTE'
           set -euo pipefail
