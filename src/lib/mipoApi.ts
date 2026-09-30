@@ -1816,6 +1816,8 @@ export interface MipoConnector {
   updated_at: string;
   stored: boolean;
   known_provider: boolean;
+  /** Remaining credit from a Tripo balance read. A number, never a secret. */
+  balance?: number;
 }
 
 export async function getAdminConnectors(): Promise<MipoConnector[]> {
@@ -1830,7 +1832,7 @@ export async function getAdminConnectors(): Promise<MipoConnector[]> {
  * server keeps what it has. Sending "" would read as "clear it".
  */
 export async function saveAdminConnector(
-  input: { provider: string; api_key?: string; label?: string; settings?: { baseUrl: string; apiVersion: string } },
+  input: { provider: string; api_key?: string; label?: string; settings?: { baseUrl: string; apiVersion?: string } },
   idempotencyKey: string,
 ): Promise<MipoConnector> {
   const result = await adminApiFetch<{ connector: MipoConnector }>("/admin/os/connectors", {

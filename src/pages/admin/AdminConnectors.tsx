@@ -43,11 +43,25 @@ import {
 /** What the owner sees instead of a key. Drawn from a boolean, never from a value. */
 const MASK = "••••••••••••";
 
-const PROVIDER_LABELS: Record<string, { name: string; docs: string; blurb: string }> = {
+const PROVIDER_LABELS: Record<string, {
+  name: string;
+  docs: string;
+  blurb: string;
+  baseUrlPlaceholder: string;
+  apiVersionPlaceholder?: string;
+}> = {
   runway: {
     name: "Runway",
     docs: "https://docs.dev.runwayml.com/",
     blurb: "וידאו והנפשה מתוך תמונה — מה שיניע את הדמות של החיה.",
+    baseUrlPlaceholder: "https://api.dev.runwayml.com/v1",
+    apiVersionPlaceholder: "2024-11-06",
+  },
+  tripo: {
+    name: "Tripo",
+    docs: "https://platform.tripo3d.ai/docs",
+    blurb: "יצירת דמויות 3D מתמונה — אבטיפוס תלת-ממדי לחיות המחמד",
+    baseUrlPlaceholder: "https://api.tripo3d.ai/v2/openapi",
   },
 };
 
@@ -88,8 +102,8 @@ const ConnectorCard = ({
   const meta = PROVIDER_LABELS[connector.provider];
 
   const [apiKey, setApiKey] = useState("");
-  const [baseUrl, setBaseUrl] = useState(connector.settings?.baseUrl || "");
-  const [apiVersion, setApiVersion] = useState(connector.settings?.apiVersion || "");
+  const [baseUrl, setBaseUrl] = useState(connector.settings?.baseUrl || meta?.baseUrlPlaceholder || "");
+  const [apiVersion, setApiVersion] = useState(connector.settings?.apiVersion || meta?.apiVersionPlaceholder || "");
   const [saving, setSaving] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
@@ -103,9 +117,14 @@ const ConnectorCard = ({
   }, []);
 
   useEffect(() => {
-    setBaseUrl(connector.settings?.baseUrl || "");
-    setApiVersion(connector.settings?.apiVersion || "");
-  }, [connector.settings?.baseUrl, connector.settings?.apiVersion]);
+    setBaseUrl(connector.settings?.baseUrl || meta?.baseUrlPlaceholder || "");
+    setApiVersion(connector.settings?.apiVersion || meta?.apiVersionPlaceholder || "");
+  }, [
+    connector.settings?.baseUrl,
+    connector.settings?.apiVersion,
+    meta?.baseUrlPlaceholder,
+    meta?.apiVersionPlaceholder,
+  ]);
 
   const status = STATUS[connector.status] || STATUS.unverified;
 
@@ -118,7 +137,10 @@ const ConnectorCard = ({
           // OMITTED, not blanked, when no new key was typed: the server keeps
           // what it has, and "" would read as "clear it".
           ...(apiKey.trim() ? { api_key: apiKey.trim() } : {}),
-          settings: { baseUrl: baseUrl.trim(), apiVersion: apiVersion.trim() },
+          settings: {
+            baseUrl: baseUrl.trim(),
+            ...(meta?.apiVersionPlaceholder ? { apiVersion: apiVersion.trim() } : {}),
+          },
         },
         idempotencyKey.current,
       );
@@ -137,16 +159,19 @@ const ConnectorCard = ({
     } finally {
       setSaving(false);
     }
-  }, [apiKey, apiVersion, baseUrl, connector.provider, onSaved, resetKey, toast]);
+  }, [apiKey, apiVersion, baseUrl, connector.provider, meta?.apiVersionPlaceholder, onSaved, resetKey, toast]);
 
   const verify = useCallback(async () => {
     setVerifying(true);
     try {
       const verified = await verifyAdminConnector(connector.provider);
       onSaved(verified);
+      const balanceNote = typeof verified.balance === "number"
+        ? `יתרה נותרה: ${verified.balance.toLocaleString("he-IL")}`
+        : undefined;
       toast({
         title: verified.status === "connected" ? "הספק אישר את המפתח" : "הספק לא אישר",
-        description: verified.status === "connected" ? undefined : verified.last_error || undefined,
+        description: verified.status === "connected" ? balanceNote : verified.last_error || undefined,
         variant: verified.status === "connected" ? undefined : "destructive",
       });
     } catch (error) {
@@ -178,7 +203,7 @@ const ConnectorCard = ({
   }, [connector.provider, onSaved, toast]);
 
   return (
-    <Card className="border-mipo-line">
+    <Card className="border-mipo-line" data-provider={connector.provider}>
       <CardContent className="space-y-4 p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -213,6 +238,12 @@ const ConnectorCard = ({
           </p>
         )}
 
+        {typeof connector.balance === "number" && (
+          <p className="text-sm font-medium text-mipo-ink">
+            יתרה נותרה: {connector.balance.toLocaleString("he-IL")}
+          </p>
+        )}
+
         <div className="space-y-1.5">
           <Label htmlFor={`${connector.provider}-key`} className="text-xs">מפתח API</Label>
           <Input
@@ -238,9 +269,10 @@ const ConnectorCard = ({
         </div>
 
         {/* Editable, because a wrong value here looks exactly like a bad key.
-            The comment in connectors.js records that these two could not be
-            checked against Runway's documentation from the build environment. */}
-        <div className="grid gap-3 sm:grid-cols-2">
+            Runway's defaults could not be checked against its documentation
+            from the build environment (see connectors.js). Tripo's default is
+            the documented balance origin, and it has no version header. */}
+        <div className={meta?.apiVersionPlaceholder ? "grid gap-3 sm:grid-cols-2" : "space-y-3"}>
           <div className="space-y-1.5">
             <Label htmlFor={`${connector.provider}-url`} className="text-xs">כתובת בסיס</Label>
             <Input
@@ -248,19 +280,21 @@ const ConnectorCard = ({
               dir="ltr"
               value={baseUrl}
               onChange={(event) => { setBaseUrl(event.target.value); resetKey(); }}
-              placeholder="https://api.dev.runwayml.com/v1"
+              placeholder={meta?.baseUrlPlaceholder || "https://"}
             />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor={`${connector.provider}-version`} className="text-xs">גרסת API</Label>
-            <Input
-              id={`${connector.provider}-version`}
-              dir="ltr"
-              value={apiVersion}
-              onChange={(event) => { setApiVersion(event.target.value); resetKey(); }}
-              placeholder="2024-11-06"
-            />
-          </div>
+          {meta?.apiVersionPlaceholder && (
+            <div className="space-y-1.5">
+              <Label htmlFor={`${connector.provider}-version`} className="text-xs">גרסת API</Label>
+              <Input
+                id={`${connector.provider}-version`}
+                dir="ltr"
+                value={apiVersion}
+                onChange={(event) => { setApiVersion(event.target.value); resetKey(); }}
+                placeholder={meta.apiVersionPlaceholder}
+              />
+            </div>
+          )}
         </div>
 
         <p className="text-[11px] leading-5 text-mipo-muted">
