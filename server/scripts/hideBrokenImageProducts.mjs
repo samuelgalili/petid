@@ -165,7 +165,12 @@ const applyOne = async (client, mode, plan) => {
     mode,
     rowsByIdFrom([{ ...row, name: plan.name }]),
     holdsByIdFrom(holdResult.rows),
-  )[0];
+  ).find((entry) => entry.id === plan.id);
+  if (!decision) {
+    const error = new Error(`no plan for ${plan.id}`);
+    error.code = "NO_PLAN";
+    throw error;
+  }
   if (blockingActions.has(decision.action)) {
     const error = new Error(`${decision.action}: ${plan.id}`);
     error.code = decision.action;
