@@ -14,6 +14,24 @@ const optionalText = (value, maxLength) => {
   return normalized;
 };
 
+// The feed may show a pet's name, or only the first word of a person's name.
+// "דנה כהן" is "דנה". The rest of the name never leaves this module.
+export const authorFirstName = (fullName) => {
+  const parts = String(fullName || "").trim().split(/\s+/).filter(Boolean);
+  return parts[0] || null;
+};
+
+// A person's profile photo is never part of a feed or comment payload.
+// avatar_url stays empty; a pet photo, when there is one, is on `pet`.
+export const publicFeedCreator = ({ id, fullName, petName = null }) => {
+  const pet = String(petName || "").trim();
+  return {
+    id,
+    display_name: pet || authorFirstName(fullName) || "Mipo",
+    avatar_url: null,
+  };
+};
+
 const normalizePollOptions = (value) => {
   if (!Array.isArray(value)) return [];
   const options = value
@@ -49,7 +67,7 @@ export const normalizeSocialPostInput = (body = {}) => {
   };
 };
 
-const serializePost = (row) => ({
+export const serializeSocialPost = (row) => ({
   id: row.id,
   caption: row.caption || null,
   location: row.location || null,
@@ -69,11 +87,11 @@ const serializePost = (row) => ({
   viewer_has_saved: Boolean(row.viewer_has_saved),
   is_owner: Boolean(row.is_owner),
   published_at: row.published_at,
-  creator: {
+  creator: publicFeedCreator({
     id: row.user_id,
-    display_name: row.creator_name || "Mipo",
-    avatar_url: row.creator_avatar_url || null,
-  },
+    fullName: row.creator_name,
+    petName: row.pet_name,
+  }),
   pet: row.pet_id ? {
     id: row.pet_id,
     name: row.pet_name,
@@ -87,8 +105,7 @@ const postSelect = `
   select
     post.*,
     upload.storage_key,
-    author.full_name as creator_name,
-    profile.avatar_url as creator_avatar_url,
+    nullif(split_part(btrim(coalesce(author.full_name, '')), ' ', 1), '') as creator_name,
     pet.name as pet_name,
     pet.avatar_url as pet_avatar_url,
     pet.type as pet_type,
@@ -117,7 +134,6 @@ const postSelect = `
     ), '[]'::jsonb) as poll_results
   from public.social_posts post
   join public.user_uploads upload on upload.id = post.upload_id
-  left join public.profiles profile on profile.id = post.user_id
   left join public.app_users author on author.id = post.user_id
   left join public.pets pet on pet.id = post.pet_id
 `;
@@ -152,7 +168,7 @@ export const listSocialFeed = async (pool, userId, { limit = 20, before = null, 
     values,
   );
 
-  return result.rows.map(serializePost);
+  return result.rows.map(serializeSocialPost);
 };
 
 export const getSocialPost = async (pool, userId, postId) => {
@@ -166,7 +182,7 @@ export const getSocialPost = async (pool, userId, postId) => {
       limit 1`,
     [userId, postId],
   );
-  return result.rows[0] ? serializePost(result.rows[0]) : null;
+  return result.rows[0] ? serializeSocialPost(result.rows[0]) : null;
 };
 
 export const createSocialPost = async (pool, userId, body) => {
@@ -263,11 +279,9 @@ export const listSocialComments = async (pool, userId, postId, { limit = 80 } = 
         comment.parent_id,
         comment.body,
         comment.created_at,
-        author.full_name as creator_name,
-        profile.avatar_url as creator_avatar_url,
+        nullif(split_part(btrim(coalesce(author.full_name, '')), ' ', 1), '') as creator_name,
         (comment.user_id = $2) as is_owner
       from public.social_post_comments comment
-      left join public.profiles profile on profile.id = comment.user_id
       left join public.app_users author on author.id = comment.user_id
       where comment.post_id = $1 and comment.status = 'published'
       order by comment.created_at asc
@@ -275,21 +289,22 @@ export const listSocialComments = async (pool, userId, postId, { limit = 80 } = 
     `,
     [postId, userId, normalizedLimit],
   );
-  return result.rows.map((row) => ({
-    id: row.id,
-    post_id: row.post_id,
-    user_id: row.user_id,
-    parent_id: row.parent_id || null,
-    body: row.body,
-    created_at: row.created_at,
-    is_owner: Boolean(row.is_owner),
-    creator: {
-      id: row.user_id,
-      display_name: row.creator_name || "Mipo",
-      avatar_url: row.creator_avatar_url || null,
-    },
-  }));
+  return result.rows.map(serializeSocialComment);
 };
+
+export const serializeSocialComment = (row) => ({
+  id: row.id,
+  post_id: row.post_id,
+  user_id: row.user_id,
+  parent_id: row.parent_id || null,
+  body: row.body,
+  created_at: row.created_at,
+  is_owner: Boolean(row.is_owner),
+  creator: publicFeedCreator({
+    id: row.user_id,
+    fullName: row.creator_name,
+  }),
+});
 
 export const createSocialComment = async (pool, userId, postId, body) => {
   const post = await getSocialPost(pool, userId, postId);
