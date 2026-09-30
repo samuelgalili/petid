@@ -115,9 +115,26 @@ test("one day after a birthday is the new year", () => {
 });
 
 test("a month boundary rolls the month, not the year", () => {
-  const age = petAge({ birth_date: daysAgo(Math.round(30.4375 * 7)) });
+  // Calendar months, measured from a fixed pair of instants. The previous
+  // form asked for 7 × 30.4375 days before Date.now() and required that to
+  // be seven months. On 2026-09-30 that span lands on 2026-03-01, which is
+  // six calendar months — and the calendar count is the one the code owes.
+  const born = Date.UTC(2026, 2, 15);
+  const now = Date.UTC(2026, 9, 15);
+  const bornDate = new Date(born);
+  const nowDate = new Date(now);
+  const expectedMonths =
+    (nowDate.getUTCFullYear() - bornDate.getUTCFullYear()) * 12
+    + (nowDate.getUTCMonth() - bornDate.getUTCMonth());
+  const age = fromTotalMonths(wholeMonthsBetween(born, now));
+  assert.equal(age.totalMonths, expectedMonths);
   assert.equal(age.years, 0);
-  assert.equal(age.months, 7);
+  assert.equal(age.months, expectedMonths);
+  // The day before the birth day-of-month is still the previous month,
+  // and still not a new year.
+  const dayBefore = fromTotalMonths(wholeMonthsBetween(born, Date.UTC(2026, 9, 14)));
+  assert.equal(dayBefore.totalMonths, expectedMonths - 1);
+  assert.equal(dayBefore.years, age.years);
 });
 
 test("a leap-day birth date is a real date and produces a real age", () => {
