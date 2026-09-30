@@ -126,6 +126,11 @@ import {
   toggleSocialSave,
   voteSocialPoll,
 } from "./social.js";
+import {
+  adminMayReadRestrictedFile,
+  decidePostUploadAccess,
+  listPostsForUploadKey,
+} from "./uploadAccess.js";
 import { createContentReportRoutes } from "./contentReportRoutes.js";
 import { resolveCatalogProducts } from "./catalogRecommendations.js";
 import { calculatePetAge } from "./petAge.js";
@@ -8151,6 +8156,7 @@ const sendStoredFile = (response, buffer, {
   isPrivate = false,
   sandbox = false,
   head = false,
+  cacheControl = null,
 } = {}) => {
   const disposition = contentType.startsWith("image/")
     || contentType.startsWith("video/")
@@ -8161,7 +8167,7 @@ const sendStoredFile = (response, buffer, {
   const headers = {
     "content-type": contentType,
     "content-length": String(buffer.length),
-    "cache-control": isPrivate ? "private, no-store" : "public, max-age=31536000, immutable",
+    "cache-control": cacheControl || (isPrivate ? "private, no-store" : "public, max-age=31536000, immutable"),
     "content-disposition": `${disposition}; filename="${sanitizeDownloadFileName(fileName, path.extname(fileName || ""))}"`,
     "x-content-type-options": "nosniff",
     "cross-origin-resource-policy": "same-origin",
@@ -8253,6 +8259,17 @@ const servePetCharacterAsset = async (userId, petId, assetKey, response) => {
   return true;
 };
 
+const uploadViewer = async (request) => {
+  const [admin, auth] = await Promise.all([
+    resolveAdminIdentity(request),
+    getUserFromSession(request),
+  ]);
+  return {
+    userId: auth?.user?.id ?? null,
+    isAdmin: adminMayReadRestrictedFile(admin, { twoFactorEnabled: adminTwoFactorEnabled }),
+  };
+};
+
 const servePublicUpload = async (request, response, pathname) => {
   const storageKey = safeStorageKey(pathname.slice("/uploads/".length));
   const contentType = storageKey ? contentTypeForSafeExtension(path.extname(storageKey)) : null;
@@ -8273,6 +8290,14 @@ const servePublicUpload = async (request, response, pathname) => {
     if (auth.user.id !== documentResult.rows[0].user_id) return false;
   }
 
+  // Post files are checked before the bytes are read. A refusal is a 404 from
+  // the caller, which already sends Cache-Control: no-store. The file stays
+  // on disk so a restored post is servable again.
+  const posts = documentResult.rows[0] ? [] : await listPostsForUploadKey(pool, storageKey);
+  let access = decidePostUploadAccess(posts);
+  if (!access.allow) access = decidePostUploadAccess(posts, await uploadViewer(request));
+  if (!access.allow) return false;
+
   let buffer;
   try {
     buffer = await readFile(path.join(uploadDir, storageKey));
@@ -8283,8 +8308,9 @@ const servePublicUpload = async (request, response, pathname) => {
   sendStoredFile(response, buffer, {
     contentType,
     fileName: storageKey,
-    isPrivate: Boolean(documentResult.rows[0]),
+    isPrivate: Boolean(documentResult.rows[0]) || access.restricted,
     sandbox: Boolean(documentResult.rows[0]),
+    cacheControl: access.cacheControl,
     head: request.method === "HEAD",
   });
   return true;
