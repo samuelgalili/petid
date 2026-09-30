@@ -1,0 +1,210 @@
+# Cancel seven unpaid test orders. Status becomes cancelled. Rows stay.
+#
+# Dry-run is the default and writes nothing. apply needs the confirmation
+# text CANCEL-TEST-ORDERS, checked before anything is contacted. A backup
+# is taken before a write.
+#
+# The script cancels only the allowlisted order numbers, and only when they
+# are still unpaid inside the UPDATE itself. It does not remove rows, it
+# does not change payment status, and it does not touch stock. The audit
+# row is the same outbox event an admin cancel writes.
+#
+# The script is bind-mounted. server/Dockerfile does not copy scripts, and
+# the deploy rsync does put server/ on the host. DATABASE_URL is never read
+# or printed here. The container receives it from compose, the same way the
+# API does.
+#
+# workflow_dispatch is offered only for workflow files on the default branch.
+# After this file lands on aws-migration, a copy of this workflow has to
+# exist on main, and the run's "Use workflow from" has to be aws-migration.
+# That is how the hide-products workflow is run.
+#
+# Running mode=apply changes production data. It needs the owner's approval.
+
+name: Cancel unpaid test orders
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'dry-run prints each order and writes nothing. apply cancels the eligible ones.'
+        required: true
+        default: 'dry-run'
+        type: choice
+        options:
+          - dry-run
+          - apply
+      confirmation:
+        description: 'For apply, type CANCEL-TEST-ORDERS. Ignored for dry-run.'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aws-production
+  cancel-in-progress: false
+
+jobs:
+  cancel-test-orders:
+    name: Cancel the unpaid test orders
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+
+    env:
+      MIPO_AWS_HOST: ${{ vars.MIPO_AWS_HOST || '63.183.241.110' }}
+      MIPO_AWS_USER: ${{ vars.MIPO_AWS_USER || 'ubuntu' }}
+      MIPO_REMOTE_PATH: ${{ vars.MIPO_REMOTE_PATH || '/opt/mipo' }}
+
+    steps:
+      - name: Confirm intent
+        env:
+          MODE: ${{ inputs.mode }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          set -euo pipefail
+
+          case "$MODE" in
+            dry-run|apply) ;;
+            *)
+              echo "Nothing was contacted. Production was not touched." >&2
+              echo "mode must be dry-run or apply." >&2
+              exit 1
+              ;;
+          esac
+
+          if [ "$MODE" = "apply" ] && [ "$CONFIRMATION" != "CANCEL-TEST-ORDERS" ]; then
+            echo "Nothing was contacted. Production was not touched." >&2
+            echo "" >&2
+            echo "mode=apply changes production data and needs the owner's approval." >&2
+            echo "The confirmation box has to contain exactly this text:" >&2
+            echo "" >&2
+            echo "    CANCEL-TEST-ORDERS" >&2
+            echo "" >&2
+            echo "Leave mode on dry-run to print each order without writing." >&2
+            exit 1
+          fi
+
+          if [ "$MODE" = "dry-run" ]; then
+            echo "Confirmed: dry run. Nothing will be written."
+          else
+            echo "Confirmed: apply. A backup is taken first. This changes production data."
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify the script only cancels allowlisted unpaid orders
+        run: |
+          set -euo pipefail
+          script="server/scripts/cancelTestOrders.mjs"
+          if [ ! -f "$script" ]; then
+            echo "BLOCKED-PROD: $script is not in this checkout." >&2
+            echo "This job ran from branch '${GITHUB_REF_NAME}'." >&2
+            echo "In Run workflow, set 'Use workflow from' to aws-migration." >&2
+            exit 1
+          fi
+
+          if grep -inE 'delete[[:space:]]+from' "$script"; then
+            echo "BLOCKED-PROD: the script contains a delete." >&2
+            exit 1
+          fi
+          if grep -inE '\b(drop|truncate)\b' "$script"; then
+            echo "BLOCKED-PROD: the script contains a destructive statement." >&2
+            exit 1
+          fi
+
+          denylist_line='export const DENYLIST = Object.freeze(["MIPO-20260818-8B5E6A"]);'
+          if ! grep -qxF "$denylist_line" "$script"; then
+            echo "BLOCKED-PROD: the denylist constant is missing or was rewritten." >&2
+            exit 1
+          fi
+          if grep -n '8B5E6A' "$script" | grep -vF "$denylist_line"; then
+            echo "BLOCKED-PROD: 8B5E6A appears outside the denylist constant." >&2
+            exit 1
+          fi
+
+          grep -qE '\bassertAllowlisted\b[[:space:]]*\(' "$script" \
+            || { echo "BLOCKED-PROD: the script must call assertAllowlisted()"; exit 1; }
+          grep -q 'update public.orders' "$script" \
+            || { echo "BLOCKED-PROD: the script does not update orders"; exit 1; }
+          grep -q "status = 'cancelled'" "$script" \
+            || { echo "BLOCKED-PROD: the script does not set status to cancelled"; exit 1; }
+          echo "Verified: cancel on the allowlist only. No delete, drop, or truncate."
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.MIPO_AWS_SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SSH_PRIVATE_KEY:-}" ]; then
+            echo "BLOCKED-PROD: the production environment has no MIPO_AWS_SSH_PRIVATE_KEY." >&2
+            exit 1
+          fi
+          if [ -z "${MIPO_AWS_HOST}" ]; then
+            echo "BLOCKED-PROD: MIPO_AWS_HOST is empty for the production environment." >&2
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/mipo_aws_key
+          chmod 600 ~/.ssh/mipo_aws_key
+          ssh-keyscan -T 30 -H "$MIPO_AWS_HOST" >> ~/.ssh/known_hosts || true
+          echo "SSH configured for ${MIPO_AWS_USER}@${MIPO_AWS_HOST}"
+
+      - name: Run the mode
+        env:
+          MODE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          case "$MODE" in
+            dry-run|apply) ;;
+            *)
+              echo "mode must be dry-run or apply." >&2
+              exit 1
+              ;;
+          esac
+          ssh -i ~/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 \
+            "${MIPO_AWS_USER}@${MIPO_AWS_HOST}" \
+            "MIPO_REMOTE_PATH='${MIPO_REMOTE_PATH}' MODE='${MODE}' bash -s" <<'REMOTE'
+          set -euo pipefail
+
+          case "$MODE" in
+            dry-run|apply) ;;
+            *)
+              echo "BLOCKED-PROD: mode must be dry-run or apply." >&2
+              exit 1
+              ;;
+          esac
+
+          compose_file="${MIPO_REMOTE_PATH}/deploy/aws/docker-compose.yml"
+          scripts_dir="${MIPO_REMOTE_PATH}/server/scripts"
+          script_name="cancelTestOrders.mjs"
+
+          test -f "$compose_file" || { echo "BLOCKED-PROD: no compose file at $compose_file" >&2; exit 1; }
+          if [ ! -f "${scripts_dir}/${script_name}" ]; then
+            echo "BLOCKED-PROD: ${scripts_dir}/${script_name} is not on the host." >&2
+            echo "The deploy's rsync puts server/ here; deploy aws-migration first." >&2
+            exit 1
+          fi
+
+          if [ "$MODE" != "dry-run" ]; then
+            echo "Backing up before writing..."
+            bash "${MIPO_REMOTE_PATH}/deploy/aws/backup-before-migrate.sh" \
+              "${MIPO_REMOTE_PATH}" "cancel-test-orders-${MODE}-$(date -u +%Y%m%dT%H%M%SZ)"
+          fi
+
+          echo "Running: node scripts/${script_name} --mode=${MODE}"
+          echo ""
+          docker compose -f "$compose_file" run --rm --no-deps -T \
+            -v "${scripts_dir}:/app/scripts:ro" \
+            mipo-api node "scripts/${script_name}" "--mode=${MODE}" </dev/null
+          REMOTE
+
+      - name: Remove the key
+        if: always()
+        run: |
+          set -euo pipefail
+          rm -f ~/.ssh/mipo_aws_key
+          echo "Key removed from the runner."
