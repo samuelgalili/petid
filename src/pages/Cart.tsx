@@ -181,9 +181,9 @@ const Cart = () => {
   }
 
   return (
-    <div className="mipo-shell h-screen overflow-hidden bg-white" dir="rtl">
+    <div className="mipo-shell flex h-dvh flex-col overflow-hidden bg-white" dir="rtl">
       <SEO title="עגלת קניות" description="סיימו את הרכישה שלכם - מוצרים איכותיים לחיות מחמד" url="/cart" noIndex={true} />
-      <div className="h-full overflow-y-auto pb-[70px]">
+      <div data-testid="cart-scroll" className="min-h-0 flex-1 overflow-y-auto">
       <AppHeader title="עגלת הקניות" showBackButton={true} />
       
       {/* Cart Items */}
@@ -440,22 +440,6 @@ const Cart = () => {
                   </div>
                 </div>
               </div>
-
-              {/* Checkout Button */}
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <Button
-                  onClick={handleCheckout}
-                  disabled={catalogue.isSuccess && orderItems.length === 0}
-                  className="mipo-cta-button h-14 w-full gap-3 rounded-2xl text-lg"
-                >
-                  {sellerGroups.length > 1
-                    ? `לתשלום — ${sellerGroups[0].sellerName || "מיפו"}`
-                    : "המשך לתשלום"}
-                </Button>
-              </motion.div>
             </div>
           </Card>
         </motion.div>
@@ -470,6 +454,35 @@ const Cart = () => {
         </motion.button>
       </div>
       </div>
+
+      {/* Pinned above the fixed bottom nav. The list scrolls; the total and
+          the checkout button stay in view, including when the basket is long. */}
+      <div
+        data-testid="cart-checkout-bar"
+        className="shrink-0 border-t border-mipo-line bg-white px-4 pb-3 pt-3"
+      >
+        <div data-testid="cart-checkout-total" className="mb-3 flex items-center justify-between gap-3">
+          <span className="font-jakarta text-base font-bold text-foreground">
+            {sellerGroups.length > 1
+              ? `סה״כ ב${sellerGroups[0].sellerName || "מיפו"}`
+              : "סה״כ לתשלום"}
+          </span>
+          <span className="font-jakarta text-xl font-bold tabular-nums text-mipo-ink">
+            ₪{total.toFixed(2)}
+          </span>
+        </div>
+        <Button
+          onClick={handleCheckout}
+          disabled={catalogue.isSuccess && orderItems.length === 0}
+          className="mipo-cta-button h-14 w-full gap-3 rounded-2xl text-lg"
+        >
+          {sellerGroups.length > 1
+            ? `לתשלום — ${sellerGroups[0].sellerName || "מיפו"}`
+            : "המשך לתשלום"}
+        </Button>
+      </div>
+      {/* BottomNav is position:fixed: 68px row, 1px top border, plus the home-indicator inset. */}
+      <div aria-hidden="true" className="h-[calc(69px+env(safe-area-inset-bottom,0px))] shrink-0" />
 
       <BottomNav />
     </div>
