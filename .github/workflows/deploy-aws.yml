@@ -295,6 +295,9 @@ jobs:
           set -euo pipefail
           cd "$MIPO_REMOTE_PATH"
           compose_file="$MIPO_REMOTE_PATH/deploy/aws/docker-compose.yml"
+          # Build, migrate and run this commit's own tag, mipo-api:<sha12>. The
+          # previous tags stay on the host for deploy/aws/api-images.sh rollback.
+          export MIPO_IMAGE_TAG="${MIPO_DEPLOY_SHA}"
 
           sudo MIPO_REMOTE_PATH="$MIPO_REMOTE_PATH" bash "$MIPO_REMOTE_PATH/deploy/aws/prepare-host.sh"
           docker compose -f "$compose_file" build mipo-api
@@ -317,6 +320,11 @@ jobs:
           # longer match the schema fails here instead of being called healthy.
           docker compose -f "$compose_file" up -d --force-recreate --no-deps --wait --wait-timeout 60 mipo-api
           docker compose -f "$compose_file" ps
+
+          # Healthy: make this build `latest` and keep only the newest three
+          # SHA tags. A failure here does not fail a deploy that is already up.
+          bash "$MIPO_REMOTE_PATH/deploy/aws/api-images.sh" promote "$MIPO_REMOTE_PATH" "$MIPO_IMAGE_TAG" \
+            || echo "::warning::api-images.sh promote failed; old API images were not pruned."
           REMOTE
 
       # Only now, with the API up and answering against the schema it was built

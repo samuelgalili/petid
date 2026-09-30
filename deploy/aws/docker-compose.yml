@@ -2,6 +2,12 @@ services:
   mipo-api:
     build:
       context: ${MIPO_REMOTE_PATH:-/opt/mipo}/server
+    # One tag per deploy (the first 12 of the commit SHA), so the previous
+    # builds stay on the host and deploy/aws/api-images.sh can put one back
+    # without a rebuild. `latest` is the one the deploy last promoted; a
+    # compose command run by hand without MIPO_IMAGE_TAG uses it. `:-` for the
+    # same reason as MIPO_DEPLOY_SHA below.
+    image: mipo-api:${MIPO_IMAGE_TAG:-latest}
     restart: unless-stopped
     env_file:
       - ${MIPO_REMOTE_PATH:-/opt/mipo}/.env
