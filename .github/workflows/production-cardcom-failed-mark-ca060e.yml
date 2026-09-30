@@ -75,7 +75,7 @@ jobs:
           CONFIRMATION: ${{ inputs.confirmation }}
         run: |
           set -euo pipefail
-          CONFIRMATION="$(printf '%s' "${CONFIRMATION:-}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+          CONFIRMATION="$(printf '%s' "${CONFIRMATION:-}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr '[:lower:]' '[:upper:]')"
           if [ "$CONFIRMATION" != "MARK-FAILED" ]; then
             # The instruction comes FIRST and the status code LAST, because the
             # other way round taught somebody to type the status code into the
