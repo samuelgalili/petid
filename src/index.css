@@ -172,6 +172,14 @@
     --accent-hover: 264 82% 60%;
     --accent-light: 264 82% 76%;
 
+    /* The one filled colour on the purchase journey: shop sheet, product,
+       cart, checkout. White on this hex is 5.37:1. Hover and press step
+       darker on the same hue; the fill itself does not invert in dark mode. */
+    --primary-cta: #5B52F0;
+    --primary-cta-hover: #5048D3;
+    --primary-cta-active: #4942C0;
+    --primary-cta-foreground: #ffffff;
+
     /* Success - Friendly Green */
     --success: 152 60% 45%;
     --success-foreground: 0 0% 100%;
@@ -1009,6 +1017,63 @@
     border: 0;
     color: hsl(var(--mipo-surface));
     background: hsl(var(--mipo-ink));
+  }
+
+  /* Purchase primary. Sits on .mipo-cta-button (or alone) and must be listed
+   * after that armour: both selectors are two classes, so source order is
+   * what keeps --primary-cta from losing to ink on hover. Colours only. */
+  .mipo-primary-cta {
+    @apply inline-flex items-center justify-center gap-2 font-bold transition-all duration-200 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .mipo-primary-cta.mipo-primary-cta,
+  .mipo-primary-cta.mipo-primary-cta:disabled {
+    border: 0;
+    color: var(--primary-cta-foreground);
+    background-color: var(--primary-cta);
+    background-image: none;
+  }
+
+  .mipo-primary-cta.mipo-primary-cta:hover,
+  .mipo-primary-cta.mipo-primary-cta:focus-visible {
+    border: 0;
+    color: var(--primary-cta-foreground);
+    background-color: var(--primary-cta-hover);
+    background-image: none;
+  }
+
+  .mipo-primary-cta.mipo-primary-cta:active {
+    border: 0;
+    color: var(--primary-cta-foreground);
+    background-color: var(--primary-cta-active);
+    background-image: none;
+  }
+
+  /* One outline for secondary purchase actions (coupon, full product page).
+   * Doubled colours so a default <Button> fill cannot paint over the line. */
+  .mipo-outline-button {
+    @apply inline-flex items-center justify-center gap-2 font-semibold transition-colors duration-200 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+    min-height: 2.75rem;
+    border-radius: 1rem;
+    border: 1px solid hsl(var(--mipo-line));
+    padding-inline: 1rem;
+  }
+
+  .mipo-outline-button.mipo-outline-button,
+  .mipo-outline-button.mipo-outline-button:focus-visible,
+  .mipo-outline-button.mipo-outline-button:active,
+  .mipo-outline-button.mipo-outline-button:disabled {
+    color: hsl(var(--mipo-ink));
+    background-color: #ffffff;
+    background-image: none;
+    border-color: hsl(var(--mipo-line));
+  }
+
+  .mipo-outline-button.mipo-outline-button:hover {
+    color: hsl(var(--mipo-ink));
+    background-color: hsl(var(--mipo-soft));
+    background-image: none;
+    border-color: hsl(var(--mipo-line));
   }
 
   /* Selected state for chips and segmented controls: same inversion, no

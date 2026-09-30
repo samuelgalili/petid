@@ -931,7 +931,7 @@ const Shop = () => {
                       type="button"
                       onClick={handleAddToCart}
                       disabled={!selectedProduct.inStock}
-                      className="h-14 flex-1 rounded-2xl text-base font-bold"
+                      className="mipo-cta-button mipo-primary-cta h-14 flex-1 rounded-2xl text-base font-bold"
                       data-testid="shop-add-to-cart"
                     >
                       <ShoppingBag className="h-5 w-5" />
@@ -944,7 +944,7 @@ const Shop = () => {
                 <button
                   type="button"
                   onClick={() => navigate(`/product/${selectedProduct.id}${activePet?.id ? `?petId=${activePet.id}` : ""}`)}
-                  className="mt-3 min-h-11 w-full rounded-2xl border border-border/60 text-sm font-medium text-foreground transition-colors hover:bg-muted/50"
+                  className="mipo-outline-button mt-3 w-full text-sm font-medium"
                 >
                   לדף המוצר המלא
                 </button>
