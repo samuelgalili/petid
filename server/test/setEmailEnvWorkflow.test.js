@@ -163,7 +163,7 @@ test("the workflow confirms a write before SSH and does not echo secrets", () =>
   assert.match(workflow, /0o600/);
 
   const secretNames = [...workflow.matchAll(/secrets\.([A-Z0-9_]+)/g)].map((match) => match[1]);
-  assert.deepEqual([...new Set(secretNames)].sort(), ["MIPO_AWS_SSH_PRIVATE_KEY", "RESEND_API_KEY"]);
+  assert.deepEqual([...new Set(secretNames)].sort(), ["MIPO_AWS_KNOWN_HOSTS", "MIPO_AWS_SSH_PRIVATE_KEY", "RESEND_API_KEY"]);
   const varNames = [...workflow.matchAll(/vars\.([A-Z0-9_]+)/g)].map((match) => match[1]);
   assert.deepEqual([...new Set(varNames)].sort(), ["MIPO_AWS_HOST", "MIPO_AWS_USER", "MIPO_REMOTE_PATH"]);
 
