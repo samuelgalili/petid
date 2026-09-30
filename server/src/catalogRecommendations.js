@@ -17,6 +17,8 @@
 // that no one has reviewed: they have no publication state yet, so the
 // assistant must not be the thing that puts them in front of a customer.
 
+import { isShopUnavailable, purchasableLegacySql } from "./shopVisibility.js";
+
 const MAX_TERMS = 6;
 const MAX_RESULTS = 6;
 const MIN_TERM_LENGTH = 2;
@@ -63,7 +65,7 @@ export const buildCatalogSearch = (terms, petType) => {
   const values = [terms.map((term) => `%${escapeLikeTerm(term)}%`)];
   const where = [
     "coalesce(p.in_stock, true) = true",
-    "coalesce(p.shop_hidden, false) = false",
+    purchasableLegacySql("p"),
     `(p.name ilike any($${values.length}::text[]) or coalesce(p.brand, '') ilike any($${values.length}::text[]) or coalesce(p.category, '') ilike any($${values.length}::text[]))`,
   ];
 
@@ -110,7 +112,7 @@ export const resolveCatalogProducts = async (pool, candidates, { petType = null 
   // The assistant's answer is still useful without product cards; a 500 is not.
   try {
     const result = await pool.query(sql, values);
-    return result.rows.map(toRecommendationCard);
+    return result.rows.filter((row) => !isShopUnavailable(row)).map(toRecommendationCard);
   } catch {
     return [];
   }

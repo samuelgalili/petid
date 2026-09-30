@@ -445,8 +445,12 @@ test.describe("public entry", () => {
     await expect(page.locator("img[src*='ken-hatuki']")).toHaveCount(0);
 
     await page.goto("/product/empty-photo");
-    await expect(page.getByRole("heading", { name: "בלי תמונה" })).toBeVisible();
-    await expect(page.getByTestId("product-image-fallback").first()).toBeVisible();
+    await expect(page.getByTestId("product-unavailable")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "המוצר לא זמין כרגע" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "בלי תמונה" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "הוסף לעגלה" })).toHaveCount(0);
+    await expect(page.getByText("₪0.00")).toHaveCount(0);
+    await expect(page.getByText("₪49.00")).toHaveCount(0);
   });
 
   test("sitemap and robots are real documents", async ({ page }) => {

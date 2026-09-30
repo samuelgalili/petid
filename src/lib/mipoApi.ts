@@ -1,5 +1,10 @@
 import { emitPetCompanionEvent } from "@/lib/petCompanionReactions";
-import { visibleShopProducts } from "@/lib/shopVisibility";
+import {
+  PRODUCT_UNAVAILABLE_CODE,
+  PRODUCT_UNAVAILABLE_HE,
+  isShopUnavailable,
+  visibleShopProducts,
+} from "@/lib/shopVisibility";
 
 export interface MipoProduct {
   id: string;
@@ -18,7 +23,7 @@ export interface MipoProduct {
   category_name?: string | null;
   pet_type?: string | null;
   in_stock: boolean | null;
-  /** Present on a full admin row. Public responses omit hidden products instead. */
+  /** Reversible hide flag. Public lists omit a true row; a leaked true row is still not for sale. */
   shop_hidden?: boolean | null;
   is_featured?: boolean | null;
   business_id?: string | null;
@@ -2111,6 +2116,17 @@ export async function getMyUsage(days = 30): Promise<MipoUserUsage> {
  */
 export async function getShopProduct(productId: string): Promise<MipoProduct> {
   const result = await apiFetch<{ product: MipoProduct }>(`/products/${encodeURIComponent(productId)}`);
+  // A 200 with no product is a missing row, the same answer as a plain 404.
+  // Only a product object that fails the shared rule is unavailable.
+  if (!result?.product || typeof result.product !== "object") {
+    throw new MipoApiError("Product not found", 404, { error: "Product not found" });
+  }
+  if (isShopUnavailable(result.product)) {
+    throw new MipoApiError(PRODUCT_UNAVAILABLE_HE, 404, {
+      error: "Product not found",
+      details: { code: PRODUCT_UNAVAILABLE_CODE },
+    });
+  }
   return result.product;
 }
 

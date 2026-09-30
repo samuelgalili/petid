@@ -14,7 +14,7 @@ import path from "node:path";
 
 import { isProductionRoute } from "./knownRoutes.js";
 import { clipPlainText, plainText } from "./productText.js";
-import { publiclyVisibleProduct } from "./shopVisibility.js";
+import { publiclyVisibleProduct, purchasableLegacySql, purchasableScrapedSql } from "./shopVisibility.js";
 import { SUPPORT_EMAIL, SUPPORT_PHONE } from "./siteContact.js";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -98,15 +98,15 @@ const PAGE_META = {
 
 
 const BUSINESS_SITEMAP_SQL = [
-  "select id::text as id, updated_at from public.business_products where in_stock is not false and coalesce(shop_hidden, false) = false",
-  "select id::text as id, created_at as updated_at from public.business_products where in_stock is not false and coalesce(shop_hidden, false) = false",
-  "select id::text as id, updated_at from public.business_products where in_stock is not false",
-  "select id::text as id, created_at as updated_at from public.business_products where in_stock is not false",
+  `select id::text as id, updated_at, price, sale_price, image_url, images, shop_hidden, in_stock from public.business_products where in_stock is not false and ${purchasableLegacySql("")}`,
+  `select id::text as id, created_at as updated_at, price, sale_price, image_url, images, shop_hidden, in_stock from public.business_products where in_stock is not false and ${purchasableLegacySql("")}`,
+  "select id::text as id, updated_at, price, sale_price, image_url, images, in_stock from public.business_products where in_stock is not false and (coalesce(sale_price, 0) > 0 or coalesce(price, 0) > 0) and (nullif(btrim(coalesce(image_url, '')), '') is not null or coalesce(cardinality(images), 0) > 0)",
+  "select id::text as id, created_at as updated_at, price, image_url, in_stock from public.business_products where in_stock is not false and coalesce(price, 0) > 0 and nullif(btrim(coalesce(image_url, '')), '') is not null",
 ];
 
 const SCRAPED_SITEMAP_SQL = [
-  "select id::text as id, coalesce(updated_at, scraped_at, created_at) as updated_at from public.scraped_products where stock_status is null or stock_status = 'in_stock'",
-  "select id::text as id, coalesce(scraped_at, created_at) as updated_at from public.scraped_products where stock_status is null or stock_status = 'in_stock'",
+  `select id::text as id, coalesce(updated_at, scraped_at, created_at) as updated_at, final_price, sale_price, regular_price, main_image_url, stock_status from public.scraped_products where (stock_status is null or stock_status = 'in_stock') and ${purchasableScrapedSql("")}`,
+  "select id::text as id, coalesce(scraped_at, created_at) as updated_at, final_price, regular_price, main_image_url, stock_status from public.scraped_products where (stock_status is null or stock_status = 'in_stock') and (coalesce(final_price, 0) > 0 or coalesce(regular_price, 0) > 0) and nullif(btrim(coalesce(main_image_url, '')), '') is not null",
 ];
 
 const FALLBACK_HTML = `<!doctype html>
@@ -459,15 +459,21 @@ export const createPublicPageRenderer = ({
         });
       } else {
         const product = await loadCachedProduct(classified.id);
-        // Same predicate as GET /api/products/:id. A hidden row is not a
-        // public product: no name, no price, no Product JSON-LD. The shell
-        // still loads so the page can show the same unavailable state the
-        // shopper gets from the 404 JSON.
-        if (!publiclyVisibleProduct(product, "public")) {
+        // Same predicate as GET /api/products/:id. A hidden, imageless, or
+        // zero-price row is not a public product: no name, no price, no
+        // Product JSON-LD. A missing id stays "not found".
+        if (!product) {
           document = pageDocument(siteOrigin, classified.path, {
             status: 404,
             title: "המוצר לא נמצא",
             description: "המוצר שביקשתם לא נמצא בקטלוג.",
+            indexable: false,
+          });
+        } else if (!publiclyVisibleProduct(product, "public")) {
+          document = pageDocument(siteOrigin, classified.path, {
+            status: 404,
+            title: "המוצר לא זמין כרגע",
+            description: "המוצר לא זמין כרגע",
             indexable: false,
           });
         } else {

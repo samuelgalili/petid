@@ -302,7 +302,8 @@ const Shop = () => {
         price,
         originalPrice,
         images: (p.images?.length ? p.images : [p.image_url]).filter((url): url is string => Boolean(url)),
-        image: p.image_url || "",
+        image: p.image_url || p.images?.find((url) => String(url || "").trim()) || "",
+        shop_hidden: p.shop_hidden ?? null,
         inStock: p.in_stock ?? true,
         freeShipping: price >= FREE_SHIPPING_THRESHOLD,
         category: p.category_name || p.category,
@@ -403,14 +404,16 @@ const Shop = () => {
       triggerFly(selectedProduct.image, centerX, centerY);
     }
 
-    addToCart({
+    const added = addToCart({
       productId: selectedProduct.id,
       name: selectedProduct.name,
       price: selectedProduct.price,
-      image: selectedProduct.image,
+      image: selectedProduct.images?.[0] || selectedProduct.image,
+      shop_hidden: selectedProduct.shop_hidden,
       quantity: quantity,
       variant: selectedSize || undefined,
     });
+    if (!added) return;
 
     toast({
       title: "נוסף לעגלה",

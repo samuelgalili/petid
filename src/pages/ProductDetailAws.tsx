@@ -26,7 +26,8 @@ import { OptimizedImage } from "@/components/OptimizedImage";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
-import { getShopProduct, type MipoProduct } from "@/lib/mipoApi";
+import { getShopProduct, MipoApiError, type MipoProduct } from "@/lib/mipoApi";
+import { isShopUnavailable, PRODUCT_UNAVAILABLE_CODE, PRODUCT_UNAVAILABLE_HE } from "@/lib/shopVisibility";
 import {
   computePetAdjustedScore,
   explainAdjustment,
@@ -152,7 +153,7 @@ const ProductDetailAws = () => {
   const [activeImage, setActiveImage] = useState(0);
   const [chosen, setChosen] = useState<Record<string, string>>({});
 
-  const { data: product, isLoading, isError } = useQuery({
+  const { data: product, isLoading, isError, error } = useQuery({
     queryKey: ["shop-product", id],
     queryFn: () => getShopProduct(id as string),
     enabled: Boolean(id),
@@ -244,19 +245,23 @@ const ProductDetailAws = () => {
   const outOfStock = product?.in_stock === false;
 
   const handleAddToCart = (thenGoToCart = false) => {
-    if (!product) return;
+    if (!product || isShopUnavailable(product)) return;
     const variantLabel = [
       ...Object.entries(chosen).map(([, value]) => value),
     ].filter(Boolean).join(" · ");
 
-    addToCart({
+    const added = addToCart({
       id: product.id,
       name: product.name,
       price,
-      image: images[0] || "/placeholder.svg",
+      image: images[0] || "",
+      image_url: images[0] || product.image_url,
+      shop_hidden: product.shop_hidden,
+      sale_price: product.sale_price,
       quantity,
       ...(variantLabel ? { variant: variantLabel } : {}),
     });
+    if (!added) return;
     toast({ title: "המוצר נוסף לעגלה", description: variantLabel || undefined });
     if (thenGoToCart) navigate("/cart");
   };
@@ -270,6 +275,28 @@ const ProductDetailAws = () => {
           <Skeleton className="h-10 w-2/3" />
           <Skeleton className="h-24 w-full" />
         </div>
+      </div>
+    );
+  }
+
+  const refused = Boolean(
+    (product && isShopUnavailable(product))
+    || (isError && error instanceof MipoApiError
+      && (error.body as { details?: { code?: string } } | undefined)?.details?.code === PRODUCT_UNAVAILABLE_CODE),
+  );
+
+  if (refused) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6" dir="rtl" data-testid="product-unavailable">
+        <Card className="w-full max-w-md text-center">
+          <CardContent className="p-6 space-y-4">
+            <Store className="mx-auto h-10 w-10 text-muted-foreground" />
+            <h1 className="text-xl font-bold">{PRODUCT_UNAVAILABLE_HE}</h1>
+            <Button asChild className="w-full">
+              <Link to="/shop">חזרה לחנות</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }

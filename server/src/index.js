@@ -102,6 +102,8 @@ import {
 import { adminProductView } from "./sellerScope.js";
 import {
   CHECKOUT_UNAVAILABLE_HE,
+  PRODUCT_UNAVAILABLE_CODE,
+  isShopUnavailable,
   matchesCategory,
   publiclyVisibleProduct,
 } from "./shopVisibility.js";
@@ -4574,7 +4576,7 @@ const mapScrapedProduct = (row) => ({
   price: row.final_price || row.regular_price || 0,
   original_price: row.regular_price !== row.final_price ? row.regular_price : null,
   sale_price: row.sale_price,
-  image_url: row.main_image_url || "/placeholder.svg",
+  image_url: row.main_image_url || null,
   images: row.main_image_url ? [row.main_image_url] : [],
   category: row.sub_category || row.main_category,
   category_id: row.category_id ?? null,
@@ -4633,6 +4635,7 @@ const PUBLIC_PRODUCT_FIELDS = [
   "product_attributes", "life_stage", "dog_size", "special_diet",
   "breed_tags", "medical_tags", "kcal_per_kg", "safety_score",
   "source_url", "source", "created_at", "updated_at",
+  "shop_hidden",
 ];
 
 const toPublicProduct = (product) => {
@@ -6048,7 +6051,7 @@ const selectBusinessProductForOrder = async (client, productId) => {
   try {
     const result = await client.query(
       `
-        select id, name, image_url, price, sale_price, in_stock, sku, weight, weight_unit,
+        select id, name, image_url, images, price, sale_price, in_stock, sku, weight, weight_unit,
                coalesce(shop_hidden, false) as shop_hidden
         from public.business_products
         where id = $1
@@ -6063,7 +6066,7 @@ const selectBusinessProductForOrder = async (client, productId) => {
     if (error.code !== "42703") throw error;
     return client.query(
       `
-        select id, name, image_url, price, sale_price, in_stock, sku, weight, weight_unit,
+        select id, name, image_url, images, price, sale_price, in_stock, sku, weight, weight_unit,
                false as shop_hidden
         from public.business_products
         where id = $1
@@ -6128,14 +6131,13 @@ const resolveCatalogOrderItem = async (client, requestedItem) => {
     error.statusCode = 409;
     throw error;
   }
-  // Hidden is not out of stock. The row is still in the catalogue, and the
-  // other lines in this request are not this line. Refusing here, before
-  // amounts are computed, means no order is written and the webhook has
-  // nothing new to settle. The client omits the line and checks out the rest.
-  if (source === "manual" && row.shop_hidden === true) {
+  // Hidden, imageless, or priced at 0. The row stays in the catalogue.
+  // Refusing here, before amounts are computed, means no order is written
+  // and the webhook has nothing new to settle.
+  if (isShopUnavailable(row)) {
     const error = new Error(CHECKOUT_UNAVAILABLE_HE);
     error.statusCode = 409;
-    error.code = "PRODUCT_UNAVAILABLE";
+    error.code = PRODUCT_UNAVAILABLE_CODE;
     throw error;
   }
 
@@ -6147,8 +6149,9 @@ const resolveCatalogOrderItem = async (client, requestedItem) => {
         ? row.sale_price
         : row.regular_price);
   if (price <= 0) {
-    const error = new Error("Product does not have a valid catalog price");
+    const error = new Error(CHECKOUT_UNAVAILABLE_HE);
     error.statusCode = 409;
+    error.code = PRODUCT_UNAVAILABLE_CODE;
     throw error;
   }
 
@@ -9903,10 +9906,15 @@ const handleRequest = async (request, response) => {
       const product = await fetchPublicProductById(publicProductMatch[1]);
       const identity = await resolveAdminIdentity(request);
       const view = adminProductView(identity, product);
-      // A hidden product is the same answer as a missing one for a shopper:
-      // 404, which the product page renders as a friendly unavailable state.
-      if (!publiclyVisibleProduct(product, view)) {
+      if (!product) {
         sendError(response, 404, "Product not found");
+        return;
+      }
+      // Hidden, no image, or price 0. A missing id stays a plain 404. This
+      // one carries a code so the product page can say the product is
+      // unavailable without offering a price or an add-to-cart control.
+      if (!publiclyVisibleProduct(product, view)) {
+        sendError(response, 404, "Product not found", { code: PRODUCT_UNAVAILABLE_CODE });
         return;
       }
       sendJson(response, 200, {
