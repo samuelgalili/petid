@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,10 @@ import { usePublicCatalogueIds } from "@/lib/usePublicCatalogueIds";
 
 const Cart = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const removedNotice = typeof (location.state as { removedNotice?: unknown } | null)?.removedNotice === "string"
+    ? (location.state as { removedNotice: string }).removedNotice
+    : "";
   const { items, updateQuantity, removeFromCart } = useCart();
   const { toast } = useToast();
   
@@ -150,6 +154,11 @@ const Cart = () => {
             <div className="w-32 h-32 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
               <ShoppingBag className="w-16 h-16 text-primary" strokeWidth={1.5} />
             </div>
+            {removedNotice && (
+              <p data-testid="removed-unavailable" className="mb-4 text-sm font-medium text-foreground">
+                {removedNotice}
+              </p>
+            )}
             <h2 className="text-2xl font-bold text-foreground mb-3">
               העגלה שלך ריקה
             </h2>

@@ -273,6 +273,8 @@ test("order totals and the payment webhook do not grow a special case for a hidd
   const totals = index.indexOf("const amounts = await calculateOrderAmounts");
   assert.ok(refusal > 0 && totals > refusal, "a hidden line is refused before the order total is computed");
   assert.match(index, /new Error\(CHECKOUT_UNAVAILABLE_HE\)/);
+  assert.match(index, /error\.productId = row\.id/);
+  assert.match(index, /product_id: error\.productId/);
   assert.match(index, /publiclyVisibleProduct\(product, view\)/);
   assert.match(index, /matchesCategory\(product, categoryKey\)/);
 });
