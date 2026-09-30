@@ -25,6 +25,7 @@ const HIDDEN_PREFIXES = [
   "/add-pet",
   "/stories",
   "/story",
+  "/checkout",
 ];
 
 export const AvatarCompanion = () => {
