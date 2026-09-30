@@ -19,15 +19,19 @@
  * always promised and never did.
  *
  * Auto-hides on auth/onboarding routes, and on /chat and /shop, which show
- * the pet themselves.
+ * the pet themselves. Guests never see it. Reading pages (support, terms,
+ * science, breeds, install, accessibility) and unknown paths stay clear too,
+ * so the control does not sit on top of text the person came to read.
  */
 
 import { useMemo } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { matchRoutes, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
+import { useAuth } from "@/hooks/useAuth";
 import { readStoredOnboardingDraft } from "@/lib/mipoOnboardingDraft";
 import { isInProgressFlow } from "@/lib/flowSurfaces";
+import { allRoutes } from "@/routes";
 
 const HIDDEN_PREFIXES = [
   // AND THE ADMIN, WHERE IT HAS NO BUSINESS AT ALL.
@@ -51,10 +55,27 @@ const HIDDEN_PREFIXES = [
   "/product",
 ];
 
+// Exact paths. startsWith("/terms") would also hide /club-terms.
+const READING_PATHS = [
+  "/support",
+  "/terms",
+  "/science",
+  "/breeds",
+  "/install",
+  "/accessibility",
+];
+
+const isUnknownPath = (pathname: string) => {
+  const matches = matchRoutes(allRoutes, pathname);
+  if (!matches || matches.length === 0) return true;
+  return matches.some((match) => match.route.path === "*");
+};
+
 export const AvatarCompanion = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { activePet } = usePetPreference();
+  const { isAuthenticated, loading: authLoading } = useAuth();
 
   // The draft is read through its own reader rather than hand-parsed here: it
   // validates the shape and swallows the private-mode throw, which the inline
@@ -80,12 +101,16 @@ export const AvatarCompanion = () => {
   // second aurora in the corner of that screen, over the results grid at that.
   const hidden = useMemo(
     () =>
+      authLoading ||
+      !isAuthenticated ||
       onboardingActive ||
       isInProgressFlow(location.pathname) ||
       HIDDEN_PREFIXES.some((p) => location.pathname.startsWith(p)) ||
+      READING_PATHS.includes(location.pathname) ||
+      isUnknownPath(location.pathname) ||
       location.pathname === "/chat" ||
       location.pathname === "/shop",
-    [location.pathname, onboardingActive],
+    [authLoading, isAuthenticated, location.pathname, onboardingActive],
   );
 
   if (hidden) return null;
