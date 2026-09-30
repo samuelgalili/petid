@@ -92,11 +92,7 @@ export const SubscribeAndSave = ({ productName, productPrice, productWeight, onS
                 onClick={handleSubscribe}
                 disabled={subscribed}
                 whileTap={{ scale: 0.97 }}
-                className="w-full mt-3 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors"
-                style={{
-                  background: subscribed ? "hsl(var(--primary) / 0.1)" : "hsl(var(--primary))",
-                  color: subscribed ? "hsl(var(--primary))" : "hsl(var(--primary-foreground))",
-                }}
+                className={`mt-3 w-full rounded-xl py-2.5 text-xs ${subscribed ? "mipo-outline-button" : "mipo-primary-cta"}`}
               >
                 {subscribed ? (
                   <>

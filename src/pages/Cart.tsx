@@ -167,7 +167,7 @@ const Cart = () => {
             </p>
             <Button
               onClick={() => navigate("/shop")}
-              className="mipo-cta-button rounded-2xl px-8 py-6"
+              className="mipo-cta-button mipo-primary-cta rounded-2xl px-8 py-6"
             >
               המשך לקניות
             </Button>
@@ -356,7 +356,7 @@ const Cart = () => {
                 <Button
                   onClick={validateCoupon}
                   disabled={!couponCode.trim() || isValidatingCoupon}
-                  className="bg-accent hover:bg-accent-hover text-accent-foreground rounded-xl font-jakarta"
+                  className="mipo-outline-button font-jakarta shadow-none"
                 >
                   {isValidatingCoupon ? <Loader2 className="w-4 h-4 animate-spin" /> : "הפעל"}
                 </Button>
@@ -474,7 +474,7 @@ const Cart = () => {
         <Button
           onClick={handleCheckout}
           disabled={catalogue.isSuccess && orderItems.length === 0}
-          className="mipo-cta-button h-14 w-full gap-3 rounded-2xl text-lg"
+          className="mipo-cta-button mipo-primary-cta h-14 w-full gap-3 rounded-2xl text-lg"
         >
           {sellerGroups.length > 1
             ? `לתשלום — ${sellerGroups[0].sellerName || "מיפו"}`
