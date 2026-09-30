@@ -38,6 +38,10 @@ test("the allowlist is the 42 CSV ids, each a unique uuid, and it does not overl
   assert.equal(EXPECTED_ALLOWLIST_COUNT, 42);
   assert.equal(IRRELEVANT_PRODUCTS.length, 42);
   const ids = IRRELEVANT_PRODUCTS.map((entry) => entry.id);
+  // The fixture is the candidates list. The script's ids have to match it
+  // exactly, so a drift in either direction fails here.
+  const fixtureIds = JSON.parse(read("server/test/fixtures/hide-irrelevant-product-ids.json"));
+  assert.deepEqual(ids, fixtureIds);
   assert.equal(new Set(ids).size, 42);
   assert.ok(ids.every((id) => UUID.test(id)));
   assert.equal(IRRELEVANT_PRODUCTS.filter((entry) => entry.candidate_category === "לא רלוונטי").length, 31);

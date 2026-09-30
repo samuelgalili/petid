@@ -1880,6 +1880,21 @@ export async function getShopProducts(options?: {
   return result.products;
 }
 
+/** One page of the public shop. A page is at most 200 rows; callers that need every id follow `total`. */
+export async function getShopProductsPage(page: { limit: number; offset: number }): Promise<{
+  products: MipoProduct[];
+  total?: number;
+  limit?: number;
+  offset?: number;
+}> {
+  const params = new URLSearchParams({
+    view: "storefront",
+    limit: String(page.limit),
+    offset: String(page.offset),
+  });
+  return apiFetch(`/products?${params.toString()}`);
+}
+
 /** The shelf a shopper sees. Hidden products are absent even on an admin session. */
 export async function getPublicShopProducts(options?: {
   view?: "storefront";

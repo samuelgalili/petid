@@ -20,7 +20,12 @@ import {
   validateCheckoutShipping,
   type CheckoutShippingInput,
 } from "@/lib/checkoutContact";
-import { createShopOrder, createShopPaymentSession, getMyShippingProfile, MipoCoupon, validateCouponCode } from "@/lib/mipoApi";
+import {
+  cartLinesForUnavailable,
+  readProductUnavailable,
+  removedUnavailableMessage,
+} from "@/lib/cartCatalogue";
+import { createShopOrder, createShopPaymentSession, getMyShippingProfile, MipoApiError, MipoCoupon, validateCouponCode } from "@/lib/mipoApi";
 import { rememberOrderAccess } from "@/lib/orderAccess";
 import {
   UNAVAILABLE_ITEM_HE,
@@ -63,7 +68,9 @@ const Checkout = () => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isProcessing, setIsProcessing] = useState(false);
+  const [removalNotice, setRemovalNotice] = useState("");
   const shippingFormRef = useRef<HTMLFormElement>(null);
+  const leaveForEmptyCart = useRef(false);
   const isUnder18 = false;
   const ageCheckLoading = false;
 
@@ -144,6 +151,7 @@ const Checkout = () => {
   }, []);
 
   useEffect(() => {
+    if (leaveForEmptyCart.current) return;
     if (!ageCheckLoading && !isUnder18 && !isProcessing && items.length === 0) {
       navigate("/cart", { replace: true });
     }
@@ -430,8 +438,28 @@ const Checkout = () => {
       throw new Error("לא התקבלה כתובת תשלום מספק הסליקה");
     } catch (error: unknown) {
       console.error("Error placing order:", error);
+      const unavailable = error instanceof MipoApiError
+        ? readProductUnavailable(error.status, error.body)
+        : null;
+      if (unavailable) {
+        const dropped = cartLinesForUnavailable(items, unavailable.productId);
+        if (dropped.length > 0) {
+          const names = dropped.map((line) => line.name).filter(Boolean);
+          const notice = removedUnavailableMessage(names.length === 1 ? names[0] : "");
+          const remaining = items.filter((line) => !dropped.some((gone) => gone.id === line.id));
+          dropped.forEach((line) => removeFromCart(line.id));
+          setRemovalNotice(notice);
+          toast({ title: notice });
+          setIsProcessing(false);
+          if (remaining.length === 0) {
+            leaveForEmptyCart.current = true;
+            navigate("/cart", { replace: true, state: { removedNotice: notice } });
+          }
+          return;
+        }
+      }
       setIsProcessing(false);
-      
+
       // More specific error messages
       const message = error instanceof Error ? error.message : "";
       let errorMessage = "נכשל בביצוע ההזמנה. נסו שוב.";
@@ -1100,6 +1128,15 @@ const Checkout = () => {
                 <Package className="w-5 h-5 text-accent" strokeWidth={1.5} />
                 <h2 className="text-lg font-bold text-foreground font-jakarta">סיכום הזמנה</h2>
               </div>
+
+              {removalNotice && (
+                <p
+                  data-testid="removed-unavailable"
+                  className="mx-auto max-w-md rounded-2xl border border-border px-4 py-3 text-sm font-medium text-foreground"
+                >
+                  {removalNotice}
+                </p>
+              )}
 
               {/* Shipping Info */}
               <Card className="p-5 bg-card border-0 rounded-2xl shadow-lg max-w-md mx-auto">

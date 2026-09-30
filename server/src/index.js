@@ -6138,6 +6138,8 @@ const resolveCatalogOrderItem = async (client, requestedItem) => {
     const error = new Error(CHECKOUT_UNAVAILABLE_HE);
     error.statusCode = 409;
     error.code = PRODUCT_UNAVAILABLE_CODE;
+    // The id is what lets checkout drop this line and keep the rest.
+    error.productId = row.id;
     throw error;
   }
 
@@ -6152,6 +6154,7 @@ const resolveCatalogOrderItem = async (client, requestedItem) => {
     const error = new Error(CHECKOUT_UNAVAILABLE_HE);
     error.statusCode = 409;
     error.code = PRODUCT_UNAVAILABLE_CODE;
+    error.productId = row.id;
     throw error;
   }
 
@@ -10063,7 +10066,14 @@ const handleRequest = async (request, response) => {
       response,
       error.statusCode || 500,
       error.statusCode ? error.message : "Internal server error",
-      error.statusCode && error.code ? { code: error.code } : undefined,
+      error.statusCode && error.code
+        ? {
+            code: error.code,
+            ...(typeof error.productId === "string" && error.productId
+              ? { product_id: error.productId }
+              : {}),
+          }
+        : undefined,
     );
   }
 };

@@ -133,14 +133,19 @@ test("order creation and the product route refuse with PRODUCT_UNAVAILABLE", () 
   const refusal = index.indexOf("if (isShopUnavailable(row))");
   const totals = index.indexOf("const amounts = await calculateOrderAmounts");
   assert.ok(refusal > 0 && totals > refusal);
-  const thrown = index.slice(refusal, refusal + 400);
+  const thrown = index.slice(refusal, refusal + 500);
   assert.match(thrown, /error\.statusCode = 409/);
   assert.match(thrown, /error\.code = PRODUCT_UNAVAILABLE_CODE/);
+  assert.match(thrown, /error\.productId = row\.id/);
   assert.equal(PRODUCT_UNAVAILABLE_CODE, "PRODUCT_UNAVAILABLE");
 
   const priceBackstop = index.indexOf("if (price <= 0)", refusal);
   assert.ok(priceBackstop > refusal);
-  assert.match(index.slice(priceBackstop, priceBackstop + 250), /PRODUCT_UNAVAILABLE_CODE/);
+  const priceThrown = index.slice(priceBackstop, priceBackstop + 350);
+  assert.match(priceThrown, /PRODUCT_UNAVAILABLE_CODE/);
+  assert.match(priceThrown, /error\.productId = row\.id/);
+  // Checkout reads details.product_id on a 409 PRODUCT_UNAVAILABLE and drops that line.
+  assert.match(index, /product_id: error\.productId/);
 
   const byId = index.indexOf("const publicProductMatch");
   const byIdBlock = index.slice(byId, byId + 900);
