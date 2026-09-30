@@ -97,6 +97,7 @@ export const createAuditService = ({ pool, logger = console }) => {
     entityType = null,
     entityId = null,
     actionType = null,
+    actionTypePrefix = null,
     from = null,
     to = null,
     limit = 50,
@@ -116,6 +117,11 @@ export const createAuditService = ({ pool, logger = console }) => {
     if (entityType) add("entity_type = $?", String(entityType));
     if (entityId) add("entity_id = $?", String(entityId));
     if (actionType) add("action_type = $?", String(actionType));
+    if (actionTypePrefix) {
+      const prefix = String(actionTypePrefix).replace(/[%_\\]/g, "");
+      if (!prefix) throw new Error("Audit action prefix is empty");
+      add("action_type like $?", `${prefix}%`);
+    }
     if (from) add("created_at >= $?", new Date(from));
     if (to) add("created_at <= $?", new Date(to));
 

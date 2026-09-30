@@ -6,6 +6,23 @@ const fail = (message, statusCode = 400) => {
   throw error;
 };
 
+// A blocked account's posts and comments stay out of every read. The column
+// is profiles.blocked_at. Clearing it is what makes a block reversible.
+const notBlocked = (column) => `not exists (
+    select 1
+    from public.profiles blocked_profile
+    where blocked_profile.id = ${column}
+      and blocked_profile.blocked_at is not null
+  )`;
+
+export const assertAccountCanPublish = async (pool, userId) => {
+  const result = await pool.query(
+    "select blocked_at from public.profiles where id = $1 limit 1",
+    [userId],
+  );
+  if (result.rows[0]?.blocked_at) fail("החשבון הזה לא יכול לפרסם כרגע", 403);
+};
+
 const optionalText = (value, maxLength) => {
   if (value === null || value === undefined) return null;
   const normalized = String(value).trim();
@@ -104,7 +121,10 @@ const postSelect = `
     ) as viewer_has_saved,
     (select vote.option_index from public.social_poll_votes vote where vote.post_id = post.id and vote.user_id = $1) as viewer_poll_option,
     (select count(*) from public.social_post_reactions reaction where reaction.post_id = post.id) as reaction_count,
-    (select count(*) from public.social_post_comments comment where comment.post_id = post.id and comment.status = 'published') as comment_count,
+    (select count(*) from public.social_post_comments comment
+      where comment.post_id = post.id
+        and comment.status = 'published'
+        and ${notBlocked("comment.user_id")}) as comment_count,
     coalesce((
       select jsonb_agg(coalesce(vote_counts.option_count, 0) order by options.option_index)
       from generate_series(0, jsonb_array_length(post.poll_options) - 1) as options(option_index)
@@ -128,6 +148,7 @@ export const listSocialFeed = async (pool, userId, { limit = 20, before = null, 
   const where = [
     "post.archived = false",
     "post.moderation_status = 'published'",
+    notBlocked("post.user_id"),
     "(post.visibility = 'public' or post.user_id = $1)",
   ];
 
@@ -162,6 +183,7 @@ export const getSocialPost = async (pool, userId, postId) => {
       where post.id = $2
         and post.archived = false
         and post.moderation_status = 'published'
+        and ${notBlocked("post.user_id")}
         and (post.visibility = 'public' or post.user_id = $1)
       limit 1`,
     [userId, postId],
@@ -171,6 +193,7 @@ export const getSocialPost = async (pool, userId, postId) => {
 
 export const createSocialPost = async (pool, userId, body) => {
   const payload = normalizeSocialPostInput(body);
+  await assertAccountCanPublish(pool, userId);
   const uploadResult = await pool.query(
     "select id, storage_key, content_type from public.user_uploads where id = $1 and user_id = $2 limit 1",
     [payload.uploadId, userId],
@@ -269,7 +292,9 @@ export const listSocialComments = async (pool, userId, postId, { limit = 80 } = 
       from public.social_post_comments comment
       left join public.profiles profile on profile.id = comment.user_id
       left join public.app_users author on author.id = comment.user_id
-      where comment.post_id = $1 and comment.status = 'published'
+      where comment.post_id = $1
+        and comment.status = 'published'
+        and ${notBlocked("comment.user_id")}
       order by comment.created_at asc
       limit $3
     `,
@@ -292,6 +317,7 @@ export const listSocialComments = async (pool, userId, postId, { limit = 80 } = 
 };
 
 export const createSocialComment = async (pool, userId, postId, body) => {
+  await assertAccountCanPublish(pool, userId);
   const post = await getSocialPost(pool, userId, postId);
   if (!post) fail("Post was not found", 404);
   if (!post.allow_comments) fail("Comments are disabled", 403);

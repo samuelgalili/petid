@@ -2351,3 +2351,91 @@ export async function listAuditLog(filters: MipoAuditFilters = {}): Promise<Mipo
   const result = await adminApiFetch<{ entries: MipoAuditEntry[] }>(`/admin/os/audit-log${suffix}`);
   return result.entries;
 }
+
+export interface MipoModerationReport {
+  id: string;
+  content_type: "post" | "comment" | "product" | string;
+  content_id: string;
+  reason: string;
+  description: string | null;
+  status: string;
+  created_at: string;
+  author_id: string | null;
+  author_name: string | null;
+  reporter_name: string | null;
+  content_status: string | null;
+  excerpt: string | null;
+  involves_minor: boolean;
+  urgent_person: boolean;
+  author_blocked: boolean;
+}
+
+export interface MipoHiddenContent {
+  content_type: "post" | "comment";
+  content_id: string;
+  excerpt: string | null;
+  author_id: string | null;
+  author_name: string | null;
+  hidden_at: string;
+  author_blocked: boolean;
+}
+
+export interface MipoBlockedUser {
+  user_id: string;
+  author_name: string | null;
+  blocked_at: string;
+  blocked_reason: string | null;
+}
+
+export interface MipoModerationQueue {
+  reports: MipoModerationReport[];
+  hidden: MipoHiddenContent[];
+  blocked: MipoBlockedUser[];
+  entries: MipoAuditEntry[];
+}
+
+const moderationWrite = (path: string, body: unknown, idempotencyKey: string) => (
+  adminApiFetch(path, {
+    method: "POST",
+    headers: { "Idempotency-Key": idempotencyKey },
+    body: JSON.stringify(body),
+  })
+);
+
+export async function getModerationQueue(): Promise<MipoModerationQueue> {
+  const [reports, hidden, blocked, log] = await Promise.all([
+    adminApiFetch<{ reports: MipoModerationReport[] }>("/admin/os/moderation/reports"),
+    adminApiFetch<{ hidden: MipoHiddenContent[] }>("/admin/os/moderation/hidden"),
+    adminApiFetch<{ blocked: MipoBlockedUser[] }>("/admin/os/moderation/blocked"),
+    adminApiFetch<{ entries: MipoAuditEntry[] }>("/admin/os/moderation/log"),
+  ]);
+  return {
+    reports: reports.reports,
+    hidden: hidden.hidden,
+    blocked: blocked.blocked,
+    entries: log.entries,
+  };
+}
+
+export function hideModerationReport(reportId: string, idempotencyKey: string) {
+  return moderationWrite("/admin/os/moderation/hide", { report_id: reportId }, idempotencyKey);
+}
+
+export function restoreModerationContent(
+  content: { content_type: "post" | "comment"; content_id: string },
+  idempotencyKey: string,
+) {
+  return moderationWrite("/admin/os/moderation/restore", content, idempotencyKey);
+}
+
+export function dismissModerationReport(reportId: string, idempotencyKey: string) {
+  return moderationWrite("/admin/os/moderation/dismiss", { report_id: reportId }, idempotencyKey);
+}
+
+export function blockModerationUser(reportId: string, idempotencyKey: string) {
+  return moderationWrite("/admin/os/moderation/block", { report_id: reportId }, idempotencyKey);
+}
+
+export function unblockModerationUser(userId: string, idempotencyKey: string) {
+  return moderationWrite("/admin/os/moderation/unblock", { user_id: userId }, idempotencyKey);
+}

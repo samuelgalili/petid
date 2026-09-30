@@ -33,6 +33,7 @@
 
 import {
   Activity, AlertTriangle, BadgeCheck, BarChart3, Bell, Boxes, Building2,
+  ShieldAlert,
   CircleDollarSign, ClipboardList, Contact, DollarSign, FileText, FolderTree,
   History, LayoutDashboard, type LucideIcon, Package, Plug, Receipt,
   RotateCcw, Settings, ShoppingCart, Sparkles, Ticket, Truck, UserCog, Users,
@@ -282,6 +283,10 @@ export const ADMIN_DOMAINS: AdminDomain[] = [
       {
         label: "Notifications", hebrew: "התראות", href: "/admin/notifications",
         icon: Bell, permission: FULL, status: "ready",
+      },
+      {
+        label: "Moderation", hebrew: "מודרציה", href: "/admin/moderation",
+        icon: ShieldAlert, permission: FULL, status: "ready",
       },
       {
         label: "Audit Log", hebrew: "יומן ביקורת", href: "/admin/audit-log",
