@@ -1,6 +1,6 @@
 # MIPO — context for coding agents
 
-Written against `aws-migration` at `3c7a8231` (2026-09-30, merge of [#47](https://github.com/samuelgalili/petid/pull/47)). This file describes the tree that production runs once that deploy finishes. Anything marked "not verified" was not checked against the live host or GitHub settings. `CLAUDE.md` is the short rule list. `todo.md` is the open work, with links.
+Written against `aws-migration` at `5d10b145` (2026-09-30, merge of [#48](https://github.com/samuelgalili/petid/pull/48)). This file describes the tree that production runs once that deploy finishes. Anything marked "not verified" was not checked against the live host or GitHub settings. `CLAUDE.md` is the short rule list. `todo.md` is the open work, with links.
 
 Older design notes under `docs/` often describe an earlier schema. When they disagree with `server/sql` and `server/src`, trust the code.
 
@@ -161,6 +161,7 @@ Shared safety pattern:
 | Hide broken-image products | `production-hide-broken-image-products.yml` | **Writes** in `hide` / `unhide`. Dry-run default, a confirmation per write mode, backup before a write. Sets `shop_hidden` on an allowlist and records the previous value. Stock is not touched. Whether it was run in a write mode: not verified. |
 | Hide irrelevant products | `production-hide-irrelevant-products.yml` | Same pattern for 42 products the owner judged irrelevant or duplicate ([#43](https://github.com/samuelgalili/petid/pull/43)). |
 | Cancel test orders | `production-cancel-test-orders.yml` | **Writes** in `apply` with confirmation `CANCEL-TEST-ORDERS`. Cancels seven allowlisted order numbers only while still unpaid. Rows stay. ([#41](https://github.com/samuelgalili/petid/pull/41), [#47](https://github.com/samuelgalili/petid/pull/47).) |
+| Set email env | `set-email-env.yml` | **Writes** two keys in `/opt/mipo/.env` (`PASSWORD_RESET_FROM_EMAIL`, `RESEND_API_KEY` from the GitHub secret) and recreates the API. Dry-run default; a write needs `SET-EMAIL-ENV`. It does not touch SSM, so the next `sync-ssm-env.sh` overwrites both unless SSM is updated too ([#48](https://github.com/samuelgalili/petid/pull/48)). |
 | Cardcom missed payments | `production-cardcom-missed-payments-readonly.yml` | Read-only list of shop orders that may have been charged while the indicator webhook answered 502. Confirmation text is `READ-ONLY`. Selects order numbers and low-profile codes, not names, emails, phones, or addresses. Added by [#27](https://github.com/samuelgalili/petid/pull/27). It does not mark anything paid. |
 
 ## Data model

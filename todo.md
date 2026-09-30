@@ -1,6 +1,6 @@
 # Open work
 
-Snapshot 2026-09-30 against `aws-migration` at `3c7a8231` (merge of [#47](https://github.com/samuelgalili/petid/pull/47)). Each item is an open pull request, a branch tip that is not an ancestor of `aws-migration` (full history, not a shallow clone), or a `TODO` / `planned` marker in the tree. "Not verified" means it was not checked against the live host or GitHub settings.
+Snapshot 2026-09-30 against `aws-migration` at `5d10b145` (merge of [#48](https://github.com/samuelgalili/petid/pull/48)). Each item is an open pull request, a branch tip that is not an ancestor of `aws-migration` (full history, not a shallow clone), or a `TODO` / `planned` marker in the tree. "Not verified" means it was not checked against the live host or GitHub settings.
 
 GitHub's default branch is `aws-migration` as of this snapshot (`git ls-remote --symref origin HEAD`). When it changed from `main` is not verified. `main` still exists, is 316 commits away from `aws-migration`, and does not deploy. Do not merge a `main` branch into `aws-migration`; port the commits onto a branch cut from `aws-migration`.
 
@@ -28,8 +28,9 @@ This is git history, not confirmation that each deploy finished on the host.
 | [#44](https://github.com/samuelgalili/petid/pull/44) | 09-30 | Cart resolves every line against the catalogue; unavailable items drop at checkout (squash-merged). |
 | [#45](https://github.com/samuelgalili/petid/pull/45) | 09-30 | Hidden, imageless, and zero-price products are not sold. |
 | [#47](https://github.com/samuelgalili/petid/pull/47) | 09-30 | Test-order cancel script: a created payment page is not a charge. |
+| [#48](https://github.com/samuelgalili/petid/pull/48) | 09-30 | Manual workflow `set-email-env.yml` sets `PASSWORD_RESET_FROM_EMAIL` and `RESEND_API_KEY` in `/opt/mipo/.env`. Dry-run default; a write needs `SET-EMAIL-ENV`. It does not update SSM, so a later `sync-ssm-env.sh` overwrites both. |
 
-Whether the hide and cancel workflows were run with a write mode on production: not verified.
+Whether the hide, cancel and set-email workflows were run with a write mode on production: not verified.
 
 ## Open pull requests
 
@@ -47,7 +48,6 @@ Whether the hide and cancel workflows were run with a write mode on production: 
 
 Not ancestors of `aws-migration`. **Not in production.**
 
-- [`cursor/set-email-env-workflow-5346`](https://github.com/samuelgalili/petid/tree/cursor/set-email-env-workflow-5346) (2026-09-30). One commit, `4a2c035f`: a manual workflow to set the production email sender, plus `server/test/setEmailEnvWorkflow.test.js` and `docs/AWS_CICD.md`. It connects to the production host; if [#49](https://github.com/samuelgalili/petid/pull/49) lands first, it needs the same host-key pinning.
 - [`claude/mifo-project-oq44tl`](https://github.com/samuelgalili/petid/tree/claude/mifo-project-oq44tl) (2026-09-28). Four commits (`c86ea47c`, `45417696`, merge `de38607e`, `b8852fb8`): admin orders and publishing to the shop, 29 files including `src/pages/admin/AdminOrders.tsx`.
 - [`claude/admin-2fa`](https://github.com/samuelgalili/petid/tree/claude/admin-2fa). Superseded: two-factor landed through [#32](https://github.com/samuelgalili/petid/pull/32) as `0061_admin_two_factor.sql`. Do not port this branch's `0031`.
 - [`claude/activity-audit`](https://github.com/samuelgalili/petid/tree/claude/activity-audit). Docs only.
