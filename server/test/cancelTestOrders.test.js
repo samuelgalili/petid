@@ -136,6 +136,61 @@ test("emails are masked and a decision line never contains the full address", ()
   assert.equal(redactSecrets("customer tester@example.com").includes("tester@example.com"), false);
 });
 
+test("a create_payment row is a created payment page, not a charge", () => {
+  const created = {
+    is_success: true,
+    operation_response: 0,
+    deal_response: null,
+    payload_json: { stage: "create_payment" },
+  };
+  assert.equal(cardcomEventLooksApproved(created), false);
+  assert.equal(cardcomEventLooksApproved({
+    ...created,
+    payload_json: { stage: "verified_indicator" },
+  }), true);
+  assert.equal(cardcomEventLooksApproved({
+    is_success: false,
+    operation_response: 0,
+    deal_response: 0,
+    payload_json: { stage: "rejected_indicator" },
+  }), true);
+  assert.equal(cardcomEventLooksApproved({
+    ...created,
+    payload_json: {},
+  }), true);
+  assert.equal(cardcomEventLooksApproved({
+    is_success: false,
+    operation_response: 2006,
+    deal_response: 0,
+    payload_json: { stage: "verified_indicator" },
+  }), false);
+  assert.match(cancelUpdateSql({ hasPaidAt: false }), /<> all \(array\['create_payment'\]\)/);
+
+  const detail = "create_payment:op=0,deal=-,ok=true ; verified_indicator:op=2006,deal=-,ok=false";
+  const [first] = ALLOWLIST;
+  const reports = reportsFor([
+    {
+      order_number: first,
+      status: "pending",
+      payment_status: "failed",
+      total: "1.00",
+      created_at: "2026-09-27T08:00:00.000Z",
+      customer_email: "qa@example.com",
+      payment_attested_at: null,
+      payment_attested_by: null,
+      cardcom_event_count: 2,
+      cardcom_approved: false,
+      cardcom_detail: detail,
+    },
+  ], { hasPaidAt: false });
+  assert.equal(reports[0].decision, "CANCEL");
+  assert.equal(reports[0].cardcom_detail, detail);
+  const line = formatDecisionLine(reports[0]);
+  assert.match(line, /cardcom_detail=\[create_payment:op=0,deal=-,ok=true ; verified_indicator:op=2006,deal=-,ok=false\]/);
+  assert.equal(line.includes("qa@example.com"), false);
+  assert.equal(line.includes("payload"), false);
+});
+
 test("an approved Cardcom event is operation 0 and deal 0, or is_success", () => {
   assert.equal(cardcomEventLooksApproved(null), false);
   assert.equal(cardcomEventLooksApproved({}), false);
