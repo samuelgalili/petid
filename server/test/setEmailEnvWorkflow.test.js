@@ -144,8 +144,10 @@ test("the workflow confirms a write before SSH and does not echo secrets", () =>
   assert.match(workflow, /secrets\.MIPO_AWS_SSH_PRIVATE_KEY/);
   assert.match(workflow, /secrets\.RESEND_API_KEY/);
   assert.match(workflow, /printf '%s\\n' "\$SSH_PRIVATE_KEY" > ~\/\.ssh\/mipo_aws_key/);
-  assert.match(workflow, /ssh-keyscan -T 30 -H "\$MIPO_AWS_HOST"/);
-  assert.match(workflow, /StrictHostKeyChecking=accept-new/);
+  assert.match(workflow, /secrets\.MIPO_AWS_KNOWN_HOSTS/);
+  assert.match(workflow, /ssh-keygen -F "\$MIPO_AWS_HOST" -f ~\/\.ssh\/known_hosts/);
+  assert.match(workflow, /StrictHostKeyChecking=yes/);
+  assert.doesNotMatch(workflow, /StrictHostKeyChecking=accept-new/);
   assert.match(workflow, /< "\$key_file"/);
   assert.match(workflow, /::add-mask::/);
   assert.match(workflow, /https:\/\/mipo\.pet\/api\/health/);
