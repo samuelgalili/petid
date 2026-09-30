@@ -32,6 +32,7 @@ export const STOREFRONT_PRODUCT_FIELDS = [
   "breed_tags",
   "medical_tags",
   "safety_score",
+  "shop_hidden",
 ];
 
 const DESCRIPTION_LIMIT = 700;

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { playAddToCartSound } from "@/lib/sounds";
+import { isShopUnavailable } from "@/lib/shopVisibility";
 
 export interface CartItem {
   /** Stable cart-line identity: product + variant + size. */
@@ -30,7 +31,10 @@ interface CartContextType {
     id?: string;
     productId?: string;
     quantity?: number;
-  }) => void;
+    shop_hidden?: boolean | null;
+    sale_price?: number | string | null;
+    image_url?: string | null;
+  }) => boolean;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
@@ -87,7 +91,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const addToCart: CartContextType["addToCart"] = (item) => {
     const productId = item.productId || item.id;
-    if (!productId) return;
+    if (!productId) return false;
+    if (isShopUnavailable({
+      shop_hidden: item.shop_hidden,
+      price: item.price,
+      sale_price: item.sale_price,
+      image_url: item.image_url || item.image,
+      image: item.image,
+    })) return false;
     const lineId = getLineId(productId, item.variant, item.size);
 
     setItems((prevItems) => {
@@ -113,6 +124,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setCartShake(true);
     playAddToCartSound();
     setTimeout(() => setCartShake(false), 500);
+    return true;
   };
 
   const removeFromCart = (id: string) => {

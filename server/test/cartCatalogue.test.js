@@ -123,7 +123,8 @@ test("checkout and the cart hook use the catalogue walk and the 409 removal", ()
   assert.match(checkout, /data-testid="removed-unavailable"/);
 
   const index = read("server/src/index.js");
-  assert.match(index, /error\.code = "PRODUCT_UNAVAILABLE"/);
+  assert.match(index, /error\.code = PRODUCT_UNAVAILABLE_CODE/);
+  assert.match(read("server/src/shopVisibility.js"), /PRODUCT_UNAVAILABLE_CODE = "PRODUCT_UNAVAILABLE"/);
   assert.match(index, /error\.productId = row\.id/);
   assert.match(index, /product_id: error\.productId/);
 });

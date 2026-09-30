@@ -47,6 +47,7 @@ const catalogue = [
     shop_hidden: true,
     in_stock: true,
     price: 120,
+    image_url: "/uploads/hidden.webp",
   },
   {
     id: otherId,
@@ -58,6 +59,7 @@ const catalogue = [
     shop_hidden: false,
     in_stock: true,
     price: 40,
+    image_url: "/uploads/treat.webp",
   },
 ];
 
@@ -269,10 +271,11 @@ test("order totals and the payment webhook do not grow a special case for a hidd
   const webhook = index.slice(webhookStart, webhookEnd);
   assert.equal(webhook.includes("shop_hidden"), false);
 
-  const refusal = index.indexOf("row.shop_hidden === true");
+  const refusal = index.indexOf("if (isShopUnavailable(row))");
   const totals = index.indexOf("const amounts = await calculateOrderAmounts");
-  assert.ok(refusal > 0 && totals > refusal, "a hidden line is refused before the order total is computed");
+  assert.ok(refusal > 0 && totals > refusal, "an unavailable line is refused before the order total is computed");
   assert.match(index, /new Error\(CHECKOUT_UNAVAILABLE_HE\)/);
+  assert.match(index, /PRODUCT_UNAVAILABLE_CODE/);
   assert.match(index, /error\.productId = row\.id/);
   assert.match(index, /product_id: error\.productId/);
   assert.match(index, /publiclyVisibleProduct\(product, view\)/);

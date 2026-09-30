@@ -189,10 +189,10 @@ test("the sitemap lists public pages and in-stock products, with a real lastmod"
   const xml = buildSitemapXml({
     origin: "https://mipo.pet",
     products: [
-      { id: productId, updated_at: "2026-08-01T12:00:00.000Z" },
-      { id: productId, updated_at: "2026-09-01T12:00:00.000Z" },
-      { id: "not-a-uuid", updated_at: "2026-08-01T12:00:00.000Z" },
-      { id: "22222222-2222-4222-8222-222222222222", in_stock: false, updated_at: "2026-08-03T00:00:00.000Z" },
+      { id: productId, updated_at: "2026-08-01T12:00:00.000Z", price: 10, image_url: "/uploads/a.webp" },
+      { id: productId, updated_at: "2026-09-01T12:00:00.000Z", price: 10, image_url: "/uploads/a.webp" },
+      { id: "not-a-uuid", updated_at: "2026-08-01T12:00:00.000Z", price: 10, image_url: "/uploads/a.webp" },
+      { id: "22222222-2222-4222-8222-222222222222", in_stock: false, updated_at: "2026-08-03T00:00:00.000Z", price: 10, image_url: "/uploads/a.webp" },
     ],
   });
   assert.match(xml, /<loc>https:\/\/mipo\.pet\/shop<\/loc>/);
@@ -287,7 +287,7 @@ test("a hidden product is not indexable and is not in the sitemap", async () => 
   const page = await htmlOf(`/product/${hiddenId}`, pageRenderer);
   assert.equal(page.status, 404);
   assert.match(page.html, /noindex/);
-  assert.match(page.html, /המוצר לא נמצא/);
+  assert.match(page.html, /המוצר לא זמין כרגע/);
   assert.doesNotMatch(page.html, /מוצר מוסתר/);
   assert.doesNotMatch(page.html, /"@type":"Product"/);
   assert.doesNotMatch(page.html, /"price":"40.00"/);
@@ -295,12 +295,16 @@ test("a hidden product is not indexable and is not in the sitemap", async () => 
   const xml = buildSitemapXml({
     origin: "https://mipo.pet",
     products: [
-      { id: productId, updated_at: "2026-08-01T12:00:00.000Z", shop_hidden: false },
-      { id: hiddenId, updated_at: "2026-08-01T12:00:00.000Z", shop_hidden: true, in_stock: true },
+      { id: productId, updated_at: "2026-08-01T12:00:00.000Z", shop_hidden: false, price: 10, image_url: "/uploads/a.webp" },
+      { id: hiddenId, updated_at: "2026-08-01T12:00:00.000Z", shop_hidden: true, in_stock: true, price: 40, image_url: "/uploads/hidden.webp" },
+      { id: "44444444-4444-4444-8444-444444444444", updated_at: "2026-08-01T12:00:00.000Z", price: 0, image_url: "/uploads/cage.webp", in_stock: true },
+      { id: "55555555-5555-4555-8555-555555555555", updated_at: "2026-08-01T12:00:00.000Z", price: 12, image_url: "", in_stock: true },
     ],
   });
   assert.match(xml, new RegExp(`/product/${productId}`));
   assert.equal(xml.includes(hiddenId), false);
+  assert.equal(xml.includes("44444444-4444-4444-8444-444444444444"), false);
+  assert.equal(xml.includes("55555555-5555-4555-8555-555555555555"), false);
 });
 
 test("www redirects to the apex with the path and query, and an empty robots policy is not sent", () => {
