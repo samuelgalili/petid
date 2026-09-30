@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 
 import defaultPetAvatar from "@/assets/default-pet-avatar.png";
 import { MipoLogo } from "@/components/MipoLogo";
+import { ContentOptionsButton, ReportContentDialog } from "@/components/feed/ReportContentDialog";
 import { MomentReel } from "@/components/moments/MomentReel";
 import { usePetPreference } from "@/contexts/PetPreferenceContext";
 import { useToast } from "@/hooks/use-toast";
@@ -272,6 +273,7 @@ const CommentsSheet = ({ post, onClose, onCountChange }: { post: MipoSocialPost;
   const [loading, setLoading] = useState(true);
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
+  const [reporting, setReporting] = useState<MipoSocialComment | null>(null);
 
   useEffect(() => {
     getSocialComments(post.id).then(setComments).finally(() => setLoading(false));
@@ -304,12 +306,17 @@ const CommentsSheet = ({ post, onClose, onCountChange }: { post: MipoSocialPost;
           {loading ? <Loader2 className="mx-auto mt-8 h-6 w-6 animate-spin text-mipo-muted" /> : comments.length === 0 ? (
             <p className="mt-8 text-center text-sm text-mipo-muted">התגובה הראשונה יכולה להיות שלך.</p>
           ) : comments.map((comment) => (
-            <div key={comment.id} className="flex gap-3">
+            <div key={comment.id} className="flex items-start gap-3">
               <img src={comment.creator.avatar_url || defaultPetAvatar} alt="" className="h-9 w-9 rounded-full object-cover" />
-              <div className="rounded-2xl bg-mipo-soft px-3.5 py-2.5">
+              <div className="min-w-0 flex-1 rounded-2xl bg-mipo-soft px-3.5 py-2.5">
                 <p className="text-xs font-semibold text-mipo-ink">{comment.creator.display_name}</p>
                 <p className="mt-0.5 text-sm text-mipo-ink">{comment.body}</p>
               </div>
+              <ContentOptionsButton
+                label={`אפשרויות לתגובה של ${comment.creator.display_name}`}
+                onReport={() => setReporting(comment)}
+                className="text-mipo-ink"
+              />
             </div>
           ))}
         </div>
@@ -319,6 +326,12 @@ const CommentsSheet = ({ post, onClose, onCountChange }: { post: MipoSocialPost;
             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </button>
         </form>
+        <ReportContentDialog
+          open={reporting !== null}
+          contentType="comment"
+          contentId={reporting?.id || ""}
+          onClose={() => setReporting(null)}
+        />
       </motion.div>
     </motion.div>
   );

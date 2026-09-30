@@ -16,8 +16,8 @@ interface PostOptionsMenuProps {
   reportLabel?: string;
   /** Toast message for hide action */
   hideToast?: string;
-  /** Toast message for report action */
-  reportToast?: string;
+  /** Opens the report sheet. Without it the item is not shown, so a tap cannot pretend a report was sent. */
+  onReport?: () => void;
   /** Icon size */
   iconSize?: number;
   /** Stroke width */
@@ -27,9 +27,9 @@ interface PostOptionsMenuProps {
 export const PostOptionsMenu = ({
   copyLink,
   hideLabel = "הסתר פוסט",
-  reportLabel = "דווח",
+  reportLabel = "דיווח",
   hideToast = "הפוסט הוסתר",
-  reportToast = "הדיווח נשלח, תודה!",
+  onReport,
   iconSize = 6,
   strokeWidth = 1.25,
 }: PostOptionsMenuProps) => {
@@ -54,13 +54,15 @@ export const PostOptionsMenu = ({
           <EyeOff className="w-4 h-4 ml-2" />
           {hideLabel}
         </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => toast.info(reportToast)}
-          className="text-destructive focus:text-destructive"
-        >
-          <Flag className="w-4 h-4 ml-2" />
-          {reportLabel}
-        </DropdownMenuItem>
+        {onReport && (
+          <DropdownMenuItem
+            onSelect={onReport}
+            className="text-destructive focus:text-destructive"
+          >
+            <Flag className="w-4 h-4 ml-2" />
+            {reportLabel}
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
