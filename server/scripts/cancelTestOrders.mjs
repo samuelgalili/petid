@@ -22,7 +22,10 @@
 //   There is no paid_at column in the migrations. The script looks for one
 //   at runtime and, when the column exists, requires it to be null.
 //   An approved Cardcom charge is the same test the webhook uses: is_success
-//   is true, or operation_response and deal_response are both 0.
+//   is true, or operation_response and deal_response are both 0. A
+//   create_payment row is the payment page being created, not a charge, and
+//   does not count. verified_indicator, rejected_indicator, and rows with no
+//   stage still do.
 //   payment_attested_at / payment_attested_by (0059) record money an admin
 //   says arrived without a gateway. Those orders are not unpaid.
 //
@@ -42,8 +45,10 @@
 // rolled back and the process exits non-zero.
 //
 // In a dry-run, the summary's "cancelled" count is how many orders the rules
-// would cancel. Nothing is written. Customer emails are masked in every log
-// line. The connection string is never printed.
+// would cancel. Nothing is written. Each decision line includes
+// cardcom_detail: stage, operation response, deal response, and is_success
+// for every event on that order. No payload and no customer data. Customer
+// emails are masked in every log line. The connection string is never printed.
 
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -73,9 +78,20 @@ export const UNPAID_PAYMENT_STATUSES = Object.freeze(["pending", "failed"]);
 
 const orderNumbersIn = (value) => String(value).toUpperCase().match(/MIPO-\d{8}-[0-9A-F]{6}/g) || [];
 
-// Mirrors isSuccessfulCardcomCharge: both gateway responses are 0.
-// is_success is that same answer stored on the event row. Either one skips.
-export const APPROVED_CARDCOM_SQL = "(e.is_success is true or (e.operation_response = 0 and e.deal_response = 0))";
+// create_payment is written by createShopPayment when a Low Profile page is
+// created. That row is hard-coded is_success=true and operation_response=0,
+// with no deal_response: the page exists, money has not moved. It must not
+// count as an approved charge. verified_indicator, rejected_indicator, and
+// rows with no stage still match the success test below and still block.
+// APPROVED_CARDCOM_SQL is built from this list, and the UPDATE uses that
+// same constant.
+export const NON_CHARGE_STAGES = Object.freeze(["create_payment"]);
+
+const nonChargeStagesSql = NON_CHARGE_STAGES.map((stage) => `'${stage}'`).join(", ");
+export const APPROVED_CARDCOM_SQL = `(
+    (e.is_success is true or (e.operation_response = 0 and e.deal_response = 0))
+    and coalesce(e.payload_json->>'stage', '') <> all (array[${nonChargeStagesSql}])
+  )`;
 
 const REQUIRED_ORDER_COLUMNS = Object.freeze([
   "id",
@@ -184,6 +200,7 @@ export const redactSecrets = (message) => String(message ?? "")
 
 export const cardcomEventLooksApproved = (event) => {
   if (!event || typeof event !== "object") return false;
+  if (NON_CHARGE_STAGES.includes(event.payload_json?.stage)) return false;
   if (event.is_success === true) return true;
   return event.operation_response === 0 && event.deal_response === 0;
 };
@@ -252,6 +269,7 @@ export const formatDecisionLine = (report) => {
     `paid_at=${report.paid_at_label ?? "absent"}`,
     `cardcom_events=${report.cardcom_event_count ?? "absent"}`,
     `cardcom_approved=${approved}`,
+    `cardcom_detail=[${report.cardcom_detail ?? ""}]`,
     `decision=${report.decision}`,
   ].join(" ");
   const raw = String(email).trim();
@@ -285,6 +303,7 @@ export const reportsFor = (rows, { hasPaidAt }) => {
         paid_at_label: "absent",
         cardcom_event_count: null,
         cardcom_approved: null,
+        cardcom_detail: "",
         decision: decideCancellation({ found: false }),
       };
     }
@@ -307,6 +326,7 @@ export const reportsFor = (rows, { hasPaidAt }) => {
       paid_at_label: paidAtLabelFor(row, hasPaidAt),
       cardcom_event_count: row.cardcom_event_count,
       cardcom_approved: row.cardcom_approved === true,
+      cardcom_detail: row.cardcom_detail ?? "",
       decision: decideCancellation(view),
     };
   });
@@ -353,7 +373,14 @@ const orderSelectSql = ({ hasPaidAt, lock }) => `
 const cardcomByOrderSql = `
   select e.order_id,
          count(*)::int as cardcom_event_count,
-         coalesce(bool_or(${APPROVED_CARDCOM_SQL}), false) as cardcom_approved
+         coalesce(bool_or(${APPROVED_CARDCOM_SQL}), false) as cardcom_approved,
+         string_agg(
+           coalesce(e.payload_json->>'stage', 'no-stage')
+             || ':op=' || coalesce(e.operation_response::text, '-')
+             || ',deal=' || coalesce(e.deal_response::text, '-')
+             || ',ok=' || coalesce(e.is_success::text, '-'),
+           ' ; ' order by e.received_at
+         ) as cardcom_detail
     from public.cardcom_events e
    where e.order_id = any($1::uuid[])
    group by e.order_id
@@ -372,6 +399,7 @@ const loadOrders = async (db, { hasPaidAt, lock }) => {
       ...row,
       cardcom_event_count: event ? Number(event.cardcom_event_count) : 0,
       cardcom_approved: event ? event.cardcom_approved === true : false,
+      cardcom_detail: event ? String(event.cardcom_detail ?? "") : "",
     };
   });
 };

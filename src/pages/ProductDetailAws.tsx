@@ -292,7 +292,7 @@ const ProductDetailAws = () => {
           <CardContent className="p-6 space-y-4">
             <Store className="mx-auto h-10 w-10 text-muted-foreground" />
             <h1 className="text-xl font-bold">{PRODUCT_UNAVAILABLE_HE}</h1>
-            <Button asChild className="w-full">
+            <Button asChild className="mipo-cta-button mipo-primary-cta w-full">
               <Link to="/shop">חזרה לחנות</Link>
             </Button>
           </CardContent>
@@ -309,7 +309,7 @@ const ProductDetailAws = () => {
             <Store className="mx-auto h-10 w-10 text-muted-foreground" />
             <h1 className="text-xl font-bold">המוצר לא נמצא</h1>
             <p className="text-sm text-muted-foreground">ייתכן שהמוצר הוסר או שהקישור אינו תקין.</p>
-            <Button asChild className="w-full">
+            <Button asChild className="mipo-cta-button mipo-primary-cta w-full">
               <Link to="/shop">חזרה לחנות</Link>
             </Button>
           </CardContent>
@@ -333,7 +333,7 @@ const ProductDetailAws = () => {
         <span className="text-lg font-bold tabular-nums text-mipo-ink">₪{price.toFixed(2)}</span>
         <Button
           size="lg"
-          className="mipo-cta-button h-12 flex-1"
+          className="mipo-cta-button mipo-primary-cta h-12 flex-1"
           onClick={() => handleAddToCart(false)}
           disabled={outOfStock}
         >
@@ -505,7 +505,7 @@ const ProductDetailAws = () => {
               </div>
 
               <div className="grid gap-2 max-md:hidden sm:grid-cols-2">
-                <Button size="lg" className="mipo-cta-button" onClick={() => handleAddToCart(false)} disabled={outOfStock}>
+                <Button size="lg" className="mipo-cta-button mipo-primary-cta" onClick={() => handleAddToCart(false)} disabled={outOfStock}>
                   <ShoppingCart className="ml-2 h-5 w-5" />
                   הוסף לעגלה
                 </Button>

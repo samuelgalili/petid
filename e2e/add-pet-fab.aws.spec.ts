@@ -1,0 +1,167 @@
+import { expect, test, type Page } from "@playwright/test";
+
+/**
+ * The floating add-pet control follows a signed-in person on the screens
+ * where adding a pet is a sensible next step. Guests never see it, and it
+ * stays off the reading pages and any path the app does not know.
+ */
+
+const ADD_PET = "הוספת חיה";
+
+const EXCLUDED = [
+  { path: "/support", landmark: "תמיכה ועזרה" },
+  { path: "/terms", landmark: "תקנון ותנאי שימוש" },
+  { path: "/science", landmark: "הסטנדרט המדעי של MIPO" },
+  { path: "/breeds", landmark: "אנציקלופדיית גזעים" },
+  { path: "/install", landmark: "טיפול בחיות מחמד" },
+  { path: "/accessibility", landmark: "הצהרת נגישות" },
+  { path: "/this-page-is-missing", landmark: "אופס! הדף ברח!" },
+] as const;
+
+const product = (id: string, name: string, price: number) => ({
+  id,
+  name,
+  description: "מזון יבש איכותי",
+  price,
+  original_price: null,
+  sale_price: null,
+  image_url: "/placeholder.svg",
+  images: ["/placeholder.svg"],
+  category: "מזון",
+  category_name: "מזון",
+  pet_type: "dog",
+  in_stock: true,
+  is_featured: id === "1",
+  brand: "MIPO",
+  created_at: "2026-01-01T00:00:00.000Z",
+});
+
+const products = [
+  product("1", "מזון יבש לכלב 7 קילו", 189),
+  product("2", "צעצוע חבל כותנה", 39),
+];
+
+const signedInUser = {
+  user: {
+    id: "11111111-1111-4111-8111-111111111111",
+    email: "owner@example.com",
+    full_name: "בעלים",
+    phone: "0501234567",
+    email_verified: true,
+    created_at: "2024-01-01T00:00:00.000Z",
+  },
+  profile: {
+    id: "11111111-1111-4111-8111-111111111111",
+    full_name: "בעלים",
+    phone: "0501234567",
+  },
+  is_admin: false,
+};
+
+function json(body: unknown, status = 200) {
+  return {
+    status,
+    contentType: "application/json",
+    body: JSON.stringify(body),
+  };
+}
+
+async function mockGuest(page: Page) {
+  await page.route("**/api/**", (route) => route.fulfill(json({})));
+  await page.route("**/api/auth/me", (route) => route.fulfill(json({ error: "Unauthorized" }, 401)));
+  await page.route("**/api/products*", (route) => route.fulfill(json({ products })));
+}
+
+async function mockSignedIn(page: Page) {
+  await page.route("**/api/**", (route) => route.fulfill(json({})));
+  await page.route("**/api/auth/me", (route) => route.fulfill(json(signedInUser)));
+  await page.route("**/api/products*", (route) => route.fulfill(json({ products })));
+  await page.route("**/api/me/pets*", (route) => route.fulfill(json({ pets: [] })));
+  await page.route("**/api/feed*", (route) => route.fulfill(json({ posts: [] })));
+}
+
+async function open(page: Page, path: string) {
+  const authSeen = page.waitForResponse((response) => {
+    try {
+      return new URL(response.url()).pathname.endsWith("/api/auth/me");
+    } catch {
+      return false;
+    }
+  });
+  await page.goto(path);
+  await authSeen;
+}
+
+const addPetButton = (page: Page) => page.getByRole("button", { name: ADD_PET });
+
+/**
+ * Absence has to be observed after the page has painted. A count of zero on
+ * the first frame is also what a loading shell looks like, so this waits
+ * until the button has had a chance to mount and still is not there.
+ */
+async function expectNoAddPet(page: Page) {
+  const started = Date.now();
+  await expect.poll(async () => {
+    if (await addPetButton(page).count()) return "shown";
+    return Date.now() - started >= 400 ? "absent" : "waiting";
+  }).toBe("absent");
+}
+
+async function expectPageWithoutAddPet(page: Page, path: string, landmark: string) {
+  await open(page, path);
+  await expect(page.getByText(landmark, { exact: false }).first()).toBeVisible();
+  await expectNoAddPet(page);
+}
+
+test.describe("floating add-pet button", () => {
+  test("a guest does not see it on home, shop, feed, or the excluded pages", async ({ page }) => {
+    await mockGuest(page);
+
+    await open(page, "/");
+    await expect(page).toHaveURL(/\/shop$/);
+    await expect(page.getByRole("heading", { name: "חנות", exact: true })).toBeVisible();
+    await expectNoAddPet(page);
+
+    await open(page, "/shop");
+    await expect(page.getByRole("heading", { name: "חנות", exact: true })).toBeVisible();
+    await expect(page.getByText("מזון יבש לכלב 7 קילו")).toBeVisible();
+    await expectNoAddPet(page);
+
+    await open(page, "/feed");
+    await expect(page.getByRole("heading", { name: "התחבר כדי לראות את הקהילה" })).toBeVisible();
+    await expectNoAddPet(page);
+
+    for (const screen of EXCLUDED) {
+      await expectPageWithoutAddPet(page, screen.path, screen.landmark);
+    }
+  });
+
+  test("a signed-in person sees it on home and the feed, and not on the excluded pages", async ({ page }) => {
+    await mockSignedIn(page);
+
+    await open(page, "/");
+    const fab = addPetButton(page);
+    const heading = page.getByRole("heading", { name: /איך .* מרגיש/ });
+    const addFirstPet = page.getByRole("button", { name: "הוספת חיית המחמד הראשונה" });
+    await expect(fab).toBeVisible();
+    await expect(heading).toBeVisible();
+    await expect(addFirstPet).toBeVisible();
+
+    const fabBox = await fab.boundingBox();
+    const headingBox = await heading.boundingBox();
+    const addFirstBox = await addFirstPet.boundingBox();
+    expect(fabBox).not.toBeNull();
+    expect(headingBox).not.toBeNull();
+    expect(addFirstBox).not.toBeNull();
+    expect(fabBox!.y).toBeGreaterThan(headingBox!.y + headingBox!.height);
+    expect(fabBox!.y).toBeGreaterThan(addFirstBox!.y + addFirstBox!.height);
+
+    await open(page, "/feed");
+    await expect(page.getByRole("heading", { name: "הפיד מתחיל ברגע אחד" })).toBeVisible();
+    await expect(addPetButton(page)).toBeVisible();
+
+    for (const screen of EXCLUDED) {
+      await expectPageWithoutAddPet(page, screen.path, screen.landmark);
+    }
+  });
+});

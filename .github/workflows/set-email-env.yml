@@ -1,0 +1,732 @@
+# הגדרת שולח המייל ומפתח Resend על שרת הייצור.
+#
+# מעדכן ב-/opt/mipo/.env רק שני מפתחות: PASSWORD_RESET_FROM_EMAIL
+# (הערך הקבוע MIPO <no-reply@mipo.pet>, בפורמט env_file של
+# deploy/aws/sync-ssm-env.sh: KEY='value') ו-RESEND_API_KEY מהסוד
+# RESEND_API_KEY. שאר השורות נשארות. ברירת המחדל היא dry_run, שלא
+# כותב כלום. כתיבה דורשת confirm בדיוק SET-EMAIL-ENV.
+#
+# Deploy AWS לא מרענן את .env. הדיפלוי מעתיק קוד ומפעיל מחדש את
+# הקונטיינר; הסודות נשארים מהקובץ שכבר על השרת.
+#
+# אזהרה: deploy/aws/sync-ssm-env.sh כותב מחדש את כל .env מ-SSM.
+# הרצה עתידית שלו תדרוס את שני הערכים האלה במה שנמצא ב-SSM.
+# צריך לעדכן גם את הפרמטרים
+#   /mipo/prod/RESEND_API_KEY
+#   /mipo/prod/PASSWORD_RESET_FROM_EMAIL
+# זו פעולה של הבעלים או מנהל AWS. הוורקפלואו הזה לא נוגע ב-SSM.
+#
+# Set the production email sender and the Resend key on the server.
+#
+# Updates only two keys in /opt/mipo/.env. PASSWORD_RESET_FROM_EMAIL is
+# the fixed sender MIPO <no-reply@mipo.pet>, quoted the way
+# deploy/aws/sync-ssm-env.sh writes a Docker env_file (KEY='value').
+# RESEND_API_KEY comes from the GitHub secret RESEND_API_KEY. Every
+# other line is left as it is. dry_run defaults to true and writes
+# nothing. A write requires confirm to equal SET-EMAIL-ENV exactly.
+#
+# Deploy AWS does not refresh .env. A deploy copies code and restarts
+# the container; the secrets stay whatever is already on the host.
+#
+# Warning: deploy/aws/sync-ssm-env.sh rewrites the whole .env from SSM.
+# A later sync would overwrite these two values with whatever SSM holds.
+# The parameters
+#   /mipo/prod/RESEND_API_KEY
+#   /mipo/prod/PASSWORD_RESET_FROM_EMAIL
+# must be updated too before that sync. That is an owner / AWS admin
+# action. This workflow does not change SSM.
+#
+# The API container is recreated the way Deploy AWS restarts it, and
+# only that service:
+#   docker compose -f <compose> up -d --force-recreate --no-deps --wait --wait-timeout 60 mipo-api
+# --force-recreate is required because Compose does not notice that an
+# env_file's contents changed. --no-deps leaves Caddy alone. This is not
+# sync-ssm-env.sh's `up -d --build`, which rebuilds the image.
+# MIPO_DEPLOY_SHA is copied off the running container before recreate
+# and is not printed; an empty shell would otherwise clear the version
+# the last deploy recorded.
+#
+# Values are never printed. The Resend key is masked, passed on stdin,
+# and not placed on a command line.
+
+name: Set production email env
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'true compares the two keys and writes nothing. false updates them and restarts the API.'
+        required: true
+        type: boolean
+        default: true
+      confirm:
+        description: 'When dry_run is false, type SET-EMAIL-ENV exactly. Ignored when dry_run is true.'
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+
+# Same production group as Deploy AWS, so this job cannot recreate the API
+# while a deploy is mid-migration.
+concurrency:
+  group: aws-production
+  cancel-in-progress: false
+
+jobs:
+  set-email-env:
+    name: Set the production email sender
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+
+    env:
+      MIPO_AWS_HOST: ${{ vars.MIPO_AWS_HOST || '63.183.241.110' }}
+      MIPO_AWS_USER: ${{ vars.MIPO_AWS_USER || 'ubuntu' }}
+      MIPO_REMOTE_PATH: ${{ vars.MIPO_REMOTE_PATH || '/opt/mipo' }}
+
+    steps:
+      - name: Confirm intent
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          set -euo pipefail
+          case "$DRY_RUN" in
+            true|false) ;;
+            *)
+              echo "Nothing was contacted. Production was not touched." >&2
+              echo "לא נוצר קשר. שרת הייצור לא שונה." >&2
+              echo "dry_run must be true or false." >&2
+              exit 1
+              ;;
+          esac
+
+          if [ "$DRY_RUN" = "false" ] && [ "$CONFIRM" != "SET-EMAIL-ENV" ]; then
+            echo "Nothing was contacted. Production was not touched." >&2
+            echo "לא נוצר קשר. שרת הייצור לא שונה." >&2
+            echo "" >&2
+            echo "dry_run=false writes /opt/mipo/.env and restarts the API." >&2
+            echo "The confirm box has to contain exactly this text:" >&2
+            echo "" >&2
+            echo "    SET-EMAIL-ENV" >&2
+            echo "" >&2
+            echo "Leave dry_run checked to compare the two keys without writing." >&2
+            exit 1
+          fi
+
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "Confirmed: dry run. Nothing will be written."
+          else
+            echo "Confirmed: write. A backup is taken first."
+          fi
+
+      - name: Require the Resend key
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: |
+          set -euo pipefail
+          umask 077
+          key_file="$RUNNER_TEMP/resend-api-key"
+          rm -f "$key_file"
+          python3 - "$key_file" <<'PY'
+          import os
+          import sys
+
+          path = sys.argv[1]
+          raw = os.environ.get("RESEND_API_KEY", "")
+          if raw.endswith("\n"):
+              raw = raw[:-1]
+          if raw.endswith("\r"):
+              raw = raw[:-1]
+          if raw == "" or any(ch in raw for ch in ("\r", "\n", "\0")):
+              sys.stderr.write("הסוד RESEND_API_KEY ריק או לא תקין. לא נכתב דבר ולא התחברנו לשרת.\n")
+              sys.stderr.write("RESEND_API_KEY is empty or invalid. Nothing was written and the server was not contacted.\n")
+              sys.exit(1)
+          fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+          with os.fdopen(fd, "w", encoding="utf-8") as handle:
+              handle.write(raw)
+          os.chmod(path, 0o600)
+          sys.stdout.write("::add-mask::")
+          sys.stdout.write(raw)
+          sys.stdout.write("\n")
+          PY
+          echo "המפתח RESEND_API_KEY קיים. הערך מוסתר ולא יודפס."
+          echo "RESEND_API_KEY is present. The value is masked and will not be printed."
+
+      - name: Configure SSH
+        id: ssh
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.MIPO_AWS_SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${MIPO_AWS_HOST}" ]; then
+            echo "MIPO_AWS_HOST is empty for the production environment." >&2
+            exit 1
+          fi
+          if [ -z "$SSH_PRIVATE_KEY" ]; then
+            echo "Missing GitHub secret MIPO_AWS_SSH_PRIVATE_KEY" >&2
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/mipo_aws_key
+          chmod 600 ~/.ssh/mipo_aws_key
+          ssh-keyscan -T 30 -H "$MIPO_AWS_HOST" >> ~/.ssh/known_hosts || true
+
+      - name: Update or inspect the two keys
+        id: envfile
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          set -euo pipefail
+          case "$DRY_RUN" in
+            true|false) ;;
+            *)
+              echo "dry_run must be true or false." >&2
+              exit 1
+              ;;
+          esac
+          if [ "$DRY_RUN" = "false" ] && [ "$CONFIRM" != "SET-EMAIL-ENV" ]; then
+            echo "Nothing was contacted. Production was not touched." >&2
+            echo "לא נוצר קשר. שרת הייצור לא שונה." >&2
+            echo "The confirm box has to contain exactly this text:" >&2
+            echo "    SET-EMAIL-ENV" >&2
+            exit 1
+          fi
+          case "$MIPO_REMOTE_PATH" in
+            /[A-Za-z0-9/_.-]*) ;;
+            *)
+              echo "MIPO_REMOTE_PATH contains an unexpected character." >&2
+              exit 1
+              ;;
+          esac
+          case "$MIPO_REMOTE_PATH" in
+            *..*)
+              echo "MIPO_REMOTE_PATH must not contain .." >&2
+              exit 1
+              ;;
+          esac
+          case "${GITHUB_RUN_ID:-}" in
+            ''|*[!0-9]*)
+              echo "GITHUB_RUN_ID is not numeric." >&2
+              exit 1
+              ;;
+          esac
+          key_file="$RUNNER_TEMP/resend-api-key"
+          if [ ! -s "$key_file" ]; then
+            echo "הסוד RESEND_API_KEY ריק או לא תקין. לא נכתב דבר ולא התחברנו לשרת." >&2
+            echo "RESEND_API_KEY is empty or invalid. Nothing was written and the server was not contacted." >&2
+            exit 1
+          fi
+
+          local_script="$RUNNER_TEMP/set-email-env.py"
+          # EMAIL-ENV-PY-BEGIN
+          cat > "$local_script" <<'PY'
+          import os
+          import re
+          import shutil
+          import subprocess
+          import sys
+          import time
+
+          FROM_KEY = "PASSWORD_RESET_FROM_EMAIL"
+          RESEND_KEY = "RESEND_API_KEY"
+          FROM_EMAIL = "MIPO <no-reply@mipo.pet>"
+          ORDER = (FROM_KEY, RESEND_KEY)
+          KEY_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+          BACKUP_NAME_RE = re.compile(r"\.env\.backup-[0-9]{8}-[0-9]{6}")
+          SHA_RE = re.compile(r"[0-9a-f]{7,40}")
+
+
+          def fail(english, hebrew):
+              sys.stderr.write(hebrew + "\n")
+              sys.stderr.write(english + "\n")
+              raise SystemExit(1)
+
+
+          def quote_env(value):
+              # Same quoting as deploy/aws/sync-ssm-env.sh: single quotes, and a
+              # single quote inside the value becomes \'.
+              if any(ch in value for ch in ("\r", "\n", "\0")):
+                  raise RuntimeError("value contains a control character and cannot be written to Docker env_file safely.")
+              return "'" + value.replace("'", "\\'") + "'"
+
+
+          def parse_raw(raw):
+              if len(raw) >= 2 and raw[0] == "'" and raw[-1] == "'":
+                  return raw[1:-1].replace("\\'", "'")
+              if len(raw) >= 2 and raw[0] == '"' and raw[-1] == '"':
+                  inner = raw[1:-1]
+                  out = []
+                  index = 0
+                  while index < len(inner):
+                      if inner[index] == "\\" and index + 1 < len(inner):
+                          nxt = inner[index + 1]
+                          mapping = {"n": "\n", "r": "\r", "t": "\t", "\\": "\\", '"': '"'}
+                          out.append(mapping.get(nxt, nxt))
+                          index += 2
+                      else:
+                          out.append(inner[index])
+                          index += 1
+                  return "".join(out)
+              return raw
+
+
+          def split_key_value(line):
+              body = line
+              if body.endswith("\r\n"):
+                  body = body[:-2]
+              elif body.endswith("\n"):
+                  body = body[:-1]
+              stripped = body.strip()
+              if not stripped or stripped.startswith("#"):
+                  return None
+              if stripped.startswith("export "):
+                  stripped = stripped[7:].lstrip()
+              if "=" not in stripped:
+                  return None
+              key, raw = stripped.split("=", 1)
+              key = key.strip()
+              if not KEY_RE.fullmatch(key):
+                  return None
+              return key, parse_raw(raw)
+
+
+          def parse_env(text):
+              found = {}
+              for line in text.splitlines(keepends=True):
+                  parsed = split_key_value(line)
+                  if parsed is None:
+                      continue
+                  found[parsed[0]] = parsed[1]
+              return found
+
+
+          def render(text, updates):
+              allowed = set(ORDER)
+              if not set(updates).issubset(allowed):
+                  raise RuntimeError("refusing to write a key other than the two mail keys")
+              lines = text.splitlines(keepends=True)
+              seen = set()
+              out = []
+              for line in lines:
+                  parsed = split_key_value(line)
+                  if parsed is None or parsed[0] not in updates:
+                      out.append(line)
+                      continue
+                  key = parsed[0]
+                  if line.endswith("\r\n"):
+                      ending = "\r\n"
+                  else:
+                      ending = "\n"
+                  out.append(key + "=" + quote_env(updates[key]) + ending)
+                  seen.add(key)
+              if out and not out[-1].endswith("\n"):
+                  out[-1] = out[-1] + "\n"
+              for key in ORDER:
+                  if key in updates and key not in seen:
+                      out.append(key + "=" + quote_env(updates[key]) + "\n")
+              return "".join(out)
+
+
+          def status_line(name, current, desired):
+              if name not in current:
+                  present, absent, different = "false", "true", "true"
+              else:
+                  present, absent = "true", "false"
+                  different = "false" if current[name] == desired else "true"
+              return name + " present=" + present + " absent=" + absent + " different=" + different
+
+
+          def validate_remote(remote):
+              if not remote or not remote.startswith("/"):
+                  fail("MIPO_REMOTE_PATH is not a safe absolute path.", "MIPO_REMOTE_PATH אינו נתיב בטוח.")
+              if any(ch in remote for ch in (" ", "'", '"', "\n", "\r", "\0", "$", "`")):
+                  fail("MIPO_REMOTE_PATH is not a safe absolute path.", "MIPO_REMOTE_PATH אינו נתיב בטוח.")
+              if ".." in remote.split("/"):
+                  fail("MIPO_REMOTE_PATH is not a safe absolute path.", "MIPO_REMOTE_PATH אינו נתיב בטוח.")
+
+
+          def read_text(path):
+              try:
+                  data = open(path, "rb").read()
+              except OSError:
+                  fail("Could not read .env.", "לא ניתן לקרוא את .env.")
+              try:
+                  return data.decode("utf-8")
+              except UnicodeDecodeError:
+                  fail(".env is not utf-8; refusing to rewrite it.", ".env אינו utf-8; לא נשכתב.")
+
+
+          def write_inplace(path, content):
+              with open(path, "r+b") as handle:
+                  handle.seek(0)
+                  handle.write(content)
+                  handle.truncate()
+                  handle.flush()
+                  os.fsync(handle.fileno())
+
+
+          def make_backup(env_path):
+              stamp = time.strftime("%Y%m%d-%H%M%S")
+              backup = env_path + ".backup-" + stamp
+              if os.path.exists(backup):
+                  time.sleep(1)
+                  stamp = time.strftime("%Y%m%d-%H%M%S")
+                  backup = env_path + ".backup-" + stamp
+              fd = os.open(backup, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+              try:
+                  with os.fdopen(fd, "wb") as out, open(env_path, "rb") as src:
+                      shutil.copyfileobj(src, out)
+                      out.flush()
+                      os.fsync(out.fileno())
+              except Exception:
+                  try:
+                      os.unlink(backup)
+                  except OSError:
+                      pass
+                  raise
+              os.chmod(backup, 0o600)
+              return backup
+
+
+          def assert_backup_path(remote, backup):
+              if not backup or any(ch in backup for ch in ("\n", "\r", "\0")):
+                  fail("backup path is empty.", "נתיב הגיבוי ריק.")
+              remote_real = os.path.realpath(remote)
+              if not os.path.isabs(backup):
+                  fail("backup path must be absolute.", "נתיב הגיבוי חייב להיות מוחלט.")
+              parent = os.path.realpath(os.path.dirname(backup))
+              if parent != remote_real:
+                  fail("backup path is outside the app directory.", "נתיב הגיבוי מחוץ לתיקיית היישום.")
+              name = os.path.basename(backup)
+              if not BACKUP_NAME_RE.fullmatch(name):
+                  fail("backup path is not a timestamped env backup.", "נתיב הגיבוי אינו גיבוי env עם חותמת זמן.")
+              full = os.path.join(parent, name)
+              full_real = os.path.realpath(full)
+              if os.path.dirname(full_real) != remote_real or not os.path.isfile(full_real):
+                  fail("backup file is missing.", "קובץ הגיבוי חסר.")
+              return full_real
+
+
+          def compose_env(remote, base):
+              env = dict(base)
+              env["MIPO_REMOTE_PATH"] = remote
+              env.pop("RESEND_API_KEY", None)
+              env.pop("PASSWORD_RESET_FROM_EMAIL", None)
+              return env
+
+
+          def compose_file(remote):
+              return os.path.join(remote, "deploy", "aws", "docker-compose.yml")
+
+
+          def current_deploy_sha(remote, env):
+              # Copy the version the running container already has. Do not print it.
+              try:
+                  result = subprocess.run(
+                      [
+                          "docker", "compose", "-f", compose_file(remote),
+                          "exec", "-T", "mipo-api", "printenv", "MIPO_DEPLOY_SHA",
+                      ],
+                      cwd=remote,
+                      env=env,
+                      stdin=subprocess.DEVNULL,
+                      stdout=subprocess.PIPE,
+                      stderr=subprocess.DEVNULL,
+                      timeout=20,
+                      check=False,
+                  )
+              except (OSError, subprocess.TimeoutExpired):
+                  return ""
+              if result.returncode != 0:
+                  return ""
+              try:
+                  value = result.stdout.decode("utf-8", "replace").strip()
+              except Exception:
+                  return ""
+              if value == "unknown" or SHA_RE.fullmatch(value):
+                  return value
+              return ""
+
+
+          def restart_api(remote, env):
+              # Deploy AWS: up -d --force-recreate --no-deps --wait --wait-timeout 60 mipo-api
+              result = subprocess.run(
+                  [
+                      "docker", "compose", "-f", compose_file(remote),
+                      "up", "-d", "--force-recreate", "--no-deps",
+                      "--wait", "--wait-timeout", "60", "mipo-api",
+                  ],
+                  cwd=remote,
+                  env=env,
+                  stdin=subprocess.DEVNULL,
+                  stdout=sys.stderr,
+                  stderr=sys.stderr,
+                  check=False,
+              )
+              if result.returncode != 0:
+                  raise RuntimeError("docker compose exit")
+
+
+          def read_key():
+              raw = sys.stdin.buffer.read(4097)
+              if len(raw) > 4096:
+                  fail("RESEND_API_KEY is too long. Nothing was written.", "RESEND_API_KEY ארוך מדי. לא נכתב דבר.")
+              try:
+                  text = raw.decode("utf-8")
+              except UnicodeDecodeError:
+                  fail("RESEND_API_KEY is not valid text. Nothing was written.", "RESEND_API_KEY אינו טקסט תקין. לא נכתב דבר.")
+              if text.endswith("\n"):
+                  text = text[:-1]
+              if text.endswith("\r"):
+                  text = text[:-1]
+              if text == "" or any(ch in text for ch in ("\r", "\n", "\0")):
+                  fail(
+                      "RESEND_API_KEY is empty or contains a control character. Nothing was written.",
+                      "הסוד RESEND_API_KEY ריק או מכיל תו בקרה. לא נכתב דבר.",
+                  )
+              return text
+
+
+          def main():
+              mode = os.environ.get("MODE", "")
+              dry = os.environ.get("DRY_RUN", "true")
+              remote = os.environ.get("MIPO_REMOTE_PATH", "/opt/mipo")
+              validate_remote(remote)
+              env_path = os.path.join(remote, ".env")
+
+              if mode == "restore":
+                  backup = assert_backup_path(remote, os.environ.get("BACKUP_PATH", ""))
+                  if not os.path.isfile(env_path):
+                      fail(".env is missing.", ".env חסר.")
+                  if not os.path.isfile(compose_file(remote)):
+                      fail("docker compose file is missing.", "קובץ docker compose חסר.")
+                  base = compose_env(remote, os.environ)
+                  sha = current_deploy_sha(remote, base)
+                  if sha:
+                      base["MIPO_DEPLOY_SHA"] = sha
+                  content = open(backup, "rb").read()
+                  write_inplace(env_path, content)
+                  try:
+                      restart_api(remote, base)
+                  except Exception:
+                      fail(
+                          "The API container did not become healthy after restore.",
+                          "קונטיינר ה-API לא חזר למצב תקין אחרי השחזור.",
+                      )
+                  sys.stdout.write("restored=true\n")
+                  sys.stdout.write("restarted=true\n")
+                  return
+
+              key = read_key()
+              if not os.path.isfile(env_path):
+                  fail(".env is missing. Refusing to create a partial env file.", ".env חסר. לא נוצר קובץ חלקי.")
+              text = read_text(env_path)
+              updates = {FROM_KEY: FROM_EMAIL, RESEND_KEY: key}
+              if dry == "true":
+                  current = parse_env(text)
+                  for name in ORDER:
+                      sys.stdout.write(status_line(name, current, updates[name]) + "\n")
+                  return
+              if dry != "false":
+                  fail("DRY_RUN must be true or false.", "DRY_RUN חייב להיות true או false.")
+              if not os.path.isfile(compose_file(remote)):
+                  fail("docker compose file is missing.", "קובץ docker compose חסר.")
+
+              base = compose_env(remote, os.environ)
+              sha = current_deploy_sha(remote, base)
+              if sha:
+                  base["MIPO_DEPLOY_SHA"] = sha
+              backup = make_backup(env_path)
+              sys.stdout.write("backup=" + backup + "\n")
+              sys.stdout.flush()
+              try:
+                  updated = render(text, updates)
+                  write_inplace(env_path, updated.encode("utf-8"))
+                  restart_api(remote, base)
+              except Exception:
+                  sys.stderr.write("הכתיבה או ההפעלה מחדש נכשלו. משחזרים את הגיבוי.\n")
+                  sys.stderr.write("Write or restart failed. Restoring the backup.\n")
+                  try:
+                      write_inplace(env_path, open(backup, "rb").read())
+                      restart_api(remote, base)
+                      sys.stderr.write("restored=true\n")
+                  except Exception:
+                      sys.stderr.write("שחזור הגיבוי נכשל. הקובץ נשאר על השרת.\n")
+                      sys.stderr.write("Restoring the backup failed. The backup file is still on the host.\n")
+                      sys.stderr.write("backup=" + backup + "\n")
+                  raise SystemExit(1)
+              sys.stdout.write("restarted=true\n")
+
+
+          if __name__ == "__main__":
+              main()
+          PY
+          # EMAIL-ENV-PY-END
+          chmod 600 "$local_script"
+
+          remote_script="/tmp/mipo-set-email-env-${GITHUB_RUN_ID}.py"
+          scp -q -i ~/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 \
+            "$local_script" "${MIPO_AWS_USER}@${MIPO_AWS_HOST}:${remote_script}"
+
+          set +e
+          report=$(ssh -i ~/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 -T \
+            "${MIPO_AWS_USER}@${MIPO_AWS_HOST}" \
+            "chmod 600 '${remote_script}' && DRY_RUN='${DRY_RUN}' MIPO_REMOTE_PATH='${MIPO_REMOTE_PATH}' PYTHONDONTWRITEBYTECODE=1 python3 -u '${remote_script}'" \
+            < "$key_file")
+          status=$?
+          set -e
+          printf '%s\n' "$report"
+          if [ "$status" -ne 0 ]; then
+            exit "$status"
+          fi
+
+          if [ "$DRY_RUN" = "false" ]; then
+            backup=""
+            while IFS= read -r line; do
+              case "$line" in
+                backup=*) backup=${line#backup=} ;;
+              esac
+            done <<< "$report"
+            case "$backup" in
+              "$MIPO_REMOTE_PATH"/.env.backup-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]) ;;
+              *)
+                echo "The remote script did not report a backup path. Refusing to continue." >&2
+                echo "הסקריפט המרוחק לא דיווח על נתיב גיבוי. עוצרים." >&2
+                exit 1
+                ;;
+            esac
+            echo "backup_path=$backup" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Read email.configured
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+          BACKUP_PATH: ${{ steps.envfile.outputs.backup_path }}
+        run: |
+          set -euo pipefail
+          case "$DRY_RUN" in
+            true|false) ;;
+            *)
+              echo "dry_run must be true or false." >&2
+              exit 1
+              ;;
+          esac
+          case "$MIPO_REMOTE_PATH" in
+            /[A-Za-z0-9/_.-]*) ;;
+            *)
+              echo "MIPO_REMOTE_PATH contains an unexpected character." >&2
+              exit 1
+              ;;
+          esac
+          case "${GITHUB_RUN_ID:-}" in
+            ''|*[!0-9]*)
+              echo "GITHUB_RUN_ID is not numeric." >&2
+              exit 1
+              ;;
+          esac
+
+          configured=""
+          ok=0
+          if [ "$DRY_RUN" = "true" ]; then
+            attempts=1
+          else
+            attempts=10
+          fi
+          attempt=1
+          while [ "$attempt" -le "$attempts" ]; do
+            tmp=$(mktemp)
+            set +e
+            http=$(curl --silent --show-error --max-time 20 -o "$tmp" -w '%{http_code}' https://mipo.pet/api/health)
+            curl_rc=$?
+            parsed=$(python3 - "$tmp" <<'PY'
+          import json
+          import sys
+          path = sys.argv[1]
+          try:
+              with open(path, encoding="utf-8") as handle:
+                  value = json.load(handle)["email"]["configured"]
+          except Exception:
+              sys.exit(2)
+          if value is True:
+              sys.stdout.write("true\n")
+          elif value is False:
+              sys.stdout.write("false\n")
+          else:
+              sys.exit(2)
+          PY
+            )
+            parse_rc=$?
+            set -e
+            rm -f "$tmp"
+            if [ "$curl_rc" -ne 0 ]; then
+              http="000"
+            fi
+            if [ "$parse_rc" -eq 0 ]; then
+              configured=$parsed
+            fi
+            if [ "$DRY_RUN" != "true" ] && [ "$http" = "200" ] && [ "$configured" = "true" ]; then
+              ok=1
+              break
+            fi
+            if [ "$DRY_RUN" = "true" ]; then
+              break
+            fi
+            if [ "$attempt" -lt "$attempts" ]; then
+              sleep 3
+            fi
+            attempt=$((attempt + 1))
+          done
+
+          if [ "$configured" = "true" ] || [ "$configured" = "false" ]; then
+            echo "email.configured=${configured}"
+          fi
+
+          if [ "$DRY_RUN" = "true" ]; then
+            if [ "$configured" != "true" ] && [ "$configured" != "false" ]; then
+              echo "לא ניתן לקרוא את email.configured." >&2
+              echo "email.configured could not be read." >&2
+              exit 1
+            fi
+            exit 0
+          fi
+
+          if [ "$ok" -eq 1 ]; then
+            exit 0
+          fi
+
+          echo "ההפעלה מחדש לא השאירה את email.configured אמיתי. משחזרים את הגיבוי ומפעילים שוב." >&2
+          echo "Restart did not leave email.configured true. Restoring the backup and restarting the API." >&2
+          case "$BACKUP_PATH" in
+            "$MIPO_REMOTE_PATH"/.env.backup-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]) ;;
+            *)
+              echo "מסרבים לשחזר: נתיב הגיבוי חסר או לא בפורמט הצפוי." >&2
+              echo "Refusing to restore: backup path is missing or not a timestamped env backup." >&2
+              exit 1
+              ;;
+          esac
+          remote_script="/tmp/mipo-set-email-env-${GITHUB_RUN_ID}.py"
+          ssh -i ~/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 -T \
+            "${MIPO_AWS_USER}@${MIPO_AWS_HOST}" \
+            "chmod 600 '${remote_script}' && MODE=restore DRY_RUN=false BACKUP_PATH='${BACKUP_PATH}' MIPO_REMOTE_PATH='${MIPO_REMOTE_PATH}' PYTHONDONTWRITEBYTECODE=1 python3 -u '${remote_script}'"
+          echo "restored=true"
+          exit 1
+
+      - name: Remove the remote helper
+        if: always() && steps.ssh.outcome == 'success'
+        run: |
+          set -euo pipefail
+          case "${GITHUB_RUN_ID:-}" in
+            ''|*[!0-9]*) exit 0 ;;
+          esac
+          ssh -i ~/.ssh/mipo_aws_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 -T \
+            "${MIPO_AWS_USER}@${MIPO_AWS_HOST}" \
+            "rm -f '/tmp/mipo-set-email-env-${GITHUB_RUN_ID}.py'"
+
+      - name: Remove local secret file
+        if: always()
+        run: |
+          rm -f "$RUNNER_TEMP/resend-api-key" "$RUNNER_TEMP/set-email-env.py"

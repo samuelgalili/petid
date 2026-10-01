@@ -56,9 +56,6 @@ const readStoredStrings = (key: string): string[] => {
  */
 const RESTING_PROMPTS = ["הכלב שלי משיר הרבה", "אוכל יבש לגור", "צעצוע לתוכי"];
 
-/** How many results one answer shows before it stops being an answer. */
-const RESULT_LIMIT = 12;
-
 /**
  * A query reads as a QUESTION rather than a lookup when it runs past three
  * words or ends in a question mark. That is the only moment the assistant is
@@ -446,11 +443,15 @@ const Shop = () => {
   /**
    * The line above the results, and what it owes the person who typed.
    *
-   * "12 מוצרים" is true and useless when the answer is to a NARROWER question
+   * A bare count is true and useless when the answer is to a NARROWER question
    * than the one asked. If somebody types "צעצוע לתוכי" and this shop has no
    * parrot anything, showing toys under a plain count tells them the parrot
    * was understood. Naming the word that went unused is the difference between
    * a search that answered and a search that changed the subject.
+   *
+   * The number is every match for the query on screen right now. It is not a
+   * window size, and it is recomputed with the results, so a new query cannot
+   * leave the previous total behind.
    */
   const resultLine = (() => {
     // A negation that could not be honoured is its own message, and it comes
@@ -467,7 +468,7 @@ const Shop = () => {
         : "אין התאמה — אפשר לשאול אחרת";
     }
 
-    const count = `${Math.min(filteredAndSortedProducts.length, RESULT_LIMIT)} מוצרים`;
+    const count = `${filteredAndSortedProducts.length} מוצרים`;
     if (search.dropped.length > 0) return `${count} — בלי ${search.dropped.join(" ")}, שאין לנו`;
     if (search.corrected.length > 0) return `${count} — חיפשנו גם איות קרוב`;
     return count;
@@ -717,11 +718,11 @@ const Shop = () => {
             </div>
           ) : (
             <>
-              <p className="mb-3 text-[13px] font-medium text-mipo-muted">{resultLine}</p>
+              <p className="mb-3 text-[13px] font-medium text-mipo-muted" data-testid="shop-search-summary">{resultLine}</p>
 
               {filteredAndSortedProducts.length > 0 && (
-                <div className="grid grid-cols-2 gap-3">
-                  {filteredAndSortedProducts.slice(0, RESULT_LIMIT).map((product) => (
+                <div className="grid grid-cols-2 gap-3" data-testid="shop-search-results">
+                  {filteredAndSortedProducts.map((product) => (
                     <button
                       key={product.id}
                       type="button"
@@ -931,7 +932,7 @@ const Shop = () => {
                       type="button"
                       onClick={handleAddToCart}
                       disabled={!selectedProduct.inStock}
-                      className="h-14 flex-1 rounded-2xl text-base font-bold"
+                      className="mipo-cta-button mipo-primary-cta h-14 flex-1 rounded-2xl text-base font-bold"
                       data-testid="shop-add-to-cart"
                     >
                       <ShoppingBag className="h-5 w-5" />
@@ -944,7 +945,7 @@ const Shop = () => {
                 <button
                   type="button"
                   onClick={() => navigate(`/product/${selectedProduct.id}${activePet?.id ? `?petId=${activePet.id}` : ""}`)}
-                  className="mt-3 min-h-11 w-full rounded-2xl border border-border/60 text-sm font-medium text-foreground transition-colors hover:bg-muted/50"
+                  className="mipo-outline-button mt-3 w-full text-sm font-medium"
                 >
                   לדף המוצר המלא
                 </button>

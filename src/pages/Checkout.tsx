@@ -1098,7 +1098,7 @@ const Checkout = () => {
                       type="button"
                       onClick={validateCoupon}
                       disabled={!couponCode.trim() || isValidatingCoupon}
-                      className="bg-accent hover:bg-accent-hover text-accent-foreground rounded-xl font-jakarta"
+                      className="mipo-outline-button font-jakarta shadow-none"
                     >
                       {isValidatingCoupon ? <Loader2 className="w-4 h-4 animate-spin" /> : "הפעל"}
                     </Button>
@@ -1312,7 +1312,7 @@ const Checkout = () => {
             type={currentStep === 3 ? "button" : "submit"}
             size="lg"
             data-testid="checkout-continue"
-            className={`flex-1 bg-accent hover:bg-accent-hover text-accent-foreground rounded-2xl font-bold font-jakarta shadow-xl h-14 ${currentStep === 1 ? 'w-full' : ''}`}
+            className={`mipo-cta-button mipo-primary-cta flex-1 rounded-2xl font-bold font-jakarta h-14 ${currentStep === 1 ? "w-full" : ""}`}
             onClick={currentStep === 3 ? handlePlaceOrder : undefined}
             disabled={isProcessing || (currentStep === 3 && nothingToBuy)}
           >
