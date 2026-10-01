@@ -365,3 +365,164 @@ export const opaqueCoverage = async (buffer) => {
   }
   return pixels === 0 ? 0 : opaque / pixels;
 };
+
+// User photos are not catalogue shots. They are portraits and feed frames, so
+// they keep their own aspect ratio. What they must not keep is the file the
+// phone sent: that file carries orientation, GPS and the device name, and the
+// bytes are what /uploads serves.
+
+export const USER_PHOTO_MAX_EDGE = 2048;
+const USER_PHOTO_MAX_PIXELS = 80_000_000;
+
+export const USER_IMAGE_UNREADABLE_HE = "לא הצלחנו לקרוא את התמונה. בחרו תמונה אחרת.";
+export const USER_IMAGE_UNSUPPORTED_HE = "סוג הקובץ לא נתמך. בחרו תמונה אחרת.";
+export const USER_IMAGE_TOO_LARGE_HE = "התמונה גדולה מדי. בחרו תמונה קטנה יותר.";
+
+const USER_RASTER_FORMATS = new Set(["jpeg", "png", "webp", "gif", "tiff", "heif", "avif"]);
+
+const userImageError = (message, code) => new ImagePipelineError(message, code);
+
+const isPixelLimitError = (error) => /pixel limit/i.test(String(error?.message || ""));
+
+// HEIC/HEIF is an ISO BMFF file. The brand sits next to the ftyp box. AVIF
+// uses the same container and sharp can decode it; iPhone HEIC is HEVC, which
+// the bundled libvips build does not decode.
+const looksLikeHeif = (buffer) => {
+  if (!Buffer.isBuffer(buffer) || buffer.length < 12) return false;
+  if (buffer.toString("ascii", 4, 8) !== "ftyp") return false;
+  const brands = buffer.subarray(8, Math.min(buffer.length, 32)).toString("ascii");
+  return ["heic", "heix", "hevc", "hevx", "mif1", "msf1", "heif"].some((brand) => brands.includes(brand));
+};
+
+const heicToJpeg = async (input) => {
+  try {
+    const { default: convert } = await import("heic-convert");
+    const jpeg = await convert({
+      buffer: input,
+      format: "JPEG",
+      quality: 1,
+    });
+    const buffer = Buffer.from(jpeg);
+    if (buffer.length < 3) throw userImageError(USER_IMAGE_UNREADABLE_HE, "undecodable");
+    return buffer;
+  } catch (error) {
+    if (error instanceof ImagePipelineError) throw error;
+    throw userImageError(USER_IMAGE_UNREADABLE_HE, "undecodable");
+  }
+};
+
+const encodeRaster = async (input, { maxEdge, quality, limitInputPixels }) => {
+  const options = {
+    failOn: "none",
+    animated: false,
+    pages: 1,
+    limitInputPixels,
+  };
+
+  let probe;
+  try {
+    probe = await sharp(input, options).metadata();
+  } catch (error) {
+    if (isPixelLimitError(error)) throw userImageError(USER_IMAGE_TOO_LARGE_HE, "too_large");
+    throw error;
+  }
+
+  if (!probe.format || !probe.width || !probe.height) {
+    throw userImageError(USER_IMAGE_UNREADABLE_HE, "undecodable");
+  }
+  if (!USER_RASTER_FORMATS.has(probe.format)) {
+    throw userImageError(USER_IMAGE_UNSUPPORTED_HE, "unsupported_format");
+  }
+
+  let output;
+  try {
+    output = await sharp(input, options)
+      // Bakes the phone's orientation into the pixels. The tag itself is not
+      // copied: nothing below opts into metadata.
+      .rotate()
+      .resize({
+        width: maxEdge,
+        height: maxEdge,
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .webp({ quality })
+      .toBuffer();
+  } catch (error) {
+    if (isPixelLimitError(error)) throw userImageError(USER_IMAGE_TOO_LARGE_HE, "too_large");
+    throw error;
+  }
+
+  const baked = await sharp(output).metadata();
+  if (
+    baked.format !== "webp"
+    || !baked.width
+    || !baked.height
+    || baked.exif
+    || baked.xmp
+    || baked.iptc
+    || baked.icc
+  ) {
+    throw userImageError(USER_IMAGE_UNREADABLE_HE, "metadata_survived");
+  }
+
+  return {
+    buffer: output,
+    content_type: "image/webp",
+    extension: ".webp",
+    width: baked.width,
+    height: baked.height,
+    bytes: output.length,
+  };
+};
+
+const encodeOrNull = async (input, options) => {
+  try {
+    return await encodeRaster(input, options);
+  } catch (error) {
+    if (error instanceof ImagePipelineError) throw error;
+    return null;
+  }
+};
+
+/**
+ * Re-encode a user photo so the stored file is not the original.
+ *
+ * One format (WebP), orientation applied, long edge capped. EXIF, XMP, IPTC
+ * and the colour profile are dropped because the encoder is never asked to
+ * keep them. HEIC is decoded first; the bundled sharp build cannot read HEVC.
+ *
+ * `thumbnail` uses the catalogue thumbnail edge. Callers that have nowhere to
+ * store a second file leave it off. The public upload path is one of those:
+ * user_uploads has a single storage key.
+ */
+export const sanitizeUserImage = async (input, {
+  maxEdge = USER_PHOTO_MAX_EDGE,
+  quality = 82,
+  thumbnail = false,
+  limitInputPixels = USER_PHOTO_MAX_PIXELS,
+} = {}) => {
+  if (!Buffer.isBuffer(input) || input.length < 8) {
+    throw userImageError(USER_IMAGE_UNREADABLE_HE, "undecodable");
+  }
+
+  const encodeOptions = { maxEdge, quality, limitInputPixels };
+  let raster = input;
+  let encoded = await encodeOrNull(raster, encodeOptions);
+  if (!encoded) {
+    if (!looksLikeHeif(input)) throw userImageError(USER_IMAGE_UNREADABLE_HE, "undecodable");
+    raster = await heicToJpeg(input);
+    encoded = await encodeOrNull(raster, encodeOptions);
+    if (!encoded) throw userImageError(USER_IMAGE_UNREADABLE_HE, "undecodable");
+  }
+
+  if (!thumbnail) return encoded;
+
+  const thumb = await encodeOrNull(raster, {
+    maxEdge: IMAGE_PRESETS.thumbnail.width,
+    quality: IMAGE_PRESETS.thumbnail.quality,
+    limitInputPixels,
+  });
+  if (!thumb) throw userImageError(USER_IMAGE_UNREADABLE_HE, "undecodable");
+  return { ...encoded, thumbnail: thumb };
+};

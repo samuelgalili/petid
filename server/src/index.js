@@ -70,6 +70,7 @@ import {
   fetchImageBuffer,
   ImagePipelineError,
   normalizeWithBackgroundRemoval,
+  sanitizeUserImage,
 } from "./imagePipeline.js";
 import { createGeminiBackgroundRemover } from "./backgroundRemoval.js";
 import { hashPassword, verifyPassword } from "./passwords.js";
@@ -8047,11 +8048,21 @@ const uploadDataUrlFile = async (body, {
   directory = uploadDir,
   publicUrl = true,
 } = {}) => {
-  const { buffer, contentType, extension } = decodeAndValidateDataUrl(body.data_url, {
+  let { buffer, contentType, extension } = decodeAndValidateDataUrl(body.data_url, {
     maxBytes,
     requireImage,
     allowedContentTypes,
   });
+  // /uploads serves the file itself, including the photo on /found-pet/:id.
+  // A public image is re-encoded before it is written so the phone's GPS and
+  // device metadata never land on disk. Video is stored as it arrived. Private
+  // documents and character photos pass publicUrl false and are not rewritten.
+  if (publicUrl && contentType.startsWith("image/")) {
+    const sanitized = await sanitizeUserImage(buffer);
+    buffer = sanitized.buffer;
+    contentType = sanitized.content_type;
+    extension = sanitized.extension;
+  }
   const fileName = `${Date.now()}-${randomUUID()}${extension}`;
 
   await mkdir(directory, publicUrl ? { recursive: true } : { recursive: true, mode: 0o700 });
