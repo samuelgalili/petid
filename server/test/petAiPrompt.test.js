@@ -21,12 +21,15 @@ import {
   containsBannedBrand,
   isUrgentVetReferral,
   needsUnknownSexRetry,
+  neutralUnknownSexReply,
   noteUnknownSexGuardKept,
   petAiPromptInsert,
   petSexForPrompt,
   redactBannedBrandReply,
   replyAssignsPetSex,
+  settleUnknownSexReply,
   shoppingTermFromQuestion,
+  UNKNOWN_SEX_REWRITES,
   unknownSexRetryNote,
 } from "../src/petAiPrompt.js";
 
@@ -82,6 +85,11 @@ test("the prompt does not guess the pet's sex and shows Hebrew do and don't exam
   assert.match(petAiPromptInsert, /גילו, גזעו ומצבו/);
   assert.match(petAiPromptInsert, /הוא\/היא/);
   assert.match(petAiPromptInsert, /יש לו עור אדום/);
+  assert.match(petAiPromptInsert, /גילו המדויק ואת מצבו הבריאותי/);
+  assert.match(petAiPromptInsert, /גזעו ורמת הפעילות שלו/);
+  assert.match(petAiPromptInsert, /בריאותו של NAME/);
+  assert.match(petAiPromptInsert, /אוכלו/);
+  assert.match(petAiPromptInsert, /החיה\/הוא-היא/);
   assert.equal(petSexForPrompt(undefined), "unknown");
   assert.equal(petSexForPrompt(null), "unknown");
   assert.equal(petSexForPrompt(""), "unknown");
@@ -123,8 +131,11 @@ test("index.js interpolates the safety text and does not keep the old diagnosis 
   assert.match(fn, /"urgentVetReferral": false/);
   assert.match(indexSource, /gender: petSexForPrompt\(pet\.gender\)/);
   assert.match(indexSource, /needsUnknownSexRetry\(/);
-  assert.match(indexSource, /unknownSexRetryNote\(/);
+  assert.match(indexSource, /unknownSexRetryNote\(selectedPet\?\.name, attempt\)/);
+  assert.match(indexSource, /UNKNOWN_SEX_REWRITES/);
+  assert.match(indexSource, /settleUnknownSexReply\(/);
   assert.match(indexSource, /noteUnknownSexGuardKept\(/);
+  assert.equal(UNKNOWN_SEX_REWRITES, 2);
   assert.match(indexSource, /redactBannedBrandReply\(/);
   assert.match(indexSource, /catalogSearchCandidates\(/);
 });
@@ -228,33 +239,67 @@ test("ordinary Hebrew and a spaced product question are not a banned brand", () 
 });
 
 test("unknown sex is detected from pronouns and possessives, not from lookalikes", () => {
+  const stems = [
+    ["הוא", "היא"],
+    ["לו", "לה"],
+    ["שלו", "שלה"],
+    ["מצבו", "מצבה"],
+    ["גילו", "גילה"],
+    ["גזעו", "גזעה"],
+    ["בריאותו", "בריאותה"],
+    ["אוכלו", "אוכלה"],
+    ["משקלו", "משקלה"],
+    ["גודלו", "גודלה"],
+    ["עורו", "עורה"],
+    ["פרוותו", "פרוותה"],
+  ];
+  const prefixes = ["", "ו", "ש", "ב", "ל", "ה", "מ", "כ", "ול", "שה"];
+  for (const pair of stems) {
+    for (const stem of pair) {
+      for (const prefix of prefixes) {
+        const text = `${prefix}${stem} של QA`;
+        assert.equal(replyAssignsPetSex({ content: text }), true, text);
+        assert.equal(replyAssignsPetSex({ content: "בסדר", suggestions: [text] }), true, `suggestion ${text}`);
+      }
+    }
+  }
+
   const hits = [
+    "QA הוא כלב. לא מופיע מידע לגבי גילו או מצבו",
+    "גילו המדויק ואת מצבו הבריאותי",
+    "גזעו ורמת הפעילות שלו",
+    "שהוא מקבל את כל אבות המזון",
+    "בריאותו של QA",
     "מצבו של QA",
     "QA התמוטט ויש לו דימום",
     "יש לו עור אדום",
     "גילו, גזעו… ומצבו",
     "הוא/היא",
+    "החיה/הוא-היא",
     "יש לה חום",
-    "שהוא לא אוכל",
     "ומצבה דורש בדיקה",
     "גילה לא ידוע",
   ];
   for (const text of hits) {
     assert.equal(replyAssignsPetSex({ content: text }), true, text);
   }
-  assert.equal(replyAssignsPetSex({ content: "בסדר", suggestions: ["יש לו חום"] }), true);
 
   const misses = [
     "לוטרינר",
     "להתקשר לוטרינר",
     "שלום, כדאי לבדוק",
     "מזון יבש לגור",
+    "אוכל יבש",
+    "האוכל של החיה",
+    "בריאות החיה",
     "מצב החיה לא ברור",
     "גיל וגזע",
+    "גילאי",
     "גזע מעורב",
     "כדאי לבדוק את QA אצל וטרינר חירום",
     "ל-QA יש דימום. פנו לוטרינר.",
     "להם יש מזון",
+    "אפשר לעזור עם QA. שאלו על טיפול, אוכל או הרגלים.",
   ];
   for (const text of misses) {
     assert.equal(replyAssignsPetSex({ content: text }), false, text);
@@ -262,10 +307,46 @@ test("unknown sex is detected from pronouns and possessives, not from lookalikes
 
   assert.equal(needsUnknownSexRetry("unknown", { content: "יש לו דימום" }), true);
   assert.equal(needsUnknownSexRetry("male", { content: "יש לו דימום" }), false);
+  assert.equal(needsUnknownSexRetry("female", { content: "יש לה חום" }), false);
+  assert.equal(needsUnknownSexRetry("female", { content: "בריאותה של לוקה" }), false);
   assert.equal(needsUnknownSexRetry("unknown", { content: "מצב החיה לא ברור" }), false);
-  assert.match(unknownSexRetryNote("QA"), /gender is unknown/);
-  assert.match(unknownSexRetryNote("QA"), /QA/);
+  assert.match(unknownSexRetryNote("QA", 1), /gender is unknown/);
+  assert.match(unknownSexRetryNote("QA", 1), /QA/);
+  assert.match(unknownSexRetryNote("QA", 1), /בריאותו/);
+  assert.match(unknownSexRetryNote("QA", 2), /Stricter correction/);
+  assert.match(unknownSexRetryNote("QA", 2), /החיה\/הוא-היא/);
+  assert.equal(unknownSexRetryNote("QA", 2).includes(unknownSexRetryNote("QA", 1)), false);
   assert.equal(unknownSexRetryNote("").includes("החיה"), true);
+});
+
+test("a gendered unknown-sex reply is replaced, and a known sex is kept", () => {
+  const gendered = {
+    content: "QA הוא כלב. לא מופיע מידע לגבי גילו או מצבו",
+    suggestions: ["בריאותו של QA"],
+  };
+  const replaced = settleUnknownSexReply("unknown", gendered, "QA");
+  assert.equal(replaced.replaced, true);
+  assert.equal(replyAssignsPetSex(replaced), false);
+  assert.deepEqual(replaced.suggestions, []);
+  assert.equal(replaced.urgentVetReferral, false);
+  assert.match(replaced.content, /QA/);
+  assert.equal(replaced.content, neutralUnknownSexReply("QA"));
+
+  const urgent = settleUnknownSexReply("unknown", {
+    content: "QA התמוטט ויש לו דימום. פנו לוטרינר חירום.",
+    suggestions: ["מצבו"],
+  }, "QA");
+  assert.equal(urgent.replaced, true);
+  assert.equal(urgent.urgentVetReferral, true);
+  assert.equal(replyAssignsPetSex(urgent), false);
+  assert.match(urgent.content, /וטרינר חירום/);
+
+  for (const sex of ["male", "female"]) {
+    const kept = settleUnknownSexReply(sex, { content: "יש לו דימום", suggestions: ["מצבו"] }, "QA");
+    assert.equal(kept.replaced, false);
+    assert.equal(kept.content, "יש לו דימום");
+    assert.deepEqual(kept.suggestions, ["מצבו"]);
+  }
 });
 
 test("a kept gendered reply logs a counter and no reply text", () => {
