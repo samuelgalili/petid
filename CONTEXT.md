@@ -211,7 +211,7 @@ Never commit values. `.env.example` is the template and does not list every name
 
 **Public URL and business.** `PUBLIC_APP_URL`, `APP_URL`, `DEFAULT_BUSINESS_ID`.
 
-**Sessions and mail.** `ADMIN_API_KEY`, `ADMIN_SESSION_HOURS`, `USER_SESSION_DAYS`, `RESEND_API_KEY`, `PASSWORD_RESET_FROM_EMAIL`, `PASSWORD_RESET_OTP_MINUTES`, `PASSWORD_RESET_DEBUG`, `EMAIL_VERIFICATION_HOURS`, `EMAIL_VERIFICATION_RESEND_SECONDS`, `TERMS_VERSION`, `SECRET_ENCRYPTION_KEY`.
+**Sessions and mail.** `ADMIN_API_KEY`, `OTP_HMAC_KEY` (optional; derived from `DATABASE_URL` when empty), `ADMIN_BOOTSTRAP_ENABLED` (optional, one-time), `ADMIN_API_KEY_ALLOWLIST` (optional, only while admin two-factor is on), `ADMIN_SESSION_HOURS`, `USER_SESSION_DAYS`, `RESEND_API_KEY`, `PASSWORD_RESET_FROM_EMAIL`, `PASSWORD_RESET_OTP_MINUTES`, `PASSWORD_RESET_DEBUG` (ignored in production), `EMAIL_VERIFICATION_HOURS`, `EMAIL_VERIFICATION_RESEND_SECONDS`, `TERMS_VERSION`, `SECRET_ENCRYPTION_KEY`.
 
 **Files.** `UPLOAD_DIR` (public pet and community media), `PRIVATE_UPLOAD_DIR` (identity and medical; authenticated routes only; do not serve it from Caddy), `MAX_UPLOAD_BYTES`, `MAX_SOCIAL_UPLOAD_BYTES`, `MAX_DOCUMENT_UPLOAD_BYTES`, `MAX_AI_ATTACHMENT_BYTES`, `MAX_IMAGE_SOURCE_BYTES`.
 
