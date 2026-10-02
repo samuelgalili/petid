@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { MoreHorizontal, X } from "lucide-react";
 
@@ -23,6 +23,35 @@ type ReportReasonId = (typeof REPORT_REASONS)[number]["id"];
 
 const PRIMARY = "#6C63FF";
 
+// The menu item that opens the dialog unmounts as the menu closes, so the
+// button that should receive focus again is the ⋯ trigger, captured here.
+let reportDialogOpener: HTMLElement | null = null;
+
+const rememberReportDialogOpener = (node: HTMLElement | null) => {
+  reportDialogOpener = node;
+};
+
+const takeReportDialogOpener = () => {
+  const node = reportDialogOpener;
+  reportDialogOpener = null;
+  return node?.isConnected ? node : null;
+};
+
+const FOCUSABLE = [
+  "a[href]",
+  "button:not([disabled])",
+  "textarea:not([disabled])",
+  "input:not([disabled]):not([type='hidden'])",
+  "select:not([disabled])",
+  "[tabindex]:not([tabindex='-1'])",
+].join(", ");
+
+const focusableElements = (root: HTMLElement) => (
+  [...root.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((element) => (
+    !element.hasAttribute("disabled") && element.tabIndex >= 0
+  ))
+);
+
 const failureMessage = (error: unknown) => {
   if (error instanceof MipoApiError) {
     if (error.status === 401) return "כדי לשלוח דיווח צריך להיות מחוברים.";
@@ -40,27 +69,47 @@ export const ContentOptionsButton = ({
   label: string;
   onReport: () => void;
   className?: string;
-}) => (
-  <DropdownMenu dir="rtl">
-    <DropdownMenuTrigger asChild>
-      <button
-        type="button"
-        aria-label={label}
-        className={cn(
-          "flex h-11 w-11 items-center justify-center rounded-full",
-          className,
-        )}
+}) => {
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const reportingRef = useRef(false);
+  return (
+    <DropdownMenu dir="rtl">
+      <DropdownMenuTrigger asChild>
+        <button
+          ref={triggerRef}
+          type="button"
+          aria-label={label}
+          className={cn(
+            "flex h-11 w-11 items-center justify-center rounded-full",
+            className,
+          )}
+        >
+          <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        className="z-[13000] min-w-[10rem]"
+        onCloseAutoFocus={(event) => {
+          if (!reportingRef.current) return;
+          reportingRef.current = false;
+          event.preventDefault();
+        }}
       >
-        <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
-      </button>
-    </DropdownMenuTrigger>
-    <DropdownMenuContent align="end" className="z-[13000] min-w-[10rem]">
-      <DropdownMenuItem className="min-h-11" onSelect={onReport}>
-        דיווח
-      </DropdownMenuItem>
-    </DropdownMenuContent>
-  </DropdownMenu>
-);
+        <DropdownMenuItem
+          className="min-h-11"
+          onSelect={() => {
+            reportingRef.current = true;
+            rememberReportDialogOpener(triggerRef.current);
+            onReport();
+          }}
+        >
+          דיווח
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
 
 export const ReportContentDialog = ({
   open,
@@ -78,6 +127,11 @@ export const ReportContentDialog = ({
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const [ack, setAck] = useState<"new" | "duplicate" | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
@@ -89,13 +143,74 @@ export const ReportContentDialog = ({
   }, [open, contentId, contentType]);
 
   useEffect(() => {
+    if (!open) {
+      const opener = openerRef.current;
+      openerRef.current = null;
+      if (opener?.isConnected) opener.focus();
+      return;
+    }
+    if (!openerRef.current) {
+      const remembered = takeReportDialogOpener();
+      const active = document.activeElement;
+      const dialog = dialogRef.current;
+      openerRef.current = remembered
+        ?? (
+          active instanceof HTMLElement
+          && active.isConnected
+          && active !== document.body
+          && !dialog?.contains(active)
+            ? active
+            : null
+        );
+    }
+    const moveFocusInside = () => {
+      const dialog = dialogRef.current;
+      if (!dialog?.isConnected) return;
+      if (dialog.contains(document.activeElement)) return;
+      const closeButton = closeButtonRef.current;
+      (closeButton?.isConnected ? closeButton : dialog).focus();
+    };
+    moveFocusInside();
+    const frame = window.requestAnimationFrame(moveFocusInside);
+    return () => window.cancelAnimationFrame(frame);
+  }, [open]);
+
+  useEffect(() => {
     if (!open) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onCloseRef.current();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const focusable = focusableElements(dialog);
+      if (focusable.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+      const inside = active instanceof Node && dialog.contains(active);
+      if (event.shiftKey) {
+        if (!inside || active === first) {
+          event.preventDefault();
+          last.focus();
+        }
+        return;
+      }
+      if (!inside || active === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
@@ -130,13 +245,15 @@ export const ReportContentDialog = ({
       }}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="content-report-title"
-        className="w-full max-w-lg rounded-t-[2rem] bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:rounded-[2rem]"
+        tabIndex={-1}
+        className="w-full max-w-lg rounded-t-[2rem] bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] outline-none sm:rounded-[2rem]"
       >
         <div className="flex items-center justify-between">
-          <button type="button" onClick={onClose} className="flex h-11 w-11 items-center justify-center rounded-full" aria-label="סגירה">
+          <button ref={closeButtonRef} type="button" onClick={onClose} className="flex h-11 w-11 items-center justify-center rounded-full" aria-label="סגירה">
             <X className="h-5 w-5" />
           </button>
           <h2 id="content-report-title" className="text-lg font-semibold text-mipo-ink">{title}</h2>

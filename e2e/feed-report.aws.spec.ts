@@ -170,3 +170,34 @@ test("a comment can be reported from the comments sheet", async ({ page }) => {
     reason: "harassment",
   });
 });
+
+test("the report dialog keeps focus inside and returns it to the opening button", async ({ page }) => {
+  await mockFeed(page);
+  await page.route("**/api/reports", async (route) => {
+    await fulfillReport(route, false);
+  });
+  await page.goto("/feed");
+
+  const opener = page.getByRole("button", { name: "אפשרויות הרגע" });
+  await opener.click();
+  await page.getByRole("menuitem", { name: "דיווח" }).click();
+  const dialog = page.getByRole("dialog", { name: "דיווח על רגע" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toHaveAttribute("aria-modal", "true");
+  await expect(dialog.getByRole("button", { name: "סגירה" })).toBeFocused();
+
+  const inside = () => dialog.evaluate((node) => node.contains(document.activeElement));
+  await page.keyboard.press("Shift+Tab");
+  expect(await inside()).toBe(true);
+  await expect(dialog.getByLabel("הערה (לא חובה)")).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(dialog.getByRole("button", { name: "סגירה" })).toBeFocused();
+  for (let step = 0; step < 8; step += 1) {
+    await page.keyboard.press("Tab");
+    expect(await inside()).toBe(true);
+  }
+
+  await dialog.getByRole("button", { name: "סגירה" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(opener).toBeFocused();
+});
