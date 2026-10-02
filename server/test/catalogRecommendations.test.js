@@ -3,8 +3,12 @@ import test from "node:test";
 
 import {
   buildCatalogSearch,
+  buildDryFoodSearch,
+  FOOD_CARD_LIMIT,
+  foodSearchIntent,
   productSearchTerms,
   resolveCatalogProducts,
+  rowMatchesLifeStage,
   toRecommendationCard,
 } from "../src/catalogRecommendations.js";
 
@@ -110,16 +114,238 @@ test("resolves the search against the catalogue", async () => {
 
   const products = await resolveCatalogProducts(
     pool,
-    [{ name: "מזון לגורים", price: 999, id: "invented" }],
+    [{ name: "רתמה", price: 999, id: "invented" }],
     { petType: "dog" },
   );
 
   assert.equal(calls.length, 1);
-  assert.deepEqual(calls[0].values[0], ["%מזון לגורים%"]);
+  assert.deepEqual(calls[0].values[0], ["%רתמה%"]);
   assert.equal(products.length, 1);
   assert.equal(products[0].name, "מזון יבש לגורים");
   assert.equal(products[0].price, 129);
   assert.equal(products[0].sale_price, 99);
+});
+
+// Field for field what the live catalogue holds, measured on the public
+// product list: category is the code dry-food, life_stage is גור / בוגר /
+// מבוגר or empty, and the Hebrew shopping phrase is not a substring of
+// name, brand, or category. "גורים" is in some names. "dry-food" is the category.
+const liveShaped = [
+  {
+    id: "puppy-name",
+    name: "גארד כלבים גורים ואימהות 3 ק\"ג",
+    brand: "גארד",
+    category: "dry-food",
+    life_stage: null,
+    pet_type: "dog",
+    price: "120.00",
+    image_url: "/uploads/puppy.jpg",
+    description: "מזון יבש לגורי כלבים",
+  },
+  {
+    id: "puppy-stage",
+    name: "קוואטרו ג'וניור (גורים) ברווז ללא דגנים 12 ק\"ג",
+    brand: "Quattro",
+    category: "dry-food",
+    life_stage: "גור",
+    pet_type: "dog",
+    price: "200.00",
+    image_url: "/uploads/junior.jpg",
+    product_attributes: { "שלב בחיים": "גור" },
+  },
+  {
+    id: "puppy-desc",
+    name: "קוואטרו כלבים מיני ללא דגנים ברווז 1.5 ק\"ג",
+    brand: "Quattro",
+    category: "dry-food",
+    life_stage: null,
+    pet_type: "dog",
+    price: "80.00",
+    image_url: "/uploads/mini.jpg",
+    description: "קוואטרו כלבים מיני ג׳וניור ברווז ללא דגנים. מזון יבש מלא לגורי כלבים",
+  },
+  {
+    id: "kitten",
+    name: "קוואטרו חתולים קיטן עוף 1.5 ק\"ג",
+    brand: "Quattro",
+    category: "dry-food",
+    life_stage: null,
+    pet_type: "cat",
+    price: "70.00",
+    image_url: "/uploads/kitten.jpg",
+  },
+  {
+    id: "puppy-extra",
+    name: "גארד פלוס כלבים גורים 14 ק\"ג",
+    brand: "גארד",
+    category: "dry-food",
+    life_stage: null,
+    pet_type: "dog",
+    price: "180.00",
+    image_url: "/uploads/puppy-14.jpg",
+  },
+  {
+    id: "puppy-fifth",
+    name: "גארד פלוס כלב גור עוף ואורז 14 קג",
+    brand: "גארד",
+    category: "dry-food",
+    life_stage: null,
+    pet_type: "dog",
+    price: "175.00",
+    image_url: "/uploads/puppy-5.jpg",
+  },
+  {
+    id: "adult",
+    name: "קוואטרו כלב בוגר מיני אקסטרה עוף 7 ק\"ג",
+    brand: "Quattro",
+    category: "dry-food",
+    life_stage: "בוגר",
+    pet_type: "dog",
+    price: "90.00",
+    image_url: "/uploads/adult.jpg",
+    product_attributes: { "שלב בחיים": "בוגר" },
+  },
+  {
+    id: "senior",
+    name: "קוואטרו חתול סניור ללא דג לבן וקריל 1.5 ק\"ג",
+    brand: "Quattro",
+    category: "dry-food",
+    life_stage: "מבוגר",
+    pet_type: "cat",
+    price: "95.00",
+    image_url: "/uploads/senior.jpg",
+    description: "למי המזון לא מתאים? כלבים גורים או צעירים מאוד",
+  },
+  {
+    id: "treat",
+    name: "חטיף סלמון",
+    brand: "Mipo",
+    category: "treats",
+    life_stage: null,
+    pet_type: "dog",
+    price: "20.00",
+    image_url: "/uploads/treat.jpg",
+  },
+];
+
+const phraseMissesRow = (phrase, row) => {
+  const haystack = [row.name, row.brand, row.category].join("\n");
+  return !haystack.includes(phrase);
+};
+
+test("a dry-food phrase maps to the dry-food category and a life stage", () => {
+  for (const phrase of ["מזון יבש לגור", "אוכל לגור", "מזון יבש לגורים", "מזון לגורים"]) {
+    const intent = foodSearchIntent([phrase]);
+    assert.equal(intent.lifeStage, "puppy", phrase);
+    assert.equal(intent.fallbackTerms.includes("יבש"), false, phrase);
+    assert.equal(intent.fallbackTerms.includes("לגור"), false, phrase);
+    assert.equal(intent.fallbackTerms.includes("לגורים"), false, phrase);
+  }
+  assert.equal(foodSearchIntent(["קיבלה"]).lifeStage, null);
+  assert.equal(foodSearchIntent(["קיבלה"]).fallbackTerms.includes("קיבלה"), true);
+  assert.equal(foodSearchIntent(["מזון לחתולים"]).species, "cat");
+  assert.equal(foodSearchIntent(["מזון לחתולים"]).lifeStage, null);
+  assert.equal(foodSearchIntent(["מזון יבש לבוגר"]).lifeStage, "adult");
+  assert.equal(foodSearchIntent(["מזון יבש למבוגר"]).lifeStage, "senior");
+  assert.equal(foodSearchIntent(["אוכל יבש"]).lifeStage, null);
+  assert.equal(foodSearchIntent(["גורים"]), null);
+  assert.equal(foodSearchIntent(["חטיף"]), null);
+  assert.equal(foodSearchIntent(["רתמה"]), null);
+
+  const search = buildDryFoodSearch("dog");
+  assert.match(search.sql, /business_products/);
+  assert.match(search.sql, /lower\(btrim\(coalesce\(p\.category, ''\)\)\) = \$1/);
+  assert.equal(search.values[0], "dry-food");
+  assert.equal(search.values[1], "dog");
+  assert.doesNotMatch(search.sql, /מזון יבש לגור/);
+});
+
+test("puppy dry food is chosen from live-shaped rows, and the Hebrew phrase matches none of them", async () => {
+  for (const phrase of ["מזון יבש לגור", "אוכל לגור", "מזון יבש לגורים"]) {
+    for (const row of liveShaped) {
+      assert.equal(phraseMissesRow(phrase, row), true, `${phrase} in ${row.name}`);
+    }
+  }
+  assert.equal(liveShaped.filter((row) => row.category === "dry-food").length > 0, true);
+  assert.equal(rowMatchesLifeStage(liveShaped.find((row) => row.id === "adult"), "puppy"), false);
+  assert.equal(rowMatchesLifeStage(liveShaped.find((row) => row.id === "senior"), "puppy"), false);
+  assert.equal(rowMatchesLifeStage(liveShaped.find((row) => row.id === "senior"), "adult"), false);
+  assert.equal(rowMatchesLifeStage(liveShaped.find((row) => row.id === "adult"), "adult"), true);
+  assert.equal(rowMatchesLifeStage(liveShaped.find((row) => row.id === "senior"), "senior"), true);
+  assert.equal(rowMatchesLifeStage(liveShaped.find((row) => row.id === "puppy-desc"), "puppy"), true);
+
+  const calls = [];
+  const pool = {
+    query: async (sql, values) => {
+      calls.push({ sql, values });
+      return { rows: liveShaped };
+    },
+  };
+  const cards = await resolveCatalogProducts(pool, ["מזון יבש לגור"], { petType: "dog" });
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].values[0], "dry-food");
+  assert.equal(calls[0].values.includes("dog"), true);
+  assert.equal(cards.length, FOOD_CARD_LIMIT);
+  assert.equal(cards.length <= 4, true);
+  assert.deepEqual(cards.map((card) => card.category), ["dry-food", "dry-food", "dry-food", "dry-food"]);
+  for (const card of cards) {
+    assert.equal(card.pet_type, undefined);
+    assert.equal(["puppy-name", "puppy-stage", "puppy-desc", "puppy-extra"].includes(card.id), true, card.name);
+    assert.notEqual(card.id, "puppy-fifth");
+  }
+  assert.equal(cards.some((card) => card.id === "adult"), false);
+  assert.equal(cards.some((card) => card.id === "kitten"), false);
+  assert.equal(cards.some((card) => card.id === "treat"), false);
+});
+
+test("cat food and an empty dry-food result use species and the word fallback", async () => {
+  const calls = [];
+  const pool = {
+    query: async (sql, values) => {
+      calls.push({ sql, values });
+      if (String(values[0]).includes("dry-food") || values[0] === "dry-food") return { rows: liveShaped };
+      return {
+        rows: [{
+          id: "word",
+          name: "מזון כללי",
+          price: "10.00",
+          image_url: "/uploads/word.jpg",
+          category: "מזון",
+          brand: "Mipo",
+        }],
+      };
+    },
+  };
+  const cats = await resolveCatalogProducts(pool, ["מזון לחתולים"]);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].values.includes("cat"), true);
+  assert.deepEqual(cats.map((card) => card.id), ["kitten", "senior"]);
+
+  calls.length = 0;
+  const empty = {
+    query: async (sql, values) => {
+      calls.push({ sql, values });
+      if (values[0] === "dry-food") return { rows: [] };
+      return {
+        rows: [{
+          id: "word",
+          name: "מזון כללי",
+          price: "10.00",
+          image_url: "/uploads/word.jpg",
+          category: "מזון",
+          brand: "Mipo",
+        }],
+      };
+    },
+  };
+  const expanded = await resolveCatalogProducts(empty, ["מזון יבש לגור"]);
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0].values[0], "dry-food");
+  assert.deepEqual(calls[1].values[0], ["%מזון%"]);
+  assert.equal(JSON.stringify(calls[1].values).includes("יבש"), false);
+  assert.equal(JSON.stringify(calls[1].values).includes("לגור"), false);
+  assert.equal(expanded.length, 1);
+  assert.equal(expanded[0].id, "word");
 });
 
 test("a catalogue failure costs the cards, not the reply", async () => {
