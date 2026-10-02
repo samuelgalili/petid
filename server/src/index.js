@@ -44,11 +44,16 @@ import {
 } from "./emailIdentity.js";
 import {
   FixedWindowRateLimiter,
+  beginLoginAttempt,
+  clientAddressForRateLimit,
   contentTypeForSafeExtension,
   createOpaqueToken,
   decodeAndValidateDataUrl,
   hashOpaqueToken,
+  rateLimitIdentity,
+  trustedClientHop,
 } from "./security.js";
+import { OTP_ATTEMPT_LIMIT, OTP_ATTEMPT_WINDOW_MS, decideOtpIssue } from "./otpAttempts.js";
 import { checkDatabaseHealth, checkSchemaHealth } from "./health.js";
 import {
   RESEND_TESTING_SENDER,
@@ -628,25 +633,45 @@ const adminUserSelect = `
 // Caddyfile replaces the header outright, which makes this a second lock on the
 // same door: rate limiting by IP is only a limit if the client cannot pick its
 // own address, and this value is also recorded on session rows.
-const getRequestIp = (request) => {
-  const forwardedFor = request.headers["x-forwarded-for"];
-  if (typeof forwardedFor === "string" && forwardedFor.trim()) {
-    const hops = forwardedFor.split(",").map((hop) => hop.trim()).filter(Boolean);
-    if (hops.length > 0) return hops[hops.length - 1];
-  }
-  return request.socket?.remoteAddress || null;
-};
+//
+// Session rows keep the full address. A rate-limit key does not: see
+// clientAddressForRateLimit. An IPv6 client holds a /64, and counting each
+// address in it would make the limit optional.
+const getRequestIp = (request) => trustedClientHop(
+  request.headers["x-forwarded-for"],
+  request.socket?.remoteAddress,
+);
 
 const rateLimiter = new FixedWindowRateLimiter();
 
+const sendRateLimited = (response, resetAt) => {
+  const retryAfter = Math.max(1, Math.ceil((resetAt - Date.now()) / 1000));
+  sendJson(response, 429, { error: "Too many requests" }, { "retry-after": String(retryAfter) });
+};
+
 const enforceRateLimit = (request, response, scope, options, identity = "") => {
-  const identifier = identity ? String(identity).trim().toLowerCase() : getRequestIp(request) || "unknown";
+  const identifier = identity
+    ? rateLimitIdentity(identity)
+    : clientAddressForRateLimit(request.headers["x-forwarded-for"], request.socket?.remoteAddress);
   const result = rateLimiter.check(`${scope}:${identifier}`, options);
   if (result.allowed) return true;
-
-  const retryAfter = Math.max(1, Math.ceil((result.resetAt - Date.now()) / 1000));
-  sendJson(response, 429, { error: "Too many requests" }, { "retry-after": String(retryAfter) });
+  sendRateLimited(response, result.resetAt);
   return false;
+};
+
+// Failed passwords count. A correct one does not, and it clears the account
+// bucket, so signing in does not walk the admin into their own lockout. The
+// address bucket stays: it is shared by everyone behind that network.
+const openLoginAttempt = (request, response, scope, limit, email) => {
+  const gate = beginLoginAttempt(rateLimiter, {
+    ipKey: `${scope}-ip:${clientAddressForRateLimit(request.headers["x-forwarded-for"], request.socket?.remoteAddress)}`,
+    emailKey: `${scope}-email:${rateLimitIdentity(email)}`,
+  }, limit);
+  if (!gate.allowed) {
+    sendRateLimited(response, gate.resetAt);
+    return null;
+  }
+  return gate;
 };
 
 const rateLimits = {
@@ -661,6 +686,9 @@ const rateLimits = {
   orderCreate: { limit: 20, windowMs: 10 * 60 * 1000 },
   paymentCreate: { limit: 20, windowMs: 10 * 60 * 1000 },
   aiChat: { limit: 30, windowMs: 60 * 60 * 1000 },
+  // Four accounts at the per-user cap. One household can share a connection.
+  // One address cannot open a fresh account for every message.
+  aiChatIp: { limit: 120, windowMs: 60 * 60 * 1000 },
   petCharacterGeneration: { limit: 3, windowMs: 24 * 60 * 60 * 1000 },
   petCharacterPack: { limit: 5, windowMs: 24 * 60 * 60 * 1000 },
   mediaUpload: { limit: 30, windowMs: 60 * 60 * 1000 },
@@ -1802,9 +1830,29 @@ const sendEmailVerification = async (request, email, otp, fullName) => {
   return { sent: true, reason: "sent" };
 };
 
-// Issues a fresh code and sends it. Never throws: signup calls this after the
-// account already exists, and an email provider having a bad minute must not
-// undo a registration that otherwise succeeded.
+// The guess counter is read and written in one transaction. A second request
+// cannot zero it between the read and the insert.
+const withOtpDecision = async (email, selectSql, writeRow) => {
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    const existing = await client.query(selectSql, [email]);
+    const decision = decideOtpIssue(existing.rows[0], Date.now(), OTP_ATTEMPT_WINDOW_MS);
+    const written = decision.locked ? null : await writeRow(client, decision);
+    await client.query("commit");
+    return { ...decision, written };
+  } catch (error) {
+    await client.query("rollback").catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+// Issues a fresh code and sends it. Signup calls this after the account
+// already exists, and an email provider having a bad minute must not undo a
+// registration that otherwise succeeded. A lockout (too many wrong codes, or
+// the resend cooldown) is the exception: that 429 is intentional.
 const issueEmailVerification = async (request, user, { force = false } = {}) => {
   if (!user?.id || !user?.email) return { sent: false, reason: "no_user" };
   if (user.email_verified_at) return { sent: false, reason: "already_verified" };
@@ -1830,23 +1878,40 @@ const issueEmailVerification = async (request, user, { force = false } = {}) => 
       }
     }
 
-    const otp = generateOtp();
-    const expiresAt = new Date(Date.now() + emailVerificationTtlMs).toISOString();
-
-    await pool.query(
-      `
-        insert into public.email_verification_otps (email, user_id, otp_hash, expires_at, used, attempts, created_at, updated_at)
-        values ($1, $2, $3, $4, false, 0, now(), now())
-        on conflict (email) do update set
-          user_id = excluded.user_id,
-          otp_hash = excluded.otp_hash,
-          expires_at = excluded.expires_at,
-          used = false,
-          attempts = 0,
-          updated_at = now()
-      `,
-      [email, user.id, hashEmailVerificationOtp(email, otp), expiresAt],
+    // A new mail does not buy a fresh set of guesses. The count stays with the
+    // address until a code is used or the lockout window passes.
+    const issued = await withOtpDecision(
+      email,
+      "select attempts, used, updated_at from public.email_verification_otps where email = $1 for update",
+      async (client, decision) => {
+        const code = generateOtp();
+        const expiresAt = new Date(Date.now() + emailVerificationTtlMs).toISOString();
+        await client.query(
+          `
+            insert into public.email_verification_otps (email, user_id, otp_hash, expires_at, used, attempts, created_at, updated_at)
+            values ($1, $2, $3, $4, false, $5, now(), now())
+            on conflict (email) do update set
+              user_id = excluded.user_id,
+              otp_hash = excluded.otp_hash,
+              expires_at = excluded.expires_at,
+              used = false,
+              attempts = excluded.attempts,
+              updated_at = case
+                when excluded.attempts = 0 then now()
+                else public.email_verification_otps.updated_at
+              end
+          `,
+          [email, user.id, hashEmailVerificationOtp(email, code), expiresAt, decision.attempts],
+        );
+        return code;
+      },
     );
+    if (issued.locked) {
+      const error = new Error("Too many invalid verification attempts");
+      error.statusCode = 429;
+      throw error;
+    }
+    const otp = issued.written;
 
     const delivery = await sendEmailVerification(request, email, otp, user.full_name);
     // Only a mail the provider accepted starts the cooldown. Stamping it
@@ -1921,7 +1986,7 @@ const confirmEmailVerification = async (body) => {
       error.statusCode = 400;
       throw error;
     }
-    if (row.attempts >= 5) {
+    if (row.attempts >= OTP_ATTEMPT_LIMIT) {
       const error = new Error("Too many invalid verification attempts");
       error.statusCode = 429;
       throw error;
@@ -1976,39 +2041,52 @@ const requestPasswordReset = async (request, body) => {
   let debugOtp;
 
   if (userResult.rowCount > 0) {
-    const otp = generateOtp();
-    const expiresAt = new Date(Date.now() + passwordResetOtpTtlMs).toISOString();
-
-    await pool.query(
-      `
-        insert into public.password_reset_otps (
-          email,
-          otp_hash,
-          expires_at,
-          used,
-          attempts,
-          created_at,
-          updated_at
-        )
-        values ($1, $2, $3, false, 0, now(), now())
-        on conflict (email) do update set
-          otp_hash = excluded.otp_hash,
-          expires_at = excluded.expires_at,
-          used = false,
-          attempts = 0,
-          updated_at = now()
-      `,
-      [email, hashPasswordResetOtp(email, otp), expiresAt],
+    // Same counter rule as email verification. The HTTP body stays the one we
+    // return for an unknown address: a lockout must not say the account exists.
+    const issued = await withOtpDecision(
+      email,
+      "select attempts, used, updated_at from public.password_reset_otps where email = $1 for update",
+      async (client, decision) => {
+        const code = generateOtp();
+        const expiresAt = new Date(Date.now() + passwordResetOtpTtlMs).toISOString();
+        await client.query(
+          `
+            insert into public.password_reset_otps (
+              email,
+              otp_hash,
+              expires_at,
+              used,
+              attempts,
+              created_at,
+              updated_at
+            )
+            values ($1, $2, $3, false, $4, now(), now())
+            on conflict (email) do update set
+              otp_hash = excluded.otp_hash,
+              expires_at = excluded.expires_at,
+              used = false,
+              attempts = excluded.attempts,
+              updated_at = case
+                when excluded.attempts = 0 then now()
+                else public.password_reset_otps.updated_at
+              end
+          `,
+          [email, hashPasswordResetOtp(email, code), expiresAt, decision.attempts],
+        );
+        return code;
+      },
     );
 
-    await pool.query(
-      "update public.app_users set password_reset_last_requested_at = now(), updated_at = now() where id = $1",
-      [userResult.rows[0].id],
-    );
+    if (!issued.locked) {
+      await pool.query(
+        "update public.app_users set password_reset_last_requested_at = now(), updated_at = now() where id = $1",
+        [userResult.rows[0].id],
+      );
 
-    const delivery = await sendPasswordResetEmail(request, email, otp);
-    emailDelivery = delivery.reason;
-    if (passwordResetDebug) debugOtp = otp;
+      const delivery = await sendPasswordResetEmail(request, email, issued.written);
+      emailDelivery = delivery.reason;
+      if (passwordResetDebug) debugOtp = issued.written;
+    }
   }
 
   return {
@@ -2059,7 +2137,7 @@ const confirmPasswordReset = async (body) => {
       error.statusCode = 400;
       throw error;
     }
-    if (row.attempts >= 5) {
+    if (row.attempts >= OTP_ATTEMPT_LIMIT) {
       const error = new Error("Too many invalid reset attempts");
       error.statusCode = 429;
       throw error;
@@ -8823,11 +8901,17 @@ const handleRequest = async (request, response) => {
     }
 
     if (request.method === "POST" && url.pathname === "/api/admin/login") {
-      if (!enforceRateLimit(request, response, "admin-login-ip", rateLimits.adminLogin)) return;
       const body = await readBody(request);
-      if (!enforceRateLimit(request, response, "admin-login-email", rateLimits.adminLogin, normalizeEmail(body.email))) return;
-      const result = await loginAdmin(request, body);
-      sendJson(response, 200, { admin: toPublicAdmin(result.admin) }, { "set-cookie": buildAdminCookie(request, result.token) });
+      const gate = openLoginAttempt(request, response, "admin-login", rateLimits.adminLogin, normalizeEmail(body.email));
+      if (!gate) return;
+      try {
+        const result = await loginAdmin(request, body);
+        gate.succeed();
+        sendJson(response, 200, { admin: toPublicAdmin(result.admin) }, { "set-cookie": buildAdminCookie(request, result.token) });
+      } catch (error) {
+        if (error.statusCode === 401) gate.fail();
+        throw error;
+      }
       return;
     }
 
@@ -8886,13 +8970,19 @@ const handleRequest = async (request, response) => {
     }
 
     if (request.method === "POST" && url.pathname === "/api/auth/login") {
-      if (!enforceRateLimit(request, response, "user-login-ip", rateLimits.userLogin)) return;
       const body = await readBody(request);
-      if (!enforceRateLimit(request, response, "user-login-email", rateLimits.userLogin, normalizeEmail(body.email))) return;
-      const result = await loginUser(request, body);
-      sendJson(response, 200, { user: result.user, profile: result.profile }, {
-        "set-cookie": buildUserCookie(request, result.token, { persistent: result.rememberMe }),
-      });
+      const gate = openLoginAttempt(request, response, "user-login", rateLimits.userLogin, normalizeEmail(body.email));
+      if (!gate) return;
+      try {
+        const result = await loginUser(request, body);
+        gate.succeed();
+        sendJson(response, 200, { user: result.user, profile: result.profile }, {
+          "set-cookie": buildUserCookie(request, result.token, { persistent: result.rememberMe }),
+        });
+      } catch (error) {
+        if (error.statusCode === 401) gate.fail();
+        throw error;
+      }
       return;
     }
 
@@ -8973,6 +9063,7 @@ const handleRequest = async (request, response) => {
         sendError(response, 403, "AI consent is required");
         return;
       }
+      if (!enforceRateLimit(request, response, "ai-chat-ip", rateLimits.aiChatIp)) return;
       if (!enforceRateLimit(request, response, "ai-chat", rateLimits.aiChat, auth.user.id)) return;
       sendJson(response, 200, { message: await createAiChatReply(auth, await readBody(request, 512 * 1024)) });
       return;
