@@ -46,3 +46,16 @@ export const decideOtpIssue = (
   if (attempts >= limit) return { locked: true, attempts };
   return { locked: false, attempts };
 };
+
+// Confirm must ask this before it treats an expired code as a plain 400.
+// The code itself can expire in minutes. The address stays locked until this
+// window ends, and a wrong code during that remainder is still a 429.
+export const otpSubmissionBlocked = (
+  row,
+  now = Date.now(),
+  windowMs = OTP_ATTEMPT_WINDOW_MS,
+  limit = OTP_ATTEMPT_LIMIT,
+) => {
+  if (!row || row.used === true) return false;
+  return decideOtpIssue(row, now, windowMs, limit).locked;
+};

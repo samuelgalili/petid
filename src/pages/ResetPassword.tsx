@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { confirmPasswordReset } from "@/lib/mipoApi";
+import { passwordResetErrorText } from "@/lib/userFacingErrors";
 import { Loader2, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MipoLogo } from "@/components/MipoLogo";
@@ -78,10 +79,10 @@ const ResetPassword = () => {
       setTimeout(() => {
         navigate("/auth");
       }, 2000);
-    } catch (error: any) {
+    } catch (caught: unknown) {
       toast({
         title: "שגיאה",
-        description: error.message || "שגיאה באיפוס הסיסמה",
+        description: passwordResetErrorText(caught, "שגיאה באיפוס הסיסמה"),
         variant: "destructive",
       });
     } finally {

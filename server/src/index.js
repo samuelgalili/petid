@@ -53,7 +53,9 @@ import {
   rateLimitIdentity,
   trustedClientHop,
 } from "./security.js";
-import { OTP_ATTEMPT_LIMIT, OTP_ATTEMPT_WINDOW_MS, decideOtpIssue } from "./otpAttempts.js";
+import { OTP_ATTEMPT_WINDOW_MS, decideOtpIssue, otpSubmissionBlocked } from "./otpAttempts.js";
+import { adminLoginLimits, userLoginLimits } from "./loginLimits.js";
+import { passwordResetAcknowledgement } from "./passwordResetAck.js";
 import { checkDatabaseHealth, checkSchemaHealth } from "./health.js";
 import {
   RESEND_TESTING_SENDER,
@@ -661,14 +663,15 @@ const enforceRateLimit = (request, response, scope, options, identity = "") => {
   return false;
 };
 
-// Failed passwords count. A correct one does not, and it clears the account
-// bucket, so signing in does not walk the admin into their own lockout. The
-// address bucket stays: it is shared by everyone behind that network.
-const openLoginAttempt = (request, response, scope, limit, email) => {
+// Failed passwords count, on two counters. The account counter stays tight.
+// The address counter is much looser, so one shared network cannot lock every
+// login. A correct password clears only the account counter. It is refused
+// when that account is already locked, or when the address passed its own cap.
+const openLoginAttempt = (request, response, scope, limits, email) => {
   const gate = beginLoginAttempt(rateLimiter, {
     ipKey: `${scope}-ip:${clientAddressForRateLimit(request.headers["x-forwarded-for"], request.socket?.remoteAddress)}`,
     emailKey: `${scope}-email:${rateLimitIdentity(email)}`,
-  }, limit);
+  }, limits);
   if (!gate.allowed) {
     sendRateLimited(response, gate.resetAt);
     return null;
@@ -677,9 +680,7 @@ const openLoginAttempt = (request, response, scope, limit, email) => {
 };
 
 const rateLimits = {
-  adminLogin: { limit: 8, windowMs: 15 * 60 * 1000 },
   adminMfaVerify: ADMIN_MFA_VERIFY_LIMIT,
-  userLogin: { limit: 20, windowMs: 15 * 60 * 1000 },
   signup: { limit: 8, windowMs: 60 * 60 * 1000 },
   passwordResetRequest: { limit: 5, windowMs: 60 * 60 * 1000 },
   emailVerificationRequest: { limit: 6, windowMs: 60 * 60 * 1000 },
@@ -2029,14 +2030,14 @@ const confirmEmailVerification = async (body) => {
       await client.query("commit");
       return { verified: true, already_verified: true };
     }
+    if (otpSubmissionBlocked(row)) {
+      const error = new Error("Too many invalid verification attempts");
+      error.statusCode = 429;
+      throw error;
+    }
     if (new Date(row.expires_at).getTime() < Date.now()) {
       const error = new Error("Invalid or expired verification code");
       error.statusCode = 400;
-      throw error;
-    }
-    if (row.attempts >= OTP_ATTEMPT_LIMIT) {
-      const error = new Error("Too many invalid verification attempts");
-      error.statusCode = 429;
       throw error;
     }
 
@@ -2137,11 +2138,11 @@ const requestPasswordReset = async (request, body) => {
     }
   }
 
-  return {
-    ok: true,
-    email_delivery: isProduction ? "sent" : emailDelivery,
-    ...(debugOtp ? { debug_otp: debugOtp } : {}),
-  };
+  return passwordResetAcknowledgement({
+    emailDelivery,
+    debugOtp,
+    production: isProduction,
+  });
 };
 
 const confirmPasswordReset = async (body) => {
@@ -2180,14 +2181,14 @@ const confirmPasswordReset = async (body) => {
       [email],
     );
     const row = otpResult.rows[0];
+    if (otpSubmissionBlocked(row)) {
+      const error = new Error("Too many invalid reset attempts");
+      error.statusCode = 429;
+      throw error;
+    }
     if (!row || row.used || new Date(row.expires_at).getTime() < Date.now()) {
       const error = new Error("Invalid or expired reset code");
       error.statusCode = 400;
-      throw error;
-    }
-    if (row.attempts >= OTP_ATTEMPT_LIMIT) {
-      const error = new Error("Too many invalid reset attempts");
-      error.statusCode = 429;
       throw error;
     }
 
@@ -8950,7 +8951,7 @@ const handleRequest = async (request, response) => {
 
     if (request.method === "POST" && url.pathname === "/api/admin/login") {
       const body = await readBody(request);
-      const gate = openLoginAttempt(request, response, "admin-login", rateLimits.adminLogin, normalizeEmail(body.email));
+      const gate = openLoginAttempt(request, response, "admin-login", adminLoginLimits(), normalizeEmail(body.email));
       if (!gate) return;
       try {
         const result = await loginAdmin(request, body);
@@ -9019,7 +9020,7 @@ const handleRequest = async (request, response) => {
 
     if (request.method === "POST" && url.pathname === "/api/auth/login") {
       const body = await readBody(request);
-      const gate = openLoginAttempt(request, response, "user-login", rateLimits.userLogin, normalizeEmail(body.email));
+      const gate = openLoginAttempt(request, response, "user-login", userLoginLimits(), normalizeEmail(body.email));
       if (!gate) return;
       try {
         const result = await loginUser(request, body);

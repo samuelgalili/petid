@@ -899,6 +899,7 @@ export async function logoutUser() {
 
 export async function requestPasswordReset(email: string): Promise<{
   ok: boolean;
+  message?: string;
   email_delivery?: "sent" | "not_configured" | "send_failed" | string;
   debug_otp?: string;
 }> {

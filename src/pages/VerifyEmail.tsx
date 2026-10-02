@@ -15,12 +15,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageTransition } from "@/components/PageTransition";
 import { confirmEmailVerification, MipoApiError } from "@/lib/mipoApi";
+import { EMAIL_VERIFICATION_LOCK_TEXT } from "@/lib/userFacingErrors";
 import { rememberedVerificationSent } from "@/lib/emailConfigured";
 import { useEmailConfigured } from "@/lib/emailConfiguredClient";
 
 const errorMessage = (error: unknown): string => {
   const status = error instanceof MipoApiError ? error.status : null;
-  if (status === 429) return "יותר מדי ניסיונות. נסו שוב בעוד כמה דקות.";
+  if (status === 429) return EMAIL_VERIFICATION_LOCK_TEXT;
   if (status === 400) return "הקוד שגוי או שפג תוקפו. אפשר לבקש קוד חדש.";
   if (status === 0) return "אין חיבור לשרת. בדקו את החיבור ונסו שוב.";
   if (status !== null && status >= 500) return "השירות אינו זמין כרגע. נסו שוב בעוד רגע.";
