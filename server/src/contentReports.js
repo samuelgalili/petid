@@ -24,7 +24,11 @@ const fail = (message, statusCode = 400) => {
 };
 
 export const isClientErrorReport = (body) => (
-  String(body?.content_type || "").trim().toLowerCase() === "client_error"
+  Boolean(body)
+  && typeof body === "object"
+  && !Array.isArray(body)
+  && typeof body.content_type === "string"
+  && body.content_type.trim().toLowerCase() === "client_error"
 );
 
 const optionalDescription = (value) => {
@@ -38,15 +42,26 @@ const optionalDescription = (value) => {
   return normalized;
 };
 
+const isReportObject = (body) => (
+  Boolean(body) && typeof body === "object" && !Array.isArray(body)
+);
+
 /**
  * A stored report. The reporter is the session user, never a field in the
  * body. Client error telemetry is not a content report.
+ *
+ * A JSON body of null, a number, a string, or an array is not a report.
+ * `JSON.parse("null")` is null, and reading a field off it throws a TypeError
+ * with no status code, which the process would report as a 500.
  */
 export const normalizeContentReport = (body = {}, reporterId) => {
   if (!reporterId || !uuidPattern.test(String(reporterId))) {
     fail("Authentication is required", 401);
   }
-  const contentType = String(body.content_type || "").trim().toLowerCase();
+  if (!isReportObject(body)) fail("A valid content report is required");
+  const contentType = typeof body.content_type === "string"
+    ? body.content_type.trim().toLowerCase()
+    : "";
   if (!STORED_TYPES.has(contentType)) fail("A valid content type is required");
 
   const contentId = typeof body.content_id === "string" ? body.content_id.trim() : "";
@@ -63,6 +78,12 @@ export const normalizeContentReport = (body = {}, reporterId) => {
     reporterId: String(reporterId),
   };
 };
+
+// One predicate, one error. A missing id, an archived post, an unpublished
+// post, a private post of someone else, and an unpublished comment all miss
+// this query and raise the same not-found error. A second message would tell
+// the caller which of those it was.
+const NOT_FOUND_MESSAGE = "Content was not found";
 
 const contentExistsSql = {
   post: `
@@ -118,7 +139,7 @@ const targetExists = async (pool, report) => {
 };
 
 export const submitContentReport = async (pool, report) => {
-  if (!(await targetExists(pool, report))) fail("Content was not found", 404);
+  if (!(await targetExists(pool, report))) fail(NOT_FOUND_MESSAGE, 404);
 
   const existingId = await findExistingReport(pool, report);
   if (existingId) {
