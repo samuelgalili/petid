@@ -286,7 +286,8 @@ test("a repeated webhook does not send", async () => {
 test("the paid webhook mails only the first transition, after commit, and a failure cannot fail it", () => {
   const source = readFileSync(new URL("../src/index.js", import.meta.url), "utf8");
   const start = source.indexOf("const handleCardcomWebhook = async");
-  const end = source.indexOf("const createReport = async", start);
+  // The next function after the webhook. Reports no longer live in this file.
+  const end = source.indexOf("const runProductIntelFunction = async", start);
   const webhook = source.slice(start, end);
   assert.ok(start > 0 && webhook.length > 500, "handleCardcomWebhook could not be located");
 

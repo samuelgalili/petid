@@ -2230,7 +2230,10 @@ export async function createContentReport(input: {
   description?: string;
   reporter_id?: string | null;
 }) {
-  return apiFetch<{ report: { id: string } }>("/reports", {
+  return apiFetch<{
+    duplicate?: boolean;
+    report: { id: string; content_type?: string; content_id?: string; reporter_id?: string };
+  }>("/reports", {
     method: "POST",
     body: JSON.stringify(input),
   });

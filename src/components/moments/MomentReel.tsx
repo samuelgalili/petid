@@ -21,6 +21,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Bookmark, Heart, MapPin, MessageCircle, Send, Volume2, VolumeX } from "lucide-react";
 
 import defaultPetAvatar from "@/assets/default-pet-avatar.png";
+import { ContentOptionsButton, ReportContentDialog } from "@/components/feed/ReportContentDialog";
 import { feedAuthorAvatar, feedAuthorName } from "@/lib/feedIdentity";
 import type { MipoSocialPost } from "@/lib/mipoApi";
 import { cn } from "@/lib/utils";
@@ -92,6 +93,7 @@ const MomentSlide = ({
   const slideRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const isVideo = post.media_type === "video";
+  const [reportOpen, setReportOpen] = useState(false);
 
   // Which Moment is on screen. The threshold is deliberately past half: with a
   // lower one, two slides both qualify mid-swipe and the video of the one being
@@ -202,6 +204,11 @@ const MomentSlide = ({
         </div>
 
         <div className="flex shrink-0 flex-col items-center gap-5 pb-1">
+          <ContentOptionsButton
+            label="אפשרויות הרגע"
+            onReport={() => setReportOpen(true)}
+            className="text-white drop-shadow-lg"
+          />
           <ReelAction label="אהבתי" onClick={onLike} count={post.reaction_count} active={post.viewer_has_liked}>
             <Heart className={cn("h-7 w-7", post.viewer_has_liked && "fill-mipo-coral text-mipo-coral")} />
           </ReelAction>
@@ -216,6 +223,12 @@ const MomentSlide = ({
           </ReelAction>
         </div>
       </div>
+      <ReportContentDialog
+        open={reportOpen}
+        contentType="post"
+        contentId={post.id}
+        onClose={() => setReportOpen(false)}
+      />
     </article>
   );
 };

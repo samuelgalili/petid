@@ -147,6 +147,7 @@ import {
   toggleSocialSave,
   voteSocialPoll,
 } from "./social.js";
+import { createContentReportRoutes } from "./contentReportRoutes.js";
 import { resolveCatalogProducts } from "./catalogRecommendations.js";
 import {
   catalogSearchCandidates,
@@ -659,7 +660,6 @@ const rateLimits = {
   passwordResetConfirm: { limit: 10, windowMs: 15 * 60 * 1000 },
   orderCreate: { limit: 20, windowMs: 10 * 60 * 1000 },
   paymentCreate: { limit: 20, windowMs: 10 * 60 * 1000 },
-  reportCreate: { limit: 10, windowMs: 60 * 60 * 1000 },
   aiChat: { limit: 30, windowMs: 60 * 60 * 1000 },
   petCharacterGeneration: { limit: 3, windowMs: 24 * 60 * 60 * 1000 },
   petCharacterPack: { limit: 5, windowMs: 24 * 60 * 60 * 1000 },
@@ -1025,6 +1025,17 @@ const handleAdminOsRoute = createAdminOsRoutes({
   // Whether outbound mail can reach a customer. Declared above, so it is
   // passed directly rather than wrapped.
   emailState: emailDeliveryState,
+});
+
+// Reports live in their own module. requireUser is declared further down, so
+// the wrapper waits until a request actually arrives.
+const handleContentReportRoute = createContentReportRoutes({
+  pool,
+  sendJson,
+  readBody,
+  enforceRateLimit,
+  requireUser: (...args) => requireUser(...args),
+  emitEvent: (event) => emitEvent(pool, event),
 });
 
 const publicCatalog = createPublicCatalog({ pool });
@@ -8135,40 +8146,6 @@ const handleCardcomWebhook = async (request, url) => {
   };
 };
 
-const createReport = async (body, reporterId = null) => {
-  const id = randomUUID();
-  await pool.query(
-    `
-      insert into public.content_reports (
-        id, content_type, content_id, reason, description, reporter_id
-      )
-      values ($1, $2, $3, $4, $5, $6)
-    `,
-    [
-      id,
-      body.content_type || "product",
-      body.content_id || null,
-      body.reason || "other",
-      body.description || null,
-      reporterId,
-    ],
-  );
-
-  await emitEvent(pool, {
-    type: EVENT_TYPES.CONTENT_REPORTED,
-    entityType: "content_report",
-    entityId: id,
-    payload: {
-      content_type: body.content_type || "product",
-      content_id: body.content_id || null,
-      reason: body.reason || "other",
-      reporter_id: reporterId,
-    },
-  });
-
-  return { id };
-};
-
 const runProductIntelFunction = async (functionName, body) => {
   if (functionName === "import-products-from-url" || functionName === "scrape-products") {
     return importProductsFromUrl(body);
@@ -8714,6 +8691,7 @@ const handleRequest = async (request, response) => {
     // through the chain below would make it a convention instead of a rule.
     if (await handleAdminOsRoute(request, response, url)) return;
     if (await handleProductIntakeRoute(request, response, url)) return;
+    if (await handleContentReportRoute(request, response, url)) return;
 
     // The public catalogue, read from the new model. Served ALONGSIDE
     // /api/products, not instead of it: everything a shopper can see today
@@ -10219,13 +10197,6 @@ const handleRequest = async (request, response) => {
         metadata: { function_name: productIntelMatch[1] },
       });
       sendJson(response, 200, result);
-      return;
-    }
-
-    if (request.method === "POST" && url.pathname === "/api/reports") {
-      if (!enforceRateLimit(request, response, "report-create", rateLimits.reportCreate)) return;
-      const auth = await getUserFromSession(request).catch(() => null);
-      sendJson(response, 201, { report: await createReport(await readBody(request), auth?.user?.id || null) });
       return;
     }
 
