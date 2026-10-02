@@ -134,3 +134,43 @@ test("a locked reset and an unknown address share one neutral acknowledgement", 
   assert.match(chat, /CHAT_HOURLY_LIMIT_TEXT/);
   assert.match(copy, /הגעתם למגבלת ההודעות לשעה\./);
 });
+
+test("checking a reset code uses the confirm lock and does not consume the code", () => {
+  const verify = sliceBetween("const verifyPasswordResetCode", "const withPasswordResetOtp");
+  assert.match(verify, /withPasswordResetOtp\(/);
+  assert.doesNotMatch(verify, /used = true/);
+  assert.doesNotMatch(verify, /password_hash/);
+  assert.doesNotMatch(verify, /User not found/);
+  assert.doesNotMatch(verify, /email exists|account exists|no account/i);
+
+  const confirm = sliceBetween("const confirmPasswordReset", "const verifyPasswordResetCode");
+  assert.match(confirm, /withPasswordResetOtp\(/);
+  assert.ok(confirm.indexOf("withPasswordResetOtp(") < confirm.indexOf("used = true"));
+
+  const shared = sliceBetween("const withPasswordResetOtp", "const logoutUser");
+  const blockedAt = shared.indexOf("otpSubmissionBlocked(row)");
+  const expiredAt = shared.indexOf("row.expires_at");
+  const countedAt = shared.indexOf("attempts = attempts + 1");
+  const matchAt = shared.indexOf("onMatch(client)");
+  assert.ok(blockedAt >= 0 && expiredAt > blockedAt, "a locked address is still a 429 before expiry");
+  assert.ok(countedAt > expiredAt && matchAt > countedAt, "a wrong code is counted before a match can continue");
+  assert.match(shared, /"Too many invalid reset attempts"/);
+  assert.match(shared, /statusCode = 429/);
+  assert.match(shared, /"Invalid or expired reset code"/);
+  assert.equal(shared.match(/"Invalid or expired reset code"/g).length, 2);
+  assert.doesNotMatch(shared, /used = true/);
+
+  const verifyRoute = sliceBetween('"/api/auth/password-reset/verify"', '"/api/auth/logout"');
+  const confirmRoute = sliceBetween('"/api/auth/password-reset/confirm"', '"/api/auth/password-reset/verify"');
+  for (const route of [verifyRoute, confirmRoute]) {
+    assert.match(route, /"password-reset-confirm-ip", rateLimits\.passwordResetConfirm/);
+    assert.match(route, /"password-reset-confirm-email", rateLimits\.passwordResetConfirm/);
+  }
+  assert.doesNotMatch(verifyRoute, /"password-reset-verify/);
+
+  const ui = readFileSync(new URL("../../src/pages/ForgotPassword.tsx", import.meta.url), "utf8");
+  const codeStep = ui.slice(ui.indexOf("const handleVerifyOtp"), ui.indexOf("const handleResetPassword"));
+  assert.ok(codeStep.indexOf("verifyPasswordResetCode(") < codeStep.indexOf('setStep("password")'));
+  assert.match(codeStep, /passwordResetErrorText\(caught, "הקוד שגוי או שפג תוקפו\."\)/);
+  assert.match(codeStep, /setError\(description\)/);
+});

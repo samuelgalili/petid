@@ -909,6 +909,16 @@ export async function requestPasswordReset(email: string): Promise<{
   });
 }
 
+export async function verifyPasswordResetCode(input: {
+  email: string;
+  otp: string;
+}): Promise<{ ok: boolean }> {
+  return apiFetch("/auth/password-reset/verify", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
 export async function confirmPasswordReset(input: {
   email: string;
   otp: string;
