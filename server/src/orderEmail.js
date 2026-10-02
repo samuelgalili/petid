@@ -13,6 +13,7 @@ import {
   redactEmailLog,
   summarizeProviderFailure,
 } from "./emailDelivery.js";
+import { signOrderTrackingToken } from "./orderTrackingToken.js";
 
 const RESEND_URL = "https://api.resend.com/emails";
 const SEND_TIMEOUT_MS = 15_000;
@@ -42,11 +43,17 @@ const readAddress = (value) => {
   return typeof value === "object" ? value : {};
 };
 
-const money = (value) => {
+const moneyText = (value) => {
   const parsed = Number(value);
   const amount = Number.isFinite(parsed) ? parsed : 0;
   return `₪${Math.abs(amount).toFixed(2)}`;
 };
+
+// dir=ltr plus an LTR isolate, so a leading minus stays on the left of the
+// amount inside the right-to-left receipt instead of jumping to another row.
+const isolateLtr = (text) => `<span dir="ltr">&#x2066;${escapeHtml(text)}&#x2069;</span>`;
+
+const moneyHtml = (value) => isolateLtr(moneyText(value));
 
 const siteOrigin = (appBaseUrl) => {
   try {
@@ -77,11 +84,14 @@ export const formatShippingAddress = (shippingAddress) => {
     .join("\n");
 };
 
-export const orderPageUrl = (order, appBaseUrl) => {
+export const orderPageUrl = (order, appBaseUrl, { trackingSecret = "", now = Date.now() } = {}) => {
   const origin = siteOrigin(appBaseUrl);
   const key = String(order?.order_number || order?.id || "").trim();
   if (!key) return `${origin}/order-history`;
-  return `${origin}/order-tracking/${encodeURIComponent(key)}`;
+  const url = new URL(`${origin}/order-tracking/${encodeURIComponent(key)}`);
+  const token = signOrderTrackingToken(order, trackingSecret, now);
+  if (token) url.searchParams.set("access_token", token);
+  return url.toString();
 };
 
 const lineItems = (order) => {
@@ -110,7 +120,7 @@ const summaryRow = (label, valueHtml, { strong = false } = {}) => `
  * template; the totals also show a coupon discount and the shipping line,
  * which that template left out.
  */
-export const renderOrderConfirmationHtml = (order, appBaseUrl) => {
+export const renderOrderConfirmationHtml = (order, appBaseUrl, options = {}) => {
   const address = readAddress(order?.shipping_address);
   const customerName = String(
     order?.customer_name || address.fullName || address.full_name || "",
@@ -121,7 +131,7 @@ export const renderOrderConfirmationHtml = (order, appBaseUrl) => {
   const discountAmount = Number.isFinite(discount) ? discount : 0;
   const shippingAmount = Number(order?.shipping);
   const shipping = Number.isFinite(shippingAmount) ? shippingAmount : 0;
-  const pageUrl = orderPageUrl(order, appBaseUrl);
+  const pageUrl = orderPageUrl(order, appBaseUrl, options);
   const origin = siteOrigin(appBaseUrl);
   let host = "mipo.pet";
   try {
@@ -132,19 +142,19 @@ export const renderOrderConfirmationHtml = (order, appBaseUrl) => {
 
   const itemsHtml = lineItems(order).map((item) => summaryRow(
     `${item.name} × ${item.quantity}`,
-    money(item.line),
+    moneyHtml(item.line),
   )).join("");
 
   const discountLabel = coupon ? `הנחה (${coupon})` : "הנחה";
   const discountHtml = discountAmount > 0
-    ? summaryRow(discountLabel, `-${money(discountAmount)}`)
+    ? summaryRow(discountLabel, isolateLtr(`-${moneyText(discountAmount)}`))
     : "";
   const couponOnlyHtml = coupon && discountAmount <= 0
     ? summaryRow("קופון", escapeHtml(coupon))
     : "";
-  const shippingHtml = summaryRow("משלוח", shipping === 0 ? "חינם" : money(shipping));
-  const totalHtml = summaryRow("סה״כ ששולם", money(order?.total), { strong: true });
-  const subtotalHtml = summaryRow("סכום ביניים", money(order?.subtotal));
+  const shippingHtml = summaryRow("משלוח", shipping === 0 ? "חינם" : moneyHtml(shipping));
+  const totalHtml = summaryRow("סה״כ ששולם", moneyHtml(order?.total), { strong: true });
+  const subtotalHtml = summaryRow("סכום ביניים", moneyHtml(order?.subtotal));
   const addressText = formatShippingAddress(order?.shipping_address);
   const addressHtml = addressText
     ? `
@@ -227,8 +237,8 @@ const postToResend = async (fetchImpl, { apiKey, fromEmail, to, subject, html })
 /**
  * Sends one confirmation. `transitioned: false` is a repeated webhook: the
  * paid update matched no row, and nothing is sent. A missing address is
- * skipped with no log line. Provider failures are logged without the key or
- * the address and returned, not thrown.
+ * skipped with no log line. Provider failures are logged without the key,
+ * the address, or the tracking token, and returned, not thrown.
  */
 export const sendOrderConfirmationEmail = async ({
   transitioned = true,
@@ -236,6 +246,8 @@ export const sendOrderConfirmationEmail = async ({
   apiKey,
   fromEmail,
   appBaseUrl,
+  trackingSecret = "",
+  now = Date.now(),
   fetchImpl = globalThis.fetch,
 } = {}) => {
   if (transitioned === false) {
@@ -254,7 +266,7 @@ export const sendOrderConfirmationEmail = async ({
   const subject = orderNumber
     ? `ההזמנה ${orderNumber} התקבלה - MIPO`
     : "ההזמנה שלך התקבלה - MIPO";
-  const html = renderOrderConfirmationHtml(order, appBaseUrl);
+  const html = renderOrderConfirmationHtml(order, appBaseUrl, { trackingSecret, now });
 
   let response;
   try {
