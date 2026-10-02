@@ -1,19 +1,20 @@
 # MIPO — context for coding agents
 
-Written against `aws-migration` at `e8583a02` (2026-09-27), which is the merge of [#29](https://github.com/samuelgalili/petid/pull/29) and includes [#27](https://github.com/samuelgalili/petid/pull/27). This file describes the tree that production runs once that deploy finishes. `CLAUDE.md` is the short rule list. `todo.md` is the open work, with links.
+Written against `aws-migration` at `5d10b145` (2026-09-30, merge of [#48](https://github.com/samuelgalili/petid/pull/48)). This file describes the tree that production runs once that deploy finishes. Anything marked "not verified" was not checked against the live host or GitHub settings. `CLAUDE.md` is the short rule list. `todo.md` is the open work, with links.
 
-`CONTEXT.md`, `CLAUDE.md`, and `todo.md` were not in git on this branch when this snapshot was written. Older design notes under `docs/` often describe an earlier schema. When they disagree with `server/sql` and `server/src`, trust the code.
+Older design notes under `docs/` often describe an earlier schema. When they disagree with `server/sql` and `server/src`, trust the code.
 
 ## Production is not `main`
 
-The live site is [https://mipo.pet](https://mipo.pet). GitHub's default branch is `main`. Production is `aws-migration`, deployed by the **Deploy AWS** workflow (`.github/workflows/deploy-aws.yml`) on push.
+The live site is [https://mipo.pet](https://mipo.pet). Production is `aws-migration`, deployed by the **Deploy AWS** workflow (`.github/workflows/deploy-aws.yml`) on push.
 
 `main` and `aws-migration` diverged at `ee5f033c` (2026-04-29, "Update URLs to custom domain petid.co.il"). As of this snapshot:
 
-- `main` has 314 commits that are not in `aws-migration`.
-- `aws-migration` has 341 commits that are not in `main`.
+- GitHub's default branch is `aws-migration` (`git ls-remote --symref origin HEAD`). When it changed from `main` is not verified.
+- `main` has 316 commits that are not in `aws-migration`.
+- `aws-migration` has 448 commits that are not in `main`.
 
-A green check on a pull request into `main` does not ship anything. Most open pull requests still target `main`. Merging one of those branches into `aws-migration` would drag the diverged `main` history with it, including Supabase-era files that production no longer runs. Port the change onto a new branch from `aws-migration` instead.
+A green check on a pull request into `main` does not ship anything. Five open pull requests still target `main` (see `todo.md`). Merging one of those branches into `aws-migration` would drag the diverged `main` history with it, including Supabase-era files that production no longer runs. Port the change onto a new branch from `aws-migration` instead.
 
 There is no remote branch named `staging`. The deploy workflow is already willing to deploy one. `docs/STAGING.md` says the AWS staging host has not been created.
 
@@ -56,10 +57,10 @@ Supabase and Vercel are not the runtime. Leftover references belong to the `main
 | `src/lib/catalogSearch.ts` | Shop search. Must stay a verbatim copy of `server/src/catalogSearch.js`. A server test compares them character for character. |
 | `src/hooks`, `src/contexts`, `src/locales` | Hooks, cart/auth/language state, copy. |
 | `server/src/index.js` | API router and most domain logic. Very large. New admin-OS and product-intake routes live in `server/src/adminOs/` and `server/src/productIntakeRoutes.js` and return before the long `if` chain. |
-| `server/sql` | Forward-only migrations. 59 files, numbered `0001`–`0060`, with two exceptions noted under Known gaps. |
-| `server/test` | `node:test` files. 87 files. |
+| `server/sql` | Forward-only migrations. 61 files, numbered `0001`–`0061`: `0018` and `0061` are each used twice, `0030` and `0031` are unused. |
+| `server/test` | `node:test` files. 108 files. Tests that need a database skip without `DATABASE_URL`. |
 | `server/scripts` | Maintenance scripts. They are not copied into the API image. Production one-shots bind-mount them. |
-| `e2e` | Playwright. Only `*.aws.spec.ts` runs (21 files). Older `*.spec.ts` files are quarantined. |
+| `e2e` | Playwright. Only `*.aws.spec.ts` runs (28 files). Older `*.spec.ts` files are quarantined. |
 | `deploy/aws` | Production compose, Caddy, backup, migration dry-run. |
 | `deploy/local` | Workbench compose (Postgres, API, Caddy). |
 | `scripts/workbench.sh` | Local full stack. |
@@ -118,7 +119,7 @@ A database that already has tables but no `schema_migrations` ledger will refuse
 |---|---|
 | `aws-migration` | **Deploy AWS.** This is production. |
 | `staging` | Same workflow, GitHub Environment `staging`. The branch does not exist yet, and the staging host is not created (`docs/STAGING.md`). |
-| `main` | GitHub's default branch. Push runs the **Quality** workflow only. It does not deploy. |
+| `main` | Former default branch. Push runs the **Quality** workflow only. It does not deploy. |
 | `claude/*`, `cursor/*`, anything else | No deploy. Open a PR. |
 
 Do not push to `aws-migration`. Do not merge your own PR. The owner merges, and a push to `aws-migration` is what starts a production deploy.
@@ -157,6 +158,10 @@ Shared safety pattern:
 | C-0 catalogue measurement | `production-catalogue-measure.yml` | Counts over the legacy catalogue. No product names, descriptions, supplier URLs, or barcode values. |
 | S-0 search vocabulary | `production-search-vocabulary.yml` | Word frequencies for `catalogSearch.js`. Brands and categories are the deliberate exception. |
 | Legacy catalogue migration | `production-legacy-catalogue-migrate.yml` | **Writes.** Dry-run is the default. `apply` needs a second confirmation that matches the step (`MIGRATE-LEGACY`, `APPROVE-LEGACY`, `COMPLETE-LEGACY`, `SELLER-STATUS`). Takes the deploy's backup first. `migrate` inserts only into `raw_import_records` and `product_drafts` (drafts stay `IMPORTED`). `approve`, `complete`, and `seller` are separate steps. `seller` changes one business id, never "all". |
+| Hide broken-image products | `production-hide-broken-image-products.yml` | **Writes** in `hide` / `unhide`. Dry-run default, a confirmation per write mode, backup before a write. Sets `shop_hidden` on an allowlist and records the previous value. Stock is not touched. Whether it was run in a write mode: not verified. |
+| Hide irrelevant products | `production-hide-irrelevant-products.yml` | Same pattern for 42 products the owner judged irrelevant or duplicate ([#43](https://github.com/samuelgalili/petid/pull/43)). |
+| Cancel test orders | `production-cancel-test-orders.yml` | **Writes** in `apply` with confirmation `CANCEL-TEST-ORDERS`. Cancels seven allowlisted order numbers only while still unpaid. Rows stay. ([#41](https://github.com/samuelgalili/petid/pull/41), [#47](https://github.com/samuelgalili/petid/pull/47).) |
+| Set email env | `set-email-env.yml` | **Writes** two keys in `/opt/mipo/.env` (`PASSWORD_RESET_FROM_EMAIL`, `RESEND_API_KEY` from the GitHub secret) and recreates the API. Dry-run default; a write needs `SET-EMAIL-ENV`. It does not touch SSM, so the next `sync-ssm-env.sh` overwrites both unless SSM is updated too ([#48](https://github.com/samuelgalili/petid/pull/48)). |
 | Cardcom missed payments | `production-cardcom-missed-payments-readonly.yml` | Read-only list of shop orders that may have been charged while the indicator webhook answered 502. Confirmation text is `READ-ONLY`. Selects order numbers and low-profile codes, not names, emails, phones, or addresses. Added by [#27](https://github.com/samuelgalili/petid/pull/27). It does not mark anything paid. |
 
 ## Data model
@@ -197,7 +202,13 @@ npm --prefix server run admin:provision -- --email <email> --role <role> --displ
 
 Roles: `admin` (full enumerated list), `product_manager` (legacy catalogue edits, not deletes, not orders), `seller_admin` (seller-scoped intake and offers, cannot review their own draft), `readonly_admin` (seller-scoped reads, not the audit log). The client copy in `src/lib/adminPermissions.ts` is a subset of the server list. The server is authoritative.
 
+Two-factor ([#32](https://github.com/samuelgalili/petid/pull/32), `server/src/adminTwoFactor.js`, migration `0061_admin_two_factor.sql`) is TOTP plus recovery codes, off unless `ADMIN_2FA_ENABLED` is on. With it on, `SECRET_ENCRYPTION_KEY` is required at boot and `ADMIN_2FA_REQUIRE_ENROLLMENT` stops an unenrolled admin at enrolment. `ADMIN_API_KEY` callers are not challenged. Setup: `docs/ADMIN_2FA_DEPLOYMENT.md`. Whether the flag is on in production: not verified.
+
 Ready admin screens include Command Center, customers and customer 360, orders (including a manual order), products (catalogue, publishing, import), categories, coupons, analytics, AI economics, connectors, notifications, audit log, settings. Thirteen more routes render `AdminPlannedScreen` on purpose. They are listed in `todo.md`.
+
+**Owner notifications.** `server/src/ownerNotify.js` sends the owner a WhatsApp through Twilio for orders, payments, signups and outages ([#30](https://github.com/samuelgalili/petid/pull/30)). Off unless `OWNER_NOTIFICATIONS_ENABLED` and the Twilio settings are present. `site-health.yml` probes the public health endpoint every ten minutes from a runner, and the deploy notifies on success or failure. Whether the secrets are set: not verified.
+
+**Shop visibility.** `business_products.shop_hidden` (`0061_product_shop_visibility.sql`) hides a product from the shop, search, categories and sitemap without touching stock. Hidden, imageless and zero-price products are not sold, and the cart drops an unavailable line at checkout ([#44](https://github.com/samuelgalili/petid/pull/44), [#45](https://github.com/samuelgalili/petid/pull/45)). Rules: `server/src/shopVisibility.js`.
 
 **Mail.** `PASSWORD_RESET_FROM_EMAIL` defaults to Resend's testing sender, which delivers only to the Resend account's own address. Production must set a verified sender. A bad sender is reported (health and Command Center), not a boot failure, because signup is designed to succeed even when the message does not go out.
 
@@ -211,7 +222,7 @@ Never commit values. `.env.example` is the template and does not list every name
 
 **Public URL and business.** `PUBLIC_APP_URL`, `APP_URL`, `DEFAULT_BUSINESS_ID`.
 
-**Sessions and mail.** `ADMIN_API_KEY`, `ADMIN_SESSION_HOURS`, `USER_SESSION_DAYS`, `RESEND_API_KEY`, `PASSWORD_RESET_FROM_EMAIL`, `PASSWORD_RESET_OTP_MINUTES`, `PASSWORD_RESET_DEBUG`, `EMAIL_VERIFICATION_HOURS`, `EMAIL_VERIFICATION_RESEND_SECONDS`, `TERMS_VERSION`, `SECRET_ENCRYPTION_KEY`.
+**Sessions and mail.** `ADMIN_API_KEY`, `ADMIN_SESSION_HOURS`, `USER_SESSION_DAYS`, `RESEND_API_KEY`, `PASSWORD_RESET_FROM_EMAIL`, `PASSWORD_RESET_OTP_MINUTES`, `PASSWORD_RESET_DEBUG`, `EMAIL_VERIFICATION_HOURS`, `EMAIL_VERIFICATION_RESEND_SECONDS`, `TERMS_VERSION`, `SECRET_ENCRYPTION_KEY`, `SECRET_ENCRYPTION_KEYS_RETIRED`, `ADMIN_2FA_ENABLED`, `ADMIN_2FA_REQUIRE_ENROLLMENT`, `ADMIN_MFA_STEP_UP_MINUTES`, `ADMIN_TOTP_ISSUER`.
 
 **Files.** `UPLOAD_DIR` (public pet and community media), `PRIVATE_UPLOAD_DIR` (identity and medical; authenticated routes only; do not serve it from Caddy), `MAX_UPLOAD_BYTES`, `MAX_SOCIAL_UPLOAD_BYTES`, `MAX_DOCUMENT_UPLOAD_BYTES`, `MAX_AI_ATTACHMENT_BYTES`, `MAX_IMAGE_SOURCE_BYTES`.
 
@@ -219,7 +230,7 @@ Never commit values. `.env.example` is the template and does not list every name
 
 **AI and images.** `GEMINI_API_KEY`, `GEMINI_MODEL`, `PET_CHARACTER_IMAGE_MODEL`, `PET_CHARACTER_VISION_MODEL`, `VERTEX_AI_API_KEY`, `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION`, `VERTEX_AI_IMAGE_MODEL`, `VERTEX_AI_VISION_MODEL`, `FIRECRAWL_API_KEY`, `PRODUCT_IMAGE_REMOVE_BACKGROUND`, `PRODUCT_IMAGE_BACKGROUND_MODEL`, `PRODUCT_IMAGE_BACKGROUND_TIMEOUT_MS`, `IMAGE_FETCH_TIMEOUT_MS`, `IMAGE_DOWNLOAD_TIMEOUT_MS`.
 
-**Automation and ops.** `AUTOMATION_WEBHOOK_URL`, `AUTOMATION_WEBHOOK_SECRET`, `AUTOMATION_DISPATCH_INTERVAL_MS`, `AUTOMATION_DISPATCH_BATCH`, `AUTOMATION_DISPATCH_TIMEOUT_MS`, `AUTOMATION_DELIVER_OWN_EVENTS`, `LEGACY_INTAKE_FROZEN`, `WAREHOUSE_WHATSAPP_NUMBER`, `MEASUREMENT_ENVIRONMENT_LABEL`.
+**Automation and ops.** `AUTOMATION_WEBHOOK_URL`, `AUTOMATION_WEBHOOK_SECRET`, `AUTOMATION_DISPATCH_INTERVAL_MS`, `AUTOMATION_DISPATCH_BATCH`, `AUTOMATION_DISPATCH_TIMEOUT_MS`, `AUTOMATION_DELIVER_OWN_EVENTS`, `LEGACY_INTAKE_FROZEN`, `WAREHOUSE_WHATSAPP_NUMBER`, `MEASUREMENT_ENVIRONMENT_LABEL`, `OWNER_NOTIFICATIONS_ENABLED`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM`, `OWNER_WHATSAPP_TO`, `OWNER_NOTIFY_QA_SECRET`, `TWILIO_WHATSAPP_CONTENT_SIDS`, `OWNER_NOTIFY_THROTTLE_MS`, `OWNER_NOTIFY_TIMEOUT_MS`, `SITE_URL`.
 
 **GitHub Actions names only.** Secret `MIPO_AWS_SSH_PRIVATE_KEY`. Variables `MIPO_PUBLIC_BASE_URL`, `MIPO_AWS_HOST`, `MIPO_AWS_USER`, `MIPO_REMOTE_PATH`, `MIPO_SKIP_DRYRUN`. Environments `production` and `staging`.
 
@@ -230,7 +241,7 @@ Never commit values. `.env.example` is the template and does not list every name
 - Tone for product copy lives in `src/lib/brandVoice.ts`: warm, plain, not a hard sell.
 - TypeScript function components, two-space indent, double quotes in frontend TypeScript, Tailwind, `@/` imports. Components in PascalCase, hooks `useSomething`, Playwright files `*.aws.spec.ts`.
 - API tests go in `server/test` and use `node:test`. Browser tests mock `/api`. Prefer roles, labels, and visible Hebrew text.
-- New migrations are the next free number after `0060`. Do not reuse `0030` or `0031` (see `todo.md`: `0031` is the filename on the unmerged admin two-factor branch). Do not edit a migration that has already been applied in production; the checksum will refuse it.
+- The next migration is `0062`. `0018` and `0061` are each used by two files and stay that way. Do not use `0030` or `0031`. Do not edit a migration that has already been applied in production; the checksum will refuse it.
 - Change shop search in `server/src/catalogSearch.js`, then paste the same text into `src/lib/catalogSearch.ts`.
 - Pull requests: new branch from `aws-migration`, PR base `aws-migration`, no force-push, no secrets and no real credential values. The owner approves and merges. A merge to `aws-migration` deploys production after the quality gate and, if configured, the production environment reviewer.
 
@@ -242,9 +253,9 @@ These are in the current tree, not a roadmap someone wished for.
 - Cart lines do not carry an offer or a seller. Marketplace grouping is written and unused.
 - Home attention has two unwired slots: reorder / low stock, and an unread assistant reply (`src/hooks/useHomeAttention.ts`).
 - Thirteen admin routes are explicit placeholders (`status: "planned"` in `src/components/admin/adminNavigation.ts`).
-- Admin sign-in is password only. Two-factor exists only on `claude/admin-2fa`, which is not in this branch.
+- Admin two-factor is in the tree but off unless `ADMIN_2FA_ENABLED` is on. Whether production has it on: not verified.
 - No `staging` branch and no staging host, despite the workflow.
-- `docs/DEPLOY_APPROVAL.md` still says the quality gate runs "60 browser tests". This tree has 21 `*.aws.spec.ts` files and 111 `test(` cases, each run on desktop and mobile Chromium.
+- `docs/DEPLOY_APPROVAL.md` still says the quality gate runs "60 browser tests". This tree has 28 `*.aws.spec.ts` files, each run on desktop and mobile Chromium.
 - `docs/product-intake/PRODUCT-INTAKE-NEXT-STATE.md` (2026-09-14) says the intake tables do not exist. They do (`0042`–`0048` and later). `docs/system-workflows/29-GAPS-AND-RECOMMENDATIONS.md` says two admin roles. The server has four.
 - Client `ADMIN_PERMISSIONS` is a subset of `server/src/adminPermissions.js`.
 - `server/src/index.js` is the router, the domain layer, and the Cardcom client in one file. Prefer the extracted modules when adding a route that matches their shape.
