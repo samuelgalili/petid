@@ -23,7 +23,9 @@ Rules for Claude Code and Cursor agents in this repo. The map of the system is `
 - `src/lib/catalogSearch.ts` is a paste of `server/src/catalogSearch.js`. Change the server file, then paste. A test diffs them.
 - Legacy routes in `src/routes/index.tsx` that `Navigate` away are retired. A leftover component is not a request to wire it back up.
 - `LEGACY_INTAKE_FROZEN` is on unless the value is exactly `false`.
-- Migrations are append-only. Next file is the next number after `0060`. Leave `0030` and `0031` unused (`0031` is the filename on unmerged `claude/admin-2fa`). Do not edit a file that production has already applied.
+- Migrations are append-only. The next file is `0062_*.sql`. Do not edit or rename a file that production has already applied: the runner keys `schema_migrations` by filename and checksum.
+- Two numbers are used twice and stay that way (renaming would break the ledger): `0018_external_refs.sql` + `0018_snapshot_profile_identity.sql`, and `0061_admin_two_factor.sql` + `0061_product_shop_visibility.sql`. The runner applies both files of each pair, in filename order. Never reuse a number again; check `ls server/sql` and open PRs before picking one.
+- `0030` and `0031` are unused. Leave them unused. Admin two-factor landed as `0061_admin_two_factor.sql`, not as `0031` from the old `claude/admin-2fa` branch; do not port that branch's `0031`.
 - Server admin permissions are `server/src/adminPermissions.js`. There is no `*` wildcard. The TypeScript list is a subset.
 - Playwright runs `e2e/*.aws.spec.ts` only. In CI the browser loads `dist/`, not the working tree.
 - `server/scripts/` is not in the API image. A production one-shot bind-mounts the script. Do not `COPY` scripts into `server/Dockerfile` just to run one.
