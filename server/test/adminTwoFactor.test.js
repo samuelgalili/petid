@@ -22,6 +22,7 @@ import {
   loadAdminTotpSecret,
   publicMfaFields,
   readAdminTwoFactorFlags,
+  sessionClearsAdminMfaGate,
   recordAdminTotpStep,
   storePendingTotpSecret,
 } from "../src/adminTwoFactor.js";
@@ -113,6 +114,34 @@ test("with the flag on, an enrolled admin must present a code", () => {
   assert.equal(
     publicMfaFields({ enabled: true, enrolled: true, mfaVerifiedAt: "2026-09-27T00:00:00.000Z" }).mfa_verified,
     true,
+  );
+});
+
+test("a timestamp that does not parse does not clear the gate", () => {
+  assert.equal(
+    adminSessionGate({ enabled: true, enrolled: true, mfaVerifiedAt: "not-a-date" }),
+    "verify",
+  );
+  assert.equal(
+    sessionClearsAdminMfaGate({ enabled: true, enrolled: true, mfaVerifiedAt: "not-a-date" }),
+    false,
+  );
+  assert.equal(
+    sessionClearsAdminMfaGate({ enabled: false, enrolled: true, mfaVerifiedAt: null }),
+    true,
+  );
+  assert.equal(
+    adminSessionGate({ enabled: true, enrolled: true, mfaVerifiedAt: "" }),
+    "verify",
+  );
+  assert.equal(
+    publicMfaFields({ enabled: true, enrolled: true, mfaVerifiedAt: "not-a-date" }).mfa_verified,
+    false,
+  );
+  // The flag off still ignores the garbage. Login stays a full session.
+  assert.equal(
+    adminSessionGate({ enabled: false, enrolled: true, mfaVerifiedAt: "not-a-date" }),
+    "full",
   );
 });
 

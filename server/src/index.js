@@ -115,8 +115,10 @@ import {
   publicMfaFields,
   readAdminTwoFactorFlags,
   recordAdminTotpStep,
+  sessionClearsAdminMfaGate,
   storePendingTotpSecret,
 } from "./adminTwoFactor.js";
+import { adminActionNeedsFreshMfa } from "./adminStepUp.js";
 import {
   ADMIN_PERMISSIONS,
   ADMIN_ROLES,
@@ -920,12 +922,28 @@ const requireAdmin = async (request, response, { allowPendingMfa = false } = {})
  * keeps working exactly as it does today.
  */
 const requireFreshAdminMfa = async (request, response) => {
-  if (!adminTwoFactorEnabled || !request.admin?.mfa_enrolled) return true;
-  if (request.admin.id === "api-key") {
-    if (apiKeyMaySkipStepUp({ twoFactorEnabled: adminTwoFactorEnabled })) return true;
+  // With the flag off this is a no-op, including for the API key. Password
+  // change, recovery codes and the sensitive actions below keep working.
+  if (!adminTwoFactorEnabled) return true;
+
+  // The key has no second factor. An allowlist entry lets it through the
+  // write gate; it does not mint a code. Checked before the enrolment
+  // short-circuit so a missing mfa_enrolled flag cannot let the key through.
+  if (request.admin?.id === "api-key" || request.admin?.identity_source === "api_key") {
+    if (apiKeyMaySkipStepUp({ twoFactorEnabled: true })) return true;
     sendError(response, 403, "Admin API key cannot satisfy two-factor step-up");
     return false;
   }
+
+  if (!request.admin) {
+    sendError(response, 401, "Unauthorized");
+    return false;
+  }
+
+  // Before enrolment there is no factor to ask for. Optional enrolment stays
+  // a prompt, not a lock. Mandatory enrolment never reaches here: the session
+  // gate already stopped it.
+  if (!request.admin.mfa_enrolled) return true;
 
   if (!mfaStepUpIsFresh(request.admin.mfa_verified_at, Date.now(), adminStepUpMs)) {
     sendJson(response, 403, {
@@ -937,6 +955,20 @@ const requireFreshAdminMfa = async (request, response) => {
   }
 
   return true;
+};
+
+/**
+ * Asks for a recent code when this request is a sensitive admin action.
+ * Returns true when the request may continue. With two-factor off the check
+ * is a no-op, so the same call sites do not change today's responses.
+ */
+const ensureFreshAdminMfa = async (request, response, url, body) => {
+  if (!adminActionNeedsFreshMfa({
+    method: request.method,
+    pathname: url.pathname,
+    body,
+  })) return true;
+  return requireFreshAdminMfa(request, response);
 };
 
 const requireSecretBox = (response) => {
@@ -960,10 +992,25 @@ const requireSecretBox = (response) => {
  *
  * Callers must now ask what the identity may see, rather than whether one
  * exists. See adminProductView below.
+ *
+ * A password session that has not cleared the MFA gate is not an admin for
+ * this purpose. The response stays the public catalogue, which is what a
+ * visitor already receives. The API key is a machine reader: GET stays a
+ * safe read (writes and step-up are decided separately, and an allowlist
+ * entry does not satisfy step-up). With two-factor off the gate is "full",
+ * so an admin screen still receives the internal row.
  */
 const resolveAdminIdentity = async (request) => {
   if (matchesAdminApiKey(request)) return apiKeyAdminIdentity();
-  return await getAdminFromSession(request);
+  const admin = await getAdminFromSession(request);
+  if (!admin) return null;
+  if (!sessionClearsAdminMfaGate({
+    enabled: adminTwoFactorEnabled,
+    requireEnrollment: adminTwoFactorRequireEnrollment,
+    enrolled: admin.mfa_enrolled,
+    mfaVerifiedAt: admin.mfa_verified_at,
+  })) return null;
+  return admin;
 };
 
 // adminProductView, mayActOnRow and resolveWriteBusinessId live in
@@ -1046,6 +1093,7 @@ const handleAdminOsRoute = createAdminOsRoutes({
   sendError,
   readBody,
   requireAdminPermission,
+  requireFreshAdminMfa,
   // Wrapped rather than passed directly: createOrder is a const declared some
   // five thousand lines below this, so naming it here would read it before it
   // exists. The wrapper defers that to call time.
@@ -9853,9 +9901,13 @@ const handleRequest = async (request, response) => {
     const adminOrderMatch = url.pathname.match(/^\/api\/admin\/orders\/([0-9a-fA-F-]{36})$/);
     if (adminOrderMatch && request.method === "PATCH") {
       if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      const body = await readBody(request);
+      // Payment marking only. A status or tracking edit on this route is not
+      // that action, and with two-factor off the check does not run.
+      if (!(await ensureFreshAdminMfa(request, response, url, body))) return;
       const order = await updateOrder(
         adminOrderMatch[1],
-        await readBody(request),
+        body,
         originFromRequest(request) === "automation" ? "automation" : "admin",
       );
       if (!order) {
@@ -9874,6 +9926,7 @@ const handleRequest = async (request, response) => {
 
     if (request.method === "POST" && url.pathname === "/api/admin/coupons") {
       if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      if (!(await ensureFreshAdminMfa(request, response, url))) return;
       sendJson(response, 201, { coupon: await createAdminCoupon(await readBody(request)) });
       return;
     }
@@ -9881,6 +9934,7 @@ const handleRequest = async (request, response) => {
     const adminCouponMatch = url.pathname.match(/^\/api\/admin\/coupons\/([0-9a-fA-F-]{36})$/);
     if (adminCouponMatch && request.method === "PATCH") {
       if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      if (!(await ensureFreshAdminMfa(request, response, url))) return;
       const coupon = await updateAdminCoupon(adminCouponMatch[1], await readBody(request));
       if (!coupon) {
         sendError(response, 404, "Coupon not found");
@@ -9892,6 +9946,7 @@ const handleRequest = async (request, response) => {
 
     if (adminCouponMatch && request.method === "DELETE") {
       if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.FULL_ACCESS))) return;
+      if (!(await ensureFreshAdminMfa(request, response, url))) return;
       sendJson(response, 200, { deleted: await deleteAdminCoupon(adminCouponMatch[1]) });
       return;
     }
@@ -10221,6 +10276,7 @@ const handleRequest = async (request, response) => {
 
     if (request.method === "DELETE" && url.pathname === "/api/products/bulk") {
       if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_DELETE))) return;
+      if (!(await ensureFreshAdminMfa(request, response, url))) return;
       const body = await readBody(request);
       const result = await bulkDeleteProducts(body.ids);
       await recordAdminAudit(request.admin, {
@@ -10253,6 +10309,7 @@ const handleRequest = async (request, response) => {
 
     if (productMatch && request.method === "DELETE") {
       if (!(await requireAdminPermission(request, response, ADMIN_PERMISSIONS.PRODUCTS_DELETE))) return;
+      if (!(await ensureFreshAdminMfa(request, response, url))) return;
       const oldProduct = await fetchProductById(productMatch[1], url.searchParams.get("source"));
       const deleted = await deleteProduct(productMatch[1], url.searchParams.get("source"));
       if (deleted) {

@@ -1,3 +1,4 @@
+import { requestAdminStepUp } from "@/lib/adminStepUp";
 import { emitPetCompanionEvent } from "@/lib/petCompanionReactions";
 import {
   PRODUCT_UNAVAILABLE_CODE,
@@ -719,7 +720,7 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
-async function adminApiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+async function adminApiFetch<T>(path: string, init?: RequestInit, allowStepUp = true): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     credentials: "same-origin",
     ...init,
@@ -734,6 +735,16 @@ async function adminApiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   if (!response.ok) {
     if (response.status === 401) {
       throw new Error("נדרשת התחברות מנהל");
+    }
+    // A sensitive action whose second factor is no longer recent. One prompt,
+    // then one retry. With two-factor off the server does not set this flag.
+    const stepUp = body && typeof body === "object"
+      ? (body as { mfa_step_up_required?: boolean }).mfa_step_up_required === true
+      : false;
+    if (allowStepUp && response.status === 403 && stepUp) {
+      const accepted = await requestAdminStepUp();
+      if (accepted) return adminApiFetch<T>(path, init, false);
+      throw new MipoApiError("נדרש קוד אימות עדכני כדי להמשיך", response.status, body);
     }
     throw new MipoApiError(body?.error || `API request failed with ${response.status}`, response.status, body);
   }
