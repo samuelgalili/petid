@@ -44,11 +44,26 @@ export const readAdminTwoFactorFlags = (env = process.env) => {
 };
 
 /**
+ * A session counts as verified only when the timestamp is a real instant.
+ * A missing value, an empty string, and a value that does not parse all mean
+ * "not verified". Anything else would treat garbage in mfa_verified_at as a
+ * passed gate.
+ */
+const verifiedSessionAt = (mfaVerifiedAt) => {
+  if (mfaVerifiedAt === null || mfaVerifiedAt === undefined || mfaVerifiedAt === "") return null;
+  const time = new Date(mfaVerifiedAt).getTime();
+  return Number.isFinite(time) ? time : null;
+};
+
+/**
  * What a password session may do.
  *
  * "full"    — the panel, exactly as a session worked before this feature.
  * "verify"  — the account is enrolled; the session stops at the code screen.
  * "enroll"  — enrolment is mandatory and this account has not finished it.
+ *
+ * With the feature off this is always "full", including for an account that
+ * already enrolled and for a timestamp that would not parse.
  */
 export const adminSessionGate = ({
   enabled,
@@ -57,10 +72,22 @@ export const adminSessionGate = ({
   mfaVerifiedAt = null,
 } = {}) => {
   if (!enabled) return "full";
-  if (enrolled) return mfaVerifiedAt ? "full" : "verify";
-  if (requireEnrollment) return mfaVerifiedAt ? "full" : "enroll";
+  const verified = verifiedSessionAt(mfaVerifiedAt) !== null;
+  if (enrolled) return verified ? "full" : "verify";
+  if (requireEnrollment) return verified ? "full" : "enroll";
   return "full";
 };
+
+/**
+ * Whether a password session may see admin-only catalogue fields.
+ *
+ * The public product routes do not reject an anonymous caller. They attach
+ * the internal row only when this is true. A session that still owes a code
+ * is not that caller: it gets the same public row a visitor gets.
+ * With the feature off the gate is "full", so an admin screen still sees
+ * cost, commission and supplier, which is what it does today.
+ */
+export const sessionClearsAdminMfaGate = (input = {}) => adminSessionGate(input) === "full";
 
 /** The fields a browser is allowed to see. No seed, no ciphertext, no hash. */
 export const publicMfaFields = ({

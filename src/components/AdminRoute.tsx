@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
+import { AdminStepUpHost } from "@/components/admin/AdminStepUpHost";
 import { useAwsAdminAuth } from "@/hooks/useAwsAdminAuth";
 import { adminHasPermission, type AdminPermission } from "@/lib/adminPermissions";
 
@@ -17,6 +18,14 @@ interface AdminRouteProps {
    */
   permission?: AdminPermission | AdminPermission[];
 }
+
+/** The step-up prompt has to be mounted wherever an admin action can run. */
+const AdminScreen = ({ children }: { children: ReactNode }) => (
+  <>
+    <AdminStepUpHost />
+    {children}
+  </>
+);
 
 export const AdminRoute = ({ children, permission }: AdminRouteProps) => {
   const { admin, needsTwoFactor, loading } = useAwsAdminAuth();
@@ -39,13 +48,13 @@ export const AdminRoute = ({ children, permission }: AdminRouteProps) => {
   // to render while that step is still outstanding.
   if (admin.must_change_password) {
     return location.pathname === "/admin/change-password"
-      ? <>{children}</>
+      ? <AdminScreen>{children}</AdminScreen>
       : <Navigate to="/admin/change-password" replace />;
   }
 
   if (needsTwoFactor) {
     return location.pathname === "/admin/two-factor"
-      ? <>{children}</>
+      ? <AdminScreen>{children}</AdminScreen>
       : <Navigate to="/admin/two-factor" replace />;
   }
 
@@ -54,5 +63,5 @@ export const AdminRoute = ({ children, permission }: AdminRouteProps) => {
     return <Navigate to="/admin/products" replace />;
   }
 
-  return <>{children}</>;
+  return <AdminScreen>{children}</AdminScreen>;
 };

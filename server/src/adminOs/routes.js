@@ -1,3 +1,4 @@
+import { adminActionNeedsFreshMfa } from "../adminStepUp.js";
 import { ADMIN_PERMISSIONS } from "../adminPermissions.js";
 import { createAuditService } from "./auditService.js";
 import { createAdminCustomer } from "./customers.js";
@@ -38,6 +39,10 @@ export const createAdminOsRoutes = ({
   sendError,
   readBody,
   requireAdminPermission,
+  // Recent second factor for the sensitive writes. Injected for the same
+  // reason as requireAdminPermission. Missing on a sensitive action refuses
+  // the action: a router that forgot the check must not let the write through.
+  requireFreshAdminMfa = null,
   // Injected rather than imported, because it lives in index.js and this
   // module is mounted before it is defined. Passing it also keeps the one
   // function that knows what an order is as the ONLY function that makes one.
@@ -222,14 +227,31 @@ export const createAdminOsRoutes = ({
 
     if (!(await requireAdminPermission(request, response, route.permission))) return true;
 
+    // Step-up runs before the handler and before idempotent replay. A stored
+    // replay would otherwise return the first response without a fresh code.
+    const freshEnough = async (body) => {
+      if (!adminActionNeedsFreshMfa({
+        method: request.method,
+        pathname: url.pathname,
+        body,
+      })) return true;
+      if (typeof requireFreshAdminMfa !== "function") {
+        sendError(response, 503, "Two-factor step-up is not configured");
+        return false;
+      }
+      return requireFreshAdminMfa(request, response);
+    };
+
     try {
       if (!route.idempotent) {
+        if (!(await freshEnough(undefined))) return true;
         await route.handler(request, response, url);
         return true;
       }
 
       const key = idempotencyKeyOf(request);
       const payload = await readBody(request);
+      if (!(await freshEnough(payload))) return true;
       const result = await withIdempotency(
         {
           scope: `${route.method} ${ADMIN_OS_PREFIX}${route.path}`,
