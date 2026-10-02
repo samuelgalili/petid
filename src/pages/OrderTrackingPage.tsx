@@ -1,10 +1,16 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { AlertTriangle, ArrowRight, CreditCard, Hash, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getShopOrder } from "@/lib/mipoApi";
-import { getOrderAccessToken } from "@/lib/orderAccess";
+import {
+  captureOrderLinkToken,
+  clearCapturedOrderLinkToken,
+  getOrderAccessToken,
+  rememberOrderAccess,
+} from "@/lib/orderAccess";
 
 const ORDER_STATUS: Record<string, string> = {
   pending: "התקבלה",
@@ -26,13 +32,31 @@ const PAYMENT_STATUS: Record<string, string> = {
 const OrderTrackingPage = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
-  const accessToken = getOrderAccessToken(orderId);
+  const [searchParams, setSearchParams] = useSearchParams();
+  // The mail puts access_token on the URL. Read it before it leaves the
+  // address bar. A guest token already saved at checkout is left in place.
+  const [linkToken] = useState(() => captureOrderLinkToken(orderId));
+  const accessToken = linkToken || getOrderAccessToken(orderId);
   const { data: order, isLoading, isError } = useQuery({
     queryKey: ["order-detail", orderId],
     queryFn: () => getShopOrder(orderId!, accessToken),
     enabled: !!orderId,
     retry: false,
   });
+
+  useEffect(() => {
+    if (!searchParams.has("access_token")) return;
+    const next = new URLSearchParams(searchParams);
+    next.delete("access_token");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  useEffect(() => {
+    if (!order || !linkToken || !orderId) return;
+    const saved = getOrderAccessToken(order.id) || getOrderAccessToken(order.order_number);
+    if (!saved) rememberOrderAccess(order, linkToken);
+    clearCapturedOrderLinkToken(orderId);
+  }, [order, orderId, linkToken]);
 
   if (isLoading) {
     return (

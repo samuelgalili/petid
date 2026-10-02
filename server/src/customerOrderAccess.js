@@ -15,7 +15,32 @@
  * This module does not decide payment amounts or webhook signatures.
  */
 
+import { verifyOpaqueToken } from "./security.js";
+import { verifyOrderTrackingToken } from "./orderTrackingToken.js";
+
 export const shouldRequestVerificationAfterOrder = ({ currentUser, placedByAdmin } = {}) => {
   if (!currentUser?.id || placedByAdmin) return false;
   return !currentUser.email_verified_at;
+};
+
+/**
+ * Who may see one order.
+ *
+ * The signed-in buyer always may. The guest token from checkout may, and it
+ * is also what starts a payment, so it stays valid when `allowTrackingToken`
+ * is false. The mail link is narrower: it is accepted only for a read, and
+ * only for the order id baked into the signature.
+ */
+export const grantsOrderAccess = ({
+  sessionUserId = null,
+  order,
+  accessToken,
+  trackingSecret = "",
+  allowTrackingToken = false,
+  now = Date.now(),
+} = {}) => {
+  if (sessionUserId && order?.user_id && sessionUserId === order.user_id) return true;
+  if (verifyOpaqueToken(accessToken, order?.accessTokenHash)) return true;
+  if (!allowTrackingToken) return false;
+  return verifyOrderTrackingToken(accessToken, order, trackingSecret, now);
 };

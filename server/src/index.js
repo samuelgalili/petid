@@ -34,7 +34,7 @@ import {
   readVerifiedCardcomNotification,
   settleCardcomNotification,
 } from "./cardcom.js";
-import { shouldRequestVerificationAfterOrder } from "./customerOrderAccess.js";
+import { grantsOrderAccess, shouldRequestVerificationAfterOrder } from "./customerOrderAccess.js";
 import {
   anonymizeOrdersForDeletedAccount,
   claimVerifiedGuestCommerce,
@@ -48,7 +48,6 @@ import {
   createOpaqueToken,
   decodeAndValidateDataUrl,
   hashOpaqueToken,
-  verifyOpaqueToken,
 } from "./security.js";
 import { checkDatabaseHealth, checkSchemaHealth } from "./health.js";
 import {
@@ -61,6 +60,7 @@ import {
   summarizeProviderFailure,
 } from "./emailDelivery.js";
 import { sendOrderConfirmationEmail } from "./orderEmail.js";
+import { orderTrackingSecret } from "./orderTrackingToken.js";
 import { createProviderRegistry } from "./aiProviders.js";
 import { createAiGateway, newRequestId, newTraceId } from "./aiGateway.js";
 import {
@@ -7210,10 +7210,15 @@ const getOrder = async (id) => {
   return order;
 };
 
-const canAccessOrder = async (request, order, accessToken) => {
+const canAccessOrder = async (request, order, accessToken, options = {}) => {
   const auth = await getUserFromSession(request).catch(() => null);
-  if (auth?.user?.id && order.user_id === auth.user.id) return true;
-  return verifyOpaqueToken(accessToken, order.accessTokenHash);
+  return grantsOrderAccess({
+    sessionUserId: auth?.user?.id || null,
+    order,
+    accessToken,
+    trackingSecret: orderTrackingSecret(),
+    allowTrackingToken: options.allowTrackingToken === true,
+  });
 };
 
 const updateOrder = async (id, body, eventOrigin = "admin") => {
@@ -8045,6 +8050,7 @@ const handleCardcomWebhook = async (request, url) => {
         apiKey: resendApiKey,
         fromEmail: passwordResetFromEmail,
         appBaseUrl: getPublicBaseUrl(request),
+        trackingSecret: orderTrackingSecret(),
       }))
       .catch((error) => {
         console.error("[mipo] order confirmation email failed:", redactEmailLog(error?.message || error));
@@ -9793,7 +9799,7 @@ const handleRequest = async (request, response) => {
       }
       const order = await getOrder(orderReference);
       const accessToken = url.searchParams.get("access_token") || request.headers["x-order-access-token"];
-      if (!order || !(await canAccessOrder(request, order, accessToken))) {
+      if (!order || !(await canAccessOrder(request, order, accessToken, { allowTrackingToken: true }))) {
         sendError(response, 404, "Order not found");
         return;
       }

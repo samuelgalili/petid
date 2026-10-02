@@ -7,6 +7,7 @@ import {
   renderOrderConfirmationHtml,
   sendOrderConfirmationEmail,
 } from "../src/orderEmail.js";
+import { verifyOrderTrackingToken } from "../src/orderTrackingToken.js";
 
 const FROM = "MIPO <no-reply@mipo.pet>";
 const APP = "https://mipo.pet";
@@ -46,6 +47,7 @@ test("the confirmation is Hebrew, right to left, and lists the receipt", () => {
   assert.match(html, /מזון לכלב × 2/);
   assert.match(html, /₪80\.00/);
   assert.match(html, /הנחה \(PET10\)/);
+  assert.match(html, /<span dir="ltr">&#x2066;-₪10\.00&#x2069;<\/span>/);
   assert.match(html, /-₪10\.00/);
   assert.match(html, /משלוח/);
   assert.match(html, /₪25\.00/);
@@ -55,7 +57,32 @@ test("the confirmation is Hebrew, right to left, and lists the receipt", () => {
   assert.match(html, /תל אביב/);
   assert.match(html, /צפה בהזמנה/);
   assert.match(html, /href="https:\/\/mipo\.pet\/order-tracking\/MIPO-1001"/);
+  assert.equal(html.includes("access_token"), false);
   assert.match(html, /שולם/);
+});
+
+const ORDER_A = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+const ORDER_B = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+const TRACKING_SECRET = "tracking-secret-not-an-admin-key";
+const TOKEN_NOW = 1_700_000_000_000;
+
+const tokenFrom = (html) => {
+  const match = html.match(/access_token=([^"&]+)/);
+  assert.ok(match, "the view-order link has no access token");
+  return decodeURIComponent(match[1]);
+};
+
+test("the view-order link carries a token for this order only", () => {
+  const html = renderOrderConfirmationHtml(
+    { ...paidOrder, id: ORDER_A },
+    APP,
+    { trackingSecret: TRACKING_SECRET, now: TOKEN_NOW },
+  );
+  const token = tokenFrom(html);
+  assert.equal(token.includes(TRACKING_SECRET), false);
+  assert.equal(verifyOrderTrackingToken(token, { id: ORDER_A }, TRACKING_SECRET, TOKEN_NOW), true);
+  assert.equal(verifyOrderTrackingToken(token, { id: ORDER_B }, TRACKING_SECRET, TOKEN_NOW), false);
+  assert.match(html, /<span dir="ltr">&#x2066;-₪10\.00&#x2069;<\/span>/);
 });
 
 test("a product name cannot break out of the markup", () => {
@@ -142,34 +169,44 @@ test("the parcel address is used when the order has no customer email", async ()
   assert.deepEqual(to, ["other@example.com"]);
 });
 
-test("a provider refusal is logged without the key or the address", async () => {
+test("a provider refusal is logged without the key, the address, or the tracking token", async () => {
   const errors = [];
   const original = console.error;
   console.error = (...args) => errors.push(args.join(" "));
+  let token = "";
   try {
     const result = await sendOrderConfirmationEmail({
-      order: paidOrder,
+      order: { ...paidOrder, id: ORDER_A },
       apiKey: "re_test_key",
       fromEmail: FROM,
       appBaseUrl: APP,
-      fetchImpl: async () => ({
-        ok: false,
-        status: 403,
-        text: async () => JSON.stringify({
-          name: "validation_error",
-          message: "refused dana@example.com with key re_test_key",
-        }),
-      }),
+      trackingSecret: TRACKING_SECRET,
+      now: TOKEN_NOW,
+      fetchImpl: async (_url, init) => {
+        token = tokenFrom(JSON.parse(init.body).html);
+        return {
+          ok: false,
+          status: 403,
+          text: async () => JSON.stringify({
+            name: "validation_error",
+            message: `refused dana@example.com with key re_test_key link access_token=${token} ${token}`,
+          }),
+        };
+      },
     });
     assert.equal(result.sent, false);
     assert.equal(result.reason, "send_failed");
+    assert.ok(token.length > 20);
     assert.equal(errors.length, 1);
     assert.match(errors[0], /order confirmation email was not sent/);
     assert.match(errors[0], /status=403/);
     assert.match(errors[0], /\[redacted-email\]/);
     assert.match(errors[0], /\[redacted\]/);
+    assert.match(errors[0], /\[redacted-token\]/);
     assert.equal(errors[0].includes("dana@example.com"), false);
     assert.equal(errors[0].includes("re_test_key"), false);
+    assert.equal(errors[0].includes(token), false);
+    assert.equal(errors[0].includes(TRACKING_SECRET), false);
   } finally {
     console.error = original;
   }
@@ -265,6 +302,7 @@ test("the paid webhook mails only the first transition, after commit, and a fail
   const paidBranch = webhook.slice(paidAt, failedAt);
   assert.match(paidBranch, /sendOrderConfirmationEmail\(/);
   assert.match(paidBranch, /fromEmail: passwordResetFromEmail/);
+  assert.match(paidBranch, /trackingSecret: orderTrackingSecret\(\)/);
   assert.match(paidBranch, /transitioned: true/);
   assert.match(paidBranch, /\.catch\(/);
   assert.match(paidBranch, /redactEmailLog/);

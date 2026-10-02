@@ -48,6 +48,8 @@ export const redactEmailLog = (value) => String(value || "")
   .replace(/re_[A-Za-z0-9_]+/g, "[redacted]")
   .replace(/Bearer\s+\S+/gi, "Bearer [redacted]")
   .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[redacted-email]")
+  .replace(/([?&]access_token=)[^&\s"'<>]+/gi, "$1[redacted-token]")
+  .replace(/\bot1\.[0-9a-f-]{36}\.[0-9]+\.[A-Za-z0-9_-]+/gi, "[redacted-token]")
   .replace(/\s+/g, " ")
   .trim()
   .slice(0, 300);

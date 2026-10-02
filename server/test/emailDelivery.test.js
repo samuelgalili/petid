@@ -55,6 +55,10 @@ test("a provider refusal is logged without the key or an address", () => {
   assert.doesNotMatch(line, /re_abc123secret/);
   assert.doesNotMatch(line, /owner@mipo\.pet/);
   assert.equal(redactEmailLog("Bearer re_should_not_appear"), "Bearer [redacted]");
+  const token = "ot1.aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa.1700000000000.abcdefghijklmnopqrstuvwxyz0123456789_-ABC";
+  const redacted = redactEmailLog(`see https://mipo.pet/order-tracking/MIPO-1?access_token=${token} and ${token}`);
+  assert.match(redacted, /\[redacted-token\]/);
+  assert.equal(redacted.includes(token), false);
 });
 
 test("a bad key and a refused sender name different settings", () => {
