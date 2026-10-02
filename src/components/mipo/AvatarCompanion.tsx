@@ -3,28 +3,25 @@
  *
  * Pinned above the BottomNav. Tap opens the AI chat, already about this pet.
  *
- * It is called the avatar companion and it drew a PLUS SIGN. The pet's name
- * was read from the context on every render and then never used, the avatar
- * was never read at all, and the glyph was painted in three hexes belonging to
- * no palette in this app. So on every screen, the one element whose whole job
- * is to keep the pet present showed a "+" in colours that were not the brand's.
+ * A pet is a row in the fleet (an id from PetPreferenceContext), not a picture.
+ * Someone whose animal has no photo still has that animal: the control must
+ * not turn back into "add a pet" and open the onboarding again.
  *
- * Avatar sources, in order:
+ * Avatar sources, in order, and only as the picture:
  *  1. activePet from PetPreferenceContext (DB)
  *  2. the onboarding draft in localStorage, for the window before the pet row
  *     exists
  *
- * With no pet at all the "+" is correct - there is nothing to show yet - and
- * it takes you to add one rather than to the chat, which is what the icon has
- * always promised and never did.
+ * With no pet at all the "+" is correct — there is nothing to show yet — and
+ * it takes you to add one rather than to the chat.
  *
  * Auto-hides on auth/onboarding routes, and on /chat and /shop, which show
  * the pet themselves. Guests never see it. Reading pages (support, terms,
- * science, breeds, install, accessibility) and unknown paths stay clear too,
- * so the control does not sit on top of text the person came to read.
- * The add-pet plus stays off /feed: that screen already has a header plus,
- * and this one covered the share button. On home it sits in the open gap
- * under the caption and above the bottom nav.
+ * science, breeds, install, accessibility) and unknown paths stay clear too.
+ * The control stays off /feed entirely: the chat button sat on the share
+ * action in the same corner. It also keeps an 8px gap from the nav and from
+ * anything it would cover; if a screen has no such gap, it stays off that
+ * screen rather than sitting on the text.
  */
 
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -75,64 +72,98 @@ const isUnknownPath = (pathname: string) => {
 };
 
 const FAB_SIZE = 56;
-const RESTING_BOTTOM = 88;
-const CLEAR_MARGIN = 12;
+const FAB_LEFT = 16;
+const SAFE_GAP = 8;
 const CONTENT_SELECTORS = "h1, h2, p, button, a, img, [data-presence-visual]";
 
-/**
- * Lowest visible home content above the nav. Layout wrappers (main, the
- * shell) are min-h-screen, so measuring them would report the viewport and
- * leave no gap at all.
- */
-function visibleContentBottom(main: HTMLElement, fab: HTMLElement, navTop: number) {
-  let bottom = 0;
-  main.querySelectorAll(CONTENT_SELECTORS).forEach((node) => {
+type Blocker = { top: number; bottom: number };
+
+function columnOf(fab: HTMLElement | null) {
+  const parsed = fab ? Number.parseFloat(getComputedStyle(fab).left) : Number.NaN;
+  const left = Number.isFinite(parsed) ? parsed : FAB_LEFT;
+  const size = fab && fab.offsetWidth > 0 ? fab.offsetWidth : FAB_SIZE;
+  return { left, right: left + size, size };
+}
+
+function contentBlockers(fab: HTMLElement | null, left: number, right: number, limit: number): Blocker[] {
+  const blockers: Blocker[] = [];
+  const root = document.querySelector("main") ?? document.body;
+  root.querySelectorAll(CONTENT_SELECTORS).forEach((node) => {
     if (!(node instanceof HTMLElement)) return;
-    if (node === fab || fab.contains(node)) return;
+    if (fab && (node === fab || fab.contains(node))) return;
+    if (node.closest("nav")) return;
     const style = getComputedStyle(node);
     if (style.display === "none" || style.visibility === "hidden" || style.position === "fixed") return;
     const rect = node.getBoundingClientRect();
-    if (rect.width < 1 || rect.height < 1 || rect.top >= navTop) return;
-    bottom = Math.max(bottom, Math.min(rect.bottom, navTop));
+    if (rect.width < 1 || rect.height < 1) return;
+    if (rect.bottom <= 0 || rect.top >= limit) return;
+    if (rect.right <= left - SAFE_GAP || rect.left >= right + SAFE_GAP) return;
+    blockers.push({ top: rect.top, bottom: Math.min(rect.bottom, limit) });
   });
-  return bottom;
+  return blockers;
 }
 
-/** Top of the home control, in the gap under the content and above the nav. */
-function homeFabTop(fab: HTMLElement) {
+/**
+ * Lowest top where the control clears the nav by SAFE_GAP and does not cover
+ * visible content in its column. Null when the screen has no such slot.
+ */
+/**
+ * Top of the bottom nav in viewport coordinates.
+ *
+ * While a page transition is still transforming its wrapper, position:fixed
+ * children stick to that wrapper. The bar's box can then sit at the end of
+ * the page, below the viewport, and a control placed against the viewport
+ * edge lands on the bar once the transition settles. Reserve the bar's own
+ * height at the bottom of the screen in that case.
+ */
+function floorLimit() {
   const nav = document.querySelector('nav[aria-label="ניווט ראשי"]');
-  const main = document.querySelector("main");
-  const restingTop = window.innerHeight - RESTING_BOTTOM - FAB_SIZE;
-  if (!(nav instanceof HTMLElement) || !(main instanceof HTMLElement)) return restingTop;
+  if (!(nav instanceof HTMLElement)) return window.innerHeight;
+  const rect = nav.getBoundingClientRect();
+  if (rect.height < 1) return window.innerHeight;
+  if (rect.top >= window.innerHeight) return window.innerHeight - rect.height;
+  return Math.min(rect.top, window.innerHeight);
+}
 
-  const navTop = nav.getBoundingClientRect().top;
-  const contentBottom = visibleContentBottom(main, fab, navTop);
-  const aboveNav = Math.max(0, navTop - FAB_SIZE);
-  const place = (top: number) => Math.min(Math.max(0, Math.ceil(top)), aboveNav);
-  const minTop = contentBottom + CLEAR_MARGIN;
-  const maxTop = navTop - CLEAR_MARGIN - FAB_SIZE;
+function companionTop(fab: HTMLElement | null): number | null {
+  const limit = floorLimit();
+  const { left, right, size } = columnOf(fab);
+  let top = Math.floor(limit - SAFE_GAP - size);
+  if (top < SAFE_GAP) return null;
 
-  if (minTop <= maxTop) return place(Math.min(Math.max(restingTop, minTop), maxTop));
+  const blockers = contentBlockers(fab, left, right, limit);
+  const overlaps = (candidate: number, blocker: Blocker) =>
+    candidate < blocker.bottom + SAFE_GAP && candidate + size > blocker.top - SAFE_GAP;
 
-  const gap = navTop - contentBottom;
-  if (gap >= FAB_SIZE) return place(contentBottom + (gap - FAB_SIZE) / 2);
-  return place(contentBottom);
+  for (let i = 0; i < blockers.length + 1; i += 1) {
+    const hit = blockers.filter((blocker) => overlaps(top, blocker));
+    if (hit.length === 0) return top;
+    const ceiling = Math.min(...hit.map((blocker) => blocker.top));
+    top = Math.floor(ceiling - SAFE_GAP - size);
+    if (top < SAFE_GAP) return null;
+  }
+  return null;
 }
 
 export const AvatarCompanion = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { activePet } = usePetPreference();
+  const { activePet, pets, loading: petsLoading } = usePetPreference();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const [homeTop, setHomeTop] = useState<number | null>(null);
+  const [top, setTop] = useState<number | null>(null);
+  const [parked, setParked] = useState(false);
 
   // The draft is read through its own reader rather than hand-parsed here: it
   // validates the shape and swallows the private-mode throw, which the inline
-  // JSON.parse only half did.
+  // JSON.parse only half did. It is only the picture for the moment before a
+  // pet row exists. A saved pet with no photo is still a pet.
   const draft = readStoredOnboardingDraft();
+  const savedPet = Boolean(activePet?.id) || pets.length > 0;
+  const draftAvatar = draft?.avatarUrl || draft?.photoUrl || "";
+  const hasPet = savedPet || Boolean(draft?.name && draftAvatar);
   const petName = activePet?.name || draft?.name || null;
-  const petAvatar = activePet?.avatar_url || draft?.avatarUrl || draft?.photoUrl || null;
+  const petAvatar = (savedPet ? activePet?.avatar_url : draftAvatar) || null;
 
   // aws-migration has no MipoOnboardingGate. Hiding when
   // mipo-onboarding-complete is unset would make Companion never appear on
@@ -152,6 +183,7 @@ export const AvatarCompanion = () => {
   const hidden = useMemo(
     () =>
       authLoading ||
+      petsLoading ||
       !isAuthenticated ||
       onboardingActive ||
       isInProgressFlow(location.pathname) ||
@@ -160,59 +192,61 @@ export const AvatarCompanion = () => {
       isUnknownPath(location.pathname) ||
       location.pathname === "/chat" ||
       location.pathname === "/shop" ||
-      // The feed's header plus already adds a post. This plus covered the
-      // share button in the same corner, so it stays off /feed until a pet
-      // is actually there to show.
-      (location.pathname === "/feed" && !petAvatar),
-    [authLoading, isAuthenticated, location.pathname, onboardingActive, petAvatar],
+      // The feed already has its own actions in this corner. The chat
+      // control covered the share button on desktop and on mobile.
+      location.pathname === "/feed",
+    [authLoading, isAuthenticated, location.pathname, onboardingActive, petsLoading],
   );
 
-  const onHome = location.pathname === "/";
-
   useLayoutEffect(() => {
-    if (!onHome || hidden) {
-      setHomeTop(null);
+    if (hidden) {
+      setTop(null);
+      setParked(false);
       return;
     }
-    const fab = buttonRef.current;
-    if (!fab) return;
 
     let frame = 0;
     let cancelled = false;
-    const place = () => {
+    const apply = () => {
       if (cancelled) return;
-      const next = homeFabTop(fab);
-      setHomeTop((current) => (current !== null && Math.abs(current - next) < 0.5 ? current : next));
+      const next = companionTop(buttonRef.current);
+      if (next === null) {
+        setParked(true);
+        setTop(null);
+        return;
+      }
+      setParked(false);
+      setTop((current) => (current !== null && Math.abs(current - next) < 0.5 ? current : next));
     };
     const schedule = () => {
       cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(place);
+      frame = requestAnimationFrame(apply);
     };
 
-    // Home is lazy. The first pass often runs while <main> is still the
-    // loading shell, and a font or a pet row can move the caption later
-    // without changing this component's props. Watch the document so the
-    // button follows the gap it is supposed to sit in.
     const observer = new ResizeObserver(schedule);
     const watch = () => {
       const main = document.querySelector("main");
-      if (!main) return;
-      observer.observe(main);
-      main.querySelectorAll(CONTENT_SELECTORS).forEach((node) => {
-        if (node instanceof HTMLElement) observer.observe(node);
-      });
+      if (main) observer.observe(main);
+      const nav = document.querySelector('nav[aria-label="ניווט ראשי"]');
+      if (nav) observer.observe(nav);
     };
     const mutations = new MutationObserver(() => {
       watch();
       schedule();
     });
-    mutations.observe(document.body, { childList: true, subtree: true });
+    mutations.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class"],
+    });
     window.addEventListener("resize", schedule);
+    window.addEventListener("scroll", schedule, true);
     void document.fonts?.ready.then(() => {
       if (!cancelled) schedule();
     });
     watch();
-    place();
+    apply();
 
     return () => {
       cancelled = true;
@@ -220,18 +254,18 @@ export const AvatarCompanion = () => {
       observer.disconnect();
       mutations.disconnect();
       window.removeEventListener("resize", schedule);
+      window.removeEventListener("scroll", schedule, true);
     };
-  }, [hidden, onHome, petAvatar, petName]);
+  }, [hidden, hasPet, location.pathname, petAvatar, petName]);
 
-  if (hidden) return null;
+  if (hidden || parked) return null;
 
-  const hasPet = Boolean(petAvatar);
-  const pinOnHome = onHome && homeTop !== null;
+  const showPhoto = Boolean(hasPet && petAvatar);
 
   return (
     <motion.button
       ref={buttonRef}
-      // The label said "הוסף" on every screen while the tap opened the chat.
+      type="button"
       aria-label={
         hasPet
           ? petName
@@ -240,34 +274,25 @@ export const AvatarCompanion = () => {
           : "הוספת חיה"
       }
       onClick={() => navigate(hasPet ? "/chat" : "/add-pet")}
-      initial={{ opacity: 0, y: onHome ? 0 : 16, scale: 0.85 }}
-      animate={{
-        opacity: 1,
-        // The home gap is only a few pixels taller than the button. The
-        // float would lift it back onto the caption.
-        y: onHome ? 0 : [0, -6, 0],
-        scale: 1,
-      }}
-      transition={{
-        opacity: { duration: 0.3 },
-        scale: { duration: 0.3 },
-        y: onHome ? { duration: 0.2 } : { duration: 3.2, repeat: Infinity, ease: "easeInOut" },
-      }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: top === null ? 0 : 1, y: 0 }}
+      transition={{ opacity: { duration: 0.2 } }}
       whileTap={{ scale: 0.92 }}
-      style={pinOnHome ? { top: homeTop } : undefined}
-      className={`fixed z-[9997] left-4 flex h-14 w-14 items-center justify-center${pinOnHome ? "" : " bottom-[88px]"}`}
+      style={top === null ? { top: 0, visibility: "hidden" } : { top }}
+      className={`fixed z-[9997] left-4 flex h-14 w-14 items-center justify-center${top === null ? " pointer-events-none" : ""}`}
     >
       {/* The avatar is the one surface the brand aurora is allowed on, so the
           halo and the ring both read --gradient-primary rather than repeating
-          the stops. With no pet there is no avatar, and so no aurora. */}
+          the stops. With no photo there is no aurora, and with no pet at all
+          there is only the plus. */}
       <span
         className={
-          hasPet
+          showPhoto
             ? "mipo-avatar-glow relative h-14 w-14"
             : "relative flex h-14 w-14 items-center justify-center rounded-full border border-mipo-line bg-white/90 backdrop-blur-sm"
         }
       >
-        {hasPet ? (
+        {showPhoto ? (
           <img
             src={petAvatar as string}
             // Decorative: the button around it is already labelled with the
@@ -283,6 +308,10 @@ export const AvatarCompanion = () => {
             alt=""
             className="h-full w-full rounded-full bg-mipo-soft object-cover"
           />
+        ) : hasPet ? (
+          <span aria-hidden className="text-base font-semibold text-mipo-ink">
+            {(petName || "מ").trim().slice(0, 1)}
+          </span>
         ) : (
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
             <path
