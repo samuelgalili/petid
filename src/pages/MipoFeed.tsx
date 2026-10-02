@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
 import defaultPetAvatar from "@/assets/default-pet-avatar.png";
+import { feedAuthorName } from "@/lib/feedIdentity";
 import { MipoLogo } from "@/components/MipoLogo";
 import { ContentOptionsButton, ReportContentDialog } from "@/components/feed/ReportContentDialog";
 import { MomentReel } from "@/components/moments/MomentReel";
@@ -307,13 +308,13 @@ const CommentsSheet = ({ post, onClose, onCountChange }: { post: MipoSocialPost;
             <p className="mt-8 text-center text-sm text-mipo-muted">התגובה הראשונה יכולה להיות שלך.</p>
           ) : comments.map((comment) => (
             <div key={comment.id} className="flex items-start gap-3">
-              <img src={comment.creator.avatar_url || defaultPetAvatar} alt="" className="h-9 w-9 rounded-full object-cover" />
+              <img data-testid="comment-author-avatar" src={defaultPetAvatar} alt="" className="h-9 w-9 rounded-full object-cover" />
               <div className="min-w-0 flex-1 rounded-2xl bg-mipo-soft px-3.5 py-2.5">
-                <p className="text-xs font-semibold text-mipo-ink">{comment.creator.display_name}</p>
+                <p data-testid="comment-author-name" className="text-xs font-semibold text-mipo-ink">{feedAuthorName(null, comment.creator.display_name)}</p>
                 <p className="mt-0.5 text-sm text-mipo-ink">{comment.body}</p>
               </div>
               <ContentOptionsButton
-                label={`אפשרויות לתגובה של ${comment.creator.display_name}`}
+                label={`אפשרויות לתגובה של ${feedAuthorName(null, comment.creator.display_name)}`}
                 onReport={() => setReporting(comment)}
                 className="text-mipo-ink"
               />

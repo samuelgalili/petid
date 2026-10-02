@@ -38,6 +38,9 @@ const CONNECTOR_COLUMNS = `
  * accepted". It must be a READ: a verification that creates something bills
  * the owner for pressing a button labelled "check".
  */
+/** Documented Tripo OpenAPI origin. The balance path is appended at verify time. */
+const TRIPO_DEFAULT_BASE_URL = "https://api.tripo3d.ai/v2/openapi";
+
 export const PROVIDERS = {
   runway: {
     label: "Runway",
@@ -64,28 +67,75 @@ export const PROVIDERS = {
       },
     }),
   },
+  tripo: {
+    label: "Tripo",
+    /**
+     * A balance read is the check, because creating a model spends credit.
+     * The documented response is `{ code: 0, data: { balance, frozen } }`.
+     * `balance` is the credit still available. `code` other than 0 is a
+     * refusal even when the HTTP status is 200.
+     */
+    defaults: {
+      baseUrl: TRIPO_DEFAULT_BASE_URL,
+    },
+    buildVerifyRequest: ({ secret, settings }) => ({
+      url: `${String(settings?.baseUrl || TRIPO_DEFAULT_BASE_URL).replace(/\/+$/, "")}/user/balance`,
+      method: "GET",
+      headers: {
+        authorization: `Bearer ${secret}`,
+        accept: "application/json",
+      },
+    }),
+    interpretVerifyResponse: (bodyText) => {
+      let parsed = null;
+      try {
+        const value = JSON.parse(bodyText);
+        parsed = value && typeof value === "object" && !Array.isArray(value) ? value : null;
+      } catch {
+        parsed = null;
+      }
+      if (parsed && typeof parsed.code === "number" && parsed.code !== 0) {
+        return { ok: false, balance: null };
+      }
+      const balance = parsed?.data?.balance;
+      return {
+        ok: true,
+        balance: typeof balance === "number" && Number.isFinite(balance) ? balance : null,
+      };
+    },
+  },
 };
 
 export const isKnownProvider = (provider) => Object.hasOwn(PROVIDERS, String(provider || ""));
 
 /**
+ * What the client may see of one row.
+ *
+ * describeSecret also names the key source that sealed the record (`"local"`).
+ * Spreading that object would replace this row's `provider`, which is the
+ * third party the screen is about. Only `stored` crosses over.
+ */
+const clientConnector = (connector, secret) => {
+  const { stored } = describeSecret(secret);
+  return {
+    ...connector,
+    stored,
+    known_provider: isKnownProvider(connector.provider),
+  };
+};
+
+/**
  * The connectors, as the client may see them.
  *
- * `secret` never appears. `secret_state` is computed through
- * describeSecret, which returns only whether something is stored.
+ * `secret` never appears. `stored` is computed through describeSecret, which
+ * returns only whether something is stored.
  */
 export const listConnectors = async ({ pool }) => {
   const { rows } = await pool.query(
     `select ${CONNECTOR_COLUMNS}, secret from public.admin_connectors order by provider`,
   );
 
-  return rows.map(({ secret, ...connector }) => ({
-    ...connector,
-    ...describeSecret(secret),
-    // A provider this build no longer knows how to talk to is shown as such
-    // rather than silently offering a verify button that cannot work.
-    known_provider: isKnownProvider(connector.provider),
-  }));
+  return rows.map(({ secret, ...connector }) => clientConnector(connector, secret));
 };
 
 const badRequest = (message) => {
@@ -109,9 +159,12 @@ export const saveConnector = async ({ pool, audit, admin }, provider, body) => {
   const label = typeof body?.label === "string" ? body.label.trim().slice(0, 120) : null;
 
   const definition = PROVIDERS[provider];
+  // A provider with no API version (Tripo) must not store the string
+  // "undefined" just because the shared form has no version field.
+  const apiVersion = String(body?.settings?.apiVersion || definition.defaults.apiVersion || "").trim();
   const settings = {
     baseUrl: String(body?.settings?.baseUrl || definition.defaults.baseUrl).trim(),
-    apiVersion: String(body?.settings?.apiVersion || definition.defaults.apiVersion).trim(),
+    ...(apiVersion ? { apiVersion } : {}),
   };
 
   if (!/^https:\/\//i.test(settings.baseUrl)) {
@@ -166,7 +219,7 @@ export const saveConnector = async ({ pool, audit, admin }, provider, body) => {
     newValues: { provider, label: connector.label, settings },
   });
 
-  return { ...connector, ...describeSecret(secret), known_provider: true };
+  return clientConnector(connector, secret);
 };
 
 /**
@@ -207,15 +260,100 @@ export const disconnectConnector = async ({ pool, audit, admin }, provider) => {
 };
 
 /**
+ * Remove a credential from text that might be stored or logged.
+ *
+ * Split/join, not a regular expression: a key can contain characters that
+ * would be meaningful in a pattern, and a partial match is not good enough.
+ */
+const redactSecret = (value, secret) => {
+  const text = String(value ?? "");
+  if (!secret) return text;
+  return text.split(String(secret)).join("[redacted]");
+};
+
+const safeLogArgs = (args, secret) => args.map((arg) => {
+  if (typeof arg === "string") return redactSecret(arg, secret);
+  if (typeof arg === "number" || typeof arg === "boolean" || arg == null) return arg;
+  try {
+    return JSON.parse(redactSecret(JSON.stringify(arg), secret));
+  } catch {
+    return redactSecret(String(arg), secret);
+  }
+});
+
+/**
+ * One outbound read, and a verdict the client may see.
+ *
+ * The key is placed on the Authorization header and nowhere else. It is not
+ * written to the returned object, and every string handed to `logger` is
+ * passed through redactSecret first. The provider body is not logged: a
+ * balance payload is reduced to a number, and an error payload is reduced to
+ * a short redacted string on the result, which the admin screen shows.
+ */
+export const executeVerifyRequest = async ({
+  provider,
+  secret,
+  settings,
+  fetchImpl = fetch,
+  logger = {},
+}) => {
+  const request = PROVIDERS[provider].buildVerifyRequest({
+    secret,
+    settings: settings || {},
+  });
+
+  const writeLog = (method, ...args) => {
+    const fn = logger?.[method];
+    if (typeof fn !== "function") return;
+    fn(...safeLogArgs(args, secret));
+  };
+
+  let response;
+  try {
+    response = await fetchImpl(request.url, { method: request.method, headers: request.headers });
+  } catch (error) {
+    const message = redactSecret(error?.message || error, secret).slice(0, 200);
+    writeLog("error", "connector.verify_unreachable", { provider });
+    return {
+      ok: false,
+      balance: null,
+      error: `לא הצלחנו להגיע לספק: ${message}`,
+    };
+  }
+
+  const bodyText = await response.text().catch(() => "");
+  const safeBody = redactSecret(bodyText, secret);
+  const safeStatus = redactSecret(response.statusText, secret);
+  const clipped = String(safeBody || safeStatus || "").slice(0, 300);
+  const interpret = PROVIDERS[provider].interpretVerifyResponse;
+  const verdict = response.ok
+    ? (interpret ? interpret(safeBody) : { ok: true, balance: null })
+    : { ok: false, balance: null };
+
+  if (!verdict?.ok) {
+    writeLog("info", "connector.verify_result", { provider, ok: false, status: response.status });
+    return { ok: false, balance: null, error: `${response.status}: ${clipped}` };
+  }
+
+  const balance = typeof verdict.balance === "number" && Number.isFinite(verdict.balance)
+    ? verdict.balance
+    : null;
+  writeLog("info", "connector.verify_result", { provider, ok: true, status: response.status, balance });
+  return { ok: true, balance, error: null };
+};
+
+/**
  * Ask the provider whether the key is good.
  *
  * THE ONLY PLACE A SECRET IS DECRYPTED, and it goes straight into an outbound
  * request. The response body is read for a message and then discarded; nothing
- * from it is stored except a short error string.
+ * from it is stored except a short error string, with the key removed first.
+ * Tripo's balance read may also attach a remaining-credit number. That number
+ * is not the key, and the raw provider body is not returned.
  *
  * `fetchImpl` is injected so a test can drive every branch without a network.
  */
-export const verifyConnector = async ({ pool, audit, admin, fetchImpl = fetch }, provider) => {
+export const verifyConnector = async ({ pool, audit, admin, fetchImpl = fetch, logger }, provider) => {
   if (!isKnownProvider(provider)) throw badRequest(`Unknown provider: ${provider}`);
 
   const { rows } = await pool.query(
@@ -233,26 +371,30 @@ export const verifyConnector = async ({ pool, audit, admin, fetchImpl = fetch },
 
   let status = "error";
   let lastError = null;
+  let balance = null;
 
   try {
-    const request = PROVIDERS[provider].buildVerifyRequest({
+    const summary = await executeVerifyRequest({
+      provider,
       secret: decryptSecret(secret),
       settings: connector.settings || {},
+      fetchImpl,
+      logger,
     });
 
-    const response = await fetchImpl(request.url, { method: request.method, headers: request.headers });
-
-    if (response.ok) {
+    if (summary.ok) {
       status = "connected";
+      balance = summary.balance;
     } else {
-      // The provider's own words, truncated. This is the most useful thing on
-      // the screen and the thing most likely to be swallowed into "failed".
-      const body = await response.text().catch(() => "");
-      lastError = `${response.status}: ${String(body || response.statusText || "").slice(0, 300)}`;
+      // The provider's own words, truncated, with the key already removed.
+      // This is the most useful thing on the screen and the thing most likely
+      // to be swallowed into "failed".
+      lastError = summary.error;
     }
   } catch (error) {
     // A network failure is not a bad key, and saying "invalid key" here sends
-    // the owner to rotate a credential that was fine.
+    // the owner to rotate a credential that was fine. Decrypt failures land
+    // here too; their message does not contain the plaintext.
     lastError = `לא הצלחנו להגיע לספק: ${String(error?.message || error).slice(0, 200)}`;
   }
 
@@ -277,5 +419,10 @@ export const verifyConnector = async ({ pool, audit, admin, fetchImpl = fetch },
     newValues: { provider, status, last_error: lastError },
   });
 
-  return { ...updated[0], stored: true, known_provider: true };
+  const result = { ...updated[0], stored: true, known_provider: true };
+  // Remaining credit from a balance read. Absent for providers that do not
+  // report one, and never a place the key could hide: it is a number or it
+  // is omitted.
+  if (typeof balance === "number") result.balance = balance;
+  return result;
 };

@@ -261,7 +261,7 @@ export const ProductInfoDrawer = ({ product, onClose, onAddToCart, onAddToCarePl
                 onClose();
               }}
               disabled={product.inStock === false}
-              className="w-full h-[52px] rounded-2xl bg-gradient-to-r from-primary to-primary/90 text-primary-foreground font-bold text-base flex items-center justify-center gap-2 shadow-lg shadow-primary/25 disabled:opacity-50 active:scale-[0.98] transition-all"
+              className="mipo-primary-cta h-[52px] w-full rounded-2xl text-base"
             >
               <Plus className="w-5 h-5" />
               הוסף לתוכנית הטיפול

@@ -22,6 +22,7 @@ import { Bookmark, Heart, MapPin, MessageCircle, Send, Volume2, VolumeX } from "
 
 import defaultPetAvatar from "@/assets/default-pet-avatar.png";
 import { ContentOptionsButton, ReportContentDialog } from "@/components/feed/ReportContentDialog";
+import { feedAuthorAvatar, feedAuthorName } from "@/lib/feedIdentity";
 import type { MipoSocialPost } from "@/lib/mipoApi";
 import { cn } from "@/lib/utils";
 
@@ -179,12 +180,13 @@ const MomentSlide = ({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2.5">
             <img
-              src={post.pet?.avatar_url || post.creator.avatar_url || defaultPetAvatar}
+              data-testid="moment-author-avatar"
+              src={feedAuthorAvatar(post.pet?.avatar_url, defaultPetAvatar)}
               alt=""
               className="h-10 w-10 shrink-0 rounded-full border-2 border-white/80 object-cover"
             />
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold">{post.pet?.name || post.creator.display_name}</p>
+              <p data-testid="moment-author-name" className="truncate text-sm font-semibold">{feedAuthorName(post.pet?.name, post.creator.display_name)}</p>
               {/* Where the Moment happened, when the author said so. The card
                   feed showed this and the first version of the reel dropped it. */}
               <p className="flex items-center gap-1 truncate text-xs text-white/70">

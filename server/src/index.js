@@ -34,14 +34,20 @@ import {
   readVerifiedCardcomNotification,
   settleCardcomNotification,
 } from "./cardcom.js";
-import { shouldRequestVerificationAfterOrder } from "./customerOrderAccess.js";
+import { grantsOrderAccess, shouldRequestVerificationAfterOrder } from "./customerOrderAccess.js";
+import {
+  anonymizeOrdersForDeletedAccount,
+  claimVerifiedGuestCommerce,
+  deleteShopCustomersForDeletedAccount,
+  readAccountEmailProof,
+  verificationGreetingHtml,
+} from "./emailIdentity.js";
 import {
   FixedWindowRateLimiter,
   contentTypeForSafeExtension,
   createOpaqueToken,
   decodeAndValidateDataUrl,
   hashOpaqueToken,
-  verifyOpaqueToken,
 } from "./security.js";
 import { checkDatabaseHealth, checkSchemaHealth } from "./health.js";
 import {
@@ -53,6 +59,8 @@ import {
   resolveFromEmail,
   summarizeProviderFailure,
 } from "./emailDelivery.js";
+import { sendOrderConfirmationEmail } from "./orderEmail.js";
+import { orderTrackingSecret } from "./orderTrackingToken.js";
 import { createProviderRegistry } from "./aiProviders.js";
 import { createAiGateway, newRequestId, newTraceId } from "./aiGateway.js";
 import {
@@ -70,6 +78,7 @@ import {
   fetchImageBuffer,
   ImagePipelineError,
   normalizeWithBackgroundRemoval,
+  sanitizeUserImage,
 } from "./imagePipeline.js";
 import { createGeminiBackgroundRemover } from "./backgroundRemoval.js";
 import { hashPassword, verifyPassword } from "./passwords.js";
@@ -128,6 +137,16 @@ import {
 } from "./social.js";
 import { createContentReportRoutes } from "./contentReportRoutes.js";
 import { resolveCatalogProducts } from "./catalogRecommendations.js";
+import {
+  catalogSearchCandidates,
+  chatProductPayload,
+  needsUnknownSexRetry,
+  noteUnknownSexGuardKept,
+  petAiPromptInsert,
+  petSexForPrompt,
+  redactBannedBrandReply,
+  unknownSexRetryNote,
+} from "./petAiPrompt.js";
 import { calculatePetAge } from "./petAge.js";
 import {
   generateCharacterCandidates,
@@ -375,6 +394,42 @@ const notifyOwnerPaidOrder = (orderId, orderNumber, total, lines) => {
       quantity: row.quantity,
     }));
   }, { orderId, orderNumber, total });
+};
+
+// Loaded after the paid commit. The mail is not part of that transaction:
+// a slow lookup must not hold the row, and a missing row just skips the send.
+const loadOrderConfirmation = async (orderId) => {
+  const orderResult = await pool.query(
+    `
+      select
+        o.id,
+        o.order_number,
+        o.customer_name,
+        o.customer_email,
+        o.subtotal,
+        o.shipping,
+        o.discount_amount,
+        o.total,
+        o.shipping_address,
+        c.code as coupon_code
+      from public.orders o
+      left join public.coupons c on c.id = o.coupon_id
+      where o.id = $1
+      limit 1
+    `,
+    [orderId],
+  );
+  if (orderResult.rowCount === 0) return null;
+  const itemsResult = await pool.query(
+    `
+      select product_name, quantity, price
+      from public.order_items
+      where order_id = $1
+      order by created_at asc
+    `,
+    [orderId],
+  );
+  return { ...orderResult.rows[0], items: itemsResult.rows };
 };
 
 // Every AI call in the API goes through this gateway. Features never hold a
@@ -1424,19 +1479,8 @@ const signupUser = async (request, body) => {
       [userResult.rows[0].id, firstName, lastName, phone],
     );
 
-    // Claim any unclaimed commerce identity that already used this email —
-    // typically orders placed as a guest before registering.
-    await client.query(
-      `
-        update public.shop_customers
-        set user_id = $1,
-            updated_at = now()
-        where lower(email) = $2
-          and user_id is null
-      `,
-      [userResult.rows[0].id, email],
-    );
-
+    // The address is not proven yet. Guest customers and their orders are
+    // attached in confirmEmailVerification, after the code checks out.
     await emitEvent(client, {
       type: EVENT_TYPES.USER_REGISTERED,
       entityType: "user",
@@ -1637,7 +1681,7 @@ const sendEmailVerification = async (request, email, otp, fullName) => {
   verifyUrl.searchParams.set("email", email);
   verifyUrl.searchParams.set("otp", otp);
 
-  const greeting = String(fullName || "").trim().split(" ")[0];
+  const greeting = verificationGreetingHtml(fullName);
 
   let response;
   try {
@@ -1655,7 +1699,7 @@ const sendEmailVerification = async (request, email, otp, fullName) => {
           <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; background: #f8f8fb;">
             <div style="background: #ffffff; border-radius: 20px; padding: 32px; text-align: center;">
               <h1 style="margin: 0 0 12px; color: #111827;">MIPO</h1>
-              <p style="margin: 0 0 8px; color: #111827; font-weight: 700;">${greeting ? `היי ${greeting},` : "היי,"}</p>
+              <p style="margin: 0 0 8px; color: #111827; font-weight: 700;">${greeting}</p>
               <p style="margin: 0 0 24px; color: #4b5563;">כדי להשלים את ההרשמה נותר לאמת שהכתובת הזו שלך. הקוד תקף ל-${emailVerificationHours} שעות.</p>
               <div style="font-size: 34px; letter-spacing: 8px; font-weight: 700; color: #6C63FF; margin: 24px 0;">${otp}</div>
               <a href="${verifyUrl.toString()}" style="display: inline-block; background: #6C63FF; color: #ffffff; text-decoration: none; padding: 12px 22px; border-radius: 999px; font-weight: 700;">אימות הכתובת</a>
@@ -1836,6 +1880,9 @@ const confirmEmailVerification = async (body) => {
       "update public.app_users set email_verified_at = now(), updated_at = now() where id = $1 and email_verified_at is null",
       [row.user_id],
     );
+    // The code matched, and the row above is the proof. Claiming before the
+    // commit means a failed claim rolls the verification back with it.
+    await claimVerifiedGuestCommerce(client, { userId: row.user_id, email });
     await client.query(
       "update public.email_verification_otps set used = true, updated_at = now() where email = $1",
       [email],
@@ -3857,7 +3904,7 @@ const compactSelectedPetForAi = (pet) => pet ? {
   ...compactPetForAi(pet),
   age_years: pet.age_years,
   age_months: pet.age_months,
-  gender: pet.gender,
+  gender: petSexForPrompt(pet.gender),
   weight: pet.weight,
   medical_conditions: pet.medical_conditions,
   current_food: pet.current_food,
@@ -3919,12 +3966,7 @@ const buildPetAiPrompt = ({
   return `You are MIPO AI, a practical pet-care assistant for an Israeli pet app.
 Reply in the user's language. Hebrew is the default when unclear.
 
-Safety:
-- You are not a veterinarian. For urgent symptoms, poisoning, breathing trouble, seizures, heavy bleeding, collapse, inability to urinate, severe pain, or rapidly worsening condition, tell the user to contact an emergency veterinarian immediately.
-- For medical images/documents, summarize and triage. Do not diagnose with certainty.
-- Do not invent facts that are not visible in the document, image, or profile.
-- If OCR/vision is uncertain, explicitly say what is uncertain.
-- If the user asks about shopping, training, grooming, boarding, documents, parks, adoption, or appointments, you may include an action tag.
+${petAiPromptInsert}
 
 Available UI action tags inside content when useful:
 [ACTION:SHOW_CALENDAR]
@@ -3944,7 +3986,8 @@ Available UI action tags inside content when useful:
 Shopping:
 - You do not have the Mipo Store catalogue and you do not know any product, price, SKU or stock level. Never state one.
 - "products" is a search, not an answer. Put short product descriptions in it -- a type, a category or a brand, in the user's language -- and the store will look them up and show the real cards. Two or three entries at most.
-- Leave "products" empty unless the user is actually asking what to buy.
+- When the user names what they want (for example dry food for a puppy), products must list two or three search phrases. Do not answer with only SHOW_STORE_CATEGORIES and an empty products array.
+- Leave products empty when the user is not asking for a product. When the reply is an urgent veterinary referral, products must be an empty array even if the user also asked what to buy.
 - Do not describe the products in your text as if you had seen them. The store decides what exists; if nothing matches, no cards are shown.
 
 Return JSON only with this shape:
@@ -3952,8 +3995,10 @@ Return JSON only with this shape:
   "content": "assistant message text, optionally with UI tags",
   "suggestions": ["short quick reply 1", "short quick reply 2"],
   "products": ["מזון יבש לגורים", "חטיפי אילוף"],
+  "urgentVetReferral": false,
   "botSource": "gemini"
 }
+urgentVetReferral is true only when the reply tells the user to contact an emergency veterinarian now. Otherwise it is false.
 
 User context:
 ${JSON.stringify({
@@ -4014,34 +4059,69 @@ const createAiChatReply = async (auth, body) => {
     attachmentReferences,
   });
 
-  const result = await callGeminiPetJson(
-    [{ text: prompt }, ...attachmentParts],
-    {
-      // Attachments mean the model has to read an image or a document.
-      feature: attachmentReferences.length > 0 ? "document_analysis" : "ai_chat",
-      capability: attachmentReferences.length > 0 ? "vision" : "reasoning",
-      userId: auth.user.id,
-      petId: selectedPet?.id || null,
-    },
-  );
+  const aiCall = {
+    // Attachments mean the model has to read an image or a document.
+    feature: attachmentReferences.length > 0 ? "document_analysis" : "ai_chat",
+    capability: attachmentReferences.length > 0 ? "vision" : "reasoning",
+    userId: auth.user.id,
+    petId: selectedPet?.id || null,
+  };
 
-  const content = safeText(result.content || result.message, 12000);
+  let result = await callGeminiPetJson([{ text: prompt }, ...attachmentParts], aiCall);
+
+  let content = safeText(result.content || result.message, 12000);
   if (!content) {
     const error = new Error("Gemini returned no chat content");
     error.statusCode = 502;
     throw error;
   }
 
+  // One rewrite when the pet's sex is unknown and the reply assigns one.
+  // A second miss is kept and counted, without the reply or the pet.
+  if (needsUnknownSexRetry(petSexForPrompt(selectedPet?.gender), { content, suggestions: result.suggestions })) {
+    try {
+      const retry = await callGeminiPetJson(
+        [{ text: `${prompt}\n\n${unknownSexRetryNote(selectedPet?.name)}` }, ...attachmentParts],
+        aiCall,
+      );
+      const retryContent = safeText(retry.content || retry.message, 12000);
+      if (retryContent && !needsUnknownSexRetry(petSexForPrompt(selectedPet?.gender), {
+        content: retryContent,
+        suggestions: retry.suggestions,
+      })) {
+        result = retry;
+        content = retryContent;
+      } else {
+        noteUnknownSexGuardKept();
+      }
+    } catch {
+      noteUnknownSexGuardKept();
+    }
+  }
+
+  const guarded = redactBannedBrandReply({ ...result, content });
+  content = guarded.content;
+  const latestUserText = [...messages].reverse().find((message) => message.role === "user")?.content || "";
+  const productReply = { ...result, content };
+
   return {
     role: "assistant",
     content,
     timestamp: new Date().toISOString(),
-    suggestions: Array.isArray(result.suggestions)
-      ? result.suggestions.map((suggestion) => safeText(suggestion, 80)).filter(Boolean).slice(0, 4)
-      : [],
-    products: await resolveCatalogProducts(pool, result.products, {
-      petType: selectedPet?.type || null,
-    }),
+    suggestions: guarded.suggestions
+      .map((suggestion) => safeText(suggestion, 80))
+      .filter(Boolean)
+      .slice(0, 4),
+    products: guarded.redacted
+      ? []
+      : chatProductPayload(
+        productReply,
+        await resolveCatalogProducts(
+          pool,
+          catalogSearchCandidates(result.products, latestUserText, productReply),
+          { petType: selectedPet?.type || null },
+        ),
+      ),
     botSource: result.botSource || "gemini",
   };
 };
@@ -6865,8 +6945,6 @@ const deleteMyAccount = async (userId, email) => {
     pool.query("select storage_key from public.user_uploads where user_id = $1", [userId]),
     listPetCharacterFileKeys(userId),
   ]);
-  const normalizedEmail = normalizeEmail(email);
-
   await Promise.all([
     ...documentFiles.rows.map((document) => deleteStoredDocument(document)),
     ...userUploads.rows.map(async (upload) => {
@@ -6882,27 +6960,20 @@ const deleteMyAccount = async (userId, email) => {
   const client = await pool.connect();
   try {
     await client.query("begin");
-    await client.query(
-      `
-        update public.orders
-        set
-          user_id = null,
-          customer_name = 'Deleted user',
-          customer_email = null,
-          customer_phone = null,
-          shipping_address = '{}'::jsonb,
-          updated_at = now()
-        where user_id = $1
-          or lower(customer_email) = $2
-      `,
-      [userId, normalizedEmail],
-    );
-    // Follows the user_id link as well as the email, so a commerce record created
-    // under a second checkout email is not left behind.
-    await client.query(
-      "delete from public.shop_customers where user_id = $1 or lower(email) = $2",
-      [userId, normalizedEmail],
-    );
+    // Proof is the stored timestamp, not the address the request repeated.
+    // Unverified accounts clear only rows already linked by user_id.
+    const proof = await readAccountEmailProof(client, userId);
+    const accountEmail = proof.email || normalizeEmail(email);
+    await anonymizeOrdersForDeletedAccount(client, {
+      userId,
+      email: accountEmail,
+      emailVerified: proof.emailVerified,
+    });
+    await deleteShopCustomersForDeletedAccount(client, {
+      userId,
+      email: accountEmail,
+      emailVerified: proof.emailVerified,
+    });
     await client.query("delete from public.app_users where id = $1", [userId]);
     await client.query("commit");
   } catch (error) {
@@ -7150,10 +7221,15 @@ const getOrder = async (id) => {
   return order;
 };
 
-const canAccessOrder = async (request, order, accessToken) => {
+const canAccessOrder = async (request, order, accessToken, options = {}) => {
   const auth = await getUserFromSession(request).catch(() => null);
-  if (auth?.user?.id && order.user_id === auth.user.id) return true;
-  return verifyOpaqueToken(accessToken, order.accessTokenHash);
+  return grantsOrderAccess({
+    sessionUserId: auth?.user?.id || null,
+    order,
+    accessToken,
+    trackingSecret: orderTrackingSecret(),
+    allowTrackingToken: options.allowTrackingToken === true,
+  });
 };
 
 const updateOrder = async (id, body, eventOrigin = "admin") => {
@@ -7973,8 +8049,23 @@ const handleCardcomWebhook = async (request, url) => {
     client.release();
   }
 
+  // ownerNotice exists only when the paid update returned a row, so a retry
+  // does not send again. The send is not awaited: a provider failure is
+  // logged and cannot change the response Cardcom already earned.
   if (ownerNotice?.kind === "paid") {
     notifyOwnerPaidOrder(ownerNotice.orderId, ownerNotice.orderNumber, ownerNotice.total);
+    loadOrderConfirmation(ownerNotice.orderId)
+      .then((order) => sendOrderConfirmationEmail({
+        transitioned: true,
+        order,
+        apiKey: resendApiKey,
+        fromEmail: passwordResetFromEmail,
+        appBaseUrl: getPublicBaseUrl(request),
+        trackingSecret: orderTrackingSecret(),
+      }))
+      .catch((error) => {
+        console.error("[mipo] order confirmation email failed:", redactEmailLog(error?.message || error));
+      });
   } else if (ownerNotice?.kind === "failed") {
     reportDeclinedPayment(notifyOwner, ownerNotice);
   }
@@ -8024,11 +8115,21 @@ const uploadDataUrlFile = async (body, {
   directory = uploadDir,
   publicUrl = true,
 } = {}) => {
-  const { buffer, contentType, extension } = decodeAndValidateDataUrl(body.data_url, {
+  let { buffer, contentType, extension } = decodeAndValidateDataUrl(body.data_url, {
     maxBytes,
     requireImage,
     allowedContentTypes,
   });
+  // /uploads serves the file itself, including the photo on /found-pet/:id.
+  // A public image is re-encoded before it is written so the phone's GPS and
+  // device metadata never land on disk. Video is stored as it arrived. Private
+  // documents and character photos pass publicUrl false and are not rewritten.
+  if (publicUrl && contentType.startsWith("image/")) {
+    const sanitized = await sanitizeUserImage(buffer);
+    buffer = sanitized.buffer;
+    contentType = sanitized.content_type;
+    extension = sanitized.extension;
+  }
   const fileName = `${Date.now()}-${randomUUID()}${extension}`;
 
   await mkdir(directory, publicUrl ? { recursive: true } : { recursive: true, mode: 0o700 });
@@ -9676,7 +9777,7 @@ const handleRequest = async (request, response) => {
       }
       const order = await getOrder(orderReference);
       const accessToken = url.searchParams.get("access_token") || request.headers["x-order-access-token"];
-      if (!order || !(await canAccessOrder(request, order, accessToken))) {
+      if (!order || !(await canAccessOrder(request, order, accessToken, { allowTrackingToken: true }))) {
         sendError(response, 404, "Order not found");
         return;
       }

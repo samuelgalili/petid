@@ -56,7 +56,9 @@ test("index.js mounts the reports route and no longer inserts reports itself", (
   assert.match(source, /if \(await handleContentReportRoute\(request, response, url\)\) return;/);
   assert.doesNotMatch(source, /insert into public\.content_reports/);
   assert.doesNotMatch(source, /content_type \|\| "product"/);
-  assert.doesNotMatch(source, /auth\?\.user\?\.id \|\| null/);
+  // Order access may pass a nullable session id. A report must not.
+  const withoutOrderAccess = source.replace(/sessionUserId: auth\?\.user\?\.id \|\| null/, "");
+  assert.doesNotMatch(withoutOrderAccess, /auth\?\.user\?\.id \|\| null/);
 });
 
 test("a path that is not a report is left to the rest of the server", async () => {
@@ -185,4 +187,54 @@ test("a rate-limited report stops before authentication lookup writes anything",
   assert.equal(response.status, 429);
   assert.equal(lookedUp, false);
   assert.equal(pool.calls.length, 0);
+});
+
+test("a second report of the same content returns the existing row and does not insert", async () => {
+  const existingId = "66666666-6666-4666-8666-666666666666";
+  const pool = scriptedPool([
+    { result: { rowCount: 1, rows: [{}] } },
+    { result: { rowCount: 1, rows: [{ id: existingId }] } },
+  ]);
+  const emitted = [];
+  const { response, sendJson } = capture();
+  const handler = route({
+    pool,
+    sendJson,
+    readBody: async () => ({ content_type: "post", content_id: postId, reason: "spam" }),
+    requireUser: async () => ({ user: { id: reporterId } }),
+    emitEvent: (event) => emitted.push(event),
+  });
+  const handled = await handler(
+    { method: "POST" },
+    response,
+    new URL("http://localhost/api/reports"),
+  );
+  assert.equal(handled, true);
+  assert.equal(response.status, 200);
+  assert.equal(response.body.duplicate, true);
+  assert.equal(response.body.report.id, existingId);
+  assert.equal(pool.calls.some((call) => /insert into/i.test(call.sql)), false);
+  assert.equal(emitted.length, 0);
+});
+
+test("a report of content that does not exist is rejected and nothing is inserted", async () => {
+  const pool = scriptedPool([
+    { result: { rowCount: 0, rows: [] } },
+  ]);
+  const { response, sendJson } = capture();
+  const handler = route({
+    pool,
+    sendJson,
+    readBody: async () => ({ content_type: "post", content_id: postId, reason: "spam" }),
+    requireUser: async () => ({ user: { id: reporterId } }),
+  });
+  await assert.rejects(
+    () => handler(
+      { method: "POST" },
+      response,
+      new URL("http://localhost/api/reports"),
+    ),
+    (error) => error.statusCode === 404 && /not found/i.test(error.message),
+  );
+  assert.equal(pool.calls.some((call) => /insert into/i.test(call.sql)), false);
 });

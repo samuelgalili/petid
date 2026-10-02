@@ -43,6 +43,8 @@ const connector = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
+const card = (page: Page, provider: string) => page.locator(`[data-provider="${provider}"]`);
+
 async function openConnectors(page: Page, initial = connector()) {
   const sent: Array<Record<string, unknown>> = [];
 
@@ -68,13 +70,21 @@ async function openConnectors(page: Page, initial = connector()) {
       status: 200,
       contentType: "application/json",
       // The server's real answer shape: stored becomes true, and no field
-      // anywhere carries the key.
-      body: JSON.stringify({ connector: connector({ stored: true }) }),
+      // anywhere carries the key. The provider echoed back is the one that
+      // was saved, so a second card is not overwritten with Runway.
+      body: JSON.stringify({
+        connector: connector({
+          stored: true,
+          provider: body.provider,
+          settings: body.settings,
+          ...(typeof body.balance === "number" ? { balance: body.balance } : {}),
+        }),
+      }),
     });
   });
 
   await page.goto("/admin/connectors");
-  await expect(page.getByLabel("מפתח API")).toBeVisible();
+  await expect(card(page, "runway").getByLabel("מפתח API")).toBeVisible();
   return sent;
 }
 
@@ -84,9 +94,9 @@ test.describe("A connector key is write-only", () => {
   test("after saving, the key is gone from the page", async ({ page }) => {
     const sent = await openConnectors(page);
 
-    const field = page.getByLabel("מפתח API");
+    const field = card(page, "runway").getByLabel("מפתח API");
     await field.fill(API_KEY);
-    await page.getByRole("button", { name: "שמירה" }).click();
+    await card(page, "runway").getByRole("button", { name: "שמירה" }).click();
 
     await expect.poll(() => sent.length).toBe(1);
     expect(sent[0].body).toMatchObject({ provider: "runway", api_key: API_KEY });
@@ -101,7 +111,7 @@ test.describe("A connector key is write-only", () => {
   test("a stored key is shown as dots that are not a real value", async ({ page }) => {
     await openConnectors(page, connector({ stored: true }));
 
-    const field = page.getByLabel("מפתח API");
+    const field = card(page, "runway").getByLabel("מפתח API");
     // Empty, with dots as a PLACEHOLDER. A masked real value would be the
     // field's value, and would be posted straight back on the next save.
     await expect(field).toHaveValue("");
@@ -112,14 +122,14 @@ test.describe("A connector key is write-only", () => {
     await openConnectors(page);
     // type="password" is not about secrecy from the person typing; it is about
     // the screen behind them and the recording of the session.
-    await expect(page.getByLabel("מפתח API")).toHaveAttribute("type", "password");
+    await expect(card(page, "runway").getByLabel("מפתח API")).toHaveAttribute("type", "password");
   });
 
   test("saving only the settings sends no api_key at all", async ({ page }) => {
     const sent = await openConnectors(page, connector({ stored: true }));
 
-    await page.getByLabel("כתובת בסיס").fill("https://api.dev.runwayml.com/v2");
-    await page.getByRole("button", { name: "שמירה" }).click();
+    await card(page, "runway").getByLabel("כתובת בסיס").fill("https://api.dev.runwayml.com/v2");
+    await card(page, "runway").getByRole("button", { name: "שמירה" }).click();
 
     await expect.poll(() => sent.length).toBe(1);
     // OMITTED, not empty. An empty string would read as "clear the key", and
@@ -136,6 +146,63 @@ test.describe("A connector key is write-only", () => {
 
     // The owner needs to see WHICH failure. "Something went wrong" sends them
     // to rotate a key that may have been fine.
-    await expect(page.getByText(/Invalid API key/)).toBeVisible();
+    await expect(card(page, "runway").getByText(/Invalid API key/)).toBeVisible();
+  });
+
+  test("Tripo sits next to Runway and a saved key leaves the page", async ({ page }) => {
+    const sent = await openConnectors(page);
+    const tripo = card(page, "tripo");
+
+    await expect(tripo.getByRole("heading", { name: "Tripo" })).toBeVisible();
+    await expect(tripo.getByText("יצירת דמויות 3D מתמונה — אבטיפוס תלת-ממדי לחיות המחמד")).toBeVisible();
+    await expect(tripo.getByRole("link", { name: "תיעוד" })).toHaveAttribute("href", "https://platform.tripo3d.ai/docs");
+    await expect(tripo.getByLabel("כתובת בסיס")).toHaveValue("https://api.tripo3d.ai/v2/openapi");
+    await expect(tripo.getByLabel("גרסת API")).toHaveCount(0);
+    await expect(tripo.getByLabel("מפתח API")).toHaveAttribute("type", "password");
+
+    await tripo.getByLabel("מפתח API").fill(API_KEY);
+    await tripo.getByRole("button", { name: "שמירה" }).click();
+
+    await expect.poll(() => sent.length).toBe(1);
+    expect(sent[0].body).toMatchObject({
+      provider: "tripo",
+      api_key: API_KEY,
+      settings: { baseUrl: "https://api.tripo3d.ai/v2/openapi" },
+    });
+    expect(Object.hasOwn(sent[0].body as object, "settings")).toBe(true);
+    expect((sent[0].body as { settings: Record<string, unknown> }).settings.apiVersion).toBeUndefined();
+
+    await expect.poll(async () => (await page.content()).includes(API_KEY)).toBe(false);
+    await expect(tripo.getByLabel("מפתח API")).toHaveValue("");
+  });
+
+  test("a Tripo check shows the remaining balance and never the key", async ({ page }) => {
+    const stored = connector({
+      id: "33333333-3333-4333-8333-333333333333",
+      provider: "tripo",
+      settings: { baseUrl: "https://api.tripo3d.ai/v2/openapi" },
+      stored: true,
+    });
+    await openConnectors(page, stored);
+    await page.route("**/api/admin/os/connectors/verify", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          connector: {
+            ...stored,
+            status: "connected",
+            balance: 99900,
+            last_verified_at: "2026-09-30T12:00:00.000Z",
+          },
+        }),
+      });
+    });
+
+    const tripo = card(page, "tripo");
+    await tripo.getByRole("button", { name: "בדיקת חיבור" }).click();
+    await expect(tripo.getByText(/יתרה נותרה:\s*99[,\u00A0\u202F.]?900/)).toBeVisible();
+    await expect(tripo.getByText("מחובר")).toBeVisible();
+    await expect.poll(async () => (await page.content()).includes(API_KEY)).toBe(false);
   });
 });

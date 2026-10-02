@@ -87,6 +87,17 @@ async function fulfillReport(route: Route, duplicate: boolean) {
   return body;
 }
 
+test("a guest does not see the report control", async ({ page }) => {
+  await page.route("**/api/auth/me", async (route) => {
+    await route.fulfill({ status: 401, json: { error: "Unauthorized" } });
+  });
+  await page.goto("/feed");
+  await expect(page.getByRole("heading", { name: "התחבר כדי לראות את הקהילה" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "אפשרויות הרגע" })).toHaveCount(0);
+  await expect(page.getByRole("menuitem", { name: "דיווח" })).toHaveCount(0);
+  await expect(page.getByText("דיווח")).toHaveCount(0);
+});
+
 test("a moment can be reported, with a reason, a note, and a Hebrew thank-you", async ({ page }) => {
   await mockFeed(page);
   let reported: Record<string, unknown> | null = null;

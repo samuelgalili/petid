@@ -36,6 +36,18 @@ If PostgreSQL reports `28P01` for the application role, compare the SSM connecti
 
 An existing RDS database without a `schema_migrations` ledger must be explicitly baselined before its first ledger-aware deployment. Verify the schema against the release migrations, then run the migration container once with `MIGRATION_BASELINE_THROUGH` set to the last already-present migration and `MIGRATION_BASELINE_CONFIRM=existing-schema-reviewed`. Do not leave either variable in the production environment.
 
+## Production email sender
+
+Deploy AWS does not refresh `/opt/mipo/.env`. Mail reads `RESEND_API_KEY` and `PASSWORD_RESET_FROM_EMAIL` from that file. The manual workflow `.github/workflows/set-email-env.yml` (Actions → "Set production email env") changes only those two keys.
+
+`PASSWORD_RESET_FROM_EMAIL` is set to `MIPO <no-reply@mipo.pet>`, quoted the way `deploy/aws/sync-ssm-env.sh` writes a Docker env_file (`KEY='value'`). `RESEND_API_KEY` comes from the GitHub Actions secret `RESEND_API_KEY`. The workflow masks that secret and does not print either value. `dry_run` defaults to true and only reports whether each key is present, absent, or different. A write requires `confirm` to be exactly `SET-EMAIL-ENV`. Before writing, it saves `/opt/mipo/.env.backup-<timestamp>` (mode `0600`), keeps the ownership and mode of `.env`, recreates only `mipo-api`, and requires `https://mipo.pet/api/health` to report `email.configured` true. If the restart or that check fails, it restores the backup and restarts the API again.
+
+Add the secret, run once with `dry_run` true, then again with `dry_run` false and `confirm` = `SET-EMAIL-ENV`. Afterwards, `email.configured` is true and a real message shows up under Resend Dashboard → Emails → Delivered.
+
+Rollback is the timestamped backup, or another run of this workflow. The job does not update SSM.
+
+אזהרה: `deploy/aws/sync-ssm-env.sh` כותב מחדש את כל `.env` מ-SSM. סנכרון עתידי ידרוס את שני הערכים האלה במה שנמצא ב-SSM. צריך לעדכן גם את `/mipo/prod/RESEND_API_KEY` ואת `/mipo/prod/PASSWORD_RESET_FROM_EMAIL` (הבעלים או מנהל AWS). הוורקפלואו הזה לא נוגע ב-SSM, ו-Deploy AWS לא מרענן את `.env`.
+
 ## Owner WhatsApp
 
 The API reads owner-notification settings from its process environment. In production that is `/opt/mipo/.env`, written by `deploy/aws/sync-ssm-env.sh` from SSM Parameter Store prefix `/mipo/prod/`. Deploy AWS does not refresh that file. After the parameters exist, run the sync script so the container picks them up.

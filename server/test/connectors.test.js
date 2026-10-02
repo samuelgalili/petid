@@ -19,6 +19,7 @@ import { createAuditService } from "../src/adminOs/auditService.js";
 import {
   PROVIDERS,
   disconnectConnector,
+  executeVerifyRequest,
   isKnownProvider,
   listConnectors,
   saveConnector,
@@ -40,10 +41,10 @@ const withDb = async (fn) => {
   const audit = createAuditService({ pool, logger: { error: () => {} } });
 
   try {
-    await pool.query("delete from public.admin_connectors where provider = 'runway'");
+    await pool.query("delete from public.admin_connectors where provider in ('runway', 'tripo')");
     await fn({ pool, audit });
   } finally {
-    await pool.query("delete from public.admin_connectors where provider = 'runway'").catch(() => {});
+    await pool.query("delete from public.admin_connectors where provider in ('runway', 'tripo')").catch(() => {});
     await pool.query("delete from public.admin_audit_log where entity_type = 'admin_connector'").catch(() => {});
     await pool.end();
     if (previousKey === undefined) delete process.env.SECRET_ENCRYPTION_KEY;
@@ -62,7 +63,11 @@ dbTest("the key never appears in anything a caller receives", async () => {
     // this breaks is a field nobody thought to look at - `select *` picking up
     // the sealed column the day someone adds one.
     const saved = await saveConnector({ pool, audit, admin: ADMIN }, "runway", { api_key: API_KEY });
+    assert.equal(saved.provider, "runway", "the sealing provider replaced the connector name");
     const listed = await listConnectors({ pool });
+    const runway = listed.find((row) => row.id === saved.id);
+    assert.equal(runway?.provider, "runway");
+    assert.equal(runway?.stored, true);
     const verified = await verifyConnector({ pool, audit, admin: ADMIN, fetchImpl: async () => okResponse() }, "runway");
     const disconnected = await disconnectConnector({ pool, audit, admin: ADMIN }, "runway");
 
@@ -275,20 +280,228 @@ dbTest("disconnecting clears the key and keeps the history", async () => {
 
 test("an unknown provider is refused rather than stored as a row nobody can use", () => {
   assert.equal(isKnownProvider("runway"), true);
+  assert.equal(isKnownProvider("tripo"), true);
   assert.equal(isKnownProvider("not-a-provider"), false);
   assert.equal(isKnownProvider(""), false);
 });
 
-test("every provider verifies with a read, over https, against a stated version", () => {
+test("every provider verifies with a read over https and keeps the key out of the url", () => {
   for (const [name, definition] of Object.entries(PROVIDERS)) {
     assert.ok(/^https:\/\//.test(definition.defaults.baseUrl), `${name} defaults to a non-https base url`);
-    assert.ok(definition.defaults.apiVersion, `${name} has no default api version`);
 
     const request = definition.buildVerifyRequest({
       secret: "test-key",
       settings: definition.defaults,
     });
     assert.equal(request.method, "GET", `${name} verifies with a ${request.method}`);
+    assert.ok(request.url.startsWith("https://"), `${name} verify url is not https`);
     assert.ok(!request.url.includes("test-key"), `${name} puts the key in the url`);
+    assert.equal(request.headers.authorization, "Bearer test-key");
   }
+});
+
+const TRIPO_KEY = "tsk_live_NEVER_LOG_0123456789abcdef";
+
+const captureConsole = () => {
+  const lines = [];
+  const methods = ["log", "info", "warn", "error", "debug"];
+  const originals = {};
+  for (const method of methods) {
+    originals[method] = console[method];
+    console[method] = (...args) => {
+      lines.push(args.map((arg) => (typeof arg === "string" ? arg : JSON.stringify(arg))).join(" "));
+    };
+  }
+  return {
+    lines,
+    restore: () => {
+      for (const method of methods) console[method] = originals[method];
+    },
+  };
+};
+
+test("tripo checks the documented balance url with a bearer header", () => {
+  const request = PROVIDERS.tripo.buildVerifyRequest({
+    secret: TRIPO_KEY,
+    settings: PROVIDERS.tripo.defaults,
+  });
+  assert.equal(request.url, "https://api.tripo3d.ai/v2/openapi/user/balance");
+  assert.equal(request.method, "GET");
+  assert.equal(request.headers.authorization, `Bearer ${TRIPO_KEY}`);
+  assert.equal(request.headers["x-runway-version"], undefined);
+  assert.equal(PROVIDERS.tripo.defaults.baseUrl, "https://api.tripo3d.ai/v2/openapi");
+});
+
+test("a tripo balance check reports the remaining credit and never the key", async () => {
+  const logs = [];
+  const logger = {
+    info: (...args) => logs.push(args),
+    error: (...args) => logs.push(args),
+    warn: (...args) => logs.push(args),
+    log: (...args) => logs.push(args),
+  };
+  const seen = [];
+  const consoleCapture = captureConsole();
+  try {
+    const summary = await executeVerifyRequest({
+      provider: "tripo",
+      secret: TRIPO_KEY,
+      settings: PROVIDERS.tripo.defaults,
+      logger,
+      fetchImpl: async (url, init) => {
+        seen.push({ url, method: init.method, authorization: init.headers.authorization });
+        return {
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          text: async () => JSON.stringify({
+            code: 0,
+            data: { balance: 99900, frozen: 0 },
+            echo: TRIPO_KEY,
+          }),
+        };
+      },
+    });
+
+    assert.equal(seen.length, 1);
+    assert.equal(seen[0].url, "https://api.tripo3d.ai/v2/openapi/user/balance");
+    assert.equal(seen[0].method, "GET");
+    assert.equal(seen[0].authorization, `Bearer ${TRIPO_KEY}`);
+    assert.ok(!seen[0].url.includes(TRIPO_KEY), "the key is in the request url");
+    assert.equal(summary.ok, true);
+    assert.equal(summary.balance, 99900);
+    assert.equal(summary.error, null);
+
+    const serialised = JSON.stringify(summary);
+    assert.ok(!serialised.includes(TRIPO_KEY), "the verify result contains the key");
+    assert.ok(!serialised.includes(TRIPO_KEY.slice(0, 12)), "the verify result contains a prefix of the key");
+    assert.ok(!JSON.stringify(logs).includes(TRIPO_KEY), "the logger received the key");
+    assert.ok(!consoleCapture.lines.join("\n").includes(TRIPO_KEY), "the console received the key");
+    assert.ok(logs.length > 0, "a safe result line was expected so this assertion is not vacuous");
+  } finally {
+    consoleCapture.restore();
+  }
+});
+
+test("a tripo refusal that echoes the key is reported without the key", async () => {
+  const logs = [];
+  const logger = { info: (...args) => logs.push(args), error: (...args) => logs.push(args) };
+  const consoleCapture = captureConsole();
+  try {
+    const summary = await executeVerifyRequest({
+      provider: "tripo",
+      secret: TRIPO_KEY,
+      settings: { baseUrl: "https://api.tripo3d.ai/v2/openapi/" },
+      logger,
+      fetchImpl: async () => ({
+        ok: false,
+        status: 401,
+        statusText: "Unauthorized",
+        text: async () => JSON.stringify({ message: `invalid ${TRIPO_KEY}` }),
+      }),
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.balance, null);
+    assert.match(summary.error, /^401:/);
+    assert.match(summary.error, /\[redacted\]/);
+    assert.ok(!JSON.stringify(summary).includes(TRIPO_KEY), "the failure result contains the key");
+    assert.ok(!JSON.stringify(logs).includes(TRIPO_KEY), "the failure log contains the key");
+    assert.ok(!consoleCapture.lines.join("\n").includes(TRIPO_KEY), "the console received the key");
+  } finally {
+    consoleCapture.restore();
+  }
+});
+
+test("tripo treats a non-zero code as a failed check even when http is 200", async () => {
+  const summary = await executeVerifyRequest({
+    provider: "tripo",
+    secret: TRIPO_KEY,
+    settings: PROVIDERS.tripo.defaults,
+    fetchImpl: async () => ({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      text: async () => JSON.stringify({ code: 1001, data: { balance: 5 }, message: "invalid" }),
+    }),
+  });
+
+  assert.equal(summary.ok, false);
+  assert.equal(summary.balance, null);
+  assert.match(summary.error, /^200:/);
+  assert.ok(!JSON.stringify(summary).includes(TRIPO_KEY));
+});
+
+test("an unreachable tripo is not reported as a bad key, and the key stays out of the log", async () => {
+  const logs = [];
+  const consoleCapture = captureConsole();
+  try {
+    const summary = await executeVerifyRequest({
+      provider: "tripo",
+      secret: TRIPO_KEY,
+      settings: PROVIDERS.tripo.defaults,
+      logger: { error: (...args) => logs.push(args) },
+      fetchImpl: async () => { throw new Error(`ENOTFOUND api.tripo3d.ai ${TRIPO_KEY}`); },
+    });
+
+    assert.equal(summary.ok, false);
+    assert.match(summary.error, /לא הצלחנו להגיע לספק/);
+    assert.doesNotMatch(summary.error, /401|invalid/i);
+    assert.ok(!summary.error.includes(TRIPO_KEY));
+    assert.match(summary.error, /\[redacted\]/);
+    assert.ok(!JSON.stringify(logs).includes(TRIPO_KEY));
+    assert.ok(!consoleCapture.lines.join("\n").includes(TRIPO_KEY));
+  } finally {
+    consoleCapture.restore();
+  }
+});
+
+dbTest("tripo verification stores the verdict and the balance, never the key", async () => {
+  await withDb(async ({ pool, audit }) => {
+    const logs = [];
+    const consoleCapture = captureConsole();
+    try {
+      const saved = await saveConnector({ pool, audit, admin: ADMIN }, "tripo", { api_key: TRIPO_KEY });
+      assert.equal(saved.settings.baseUrl, "https://api.tripo3d.ai/v2/openapi");
+      assert.equal(saved.settings.apiVersion, undefined);
+      assert.equal(saved.stored, true);
+      assert.ok(!JSON.stringify(saved).includes(TRIPO_KEY));
+
+      let seen = null;
+      const verified = await verifyConnector({
+        pool,
+        audit,
+        admin: ADMIN,
+        logger: { info: (...args) => logs.push(args), error: (...args) => logs.push(args) },
+        fetchImpl: async (url, init) => {
+          seen = { url, method: init.method, authorization: init.headers.authorization };
+          return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            text: async () => JSON.stringify({
+              code: 0,
+              data: { balance: 2400, frozen: 10 },
+              echo: TRIPO_KEY,
+            }),
+          };
+        },
+      }, "tripo");
+
+      assert.equal(seen.url, "https://api.tripo3d.ai/v2/openapi/user/balance");
+      assert.equal(seen.method, "GET");
+      assert.equal(seen.authorization, `Bearer ${TRIPO_KEY}`);
+      assert.equal(verified.status, "connected");
+      assert.equal(verified.balance, 2400);
+      assert.ok(!JSON.stringify(verified).includes(TRIPO_KEY), "the connector response contains the key");
+      assert.ok(!JSON.stringify(verified).includes("secret"), "the connector response names a secret");
+
+      const entries = await audit.list({ entityType: "admin_connector", entityId: saved.id });
+      assert.ok(!JSON.stringify(entries).includes(TRIPO_KEY), "the audit log contains the key");
+      assert.ok(!JSON.stringify(logs).includes(TRIPO_KEY), "the logger received the key");
+      assert.ok(!consoleCapture.lines.join("\n").includes(TRIPO_KEY), "the console received the key");
+    } finally {
+      consoleCapture.restore();
+    }
+  });
 });
