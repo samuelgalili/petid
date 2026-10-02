@@ -36,6 +36,13 @@ import {
 } from "./cardcom.js";
 import { grantsOrderAccess, shouldRequestVerificationAfterOrder } from "./customerOrderAccess.js";
 import {
+  anonymizeOrdersForDeletedAccount,
+  claimVerifiedGuestCommerce,
+  deleteShopCustomersForDeletedAccount,
+  readAccountEmailProof,
+  verificationGreetingHtml,
+} from "./emailIdentity.js";
+import {
   FixedWindowRateLimiter,
   contentTypeForSafeExtension,
   createOpaqueToken,
@@ -1461,19 +1468,8 @@ const signupUser = async (request, body) => {
       [userResult.rows[0].id, firstName, lastName, phone],
     );
 
-    // Claim any unclaimed commerce identity that already used this email —
-    // typically orders placed as a guest before registering.
-    await client.query(
-      `
-        update public.shop_customers
-        set user_id = $1,
-            updated_at = now()
-        where lower(email) = $2
-          and user_id is null
-      `,
-      [userResult.rows[0].id, email],
-    );
-
+    // The address is not proven yet. Guest customers and their orders are
+    // attached in confirmEmailVerification, after the code checks out.
     await emitEvent(client, {
       type: EVENT_TYPES.USER_REGISTERED,
       entityType: "user",
@@ -1674,7 +1670,7 @@ const sendEmailVerification = async (request, email, otp, fullName) => {
   verifyUrl.searchParams.set("email", email);
   verifyUrl.searchParams.set("otp", otp);
 
-  const greeting = String(fullName || "").trim().split(" ")[0];
+  const greeting = verificationGreetingHtml(fullName);
 
   let response;
   try {
@@ -1692,7 +1688,7 @@ const sendEmailVerification = async (request, email, otp, fullName) => {
           <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; background: #f8f8fb;">
             <div style="background: #ffffff; border-radius: 20px; padding: 32px; text-align: center;">
               <h1 style="margin: 0 0 12px; color: #111827;">MIPO</h1>
-              <p style="margin: 0 0 8px; color: #111827; font-weight: 700;">${greeting ? `היי ${greeting},` : "היי,"}</p>
+              <p style="margin: 0 0 8px; color: #111827; font-weight: 700;">${greeting}</p>
               <p style="margin: 0 0 24px; color: #4b5563;">כדי להשלים את ההרשמה נותר לאמת שהכתובת הזו שלך. הקוד תקף ל-${emailVerificationHours} שעות.</p>
               <div style="font-size: 34px; letter-spacing: 8px; font-weight: 700; color: #6C63FF; margin: 24px 0;">${otp}</div>
               <a href="${verifyUrl.toString()}" style="display: inline-block; background: #6C63FF; color: #ffffff; text-decoration: none; padding: 12px 22px; border-radius: 999px; font-weight: 700;">אימות הכתובת</a>
@@ -1873,6 +1869,9 @@ const confirmEmailVerification = async (body) => {
       "update public.app_users set email_verified_at = now(), updated_at = now() where id = $1 and email_verified_at is null",
       [row.user_id],
     );
+    // The code matched, and the row above is the proof. Claiming before the
+    // commit means a failed claim rolls the verification back with it.
+    await claimVerifiedGuestCommerce(client, { userId: row.user_id, email });
     await client.query(
       "update public.email_verification_otps set used = true, updated_at = now() where email = $1",
       [email],
@@ -6935,8 +6934,6 @@ const deleteMyAccount = async (userId, email) => {
     pool.query("select storage_key from public.user_uploads where user_id = $1", [userId]),
     listPetCharacterFileKeys(userId),
   ]);
-  const normalizedEmail = normalizeEmail(email);
-
   await Promise.all([
     ...documentFiles.rows.map((document) => deleteStoredDocument(document)),
     ...userUploads.rows.map(async (upload) => {
@@ -6952,27 +6949,20 @@ const deleteMyAccount = async (userId, email) => {
   const client = await pool.connect();
   try {
     await client.query("begin");
-    await client.query(
-      `
-        update public.orders
-        set
-          user_id = null,
-          customer_name = 'Deleted user',
-          customer_email = null,
-          customer_phone = null,
-          shipping_address = '{}'::jsonb,
-          updated_at = now()
-        where user_id = $1
-          or lower(customer_email) = $2
-      `,
-      [userId, normalizedEmail],
-    );
-    // Follows the user_id link as well as the email, so a commerce record created
-    // under a second checkout email is not left behind.
-    await client.query(
-      "delete from public.shop_customers where user_id = $1 or lower(email) = $2",
-      [userId, normalizedEmail],
-    );
+    // Proof is the stored timestamp, not the address the request repeated.
+    // Unverified accounts clear only rows already linked by user_id.
+    const proof = await readAccountEmailProof(client, userId);
+    const accountEmail = proof.email || normalizeEmail(email);
+    await anonymizeOrdersForDeletedAccount(client, {
+      userId,
+      email: accountEmail,
+      emailVerified: proof.emailVerified,
+    });
+    await deleteShopCustomersForDeletedAccount(client, {
+      userId,
+      email: accountEmail,
+      emailVerified: proof.emailVerified,
+    });
     await client.query("delete from public.app_users where id = $1", [userId]);
     await client.query("commit");
   } catch (error) {
