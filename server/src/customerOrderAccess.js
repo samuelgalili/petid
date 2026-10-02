@@ -3,9 +3,9 @@
  *
  * A person who just signed up must be able to place an order and continue
  * to Cardcom. A guest already can: this route accepts an order with no
- * account at all. The app does not send its own order confirmation; the
- * invoice Cardcom may email uses the address typed at checkout, which a
- * guest can already set. Refusing the signed-in customer stopped the sale
+ * account at all. The confirmation mail goes to the address on the order
+ * after payment; the invoice Cardcom may email uses that same address, which
+ * a guest can already set. Refusing the signed-in customer stopped the sale
  * and did not stop anyone else from naming an address.
  *
  * Verification is requested after the order is stored. A failure to send
