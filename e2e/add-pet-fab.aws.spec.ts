@@ -93,6 +93,7 @@ async function open(page: Page, path: string) {
 }
 
 const addPetButton = (page: Page) => page.getByRole("button", { name: ADD_PET });
+const companionButton = (page: Page) => page.getByRole("button", { name: /הוספת חיה|שיחה עם מיפו/ });
 
 type Box = { x: number; y: number; width: number; height: number };
 
@@ -101,6 +102,14 @@ function boxesOverlap(a: Box, b: Box) {
     && a.x + a.width > b.x
     && a.y < b.y + b.height
     && a.y + a.height > b.y;
+}
+
+/** True when the boxes are at least `gap` pixels apart on one axis. */
+function separatedBy(a: Box, b: Box, gap: number) {
+  return a.x + a.width + gap <= b.x + 0.5
+    || b.x + b.width + gap <= a.x + 0.5
+    || a.y + a.height + gap <= b.y + 0.5
+    || b.y + b.height + gap <= a.y + 0.5;
 }
 
 /**
@@ -114,6 +123,49 @@ async function expectNoAddPet(page: Page) {
     if (await addPetButton(page).count()) return "shown";
     return Date.now() - started >= 400 ? "absent" : "waiting";
   }).toBe("absent");
+}
+
+async function expectNoCompanion(page: Page) {
+  const started = Date.now();
+  await expect.poll(async () => {
+    if (await companionButton(page).count()) return "shown";
+    return Date.now() - started >= 400 ? "absent" : "waiting";
+  }).toBe("absent");
+}
+
+async function expectNavClearance(page: Page) {
+  const fab = companionButton(page);
+  await expect(fab).toBeVisible();
+  const fabBox = await fab.boundingBox();
+  const navBox = await page.getByRole("navigation", { name: "ניווט ראשי" }).boundingBox();
+  expect(fabBox).not.toBeNull();
+  expect(navBox).not.toBeNull();
+  expect(fabBox!.y + fabBox!.height).toBeLessThanOrEqual(navBox!.y - 8 + 0.5);
+}
+
+const petWithoutPhoto = {
+  id: "22222222-2222-4222-8222-222222222222",
+  name: "QA",
+  type: "dog",
+  pet_type: "dog",
+  avatar_url: null,
+  gender: null,
+};
+
+async function mockPet(page: Page, pet: { id: string; name: string; avatar_url: string | null }) {
+  await page.route("**/api/me/pets*", (route) => route.fulfill(json({ pets: [pet] })));
+  await page.route("**/api/me/pets/*/health-summary", (route) => route.fulfill(json({
+    pet,
+    profile: null,
+    vet_visits: [],
+    vaccinations: [],
+    documents: [],
+    active_recovery: null,
+  })));
+  await page.route("**/api/me/pets/*/character", (route) => route.fulfill(json({
+    available: false,
+    character: null,
+  })));
 }
 
 async function expectPageWithoutAddPet(page: Page, path: string, landmark: string) {
@@ -164,8 +216,11 @@ test.describe("floating add-pet button", () => {
     expect(addFirstBox).not.toBeNull();
     expect(boxesOverlap(fabBox!, headingBox!)).toBe(false);
     expect(boxesOverlap(fabBox!, addFirstBox!)).toBe(false);
+    expect(separatedBy(fabBox!, headingBox!, 8)).toBe(true);
+    expect(separatedBy(fabBox!, addFirstBox!, 8)).toBe(true);
     expect(fabBox!.y).toBeGreaterThanOrEqual(headingBox!.y + headingBox!.height);
     expect(fabBox!.y).toBeGreaterThanOrEqual(addFirstBox!.y + addFirstBox!.height);
+    await expectNavClearance(page);
 
     await open(page, "/feed");
     await expect(page.getByRole("heading", { name: "הפיד מתחיל ברגע אחד" })).toBeVisible();
@@ -176,53 +231,133 @@ test.describe("floating add-pet button", () => {
     }
   });
 
-  test("on home it sits clear of the heading and the caption", async ({ page }) => {
+  test("a pet without a photo is not offered the add-pet flow", async ({ page }) => {
     await mockSignedIn(page);
-    const pet = {
-      id: "22222222-2222-4222-8222-222222222222",
-      name: "QA",
-      type: "dog",
-      pet_type: "dog",
-      avatar_url: null,
-      gender: null,
-    };
-    await page.route("**/api/me/pets*", (route) => route.fulfill(json({ pets: [pet] })));
-    await page.route("**/api/me/pets/*/health-summary", (route) => route.fulfill(json({
-      pet,
-      profile: null,
-      vet_visits: [],
-      vaccinations: [],
-      documents: [],
-      active_recovery: null,
-    })));
-    await page.route("**/api/me/pets/*/character", (route) => route.fulfill(json({
-      available: false,
-      character: null,
-    })));
+    await mockPet(page, petWithoutPhoto);
 
     await open(page, "/");
-    const fab = addPetButton(page);
+    const fab = page.getByRole("button", { name: "שיחה עם מיפו על QA" });
     const heading = page.getByRole("heading", { name: /איך QA מרגיש/ });
     const caption = page.getByText("הקישו על QA לעדכון מצב הרוח");
     await expect(fab).toBeVisible();
+    await expect(addPetButton(page)).toHaveCount(0);
     await expect(heading).toBeVisible();
     await expect(caption).toBeVisible();
 
     const fabBox = await fab.boundingBox();
     const headingBox = await heading.boundingBox();
     const captionBox = await caption.boundingBox();
-    const navBox = await page.getByRole("navigation", { name: "ניווט ראשי" }).boundingBox();
     expect(fabBox).not.toBeNull();
     expect(headingBox).not.toBeNull();
     expect(captionBox).not.toBeNull();
-    expect(navBox).not.toBeNull();
-    expect(boxesOverlap(fabBox!, headingBox!)).toBe(false);
-    expect(boxesOverlap(fabBox!, captionBox!)).toBe(false);
-    const sharesColumn = fabBox!.x < captionBox!.x + captionBox!.width
-      && fabBox!.x + fabBox!.width > captionBox!.x;
-    if (sharesColumn) {
-      expect(fabBox!.y).toBeGreaterThanOrEqual(captionBox!.y + captionBox!.height - 0.5);
-    }
-    expect(fabBox!.y + fabBox!.height).toBeLessThanOrEqual(navBox!.y + 0.5);
+    expect(separatedBy(fabBox!, headingBox!, 8)).toBe(true);
+    expect(separatedBy(fabBox!, captionBox!, 8)).toBe(true);
+    await expectNavClearance(page);
+
+    await fab.click();
+    await expect(page).toHaveURL(/\/chat$/);
+    await expect(page.getByText(/שלב \d+ מתוך/)).toHaveCount(0);
+    await expectNoAddPet(page);
+
+    await open(page, "/feed");
+    await expect(page.getByRole("heading", { name: "הפיד מתחיל ברגע אחד" })).toBeVisible();
+    await expectNoCompanion(page);
+  });
+
+  test("a pet photo does not cover the share action on the feed", async ({ page }) => {
+    await mockSignedIn(page);
+    const pet = { ...petWithoutPhoto, avatar_url: "/placeholder.svg" };
+    await mockPet(page, pet);
+    await page.route("**/api/feed*", (route) => route.fulfill(json({
+      posts: [{
+        id: "33333333-3333-4333-8333-333333333333",
+        caption: "בוקר טוב",
+        location: null,
+        media_url: "/placeholder.svg",
+        media_type: "image",
+        visibility: "public",
+        allow_comments: true,
+        poll_question: null,
+        poll_options: [],
+        poll_results: [],
+        viewer_poll_option: null,
+        reaction_count: 0,
+        comment_count: 0,
+        viewer_has_liked: false,
+        viewer_has_saved: false,
+        is_owner: false,
+        published_at: "2026-01-01T00:00:00.000Z",
+        creator: {
+          id: signedInUser.user.id,
+          display_name: "בעלים",
+          avatar_url: null,
+        },
+        pet: {
+          id: pet.id,
+          name: pet.name,
+          avatar_url: pet.avatar_url,
+          type: "dog",
+          breed: null,
+        },
+      }],
+    })));
+
+    await open(page, "/feed");
+    const share = page.getByRole("button", { name: "שיתוף" });
+    await expect(share).toBeVisible();
+    await expectNoCompanion(page);
+    const shareBox = await share.boundingBox();
+    expect(shareBox).not.toBeNull();
+    expect(shareBox!.width).toBeGreaterThanOrEqual(44);
+    expect(shareBox!.height).toBeGreaterThanOrEqual(44);
+    const hit = await share.evaluate((el) => {
+      const rect = el.getBoundingClientRect();
+      const node = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
+      return Boolean(node && (node === el || el.contains(node)));
+    });
+    expect(hit).toBe(true);
+  });
+
+  test("on the profile it stays clear of claims, payment methods, and the nav", async ({ page }) => {
+    await mockSignedIn(page);
+    await mockPet(page, petWithoutPhoto);
+    await page.route("**/api/me/insurance-claims*", (route) => route.fulfill(json({ claims: [] })));
+    await page.route("**/api/me/orders*", (route) => route.fulfill(json({ orders: [] })));
+    await page.route("**/api/me/documents*", (route) => route.fulfill(json({ documents: [] })));
+
+    await open(page, "/profile");
+    const claims = page.getByText("אין תביעות ביטוח עדיין");
+    const payments = page.getByRole("button", { name: "אמצעי תשלום" });
+    await expect(claims).toBeVisible();
+    await expect(payments).toBeVisible();
+    await expectNoAddPet(page);
+
+    const assertClear = async () => {
+      const fab = companionButton(page);
+      if (await fab.count() === 0) return;
+      const fabBox = await fab.boundingBox();
+      const claimsBox = await claims.boundingBox();
+      const paymentsBox = await payments.boundingBox();
+      const navBox = await page.getByRole("navigation", { name: "ניווט ראשי" }).boundingBox();
+      expect(fabBox).not.toBeNull();
+      expect(claimsBox).not.toBeNull();
+      expect(paymentsBox).not.toBeNull();
+      expect(navBox).not.toBeNull();
+      expect(separatedBy(fabBox!, claimsBox!, 8)).toBe(true);
+      expect(separatedBy(fabBox!, paymentsBox!, 8)).toBe(true);
+      expect(fabBox!.y + fabBox!.height).toBeLessThanOrEqual(navBox!.y - 8 + 0.5);
+    };
+
+    await assertClear();
+    await payments.evaluate((el) => el.scrollIntoView({ block: "end", inline: "nearest" }));
+    await expect.poll(async () => {
+      const fab = companionButton(page);
+      if (await fab.count() === 0) return "clear";
+      const fabBox = await fab.boundingBox();
+      const paymentsBox = await payments.boundingBox();
+      const claimsBox = await claims.boundingBox();
+      if (!fabBox || !paymentsBox || !claimsBox) return "pending";
+      return separatedBy(fabBox, paymentsBox, 8) && separatedBy(fabBox, claimsBox, 8) ? "clear" : "covered";
+    }).toBe("clear");
   });
 });
