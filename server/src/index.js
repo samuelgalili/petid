@@ -2172,6 +2172,55 @@ const confirmPasswordReset = async (body) => {
     throw error;
   }
 
+  return withPasswordResetOtp(email, otp, async (client) => {
+    const userResult = await client.query(
+      `
+        update public.app_users
+        set
+          password_hash = $2,
+          password_reset_required = false,
+          updated_at = now()
+        where lower(email) = $1 and is_active = true
+        returning id
+      `,
+      [email, hashPassword(password)],
+    );
+    if (userResult.rowCount === 0) {
+      const error = new Error("User not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    await client.query("delete from public.user_sessions where user_id = $1", [userResult.rows[0].id]);
+    await client.query(
+      "update public.password_reset_otps set used = true, updated_at = now() where email = $1",
+      [email],
+    );
+    return { ok: true };
+  });
+};
+
+// The code screen asks this before the new password. A match is not consumed:
+// confirm still has to accept the same code and is the only place that marks it used.
+const verifyPasswordResetCode = async (body) => {
+  const email = normalizeEmail(body.email);
+  const otp = String(body.otp || "").trim();
+
+  if (!email || !email.includes("@")) {
+    const error = new Error("A valid email is required");
+    error.statusCode = 400;
+    throw error;
+  }
+  if (!/^\d{6}$/.test(otp)) {
+    const error = new Error("A valid 6-digit code is required");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return withPasswordResetOtp(email, otp, async () => ({ ok: true }));
+};
+
+const withPasswordResetOtp = async (email, otp, onMatch) => {
   const client = await pool.connect();
   let committed = false;
   try {
@@ -2206,32 +2255,10 @@ const confirmPasswordReset = async (body) => {
       throw error;
     }
 
-    const userResult = await client.query(
-      `
-        update public.app_users
-        set
-          password_hash = $2,
-          password_reset_required = false,
-          updated_at = now()
-        where lower(email) = $1 and is_active = true
-        returning id
-      `,
-      [email, hashPassword(password)],
-    );
-    if (userResult.rowCount === 0) {
-      const error = new Error("User not found");
-      error.statusCode = 404;
-      throw error;
-    }
-
-    await client.query("delete from public.user_sessions where user_id = $1", [userResult.rows[0].id]);
-    await client.query(
-      "update public.password_reset_otps set used = true, updated_at = now() where email = $1",
-      [email],
-    );
+    const result = await onMatch(client);
     await client.query("commit");
     committed = true;
-    return { ok: true };
+    return result;
   } catch (error) {
     if (!committed) await client.query("rollback");
     throw error;
@@ -9070,6 +9097,16 @@ const handleRequest = async (request, response) => {
       const body = await readBody(request);
       if (!enforceRateLimit(request, response, "password-reset-confirm-email", rateLimits.passwordResetConfirm, normalizeEmail(body.email))) return;
       sendJson(response, 200, await confirmPasswordReset(body));
+      return;
+    }
+
+    // Same buckets as confirm, so checking a code cannot buy a second budget.
+    // Failures stay the neutral reset errors: a missing address looks like a bad code.
+    if (request.method === "POST" && url.pathname === "/api/auth/password-reset/verify") {
+      if (!enforceRateLimit(request, response, "password-reset-confirm-ip", rateLimits.passwordResetConfirm)) return;
+      const body = await readBody(request);
+      if (!enforceRateLimit(request, response, "password-reset-confirm-email", rateLimits.passwordResetConfirm, normalizeEmail(body.email))) return;
+      sendJson(response, 200, await verifyPasswordResetCode(body));
       return;
     }
 

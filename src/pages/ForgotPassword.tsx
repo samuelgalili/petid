@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { confirmPasswordReset, requestPasswordReset } from "@/lib/mipoApi";
+import { confirmPasswordReset, requestPasswordReset, verifyPasswordResetCode } from "@/lib/mipoApi";
 import { PASSWORD_RESET_NEUTRAL_TEXT, passwordResetErrorText } from "@/lib/userFacingErrors";
 import { Loader2, ArrowLeft, Mail, KeyRound, Eye, EyeOff, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -35,6 +35,7 @@ const ForgotPassword = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [step, setStep] = useState<Step>("email");
   const [error, setError] = useState("");
   const [videoEnded, setVideoEnded] = useState(true);
@@ -81,7 +82,23 @@ const ForgotPassword = () => {
       return;
     }
     setError("");
-    setStep("password");
+    setVerifying(true);
+
+    try {
+      await verifyPasswordResetCode({ email, otp });
+      setStep("password");
+    } catch (caught: unknown) {
+      console.error("Error verifying OTP:", caught);
+      const description = passwordResetErrorText(caught, "הקוד שגוי או שפג תוקפו.");
+      setError(description);
+      toast({
+        title: "שגיאה",
+        description,
+        variant: "destructive",
+      });
+    } finally {
+      setVerifying(false);
+    }
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
@@ -323,6 +340,8 @@ const ForgotPassword = () => {
                           setOtp(value);
                           setError("");
                         }}
+                        disabled={verifying}
+                        aria-label="קוד אימות"
                       >
                         <InputOTPGroup className="gap-2">
                           {[0, 1, 2, 3, 4, 5].map((index) => (
@@ -337,17 +356,25 @@ const ForgotPassword = () => {
                     </div>
 
                     <Button
+                      type="button"
                       onClick={handleVerifyOtp}
                       className="w-full h-12 font-medium transition-all bg-accent hover:bg-accent/90 text-accent-foreground rounded-xl shadow-lg shadow-accent/20"
-                      disabled={otp.length !== 6}
+                      disabled={verifying || otp.length !== 6}
                     >
-                      <span className="font-jakarta">אמת קוד</span>
+                      {verifying ? (
+                        <>
+                          <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                          <span className="font-jakarta">בודק...</span>
+                        </>
+                      ) : (
+                        <span className="font-jakarta">אמת קוד</span>
+                      )}
                     </Button>
 
                     <div className="text-center">
                       <button
                         onClick={handleResendOtp}
-                        disabled={loading}
+                        disabled={loading || verifying}
                         className="text-sm text-muted-foreground hover:text-primary transition-colors font-jakarta"
                       >
                         {loading ? "שולח..." : "הקוד לא הגיע? שליחה מחדש"}
