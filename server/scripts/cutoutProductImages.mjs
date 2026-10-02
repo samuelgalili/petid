@@ -1,204 +1,288 @@
 #!/usr/bin/env node
 //
-// Put the product on a clean, consistent background.
+// Make a near-white studio background transparent, locally.
 //
-// adoptProductImages.mjs pulled foreign images onto our own storage and gave
-// them one canvas, one format and one quality. What it did not do is remove the
-// backgrounds, so the catalogue is still every studio, every backdrop and every
-// shade of not-quite-white that each supplier happened to shoot against. A grid
-// of those never looks settled no matter how square the frames are.
+// Default is a dry run. It downloads each image with a read-only GET, cuts the
+// background on this machine, and writes PNG/WebP plus a contact sheet and a
+// JSON report into --output. It does not open the database and it does not
+// write to the upload store.
 //
-// This runs the cutout over images we already host, and writes the result as a
-// TRANSPARENT WebP rather than one flattened onto white. That is deliberate:
+//   node server/scripts/cutoutProductImages.mjs \
+//     --csv=affected.csv --ids=id1,id2 --output=./cutout-output
 //
-//   * The app has a dark mode (tailwind darkMode: ["class"], ThemeContext, a
-//     toggle in Settings). A white-baked image is a glaring white rectangle on
-//     a dark page - the same "catalogue looks broken" problem, moved.
-//   * Transparency is reversible and baked white is not. A transparent cutout
-//     can be flattened onto any colour at any time, including white; a flattened
-//     one cannot be un-flattened.
+// --apply copies each original object to cutout-backup/<key>, writes the cutout
+// as a new object, and records the mapping. It never deletes or overwrites the
+// original key. It runs only when both of these are set, and they are not part
+// of the app's environment:
 //
-// So the page supplies the background - white in light mode, the card colour in
-// dark - and the image supplies only the product.
+//   CUTOUT_APPLY_CONFIRM=write-new-object-keep-original
+//   CUTOUT_OBJECT_ROOT=/absolute/path/to/the/upload/objects
 //
-// WHAT THIS DOES NOT DO: it does not change who owns the photograph. A cutout
-// of a supplier's product shot is a derivative work of that shot; the angle,
-// the lighting and the reflections are exactly the part that is kept. Nothing
-// here should be read as establishing a right to use an image. That is recorded
-// separately or it is not recorded at all.
-//
-// NEVER DESTRUCTIVE. The normalized image is left in place and a new file is
-// written alongside it. A product is only repointed after its cutout has been
-// written and checked, and the previous path is printed so a revert is a
-// one-line UPDATE rather than an archaeology exercise.
-//
-// READ THIS BEFORE THE FIRST RUN. backgroundRemoval.js says of itself: "NOT
-// VERIFIED END TO END ... no request has been made against the live API, so the
-// response parsing below is the part to watch on first run. Enable it on a
-// handful of products before turning it on for an import." That is why --limit
-// defaults to 5 here instead of everything, and why --dry-run exists.
-//
-//   DATABASE_URL=... UPLOAD_DIR=/app/uploads GEMINI_API_KEY=... \
-//     node scripts/cutoutProductImages.mjs [--dry-run] [--limit=N] [--all]
+// Upload-time background removal, when someone turns it on, is still
+// server/src/backgroundRemoval.js. This script does not call it.
 
-import { mkdir, writeFile, readFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
-import pg from "pg";
+import { pathToFileURL } from "node:url";
 
-import sharp from "sharp";
+import { fetchImageBuffer } from "../src/imagePipeline.js";
+import {
+  DARK_CARD,
+  SKIP_REASON,
+  applyCutoutObjects,
+  assertApplyAllowed,
+  buildContactSheet,
+  createFilesystemObjectStore,
+  compositeOnBackground,
+  cutoutKeyFor,
+  cutoutWhiteBackground,
+  objectKeyFromImageUrl,
+  parseProductCsv,
+  resolvePublicImageUrl,
+  selectProducts,
+} from "../src/whiteBackgroundCutout.js";
 
-import { normalizeWithBackgroundRemoval, ImagePipelineError } from "../src/imagePipeline.js";
-import { createGeminiBackgroundRemover } from "../src/backgroundRemoval.js";
-import { scriptPoolOptions } from "./scriptPoolSsl.mjs";
+const DEFAULT_DELAY_MS = 500;
 
-const { Pool } = pg;
-
-const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) {
-  console.error("DATABASE_URL is required");
-  process.exit(2);
-}
-
-const uploadDir = process.env.UPLOAD_DIR || "/app/uploads";
-const dryRun = process.argv.includes("--dry-run");
-const all = process.argv.includes("--all");
-const limitArg = process.argv.find((arg) => arg.startsWith("--limit="));
-// Small on purpose. See the note above about the first run.
-const limit = all ? null : Math.max(1, Number(limitArg?.split("=")[1]) || 5);
-
-const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
-const remover = createGeminiBackgroundRemover({ apiKey });
-if (!remover) {
-  console.error("No image credential found (GEMINI_API_KEY / GOOGLE_API_KEY).");
-  console.error("Nothing was read and nothing was changed.");
-  process.exit(2);
-}
-
-const pool = new Pool({
-  ...scriptPoolOptions(),
+const sleep = (ms) => new Promise((resolve) => {
+  setTimeout(resolve, ms);
 });
 
-// Only images we already host. A foreign URL belongs to adoptProductImages.mjs
-// first: cutting out an image we do not hold would mean fetching somebody
-// else's bytes on every run.
-const isLocal = (url) => String(url || "").trim().startsWith("/uploads/");
-
-// Whether a file has already been cut out is read from the FILE, not from its
-// name: a cutout has an alpha channel and a flat photograph does not. A naming
-// convention would have put a processing detail into a public URL and would
-// have been wrong the moment somebody renamed a file by hand.
-//
-// The name itself carries nothing - no timestamp, no source filename, no stage
-// marker. A URL is the most public thing we store and there is no reason for it
-// to describe our pipeline.
-const alreadyCutOut = async (url) => {
-  try {
-    const meta = await sharp(await readFile(localPath(url))).metadata();
-    return Boolean(meta.hasAlpha);
-  } catch {
-    return false;
-  }
+const readFlag = (argv, name) => {
+  const prefix = `--${name}=`;
+  const found = argv.find((arg) => arg.startsWith(prefix));
+  return found ? found.slice(prefix.length) : null;
 };
 
-const store = async (buffer, extension) => {
-  const fileName = `${randomUUID()}${extension}`;
-  await mkdir(uploadDir, { recursive: true });
-  await writeFile(path.join(uploadDir, fileName), buffer, { flag: "wx", mode: 0o644 });
-  return `/uploads/${fileName}`;
+const readNumber = (argv, name) => {
+  const raw = readFlag(argv, name);
+  if (raw == null || raw === "") return null;
+  const value = Number(raw);
+  if (!Number.isFinite(value)) {
+    throw Object.assign(new Error(`--${name} must be a number`), { code: "BAD_ARG" });
+  }
+  return value;
 };
 
-const localPath = (url) => path.join(uploadDir, path.basename(String(url)));
-
-const cutout = async (url) => {
-  const source = await readFile(localPath(url));
-  const result = await normalizeWithBackgroundRemoval(source, { remover });
-
-  // The pipeline reports why it declined rather than throwing, because a
-  // product with a background beats a product with no image. Those reasons are
-  // surfaced here rather than swallowed: "skipped 40 of 164" with no reason is
-  // not a result anybody can act on.
-  if (!result.background_removed) {
-    return { skipped: result.background_removal_skipped || "unknown" };
-  }
-  if (dryRun) {
-    return { coverage: result.opaque_coverage, size: `${result.width}x${result.height}` };
-  }
+export const parseCutoutArgs = (argv) => {
+  const apply = argv.includes("--apply");
+  const csv = readFlag(argv, "csv");
+  const output = readFlag(argv, "output") || "cutout-output";
+  const origin = readFlag(argv, "origin") || "https://mipo.pet";
+  const ids = (readFlag(argv, "ids") || "").split(",").map((id) => id.trim()).filter(Boolean);
+  const limit = readNumber(argv, "limit");
+  const delayMs = readNumber(argv, "delay-ms");
+  const tolerance = readNumber(argv, "tolerance");
+  const maxRemoved = readNumber(argv, "max-removed");
+  const cell = readNumber(argv, "sheet-cell");
   return {
-    url: await store(result.buffer, result.extension),
-    coverage: result.opaque_coverage,
-    size: `${result.width}x${result.height}`,
+    apply,
+    csv,
+    output,
+    origin,
+    ids,
+    limit,
+    delayMs: delayMs == null ? DEFAULT_DELAY_MS : delayMs,
+    tolerance,
+    maxRemoved,
+    cell: cell == null ? 240 : cell,
   };
 };
 
-const run = async () => {
-  const { rows } = await pool.query(
-    `select id, name, image_url
-       from public.business_products
-      where image_url like '/uploads/%'
-      order by created_at
-      ${limit ? `limit ${limit}` : ""}`,
-  );
-
-  console.log(
-    `${rows.length} product image(s) to cut out${dryRun ? " (dry run)" : ""}` +
-    `${limit ? ` — limited to ${limit}; pass --all for the whole catalogue` : ""}\n`,
-  );
-
-  let done = 0;
-  let skipped = 0;
-  let failed = 0;
-  const reasons = new Map();
-
-  for (const row of rows) {
-    if (!isLocal(row.image_url)) continue;
-    if (await alreadyCutOut(row.image_url)) continue;
-    try {
-      const result = await cutout(row.image_url);
-
-      if (result.skipped) {
-        skipped += 1;
-        reasons.set(result.skipped, (reasons.get(result.skipped) || 0) + 1);
-        console.log(`  skip  ${row.name} — ${result.skipped}`);
-        continue;
-      }
-
-      if (!dryRun) {
-        await pool.query(
-          "update public.business_products set image_url = $2, updated_at = now() where id = $1",
-          [row.id, result.url],
-        );
-        // Printed so a revert does not need to reconstruct anything.
-        console.log(`  ok    ${row.name} — ${(result.coverage * 100).toFixed(0)}% kept — was ${row.image_url}`);
-      } else {
-        console.log(`  ok    ${row.name} — ${(result.coverage * 100).toFixed(0)}% kept — ${result.size}`);
-      }
-      done += 1;
-    } catch (error) {
-      failed += 1;
-      const code = error instanceof ImagePipelineError ? error.code : (error?.message || "error");
-      console.log(`  fail  ${row.name} — ${code}`);
-    }
+const extensionOf = (url) => {
+  try {
+    const ext = path.posix.extname(new URL(url).pathname).toLowerCase();
+    if ([".png", ".jpg", ".jpeg", ".webp", ".gif"].includes(ext)) return ext;
+  } catch {
+    // fall through
   }
-
-  console.log(`\n${done} cut out, ${skipped} skipped, ${failed} failed${dryRun ? " (nothing written)" : ""}`);
-  if (reasons.size > 0) {
-    console.log("skip reasons:");
-    for (const [reason, count] of [...reasons].sort((a, b) => b[1] - a[1])) {
-      console.log(`  ${count.toString().padStart(4)}  ${reason}`);
-    }
-  }
-  if (!dryRun && done > 0) {
-    console.log("\nEach ok line above prints the path the product used to point at.");
-    console.log("The previous file is still on disk; nothing was deleted.");
-  }
+  return ".img";
 };
 
-run()
-  .catch((error) => {
-    console.error(error);
-    process.exitCode = 1;
-  })
-  .finally(async () => {
-    await pool.end();
-  });
+const writeBytes = async (file, bytes) => {
+  await mkdir(path.dirname(file), { recursive: true });
+  await writeFile(file, bytes);
+};
+
+export const runCutout = async ({
+  args,
+  env = process.env,
+  fetchImage = fetchImageBuffer,
+  log = console.log,
+}) => {
+  if (args.apply) {
+    const allowed = assertApplyAllowed(env);
+    if (!allowed.ok) {
+      const error = new Error(allowed.message);
+      error.code = "APPLY_REFUSED";
+      throw error;
+    }
+  }
+  if (!args.csv) {
+    throw Object.assign(new Error("Pass --csv=path. Dry-run is the default and nothing was written."), { code: "BAD_ARG" });
+  }
+
+  const table = parseProductCsv(await readFile(args.csv, "utf8"));
+  const products = selectProducts(table, { ids: args.ids, limit: args.limit });
+  const mode = args.apply ? "apply" : "dry-run";
+  log(`${products.length} image(s), ${mode}. Delay ${args.delayMs}ms between GETs.`);
+
+  const options = {};
+  if (args.tolerance != null) options.tolerance = args.tolerance;
+  if (args.maxRemoved != null) options.maxRemovedRatio = args.maxRemoved;
+
+  const items = [];
+  for (let index = 0; index < products.length; index += 1) {
+    const product = products[index];
+    if (index > 0 && args.delayMs > 0) await sleep(args.delayMs);
+    const id = product.id || `row-${index + 1}`;
+    const name = product.name || id;
+    const record = {
+      id,
+      name,
+      imageUrl: product.image_url || "",
+      sourceUrl: null,
+      status: "failed",
+      reason: null,
+      cause: null,
+      stats: {},
+      files: {},
+    };
+
+    try {
+      record.sourceUrl = resolvePublicImageUrl(record.imageUrl, args.origin);
+      const downloaded = await fetchImage(record.sourceUrl);
+      const result = await cutoutWhiteBackground(downloaded, options);
+      record.status = result.status;
+      record.reason = result.reason;
+      record.cause = result.cause;
+      record.stats = result.stats;
+
+      const dir = path.join(args.output, "items", id);
+      const beforeName = `before${extensionOf(record.sourceUrl)}`;
+      await writeBytes(path.join(dir, beforeName), downloaded);
+      record.files.before = path.join("items", id, beforeName);
+
+      const preview = result.png || result.rejectedPng;
+      if (result.rejectedPng) {
+        await writeBytes(path.join(dir, "rejected.png"), result.rejectedPng);
+        record.files.rejectedPng = path.join("items", id, "rejected.png");
+      }
+      if (preview) {
+        const onDark = await compositeOnBackground(preview, DARK_CARD);
+        const previewName = result.status === "cut" ? "after-on-dark.png" : "rejected-on-dark.png";
+        await writeBytes(path.join(dir, previewName), onDark);
+        record.files[result.status === "cut" ? "afterOnDark" : "rejectedOnDark"] = path.join("items", id, previewName);
+      }
+      if (result.status === "cut") {
+        await writeBytes(path.join(dir, "after.png"), result.png);
+        await writeBytes(path.join(dir, "after.webp"), result.webp);
+        record.files.afterPng = path.join("items", id, "after.png");
+        record.files.afterWebp = path.join("items", id, "after.webp");
+        record.bytes = result.webp;
+        record.originalKey = objectKeyFromImageUrl(record.imageUrl);
+      }
+
+      const kept = result.stats.removedRatio == null ? "" : ` removed ${(result.stats.removedRatio * 100).toFixed(1)}%`;
+      const note = result.reason ? ` — ${result.reason}` : "";
+      log(`  ${result.status.padEnd(7)} ${name}${kept}${note}`);
+    } catch (error) {
+      record.status = "failed";
+      record.cause = error.code || "error";
+      record.reason = error.message || "error";
+      log(`  failed  ${name} — ${record.reason}`);
+    }
+    items.push(record);
+  }
+
+  const sheetItems = [];
+  for (const item of items) {
+    const beforePath = item.files.before ? path.join(args.output, item.files.before) : null;
+    const afterPath = item.files.afterPng
+      ? path.join(args.output, item.files.afterPng)
+      : (item.files.rejectedOnDark ? null : null);
+    if (!beforePath) continue;
+    let after = null;
+    if (item.files.afterPng) after = await readFile(path.join(args.output, item.files.afterPng));
+    else if (item.files.rejectedPng) after = await readFile(path.join(args.output, item.files.rejectedPng));
+    const tag = item.status === "cut" ? "חיתוך" : (item.status === "skipped" ? "דילוג" : "כשל");
+    sheetItems.push({
+      before: await readFile(beforePath),
+      after: after || await readFile(beforePath),
+      label: `${tag} ${item.name}`,
+    });
+  }
+
+  await mkdir(args.output, { recursive: true });
+  if (sheetItems.length > 0) {
+    const sheet = await buildContactSheet(sheetItems, { cell: args.cell });
+    await writeBytes(path.join(args.output, "contact-sheet.png"), sheet);
+  }
+
+  const counts = {
+    cut: items.filter((item) => item.status === "cut").length,
+    skipped: items.filter((item) => item.status === "skipped").length,
+    failed: items.filter((item) => item.status === "failed").length,
+  };
+
+  let manifest = null;
+  if (args.apply) {
+    const allowed = assertApplyAllowed(env);
+    const hosted = items.filter((item) => item.status === "cut" && item.originalKey && item.bytes);
+    const store = createFilesystemObjectStore(allowed.root);
+    manifest = await applyCutoutObjects({
+      store,
+      items: hosted.map((item) => ({
+        status: "cut",
+        originalKey: item.originalKey,
+        bytes: item.bytes,
+        id: item.id,
+        newKey: cutoutKeyFor(item.originalKey, item.id),
+      })),
+    });
+    const manifestKey = `cutout-backup/manifest-${Date.now()}.json`;
+    await store.putNew(manifestKey, Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`));
+    manifest.manifestKey = manifestKey;
+    log(`apply wrote ${manifest.entries.length} new object(s). Original keys were not changed.`);
+  }
+
+  const report = {
+    mode: args.apply ? "apply" : "dry-run",
+    origin: args.origin,
+    skipReason: SKIP_REASON,
+    counts,
+    items: items.map((item) => ({
+      id: item.id,
+      name: item.name,
+      imageUrl: item.imageUrl,
+      sourceUrl: item.sourceUrl,
+      status: item.status,
+      reason: item.reason,
+      cause: item.cause,
+      stats: item.stats,
+      files: item.files,
+    })),
+    manifest,
+  };
+  await writeBytes(path.join(args.output, "report.json"), Buffer.from(`${JSON.stringify(report, null, 2)}\n`));
+  log(`\n${counts.cut} cut, ${counts.skipped} skipped, ${counts.failed} failed. Report: ${path.join(args.output, "report.json")}`);
+  return report;
+};
+
+const invokedDirectly = process.argv[1]
+  && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
+
+if (invokedDirectly) {
+  let args;
+  try {
+    args = parseCutoutArgs(process.argv.slice(2));
+  } catch (error) {
+    console.error(error.message);
+    process.exit(2);
+  }
+  runCutout({ args })
+    .catch((error) => {
+      console.error(error.message || error);
+      process.exit(error.code === "APPLY_REFUSED" || error.code === "BAD_ARG" ? 2 : 1);
+    });
+}

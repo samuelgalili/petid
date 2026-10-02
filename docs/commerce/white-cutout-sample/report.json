@@ -1,0 +1,111 @@
+{
+  "mode": "dry-run",
+  "counts": {
+    "cut": 10,
+    "skipped": 0,
+    "failed": 0
+  },
+  "note": "After images are composited on the dark card colour hsl(210 15% 10%) so the transparent background is visible.",
+  "items": [
+    {
+      "id": "7dc52203-e636-40c7-9828-507c1c927f43",
+      "name": "חול חתולים לבנדר 10 ליטר אוליסאנד",
+      "imageUrl": "/uploads/1788869837229-3a2ae041-e853-43ae-a9e4-67e0679fd738.png",
+      "status": "cut",
+      "cause": null,
+      "removedRatio": 0.6812498274227544,
+      "before": "7dc52203-before.jpg",
+      "after": "7dc52203-after.jpg"
+    },
+    {
+      "id": "c1f3e67b-cdbd-4c76-a278-db94b7cb2e7b",
+      "name": "חול חתולים נטורל 10 ליטר אוליסאנד",
+      "imageUrl": "/uploads/catalog-8cb102cb0724443cd37165b6.jpg",
+      "status": "cut",
+      "cause": null,
+      "removedRatio": 0.93835859375,
+      "before": "c1f3e67b-before.jpg",
+      "after": "c1f3e67b-after.jpg"
+    },
+    {
+      "id": "3a2f4ebd-26f6-4a8a-875f-ee219224a222",
+      "name": "פלקסי פאן רצועה לכלב",
+      "imageUrl": "/uploads/1788948799052-0b0525f9-de46-4082-9272-315b95eeeb2e.webp",
+      "status": "cut",
+      "cause": null,
+      "removedRatio": 0.7703201388888888,
+      "before": "3a2f4ebd-before.jpg",
+      "after": "3a2f4ebd-after.jpg"
+    },
+    {
+      "id": "8f929b29-4120-43d7-8624-e0ca88bb06e7",
+      "name": "רצועת ניילון מגוון צבעים",
+      "imageUrl": "https://d3m9l0v76dty0.cloudfront.net/system/photos/8434669/original/2a248746d0da232a337328b68abf861a.jpg",
+      "status": "cut",
+      "cause": null,
+      "removedRatio": 0.741808,
+      "before": "8f929b29-before.jpg",
+      "after": "8f929b29-after.jpg"
+    },
+    {
+      "id": "5f02f2d3-f4ee-431e-8456-d850f2fc0a97",
+      "name": "גארד חתולים טבעי 20 ק\"ג",
+      "imageUrl": "/uploads/1788273614543-3438ebca-0b02-47d0-b6a6-0df975d80edc.png",
+      "status": "cut",
+      "cause": null,
+      "removedRatio": 0.6428784201235658,
+      "before": "5f02f2d3-before.jpg",
+      "after": "5f02f2d3-after.jpg"
+    },
+    {
+      "id": "534e972b-3c29-4c09-a3d0-1786848f0278",
+      "name": "גארד פלוס כלב בוגר כבש ואורז 14 קג",
+      "imageUrl": "/uploads/1789045345915-175dabb3-7996-48cf-9581-00321c1f9c74.webp",
+      "status": "cut",
+      "cause": null,
+      "removedRatio": 0.9372916666666666,
+      "before": "534e972b-before.jpg",
+      "after": "534e972b-after.jpg"
+    },
+    {
+      "id": "9e0a35eb-c46d-4795-ab45-de5c6a210d35",
+      "name": "גארד פלוס כלבים מיני 7 ק\"ג",
+      "imageUrl": "/uploads/1790928809604-c97e5bce-59bf-4da5-99fc-9010bc46fe51.webp",
+      "status": "cut",
+      "cause": null,
+      "removedRatio": 0.54361875,
+      "before": "9e0a35eb-before.jpg",
+      "after": "9e0a35eb-after.jpg"
+    },
+    {
+      "id": "6c028c65-b87f-47bf-86e1-4c8e334f5d87",
+      "name": "חטיף אלפא דוג פולקע בקר 80 גר'",
+      "imageUrl": "/uploads/1788325865292-ff62493e-5d53-4831-add6-74ce2b7e58a8.jpg",
+      "status": "cut",
+      "cause": null,
+      "removedRatio": 0.19109268402836585,
+      "before": "6c028c65-before.jpg",
+      "after": "6c028c65-after.jpg"
+    },
+    {
+      "id": "a54c5756-8208-4af2-b3c5-57449118be08",
+      "name": "שמן סלמון טהור בקבוק 300 מ\"ל",
+      "imageUrl": "/uploads/1788360178158-69419acf-9bab-4252-a925-5a61510646dd.png",
+      "status": "cut",
+      "cause": null,
+      "removedRatio": 0.44328548644338117,
+      "before": "a54c5756-before.jpg",
+      "after": "a54c5756-after.jpg"
+    },
+    {
+      "id": "3184d8bd-8589-4039-be53-fff685299fbe",
+      "name": "קונג KONG קלאסיק אדום גדלים שונים - ₪35.00",
+      "imageUrl": "https://www.animalshop.co.il/images/itempics/549.jpg",
+      "status": "cut",
+      "cause": null,
+      "removedRatio": 0.2776342137351635,
+      "before": "3184d8bd-before.jpg",
+      "after": "3184d8bd-after.jpg"
+    }
+  ]
+}
