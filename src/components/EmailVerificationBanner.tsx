@@ -13,6 +13,7 @@ import { MailWarning, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { requestEmailVerification, MipoApiError } from "@/lib/mipoApi";
+import { EMAIL_VERIFICATION_LOCK_TEXT } from "@/lib/userFacingErrors";
 import { rememberedVerificationSent, rememberVerificationSent } from "@/lib/emailConfigured";
 import { useEmailConfigured } from "@/lib/emailConfiguredClient";
 import { isInProgressFlow } from "@/lib/flowSurfaces";
@@ -45,13 +46,17 @@ export const EmailVerificationBanner = ({ className }: { className?: string }) =
       }
     } catch (error) {
       const status = error instanceof MipoApiError ? error.status : 0;
+      const lockedLong = error instanceof MipoApiError
+        && error.message === "Too many invalid verification attempts";
       if (status !== 429) {
         rememberVerificationSent(false);
         setDenied(true);
       }
-      toast(status === 429
-        ? { title: "כבר שלחנו מייל", description: "המתינו רגע לפני שליחה נוספת" }
-        : { title: "השליחה נכשלה", description: "נסו שוב בעוד רגע", variant: "destructive" });
+      toast(lockedLong
+        ? { title: "הכתובת נעולה", description: EMAIL_VERIFICATION_LOCK_TEXT }
+        : status === 429
+          ? { title: "כבר שלחנו מייל", description: "המתינו רגע לפני שליחה נוספת" }
+          : { title: "השליחה נכשלה", description: "נסו שוב בעוד רגע", variant: "destructive" });
     } finally {
       setSending(false);
     }

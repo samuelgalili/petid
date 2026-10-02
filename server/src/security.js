@@ -189,13 +189,20 @@ export const rateLimitIdentity = (value) => {
   return normalized.slice(0, RATE_LIMIT_IDENTITY_MAX);
 };
 
-// Count a login only when it fails. A success clears the account bucket so
-// the owner's own sign-ins never add up to a lockout. The address bucket is
-// shared, so a success leaves it alone.
-export const beginLoginAttempt = (limiter, { ipKey, emailKey }, options, now = Date.now()) => {
-  const ip = limiter.isBlocked(ipKey, options, now);
+// Count a login only when it fails. The account bucket and the address bucket
+// have their own caps: a success clears only the account, so one person's
+// wrong passwords cannot fill a neighbour's lock, and a correct password on
+// an unlocked account still proceeds unless the address itself is over its
+// (looser) cap.
+export const beginLoginAttempt = (limiter, { ipKey, emailKey }, limits, now = Date.now()) => {
+  const ipLimit = limits?.ip;
+  const accountLimit = limits?.account;
+  if (!ipLimit || !accountLimit) {
+    throw new Error("Login rate limits require separate ip and account thresholds");
+  }
+  const ip = limiter.isBlocked(ipKey, ipLimit, now);
   if (ip.blocked) return { allowed: false, resetAt: ip.resetAt };
-  const email = limiter.isBlocked(emailKey, options, now);
+  const email = limiter.isBlocked(emailKey, accountLimit, now);
   if (email.blocked) return { allowed: false, resetAt: email.resetAt };
   return {
     allowed: true,
@@ -203,8 +210,8 @@ export const beginLoginAttempt = (limiter, { ipKey, emailKey }, options, now = D
       limiter.reset(emailKey);
     },
     fail(at = now) {
-      limiter.check(ipKey, options, at);
-      limiter.check(emailKey, options, at);
+      limiter.check(ipKey, ipLimit, at);
+      limiter.check(emailKey, accountLimit, at);
     },
   };
 };

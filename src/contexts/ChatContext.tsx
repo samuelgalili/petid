@@ -4,9 +4,11 @@ import {
   getMyNotifications,
   getMyPets,
   markMyNotificationRead,
+  MipoApiError,
   sendAiChat,
   type MipoNotification,
 } from "@/lib/mipoApi";
+import { CHAT_HOURLY_LIMIT_TEXT } from "@/lib/userFacingErrors";
 
 // ============= Types =============
 export interface Product {
@@ -337,7 +339,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       }]);
     } catch (error) {
       console.error("AI chat error:", error);
-      setMessages((prev) => [...prev, fallbackAssistantMessage]);
+      const content = error instanceof MipoApiError && error.status === 429
+        ? CHAT_HOURLY_LIMIT_TEXT
+        : fallbackAssistantMessage.content;
+      setMessages((prev) => [...prev, { ...fallbackAssistantMessage, content }]);
     } finally {
       setIsTyping(false);
     }
