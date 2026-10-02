@@ -129,6 +129,16 @@ import {
   voteSocialPoll,
 } from "./social.js";
 import { resolveCatalogProducts } from "./catalogRecommendations.js";
+import {
+  catalogSearchCandidates,
+  chatProductPayload,
+  needsUnknownSexRetry,
+  noteUnknownSexGuardKept,
+  petAiPromptInsert,
+  petSexForPrompt,
+  redactBannedBrandReply,
+  unknownSexRetryNote,
+} from "./petAiPrompt.js";
 import { calculatePetAge } from "./petAge.js";
 import {
   generateCharacterCandidates,
@@ -3884,7 +3894,7 @@ const compactSelectedPetForAi = (pet) => pet ? {
   ...compactPetForAi(pet),
   age_years: pet.age_years,
   age_months: pet.age_months,
-  gender: pet.gender,
+  gender: petSexForPrompt(pet.gender),
   weight: pet.weight,
   medical_conditions: pet.medical_conditions,
   current_food: pet.current_food,
@@ -3946,12 +3956,7 @@ const buildPetAiPrompt = ({
   return `You are MIPO AI, a practical pet-care assistant for an Israeli pet app.
 Reply in the user's language. Hebrew is the default when unclear.
 
-Safety:
-- You are not a veterinarian. For urgent symptoms, poisoning, breathing trouble, seizures, heavy bleeding, collapse, inability to urinate, severe pain, or rapidly worsening condition, tell the user to contact an emergency veterinarian immediately.
-- For medical images/documents, summarize and triage. Do not diagnose with certainty.
-- Do not invent facts that are not visible in the document, image, or profile.
-- If OCR/vision is uncertain, explicitly say what is uncertain.
-- If the user asks about shopping, training, grooming, boarding, documents, parks, adoption, or appointments, you may include an action tag.
+${petAiPromptInsert}
 
 Available UI action tags inside content when useful:
 [ACTION:SHOW_CALENDAR]
@@ -3971,7 +3976,8 @@ Available UI action tags inside content when useful:
 Shopping:
 - You do not have the Mipo Store catalogue and you do not know any product, price, SKU or stock level. Never state one.
 - "products" is a search, not an answer. Put short product descriptions in it -- a type, a category or a brand, in the user's language -- and the store will look them up and show the real cards. Two or three entries at most.
-- Leave "products" empty unless the user is actually asking what to buy.
+- When the user names what they want (for example dry food for a puppy), products must list two or three search phrases. Do not answer with only SHOW_STORE_CATEGORIES and an empty products array.
+- Leave products empty when the user is not asking for a product. When the reply is an urgent veterinary referral, products must be an empty array even if the user also asked what to buy.
 - Do not describe the products in your text as if you had seen them. The store decides what exists; if nothing matches, no cards are shown.
 
 Return JSON only with this shape:
@@ -3979,8 +3985,10 @@ Return JSON only with this shape:
   "content": "assistant message text, optionally with UI tags",
   "suggestions": ["short quick reply 1", "short quick reply 2"],
   "products": ["מזון יבש לגורים", "חטיפי אילוף"],
+  "urgentVetReferral": false,
   "botSource": "gemini"
 }
+urgentVetReferral is true only when the reply tells the user to contact an emergency veterinarian now. Otherwise it is false.
 
 User context:
 ${JSON.stringify({
@@ -4041,34 +4049,69 @@ const createAiChatReply = async (auth, body) => {
     attachmentReferences,
   });
 
-  const result = await callGeminiPetJson(
-    [{ text: prompt }, ...attachmentParts],
-    {
-      // Attachments mean the model has to read an image or a document.
-      feature: attachmentReferences.length > 0 ? "document_analysis" : "ai_chat",
-      capability: attachmentReferences.length > 0 ? "vision" : "reasoning",
-      userId: auth.user.id,
-      petId: selectedPet?.id || null,
-    },
-  );
+  const aiCall = {
+    // Attachments mean the model has to read an image or a document.
+    feature: attachmentReferences.length > 0 ? "document_analysis" : "ai_chat",
+    capability: attachmentReferences.length > 0 ? "vision" : "reasoning",
+    userId: auth.user.id,
+    petId: selectedPet?.id || null,
+  };
 
-  const content = safeText(result.content || result.message, 12000);
+  let result = await callGeminiPetJson([{ text: prompt }, ...attachmentParts], aiCall);
+
+  let content = safeText(result.content || result.message, 12000);
   if (!content) {
     const error = new Error("Gemini returned no chat content");
     error.statusCode = 502;
     throw error;
   }
 
+  // One rewrite when the pet's sex is unknown and the reply assigns one.
+  // A second miss is kept and counted, without the reply or the pet.
+  if (needsUnknownSexRetry(petSexForPrompt(selectedPet?.gender), { content, suggestions: result.suggestions })) {
+    try {
+      const retry = await callGeminiPetJson(
+        [{ text: `${prompt}\n\n${unknownSexRetryNote(selectedPet?.name)}` }, ...attachmentParts],
+        aiCall,
+      );
+      const retryContent = safeText(retry.content || retry.message, 12000);
+      if (retryContent && !needsUnknownSexRetry(petSexForPrompt(selectedPet?.gender), {
+        content: retryContent,
+        suggestions: retry.suggestions,
+      })) {
+        result = retry;
+        content = retryContent;
+      } else {
+        noteUnknownSexGuardKept();
+      }
+    } catch {
+      noteUnknownSexGuardKept();
+    }
+  }
+
+  const guarded = redactBannedBrandReply({ ...result, content });
+  content = guarded.content;
+  const latestUserText = [...messages].reverse().find((message) => message.role === "user")?.content || "";
+  const productReply = { ...result, content };
+
   return {
     role: "assistant",
     content,
     timestamp: new Date().toISOString(),
-    suggestions: Array.isArray(result.suggestions)
-      ? result.suggestions.map((suggestion) => safeText(suggestion, 80)).filter(Boolean).slice(0, 4)
-      : [],
-    products: await resolveCatalogProducts(pool, result.products, {
-      petType: selectedPet?.type || null,
-    }),
+    suggestions: guarded.suggestions
+      .map((suggestion) => safeText(suggestion, 80))
+      .filter(Boolean)
+      .slice(0, 4),
+    products: guarded.redacted
+      ? []
+      : chatProductPayload(
+        productReply,
+        await resolveCatalogProducts(
+          pool,
+          catalogSearchCandidates(result.products, latestUserText, productReply),
+          { petType: selectedPet?.type || null },
+        ),
+      ),
     botSource: result.botSource || "gemini",
   };
 };
