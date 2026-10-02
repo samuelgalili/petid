@@ -147,7 +147,7 @@ test("cancelling the prompt does not send the edit again", async ({ page }) => {
   await prompt.getByRole("button", { name: "ביטול" }).click();
 
   await expect(prompt).toBeHidden();
-  await expect(page.getByText("נדרש קוד אימות עדכני כדי להמשיך")).toBeVisible();
+  await expect(page.getByText("נדרש קוד אימות עדכני כדי להמשיך", { exact: true })).toBeVisible();
   expect(patches).toBe(1);
 });
 
