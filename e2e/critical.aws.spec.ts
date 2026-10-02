@@ -180,6 +180,8 @@ test.describe("AWS application smoke tests", () => {
     await email.fill("reset@example.com");
     await page.getByRole("button", { name: "שליחת קוד אימות" }).click();
     await expect(page.getByRole("heading", { name: "הזנת קוד אימות" })).toBeVisible();
+    await expect(page.getByText("אם הכתובת קיימת במערכת, יישלח אליה קוד.", { exact: true })).toBeVisible();
+    await expect(page.getByText("קוד אימות נשלח לאימייל שלך")).toHaveCount(0);
     await expect(page.getByText("reset@example.com", { exact: true })).toBeVisible();
   });
 
