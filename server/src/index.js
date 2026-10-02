@@ -1,5 +1,5 @@
 import http from "node:http";
-import { createHash, createHmac, randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { chmod, mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Pool } from "pg";
@@ -61,6 +61,18 @@ import {
 } from "./emailDelivery.js";
 import { sendOrderConfirmationEmail } from "./orderEmail.js";
 import { orderTrackingSecret } from "./orderTrackingToken.js";
+import {
+  hashEmailVerificationOtp as hashEmailVerificationOtpWithKey,
+  hashPasswordResetOtp as hashPasswordResetOtpWithKey,
+  otpHmacKey,
+} from "./emailOtpKey.js";
+import {
+  apiKeyMayPerform,
+  apiKeyMaySkipStepUp,
+  bootstrapMayResetPassword,
+  bootstrapRouteOpen,
+  passwordResetDebugEnabled,
+} from "./adminApiKeyPolicy.js";
 import { createProviderRegistry } from "./aiProviders.js";
 import { createAiGateway, newRequestId, newTraceId } from "./aiGateway.js";
 import {
@@ -191,7 +203,9 @@ const adminCookieName = "mipo_admin_session";
 const userCookieName = "mipo_user_session";
 const passwordResetOtpMinutes = Number(process.env.PASSWORD_RESET_OTP_MINUTES || 10);
 const passwordResetOtpTtlMs = Math.max(1, passwordResetOtpMinutes) * 60 * 1000;
-const passwordResetDebug = process.env.PASSWORD_RESET_DEBUG === "true";
+// Ignored in production even if the variable is set. The boot check below
+// still refuses to start when the variable is true, so a mis-set flag is loud.
+const passwordResetDebug = passwordResetDebugEnabled(process.env);
 const resendApiKey = process.env.RESEND_API_KEY;
 /**
  * Who the mail comes from.
@@ -303,6 +317,14 @@ if (!databaseUrl) {
   throw new Error("DATABASE_URL is required");
 }
 
+// Not the admin API key. A dedicated OTP_HMAC_KEY wins; otherwise this is a
+// purpose-separated digest of DATABASE_URL, so production boots with no new
+// secret. Codes already outstanding simply expire.
+const emailOtpKey = otpHmacKey();
+if (!emailOtpKey) {
+  throw new Error("OTP HMAC key is not configured");
+}
+
 {
   // Said at start-up because a mail system that reaches one person looks
   // exactly like a working one until a customer registers.
@@ -339,7 +361,7 @@ if (isProduction) {
       );
     }
   }
-  if (passwordResetDebug) {
+  if (process.env.PASSWORD_RESET_DEBUG === "true") {
     throw new Error("PASSWORD_RESET_DEBUG must be disabled in production");
   }
 
@@ -807,12 +829,30 @@ const matchesAdminApiKey = (request) =>
 
 const requireAdmin = async (request, response, { allowPendingMfa = false } = {}) => {
   if (matchesAdminApiKey(request)) {
-    // The service key is a machine caller. There is no person to challenge,
-    // and it is not an enrolled admin session.
+    // The service key is a machine caller. There is no person to challenge.
+    // While two-factor is off, that is the caller deploy smoke already uses.
+    // While two-factor is on, a write is not a substitute for a code unless
+    // the path is named on ADMIN_API_KEY_ALLOWLIST.
+    let pathname = "/";
+    try {
+      pathname = new URL(request.url || "/", "http://localhost").pathname;
+    } catch {
+      pathname = "/";
+    }
+    if (!apiKeyMayPerform({
+      twoFactorEnabled: adminTwoFactorEnabled,
+      method: request.method,
+      pathname,
+      allowlist: process.env.ADMIN_API_KEY_ALLOWLIST,
+    })) {
+      sendError(response, 403, "Admin API key cannot perform this action while two-factor authentication is enabled");
+      return false;
+    }
     request.admin = {
       ...apiKeyAdminIdentity(),
       mfa_enrolled: true,
-      mfa_verified_at: new Date().toISOString(),
+      // A fresh timestamp would let the key skip step-up once two-factor is on.
+      mfa_verified_at: adminTwoFactorEnabled ? null : new Date().toISOString(),
     };
     return true;
   }
@@ -851,7 +891,11 @@ const requireAdmin = async (request, response, { allowPendingMfa = false } = {})
  */
 const requireFreshAdminMfa = async (request, response) => {
   if (!adminTwoFactorEnabled || !request.admin?.mfa_enrolled) return true;
-  if (request.admin.id === "api-key") return true;
+  if (request.admin.id === "api-key") {
+    if (apiKeyMaySkipStepUp({ twoFactorEnabled: adminTwoFactorEnabled })) return true;
+    sendError(response, 403, "Admin API key cannot satisfy two-factor step-up");
+    return false;
+  }
 
   if (!mfaStepUpIsFresh(request.admin.mfa_verified_at, Date.now(), adminStepUpMs)) {
     sendJson(response, 403, {
@@ -983,7 +1027,12 @@ const handleAdminOsRoute = createAdminOsRoutes({
 
 const publicCatalog = createPublicCatalog({ pool });
 
-const bootstrapAdmin = async (body) => {
+const countAdminUsers = async () => {
+  const result = await pool.query("select count(*)::int as total from public.admin_users");
+  return result.rows[0].total;
+};
+
+const bootstrapAdmin = async (body, { allowPasswordReset = false } = {}) => {
   const email = normalizeEmail(body.email);
   const password = String(body.password || "");
   const displayName = String(body.display_name || body.displayName || "Admin").trim() || "Admin";
@@ -1005,6 +1054,19 @@ const bootstrapAdmin = async (body) => {
     throw error;
   }
 
+  // Resetting a password is a separate statement from creating the first admin.
+  // ON CONFLICT DO NOTHING leaves an existing hash untouched when a second
+  // request races the first.
+  const conflictClause = allowPasswordReset
+    ? `
+      on conflict (email) do update set
+        password_hash = excluded.password_hash,
+        display_name = excluded.display_name,
+        is_active = true,
+        updated_at = now()
+    `
+    : "on conflict (email) do nothing";
+
   const result = await pool.query(
     `
       insert into public.admin_users (
@@ -1015,15 +1077,17 @@ const bootstrapAdmin = async (body) => {
         is_active
       )
       values ($1, $2, $3, 'admin', true)
-      on conflict (email) do update set
-        password_hash = excluded.password_hash,
-        display_name = excluded.display_name,
-        is_active = true,
-        updated_at = now()
+      ${conflictClause}
       returning ${adminUserSelect}
     `,
     [email, hashPassword(password), displayName],
   );
+
+  if (result.rowCount === 0) {
+    const error = new Error("An admin account already exists for this email");
+    error.statusCode = 409;
+    throw error;
+  }
 
   return serializeAdmin(result.rows[0]);
 };
@@ -1593,9 +1657,7 @@ const loginUser = async (request, body) => {
 
 const generateOtp = () => String(randomInt(100000, 1000000));
 
-const hashPasswordResetOtp = (email, otp) => createHmac("sha256", adminApiKey || databaseUrl)
-  .update(`${normalizeEmail(email)}:${String(otp || "")}`)
-  .digest("hex");
+const hashPasswordResetOtp = (email, otp) => hashPasswordResetOtpWithKey(email, otp, emailOtpKey);
 
 const logEmailTransportFailure = (kind, status, body) => {
   const summary = summarizeProviderFailure(status, body);
@@ -1652,9 +1714,7 @@ const sendPasswordResetEmail = async (request, email, otp) => {
   return { sent: true, reason: "sent" };
 };
 
-const hashEmailVerificationOtp = (email, otp) => createHmac("sha256", adminApiKey || databaseUrl)
-  .update(`verify:${normalizeEmail(email)}:${String(otp || "")}`)
-  .digest("hex");
+const hashEmailVerificationOtp = (email, otp) => hashEmailVerificationOtpWithKey(email, otp, emailOtpKey);
 
 const sendEmailVerification = async (request, email, otp, fullName) => {
   if (!resendApiKey) {
@@ -8751,7 +8811,27 @@ const handleRequest = async (request, response) => {
         return;
       }
 
-      sendJson(response, 201, { admin: await bootstrapAdmin(await readBody(request)) });
+      // In production the key alone may create the first admin. It may not
+      // replace an existing password unless ADMIN_BOOTSTRAP_ENABLED is set
+      // for that one call, then removed.
+      const existingAdminCount = isProduction ? await countAdminUsers() : 0;
+      if (!bootstrapRouteOpen({
+        nodeEnv: process.env.NODE_ENV,
+        existingAdminCount,
+        bootstrapEnabled: process.env.ADMIN_BOOTSTRAP_ENABLED,
+      })) {
+        sendError(response, 404, "Not found");
+        return;
+      }
+
+      sendJson(response, 201, {
+        admin: await bootstrapAdmin(await readBody(request), {
+          allowPasswordReset: bootstrapMayResetPassword({
+            nodeEnv: process.env.NODE_ENV,
+            bootstrapEnabled: process.env.ADMIN_BOOTSTRAP_ENABLED,
+          }),
+        }),
+      });
       return;
     }
 

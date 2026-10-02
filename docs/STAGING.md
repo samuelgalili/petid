@@ -126,8 +126,8 @@ Two rules for the rest of the keys:
   terminal. If you need to exercise checkout, ask CardCom for test credentials.
 - **Every other secret gets its own value.** A staging key that is also the
   production key means a leak from the weaker environment is a leak from both.
-  `ADMIN_API_KEY` especially — note that it doubles as the HMAC secret for
-  password-reset codes.
+  `ADMIN_API_KEY` especially. It is not the HMAC secret for password-reset
+  codes; those use `OTP_HMAC_KEY`, or a key derived from `DATABASE_URL`.
 
 `sync-ssm-env.sh` already accepts `MIPO_SSM_PREFIX`, so an SSM path of
 `/mipo/staging` works with no change:

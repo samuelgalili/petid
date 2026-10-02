@@ -36,6 +36,11 @@ OPTIONAL_KEYS=(
   ADMIN_2FA_REQUIRE_ENROLLMENT
   ADMIN_MFA_STEP_UP_MINUTES
   ADMIN_TOTP_ISSUER
+  # Empty is fine: email codes then use a key derived from DATABASE_URL.
+  # Bootstrap reset and key writes under two-factor stay off unless set.
+  OTP_HMAC_KEY
+  ADMIN_BOOTSTRAP_ENABLED
+  ADMIN_API_KEY_ALLOWLIST
   WAREHOUSE_WHATSAPP_NUMBER
   CARDCOM_TERMINAL_NUMBER
   CARDCOM_USERNAME
