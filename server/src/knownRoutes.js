@@ -372,6 +372,7 @@ export const PRODUCTION_ROUTE_PATTERNS = [
   "/admin/leads",
   "/admin/login",
   "/admin/marketing",
+  "/admin/moderation",
   "/admin/notification-rules",
   "/admin/notifications",
   "/admin/ocr-verification",

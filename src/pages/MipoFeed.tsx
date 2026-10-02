@@ -25,6 +25,7 @@ import {
   createSocialPost,
   getSocialComments,
   getSocialFeed,
+  MipoApiError,
   toggleSocialReaction,
   toggleSocialSave,
   uploadSocialMedia,
@@ -33,6 +34,10 @@ import {
   type MipoSocialPost,
 } from "@/lib/mipoApi";
 import { cn } from "@/lib/utils";
+
+// An open feed keeps the posts it already drew. Hidden content has to leave
+// that screen too, not only the next visit. The API itself is not cached.
+const FEED_REFRESH_MS = 60_000;
 
 const MipoFeed = () => {
   const navigate = useNavigate();
@@ -43,23 +48,30 @@ const MipoFeed = () => {
   const [composerOpen, setComposerOpen] = useState(false);
   const [commentsPost, setCommentsPost] = useState<MipoSocialPost | null>(null);
 
-  const loadFeed = async () => {
+  const loadFeed = async (quiet = false) => {
     try {
-      setLoading(true);
-      setPosts(await getSocialFeed({ limit: 30 }));
+      if (!quiet) setLoading(true);
+      const next = await getSocialFeed({ limit: 30 });
+      setPosts(next);
+      setCommentsPost((current) => (
+        current && next.some((post) => post.id === current.id) ? current : null
+      ));
     } catch (error) {
+      if (quiet) return;
       toast({
         title: "הפיד לא נטען",
         description: error instanceof Error ? error.message : "נסו שוב בעוד רגע",
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      if (!quiet) setLoading(false);
     }
   };
 
   useEffect(() => {
     void loadFeed();
+    const timer = window.setInterval(() => { void loadFeed(true); }, FEED_REFRESH_MS);
+    return () => window.clearInterval(timer);
   }, []);
 
   const updatePost = (postId: string, update: (post: MipoSocialPost) => MipoSocialPost) => {
@@ -277,7 +289,28 @@ const CommentsSheet = ({ post, onClose, onCountChange }: { post: MipoSocialPost;
   const [reporting, setReporting] = useState<MipoSocialComment | null>(null);
 
   useEffect(() => {
-    getSocialComments(post.id).then(setComments).finally(() => setLoading(false));
+    let cancelled = false;
+    const load = (quiet: boolean) => {
+      if (!quiet) setLoading(true);
+      getSocialComments(post.id)
+        .then((next) => {
+          if (cancelled) return;
+          setComments(next);
+          onCountChange(next.length);
+        })
+        .catch((error) => {
+          if (!cancelled && error instanceof MipoApiError && error.status === 404) onClose();
+        })
+        .finally(() => {
+          if (!cancelled && !quiet) setLoading(false);
+        });
+    };
+    load(false);
+    const timer = window.setInterval(() => load(true), FEED_REFRESH_MS);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
   }, [post.id]);
 
   const submit = async (event: FormEvent) => {

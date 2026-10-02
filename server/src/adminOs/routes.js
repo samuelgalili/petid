@@ -1,5 +1,16 @@
 import { ADMIN_PERMISSIONS } from "../adminPermissions.js";
 import { createAuditService } from "./auditService.js";
+import {
+  blockReportedUser,
+  dismissContentReport,
+  hideReportedContent,
+  listBlockedUsers,
+  listHiddenContent,
+  listModerationLog,
+  listOpenReports,
+  restoreHiddenContent,
+  unblockUser,
+} from "./moderation.js";
 import { createAdminCustomer } from "./customers.js";
 import { adminHome } from "./home.js";
 import { createManualOrder } from "./manualOrders.js";
@@ -203,6 +214,94 @@ export const createAdminOsRoutes = ({
       );
       return { status: 200, body: { connector } };
     },
+  });
+
+  // Moderation. FULL_ACCESS: hiding a post and blocking a person are not a
+  // lighter capability than the rest of the platform admin. Seller-scoped
+  // roles do not hold it, so they neither see the screen nor call these routes.
+  routes.push({
+    method: "GET",
+    path: "moderation/reports",
+    permission: ADMIN_PERMISSIONS.FULL_ACCESS,
+    idempotent: false,
+    handler: async (request, response) => {
+      sendJson(response, 200, { reports: await listOpenReports(pool) });
+    },
+  });
+
+  routes.push({
+    method: "GET",
+    path: "moderation/hidden",
+    permission: ADMIN_PERMISSIONS.FULL_ACCESS,
+    idempotent: false,
+    handler: async (request, response) => {
+      sendJson(response, 200, { hidden: await listHiddenContent(pool) });
+    },
+  });
+
+  routes.push({
+    method: "GET",
+    path: "moderation/blocked",
+    permission: ADMIN_PERMISSIONS.FULL_ACCESS,
+    idempotent: false,
+    handler: async (request, response) => {
+      sendJson(response, 200, { blocked: await listBlockedUsers(pool) });
+    },
+  });
+
+  routes.push({
+    method: "GET",
+    path: "moderation/log",
+    permission: ADMIN_PERMISSIONS.FULL_ACCESS,
+    idempotent: false,
+    handler: async (request, response) => {
+      sendJson(response, 200, { entries: await listModerationLog(audit) });
+    },
+  });
+
+  routes.push({
+    method: "POST",
+    path: "moderation/hide",
+    permission: ADMIN_PERMISSIONS.FULL_ACCESS,
+    idempotent: true,
+    handler: async (request, response, url, payload) =>
+      hideReportedContent({ pool, audit, admin: request.admin }, payload),
+  });
+
+  routes.push({
+    method: "POST",
+    path: "moderation/restore",
+    permission: ADMIN_PERMISSIONS.FULL_ACCESS,
+    idempotent: true,
+    handler: async (request, response, url, payload) =>
+      restoreHiddenContent({ pool, audit, admin: request.admin }, payload),
+  });
+
+  routes.push({
+    method: "POST",
+    path: "moderation/dismiss",
+    permission: ADMIN_PERMISSIONS.FULL_ACCESS,
+    idempotent: true,
+    handler: async (request, response, url, payload) =>
+      dismissContentReport({ pool, audit, admin: request.admin }, payload),
+  });
+
+  routes.push({
+    method: "POST",
+    path: "moderation/block",
+    permission: ADMIN_PERMISSIONS.FULL_ACCESS,
+    idempotent: true,
+    handler: async (request, response, url, payload) =>
+      blockReportedUser({ pool, audit, admin: request.admin }, payload),
+  });
+
+  routes.push({
+    method: "POST",
+    path: "moderation/unblock",
+    permission: ADMIN_PERMISSIONS.FULL_ACCESS,
+    idempotent: true,
+    handler: async (request, response, url, payload) =>
+      unblockUser({ pool, audit, admin: request.admin }, payload),
   });
 
   const byKey = new Map(routes.map((route) => [`${route.method} ${route.path}`, route]));
