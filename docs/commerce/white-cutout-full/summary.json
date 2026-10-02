@@ -1,0 +1,218 @@
+{
+  "mode": "dry-run",
+  "source": "161-row affected list matching live GET /api/products image urls. /workspace/qa/dark_white_images/affected_products.csv was not in the tree.",
+  "apply": false,
+  "counts": {
+    "cut": 154,
+    "skipped": 7,
+    "failed": 0
+  },
+  "skipReason": "needs separate handling (light tile behind image)",
+  "skipped": [
+    {
+      "id": "4da218ab-466d-492f-be21-e5a7f3dfe71e",
+      "name": "גארד כלבים מאינטננס 20 קג",
+      "imageUrl": "/uploads/1788274795527-7f89b670-46c2-47f1-9d16-5473f446d848.png",
+      "reason": "needs separate handling (light tile behind image)",
+      "cause": "shared_colour",
+      "detail": "interior_shares_border_colour",
+      "removedRatio": 0.4032258064516129
+    },
+    {
+      "id": "c2508cee-df28-4afe-9607-9e717f44a41d",
+      "name": "קוואטרו חתולים אדולט עוף 7 ק\"ג",
+      "imageUrl": "/uploads/catalog-d08ffca1e89a2d16fce6ecdd.png",
+      "reason": "needs separate handling (light tile behind image)",
+      "cause": "shared_colour",
+      "detail": "interior_shares_border_colour",
+      "removedRatio": 0.4852971943064221
+    },
+    {
+      "id": "2be505b7-4725-4eca-b485-e0b6699ec118",
+      "name": "קוואטרו חתולים אודולט + אקסטרה עוף 1.5 ק״ג",
+      "imageUrl": "/uploads/catalog-d08ffca1e89a2d16fce6ecdd.png",
+      "reason": "needs separate handling (light tile behind image)",
+      "cause": "shared_colour",
+      "detail": "interior_shares_border_colour",
+      "removedRatio": 0.4852971943064221
+    },
+    {
+      "id": "12ded350-782e-4d15-b52b-47a6adcbfa41",
+      "name": "SILAND ONE PROTEIN MAIALE ADULT MEDIUM/LARGE 12 KG",
+      "imageUrl": "/uploads/1788277423241-7ff537c7-bcb5-4388-89e6-4faeb3d108e2.png",
+      "reason": "needs separate handling (light tile behind image)",
+      "cause": "shared_colour",
+      "detail": "fragmented_foreground",
+      "removedRatio": 0.7640647523398957
+    },
+    {
+      "id": "24a6f4ae-8d8c-485d-b1d5-c9fe1cafaf2e",
+      "name": "SILAND ONE PROTEIN MAIALE ADULT MINI 3 KG",
+      "imageUrl": "/uploads/1788276982566-da9fb36a-fa3e-4d2f-b408-5d19322db9f1.png",
+      "reason": "needs separate handling (light tile behind image)",
+      "cause": "shared_colour",
+      "detail": "fragmented_foreground",
+      "removedRatio": 0.8478394229786127
+    },
+    {
+      "id": "36d7cdce-f85d-48bb-aa3e-3a531ead9b5f",
+      "name": "SILAND ONE PROTEIN PESCE ADULT MEDIUM/LARGE 12 KG",
+      "imageUrl": "/uploads/1788277468248-b574a022-1d09-4861-92c3-083c6c353ad3.png",
+      "reason": "needs separate handling (light tile behind image)",
+      "cause": "shared_colour",
+      "detail": "fragmented_foreground",
+      "removedRatio": 0.7772483601371825
+    },
+    {
+      "id": "26e82d83-453b-458c-a291-0b8e7d95ca1d",
+      "name": "SILAND ONE PROTEIN PESCE ADULT MINI 3 KG",
+      "imageUrl": "/uploads/1788276800382-86ee7c31-fedb-434f-8373-3c1706d63df3.png",
+      "reason": "needs separate handling (light tile behind image)",
+      "cause": "shared_colour",
+      "detail": "fragmented_foreground",
+      "removedRatio": 0.7773613630238267
+    }
+  ],
+  "problemSheet": [
+    {
+      "id": "4da218ab-466d-492f-be21-e5a7f3dfe71e",
+      "name": "גארד כלבים מאינטננס 20 קג",
+      "status": "skipped",
+      "label": "דילוג · גארד מאינטננס · לבן מהמסגרת נכנס למוצר",
+      "removedRatio": 0.4032258064516129
+    },
+    {
+      "id": "c2508cee-df28-4afe-9607-9e717f44a41d",
+      "name": "קוואטרו חתולים אדולט עוף 7 ק\"ג",
+      "status": "skipped",
+      "label": "דילוג · קוואטרו חתולים עוף · אותה תמונה גם במוצר 1.5 ק״ג",
+      "removedRatio": 0.4852971943064221
+    },
+    {
+      "id": "12ded350-782e-4d15-b52b-47a6adcbfa41",
+      "name": "SILAND ONE PROTEIN MAIALE ADULT MEDIUM/LARGE 12 KG",
+      "status": "skipped",
+      "label": "דילוג · סילאנד מאיאלה 12 ק״ג · החזית נשברת לרסיסים",
+      "removedRatio": 0.7640647523398957
+    },
+    {
+      "id": "24a6f4ae-8d8c-485d-b1d5-c9fe1cafaf2e",
+      "name": "SILAND ONE PROTEIN MAIALE ADULT MINI 3 KG",
+      "status": "skipped",
+      "label": "דילוג · סילאנד מאיאלה מיני · החזית נשברת לרסיסים",
+      "removedRatio": 0.8478394229786127
+    },
+    {
+      "id": "36d7cdce-f85d-48bb-aa3e-3a531ead9b5f",
+      "name": "SILAND ONE PROTEIN PESCE ADULT MEDIUM/LARGE 12 KG",
+      "status": "skipped",
+      "label": "דילוג · סילאנד דג 12 ק״ג · החזית נשברת לרסיסים",
+      "removedRatio": 0.7772483601371825
+    },
+    {
+      "id": "26e82d83-453b-458c-a291-0b8e7d95ca1d",
+      "name": "SILAND ONE PROTEIN PESCE ADULT MINI 3 KG",
+      "status": "skipped",
+      "label": "דילוג · סילאנד דג מיני · החזית נשברת לרסיסים",
+      "removedRatio": 0.7773613630238267
+    },
+    {
+      "id": "50214e6d-a3c8-4c47-8cbb-7af162e0dfca",
+      "name": "SILAND DERMOCORTIPET WET FOOD DOG DEER/POTATO 300G",
+      "status": "cut",
+      "label": "חיתוך · סילאנד שימורים · אריזה לבנה נשמרה, אפור בשוליים",
+      "removedRatio": 0.14740352961560357
+    },
+    {
+      "id": "bff7cad0-5f25-4713-905e-aa560de1ebaa",
+      "name": "קוואטרו כלב בוגר מיני אקסטרה עוף 7 קג",
+      "status": "cut",
+      "label": "חיתוך · קוואטרו מיני עוף 7 ק״ג · שוליים בהירים",
+      "removedRatio": 0.7374369271959633
+    },
+    {
+      "id": "c1a4c168-90c1-429f-9ce7-649aec7ca33d",
+      "name": "קוואטרו כלב בוגר מיני אקסטרה עוף 1.5 ק\"ג",
+      "status": "cut",
+      "label": "חיתוך · קוואטרו מיני עוף 1.5 ק״ג · שוליים בהירים",
+      "removedRatio": 0.7569682734204793
+    },
+    {
+      "id": "3a35bc8e-4887-4c7e-a092-5597bc9178df",
+      "name": "קוואטרו חתולים קיטן עוף 1.5 ק\"ג",
+      "status": "cut",
+      "label": "חיתוך · קוואטרו קיטן עוף · שוליים בהירים",
+      "removedRatio": 0.48790301490641463
+    },
+    {
+      "id": "f4105227-898a-4dc1-98e0-cdb7c0844275",
+      "name": "מזון ביצים לבן 5 קג",
+      "status": "cut",
+      "label": "חיתוך · מזון ביצים לבן · שוליים בהירים ואפור",
+      "removedRatio": 0.7141433445781272
+    },
+    {
+      "id": "b9660e4f-c95e-47f7-a805-b18b5849f08e",
+      "name": "קוואטרו כלבים אדולט כל הגזעים כבש ואורז 12 ק\"ג",
+      "status": "cut",
+      "label": "חיתוך · קוואטרו כבש 12 ק״ג · שוליים בהירים ואפור",
+      "removedRatio": 0.3871501848541978
+    },
+    {
+      "id": "8ad56a6e-7163-4f1f-9745-5f7c16a8d8e0",
+      "name": "למור חתולים אקסטרה עוף 15 ק\"ג",
+      "status": "cut",
+      "label": "חיתוך · למור חתולים 15 ק״ג · שוליים בהירים",
+      "removedRatio": 0.8965958333333334
+    },
+    {
+      "id": "8f929b29-4120-43d7-8624-e0ca88bb06e7",
+      "name": "רצועת ניילון מגוון צבעים",
+      "status": "cut",
+      "label": "חיתוך · רצועת ניילון · שוליים לבנים ליד האבזם",
+      "removedRatio": 0.741808
+    },
+    {
+      "id": "6c028c65-b87f-47bf-86e1-4c8e334f5d87",
+      "name": "חטיף אלפא דוג פולקע בקר 80 גר'",
+      "status": "cut",
+      "label": "חיתוך · חטיף פולקע · צל רך מתחת לאריזה",
+      "removedRatio": 0.19109268402836585
+    },
+    {
+      "id": "5a2ddf36-c332-40bd-9975-d1191aa27a9d",
+      "name": "ארנבון גוניור ויטמין סי 3 קג אקטיב",
+      "status": "cut",
+      "label": "חיתוך · ארנבון גוניור · מעט רקע הוסר",
+      "removedRatio": 0.22492601866605963
+    },
+    {
+      "id": "f925cbf5-6471-44d6-a15d-9e297aed86d8",
+      "name": "גור ארנב תוספת ויטמין סי 3 קג אקטיב",
+      "status": "cut",
+      "label": "חיתוך · גור ארנב · מעט רקע הוסר",
+      "removedRatio": 0.24395155324349438
+    },
+    {
+      "id": "50174f7a-2f60-44d8-87e1-8ebbc1a2ce65",
+      "name": "חטיף אלפא דוג עצם ברווז ואורז 80 גר'",
+      "status": "cut",
+      "label": "חיתוך · חטיף עצם ברווז · אפור רך בשוליים",
+      "removedRatio": 0.2758378146135935
+    },
+    {
+      "id": "e0b0b719-7e3e-4093-81a0-9e8bb734ef14",
+      "name": "חטיף אלפא דוג סלסולי עוף 80 גר",
+      "status": "cut",
+      "label": "חיתוך · חטיף סלסולי עוף · אפור רך בשוליים",
+      "removedRatio": 0.32436158033690804
+    },
+    {
+      "id": "f7705ee9-2942-4f45-aaf3-f14392f3aa93",
+      "name": "גארד חתולים טריקולור 3 ק\"ג",
+      "status": "cut",
+      "label": "חיתוך · גארד טריקולור 3 ק״ג · אפור בשוליים",
+      "removedRatio": 0.4670799890238046
+    }
+  ]
+}

@@ -47,3 +47,6 @@ backups/
 # by accident. On the server these are Docker volumes and never come from git.
 uploads/
 private-uploads/
+
+# Local dry-run output of server/scripts/cutoutProductImages.mjs.
+cutout-output/
