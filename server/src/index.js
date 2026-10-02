@@ -53,6 +53,7 @@ import {
   resolveFromEmail,
   summarizeProviderFailure,
 } from "./emailDelivery.js";
+import { sendOrderConfirmationEmail } from "./orderEmail.js";
 import { createProviderRegistry } from "./aiProviders.js";
 import { createAiGateway, newRequestId, newTraceId } from "./aiGateway.js";
 import {
@@ -385,6 +386,42 @@ const notifyOwnerPaidOrder = (orderId, orderNumber, total, lines) => {
       quantity: row.quantity,
     }));
   }, { orderId, orderNumber, total });
+};
+
+// Loaded after the paid commit. The mail is not part of that transaction:
+// a slow lookup must not hold the row, and a missing row just skips the send.
+const loadOrderConfirmation = async (orderId) => {
+  const orderResult = await pool.query(
+    `
+      select
+        o.id,
+        o.order_number,
+        o.customer_name,
+        o.customer_email,
+        o.subtotal,
+        o.shipping,
+        o.discount_amount,
+        o.total,
+        o.shipping_address,
+        c.code as coupon_code
+      from public.orders o
+      left join public.coupons c on c.id = o.coupon_id
+      where o.id = $1
+      limit 1
+    `,
+    [orderId],
+  );
+  if (orderResult.rowCount === 0) return null;
+  const itemsResult = await pool.query(
+    `
+      select product_name, quantity, price
+      from public.order_items
+      where order_id = $1
+      order by created_at asc
+    `,
+    [orderId],
+  );
+  return { ...orderResult.rows[0], items: itemsResult.rows };
 };
 
 // Every AI call in the API goes through this gateway. Features never hold a
@@ -8006,8 +8043,22 @@ const handleCardcomWebhook = async (request, url) => {
     client.release();
   }
 
+  // ownerNotice exists only when the paid update returned a row, so a retry
+  // does not send again. The send is not awaited: a provider failure is
+  // logged and cannot change the response Cardcom already earned.
   if (ownerNotice?.kind === "paid") {
     notifyOwnerPaidOrder(ownerNotice.orderId, ownerNotice.orderNumber, ownerNotice.total);
+    loadOrderConfirmation(ownerNotice.orderId)
+      .then((order) => sendOrderConfirmationEmail({
+        transitioned: true,
+        order,
+        apiKey: resendApiKey,
+        fromEmail: passwordResetFromEmail,
+        appBaseUrl: getPublicBaseUrl(request),
+      }))
+      .catch((error) => {
+        console.error("[mipo] order confirmation email failed:", redactEmailLog(error?.message || error));
+      });
   } else if (ownerNotice?.kind === "failed") {
     reportDeclinedPayment(notifyOwner, ownerNotice);
   }
