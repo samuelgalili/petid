@@ -55,7 +55,7 @@ export const petAiPromptInsert = `Safety:
 - Do not recommend, name, or suggest a medication, drug, or home remedy. Do not tell the user to give something that appears in a past treatment note.
 - For urgent symptoms, poisoning, breathing trouble, seizures, heavy bleeding, collapse, inability to urinate, severe pain, or a rapidly worsening condition, tell the user to contact an emergency veterinarian immediately. In Hebrew, use the words וטרינר and חירום. Set urgentVetReferral to true and leave products as an empty array. Do not include product cards, product suggestions, prices, or store action tags in that reply.
 - Do not guess the pet's sex. gender is male, female, or unknown. unknown means the owner did not say. Never infer sex from the name, species, breed, photo, or behaviour.
-- When gender is unknown, do not assign a sex to the pet in Hebrew or English. Do use the pet's name, החיה, a plural to the owner, or an infinitive. Do say: "כדאי לבדוק את NAME אצל וטרינר חירום." "ל-NAME יש דימום. פנו לוטרינר." "מצב החיה לא ברור." Don't say: "מצבו של NAME", "יש לו דימום", "גילו, גזעו ומצבו", "הוא/היא", "NAME התמוטט ויש לו דימום", "יש לו עור אדום".
+- When gender is unknown, do not assign a sex to the pet in Hebrew or English. Do use the pet's name, החיה, a plural to the owner, or an infinitive. Do say: "כדאי לבדוק את NAME אצל וטרינר חירום." "ל-NAME יש דימום. פנו לוטרינר." "מצב החיה לא ברור." Don't say: "מצבו של NAME", "יש לו דימום", "גילו, גזעו ומצבו", "הוא/היא", "NAME התמוטט ויש לו דימום", "יש לו עור אדום", "גילו המדויק ואת מצבו הבריאותי", "גזעו ורמת הפעילות שלו", "שהוא מקבל", "בריאותו של NAME", "אוכלו". Do not write the slash form הוא/היא or החיה/הוא-היא.
 - Do not invent facts that are not visible in the document, image, or profile.
 - If OCR/vision is uncertain, explicitly say what is uncertain.
 - If the user asks about training, grooming, boarding, documents, parks, adoption, or appointments, you may include an action tag. A question that names something to buy (food, a toy, a supply), such as which dry food for a puppy, must put two or three short search phrases in products. SHOW_STORE_CATEGORIES is only for opening the store when no product kind was asked. Do not answer that question with only SHOW_STORE_CATEGORIES and an empty products array. Do not use a store action, and leave products empty, when urgentVetReferral is true.
@@ -141,17 +141,72 @@ export const redactBannedBrandReply = (reply) => {
   return { content: BRAND_SAFE_REPLY_HE, suggestions: [], redacted: true };
 };
 
-// Hebrew has no ASCII word boundary. A leading ו/ש ("שהוא", "ומצבו") still
-// counts; a following letter ("לוטרינר", "להתקשר", "שלום") does not.
-const PET_SEX_FORM = /(?<![\u0590-\u05FF])[וש]?(?:הוא|היא|לו|לה|שלו|שלה|מצבו|מצבה|גילו|גילה|גזעו|גזעה)(?![\u0590-\u05FF])/;
+// Hebrew has no ASCII word boundary. A short prefix (ו, ה, ב, ל, מ, כ, ש,
+// and a pair such as ול or שה) still counts. A following letter does not, so
+// "לוטרינר", "להתקשר", "שלום", and "אוכל" are not possessives.
+const SEX_PREFIX = "[והבלמכש]{0,2}";
+const SEX_STEMS = [
+  "בריאותו", "בריאותה",
+  "אוכלו", "אוכלה",
+  "משקלו", "משקלה",
+  "גודלו", "גודלה",
+  "פרוותו", "פרוותה",
+  "עורו", "עורה",
+  "מצבו", "מצבה",
+  "גילו", "גילה",
+  "גזעו", "גזעה",
+  "שלו", "שלה",
+  "הוא", "היא",
+  "לו", "לה",
+].join("|");
+const PET_SEX_FORM = new RegExp(`(?<![\\u0590-\\u05FF])${SEX_PREFIX}(?:${SEX_STEMS})(?![\\u0590-\\u05FF])`);
 
 export const replyAssignsPetSex = (reply) => replyParts(reply).some((part) => PET_SEX_FORM.test(String(part || "")));
 
 export const needsUnknownSexRetry = (sex, reply) => sex === "unknown" && replyAssignsPetSex(reply);
 
-export const unknownSexRetryNote = (petName) => {
-  const name = String(petName || "").replace(/\s+/g, " ").trim().slice(0, 40) || "החיה";
-  return `Correction: gender is unknown. Rewrite the previous reply about ${name}. Do not use הוא, היא, הוא/היא, לו, לה, שלו, שלה, מצבו, מצבה, גילו, גילה, גזעו, or גזעה. Use the name, החיה, a plural to the owner, or an infinitive.`;
+// The first model call plus this many rewrites. Three attempts, then the
+// neutral line. A known sex never enters this path.
+export const UNKNOWN_SEX_REWRITES = 2;
+
+const petNameForGuard = (petName) => String(petName || "").replace(/\s+/g, " ").trim().slice(0, 40) || "החיה";
+
+const SEX_BAN_LIST = "הוא, היא, הוא/היא, החיה/הוא-היא, לו, לה, שלו, שלה, מצבו, מצבה, גילו, גילה, גזעו, גזעה, בריאותו, בריאותה, אוכלו, אוכלה, משקלו, משקלה, גודלו, גודלה, עורו, עורה, פרוותו, פרוותה";
+
+export const unknownSexRetryNote = (petName, attempt = 1) => {
+  const name = petNameForGuard(petName);
+  if (Number(attempt) <= 1) {
+    return `Correction: gender is unknown. Rewrite the previous reply about ${name}. Do not use ${SEX_BAN_LIST}, including with a Hebrew prefix such as ו, ש, ב, or ל. Use the name, החיה, a plural to the owner, or an infinitive.`;
+  }
+  return `Stricter correction: the previous rewrite about ${name} still assigned a sex. gender is unknown. Address only by the name ${name}. No pronouns and no possessive endings. Do not use ${SEX_BAN_LIST}. Do not write the screened slash form הוא/היא or החיה/הוא-היא. Speak to the owner in the plural, or use an infinitive.`;
+};
+
+// Last step when every rewrite still assigns a sex. The gendered text is not
+// returned. An urgent reply stays an urgent vet referral, so product cards
+// stay off.
+export const neutralUnknownSexReply = (petName, { urgent = false } = {}) => {
+  const name = petNameForGuard(petName);
+  if (urgent) return `כדאי לבדוק את ${name} אצל וטרינר חירום.`;
+  return `אפשר לעזור עם ${name}. שאלו על טיפול, אוכל או הרגלים.`;
+};
+
+export const settleUnknownSexReply = (sex, reply, petName) => {
+  const suggestions = Array.isArray(reply?.suggestions) ? reply.suggestions : [];
+  if (!needsUnknownSexRetry(sex, reply)) {
+    return {
+      content: String(reply?.content || ""),
+      suggestions,
+      urgentVetReferral: isUrgentVetReferral(reply),
+      replaced: false,
+    };
+  }
+  const urgent = isUrgentVetReferral(reply);
+  return {
+    content: neutralUnknownSexReply(petName, { urgent }),
+    suggestions: [],
+    urgentVetReferral: urgent,
+    replaced: true,
+  };
 };
 
 let unknownSexGuardKept = 0;

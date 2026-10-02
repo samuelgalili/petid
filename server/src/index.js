@@ -144,6 +144,8 @@ import {
   petAiPromptInsert,
   petSexForPrompt,
   redactBannedBrandReply,
+  settleUnknownSexReply,
+  UNKNOWN_SEX_REWRITES,
   unknownSexRetryNote,
 } from "./petAiPrompt.js";
 import { calculatePetAge } from "./petAge.js";
@@ -4065,27 +4067,34 @@ const createAiChatReply = async (auth, body) => {
     throw error;
   }
 
-  // One rewrite when the pet's sex is unknown and the reply assigns one.
-  // A second miss is kept and counted, without the reply or the pet.
-  if (needsUnknownSexRetry(petSexForPrompt(selectedPet?.gender), { content, suggestions: result.suggestions })) {
+  // Unknown sex: up to UNKNOWN_SEX_REWRITES stronger rewrites, then a neutral
+  // line. A known sex is not rewritten. The counter has no reply and no pet.
+  const sex = petSexForPrompt(selectedPet?.gender);
+  const sexView = () => ({ ...result, content, suggestions: result.suggestions });
+  for (let attempt = 1; attempt <= UNKNOWN_SEX_REWRITES && needsUnknownSexRetry(sex, sexView()); attempt += 1) {
     try {
       const retry = await callGeminiPetJson(
-        [{ text: `${prompt}\n\n${unknownSexRetryNote(selectedPet?.name)}` }, ...attachmentParts],
+        [{ text: `${prompt}\n\n${unknownSexRetryNote(selectedPet?.name, attempt)}` }, ...attachmentParts],
         aiCall,
       );
       const retryContent = safeText(retry.content || retry.message, 12000);
-      if (retryContent && !needsUnknownSexRetry(petSexForPrompt(selectedPet?.gender), {
-        content: retryContent,
-        suggestions: retry.suggestions,
-      })) {
-        result = retry;
-        content = retryContent;
-      } else {
-        noteUnknownSexGuardKept();
-      }
+      if (!retryContent) continue;
+      result = retry;
+      content = retryContent;
     } catch {
-      noteUnknownSexGuardKept();
+      break;
     }
+  }
+  const settled = settleUnknownSexReply(sex, sexView(), selectedPet?.name);
+  if (settled.replaced) {
+    noteUnknownSexGuardKept();
+    content = settled.content;
+    result = {
+      ...result,
+      content,
+      suggestions: settled.suggestions,
+      urgentVetReferral: settled.urgentVetReferral,
+    };
   }
 
   const guarded = redactBannedBrandReply({ ...result, content });
