@@ -1,4 +1,5 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { isIP } from "node:net";
 
 const typeInfo = new Map([
   ["image/jpeg", { extension: ".jpg", validate: (buffer) => startsWith(buffer, [0xff, 0xd8, 0xff]) }],
@@ -127,6 +128,20 @@ export class FixedWindowRateLimiter {
     return { allowed: true, remaining: limit - existing.count, resetAt: existing.resetAt };
   }
 
+  // Look only. Login uses this so a request that has not failed yet does not
+  // consume a slot, and a blocked window still reports when it ends.
+  isBlocked(key, { limit }, now = Date.now()) {
+    if (now - this.lastCleanupAt > 5 * 60 * 1000) this.cleanup(now);
+    const existing = this.entries.get(key);
+    if (!existing || existing.resetAt <= now) return { blocked: false, resetAt: now };
+    if (existing.count >= limit) return { blocked: true, resetAt: existing.resetAt };
+    return { blocked: false, resetAt: existing.resetAt };
+  }
+
+  reset(key) {
+    this.entries.delete(key);
+  }
+
   cleanup(now = Date.now()) {
     for (const [key, entry] of this.entries) {
       if (entry.resetAt <= now) this.entries.delete(key);
@@ -134,3 +149,124 @@ export class FixedWindowRateLimiter {
     this.lastCleanupAt = now;
   }
 }
+
+// The rightmost forwarded hop, otherwise the socket. Callers that append to
+// X-Forwarded-For can set the left side to anything; the proxy in front of
+// this process (Caddy replaces the header with the address it accepted) is
+// the hop that is kept. Session rows store that address unchanged.
+export const trustedClientHop = (forwardedFor, remoteAddress) => {
+  if (typeof forwardedFor === "string" && forwardedFor.trim()) {
+    const hops = forwardedFor.split(",").map((hop) => hop.trim()).filter(Boolean);
+    if (hops.length > 0) return hops[hops.length - 1];
+  }
+  if (typeof remoteAddress === "string" && remoteAddress.trim()) return remoteAddress.trim();
+  return null;
+};
+
+// Rate-limit key for an address. IPv4 is itself. IPv4-mapped IPv6 (::ffff:a.b.c.d)
+// is the same IPv4, not a /64 — masking those would put every IPv4 client in
+// one bucket. A real IPv6 address is its /64: a household prefix is 2^64
+// addresses, and each one would otherwise be its own limit.
+export const normalizeClientIp = (value) => {
+  const parsed = parseClientIp(value);
+  if (!parsed) return null;
+  if (parsed.kind === "ipv4") return parsed.address;
+  return `${parsed.prefix.map((part) => part.toString(16).padStart(4, "0")).join(":")}/64`;
+};
+
+export const clientAddressForRateLimit = (forwardedFor, remoteAddress) => (
+  normalizeClientIp(trustedClientHop(forwardedFor, remoteAddress)) || "unknown"
+);
+
+// Email keys are attacker-controlled and used to live for the whole window
+// at whatever length the body allowed. 254 is the longest address a mail
+// system will carry, and it caps the map entry.
+export const RATE_LIMIT_IDENTITY_MAX = 254;
+
+export const rateLimitIdentity = (value) => {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (!normalized) return "unknown";
+  return normalized.slice(0, RATE_LIMIT_IDENTITY_MAX);
+};
+
+// Count a login only when it fails. A success clears the account bucket so
+// the owner's own sign-ins never add up to a lockout. The address bucket is
+// shared, so a success leaves it alone.
+export const beginLoginAttempt = (limiter, { ipKey, emailKey }, options, now = Date.now()) => {
+  const ip = limiter.isBlocked(ipKey, options, now);
+  if (ip.blocked) return { allowed: false, resetAt: ip.resetAt };
+  const email = limiter.isBlocked(emailKey, options, now);
+  if (email.blocked) return { allowed: false, resetAt: email.resetAt };
+  return {
+    allowed: true,
+    succeed() {
+      limiter.reset(emailKey);
+    },
+    fail(at = now) {
+      limiter.check(ipKey, options, at);
+      limiter.check(emailKey, options, at);
+    },
+  };
+};
+
+const IPV4_TAIL = /^(.*:)(\d{1,3}(?:\.\d{1,3}){3})$/;
+
+const parseClientIp = (value) => {
+  if (value == null) return null;
+  let text = String(value).trim().toLowerCase();
+  if (!text) return null;
+  if (text.startsWith("[")) {
+    const end = text.indexOf("]");
+    if (end <= 1) return null;
+    text = text.slice(1, end);
+  }
+  const zone = text.indexOf("%");
+  if (zone !== -1) text = text.slice(0, zone);
+  if (/^\d{1,3}(?:\.\d{1,3}){3}:\d+$/.test(text)) {
+    text = text.slice(0, text.lastIndexOf(":"));
+  }
+  if (isIP(text) === 4) return { kind: "ipv4", address: text };
+  if (isIP(text) !== 6) return null;
+
+  let expanded = text;
+  const embedded = expanded.match(IPV4_TAIL);
+  if (embedded && isIP(embedded[2]) === 4) {
+    const [a, b, c, d] = embedded[2].split(".").map((octet) => Number(octet));
+    expanded = `${embedded[1]}${((a << 8) | b).toString(16)}:${((c << 8) | d).toString(16)}`;
+  }
+
+  const halves = expanded.split("::");
+  if (halves.length > 2) return null;
+  const toGroups = (side) => {
+    if (side === "") return [];
+    const groups = [];
+    for (const part of side.split(":")) {
+      if (!/^[0-9a-f]{1,4}$/.test(part)) return null;
+      groups.push(Number.parseInt(part, 16));
+    }
+    return groups;
+  };
+
+  let groups;
+  if (halves.length === 1) {
+    groups = toGroups(halves[0]);
+    if (!groups || groups.length !== 8) return null;
+  } else {
+    const left = toGroups(halves[0]);
+    const right = toGroups(halves[1]);
+    if (!left || !right) return null;
+    const missing = 8 - left.length - right.length;
+    if (missing < 1) return null;
+    groups = [...left, ...Array(missing).fill(0), ...right];
+  }
+
+  const mapped = groups[0] === 0 && groups[1] === 0 && groups[2] === 0
+    && groups[3] === 0 && groups[4] === 0 && groups[5] === 0xffff;
+  if (mapped) {
+    return {
+      kind: "ipv4",
+      address: `${groups[6] >> 8}.${groups[6] & 0xff}.${groups[7] >> 8}.${groups[7] & 0xff}`,
+    };
+  }
+  return { kind: "ipv6", prefix: groups.slice(0, 4) };
+};
