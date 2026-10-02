@@ -175,6 +175,7 @@ import {
   generateCharacterCandidates,
   generateCharacterExpressions,
 } from "./petCharacter.js";
+import { characterErrorCode, logGenerationFailure } from "./petCharacterDiagnostics.js";
 import { LEAVE_AT_DOOR_TERMS, normalizeShippingAddress } from "./shippingAddress.js";
 import {
   EVENT_TYPES,
@@ -2936,37 +2937,25 @@ const storePetCharacterImage = async ({ buffer, contentType }) => {
   return { storageKey, contentType, fileSize: buffer.length };
 };
 
-const characterErrorCode = (error) => {
-  if (error?.code === "INVALID_REFERENCE_PHOTOS") return "invalid_reference_photos";
-  if (error?.code === "REFERENCE_PHOTOS_FACE_ONLY") return "reference_photos_face_only";
-  if (error?.code === "NO_GENERATED_IMAGE") return "generation_blocked";
-  // Its own code, not the generic bucket.
-  //
-  // The model returned an image and it was refused for a specific, knowable
-  // reason: the background was painted rather than encoded in an alpha
-  // channel, twice - the correction note did not land. Folding that into
-  // "generation_failed" would make it indistinguishable from a network error
-  // or a parse failure, and the one thing we would want to learn from a
-  // regeneration is exactly which of those happened.
-  if (error?.code === "GENERATED_IMAGE_NOT_TRANSPARENT") return "generation_not_transparent";
-  if (error?.code === "INCONSISTENT_CHARACTER_PACK") return "generation_inconsistent";
-  if (/429|resource exhausted|quota/i.test(String(error?.message || ""))) return "temporarily_unavailable";
-  return "generation_failed";
-};
-
-const markPetCharacterFailed = async (characterId, error) => {
-  console.error("Pet character generation failed", {
+const markPetCharacterFailed = async (characterId, error, denylist = []) => {
+  const code = characterErrorCode(error);
+  // error.details is the provider payload. It is logged only after redaction:
+  // no photograph, no prompt, no pet name, no credential.
+  logGenerationFailure(console, "Pet character generation failed", {
     characterId,
-    code: characterErrorCode(error),
-    message: String(error?.message || "Unknown generation error").slice(0, 300),
-  });
+    code,
+    message: String(error?.message || "Unknown generation error"),
+    status: error?.status ?? error?.statusCode ?? null,
+    errorCode: typeof error?.code === "string" ? error.code : null,
+    details: error?.details ?? error?.error?.details ?? null,
+  }, { denylist });
   await pool.query(
     `
       update public.pet_characters
-      set status = 'failed', error_code = $2, source_storage_keys = '[]'::jsonb, updated_at = now()
+      set status = 'failed', error_code = $2, updated_at = now()
       where id = $1
     `,
-    [characterId, characterErrorCode(error)],
+    [characterId, code],
   ).catch(() => {});
 };
 
@@ -3070,8 +3059,11 @@ const processPetCharacterCandidates = async (characterId) => {
     // Everything but the retained identity photo.
     await deletePetCharacterFiles(sourceKeys.filter((key) => key !== sourceKeys[0]));
   } catch (error) {
-    await deletePetCharacterFiles([...sourceKeys, ...newFiles.map((file) => file.storageKey)]).catch(() => {});
-    await markPetCharacterFailed(characterId, error);
+    // Partial generated files are ours. The owner's source photos stay until
+    // they delete the character. A model or server failure must not be what
+    // removes the only copies.
+    await deletePetCharacterFiles(newFiles.map((file) => file.storageKey)).catch(() => {});
+    await markPetCharacterFailed(characterId, error, [character.pet_name]);
   }
 };
 
@@ -3159,7 +3151,7 @@ const processPetCharacterExpressions = async (characterId) => {
     }
   } catch (error) {
     await deletePetCharacterFiles(newFiles.map((file) => file.storageKey)).catch(() => {});
-    await markPetCharacterFailed(characterId, error);
+    await markPetCharacterFailed(characterId, error, [character.pet_name]);
   }
 };
 

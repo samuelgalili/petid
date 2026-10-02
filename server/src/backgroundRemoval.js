@@ -14,6 +14,8 @@
 // parsing below is the part to watch on first run. Enable it on a handful of
 // products before turning it on for an import.
 
+import { logGenerationFailure, summarizeImageResponse } from "./petCharacterDiagnostics.js";
+
 const ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
 
 const PROMPT = [
@@ -23,17 +25,29 @@ const PROMPT = [
   "Return the product isolated on a fully transparent background as a PNG.",
 ].join(" ");
 
+const readProviderJson = async (response) => {
+  try {
+    const text = await response.text();
+    if (!text) return null;
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+};
+
 /**
  * @param {object} options
  * @param {string} options.apiKey
  * @param {string} [options.model] image-capable Gemini model
  * @param {number} [options.timeoutMs]
+ * @param {Console} [options.logger]
  * @returns {(buffer: Buffer, meta: { contentType: string }) => Promise<Buffer|null>}
  */
 export const createGeminiBackgroundRemover = ({
   apiKey,
   model = process.env.PRODUCT_IMAGE_BACKGROUND_MODEL || "gemini-2.5-flash-image",
   timeoutMs = Number(process.env.PRODUCT_IMAGE_BACKGROUND_TIMEOUT_MS || 45000),
+  logger = console,
 } = {}) => {
   if (!apiKey) return null;
 
@@ -59,8 +73,16 @@ export const createGeminiBackgroundRemover = ({
         }),
       });
     } catch (error) {
-      // Read the status, never the body: a provider error echoes the request,
-      // and the URL carries the API key.
+      // The thrown error stays generic: a provider error echoes the request,
+      // and the URL carries the API key. The log gets the status and a
+      // redacted message, never the URL.
+      logGenerationFailure(logger, "Product background removal request failed", {
+        model,
+        code: error?.name === "AbortError" ? "timeout" : "request_failed",
+        status: error?.status ?? error?.statusCode ?? null,
+        message: error?.name === "AbortError" ? "Background removal timed out" : error?.message,
+        details: error?.details ?? error?.error?.details ?? null,
+      });
       throw new Error(error?.name === "AbortError"
         ? "Background removal timed out"
         : "Background removal request failed");
@@ -69,6 +91,14 @@ export const createGeminiBackgroundRemover = ({
     }
 
     if (!response.ok) {
+      const data = await readProviderJson(response);
+      logGenerationFailure(logger, "Product background removal failed", {
+        model,
+        status: response.status,
+        ...summarizeImageResponse(data),
+        message: data?.error?.message || null,
+        details: data?.error?.details ?? data?.error ?? null,
+      });
       throw new Error(`Background removal provider responded with ${response.status}`);
     }
 
@@ -78,7 +108,16 @@ export const createGeminiBackgroundRemover = ({
     const base64 = image?.inline_data?.data || image?.inlineData?.data;
 
     // No image in the response is a normal outcome, not an error: the model can
-    // decline. The caller keeps the plain image.
-    return base64 ? Buffer.from(base64, "base64") : null;
+    // decline. The caller keeps the plain image. The log records why, without
+    // the picture.
+    if (!base64) {
+      logGenerationFailure(logger, "Product background removal returned no image", {
+        model,
+        status: response.status,
+        ...summarizeImageResponse(data),
+      }, { level: "warn" });
+      return null;
+    }
+    return Buffer.from(base64, "base64");
   };
 };
