@@ -19,6 +19,7 @@
     "typecheck:all": "tsc -p tsconfig.app.json --pretty false",
     "check:imports": "node scripts/check-imports.mjs",
     "test:e2e": "playwright test",
+    "test:unit": "node --test src/lib/petAvatarAppearance.test.js",
     "preview": "vite preview"
   },
   "dependencies": {

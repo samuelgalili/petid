@@ -26,7 +26,7 @@ import { SmartRecommendationSheet } from "@/components/pet-services/SmartRecomme
 import { HealthScoreBreakdown } from "@/components/profile/HealthScoreBreakdown";
 import { PetDashboardTabs } from "@/components/profile/PetDashboardTabs";
 import { HeartRain } from "@/components/profile/HeartRain";
-import { PetHeroVisual, type Mood } from "@/components/profile/PetHeroVisual";
+import { PetAvatarGate } from "@/components/pet/PetAvatarGate";
 import { haptic } from "@/lib/haptics";
 import { isValidUrl } from "@/lib/inputSanitizer";
 import { getCurrentUser, getMyPets, type MipoProfile } from "@/lib/mipoApi";
@@ -41,6 +41,7 @@ interface Pet {
   age_months?: number;
   size?: string;
   avatar_url?: string;
+  color?: string | null;
   weight?: number | null;
 }
 
@@ -54,15 +55,6 @@ const resolveHeroSrc = (avatarUrl: string | null | undefined, fallbackSrc: strin
   // upload-avatar persists pets.avatar_url as data:image/{png|jpeg|webp|gif};base64,...
   if (trimmed.startsWith("data:image/")) return trimmed;
   return fallbackSrc;
-};
-
-const inferMood = (pet: Pet): Mood => {
-  const hour = new Date().getHours();
-  const isNight = hour >= 22 || hour < 6;
-  if (!pet.breed && pet.weight == null) return "unknown";
-  if (isNight) return "asleep";
-  if (pet.weight == null) return "attention";
-  return "calm";
 };
 
 const Profile = () => {
@@ -87,7 +79,6 @@ const Profile = () => {
   const [healthRefreshKey, setHealthRefreshKey] = useState(0);
   const [healthBreakdownOpen, setHealthBreakdownOpen] = useState(false);
   const [heartRainActive, setHeartRainActive] = useState(false);
-  const [celebrateKey, setCelebrateKey] = useState(0);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -99,7 +90,6 @@ const Profile = () => {
   const triggerHeartRain = () => {
     haptic("success");
     setHeartRainActive(true);
-    setCelebrateKey((k) => k + 1);
     setTimeout(() => setHeartRainActive(false), 2500);
   };
 
@@ -372,29 +362,26 @@ const Profile = () => {
                 {/* ── Premium Pet Header ── */}
                 {selectedPet && (
                   <motion.div
-                    className="flex items-center gap-3.5 py-4 mb-1"
+                    className="pt-3"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.05, duration: 0.35 }}
                   >
-                    {/* Profile Hero — Master avatar (Slice A / F1, ungated) */}
-                    <motion.div
-                      className="relative shrink-0 scale-[0.4] origin-right -my-12"
-                      whileTap={{ scale: 0.38 }}
-                      onClick={triggerHeartRain}
-                    >
-                      <PetHeroVisual
-                        src={resolveHeroSrc(
+                    <div className="flex justify-center">
+                      <PetAvatarGate
+                        key={selectedPet.id}
+                        name={selectedPet.name}
+                        photoSrc={resolveHeroSrc(
                           selectedPet.avatar_url,
                           selectedPet.type === "cat" ? catIcon : dogIcon,
                         )}
-                        alt={selectedPet.name}
-                        mood={inferMood(selectedPet)}
-                        celebrateKey={celebrateKey}
-                        renderer="image"
+                        species={selectedPet.type}
+                        breed={selectedPet.breed}
+                        color={selectedPet.color}
+                        onActivate={triggerHeartRain}
                       />
-                    </motion.div>
-
+                    </div>
+                    <div className="flex items-center gap-3.5 py-4 mb-1">
                     {/* Pet Info */}
                     <div className="flex-1 min-w-0">
                       <h2 className="text-lg font-bold text-foreground tracking-tight truncate">
@@ -441,6 +428,7 @@ const Profile = () => {
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
+                    </div>
                     </div>
                   </motion.div>
                 )}

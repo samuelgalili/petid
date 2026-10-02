@@ -8,7 +8,7 @@ import {
   PetAvatarScene,
   type PrototypeMood,
   type PrototypeSpecies,
-} from "@/pages/dev/petAvatarScene";
+} from "@/components/pet/petAvatarScene";
 
 const MOODS: { id: PrototypeMood; label: string }[] = [
   { id: "neutral", label: "רגוע" },

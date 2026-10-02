@@ -1,14 +1,39 @@
 /**
- * Dev-only volume test for a living pet in the home centre.
+ * Volume stand-in for a pet, drawn with raw WebGL.
  *
- * Raw WebGL, no three.js and no model file: this page is how the proposal
- * shows idle, blink, tail, tap and a missing-WebGL fallback without adding a
- * dependency or a licensed asset. It is not a likeness of anyone's pet, and
- * nothing in the production home imports it.
+ * No three.js and no model file. Coat, ears and proportions come from
+ * `appearanceFromPet`. The dev page still drives species and mood directly.
  */
 
-export type PrototypeSpecies = "dog" | "cat";
+import type { AvatarLook, AvatarSpecies, Rgb } from "@/lib/petAvatarAppearance";
+
+export type PrototypeSpecies = AvatarSpecies;
 export type PrototypeMood = "neutral" | "happy" | "excited" | "curious" | "concerned";
+
+const prototypeLook = (species: PrototypeSpecies): AvatarLook => ({
+  species,
+  coat: species === "cat" ? [0.62, 0.5, 0.42] : [0.86, 0.64, 0.4],
+  markings: species === "cat" ? [0.62, 0.5, 0.42] : [0.86, 0.64, 0.4],
+  ears: species === "cat" ? "pointed" : "pointed",
+  bodyLength: 1,
+  headScale: 1,
+  legScale: 1,
+});
+
+const shade = (color: Rgb, factor: number): Rgb => [
+  color[0] * factor,
+  color[1] * factor,
+  color[2] * factor,
+];
+
+const earsOf = (look: AvatarLook): { x: number; y: number; z: number; scale: Rgb; roll: number } => {
+  if (look.ears === "floppy") return { x: 0.28, y: 0.34, z: 0.16, scale: [0.08, 0.22, 0.045], roll: 1.15 };
+  if (look.ears === "folded") return { x: 0.2, y: 0.58, z: 0.26, scale: [0.14, 0.08, 0.08], roll: 0.2 };
+  if (look.species === "cat") return { x: 0.2, y: 0.72, z: 0.28, scale: [0.1, 0.22, 0.06], roll: 0.15 };
+  return { x: 0.2, y: 0.58, z: 0.28, scale: [0.12, 0.16, 0.07], roll: 0.15 };
+};
+
+const coatsDiffer = (a: Rgb, b: Rgb) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) > 0.15;
 
 type Vec3 = [number, number, number];
 
@@ -197,12 +222,13 @@ const part = (
 ): Part => ({ color, position, scale, rotationY, rotationZ, alpha });
 
 const buildParts = (
-  species: PrototypeSpecies,
+  look: AvatarLook,
   mood: PrototypeMood,
   time: number,
   hop: number,
   blink: number,
 ): Part[] => {
+  const species = look.species;
   const excited = mood === "excited" ? 1.35 : mood === "happy" ? 1.12 : mood === "concerned" ? 0.72 : 1;
   const breath = 1 + Math.sin(time * (mood === "concerned" ? 1.4 : 2.1)) * (mood === "excited" ? 0.045 : 0.028);
   const bob = Math.sin(time * 1.7) * (mood === "excited" ? 0.035 : 0.018) + hop;
@@ -210,31 +236,44 @@ const buildParts = (
   const wag = Math.sin(time * wagSpeed) * (mood === "concerned" ? 0.18 : 0.48) * excited;
   const tilt = mood === "curious" ? 0.28 : mood === "concerned" ? -0.08 : 0;
   const eyeY = 0.12 + blink * 0.78;
-  const coat: Vec3 = species === "cat" ? [0.62, 0.5, 0.42] : [0.86, 0.64, 0.4];
-  const dark: Vec3 = [0.22, 0.16, 0.14];
-  const earY = species === "cat" ? 0.72 : 0.58;
-  const earScale: Vec3 = species === "cat" ? [0.1, 0.22, 0.06] : [0.12, 0.16, 0.07];
+  const coat = look.coat;
+  const mark = look.markings;
+  const nose: Vec3 = [0.22, 0.16, 0.14];
+  const paws = shade(coat, 0.38);
+  const ears = earsOf(look);
   const snoutZ = species === "cat" ? 0.58 : 0.66;
   const snoutScale: Vec3 = species === "cat" ? [0.12, 0.09, 0.1] : [0.16, 0.11, 0.16];
+  const headBase: Vec3 = species === "cat" ? [0.4, 0.36, 0.36] : [0.34, 0.32, 0.32];
+  const head: Vec3 = [
+    headBase[0] * look.headScale,
+    headBase[1] * look.headScale,
+    headBase[2] * look.headScale,
+  ];
+  const bodyDepth = (species === "cat" ? 0.4 : 0.48) * look.bodyLength;
+  const legHeight = 0.14 * look.legScale;
 
-  return [
+  const parts: Part[] = [
     part([0.15, 0.12, 0.16], [0, -0.34 + bob * 0.15, 0], [0.72, 0.035, 0.48], 0, 0, 0.28),
-    part(coat, [0, 0.02 + bob, 0.02], [0.58, 0.4 * breath, species === "cat" ? 0.4 : 0.48]),
-    part(coat, [0, 0.36 + bob, 0.34], species === "cat" ? [0.4, 0.36, 0.36] : [0.34, 0.32, 0.32], 0, tilt),
+    part(coat, [0, 0.02 + bob, 0.02], [0.58, 0.4 * breath, bodyDepth]),
+    part(coat, [0, 0.36 + bob, 0.34], head, 0, tilt),
     part(coat, [0, 0.26 + bob, snoutZ], snoutScale, 0, tilt * 0.4),
-    part(dark, [0, 0.3 + bob, snoutZ + 0.12], [0.055, 0.045, 0.05]),
-    part(coat, [-0.2, earY + bob, 0.28], earScale, 0, 0.15),
-    part(coat, [0.2, earY + bob, 0.28], earScale, 0, -0.15),
+    part(nose, [0, 0.3 + bob, snoutZ + 0.12], [0.055, 0.045, 0.05]),
+    part(mark, [-ears.x, ears.y + bob, ears.z], ears.scale, 0, ears.roll),
+    part(mark, [ears.x, ears.y + bob, ears.z], ears.scale, 0, -ears.roll),
     part([0.96, 0.95, 0.93], [-0.12, 0.44 + bob, 0.58], [0.07, eyeY, 0.05]),
     part([0.96, 0.95, 0.93], [0.12, 0.44 + bob, 0.58], [0.07, eyeY, 0.05]),
-    part(dark, [-0.12, 0.43 + bob, 0.62], [0.035, eyeY * 0.72, 0.03]),
-    part(dark, [0.12, 0.43 + bob, 0.62], [0.035, eyeY * 0.72, 0.03]),
-    part(coat, [0, 0.22 + bob, -0.42], species === "cat" ? [0.07, 0.07, 0.34] : [0.08, 0.08, 0.26], wag, 0.4),
-    part(dark, [-0.18, -0.22 + bob, 0.16], [0.09, 0.14, 0.1]),
-    part(dark, [0.18, -0.22 + bob, 0.16], [0.09, 0.14, 0.1]),
-    part(dark, [-0.18, -0.22 + bob, -0.16], [0.09, 0.14, 0.1]),
-    part(dark, [0.18, -0.22 + bob, -0.16], [0.09, 0.14, 0.1]),
+    part(nose, [-0.12, 0.43 + bob, 0.62], [0.035, eyeY * 0.72, 0.03]),
+    part(nose, [0.12, 0.43 + bob, 0.62], [0.035, eyeY * 0.72, 0.03]),
+    part(mark, [0, 0.22 + bob, -0.42], species === "cat" ? [0.07, 0.07, 0.34] : [0.08, 0.08, 0.26], wag, 0.4),
+    part(paws, [-0.18, -0.22 + bob, 0.16], [0.09, legHeight, 0.1]),
+    part(paws, [0.18, -0.22 + bob, 0.16], [0.09, legHeight, 0.1]),
+    part(paws, [-0.18, -0.22 + bob, -0.16], [0.09, legHeight, 0.1]),
+    part(paws, [0.18, -0.22 + bob, -0.16], [0.09, legHeight, 0.1]),
   ];
+  if (coatsDiffer(coat, mark)) {
+    parts.splice(2, 0, part(mark, [0, 0.1 + bob, 0.2], [0.16, 0.1, 0.06]));
+  }
+  return parts;
 };
 
 export class PetAvatarScene {
@@ -244,13 +283,18 @@ export class PetAvatarScene {
   private readonly indexBuffer: WebGLBuffer;
   private readonly indexCount: number;
   private frame = 0;
+  private destroyed = false;
   private running = false;
-  private reducedMotion = false;
-  private species: PrototypeSpecies = "cat";
+  private look: AvatarLook = prototypeLook("cat");
   private mood: PrototypeMood = "neutral";
   private hop = 0;
   private hopUntil = 0;
   private startedAt = performance.now();
+  private lastTime = 0;
+  private reducedMotion = false;
+  private userPaused = false;
+  private frameListener: (() => void) | null = null;
+  private onError: ((error: unknown) => void) | null = null;
   private readonly uniforms: Record<string, WebGLUniformLocation | null>;
   private readonly onResize: () => void;
   private readonly resizeObserver: ResizeObserver;
@@ -259,7 +303,7 @@ export class PetAvatarScene {
     this.gl = gl;
     const program = createProgram(gl, VERT, FRAG);
     this.program = program;
-    const sphere = createSphere(18, 24);
+    const sphere = createSphere(12, 16);
     const buffer = gl.createBuffer();
     if (!buffer) throw new Error("buffer");
     this.buffer = buffer;
@@ -312,48 +356,73 @@ export class PetAvatarScene {
       failIfMajorPerformanceCaveat: false,
     });
     if (!gl) {
-      console.error("pet avatar prototype: WebGL context unavailable");
+      console.error("pet avatar: WebGL context unavailable");
       return null;
     }
     try {
       return new PetAvatarScene(canvas, gl);
     } catch (error) {
-      console.error("pet avatar prototype failed to start", error);
+      console.error("pet avatar failed to start", error);
       return null;
     }
   }
 
   setSpecies(species: PrototypeSpecies) {
-    this.species = species;
-    if (this.reducedMotion) this.draw(0);
+    this.setLook(prototypeLook(species));
+  }
+
+  setLook(look: AvatarLook) {
+    if (this.destroyed) return;
+    this.look = look;
+    if (!this.running) this.paint(this.reducedMotion ? 0 : this.lastTime);
   }
 
   setMood(mood: PrototypeMood) {
     this.mood = mood;
-    if (this.reducedMotion) this.draw(0);
+    if (!this.running) this.paint(this.reducedMotion ? 0 : this.lastTime);
+  }
+
+  setFrameListener(listener: (() => void) | null) {
+    this.frameListener = listener;
+  }
+
+  setErrorHandler(handler: ((error: unknown) => void) | null) {
+    this.onError = handler;
   }
 
   setReducedMotion(reduced: boolean) {
+    if (this.destroyed) return;
     this.reducedMotion = reduced;
     if (reduced) {
       this.stop();
-      this.draw(0);
-    } else if (!this.running) {
+      this.paint(0);
+    } else if (!this.userPaused && !this.running) {
       this.start();
     }
   }
 
+  /** Stops the frame loop while the canvas is off-screen or the tab is hidden. */
+  setPaused(paused: boolean) {
+    if (this.destroyed) return;
+    this.userPaused = paused;
+    if (paused) {
+      this.stop();
+      return;
+    }
+    if (!this.reducedMotion) this.start();
+  }
+
   nudge() {
     this.hopUntil = performance.now() + 520;
-    if (this.reducedMotion) this.draw(0.2);
+    if (!this.running) this.paint(this.reducedMotion ? 0.2 : this.lastTime);
   }
 
   start() {
-    if (this.running || this.reducedMotion) return;
+    if (this.destroyed || this.running || this.reducedMotion || this.userPaused) return;
     this.running = true;
     const loop = (now: number) => {
       if (!this.running) return;
-      this.draw((now - this.startedAt) / 1000);
+      this.paint((now - this.startedAt) / 1000);
       this.frame = requestAnimationFrame(loop);
     };
     this.frame = requestAnimationFrame(loop);
@@ -365,6 +434,8 @@ export class PetAvatarScene {
   }
 
   destroy() {
+    if (this.destroyed) return;
+    this.destroyed = true;
     this.stop();
     this.resizeObserver.disconnect();
     // Do not call WEBGL_lose_context. Dev Strict Mode runs this cleanup and
@@ -377,7 +448,8 @@ export class PetAvatarScene {
   }
 
   private resize() {
-    const ratio = Math.min(window.devicePixelRatio || 1, 2);
+    const cap = this.canvas.clientWidth < 400 ? 1.5 : 2;
+    const ratio = Math.min(window.devicePixelRatio || 1, cap);
     const width = Math.max(1, Math.floor(this.canvas.clientWidth * ratio));
     const height = Math.max(1, Math.floor(this.canvas.clientHeight * ratio));
     if (this.canvas.width !== width || this.canvas.height !== height) {
@@ -385,7 +457,18 @@ export class PetAvatarScene {
       this.canvas.height = height;
     }
     this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-    if (this.reducedMotion) this.draw(0);
+    if (!this.running) this.paint(this.reducedMotion ? 0 : this.lastTime);
+  }
+
+  private paint(time: number) {
+    if (this.destroyed) return;
+    try {
+      this.draw(time);
+      this.frameListener?.();
+    } catch (error) {
+      this.stop();
+      this.onError?.(error);
+    }
   }
 
   private draw(time: number) {
@@ -395,6 +478,7 @@ export class PetAvatarScene {
     this.hop = hopWindow > 0 ? Math.sin((1 - hopWindow / 520) * Math.PI) * 0.28 : 0;
     const blinkPhase = time % 3.4;
     const blink = blinkPhase > 3.22 && blinkPhase < 3.38 ? 1 : 0;
+    this.lastTime = time;
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.useProgram(this.program);
     const aspect = this.canvas.width / Math.max(1, this.canvas.height);
@@ -403,7 +487,7 @@ export class PetAvatarScene {
       lookAt([0.15, 0.72, 2.55], [0, 0.12, 0], [0, 1, 0]),
     );
     gl.uniformMatrix4fv(this.uniforms.uViewProj, false, viewProj);
-    for (const piece of buildParts(this.species, this.mood, time, this.hop, blink)) {
+    for (const piece of buildParts(this.look, this.mood, time, this.hop, blink)) {
       gl.uniformMatrix4fv(
         this.uniforms.uModel,
         false,
