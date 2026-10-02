@@ -1,6 +1,13 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import sharp from "sharp";
 import { KEY_BACKGROUND_INSTRUCTION, chromaKeyToAlpha } from "./chromaKey.js";
+import {
+  apiErrorDiagnostic,
+  classifyCutFailure,
+  logGenerationFailure,
+  redactGenerationDiagnostic,
+  summarizeImageResponse,
+} from "./petCharacterDiagnostics.js";
 
 /**
  * Two candidates, one per style, so the owner picks a direction rather than
@@ -110,7 +117,7 @@ export const resolvePetCharacterProvider = ({
 const makeClient = (configuration) => {
   const resolved = resolvePetCharacterProvider(configuration);
   if (!resolved) throw new Error("Pet character generation is not configured");
-  return new GoogleGenAI(resolved.clientOptions);
+  return { client: new GoogleGenAI(resolved.clientOptions), provider: resolved.provider };
 };
 
 const referenceParts = (references) => references.map((reference) => ({
@@ -188,7 +195,9 @@ export const inspectTransparency = async (buffer) => {
   }
 
   if (!metadata.width || !metadata.height) return { transparent: false, reason: "undecodable" };
-  if (metadata.hasAlpha === false) return { transparent: false, reason: "no_alpha_channel" };
+  if (metadata.hasAlpha === false) {
+    return { transparent: false, reason: "no_alpha_channel", width: metadata.width, height: metadata.height };
+  }
 
   const { data, info } = await image.ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const alphaAt = (x, y) => data[(y * info.width + x) * info.channels + (info.channels - 1)];
@@ -202,6 +211,8 @@ export const inspectTransparency = async (buffer) => {
     reason: transparentCorners >= CORNERS_REQUIRED_TRANSPARENT ? null : "opaque_corners",
     corners,
     transparentCorners,
+    width: info.width,
+    height: info.height,
   };
 };
 
@@ -330,6 +341,25 @@ export const assertUsableReferences = (parsed) => {
  * call the product makes. Failing after two is honest and bounded; the pack is
  * then marked failed rather than filled with squares.
  */
+const transparencyFailure = (cut, summary) => {
+  const failure = classifyCutFailure(cut.reason);
+  const error = new Error(failure.message);
+  error.code = failure.code;
+  error.details = {
+    reason: cut.reason ?? null,
+    keyedBorder: cut.keyedBorder ?? null,
+    corners: Array.isArray(cut.corners) ? cut.corners : null,
+    width: cut.width ?? null,
+    height: cut.height ?? null,
+    mimeType: summary?.mimeType ?? null,
+    bytes: summary?.bytes ?? null,
+    finishReason: summary?.finishReason ?? null,
+    blockReason: summary?.blockReason ?? null,
+    usageMetadata: summary?.usageMetadata ?? null,
+  };
+  return error;
+};
+
 /**
  * One image, cut out here rather than asked for cut out.
  *
@@ -345,64 +375,128 @@ export const assertUsableReferences = (parsed) => {
  *
  * The result is always a PNG, because that is what the key emits.
  */
-const generateImage = async ({ client, imageModel, parts, requireTransparency = true, logger = console }) => {
-  const ask = async (withParts) => {
-    const response = await client.models.generateContent({
-      model: imageModel,
-      contents: [{ role: "user", parts: withParts }],
-      config: {
-        responseModalities: [Modality.TEXT, Modality.IMAGE],
-        candidateCount: 1,
-        imageConfig: { aspectRatio: "1:1" },
-      },
-    });
-    return extractGeneratedImage(response);
-  };
-
+const generateImage = async ({
+  client,
+  imageModel,
+  parts,
+  requireTransparency = true,
+  logger = console,
+  provider = null,
+  style = null,
+  expression = null,
+  denylist = [],
+}) => {
   /** Key it, then hold the result to the same standard the screen holds it to. */
   const cutOut = async (generated) => {
-    const keyed = await chromaKeyToAlpha(generated.buffer);
-    if (!keyed.ok) return { ok: false, reason: keyed.reason, keyedBorder: keyed.keyedBorder };
+    const keyed = await chromaKeyToAlpha(generated.buffer, { logger });
+    if (!keyed.ok) {
+      return {
+        ok: false,
+        reason: keyed.reason,
+        keyedBorder: keyed.keyedBorder ?? null,
+        width: keyed.width ?? null,
+        height: keyed.height ?? null,
+      };
+    }
 
     const verdict = await inspectTransparency(keyed.buffer);
-    if (!verdict.transparent) return { ok: false, reason: `keyed_but_${verdict.reason}` };
+    if (!verdict.transparent) {
+      return {
+        ok: false,
+        reason: verdict.reason === "undecodable" ? "undecodable" : `keyed_but_${verdict.reason}`,
+        keyedBorder: keyed.keyedBorder ?? null,
+        corners: verdict.corners ?? null,
+        width: verdict.width ?? null,
+        height: verdict.height ?? null,
+      };
+    }
 
     return { ok: true, image: { buffer: keyed.buffer, contentType: "image/png" } };
   };
 
-  const first = await ask(parts);
-  if (!requireTransparency) return first;
+  const attemptFields = (attempt, extra) => redactGenerationDiagnostic({
+    attempt,
+    model: imageModel,
+    provider,
+    style,
+    expression,
+    ...extra,
+  }, { denylist });
 
-  const firstCut = await cutOut(first);
+  const ask = async (withParts, attempt) => {
+    let response;
+    try {
+      response = await client.models.generateContent({
+        model: imageModel,
+        contents: [{ role: "user", parts: withParts }],
+        config: {
+          responseModalities: [Modality.TEXT, Modality.IMAGE],
+          candidateCount: 1,
+          imageConfig: { aspectRatio: "1:1" },
+        },
+      });
+    } catch (error) {
+      logGenerationFailure(logger, "Pet character image request failed", {
+        ...attemptFields(attempt, apiErrorDiagnostic(error)),
+      }, { denylist });
+      throw error;
+    }
+
+    const summary = summarizeImageResponse(response);
+    try {
+      return { image: extractGeneratedImage(response), summary };
+    } catch (error) {
+      logGenerationFailure(logger, "Pet character image response had no usable image", {
+        attempt,
+        model: imageModel,
+        provider,
+        style,
+        expression,
+        ...summary,
+        code: error?.code || null,
+      }, { denylist, level: "warn" });
+      throw error;
+    }
+  };
+
+  const first = await ask(parts, 1);
+  if (!requireTransparency) return first.image;
+
+  const firstCut = await cutOut(first.image);
   if (firstCut.ok) return firstCut.image;
 
   // SAY IT OUT LOUD, BOTH WAYS. Whether the correction lands depends on the
   // model, which no test can establish. A silent retry makes a success
   // invisible and a failure look like every other failure.
-  logger.warn("Pet character background was not keyable; retrying with a correction", {
-    reason: firstCut.reason,
-    keyedBorder: firstCut.keyedBorder,
-  });
+  logger.warn("Pet character background was not keyable; retrying with a correction", attemptFields(1, {
+    ...first.summary,
+    reason: firstCut.reason ?? null,
+    keyedBorder: firstCut.keyedBorder ?? null,
+    corners: firstCut.corners ?? null,
+    width: firstCut.width ?? null,
+    height: firstCut.height ?? null,
+    mimeType: first.summary?.mimeType || first.image.contentType || null,
+    bytes: first.summary?.bytes || first.image.buffer?.length || 0,
+  }));
 
   // The correction goes FIRST, with the original instruction intact after it:
   // the retry is the same request plus a note about what came back, not a
   // different request that might also change the animal.
-  const retried = await ask([{ text: TRANSPARENCY_RETRY_NOTE }, ...parts]);
-  const retriedCut = await cutOut(retried);
+  const retried = await ask([{ text: TRANSPARENCY_RETRY_NOTE }, ...parts], 2);
+  const retriedCut = await cutOut(retried.image);
 
   if (!retriedCut.ok) {
-    logger.error("Pet character background was not keyable on the retry either", {
-      reason: retriedCut.reason,
-      keyedBorder: retriedCut.keyedBorder,
-    });
-    const error = new Error(
-      retriedCut.reason === "background_not_keyable"
-        ? "The model did not place the character on the requested background colour"
-        : "The keyed image still has an opaque background",
-    );
-    error.code = "GENERATED_IMAGE_NOT_TRANSPARENT";
-    error.details = retriedCut;
-    throw error;
+    logger.error("Pet character background was not keyable on the retry either", attemptFields(2, {
+      ...retried.summary,
+      reason: retriedCut.reason ?? null,
+      keyedBorder: retriedCut.keyedBorder ?? null,
+      corners: retriedCut.corners ?? null,
+      width: retriedCut.width ?? null,
+      height: retriedCut.height ?? null,
+      mimeType: retried.summary?.mimeType || retried.image.contentType || null,
+      bytes: retried.summary?.bytes || retried.image.buffer?.length || 0,
+    }));
+    throw transparencyFailure(retriedCut, retried.summary);
   }
 
   logger.warn("The background correction worked on the retry");
@@ -464,7 +558,7 @@ export const generateCharacterCandidates = async ({
   petName,
   petType,
 }) => {
-  const client = makeClient({ geminiApiKey, vertexApiKey, project, location });
+  const { client, provider } = makeClient({ geminiApiKey, vertexApiKey, project, location });
   const visualIdentity = await analyzeReferences({ client, visionModel, references, petName, petType });
   const candidates = [];
 
@@ -472,6 +566,9 @@ export const generateCharacterCandidates = async ({
     const image = await generateImage({
       client,
       imageModel,
+      provider,
+      style: CHARACTER_STYLES[index],
+      denylist: [petName],
       parts: [
         { text: buildCandidatePrompt({ petName, petType, visualIdentity, style: STYLE_DIRECTION[CHARACTER_STYLES[index]] }) },
         ...referenceParts(references),
@@ -494,13 +591,16 @@ export const generateCharacterExpressions = async ({
   visualIdentity,
   petName,
 }) => {
-  const client = makeClient({ geminiApiKey, vertexApiKey, project, location });
+  const { client, provider } = makeClient({ geminiApiKey, vertexApiKey, project, location });
   const expressions = [];
 
   for (const expression of CHARACTER_EXPRESSIONS) {
     const image = await generateImage({
       client,
       imageModel,
+      provider,
+      expression,
+      denylist: [petName],
       parts: [
         { text: buildExpressionPrompt({ petName, expression, visualIdentity }) },
         {
@@ -530,6 +630,9 @@ export const generateCharacterExpressions = async ({
       const image = await generateImage({
         client,
         imageModel,
+        provider,
+        expression,
+        denylist: [petName],
         parts: [
           {
             text: `${buildExpressionPrompt({ petName, expression, visualIdentity })}\n\nQUALITY CORRECTION: The previous version drifted from the canonical master. Match every identity and rendering detail with exceptional precision; change only the requested pose and expression.`,

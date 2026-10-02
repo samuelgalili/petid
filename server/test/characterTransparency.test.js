@@ -26,6 +26,7 @@ import {
   CORNER_ALPHA_THRESHOLD,
   inspectTransparency,
 } from "../src/petCharacter.js";
+import { characterErrorCode, classifyCutFailure } from "../src/petCharacterDiagnostics.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
@@ -130,16 +131,25 @@ test("just under the threshold passes, exactly on it does not", async () => {
 // ─── the error the retry path recognises ─────────────────────────────────────
 
 test("the refusal carries the code characterErrorCode maps", () => {
-  // generateImage constructs this error inline now that the keying step owns
-  // the decision. The code is the contract between the generator and the
-  // screen's error message, so it is asserted where it is written.
+  // The keying step owns the decision, and the code is the contract between
+  // the generator and the screen. An unkeyable background, a corrupt file and
+  // a keyed image that is still opaque are three different faults.
   const source = readFileSync(path.join(repoRoot, "server/src/petCharacter.js"), "utf8");
-  assert.match(source, /error\.code = "GENERATED_IMAGE_NOT_TRANSPARENT"/);
-  assert.match(
-    source,
-    /did not place the character on the requested background colour/,
-    "the message no longer distinguishes an unkeyable background from a keyed\n" +
-      "image that came out opaque anyway - two different faults.",
+  assert.match(source, /classifyCutFailure\(cut\.reason\)/);
+  assert.match(source, /error\.code = failure\.code/);
+
+  const unkeyable = classifyCutFailure("background_not_keyable");
+  const corrupt = classifyCutFailure("undecodable");
+  const opaque = classifyCutFailure("keyed_but_opaque_corners");
+  assert.equal(unkeyable.code, "BACKGROUND_NOT_KEYABLE");
+  assert.equal(unkeyable.publicCode, "background_not_keyable");
+  assert.match(unkeyable.message, /requested background colour/);
+  assert.equal(corrupt.publicCode, "undecodable");
+  assert.notEqual(unkeyable.message, opaque.message);
+  assert.notEqual(unkeyable.publicCode, opaque.publicCode);
+  assert.equal(
+    characterErrorCode(Object.assign(new Error(unkeyable.message), { code: unkeyable.code })),
+    "background_not_keyable",
   );
 });
 
@@ -200,27 +210,47 @@ test("a transparency failure has its own error code, not the generic bucket", ()
   // way to find out is a real regeneration, and that experiment is worthless
   // if its failure is recorded as "generation_failed", which is also what a
   // network error, a parse failure and an empty response look like.
-  const index = readFileSync(path.join(repoRoot, "server/src/index.js"), "utf8");
-  const mapper = index.slice(index.indexOf("const characterErrorCode"), index.indexOf("const markPetCharacterFailed"));
+  const unkeyable = Object.assign(new Error("colour"), {
+    code: "BACKGROUND_NOT_KEYABLE",
+    details: { reason: "background_not_keyable", keyedBorder: 0.2 },
+  });
+  assert.equal(characterErrorCode(unkeyable), "background_not_keyable");
+  assert.notEqual(characterErrorCode(unkeyable), "generation_failed");
 
-  assert.ok(mapper.length > 0, "characterErrorCode is gone");
-  assert.match(
-    mapper,
-    /GENERATED_IMAGE_NOT_TRANSPARENT"\) return "generation_not_transparent"/,
-    "a transparency refusal falls through to generation_failed, so a\n" +
-      "regeneration cannot tell us whether the retry note worked.",
+  const index = readFileSync(path.join(repoRoot, "server/src/index.js"), "utf8");
+  assert.match(index, /characterErrorCode/);
+  assert.match(index, /from "\.\/petCharacterDiagnostics\.js"/);
+  const failed = index.slice(index.indexOf("const markPetCharacterFailed"), index.indexOf("const processPetCharacterCandidates"));
+  assert.ok(failed.length > 0, "markPetCharacterFailed is gone");
+  assert.match(failed, /logGenerationFailure/);
+  assert.doesNotMatch(
+    failed,
+    /source_storage_keys/,
+    "a failed generation still clears the owner's source photos",
   );
+  const candidates = index.slice(
+    index.indexOf("const processPetCharacterCandidates"),
+    index.indexOf("const processPetCharacterExpressions"),
+  );
+  const failureCatch = candidates.slice(candidates.lastIndexOf("} catch (error)"));
+  assert.match(failureCatch, /newFiles\.map/);
+  assert.doesNotMatch(failureCatch, /sourceKeys/);
 });
 
 test("the owner is told what actually happened, in their own words", () => {
   // An owner shown "something went wrong, try again" will try again and get
-  // the same answer, because nothing about their photographs is wrong.
+  // the same answer, because nothing about their photographs is wrong. The
+  // sentence has to name the fault we actually measured, and it must not
+  // promise a time we do not know.
   const studio = readFileSync(path.join(repoRoot, "src/components/home/PetCharacterStudio.tsx"), "utf8");
-  assert.match(
-    studio,
-    /generation_not_transparent: "/,
-    "the new error code has no message, so it renders as no message at all",
-  );
+  for (const code of ["background_not_keyable", "undecodable", "opaque_corners", "model_unavailable", "generation_not_transparent"]) {
+    assert.match(studio, new RegExp(`${code}: "`), `${code} has no message`);
+  }
+  assert.doesNotMatch(studio, /רקע מצויר/);
+  const modelMessage = studio.slice(studio.indexOf("model_unavailable:"), studio.indexOf("generation_failed:"));
+  assert.doesNotMatch(modelMessage, /נסו שוב/);
+  assert.match(studio, /התמונות תקינות/);
+  assert.doesNotMatch(studio.slice(studio.indexOf("const errorMessages"), studio.indexOf("const EXPRESSION_LABELS")), /מאוחר יותר/);
 });
 
 test("the retry says out loud whether it worked", () => {

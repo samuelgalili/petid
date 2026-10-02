@@ -170,4 +170,37 @@ test.describe("AWS pet character studio", () => {
     await expect(page.getByAltText("לוקה סקרן")).toBeVisible();
     expect(videoRequests).toEqual([]);
   });
+
+  test("a failed cut-out tells the owner the fault is ours and the photos are fine", async ({ page }) => {
+    await mockHome(page);
+    await page.route(`**/api/me/pets/${petId}/character`, async (route) => {
+      await route.fulfill({
+        json: {
+          available: true,
+          character: {
+            id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            pet_id: petId,
+            status: "failed",
+            style_key: "mipo-soft-character-v1",
+            selected_candidate_key: null,
+            candidates: [],
+            expressions: {},
+            error_code: "background_not_keyable",
+            generation_version: 1,
+            created_at: "2026-10-02T18:31:00.000Z",
+            updated_at: "2026-10-02T18:31:25.000Z",
+          },
+        },
+      });
+    });
+
+    await page.goto("/");
+    await page.getByRole("button", { name: /מצב הרוח והדמות של לוקה/ }).click();
+    await page.getByRole("button", { name: "פתיחת סטודיו הדמות של לוקה" }).click();
+    const alert = page.getByRole("alert");
+    await expect(alert).toContainText("זו תקלה אצלנו");
+    await expect(alert).toContainText("התמונות תקינות");
+    await expect(alert).not.toContainText("רקע מצויר");
+    await expect(alert).not.toContainText("נסו שוב");
+  });
 });

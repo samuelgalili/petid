@@ -1,4 +1,5 @@
 import sharp from "sharp";
+import { logGenerationFailure } from "./petCharacterDiagnostics.js";
 
 /**
  * Cut the background out ourselves instead of asking for it to be absent.
@@ -87,16 +88,29 @@ export const measureKeyedBorder = (data, info) => {
  * where they exceed it removes the cast without touching a pixel that was
  * genuinely pink.
  */
-export const chromaKeyToAlpha = async (buffer) => {
+export const chromaKeyToAlpha = async (buffer, options = {}) => {
+  const logger = options?.logger;
+  const refuse = (result) => {
+    if (logger) {
+      logGenerationFailure(logger, "Pet character chroma key refused", {
+        reason: result.reason ?? null,
+        keyedBorder: result.keyedBorder ?? null,
+        width: result.width ?? null,
+        height: result.height ?? null,
+      }, { level: "warn" });
+    }
+    return result;
+  };
+
   const image = sharp(buffer, { failOn: "none" });
 
   let metadata;
   try {
     metadata = await image.metadata();
   } catch {
-    return { ok: false, reason: "undecodable" };
+    return refuse({ ok: false, reason: "undecodable" });
   }
-  if (!metadata.width || !metadata.height) return { ok: false, reason: "undecodable" };
+  if (!metadata.width || !metadata.height) return refuse({ ok: false, reason: "undecodable" });
 
   const { data, info } = await image.ensureAlpha().raw().toBuffer({ resolveWithObject: true });
 
@@ -104,7 +118,13 @@ export const chromaKeyToAlpha = async (buffer) => {
   if (keyedBorder < MIN_KEYED_BORDER) {
     // The model did not put the animal on the colour it was asked for. Keying
     // now would punch holes through anything pink in the fur.
-    return { ok: false, reason: "background_not_keyable", keyedBorder };
+    return refuse({
+      ok: false,
+      reason: "background_not_keyable",
+      keyedBorder,
+      width: metadata.width,
+      height: metadata.height,
+    });
   }
 
   const { width, height, channels } = info;

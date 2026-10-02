@@ -37,14 +37,19 @@ const errorMessages: Record<string, string> = {
   reference_photos_face_only: "התמונות מראות רק את הפנים. כדי שהדמות תיראה כמו חיית המחמד שלכם באמת, צריך תמונה אחת לפחות של כל הגוף — ראש, גוף, רגליים וזנב.",
   generation_blocked: "המודל לא הצליח ליצור דמות מהתמונות האלה. נסו תמונות אחרות ללא אנשים ברקע.",
   generation_inconsistent: "חלק מההבעות לא שמרו בדיוק על המראה של הדמות. בחרו שוב בעיצוב כדי שניצור חבילה עקבית יותר.",
-  temporarily_unavailable: "הסטודיו עמוס כרגע. הדמות נשמרה ואפשר לנסות שוב מאוחר יותר.",
-  // Its own sentence, not "something went wrong". This failure has a specific
-  // and knowable cause - the model painted a background instead of leaving it
-  // out of the file, twice - and it says so, because an owner told to "try
-  // again" will try again and get the same answer. It also says the fault is
-  // ours, because it is: their photographs were fine.
-  generation_not_transparent: "המודל החזיר דמות עם רקע מצויר במקום רקע שקוף, גם בניסיון השני. זו תקלה אצלנו ולא בתמונות שלכם — אנחנו מטפלים בה.",
-  generation_failed: "משהו השתבש ביצירת הדמות. אפשר לנסות שוב עם אותן תמונות או לבחור עיצוב אחר.",
+  // Our capacity, not their photographs. No clock: we do not know when the
+  // service will accept another request.
+  temporarily_unavailable: "היצירה לא הושלמה כי השירות היה עמוס. זו תקלה אצלנו, לא בתמונות שלכם — התמונות תקינות.",
+  // Older rows. The failure was ours: the cut-out did not succeed. It does not
+  // say the background was drawn, because that is not what the check measures.
+  generation_not_transparent: "לא הצלחנו להפריד את הדמות מהרקע. זו תקלה אצלנו, לא בתמונות שלכם — התמונות תקינות.",
+  background_not_keyable: "המודל החזיר דמות שהרקע שלה לא היה הצבע האחיד שביקשנו, ולכן לא יכולנו להפריד אותה. זו תקלה אצלנו, לא בתמונות שלכם — התמונות תקינות.",
+  undecodable: "התמונה שחזרה מהמודל לא ניתנת לקריאה. זו תקלה אצלנו, לא בתמונות שלכם — התמונות תקינות.",
+  opaque_corners: "הדמות נוצרה, אבל הרקע נשאר אטום אחרי העיבוד שלנו. זו תקלה אצלנו, לא בתמונות שלכם — התמונות תקינות.",
+  // The configured model is gone or refused. Asking the owner to try again
+  // would send the same request at the same model.
+  model_unavailable: "שירות יצירת הדמות לא זמין כי המודל שמוגדר אצלנו לא זמין. זו תקלה אצלנו, לא בתמונות שלכם — התמונות תקינות.",
+  generation_failed: "משהו השתבש ביצירת הדמות. זו תקלה אצלנו, לא בתמונות שלכם — התמונות תקינות.",
 };
 
 const EXPRESSION_LABELS: Record<string, string> = {
